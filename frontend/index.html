@@ -578,6 +578,8 @@ let state = {
   hiddenProjects: new Set(),
   hiddenStatuses: new Set(),
   hiddenPriorities: new Set(),
+  // Eingeklappte Baumknoten (uids); überlebt Neurendern und Neuladen.
+  collapsed: new Set(),
   search: "",
   selectedId: null,
   currentView: "tree",
@@ -593,6 +595,7 @@ function applyState(saved) {
   if (Array.isArray(saved.hiddenProjects)) state.hiddenProjects = new Set(saved.hiddenProjects);
   if (Array.isArray(saved.hiddenStatuses)) state.hiddenStatuses = new Set(saved.hiddenStatuses);
   if (Array.isArray(saved.hiddenPriorities)) state.hiddenPriorities = new Set(saved.hiddenPriorities);
+  if (Array.isArray(saved.collapsed)) state.collapsed = new Set(saved.collapsed);
   if (typeof saved.search === "string") state.search = saved.search;
   if (typeof saved.selectedId === "string" || saved.selectedId === null) state.selectedId = saved.selectedId;
   if (typeof saved.currentView === "string") state.currentView = saved.currentView;
@@ -623,6 +626,7 @@ function stateSnapshot() {
     hiddenProjects: [...state.hiddenProjects],
     hiddenStatuses: [...state.hiddenStatuses],
     hiddenPriorities: [...state.hiddenPriorities],
+    collapsed: [...state.collapsed],
     search: state.search,
     selectedId: state.selectedId,
     currentView: state.currentView,
@@ -885,9 +889,10 @@ function buildTreeLevel(byParent, parentKey) {
     row.className = "node-row" + (item.uid === state.selectedId ? " selected" : "");
 
     const hasChildren = (byParent[item.uid] || []).length > 0;
+    const collapsed = hasChildren && state.collapsed.has(item.uid);
     const caret = document.createElement("span");
     caret.className = "caret";
-    caret.textContent = hasChildren ? "▾" : "";
+    caret.textContent = hasChildren ? (collapsed ? "▸" : "▾") : "";
     row.appendChild(caret);
 
     const badge = document.createElement("span");
@@ -918,13 +923,18 @@ function buildTreeLevel(byParent, parentKey) {
     if (hasChildren) {
       const childWrap = document.createElement("div");
       childWrap.className = "node-children";
+      if (collapsed) childWrap.style.display = "none";
       childWrap.appendChild(buildTreeLevel(byParent, item.uid));
       node.appendChild(childWrap);
       caret.style.cursor = "pointer";
       caret.addEventListener("click", (e) => {
         e.stopPropagation();
-        childWrap.style.display = childWrap.style.display === "none" ? "" : "none";
-        caret.textContent = childWrap.style.display === "none" ? "▸" : "▾";
+        const nowCollapsed = !state.collapsed.has(item.uid);
+        if (nowCollapsed) state.collapsed.add(item.uid);
+        else state.collapsed.delete(item.uid);
+        childWrap.style.display = nowCollapsed ? "none" : "";
+        caret.textContent = nowCollapsed ? "▸" : "▾";
+        saveState();
       });
     }
 

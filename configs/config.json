@@ -1,0 +1,20 @@
+{
+  "sources": [
+    {
+      "project": "LLM_Tests",
+      "path": "/Users/hoppmann/Documents/GitHub/LLM_Tests/docs"
+    },
+    {
+      "project": "EZF-Backend",
+      "path": "/Users/hoppmann/Documents/GitHub/EZF-Backend/docs/Anselm"
+    },
+    {
+      "project": "my_story_game",
+      "path": "/Users/hoppmann/Documents/GitHub/my_story_game/docs"
+    },
+    {
+      "project": "Claude_Harness",
+      "path": "/Users/hoppmann/Documents/GitHub/Claude_Harness/docs/todo"
+    }
+  ]
+}

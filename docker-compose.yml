@@ -1,0 +1,24 @@
+services:
+  todo-viewer:
+    build: .
+    container_name: todo-viewer
+    hostname: todo.localhost
+    restart: unless-stopped
+    environment:
+      # Startordner des Dateibrowsers beim Hinzufügen von Projekten
+      - BROWSE_START=/Users/hoppmann/Documents/GitHub
+    ports:
+      - "5411:5411"
+    volumes:
+      # config.json + UI-Zustand (ui_state.json) liegen hier beschreibbar auf
+      # dem Host und überleben damit "docker compose down" bzw. Rebuilds.
+      - ./configs:/app/configs
+      # gleicher absoluter Pfad wie auf dem Host, damit die in config.json
+      # referenzierten Backlog-Ordner in den Nachbar-Repos gefunden werden.
+      # Beschreibbar, damit Status-/Prioritätsänderungen und Archivierung
+      # aus der UI in den Dateien landen.
+      - /Users/hoppmann/Documents/GitHub:/Users/hoppmann/Documents/GitHub
+
+# Aufruf im Browser: http://todo.localhost:5411
+# (*.localhost wird von macOS ohne /etc/hosts-Eintrag automatisch auf
+# 127.0.0.1 aufgelöst; Port 80 ist auf dieser Maschine bereits belegt)

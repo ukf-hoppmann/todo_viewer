@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<title>ToDo Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-border: #262a33;
+    --text: #e6e8ec;
+    --text-dim: #9aa1ac;
+    --accent: #5b8cff;
+    --open: #6b7280;
+    --progress: #d59a3a;
+    --await: #a06bd5;
+    --done: #3ab26b;
+    --rejected: #d5544a;
+    --prio-urgent: #e05a4e;
+    --prio-important: #d5a13a;
+    --prio-later: #4a7fd5;
+    --prio-none: #3a3f4a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+  #app { display: flex; height: 100vh; }
+
+  #sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--panel-border);
+    padding: 14px;
+    overflow-y: auto;
+  }
+  .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 14px; }
+  #sidebar h1 { font-size: 15px; margin: 0; }
+  .lang-switch { display: flex; border: 1px solid var(--panel-border); border-radius: 6px; overflow: hidden; }
+  .lang-switch button {
+    background: transparent; border: none; color: var(--text-dim); font-size: 11px;
+    padding: 3px 8px; cursor: pointer;
+  }
+  .lang-switch button.active { background: var(--accent); color: white; }
+  .filter-group { margin-bottom: 16px; }
+  .filter-group h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--text-dim); margin: 0 0 6px;
+  }
+  .filter-group label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 3px 0; cursor: pointer;
+  }
+  input[type=text], textarea {
+    width: 100%; padding: 6px 8px; border-radius: 6px;
+    border: 1px solid var(--panel-border); background: #0f1115; color: var(--text);
+    font-size: 13px; margin-bottom: 10px; font-family: inherit;
+  }
+  .badge {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 6px; flex-shrink: 0;
+  }
+
+  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #tabs {
+    display: flex; gap: 4px; padding: 10px 16px; border-bottom: 1px solid var(--panel-border);
+    background: var(--panel);
+  }
+  .tab-btn {
+    background: transparent; border: none; color: var(--text-dim);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  .tab-btn.active { background: var(--accent); color: white; }
+
+  #content { flex: 1; overflow: hidden; position: relative; display: flex; }
+  .view { flex: 1; overflow: auto; padding: 16px; display: none; }
+  .view.active { display: flex; flex-direction: column; }
+
+  /* Tree view */
+  #tree-view { gap: 4px; }
+  .project-group { margin-bottom: 18px; }
+  .project-title { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+  .node-row {
+    display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px;
+    cursor: pointer; font-size: 13px;
+  }
+  .node-row:hover { background: #1f232c; }
+  .node-row.selected { background: #22304f; }
+  .node-type { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #2a2e38; color: var(--text-dim); }
+  .prio-badge {
+    display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px;
+    border-radius: 4px; color: #14161b; flex-shrink: 0;
+  }
+  .node-title { flex: 1; }
+  .node-children { margin-left: 20px; }
+  .node-children > .tree-node { border-left: 1px solid var(--panel-border); padding-left: 6px; }
+  /* Optionale Kinder (Required for parent: No): gestrichelte Linie, hohler Punkt, gedimmt, Label */
+  .node-children > .tree-node.optional { border-left: 1px dashed #4a505c; }
+  .tree-node.optional > .node-row .node-title { color: var(--text-dim); }
+  .tree-node.optional > .node-row .badge { background: transparent !important; border: 1.5px solid var(--status-color); }
+  .opt-tag {
+    font-size: 10px; padding: 0 5px; border-radius: 4px; border: 1px solid #3a3f4a; color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .caret { width: 12px; display: inline-block; color: var(--text-dim); font-size: 10px; }
+
+  /* Kanban */
+  #kanban-view { flex-direction: row; gap: 12px; overflow-x: auto; }
+  .kanban-col { min-width: 240px; background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 8px; padding: 10px; display: flex; flex-direction: column; }
+  .kanban-col h3 { font-size: 12px; margin: 0 0 8px; color: var(--text-dim); text-transform: uppercase; }
+  .kanban-card {
+    background: #1c202a; border: 1px solid var(--panel-border); border-left: 3px solid transparent;
+    border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; font-size: 12.5px; cursor: pointer;
+  }
+  .kanban-card:hover { border-color: var(--accent); }
+  .kanban-card .k-id { color: var(--text-dim); font-size: 10.5px; }
+
+  /* Graph */
+  #graph-view { padding: 0; }
+  #graph-canvas { flex: 1; width: 100%; height: 100%; }
+
+  /* Detail panel */
+  #detail-panel {
+    width: 380px; flex-shrink: 0; background: var(--panel); border-left: 1px solid var(--panel-border);
+    padding: 18px; overflow-y: auto; display: none; position: relative;
+  }
+  #detail-panel.open { display: block; }
+  #detail-panel h2 { font-size: 16px; margin: 0 24px 4px 0; }
+  #detail-panel .detail-id { color: var(--text-dim); font-size: 12px; margin-bottom: 14px; }
+  .detail-summary {
+    font-size: 13px; line-height: 1.5; background: #1c202a; border: 1px solid var(--panel-border);
+    border-radius: 6px; padding: 8px 10px; margin-bottom: 14px;
+  }
+  .detail-field { margin-bottom: 12px; }
+  .detail-field .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); margin-bottom: 3px; }
+  .detail-field .v { font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+  .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: #22262f; border: 1px solid var(--panel-border); border-radius: 12px;
+    padding: 2px 9px; font-size: 12px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  .doc-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .close-btn { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px; }
+
+  select.field-edit {
+    background: #0f1115; color: var(--text); border: 1px solid var(--panel-border);
+    border-radius: 6px; padding: 4px 6px; font-size: 13px; cursor: pointer;
+  }
+  select.field-edit:disabled { opacity: .6; cursor: wait; }
+  .field-status { color: var(--text-dim); font-size: 11px; margin-left: 6px; }
+
+  .progress-bar { height: 6px; background: #262a33; border-radius: 3px; overflow: hidden; margin: 4px 0 10px; }
+  .progress-bar-fill { height: 100%; background: var(--done); }
+
+  /* Projekt-Quellen in der Sidebar */
+  .filter-group h2.with-action { display: flex; align-items: center; justify-content: space-between; }
+  .icon-btn {
+    background: transparent; border: 1px solid transparent; color: var(--text-dim);
+    border-radius: 5px; cursor: pointer; font-size: 12px; line-height: 1; padding: 3px 5px;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--panel-border); background: #1f232c; }
+  .icon-btn.danger:hover { color: var(--rejected); }
+  .add-btn { font-size: 11px; text-transform: none; letter-spacing: 0; }
+  .source-row { display: flex; align-items: center; gap: 2px; }
+  .source-row > label { flex: 1; min-width: 0; }
+  .source-row > label span.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .source-row .icon-btn { visibility: hidden; }
+  .source-row:hover .icon-btn, .source-row.broken .icon-btn { visibility: visible; }
+  .source-row.broken > label { opacity: .45; }
+  .source-row.broken .warn { color: var(--progress); font-size: 12px; }
+  .source-error { font-size: 11px; color: var(--text-dim); margin: -2px 0 4px 22px; opacity: .8; word-break: break-all; }
+
+  /* Modals */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none;
+    align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 64px);
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px;
+    padding: 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .modal h3 { margin: 0; font-size: 15px; }
+  .modal label.field { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
+  .modal input[type=text] { margin: 3px 0 0; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+  .modal textarea { margin: 3px 0 0; min-height: 70px; resize: vertical; }
+  .modal .hint { font-size: 12px; color: var(--text-dim); }
+  .browser {
+    border: 1px solid var(--panel-border); border-radius: 6px; background: #0f1115;
+    display: flex; flex-direction: column; height: min(320px, 40vh);
+  }
+  .browser-path {
+    display: flex; gap: 6px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--panel-border);
+    font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--text-dim);
+  }
+  .browser-path span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+  .browser-list { overflow-y: auto; flex: 1; padding: 4px; }
+  .browser-entry {
+    display: flex; gap: 8px; align-items: center; padding: 4px 8px; border-radius: 5px;
+    font-size: 13px; cursor: pointer; user-select: none;
+  }
+  .browser-entry:hover { background: #1f232c; }
+  .browser-entry .ico { width: 16px; text-align: center; color: var(--text-dim); }
+  .browser-entry .todo-tag { margin-left: auto; font-size: 10.5px; color: var(--done); border: 1px solid #2a5a3c; border-radius: 4px; padding: 0 5px; }
+  .browser-empty { color: var(--text-dim); font-size: 12px; padding: 8px; }
+  .todo-status { font-size: 12px; min-height: 16px; }
+  .todo-status.ok { color: var(--done); }
+  .todo-status.missing { color: var(--text-dim); }
+  .modal-error { color: var(--rejected); font-size: 12px; min-height: 16px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .btn {
+    border: 1px solid var(--panel-border); background: #1f232c; color: var(--text);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.small { padding: 3px 10px; font-size: 12px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn:disabled { opacity: .6; cursor: wait; }
+
+  /* Dokument-Popup (Notes/Spec) */
+  .modal.doc { width: calc(100vw - 48px); height: calc(100vh - 48px); max-height: none; padding: 0; gap: 0; }
+  .doc-head {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--panel-border);
+  }
+  .doc-head h3 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .doc-tabs { display: flex; gap: 4px; padding: 8px 14px 0; border-bottom: 1px solid var(--panel-border); flex-wrap: wrap; }
+  .doc-tab {
+    background: transparent; border: 1px solid transparent; border-bottom: none; color: var(--text-dim);
+    padding: 6px 12px; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 12.5px;
+  }
+  .doc-tab.active { background: var(--bg); border-color: var(--panel-border); color: var(--text); }
+  .doc-body { flex: 1; overflow-y: auto; background: var(--bg); padding: 20px 28px; }
+  .md { max-width: 900px; margin: 0 auto; font-size: 14px; line-height: 1.6; }
+  .md h1 { font-size: 22px; margin: 0 0 16px; }
+  .md h2 { font-size: 18px; margin: 26px 0 10px; padding-bottom: 4px; border-bottom: 1px solid var(--panel-border); }
+  .md h3 { font-size: 15px; margin: 20px 0 8px; color: var(--accent); }
+  .md code { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; background: #1c202a; padding: 1px 5px; border-radius: 4px; }
+  .md pre { background: #1c202a; border: 1px solid var(--panel-border); border-radius: 6px; padding: 10px 12px; overflow-x: auto; }
+  .md pre code { background: none; padding: 0; }
+  .md a { color: var(--accent); }
+  .md blockquote { margin: 0; padding-left: 12px; border-left: 3px solid var(--panel-border); color: var(--text-dim); }
+  .md table { border-collapse: collapse; }
+  .md th, .md td { border: 1px solid var(--panel-border); padding: 4px 8px; }
+  .md ul, .md ol { padding-left: 22px; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #2a2e38; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sidebar-head">
+      <h1 data-i18n="app.title">ToDo Viewer</h1>
+      <div class="lang-switch" role="group" aria-label="Sprache / Language">
+        <button data-lang="de">DE</button>
+        <button data-lang="en">EN</button>
+      </div>
+    </div>
+    <input type="text" id="search" data-i18n-placeholder="search" />
+    <div class="filter-group">
+      <h2 class="with-action"><span data-i18n="filter.projects"></span>
+        <button class="icon-btn add-btn" id="add-source-btn" data-i18n="source.add" data-i18n-title="source.add.title"></button>
+      </h2>
+      <div id="project-filters"></div>
+    </div>
+    <div class="filter-group">
+      <h2 data-i18n="filter.status"></h2>
+      <div id="status-filters"></div>
+    </div>
+    <div class="filter-group">
+      <h2 data-i18n="filter.priority"></h2>
+      <div id="priority-filters"></div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="tabs">
+      <button class="tab-btn active" data-view="tree" data-i18n="tab.tree"></button>
+      <button class="tab-btn" data-view="graph" data-i18n="tab.graph"></button>
+      <button class="tab-btn" data-view="kanban" data-i18n="tab.kanban"></button>
+    </div>
+    <div id="content">
+      <div class="view active" id="tree-view"></div>
+      <div class="view" id="graph-view">
+        <div id="graph-info" style="font-size:12px;color:var(--text-dim);padding:8px 12px;border-bottom:1px solid var(--panel-border);"></div>
+        <div id="graph-canvas"></div>
+      </div>
+      <div class="view" id="kanban-view"></div>
+      <div id="detail-panel">
+        <button class="close-btn" onclick="closeDetail()">✕</button>
+        <div id="detail-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Projekt hinzufügen / Ordner ändern -->
+<div class="modal-backdrop" id="source-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="source-modal-title">
+    <h3 id="source-modal-title"></h3>
+    <div>
+      <label class="field" for="modal-project" data-i18n="source.name"></label>
+      <input type="text" id="modal-project" data-i18n-placeholder="source.name.ph" />
+    </div>
+    <div>
+      <label class="field" for="modal-path" data-i18n="source.path"></label>
+      <input type="text" id="modal-path" data-i18n-placeholder="source.path.ph" />
+    </div>
+    <div class="browser">
+      <div class="browser-path">
+        <button class="icon-btn" id="browser-up" data-i18n-title="browser.up">↑</button>
+        <span id="browser-cwd"></span>
+      </div>
+      <div class="browser-list" id="browser-list"></div>
+    </div>
+    <div class="todo-status" id="todo-status"></div>
+    <div class="modal-error" id="source-modal-error"></div>
+    <div class="modal-actions">
+      <button class="btn" id="source-modal-cancel" data-i18n="cancel"></button>
+      <button class="btn primary" id="source-modal-ok" data-i18n="ok"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Resolution beim Setzen von Completed/Rejected -->
+<div class="modal-backdrop" id="resolution-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resolution-modal-title">
+    <h3 id="resolution-modal-title"></h3>
+    <div>
+      <label class="field" for="resolution-text" data-i18n="resolution.label"></label>
+      <textarea id="resolution-text"></textarea>
+    </div>
+    <div class="hint" id="resolution-hint"></div>
+    <div class="modal-error" id="resolution-error"></div>
+    <div class="modal-actions">
+      <button class="btn" id="resolution-cancel" data-i18n="cancel"></button>
+      <button class="btn primary" id="resolution-ok" data-i18n="save"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Notes/Spec -->
+<div class="modal-backdrop" id="doc-modal">
+  <div class="modal doc" role="dialog" aria-modal="true" aria-labelledby="doc-modal-title">
+    <div class="doc-head">
+      <h3 id="doc-modal-title"></h3>
+      <button class="btn small" id="doc-close" data-i18n="close"></button>
+    </div>
+    <div class="doc-tabs" id="doc-tabs"></div>
+    <div class="doc-body"><div class="md" id="doc-content"></div></div>
+  </div>
+</div>
+
+<script>
+/* ---------- LOKALISIERUNG ----------
+   Werte (Status, Priorität, Typ, Feldnamen) bleiben intern englisch; übersetzt
+   wird nur die Anzeige. Filter, Farben und Speichern arbeiten mit den Keys. */
+const I18N = {
+  de: {
+    "app.title": "ToDo Viewer",
+    "search": "Suche…",
+    "filter.projects": "Projekte",
+    "filter.status": "Status",
+    "filter.priority": "Priorität",
+    "tab.tree": "Baum",
+    "tab.graph": "Abhängigkeiten",
+    "tab.kanban": "Kanban",
+    "graph.info": "{n} von {total} Einträgen haben Abhängigkeiten (isolierte ausgeblendet)",
+    "source.add": "＋ Hinzufügen",
+    "source.add.title": "Projekt hinzufügen",
+    "source.edit.title": "Projektordner ändern",
+    "source.remove.title": "Projekt entfernen",
+    "source.name": "Projektname",
+    "source.name.ph": "automatisch aus dem Ordner (Repo-Name)",
+    "source.path": "Backlog-Ordner (enthält TODO.md)",
+    "source.path.ph": "/pfad/zu/docs/todo",
+    "source.confirmRemove": "Projekt „{p}“ entfernen?\n\n{path}\n\nDie Dateien bleiben erhalten, nur der Eintrag in der Config wird entfernt.",
+    "browser.up": "Übergeordneter Ordner",
+    "browser.empty": "Keine Unterordner.",
+    "browser.unreadable": "Ordner nicht lesbar: {e}",
+    "browser.failed": "Fehler beim Laden: {e}",
+    "browser.hasTodo": "✓ TODO.md in diesem Ordner vorhanden",
+    "browser.noTodo": "Keine TODO.md in diesem Ordner",
+    "cancel": "Abbrechen",
+    "ok": "OK",
+    "save": "Speichern",
+    "close": "Schließen",
+    "saving": " speichert…",
+    "optional": "optional",
+    "yes": "Ja",
+    "no": "Nein",
+    "detail.children": "Untergeordnet",
+    "detail.source": "Quelle",
+    "detail.archived": "Archiv",
+    "doc.notes": "Notizen",
+    "doc.spec": "Spec",
+    "doc.loading": "Lädt…",
+    "resolution.title": "{status}: {id}",
+    "resolution.label": "Entscheidung (Resolution)",
+    "resolution.hint": "Wird als Resolution im Eintrag vermerkt, anschließend wird der Eintrag nach archive.md verschoben.",
+    "err.not_found": "Ordner nicht gefunden.",
+    "err.not_a_dir": "Pfad ist kein Ordner.",
+    "err.no_todo": "Keine TODO.md im Ordner.",
+    "err.duplicate": "Dieser Ordner ist bereits eingetragen.",
+    "err.missing_path": "Bitte einen Ordner auswählen.",
+    "err.source_gone": "Quelle nicht gefunden (Config wurde evtl. extern geändert).",
+    "err.parse_error": "Datei konnte nicht gelesen werden",
+    "err.entry_moved": "Eintrag nicht gefunden (Datei wurde vermutlich extern geändert).",
+    "err.resolution_required": "Bitte eine Resolution angeben.",
+    "err.not_editable": "Feld ist nicht editierbar.",
+    "err.file_not_found": "Datei nicht gefunden.",
+    "err.forbidden": "Nur Markdown-Dateien im Backlog-Ordner können geöffnet werden.",
+    "err.write_failed": "Datei konnte nicht geschrieben werden (Schreibrechte?).",
+    "err.generic": "Fehler: {e}",
+    "err.save": "Fehler beim Speichern: {e}",
+  },
+  en: {
+    "app.title": "ToDo Viewer",
+    "search": "Search…",
+    "filter.projects": "Projects",
+    "filter.status": "Status",
+    "filter.priority": "Priority",
+    "tab.tree": "Tree",
+    "tab.graph": "Dependencies",
+    "tab.kanban": "Kanban",
+    "graph.info": "{n} of {total} items have dependencies (isolated items hidden)",
+    "source.add": "＋ Add",
+    "source.add.title": "Add project",
+    "source.edit.title": "Change project folder",
+    "source.remove.title": "Remove project",
+    "source.name": "Project name",
+    "source.name.ph": "derived from the folder (repo name)",
+    "source.path": "Backlog folder (contains TODO.md)",
+    "source.path.ph": "/path/to/docs/todo",
+    "source.confirmRemove": "Remove project \"{p}\"?\n\n{path}\n\nThe files are kept; only the config entry is removed.",
+    "browser.up": "Parent folder",
+    "browser.empty": "No subfolders.",
+    "browser.unreadable": "Folder not readable: {e}",
+    "browser.failed": "Couldn't load: {e}",
+    "browser.hasTodo": "✓ TODO.md found in this folder",
+    "browser.noTodo": "No TODO.md in this folder",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "save": "Save",
+    "close": "Close",
+    "saving": " saving…",
+    "optional": "optional",
+    "yes": "Yes",
+    "no": "No",
+    "detail.children": "Children",
+    "detail.source": "Source",
+    "detail.archived": "Archive",
+    "doc.notes": "Notes",
+    "doc.spec": "Spec",
+    "doc.loading": "Loading…",
+    "resolution.title": "{status}: {id}",
+    "resolution.label": "Resolution",
+    "resolution.hint": "Recorded as the entry's resolution; the entry is then moved to archive.md.",
+    "err.not_found": "Folder not found.",
+    "err.not_a_dir": "Path is not a folder.",
+    "err.no_todo": "No TODO.md in this folder.",
+    "err.duplicate": "This folder is already configured.",
+    "err.missing_path": "Select a folder.",
+    "err.source_gone": "Source not found (config was probably changed externally).",
+    "err.parse_error": "Couldn't read file",
+    "err.entry_moved": "Entry not found (file was probably changed externally).",
+    "err.resolution_required": "Enter a resolution.",
+    "err.not_editable": "Field is not editable.",
+    "err.file_not_found": "File not found.",
+    "err.forbidden": "Only markdown files inside the backlog folder can be opened.",
+    "err.write_failed": "Couldn't write the file (permissions?).",
+    "err.generic": "Error: {e}",
+    "err.save": "Couldn't save: {e}",
+  },
+};
+
+const VOCAB_DE = {
+  status: {
+    "Open": "Offen",
+    "In progress": "In Arbeit",
+    "Awaiting confirmation": "Wartet auf Bestätigung",
+    "Completed": "Abgeschlossen",
+    "Rejected": "Abgelehnt",
+  },
+  priority: { "Urgent": "Dringend", "Important": "Wichtig", "Prospective": "Perspektivisch" },
+  type: { "Epic": "Epic", "Story": "Story", "Task": "Task" },
+  field: {
+    "Type": "Typ",
+    "Status": "Status",
+    "Parent": "Parent",
+    "Required for parent": "Pflicht für Parent",
+    "Created": "Erstellt",
+    "Area": "Bereich",
+    "Priority": "Priorität",
+    "Dependencies": "Abhängigkeiten",
+    "Goal": "Ziel",
+    "Completion criteria": "Fertigstellungskriterien",
+    "Summary": "Kurzfassung",
+    "Notes": "Notizen",
+    "Spec": "Spec",
+    "Resolution": "Entscheidung",
+  },
+};
+
+// Resolution-Vorgabe folgt der Konvention des Harness (englisch, unabhängig von der UI-Sprache).
+const RESOLUTION_DEFAULT = {
+  Completed: "Confirmed by the project owner on {date}.",
+  Rejected: "Rejected by the project owner on {date}.",
+};
+
+function t(key, vars) {
+  let s = (I18N[state.lang] || I18N.de)[key] ?? I18N.en[key] ?? key;
+  if (vars) Object.entries(vars).forEach(([k, v]) => { s = s.split("{" + k + "}").join(v); });
+  return s;
+}
+function vocab(kind, key) {
+  if (key == null) return key;
+  if (state.lang !== "de") return key;
+  return (VOCAB_DE[kind] && VOCAB_DE[kind][key]) || key;
+}
+function errorText(data, fallback) {
+  if (data && data.code && I18N.de["err." + data.code]) {
+    return t("err." + data.code) + (data.code === "parse_error" && data.error ? `: ${data.error}` : "");
+  }
+  return (data && data.error) || fallback;
+}
+
+function applyI18n() {
+  document.documentElement.lang = state.lang;
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  document.querySelectorAll(".lang-switch button").forEach(b => b.classList.toggle("active", b.dataset.lang === state.lang));
+}
+
+/* ---------- FARBEN (an den englischen Keys) ---------- */
+const STATUS_KEYS = ["Open", "In progress", "Awaiting confirmation", "Completed", "Rejected"];
+const TERMINAL_STATUSES = new Set(["Completed", "Rejected"]);
+const PRIORITY_KEYS = ["Urgent", "Important", "Prospective"];
+const STATUS_COLORS = {
+  "Open": "#6b7280",
+  "In progress": "#d59a3a",
+  "Awaiting confirmation": "#a06bd5",
+  "Completed": "#3ab26b",
+  "Rejected": "#d5544a",
+};
+function statusColor(s) { return STATUS_COLORS[s] || "#6b7280"; }
+function isDone(s) { return s === "Completed"; }
+
+const PRIORITY_COLORS = {
+  "Urgent": "var(--prio-urgent)",
+  "Important": "var(--prio-important)",
+  "Prospective": "var(--prio-later)",
+};
+const PRIORITY_FALLBACK_PALETTE = ["#5b8cff", "#3ab26b", "#a06bd5", "#d59a3a", "#d5544a", "#4a7fd5"];
+function priorityColor(p) {
+  if (!p) return "var(--prio-none)";
+  if (PRIORITY_COLORS[p]) return PRIORITY_COLORS[p];
+  let hash = 0;
+  for (let i = 0; i < p.length; i++) hash = (hash * 31 + p.charCodeAt(i)) >>> 0;
+  return PRIORITY_FALLBACK_PALETTE[hash % PRIORITY_FALLBACK_PALETTE.length];
+}
+
+/* ---------- STATE ---------- */
+let ITEMS = [];
+let SOURCES = [];
+let itemsById = {};
+// Filter speichern, was ausgeblendet ist: neue Werte erscheinen dadurch automatisch.
+let state = {
+  hiddenProjects: new Set(),
+  hiddenStatuses: new Set(),
+  hiddenPriorities: new Set(),
+  search: "",
+  selectedId: null,
+  currentView: "tree",
+  lang: "de",
+};
+
+function uidOf(project, id) { return project + "::" + id; }
+
+const STATE_KEY = "todoViewerState";
+
+function applyState(saved) {
+  if (!saved) return;
+  if (Array.isArray(saved.hiddenProjects)) state.hiddenProjects = new Set(saved.hiddenProjects);
+  if (Array.isArray(saved.hiddenStatuses)) state.hiddenStatuses = new Set(saved.hiddenStatuses);
+  if (Array.isArray(saved.hiddenPriorities)) state.hiddenPriorities = new Set(saved.hiddenPriorities);
+  if (typeof saved.search === "string") state.search = saved.search;
+  if (typeof saved.selectedId === "string" || saved.selectedId === null) state.selectedId = saved.selectedId;
+  if (typeof saved.currentView === "string") state.currentView = saved.currentView;
+  if (saved.lang === "de" || saved.lang === "en") state.lang = saved.lang;
+}
+
+// localStorage dient nur als sofort verfügbarer Zwischenspeicher, damit die
+// UI ohne Flackern startet, bevor die Server-Antwort da ist. Quelle der
+// Wahrheit ist configs/ui_state.json auf dem Server (siehe /api/state).
+function loadStateFromLocalCache() {
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem(STATE_KEY));
+  } catch (e) { saved = null; }
+  applyState(saved);
+}
+
+async function loadStateFromServer() {
+  try {
+    const res = await fetch("/api/state");
+    if (!res.ok) return;
+    applyState(await res.json());
+  } catch (e) { /* Server evtl. nicht erreichbar, lokaler Cache bleibt gültig */ }
+}
+
+function stateSnapshot() {
+  return {
+    hiddenProjects: [...state.hiddenProjects],
+    hiddenStatuses: [...state.hiddenStatuses],
+    hiddenPriorities: [...state.hiddenPriorities],
+    search: state.search,
+    selectedId: state.selectedId,
+    currentView: state.currentView,
+    lang: state.lang,
+  };
+}
+
+function saveState() {
+  const snapshot = stateSnapshot();
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(snapshot)); } catch (e) { /* ignore */ }
+  fetch("/api/state", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(snapshot),
+  }).catch(() => { /* Server evtl. nicht erreichbar */ });
+}
+
+function applyCurrentViewToTabs() {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.view === state.currentView));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === state.currentView + "-view"));
+}
+
+async function loadData() {
+  const res = await fetch("/api/data");
+  const data = await res.json();
+  ITEMS = data.items || [];
+  SOURCES = data.sources || [];
+  ITEMS.forEach(i => {
+    i.uid = uidOf(i.project, i.id);
+    i.parentUid = i.parent ? uidOf(i.project, i.parent) : null;
+    i.dependencyUids = (i.dependencies || []).map(d => uidOf(i.project, d));
+  });
+  itemsById = Object.fromEntries(ITEMS.map(i => [i.uid, i]));
+  buildFilters();
+  applyCurrentViewToTabs();
+  if (state.selectedId && itemsById[state.selectedId]) {
+    showDetail(state.selectedId);
+  } else {
+    renderAll();
+  }
+}
+
+function sortByKeyOrder(values, order) {
+  return values.sort((a, b) => {
+    const ia = order.indexOf(a), ib = order.indexOf(b);
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    return a.localeCompare(b);
+  });
+}
+
+function buildFilters() {
+  const projects = [...new Set([...SOURCES.map(s => s.project), ...ITEMS.map(i => i.project)])].sort();
+  const statuses = sortByKeyOrder([...new Set(ITEMS.map(i => i.status))], STATUS_KEYS);
+  const priorities = sortByKeyOrder([...new Set(ITEMS.map(i => i.priority).filter(Boolean))], PRIORITY_KEYS);
+
+  renderProjectFilters(projects);
+  renderFilterGroup("status-filters", statuses, state.hiddenStatuses, statusColor, v => vocab("status", v));
+  renderFilterGroup("priority-filters", priorities, state.hiddenPriorities, priorityColor, v => vocab("priority", v));
+}
+
+function renderFilterGroup(containerId, values, hiddenSet, colorFn, labelFn) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = "";
+  values.forEach(v => {
+    const label = document.createElement("label");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !hiddenSet.has(v);
+    cb.onchange = () => {
+      if (cb.checked) hiddenSet.delete(v); else hiddenSet.add(v);
+      saveState();
+      renderAll();
+    };
+    label.appendChild(cb);
+    if (colorFn) {
+      const dot = document.createElement("span");
+      dot.className = "badge";
+      dot.style.background = colorFn(v);
+      label.appendChild(dot);
+    }
+    label.appendChild(document.createTextNode(labelFn ? labelFn(v) : v));
+    el.appendChild(label);
+  });
+}
+
+function renderProjectFilters(projects) {
+  const el = document.getElementById("project-filters");
+  el.innerHTML = "";
+  const sourcesByProject = {};
+  SOURCES.forEach(s => (sourcesByProject[s.project] = sourcesByProject[s.project] || []).push(s));
+
+  projects.forEach(project => {
+    const sources = sourcesByProject[project] || [];
+    // Ein Projekt kann aus mehreren Quellen bestehen; jede bekommt eine eigene Zeile.
+    const rows = sources.length ? sources : [null];
+    rows.forEach((source, idx) => {
+      const broken = !!(source && source.error);
+      const errMsg = broken ? errorText(source, source.error) : "";
+      const row = document.createElement("div");
+      row.className = "source-row" + (broken ? " broken" : "");
+
+      const label = document.createElement("label");
+      label.title = source ? source.path + (broken ? "\n⚠ " + errMsg : "") : "";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !state.hiddenProjects.has(project);
+      cb.onchange = () => {
+        if (cb.checked) state.hiddenProjects.delete(project); else state.hiddenProjects.add(project);
+        saveState();
+        buildFilters();
+        renderAll();
+      };
+      label.appendChild(cb);
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = rows.length > 1 ? `${project} (${idx + 1})` : project;
+      label.appendChild(name);
+      if (broken) {
+        const warn = document.createElement("span");
+        warn.className = "warn";
+        warn.textContent = "⚠";
+        label.appendChild(warn);
+      }
+      row.appendChild(label);
+
+      if (source) {
+        const edit = document.createElement("button");
+        edit.className = "icon-btn";
+        edit.textContent = "✎";
+        edit.title = t("source.edit.title");
+        edit.onclick = () => openSourceModal(source);
+        row.appendChild(edit);
+
+        const del = document.createElement("button");
+        del.className = "icon-btn danger";
+        del.textContent = "✕";
+        del.title = t("source.remove.title");
+        del.onclick = () => removeSource(source);
+        row.appendChild(del);
+      }
+      el.appendChild(row);
+
+      if (broken) {
+        const err = document.createElement("div");
+        err.className = "source-error";
+        err.textContent = `${errMsg} ${source.path}`;
+        el.appendChild(err);
+      }
+    });
+  });
+}
+
+function filteredItems() {
+  const q = state.search.trim().toLowerCase();
+  return ITEMS.filter(i =>
+    !state.hiddenProjects.has(i.project) &&
+    !state.hiddenStatuses.has(i.status) &&
+    (i.priority == null || !state.hiddenPriorities.has(i.priority)) &&
+    (!q || i.title.toLowerCase().includes(q) || i.id.toLowerCase().includes(q))
+  );
+}
+
+document.getElementById("search").addEventListener("input", e => {
+  state.search = e.target.value;
+  saveState();
+  renderAll();
+});
+
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    state.currentView = btn.dataset.view;
+    applyCurrentViewToTabs();
+    saveState();
+    renderAll();
+  });
+});
+
+document.querySelectorAll(".lang-switch button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (state.lang === btn.dataset.lang) return;
+    state.lang = btn.dataset.lang;
+    saveState();
+    applyI18n();
+    buildFilters();
+    if (state.selectedId && itemsById[state.selectedId]) showDetail(state.selectedId);
+    else renderAll();
+  });
+});
+
+function renderAll() {
+  const items = filteredItems();
+  if (state.currentView === "tree") renderTree(items);
+  else if (state.currentView === "kanban") renderKanban(items);
+  else if (state.currentView === "graph") renderGraph(items);
+}
+
+/* ---------- TREE VIEW ---------- */
+function renderTree(items) {
+  const root = document.getElementById("tree-view");
+  root.innerHTML = "";
+  const byProject = {};
+  items.forEach(i => {
+    (byProject[i.project] = byProject[i.project] || []).push(i);
+  });
+
+  Object.keys(byProject).sort().forEach(project => {
+    const group = document.createElement("div");
+    group.className = "project-group";
+
+    const projItems = byProject[project];
+    // Optionale Kinder blockieren ihren Parent nie und zählen nicht zum Fortschritt.
+    const counted = projItems.filter(i => i.required_for_parent !== false);
+    const total = counted.length;
+    const done = counted.filter(i => isDone(i.status)).length;
+
+    const title = document.createElement("div");
+    title.className = "project-title";
+    title.textContent = `${project} (${done}/${total})`;
+    group.appendChild(title);
+
+    const bar = document.createElement("div");
+    bar.className = "progress-bar";
+    const fill = document.createElement("div");
+    fill.className = "progress-bar-fill";
+    fill.style.width = total ? `${(done / total) * 100}%` : "0%";
+    bar.appendChild(fill);
+    group.appendChild(bar);
+
+    const uidSet = new Set(projItems.map(i => i.uid));
+    const byParent = {};
+    projItems.forEach(i => {
+      const p = (i.parentUid && uidSet.has(i.parentUid)) ? i.parentUid : "__root__";
+      (byParent[p] = byParent[p] || []).push(i);
+    });
+
+    const container = document.createElement("div");
+    container.appendChild(buildTreeLevel(byParent, "__root__"));
+    group.appendChild(container);
+    root.appendChild(group);
+  });
+}
+
+function buildTreeLevel(byParent, parentKey) {
+  const wrapper = document.createDocumentFragment();
+  const children = byParent[parentKey] || [];
+  children.forEach(item => {
+    const optional = parentKey !== "__root__" && item.required_for_parent === false;
+    const node = document.createElement("div");
+    node.className = "tree-node" + (optional ? " optional" : "");
+
+    const row = document.createElement("div");
+    row.className = "node-row" + (item.uid === state.selectedId ? " selected" : "");
+
+    const hasChildren = (byParent[item.uid] || []).length > 0;
+    const caret = document.createElement("span");
+    caret.className = "caret";
+    caret.textContent = hasChildren ? "▾" : "";
+    row.appendChild(caret);
+
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.style.background = statusColor(item.status);
+    badge.style.setProperty("--status-color", statusColor(item.status));
+    badge.title = vocab("status", item.status);
+    row.appendChild(badge);
+
+    const type = document.createElement("span");
+    type.className = "node-type";
+    type.textContent = vocab("type", item.type);
+    if (item.priority) {
+      type.style.background = priorityColor(item.priority);
+      type.style.color = "#14161b";
+    }
+    type.title = item.priority ? `${vocab("field", "Priority")}: ${vocab("priority", item.priority)}` : "";
+    row.appendChild(type);
+
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "node-title";
+    titleSpan.textContent = `${item.id} — ${item.title}`;
+    row.appendChild(titleSpan);
+
+    if (optional) {
+      const tag = document.createElement("span");
+      tag.className = "opt-tag";
+      tag.textContent = t("optional");
+      row.appendChild(tag);
+    }
+
+    row.addEventListener("click", () => showDetail(item.uid));
+    node.appendChild(row);
+
+    if (hasChildren) {
+      const childWrap = document.createElement("div");
+      childWrap.className = "node-children";
+      childWrap.appendChild(buildTreeLevel(byParent, item.uid));
+      node.appendChild(childWrap);
+      caret.style.cursor = "pointer";
+      caret.addEventListener("click", (e) => {
+        e.stopPropagation();
+        childWrap.style.display = childWrap.style.display === "none" ? "" : "none";
+        caret.textContent = childWrap.style.display === "none" ? "▸" : "▾";
+      });
+    }
+
+    wrapper.appendChild(node);
+  });
+  return wrapper;
+}
+
+/* ---------- KANBAN VIEW ---------- */
+function renderKanban(items) {
+  const root = document.getElementById("kanban-view");
+  root.innerHTML = "";
+  const byStatus = {};
+  items.forEach(i => (byStatus[i.status] = byStatus[i.status] || []).push(i));
+
+  const statuses = sortByKeyOrder(Object.keys(byStatus), STATUS_KEYS);
+
+  statuses.forEach(status => {
+    const col = document.createElement("div");
+    col.className = "kanban-col";
+    const h = document.createElement("h3");
+    h.textContent = `${vocab("status", status)} (${byStatus[status].length})`;
+    col.appendChild(h);
+    byStatus[status].forEach(item => {
+      const card = document.createElement("div");
+      card.className = "kanban-card";
+      card.style.borderLeftColor = priorityColor(item.priority);
+      const prioBadge = item.priority
+        ? `<span class="prio-badge" style="background:${priorityColor(item.priority)}">${escapeHtml(vocab("priority", item.priority))}</span>`
+        : "";
+      card.innerHTML = `<div class="k-id">${escapeHtml(item.id)} · ${escapeHtml(item.project)}</div><div>${escapeHtml(item.title)}</div>${prioBadge ? `<div style="margin-top:6px;">${prioBadge}</div>` : ""}`;
+      card.addEventListener("click", () => showDetail(item.uid));
+      col.appendChild(card);
+    });
+    root.appendChild(col);
+  });
+}
+
+/* ---------- GRAPH VIEW ---------- */
+let network = null;
+function renderGraph(allItems) {
+  const container = document.getElementById("graph-canvas");
+  const uidSet = new Set(allItems.map(i => i.uid));
+
+  const connected = new Set();
+  allItems.forEach(i => {
+    (i.dependencyUids || []).forEach(dep => {
+      if (uidSet.has(dep)) { connected.add(dep); connected.add(i.uid); }
+    });
+  });
+  const items = allItems.filter(i => connected.has(i.uid));
+
+  const info = document.getElementById("graph-info");
+  if (info) info.textContent = t("graph.info", { n: items.length, total: allItems.length });
+
+  const nodes = items.map(i => ({
+    id: i.uid,
+    label: `${i.id}\n${i.title.length > 28 ? i.title.slice(0, 28) + "…" : i.title}`,
+    color: {
+      background: "#1c202a",
+      border: statusColor(i.status),
+      highlight: { background: "#22304f", border: statusColor(i.status) },
+    },
+    font: { color: "#e6e8ec", size: 12 },
+    shape: "box",
+    margin: 8,
+  }));
+
+  const edges = [];
+  items.forEach(i => {
+    (i.dependencyUids || []).forEach(depUid => {
+      if (uidSet.has(depUid)) {
+        edges.push({ from: depUid, to: i.uid, arrows: "to", color: { color: "#5b8cff", opacity: 0.6 } });
+      }
+    });
+  });
+
+  const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+  const options = {
+    layout: { hierarchical: { enabled: true, direction: "LR", sortMethod: "directed", levelSeparation: 220, nodeSpacing: 160, blockShifting: true, edgeMinimization: true } },
+    physics: false,
+    interaction: { hover: true, zoomView: true, dragView: true },
+  };
+  if (network) network.destroy();
+  network = new vis.Network(container, data, options);
+  network.on("click", params => {
+    if (params.nodes.length > 0) showDetail(params.nodes[0]);
+  });
+  network.fit({ animation: false });
+  network.once("stabilizationIterationsDone", () => network.fit({ animation: false }));
+}
+
+/* ---------- DETAIL PANEL ---------- */
+function showDetail(uid) {
+  state.selectedId = uid;
+  saveState();
+  const item = itemsById[uid];
+  const panel = document.getElementById("detail-panel");
+  const body = document.getElementById("detail-body");
+  if (!item) { panel.classList.remove("open"); return; }
+
+  const L = key => escapeHtml(vocab("field", key));
+  let html = `<h2>${escapeHtml(item.title)}</h2>`;
+  html += `<div class="detail-id">${escapeHtml(item.id)} · ${escapeHtml(vocab("type", item.type))} · ${escapeHtml(item.project)}${item.in_archive ? " · " + escapeHtml(t("detail.archived")) : ""}</div>`;
+
+  if (item.summary) html += `<div class="detail-summary">${escapeHtml(item.summary)}</div>`;
+
+  const docs = [...(item.notes || []), ...(item.spec || [])];
+  if (docs.length) {
+    html += `<div class="doc-buttons">` +
+      (item.notes || []).map((p, n) => `<button class="btn small" data-doc="${escapeHtml(p)}">📝 ${escapeHtml(t("doc.notes"))}${item.notes.length > 1 ? " " + (n + 1) : ""}</button>`).join("") +
+      (item.spec || []).map((p, n) => `<button class="btn small" data-doc="${escapeHtml(p)}">📐 ${escapeHtml(t("doc.spec"))}${item.spec.length > 1 ? " " + (n + 1) : ""}</button>`).join("") +
+      `</div>`;
+  }
+
+  const field = (label, value) => value ? `<div class="detail-field"><div class="k">${label}</div><div class="v">${escapeHtml(value)}</div></div>` : "";
+
+  html += `<div class="detail-field"><div class="k">${L("Status")}</div><div class="v">${editableFieldHtml(item, "status", statusOptionsFor(item), v => vocab("status", v))}</div></div>`;
+  if (item.format === "checkbox") {
+    html += field(L("Priority"), vocab("priority", item.priority));
+  } else {
+    html += `<div class="detail-field"><div class="k">${L("Priority")}</div><div class="v">${editableFieldHtml(item, "priority", priorityOptionsFor(item), v => vocab("priority", v))}</div></div>`;
+  }
+  html += field(L("Resolution"), item.resolution);
+  html += field(L("Area"), item.area);
+
+  if (item.parentUid) {
+    const p = itemsById[item.parentUid];
+    html += `<div class="detail-field"><div class="k">${L("Parent")}</div><div class="v"><span class="chip" data-goto="${escapeHtml(item.parentUid)}">${escapeHtml(item.parent)}${p ? " — " + escapeHtml(p.title) : ""}</span></div></div>`;
+  }
+  if (item.required_for_parent != null) {
+    html += field(L("Required for parent"), item.required_for_parent ? t("yes") : t("no"));
+  }
+
+  if (item.dependencyUids && item.dependencyUids.length) {
+    html += `<div class="detail-field"><div class="k">${L("Dependencies")}</div><div class="v chip-list">` +
+      item.dependencyUids.map(uid => `<span class="chip" data-goto="${escapeHtml(uid)}">${escapeHtml(itemsById[uid] ? itemsById[uid].id : uid)}</span>`).join("") +
+      `</div></div>`;
+  }
+
+  const children = ITEMS.filter(i => i.parentUid === item.uid);
+  if (children.length) {
+    html += `<div class="detail-field"><div class="k">${escapeHtml(t("detail.children"))}</div><div class="v chip-list">` +
+      children.map(c => `<span class="chip" data-goto="${escapeHtml(c.uid)}">${escapeHtml(c.id)}${c.required_for_parent === false ? " (" + escapeHtml(t("optional")) + ")" : ""}</span>`).join("") +
+      `</div></div>`;
+  }
+
+  html += field(L("Goal"), item.goal);
+  html += field(L("Completion criteria"), item.completion_criteria);
+  html += field(L("Created"), item.created);
+
+  if (item.extra_fields) {
+    Object.entries(item.extra_fields).forEach(([k, v]) => {
+      html += field(L(k), v);
+    });
+  }
+
+  html += `<div class="detail-field"><div class="k">${escapeHtml(t("detail.source"))}</div><div class="v">${escapeHtml(item.source_file)}:${item.line}</div></div>`;
+
+  body.innerHTML = html;
+  body.querySelectorAll("[data-goto]").forEach(el => el.addEventListener("click", () => showDetail(el.dataset.goto)));
+  body.querySelectorAll("[data-doc]").forEach(el => el.addEventListener("click", () => openDocModal(item, el.dataset.doc)));
+  panel.classList.add("open");
+  wireEditableFields(item);
+  renderAll();
+}
+
+function statusOptionsFor(item) {
+  const opts = item.format === "checkbox" ? ["Open", "Completed"] : [...STATUS_KEYS];
+  if (item.status && !opts.includes(item.status)) opts.push(item.status);
+  return opts;
+}
+
+function priorityOptionsFor(item) {
+  const opts = [...PRIORITY_KEYS];
+  if (item.priority && !opts.includes(item.priority)) opts.push(item.priority);
+  return opts;
+}
+
+function editableFieldHtml(item, fieldKey, options, labelFn) {
+  const current = item[fieldKey] || "";
+  const optsHtml = (current ? [] : [`<option value="" selected>—</option>`]).concat(options.map(o =>
+    `<option value="${escapeHtml(o)}"${o === current ? " selected" : ""}>${escapeHtml(labelFn(o))}</option>`
+  )).join("");
+  return `<select class="field-edit" data-field="${fieldKey}">${optsHtml}</select>` +
+    `<span class="field-status" data-field-status="${fieldKey}"></span>`;
+}
+
+function wireEditableFields(item) {
+  document.querySelectorAll("#detail-body select.field-edit").forEach(sel => {
+    sel.addEventListener("change", () => onFieldEdit(item, sel));
+  });
+}
+
+async function onFieldEdit(item, selectEl) {
+  const field = selectEl.dataset.field;
+  const value = selectEl.value;
+  const previous = item[field] || "";
+  if (!value) { selectEl.value = previous; return; }
+
+  let resolution = null;
+  if (field === "status" && item.archive_supported && TERMINAL_STATUSES.has(value)) {
+    resolution = await askResolution(item, value);
+    if (resolution === null) { selectEl.value = previous; return; }
+  }
+
+  const statusEl = document.querySelector(`#detail-body [data-field-status="${field}"]`);
+  selectEl.disabled = true;
+  if (statusEl) statusEl.textContent = t("saving");
+  try {
+    const res = await fetch("/api/items/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_file: item.source_file,
+        line: item.line,
+        id: item.id,
+        project: item.project,
+        format: item.format,
+        field,
+        value,
+        resolution,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(errorText(data, res.statusText));
+    // Der Eintrag kann dabei nach archive.md (oder zurück) gewandert sein.
+    await loadData();
+  } catch (e) {
+    selectEl.value = previous;
+    selectEl.disabled = false;
+    if (statusEl) statusEl.textContent = "";
+    alert(t("err.save", { e: e.message }));
+    loadData();
+  }
+}
+
+function closeDetail() {
+  state.selectedId = null;
+  saveState();
+  document.getElementById("detail-panel").classList.remove("open");
+  renderAll();
+}
+
+function escapeHtml(s) {
+  const div = document.createElement("div");
+  div.textContent = s == null ? "" : String(s);
+  return div.innerHTML.replace(/"/g, "&quot;");
+}
+
+/* ---------- MODAL-HELFER ---------- */
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+function isOpen(id) { return document.getElementById(id).classList.contains("open"); }
+
+document.querySelectorAll(".modal-backdrop").forEach(bd => {
+  bd.addEventListener("mousedown", e => {
+    if (e.target === bd) bd.dispatchEvent(new CustomEvent("dismiss"));
+  });
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  const open = [...document.querySelectorAll(".modal-backdrop.open")].pop();
+  if (open) open.dispatchEvent(new CustomEvent("dismiss"));
+});
+
+/* ---------- RESOLUTION ---------- */
+let resolutionResolve = null;
+
+function askResolution(item, status) {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("resolution-modal-title").textContent =
+    t("resolution.title", { status: vocab("status", status), id: item.id });
+  document.getElementById("resolution-hint").textContent = item.in_archive ? "" : t("resolution.hint");
+  const text = document.getElementById("resolution-text");
+  text.value = RESOLUTION_DEFAULT[status].replace("{date}", today);
+  document.getElementById("resolution-error").textContent = "";
+  openModal("resolution-modal");
+  text.focus();
+  text.select();
+  return new Promise(resolve => { resolutionResolve = resolve; });
+}
+
+function finishResolution(value) {
+  closeModal("resolution-modal");
+  if (resolutionResolve) resolutionResolve(value);
+  resolutionResolve = null;
+}
+
+document.getElementById("resolution-ok").addEventListener("click", () => {
+  const value = document.getElementById("resolution-text").value.trim();
+  if (!value) { document.getElementById("resolution-error").textContent = t("err.resolution_required"); return; }
+  finishResolution(value);
+});
+document.getElementById("resolution-cancel").addEventListener("click", () => finishResolution(null));
+document.getElementById("resolution-modal").addEventListener("dismiss", () => finishResolution(null));
+document.getElementById("resolution-text").addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) document.getElementById("resolution-ok").click();
+});
+
+/* ---------- NOTES / SPEC ---------- */
+async function openDocModal(item, activePath) {
+  const docs = [
+    ...(item.notes || []).map((p, n) => ({ path: p, label: t("doc.notes") + (item.notes.length > 1 ? " " + (n + 1) : "") })),
+    ...(item.spec || []).map((p, n) => ({ path: p, label: t("doc.spec") + (item.spec.length > 1 ? " " + (n + 1) : "") })),
+  ];
+  document.getElementById("doc-modal-title").textContent = `${item.id} — ${item.title}`;
+  const tabs = document.getElementById("doc-tabs");
+  tabs.innerHTML = "";
+  docs.forEach(d => {
+    const b = document.createElement("button");
+    b.className = "doc-tab" + (d.path === activePath ? " active" : "");
+    b.textContent = d.label;
+    b.title = d.path;
+    b.onclick = () => {
+      tabs.querySelectorAll(".doc-tab").forEach(x => x.classList.toggle("active", x === b));
+      loadDoc(item, d.path);
+    };
+    tabs.appendChild(b);
+  });
+  openModal("doc-modal");
+  loadDoc(item, activePath);
+}
+
+async function loadDoc(item, path) {
+  const el = document.getElementById("doc-content");
+  el.textContent = t("doc.loading");
+  try {
+    const res = await fetch(`/api/itemfile?source=${item.source_index}&path=${encodeURIComponent(path)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(errorText(data, res.statusText) + ` (${path})`);
+    const html = window.marked ? marked.parse(data.content) : escapeHtml(data.content);
+    el.innerHTML = window.DOMPurify ? DOMPurify.sanitize(html) : html;
+    el.parentElement.scrollTop = 0;
+  } catch (e) {
+    el.textContent = t("err.generic", { e: e.message });
+  }
+}
+
+document.getElementById("doc-close").addEventListener("click", () => closeModal("doc-modal"));
+document.getElementById("doc-modal").addEventListener("dismiss", () => closeModal("doc-modal"));
+
+/* ---------- PROJEKTE VERWALTEN ---------- */
+async function removeSource(source) {
+  if (!confirm(t("source.confirmRemove", { p: source.project, path: source.path }))) return;
+  try {
+    const res = await fetch(`/api/sources/${source.index}?path=${encodeURIComponent(source.path)}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(errorText(data, res.statusText));
+  } catch (e) {
+    alert(t("err.generic", { e: e.message }));
+  }
+  loadData();
+}
+
+let modalSource = null;   // null = neues Projekt, sonst die bearbeitete Quelle
+
+function openSourceModal(source) {
+  modalSource = source || null;
+  document.getElementById("source-modal-title").textContent = t(source ? "source.edit.title" : "source.add.title");
+  document.getElementById("modal-project").value = source ? source.project : "";
+  document.getElementById("modal-path").value = source ? source.path : "";
+  document.getElementById("source-modal-error").textContent = source && source.error ? `⚠ ${errorText(source, source.error)}` : "";
+  document.getElementById("source-modal-ok").disabled = false;
+  openModal("source-modal");
+  // Bei einem kaputten Pfad bleibt er im Eingabefeld stehen; der Browser zeigt den nächsten existierenden Ordner.
+  browseTo(source ? source.path : "", { keepInput: !!source });
+  document.getElementById(source ? "modal-path" : "modal-project").focus();
+}
+
+function closeSourceModal() {
+  closeModal("source-modal");
+  modalSource = null;
+}
+
+function setTodoStatus(hasTodo) {
+  const el = document.getElementById("todo-status");
+  el.className = "todo-status " + (hasTodo ? "ok" : "missing");
+  el.textContent = t(hasTodo ? "browser.hasTodo" : "browser.noTodo");
+}
+
+async function browseTo(path, { keepInput = false } = {}) {
+  const list = document.getElementById("browser-list");
+  try {
+    const res = await fetch("/api/browse?path=" + encodeURIComponent(path || ""));
+    const data = await res.json();
+    // LRM-Zeichen, damit der führende "/" bei rechtsbündiger Kürzung (direction: rtl) vorne bleibt
+    document.getElementById("browser-cwd").textContent = "‎" + data.path + "‎";
+    document.getElementById("browser-cwd").title = data.path;
+    document.getElementById("browser-up").disabled = !data.parent;
+    document.getElementById("browser-up").dataset.parent = data.parent || "";
+    if (!keepInput) {
+      document.getElementById("modal-path").value = data.path;
+      document.getElementById("source-modal-error").textContent = "";
+    }
+    setTodoStatus(data.has_todo);
+    list.innerHTML = "";
+    const join = name => data.path.replace(/\/$/, "") + "/" + name;
+
+    data.dirs.forEach(dir => {
+      const entry = document.createElement("div");
+      entry.className = "browser-entry";
+      entry.innerHTML = `<span class="ico">📁</span><span></span>`;
+      entry.children[1].textContent = dir.name;
+      if (dir.has_todo) {
+        const tag = document.createElement("span");
+        tag.className = "todo-tag";
+        tag.textContent = "TODO.md";
+        entry.appendChild(tag);
+      }
+      entry.onclick = () => browseTo(join(dir.name));
+      if (dir.has_todo) {
+        entry.ondblclick = () => {
+          document.getElementById("modal-path").value = join(dir.name);
+          submitSourceModal();
+        };
+      }
+      list.appendChild(entry);
+    });
+    if (data.error) {
+      list.innerHTML = `<div class="browser-empty">${escapeHtml(t("browser.unreadable", { e: data.error }))}</div>`;
+    } else if (!data.dirs.length) {
+      list.innerHTML = `<div class="browser-empty">${escapeHtml(t("browser.empty"))}</div>`;
+    }
+  } catch (e) {
+    list.innerHTML = `<div class="browser-empty">${escapeHtml(t("browser.failed", { e: e.message }))}</div>`;
+  }
+}
+
+async function submitSourceModal() {
+  const okBtn = document.getElementById("source-modal-ok");
+  const errEl = document.getElementById("source-modal-error");
+  const body = {
+    project: document.getElementById("modal-project").value.trim(),
+    path: document.getElementById("modal-path").value.trim(),
+  };
+  if (!body.path) { errEl.textContent = t("err.missing_path"); return; }
+  okBtn.disabled = true;
+  errEl.textContent = "";
+  try {
+    const url = modalSource ? `/api/sources/${modalSource.index}` : "/api/sources";
+    const res = await fetch(url, {
+      method: modalSource ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(errorText(data, res.statusText));
+    state.hiddenProjects.delete(data.source.project);
+    saveState();
+    closeSourceModal();
+    await loadData();
+  } catch (e) {
+    errEl.textContent = e.message;
+    okBtn.disabled = false;
+  }
+}
+
+document.getElementById("add-source-btn").addEventListener("click", () => openSourceModal(null));
+document.getElementById("source-modal-cancel").addEventListener("click", closeSourceModal);
+document.getElementById("source-modal-ok").addEventListener("click", submitSourceModal);
+document.getElementById("source-modal").addEventListener("dismiss", closeSourceModal);
+document.getElementById("browser-up").addEventListener("click", e => {
+  if (e.currentTarget.dataset.parent) browseTo(e.currentTarget.dataset.parent);
+});
+document.getElementById("modal-path").addEventListener("keydown", e => {
+  if (e.key === "Enter") submitSourceModal();
+});
+document.getElementById("modal-path").addEventListener("change", e => browseTo(e.target.value.trim(), { keepInput: true }));
+document.getElementById("modal-project").addEventListener("keydown", e => {
+  if (e.key === "Enter") submitSourceModal();
+});
+
+async function init() {
+  loadStateFromLocalCache();
+  applyI18n();
+  document.getElementById("search").value = state.search;
+  await loadStateFromServer();
+  applyI18n();
+  document.getElementById("search").value = state.search;
+  await loadData();
+  setInterval(() => {
+    // Während ein Dialog offen ist nicht neu rendern (Auswahl/Eingaben bleiben stabil).
+    if (!document.querySelector(".modal-backdrop.open")) loadData();
+  }, 5000);
+}
+init();
+</script>
+</body>
+</html>

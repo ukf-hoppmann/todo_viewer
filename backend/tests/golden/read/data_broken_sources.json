@@ -1,0 +1,29 @@
+{
+  "items": [],
+  "sources": [
+    {
+      "code": "not_found",
+      "count": 0,
+      "error": "Folder not found.",
+      "index": 0,
+      "path": "<ROOT>/repos/missing",
+      "project": "Missing"
+    },
+    {
+      "code": "no_todo",
+      "count": 0,
+      "error": "No TODO.md in this folder.",
+      "index": 1,
+      "path": "<ROOT>/repos/plain",
+      "project": "NoTodo"
+    },
+    {
+      "code": "no_todo",
+      "count": 0,
+      "error": "No TODO.md in this folder.",
+      "index": 2,
+      "path": "<ROOT>/repos",
+      "project": "NotADir"
+    }
+  ]
+}

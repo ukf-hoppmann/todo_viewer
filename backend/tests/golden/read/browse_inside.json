@@ -1,0 +1,12 @@
+{
+  "dirs": [
+    {
+      "has_todo": false,
+      "name": "items"
+    }
+  ],
+  "error": null,
+  "has_todo": true,
+  "parent": "<ROOT>/repos/repo_a",
+  "path": "<ROOT>/repos/repo_a/docs"
+}

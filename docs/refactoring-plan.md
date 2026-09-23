@@ -23,7 +23,7 @@ Wird ab Etappe 5 per `import-linter` geprüft.
 | # | Etappe | Status |
 |---|---|---|
 | 0 | Sicherheitsnetz: pytest/ruff/mypy, Characterization-Tests (Parser, Edits, Archiv, API) | erledigt |
-| 1 | Domain-Kern: Item, Source, Status-Regeln, ChangeSet, Fehlercodes | offen |
+| 1 | Domain-Kern: Item, Source, Status-Regeln, ChangeSet, Fehlercodes | erledigt |
 | 2 | Markdown-Adapter: parser.py in kleine Klassen, atomares Schreiben + Lock | offen |
 | 3 | Application-Services + Ports, JSON-Adapter für Config/UI-State | offen |
 | 4 | FastAPI + Composition Root, alte Endpoints kompatibel, Docker | offen |

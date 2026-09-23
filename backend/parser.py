@@ -24,8 +24,11 @@ Supports two formats:
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
 from pathlib import Path
+
+from todo_viewer.domain.editing import EditPlanner, Field
+from todo_viewer.domain.errors import EntryMovedError, UnknownFormatError
+from todo_viewer.domain.item import Item, ItemFormat, Location
 
 ENTRY_HEADER_RE = re.compile(r"^- `([A-Za-z0-9_.\-]+)`\s+\*\*(.+?)\*\*\s*$", re.MULTILINE)
 FIELD_RE = re.compile(r"^ {2}- ([A-Za-z][A-Za-z ]*?):\s?(.*)$")
@@ -41,17 +44,8 @@ BACKLOG_V2_MARKER_RE = re.compile(r"backlog\s+format\s+version\s+\d+", re.IGNORE
 # Older backlogs used German priority names; the keys are English now.
 LEGACY_PRIORITIES = {"dringend": "Urgent", "wichtig": "Important", "perspektivisch": "Prospective"}
 
-TERMINAL_STATUSES = {"Completed", "Rejected"}
 TODO_FILE = "TODO.md"
 ARCHIVE_FILE = "archive.md"
-
-
-class BacklogError(ValueError):
-    """Error with a stable code the frontend can translate."""
-
-    def __init__(self, code: str, message: str):
-        super().__init__(message)
-        self.code = code
 
 
 def _slug(key: str) -> str:
@@ -90,54 +84,30 @@ def _yes_no(value: str) -> bool | None:
     return None
 
 
-@dataclass
-class Item:
-    id: str
-    title: str
-    source_file: str
-    project: str
-    line: int
-    format: str = "backlog_v2"
-    item_type: str = "Task"
-    status: str = "Open"
-    parent: str | None = None
-    required_for_parent: bool | None = None
-    dependencies: list[str] = field(default_factory=list)
-    created: str | None = None
-    area: str | None = None
-    priority: str | None = None
-    goal: str | None = None
-    completion_criteria: str | None = None
-    summary: str | None = None
-    resolution: str | None = None
-    notes: list[str] = field(default_factory=list)
-    spec: list[str] = field(default_factory=list)
-    extra_fields: dict[str, str] = field(default_factory=dict)
-
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "title": self.title,
-            "source_file": self.source_file,
-            "project": self.project,
-            "line": self.line,
-            "format": self.format,
-            "type": self.item_type,
-            "status": self.status,
-            "parent": self.parent,
-            "required_for_parent": self.required_for_parent,
-            "dependencies": self.dependencies,
-            "created": self.created,
-            "area": self.area,
-            "priority": self.priority,
-            "goal": self.goal,
-            "completion_criteria": self.completion_criteria,
-            "summary": self.summary,
-            "resolution": self.resolution,
-            "notes": self.notes,
-            "spec": self.spec,
-            "extra_fields": self.extra_fields,
-        }
+def item_to_dict(item: Item) -> dict:
+    return {
+        "id": item.id,
+        "title": item.title,
+        "source_file": item.source_file,
+        "project": item.project,
+        "line": item.line,
+        "format": item.format.value,
+        "type": item.item_type,
+        "status": item.status,
+        "parent": item.parent,
+        "required_for_parent": item.required_for_parent,
+        "dependencies": item.dependencies,
+        "created": item.created,
+        "area": item.area,
+        "priority": item.priority,
+        "goal": item.goal,
+        "completion_criteria": item.completion_criteria,
+        "summary": item.summary,
+        "resolution": item.resolution,
+        "notes": item.notes,
+        "spec": item.spec,
+        "extra_fields": item.extra_fields,
+    }
 
 
 def _apply_fields(item: Item, fields: list[tuple[str, str]]) -> None:
@@ -255,7 +225,7 @@ def parse_checkbox_tree(text: str, source_file: str, project: str) -> list[Item]
                 source_file=source_file,
                 project=project,
                 line=lineno,
-                format="checkbox",
+                format=ItemFormat.CHECKBOX,
                 item_type="Task",
                 status=status,
                 parent=parent_id,
@@ -270,14 +240,18 @@ def parse_checkbox_tree(text: str, source_file: str, project: str) -> list[Item]
 def parse_file(path: Path, project: str) -> list[Item]:
     text = path.read_text(encoding="utf-8", errors="replace")
     if looks_like_backlog_v2(text):
-        return parse_backlog_v2(text, str(path), project)
+        items = parse_backlog_v2(text, str(path), project)
+        if path.name == ARCHIVE_FILE:
+            for item in items:
+                item.location = Location.ARCHIVE
+        return items
     if path.name == ARCHIVE_FILE:
         # An archive never falls back to checkbox parsing ("No entries." etc.).
         return []
     return parse_checkbox_tree(text, str(path), project)
 
 
-EDITABLE_FIELDS = {"status", "priority"}
+EDITABLE_FIELDS = Field.EDITABLE
 FIELD_LABELS = {"status": "Status", "priority": "Priority", "resolution": "Resolution"}
 
 
@@ -376,9 +350,9 @@ def _append_block(lines: list[str], block: list[str]) -> None:
     lines.extend([""] + block + [""])
 
 
-def archive_supported(path: Path, fmt: str) -> bool:
+def archive_supported(path: Path, fmt: ItemFormat) -> bool:
     return (
-        fmt == "backlog_v2"
+        fmt is ItemFormat.BACKLOG_V2
         and path.name in (TODO_FILE, ARCHIVE_FILE)
         and (path.parent / TODO_FILE).exists()
         and (path.parent / ARCHIVE_FILE).exists()
@@ -396,62 +370,53 @@ def update_item_field(
 ) -> Path:
     """Rewrites a single field of one entry in its source markdown file.
 
-    For backlogs with an archive, setting Completed/Rejected records the
-    Resolution and moves the entry to archive.md; setting an active status on
-    an archived entry removes the Resolution and moves it back to TODO.md.
+    The edit rules (resolution + archiving for Completed/Rejected) come from
+    the domain's EditPlanner; this function only applies the resulting changes.
 
-    Returns the file the entry lives in afterwards. Raises BacklogError if the
+    Returns the file the entry lives in afterwards. Raises a DomainError if the
     entry at `line` no longer matches `item_id` or the edit is not allowed.
     """
-    if field_key not in EDITABLE_FIELDS:
-        raise BacklogError("not_editable", f"Field '{field_key}' is not editable.")
+    try:
+        item_format = ItemFormat(fmt)
+    except ValueError:
+        raise UnknownFormatError(fmt) from None
 
     lines, newline = _read_lines(path)
     idx = line - 1
     if idx < 0 or idx >= len(lines):
-        raise BacklogError("entry_moved", "Line not found (file was probably changed externally).")
+        raise EntryMovedError("Line not found (file was probably changed externally).")
 
-    if fmt == "checkbox":
-        if field_key != "status":
-            raise BacklogError("checkbox_status_only", "Only the status is editable for checkbox lists.")
+    if item_format is ItemFormat.CHECKBOX:
         checkbox_match = CHECKBOX_RE.match(lines[idx])
         if item_id != f"{path.stem}:{line}" or not checkbox_match:
-            raise BacklogError("entry_moved", "Entry not found (file was probably changed externally).")
+            raise EntryMovedError()
+    else:
+        header_match = ENTRY_HEADER_RE.match(lines[idx])
+        if not header_match or header_match.group(1) != item_id:
+            raise EntryMovedError()
+
+    location = Location.ARCHIVE if path.name == ARCHIVE_FILE else Location.ACTIVE
+    item = Item(id=item_id, title="", source_file=str(path), project="", line=line,
+                format=item_format, location=location)
+    changes = EditPlanner().plan(item, field_key, value, resolution, archive_supported(path, item_format))
+
+    if item_format is ItemFormat.CHECKBOX:
         mark = "x" if value == "Completed" else " "
         indent, _old_mark, content = checkbox_match.groups()
         lines[idx] = f"{indent}- [{mark}] {content}"
         _write_lines(path, lines, newline)
         return path
 
-    if fmt != "backlog_v2":
-        raise BacklogError("unknown_format", f"Unknown format '{fmt}'.")
+    for key, new_value in changes.set_fields:
+        _set_field(lines, idx, key, new_value)
+    for key in changes.remove_fields:
+        _remove_field(lines, idx, key)
 
-    header_match = ENTRY_HEADER_RE.match(lines[idx])
-    if not header_match or header_match.group(1) != item_id:
-        raise BacklogError("entry_moved", "Entry not found (file was probably changed externally).")
-
-    _set_field(lines, idx, field_key, value)
-
-    if field_key != "status" or not archive_supported(path, fmt):
+    if changes.move_to is None:
         _write_lines(path, lines, newline)
         return path
 
-    in_archive = path.name == ARCHIVE_FILE
-    if value in TERMINAL_STATUSES:
-        if not (resolution or "").strip():
-            raise BacklogError("resolution_required", "A resolution is required for Completed/Rejected.")
-        _set_field(lines, idx, "resolution", resolution)
-        if in_archive:
-            _write_lines(path, lines, newline)
-            return path
-        target = path.parent / ARCHIVE_FILE
-    else:
-        _remove_field(lines, idx, "resolution")
-        if not in_archive:
-            _write_lines(path, lines, newline)
-            return path
-        target = path.parent / TODO_FILE
-
+    target = path.parent / (ARCHIVE_FILE if changes.move_to is Location.ARCHIVE else TODO_FILE)
     target_lines, target_newline = _read_lines(target)
     block = _cut_block(lines, idx)
     _append_block(target_lines, block)

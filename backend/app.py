@@ -11,11 +11,12 @@ from parser import (
     ARCHIVE_FILE,
     EDITABLE_FIELDS,
     TODO_FILE,
-    BacklogError,
     archive_supported,
+    item_to_dict,
     parse_file,
     update_item_field,
 )
+from todo_viewer.domain.errors import DomainError
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_DIR = Path(os.environ.get("CONFIG_DIR", BASE_DIR / "configs"))
@@ -109,7 +110,7 @@ def collect_items() -> dict:
                 continue
             entry["count"] += len(items)
             for item in items:
-                data = item.to_dict()
+                data = item_to_dict(item)
                 data["source_index"] = index
                 data["in_archive"] = name == ARCHIVE_FILE
                 data["archive_supported"] = archive_supported(path, item.format)
@@ -298,7 +299,7 @@ def api_update_item():
 
     try:
         final_path = update_item_field(path, line, item_id, fmt, field, value, resolution)
-    except BacklogError as exc:
+    except DomainError as exc:
         return error(exc.code, str(exc))
     except OSError as exc:
         return error("write_failed", str(exc), 500)
@@ -307,7 +308,7 @@ def api_update_item():
     updated = next((i for i in items if i.id == item_id), None)
     if updated is None:
         return error("entry_moved", "Entry not found after saving.", 500)
-    return jsonify({"item": updated.to_dict()})
+    return jsonify({"item": item_to_dict(updated)})
 
 
 @app.get("/")

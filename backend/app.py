@@ -7,16 +7,12 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
 
-from parser import (
-    ARCHIVE_FILE,
-    EDITABLE_FIELDS,
-    TODO_FILE,
-    archive_supported,
-    item_to_dict,
-    parse_file,
-    update_item_field,
-)
-from todo_viewer.domain.errors import DomainError
+from todo_viewer.domain.editing import EditPlanner, Field
+from todo_viewer.domain.errors import DomainError, EntryMovedError, UnknownFormatError
+from todo_viewer.domain.item import Item, ItemFormat, ItemRef, Location
+from todo_viewer.domain.source import Source
+from todo_viewer.infrastructure.markdown import build_markdown_repository
+from todo_viewer.infrastructure.markdown.syntax import ARCHIVE_FILE, TODO_FILE
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_DIR = Path(os.environ.get("CONFIG_DIR", BASE_DIR / "configs"))
@@ -27,6 +23,34 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 app = Flask(__name__, static_folder=None)
 
 CONFIG_LOCK = threading.RLock()
+BACKLOGS = build_markdown_repository(BASE_DIR)
+PLANNER = EditPlanner()
+
+
+def item_to_dict(item: Item) -> dict:
+    return {
+        "id": item.id,
+        "title": item.title,
+        "source_file": item.source_file,
+        "project": item.project,
+        "line": item.line,
+        "format": item.format.value,
+        "type": item.item_type,
+        "status": item.status,
+        "parent": item.parent,
+        "required_for_parent": item.required_for_parent,
+        "dependencies": item.dependencies,
+        "created": item.created,
+        "area": item.area,
+        "priority": item.priority,
+        "goal": item.goal,
+        "completion_criteria": item.completion_criteria,
+        "summary": item.summary,
+        "resolution": item.resolution,
+        "notes": item.notes,
+        "spec": item.spec,
+        "extra_fields": item.extra_fields,
+    }
 
 
 def error(code: str, message: str, status: int = 400, **extra):
@@ -65,14 +89,8 @@ def source_dir(path: str) -> Path:
 
 def check_source_dir(path: str) -> tuple[str, str] | None:
     """(code, message) if the configured backlog folder is unusable, else None."""
-    folder = source_dir(path)
-    if not folder.exists():
-        return "not_found", "Folder not found."
-    if not folder.is_dir():
-        return "not_a_dir", "Path is not a folder."
-    if not (folder / TODO_FILE).is_file():
-        return "no_todo", f"No {TODO_FILE} in this folder."
-    return None
+    problem = BACKLOGS.check(Source(project="", path=path))
+    return (problem.code, problem.message) if problem else None
 
 
 def suggest_project_name(folder: Path) -> str:
@@ -87,34 +105,20 @@ def collect_items() -> dict:
     config = load_config()
     all_items = []
     sources = []
-    for index, source in enumerate(config.get("sources", [])):
-        project = source["project"]
-        entry = {"index": index, "project": project, "path": source["path"], "count": 0,
-                 "error": None, "code": None}
-        sources.append(entry)
-
-        problem = check_source_dir(source["path"])
-        if problem:
-            entry["code"], entry["error"] = problem
-            continue
-
-        folder = source_dir(source["path"])
-        for name in (TODO_FILE, ARCHIVE_FILE):
-            path = folder / name
-            if not path.is_file():
-                continue
-            try:
-                items = parse_file(path, project)
-            except Exception as exc:  # surfaced to the UI instead of crashing
-                entry["code"], entry["error"] = "parse_error", f"{name}: {exc}"
-                continue
-            entry["count"] += len(items)
-            for item in items:
-                data = item_to_dict(item)
-                data["source_index"] = index
-                data["in_archive"] = name == ARCHIVE_FILE
-                data["archive_supported"] = archive_supported(path, item.format)
-                all_items.append(data)
+    for index, raw in enumerate(config.get("sources", [])):
+        source = Source(project=raw["project"], path=raw["path"])
+        backlog = BACKLOGS.load(source)
+        problem = backlog.problem
+        sources.append({"index": index, "project": source.project, "path": source.path,
+                        "count": len(backlog.items),
+                        "error": problem.message if problem else None,
+                        "code": problem.code if problem else None})
+        for item in backlog.items:
+            data = item_to_dict(item)
+            data["source_index"] = index
+            data["in_archive"] = item.location is Location.ARCHIVE
+            data["archive_supported"] = backlog.supports_archive(item)
+            all_items.append(data)
     return {"items": all_items, "sources": sources}
 
 
@@ -290,7 +294,7 @@ def api_update_item():
 
     if not all([source_file, isinstance(line, int), item_id, project, fmt, field]) or value is None:
         return error("bad_request", "missing required fields")
-    if field not in EDITABLE_FIELDS:
+    if field not in Field.EDITABLE:
         return error("not_editable", f"Field '{field}' is not editable.")
 
     path = Path(source_file)
@@ -298,16 +302,24 @@ def api_update_item():
         return error("file_not_found", "Source file not found.", 404)
 
     try:
-        final_path = update_item_field(path, line, item_id, fmt, field, value, resolution)
+        try:
+            item_format = ItemFormat(fmt)
+        except ValueError:
+            raise UnknownFormatError(fmt) from None
+        location = {TODO_FILE: Location.ACTIVE, ARCHIVE_FILE: Location.ARCHIVE}.get(path.name)
+        if location is None:
+            raise EntryMovedError()
+        source = Source(project=project, path=str(path.parent))
+        item = BACKLOGS.find(source, ItemRef(item_id, location, line))
+        if item.format is not item_format:
+            raise EntryMovedError()
+        backlog = BACKLOGS.load(source)
+        changes = PLANNER.plan(item, field, value, resolution, backlog.supports_archive(item))
+        updated = BACKLOGS.apply(source, item, changes)
     except DomainError as exc:
         return error(exc.code, str(exc))
     except OSError as exc:
         return error("write_failed", str(exc), 500)
-
-    items = parse_file(final_path, project)
-    updated = next((i for i in items if i.id == item_id), None)
-    if updated is None:
-        return error("entry_moved", "Entry not found after saving.", 500)
     return jsonify({"item": item_to_dict(updated)})
 
 

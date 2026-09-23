@@ -33,6 +33,13 @@ class EntryMovedError(DomainError):
         super().__init__(message)
 
 
+class FileChangedError(DomainError):
+    code = "file_changed"
+
+    def __init__(self) -> None:
+        super().__init__("The file was changed externally while saving. Please try again.")
+
+
 class NotEditableError(DomainError):
     code = "not_editable"
 

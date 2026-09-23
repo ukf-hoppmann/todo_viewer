@@ -33,6 +33,15 @@ class Status:
         return status in cls.TERMINAL
 
 
+@dataclass(frozen=True)
+class ItemRef:
+    """Identifies one item inside a backlog. `line` guards against external edits."""
+
+    id: str
+    location: Location
+    line: int
+
+
 @dataclass
 class Item:
     id: str
@@ -57,3 +66,7 @@ class Item:
     spec: list[str] = field(default_factory=list)
     extra_fields: dict[str, str] = field(default_factory=dict)
     location: Location = Location.ACTIVE
+
+    @property
+    def ref(self) -> ItemRef:
+        return ItemRef(self.id, self.location, self.line)

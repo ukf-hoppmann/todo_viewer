@@ -83,7 +83,6 @@ def test_edit_twice_reopen_after_archive(api, workspace, golden):
     golden("edit/roundtrip_archive_and_back.md", _files(folder))
 
 
-@pytest.mark.xfail(reason="known bug: read_text() normalizes CRLF, so edits rewrite files as LF", strict=True)
 def test_edit_preserves_crlf(api, workspace):
     folder = _setup(api, workspace, "backlog")
     for name in ("TODO.md", "archive.md"):

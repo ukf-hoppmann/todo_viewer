@@ -24,7 +24,7 @@ Wird ab Etappe 5 per `import-linter` geprüft.
 |---|---|---|
 | 0 | Sicherheitsnetz: pytest/ruff/mypy, Characterization-Tests (Parser, Edits, Archiv, API) | erledigt |
 | 1 | Domain-Kern: Item, Source, Status-Regeln, ChangeSet, Fehlercodes | erledigt |
-| 2 | Markdown-Adapter: parser.py in kleine Klassen, atomares Schreiben + Lock | offen |
+| 2 | Markdown-Adapter: parser.py in kleine Klassen, atomares Schreiben + Lock | erledigt |
 | 3 | Application-Services + Ports, JSON-Adapter für Config/UI-State | offen |
 | 4 | FastAPI + Composition Root, alte Endpoints kompatibel, Docker | offen |
 | 5 | API v2: stabile Item-Referenzen, OpenAPI → TS-Typen, import-linter | offen |
@@ -40,5 +40,9 @@ Wird ab Etappe 5 per `import-linter` geprüft.
 
 ## Gefundene Bugs
 
-- CRLF-Dateien werden beim Bearbeiten auf LF umgestellt (`read_text()` normalisiert
-  Zeilenenden vor der Erkennung). Als `xfail` festgehalten, Fix in Etappe 2.
+- CRLF-Dateien wurden beim Bearbeiten auf LF umgestellt (`read_text()` normalisiert
+  Zeilenenden vor der Erkennung). Behoben in Etappe 2.
+- Schreiben war nicht atomar und überschrieb parallele externe Änderungen still.
+  Seit Etappe 2: temp-Datei + `os.replace`, mtime/size-Prüfung → Fehlercode `file_changed`.
+- `/api/items/update` schreibt in jede übergebene Datei, nicht nur in konfigurierte
+  Quellen. Wird in Etappe 5 mit Quell-Referenzen statt Dateipfaden behoben.

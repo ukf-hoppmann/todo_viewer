@@ -12,7 +12,6 @@ from todo_viewer.application.container import Container
 
 from . import v2
 from .errors import install_error_handlers
-from .legacy import items, misc, sources
 
 
 def create_app(container: Container, frontend_dir: Path) -> FastAPI:
@@ -20,9 +19,6 @@ def create_app(container: Container, frontend_dir: Path) -> FastAPI:
     app.state.container = container
     install_error_handlers(app)
     app.include_router(v2.router)
-    # Legacy API for the old frontend; removed together with it.
-    for module in (items, sources, misc):
-        app.include_router(module.router)
     # Mounted last: everything that is not an API route is a frontend file.
     app.mount("/", FrontendFiles(frontend_dir), name="frontend")
     return app

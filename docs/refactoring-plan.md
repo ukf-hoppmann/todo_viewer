@@ -30,13 +30,15 @@ Wird per `import-linter` geprüft (`scripts/check.sh`: ruff, mypy --strict, impo
 | 5 | API v2 (`/api/v2`): stabile Quell-IDs, Item-Referenzen, 409 bei Konflikten, import-linter | erledigt |
 | 6 | React-Grundgerüst in `web/`: Vite/TS/TanStack Query, OpenAPI → TS-Typen, Sidebar, Filter, i18n, UI-State | erledigt |
 | 7 | React-Views: Baum, Kanban, Graph, Detail/Edit, Dialoge; Umschalten auf React + Docker multi-stage | erledigt |
-| 8 | Aufräumen: altes Frontend + Kompat-Endpoints entfernen, README, CI | offen |
+| 8 | Aufräumen: altes Frontend + Legacy-API entfernt, Tests auf v2, README, CI | erledigt |
 
 ## Leitplanken
 
 - Testdaten sind synthetisch (`backend/tests/fixtures`), keine Kopien echter Backlogs.
 - Dateiinhalte nach Edits bleiben bytegenau wie im alten Verhalten (Characterization-Tests).
-- Das alte Frontend funktioniert bis Etappe 7 gegen die kompatiblen Endpoints.
+- Das alte Frontend funktionierte bis Etappe 7 gegen die kompatiblen Endpoints.
+- Die Datei-Goldens (`backend/tests/golden/edit/*.md`) stammen aus der ursprünglichen
+  Implementierung und laufen seit Etappe 8 unverändert über API v2.
 
 ## Gefundene Bugs
 

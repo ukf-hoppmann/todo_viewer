@@ -56,7 +56,8 @@ Alternativ direkt in `configs/config.json`:
 automatisch auf deren Ordner umgestellt.
 
 Änderungen an `config.json` oder den Backlog-Dateien werden automatisch
-übernommen — das Frontend pollt `/api/data` alle 5 Sekunden neu.
+übernommen — das Frontend pollt `/api/v2/backlog` alle 5 Sekunden neu
+(pausiert, solange ein Dialog offen ist oder ein Feld bearbeitet wird).
 
 Der `configs/`-Ordner ist per Volume in den Container gemountet und liegt
 physisch auf dem Host — er übersteht `./todo.sh down` und Rebuilds. Neben
@@ -70,6 +71,11 @@ Status und Priorität sind im Detail-Panel editierbar. Wird ein Eintrag auf
 und verschiebt ihn nach `archive.md`; ein Zurücksetzen auf einen offenen
 Status holt ihn (ohne Resolution) zurück nach `TODO.md`. `Notes` und `Spec`
 eines Eintrags öffnen sich in einem großen Lese-Popup.
+
+Geschrieben wird atomar (temporäre Datei + Umbenennen), Zeilenenden (LF/CRLF)
+bleiben erhalten. Hat jemand anderes (z. B. ein Agent) die Datei zwischen
+Lesen und Schreiben geändert, bricht das Speichern mit einem Hinweis ab,
+statt dessen Änderung zu überschreiben.
 
 ## Sprache
 
@@ -92,3 +98,49 @@ abgebildet.
 
 Klick auf ein Item öffnet das Detail-Panel rechts mit allen geparsten Feldern
 (inkl. aller Freitext-Felder wie `Implementation`, `Verification`, `Context` etc.).
+
+## Architektur
+
+Onion-Architektur im Backend: Abhängigkeiten zeigen nur nach innen, geprüft
+per `import-linter`.
+
+```
+backend/todo_viewer/
+  domain/          Item, Source, Backlog, Status-/Archiv-Regeln (EditPlanner → ChangeSet), Fehler mit Codes
+  application/     Ports (Protocols) + kleine Use-Case-Services, Container
+  infrastructure/  Adapter: markdown/ (Parser, Editoren, atomares Schreiben), config/ (JSON), filesystem/
+  api/             FastAPI: v2-Router, Pydantic-Schemas, Fehler → HTTP ({code, message, details})
+  bootstrap.py     Composition Root: setzt alles per Konstruktor-Injection zusammen
+web/               React + Vite + TypeScript, TanStack Query
+  src/api/         aus OpenAPI generierte Typen (schema.d.ts), Client, Query-Hooks
+  src/domain/      Filter, Baum, Fortschritt, Edit-Regeln als reine Funktionen
+  src/state/       UI-Zustand (Server = configs/ui_state.json), Polling-Pause
+  src/components/, src/views/
+```
+
+Ein anderer Speicher (z. B. SQLite) wäre ein neuer Adapter für den Port
+`BacklogRepository` und eine Zeile in `bootstrap.py`.
+
+## Entwicklung
+
+```bash
+python3.11 -m venv .venv && .venv/bin/pip install -r backend/requirements-dev.txt
+npm --prefix web install
+```
+
+```bash
+.venv/bin/python backend/main.py        # API + gebautes Frontend auf :5411 (Auto-Reload)
+npm --prefix web run dev                # Vite auf :5173, proxyt /api auf :5411
+scripts/check.sh                        # ruff, mypy --strict, import-linter, pytest, tsc, eslint, vitest
+```
+
+Nach Änderungen an der v2-API die TS-Typen neu erzeugen (ein Test schlägt
+sonst fehl):
+
+```bash
+.venv/bin/python backend/scripts/export_openapi.py && npm --prefix web run gen:api
+```
+
+Die Characterization-Tests (`backend/tests/characterization`) prüfen die
+geschriebenen Markdown-Dateien bytegenau gegen Golden-Files; bewusste
+Änderungen mit `UPDATE_GOLDEN=1 .venv/bin/pytest` neu aufnehmen.

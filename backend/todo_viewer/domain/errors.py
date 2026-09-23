@@ -58,13 +58,6 @@ class CheckboxStatusOnlyError(DomainError):
         super().__init__("Only the status is editable for checkbox lists.")
 
 
-class UnknownFormatError(DomainError):
-    code = "unknown_format"
-
-    def __init__(self, fmt: str):
-        super().__init__(f"Unknown format '{fmt}'.")
-
-
 class ResolutionRequiredError(DomainError):
     code = "resolution_required"
 

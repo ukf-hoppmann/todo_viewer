@@ -1,0 +1,35 @@
+{
+  "items": [],
+  "sources": [
+    {
+      "id": "<SOURCE0>",
+      "item_count": 0,
+      "path": "<ROOT>/repos/missing",
+      "problem": {
+        "code": "not_found",
+        "message": "Folder not found."
+      },
+      "project": "Missing"
+    },
+    {
+      "id": "<SOURCE1>",
+      "item_count": 0,
+      "path": "<ROOT>/repos/plain",
+      "problem": {
+        "code": "no_todo",
+        "message": "No TODO.md in this folder."
+      },
+      "project": "NoTodo"
+    },
+    {
+      "id": "<SOURCE2>",
+      "item_count": 0,
+      "path": "<ROOT>/repos",
+      "problem": {
+        "code": "no_todo",
+        "message": "No TODO.md in this folder."
+      },
+      "project": "NotADir"
+    }
+  ]
+}

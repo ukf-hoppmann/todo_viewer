@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from pathlib import PurePath
 
 import pytest
 
@@ -110,17 +109,13 @@ def test_source_id_is_stable_and_path_based():
     assert Source("A", "/a").id == Source("Renamed", "/a").id != Source("A", "/b").id
 
 
-def test_lookup():
+def test_lookup_by_id():
     a = Source("A", "/repo/docs")
     lookup = SourceLookup(InMemorySources([a]))
 
-    assert lookup.by_id(a.id) == lookup.by_index(0) == lookup.by_folder(PurePath("/repo/docs")) == a
+    assert lookup.by_id(a.id) == a
     with pytest.raises(SourceGoneError):
-        lookup.by_index(1)
-    with pytest.raises(SourceGoneError):
-        lookup.by_index(0, expected_path="/other")
-    with pytest.raises(SourceGoneError):
-        lookup.by_folder(PurePath("/elsewhere"))
+        lookup.by_id("unknown")
 
 
 def test_item_edit_plans_with_archive_rules():

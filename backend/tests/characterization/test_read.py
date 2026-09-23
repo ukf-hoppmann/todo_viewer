@@ -1,23 +1,32 @@
-"""Characterization tests: pin the current read behavior of the HTTP API."""
+"""Characterization tests: what the API reads from backlogs, configs and the file system."""
 from __future__ import annotations
 
+import json
 
-def test_data_for_all_formats(api, workspace, golden):
-    sources = [
+
+def _stable_ids(body):
+    """Source ids depend on the (temporary) path; replace them for golden files."""
+    text = json.dumps(body)
+    for n, source in enumerate(body["sources"]):
+        text = text.replace(source["id"], f"<SOURCE{n}>")
+    return json.loads(text)
+
+
+def test_backlog_for_all_formats(api, workspace, golden):
+    workspace.write_config([
         {"project": "Backlog", "path": str(workspace.add_backlog("backlog"))},
         {"project": "Checklist", "path": str(workspace.add_backlog("checklist"))},
         {"project": "NoArchive", "path": str(workspace.add_backlog("no_archive"))},
         {"project": "EmptyArchive", "path": str(workspace.add_backlog("empty_archive"))},
-    ]
-    workspace.write_config(sources)
+    ])
 
-    resp = api.get("/api/data")
+    resp = api.get("/api/v2/backlog")
 
     assert resp.status_code == 200
-    golden("read/data_all_formats.json", resp.body)
+    golden("read/backlog_all_formats.json", _stable_ids(resp.body))
 
 
-def test_data_reports_broken_sources(api, workspace, golden):
+def test_backlog_reports_broken_sources(api, workspace, golden):
     plain = workspace.repos / "plain"
     plain.mkdir()
     a_file = workspace.repos / "file.txt"
@@ -28,61 +37,58 @@ def test_data_reports_broken_sources(api, workspace, golden):
         {"project": "NotADir", "path": str(a_file)},
     ])
 
-    resp = api.get("/api/data")
+    resp = api.get("/api/v2/backlog")
 
     assert resp.status_code == 200
-    golden("read/data_broken_sources.json", resp.body)
-
-
-def test_data_without_config(api):
-    resp = api.get("/api/data")
-
-    assert resp.status_code == 404
-    assert resp.body == {"items": [], "sources": [], "error": "config.json not found"}
+    golden("read/backlog_broken_sources.json", _stable_ids(resp.body))
 
 
 def test_config_migrates_file_paths_to_folders(api, workspace):
     folder = workspace.add_backlog("backlog")
-    workspace.write_config([{"project": "Backlog", "path": str(folder / "TODO.md")}])
+    workspace.config_dir.mkdir(parents=True, exist_ok=True)
+    (workspace.config_dir / "config.json").write_text(json.dumps({
+        "sources": [{"project": "Backlog", "path": str(folder / "TODO.md"), "color": "red"}],
+        "other": 1,
+    }), encoding="utf-8")
 
-    resp = api.get("/api/config")
+    resp = api.get("/api/v2/sources")
 
-    assert resp.status_code == 200
-    assert resp.body == {"sources": [{"project": "Backlog", "path": str(folder)}]}
-    assert workspace.read_config() == resp.body
+    assert [(s["project"], s["path"]) for s in resp.body] == [("Backlog", str(folder))]
+    assert workspace.read_config() == {"sources": [{"project": "Backlog", "path": str(folder), "color": "red"}],
+                                       "other": 1}
 
 
-def test_item_file(api, workspace):
+def test_documents(api, workspace):
     folder = workspace.add_backlog("backlog")
     workspace.write_config([{"project": "Backlog", "path": str(folder)}])
+    source_id = api.get("/api/v2/sources").body[0]["id"]
+    url = f"/api/v2/sources/{source_id}/document"
 
-    ok = api.get("/api/itemfile", source="0", path="items/TASK-002/notes.md")
-    missing = api.get("/api/itemfile", source="0", path="items/TASK-002/spec.md")
-    escape = api.get("/api/itemfile", source="0", path="../../../etc/passwd.md")
-    wrong_type = api.get("/api/itemfile", source="0", path="TODO.json")
-    bad_source = api.get("/api/itemfile", source="7", path="TODO.md")
-    no_source = api.get("/api/itemfile", path="TODO.md")
+    ok = api.get(url, path="items/TASK-002/notes.md")
+    missing = api.get(url, path="items/TASK-002/spec.md")
+    escape = api.get(url, path="../../../etc/passwd.md")
+    wrong_type = api.get(url, path="TODO.json")
+    bad_source = api.get("/api/v2/sources/nope/document", path="TODO.md")
+    no_path = api.get(url)
 
-    assert ok.status_code == 200
-    assert ok.body == {"path": "items/TASK-002/notes.md",
-                       "content": "# Notes for TASK-002\n\nSome *markdown* notes.\n"}
+    assert ok.body == {"path": "items/TASK-002/notes.md", "content": "# Notes for TASK-002\n\nSome *markdown* notes.\n"}
     assert (missing.status_code, missing.body["code"]) == (404, "file_not_found")
-    assert missing.body["path"] == "items/TASK-002/spec.md"
+    assert missing.body["details"] == {"path": "items/TASK-002/spec.md"}
     assert (escape.status_code, escape.body["code"]) == (403, "forbidden")
     assert (wrong_type.status_code, wrong_type.body["code"]) == (403, "forbidden")
     assert (bad_source.status_code, bad_source.body["code"]) == (404, "source_gone")
-    assert (no_source.status_code, no_source.body["code"]) == (400, "bad_request")
+    assert (no_path.status_code, no_path.body["code"]) == (400, "bad_request")
 
 
-def test_browse(api, workspace, golden):
+def test_folders(api, workspace, golden):
     workspace.add_backlog("backlog", name="repo_a")
     (workspace.repos / "repo_b").mkdir()
     (workspace.repos / ".hidden").mkdir()
     (workspace.repos / "a_file.md").write_text("x", encoding="utf-8")
 
-    default = api.get("/api/browse")
-    inside = api.get("/api/browse", path=str(workspace.repos / "repo_a" / "docs"))
-    fallback = api.get("/api/browse", path=str(workspace.repos / "repo_b" / "gone" / "deeper"))
+    default = api.get("/api/v2/folders")
+    inside = api.get("/api/v2/folders", path=str(workspace.repos / "repo_a" / "docs"))
+    fallback = api.get("/api/v2/folders", path=str(workspace.repos / "repo_b" / "gone" / "deeper"))
 
     golden("read/browse_default.json", default.body)
     golden("read/browse_inside.json", inside.body)
@@ -90,14 +96,14 @@ def test_browse(api, workspace, golden):
 
 
 def test_ui_state_roundtrip(api, workspace):
-    assert api.get("/api/state").body == {}
+    assert api.get("/api/v2/ui-state").body == {}
 
-    saved = api.post("/api/state", {"view": "kanban", "hidden": {"status": ["Rejected"]}})
-    bad = api.post("/api/state", ["not", "an", "object"])
+    saved = api.put("/api/v2/ui-state", {"view": "kanban", "hidden": {"status": ["Rejected"]}})
+    bad = api.put("/api/v2/ui-state", ["not", "an", "object"])
 
-    assert saved.body == {"ok": True}
+    assert saved.status_code == 200
     assert bad.status_code == 400
-    assert api.get("/api/state").body == {"view": "kanban", "hidden": {"status": ["Rejected"]}}
+    assert api.get("/api/v2/ui-state").body == {"view": "kanban", "hidden": {"status": ["Rejected"]}}
 
     (workspace.config_dir / "ui_state.json").write_text("{broken", encoding="utf-8")
-    assert api.get("/api/state").body == {}
+    assert api.get("/api/v2/ui-state").body == {}

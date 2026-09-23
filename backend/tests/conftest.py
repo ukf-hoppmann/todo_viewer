@@ -79,8 +79,11 @@ def workspace(tmp_path: Path) -> Workspace:
 
 @pytest.fixture
 def settings(workspace: Workspace) -> Settings:
+    frontend = workspace.root / "frontend"
+    frontend.mkdir()
+    (frontend / "index.html").write_text("<!doctype html><title>test</title>", encoding="utf-8")
     return Settings(base_dir=PROJECT_ROOT, config_dir=workspace.config_dir,
-                    frontend_dir=PROJECT_ROOT / "frontend", browse_start=str(workspace.repos))
+                    frontend_dir=frontend, browse_start=str(workspace.repos))
 
 
 @pytest.fixture

@@ -37,7 +37,7 @@ class Settings:
         return cls(
             base_dir=PROJECT_ROOT,
             config_dir=Path(os.environ.get("CONFIG_DIR", PROJECT_ROOT / "configs")),
-            frontend_dir=PROJECT_ROOT / "frontend",
+            frontend_dir=Path(os.environ.get("FRONTEND_DIR", PROJECT_ROOT / "web" / "dist")),
             browse_start=os.environ.get("BROWSE_START"),
         )
 

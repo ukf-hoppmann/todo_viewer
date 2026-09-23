@@ -29,7 +29,7 @@ Wird per `import-linter` geprüft (`scripts/check.sh`: ruff, mypy --strict, impo
 | 4 | FastAPI, alte Endpoints kompatibel, Docker | erledigt |
 | 5 | API v2 (`/api/v2`): stabile Quell-IDs, Item-Referenzen, 409 bei Konflikten, import-linter | erledigt |
 | 6 | React-Grundgerüst in `web/`: Vite/TS/TanStack Query, OpenAPI → TS-Typen, Sidebar, Filter, i18n, UI-State | erledigt |
-| 7 | React-Views: Baum, Kanban, Graph, Detail/Edit, Dialoge; Umschalten auf React + Docker multi-stage | offen |
+| 7 | React-Views: Baum, Kanban, Graph, Detail/Edit, Dialoge; Umschalten auf React + Docker multi-stage | erledigt |
 | 8 | Aufräumen: altes Frontend + Kompat-Endpoints entfernen, README, CI | offen |
 
 ## Leitplanken

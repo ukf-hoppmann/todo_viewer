@@ -4,7 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.types import Receive, Scope, Send
 
 from todo_viewer.application.container import Container
 
@@ -21,6 +23,21 @@ def create_app(container: Container, frontend_dir: Path) -> FastAPI:
     # Legacy API for the old frontend; removed together with it.
     for module in (items, sources, misc):
         app.include_router(module.router)
-    # Registered last: everything that is not an API route is a frontend file.
-    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+    # Mounted last: everything that is not an API route is a frontend file.
+    app.mount("/", FrontendFiles(frontend_dir), name="frontend")
     return app
+
+
+class FrontendFiles(StaticFiles):
+    """The built frontend; checked per request, so a later `npm run build` needs no restart."""
+
+    def __init__(self, directory: Path):
+        super().__init__(directory=directory, html=True, check_dir=False)
+        self._index = directory / "index.html"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if not self._index.is_file():
+            message = f"Frontend not built ({self._index.parent}): run `npm --prefix web run build`."
+            await PlainTextResponse(message, 503)(scope, receive, send)
+            return
+        await super().__call__(scope, receive, send)

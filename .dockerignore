@@ -6,3 +6,5 @@ __pycache__
 backend/tests
 docs
 .claude
+web/node_modules
+web/dist

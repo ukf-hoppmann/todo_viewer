@@ -99,3 +99,17 @@ def test_document_folders_and_ui_state(api, workspace):
     assert (forbidden.status_code, forbidden.body["code"]) == (403, "forbidden")
     assert [d["name"] for d in folders.body["dirs"]] == ["backlog"]
     assert saved.body == api.get("/api/v2/ui-state").body == {"view": "tree"}
+
+
+def test_serves_frontend_and_reports_missing_build(api, settings):
+    from fastapi.testclient import TestClient
+
+    from todo_viewer.api import create_app
+    from todo_viewer.bootstrap import build_container
+
+    index = api._raw.get("/")
+    missing = TestClient(create_app(build_container(settings), settings.frontend_dir / "nope")).get("/")
+
+    assert (index.status_code, index.text) == (200, "<!doctype html><title>test</title>")
+    assert missing.status_code == 503
+    assert "npm --prefix web run build" in missing.text

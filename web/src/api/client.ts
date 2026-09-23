@@ -10,7 +10,12 @@ export type Source = Schemas["SourceOut"];
 export type FolderListing = Schemas["FolderListingOut"];
 export type EditableField = Schemas["ItemEditIn"]["field"];
 
-export const api = createClient<paths>({ baseUrl: "" });
+// Absolute base URL (Request needs one outside browsers); fetch is looked up per call
+// instead of being captured at import, so tests can stub it.
+export const api = createClient<paths>({
+  baseUrl: globalThis.location?.origin ?? "",
+  fetch: (request) => globalThis.fetch(request),
+});
 
 /** An error answer of the API, carrying the stable code the UI translates. */
 export class ApiError extends Error {

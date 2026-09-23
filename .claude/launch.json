@@ -11,19 +11,6 @@
       "autoPort": true
     },
     {
-      "name": "todo-viewer-sandbox",
-      "runtimeExecutable": ".venv/bin/python",
-      "runtimeArgs": [
-        "backend/main.py"
-      ],
-      "port": 5412,
-      "autoPort": true,
-      "env": {
-        "CONFIG_DIR": "/private/tmp/claude-501/-Users-hoppmann-Documents-GitHub-ToDo-viewer/fba999ee-c696-4b4b-bf4e-988620e80785/scratchpad/sandbox/configs",
-        "BROWSE_START": "/private/tmp/claude-501/-Users-hoppmann-Documents-GitHub-ToDo-viewer/fba999ee-c696-4b4b-bf4e-988620e80785/scratchpad/sandbox/repos"
-      }
-    },
-    {
       "name": "web-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
@@ -36,10 +23,7 @@
         "5173",
         "--strictPort"
       ],
-      "port": 5173,
-      "env": {
-        "BACKEND_URL": "http://127.0.0.1:5412"
-      }
+      "port": 5173
     }
   ]
 }

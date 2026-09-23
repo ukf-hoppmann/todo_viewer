@@ -7,7 +7,8 @@
       "runtimeArgs": [
         "backend/app.py"
       ],
-      "port": 5411
+      "port": 5411,
+      "autoPort": true
     }
   ]
 }

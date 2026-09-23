@@ -104,14 +104,10 @@
   .node-title { flex: 1; }
   .node-children { margin-left: 20px; }
   .node-children > .tree-node { border-left: 1px solid var(--panel-border); padding-left: 6px; }
-  /* Optionale Kinder (Required for parent: No): gestrichelte Linie, hohler Punkt, gedimmt, Label */
+  /* Optionale Kinder (Required for parent: No): gestrichelte Linie, hohler Punkt, gedimmt */
   .node-children > .tree-node.optional { border-left: 1px dashed #4a505c; }
   .tree-node.optional > .node-row .node-title { color: var(--text-dim); }
   .tree-node.optional > .node-row .badge { background: transparent !important; border: 1.5px solid var(--status-color); }
-  .opt-tag {
-    font-size: 10px; padding: 0 5px; border-radius: 4px; border: 1px solid #3a3f4a; color: var(--text-dim);
-    flex-shrink: 0;
-  }
   .caret { width: 12px; display: inline-block; color: var(--text-dim); font-size: 10px; }
 
   /* Kanban */
@@ -649,9 +645,17 @@ function applyCurrentViewToTabs() {
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === state.currentView + "-view"));
 }
 
-async function loadData() {
+// Rohtext der letzten /api/data-Antwort: Beim Polling wird nur neu gerendert,
+// wenn sich die Daten tatsächlich geändert haben (sonst gehen offene Dropdowns,
+// Graph-Zoom usw. alle paar Sekunden verloren).
+let lastDataText = null;
+
+async function loadData({ force = false } = {}) {
   const res = await fetch("/api/data");
-  const data = await res.json();
+  const text = await res.text();
+  if (!force && text === lastDataText) return;
+  lastDataText = text;
+  const data = JSON.parse(text);
   ITEMS = data.items || [];
   SOURCES = data.sources || [];
   ITEMS.forEach(i => {
@@ -908,13 +912,6 @@ function buildTreeLevel(byParent, parentKey) {
     titleSpan.textContent = `${item.id} — ${item.title}`;
     row.appendChild(titleSpan);
 
-    if (optional) {
-      const tag = document.createElement("span");
-      tag.className = "opt-tag";
-      tag.textContent = t("optional");
-      row.appendChild(tag);
-    }
-
     row.addEventListener("click", () => showDetail(item.uid));
     node.appendChild(row);
 
@@ -1011,13 +1008,20 @@ function renderGraph(allItems) {
     physics: false,
     interaction: { hover: true, zoomView: true, dragView: true },
   };
+  // Zoom und Ausschnitt über das Neuaufbauen hinweg erhalten; nur beim
+  // allerersten Rendern auf den ganzen Graphen zoomen.
+  const view = network ? { scale: network.getScale(), position: network.getViewPosition() } : null;
   if (network) network.destroy();
   network = new vis.Network(container, data, options);
   network.on("click", params => {
     if (params.nodes.length > 0) showDetail(params.nodes[0]);
   });
-  network.fit({ animation: false });
-  network.once("stabilizationIterationsDone", () => network.fit({ animation: false }));
+  if (view) {
+    network.moveTo({ scale: view.scale, position: view.position, animation: false });
+  } else {
+    network.fit({ animation: false });
+    network.once("stabilizationIterationsDone", () => network.fit({ animation: false }));
+  }
 }
 
 /* ---------- DETAIL PANEL ---------- */
@@ -1155,13 +1159,13 @@ async function onFieldEdit(item, selectEl) {
     const data = await res.json();
     if (!res.ok) throw new Error(errorText(data, res.statusText));
     // Der Eintrag kann dabei nach archive.md (oder zurück) gewandert sein.
-    await loadData();
+    await loadData({ force: true });
   } catch (e) {
     selectEl.value = previous;
     selectEl.disabled = false;
     if (statusEl) statusEl.textContent = "";
     alert(t("err.save", { e: e.message }));
-    loadData();
+    loadData({ force: true });
   }
 }
 
@@ -1280,7 +1284,7 @@ async function removeSource(source) {
   } catch (e) {
     alert(t("err.generic", { e: e.message }));
   }
-  loadData();
+  loadData({ force: true });
 }
 
 let modalSource = null;   // null = neues Projekt, sonst die bearbeitete Quelle
@@ -1379,7 +1383,7 @@ async function submitSourceModal() {
     state.hiddenProjects.delete(data.source.project);
     saveState();
     closeSourceModal();
-    await loadData();
+    await loadData({ force: true });
   } catch (e) {
     errEl.textContent = e.message;
     okBtn.disabled = false;
@@ -1410,8 +1414,11 @@ async function init() {
   document.getElementById("search").value = state.search;
   await loadData();
   setInterval(() => {
-    // Während ein Dialog offen ist nicht neu rendern (Auswahl/Eingaben bleiben stabil).
-    if (!document.querySelector(".modal-backdrop.open")) loadData();
+    // Während ein Dialog offen ist oder ein Feld im Detail-Panel bedient wird,
+    // nicht neu rendern (Auswahl/Eingaben bleiben stabil).
+    if (document.querySelector(".modal-backdrop.open")) return;
+    if (document.activeElement?.matches("#detail-panel select, #detail-panel input, #detail-panel textarea")) return;
+    loadData();
   }, 5000);
 }
 init();

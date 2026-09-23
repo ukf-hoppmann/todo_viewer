@@ -77,6 +77,13 @@ class SourceGoneError(NotFoundError):
         super().__init__(message)
 
 
+class ConfigMissingError(NotFoundError):
+    code = "config_missing"
+
+    def __init__(self) -> None:
+        super().__init__("config.json not found")
+
+
 class DuplicateSourceError(DomainError):
     code = "duplicate"
 

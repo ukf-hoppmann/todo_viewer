@@ -61,6 +61,9 @@ class MarkdownBacklogRepository:
                 backlog.problem = SourceProblem("parse_error", f"{path.name}: {exc}")
         return backlog
 
+    def archive_available(self, source: Source) -> bool:
+        return self._layouts.for_source(source).archive_available()
+
     def find(self, source: Source, ref: ItemRef) -> Item:
         path = self._layouts.for_source(source).file(ref.location)
         if not path.is_file():

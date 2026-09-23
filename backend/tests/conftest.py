@@ -10,6 +10,8 @@ from typing import Any
 
 import pytest
 
+from todo_viewer.bootstrap import PROJECT_ROOT, Settings, build_container
+
 FIXTURES = Path(__file__).parent / "fixtures"
 GOLDEN = Path(__file__).parent / "golden"
 UPDATE_GOLDEN = os.environ.get("UPDATE_GOLDEN") == "1"
@@ -74,15 +76,18 @@ def workspace(tmp_path: Path) -> Workspace:
 
 
 @pytest.fixture
-def api(workspace: Workspace, monkeypatch: pytest.MonkeyPatch) -> Iterator[ApiClient]:
-    import app as app_module
+def settings(workspace: Workspace) -> Settings:
+    return Settings(base_dir=PROJECT_ROOT, config_dir=workspace.config_dir,
+                    frontend_dir=PROJECT_ROOT / "frontend", browse_start=str(workspace.repos))
 
-    monkeypatch.setenv("BROWSE_START", str(workspace.repos))
-    monkeypatch.setattr(app_module, "CONFIG_DIR", workspace.config_dir)
-    monkeypatch.setattr(app_module, "CONFIG_PATH", workspace.config_dir / "config.json")
-    monkeypatch.setattr(app_module, "STATE_PATH", workspace.config_dir / "ui_state.json")
-    app_module.app.config["TESTING"] = True
-    with app_module.app.test_client() as client:
+
+@pytest.fixture
+def api(workspace: Workspace, settings: Settings) -> Iterator[ApiClient]:
+    from app import create_app
+
+    app = create_app(build_container(settings), settings.frontend_dir)
+    app.config["TESTING"] = True
+    with app.test_client() as client:
         yield ApiClient(client, workspace.root)
 
 

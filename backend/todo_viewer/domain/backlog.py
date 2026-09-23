@@ -7,6 +7,11 @@ from .item import Item, ItemFormat
 from .source import SourceProblem
 
 
+def supports_archive(item: Item, archive_available: bool) -> bool:
+    """Only structured entries move between the active list and the archive."""
+    return archive_available and item.format is ItemFormat.BACKLOG_V2
+
+
 @dataclass
 class Backlog:
     items: list[Item] = field(default_factory=list)
@@ -15,4 +20,4 @@ class Backlog:
     problem: SourceProblem | None = None
 
     def supports_archive(self, item: Item) -> bool:
-        return self.archive_available and item.format is ItemFormat.BACKLOG_V2
+        return supports_archive(item, self.archive_available)

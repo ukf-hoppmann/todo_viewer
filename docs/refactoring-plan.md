@@ -26,7 +26,7 @@ Wird ab Etappe 5 per `import-linter` geprüft.
 | 1 | Domain-Kern: Item, Source, Status-Regeln, ChangeSet, Fehlercodes | erledigt |
 | 2 | Markdown-Adapter: parser.py in kleine Klassen, atomares Schreiben + Lock | erledigt |
 | 3 | Application-Services + Ports, JSON-Adapter für Config/UI-State, Composition Root | erledigt |
-| 4 | FastAPI + Composition Root, alte Endpoints kompatibel, Docker | offen |
+| 4 | FastAPI, alte Endpoints kompatibel, Docker | erledigt |
 | 5 | API v2: stabile Item-Referenzen, OpenAPI → TS-Typen, import-linter | offen |
 | 6 | React-Grundgerüst: Vite/TS/TanStack Query, Layout, Filter, i18n, UI-State, Docker multi-stage | offen |
 | 7 | React-Views: Baum, Kanban, Graph, Detail/Edit, Dialoge | offen |

@@ -11,8 +11,8 @@ COPY configs configs
 
 ENV HOST=0.0.0.0 \
     PORT=5411 \
-    FLASK_DEBUG=0
+    DEV_RELOAD=0
 
 EXPOSE 5411
 
-CMD ["python3", "backend/app.py"]
+CMD ["python3", "backend/main.py"]

@@ -5,10 +5,23 @@
       "name": "todo-viewer",
       "runtimeExecutable": ".venv/bin/python",
       "runtimeArgs": [
-        "backend/app.py"
+        "backend/main.py"
       ],
       "port": 5411,
       "autoPort": true
+    },
+    {
+      "name": "todo-viewer-sandbox",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": [
+        "backend/main.py"
+      ],
+      "port": 5412,
+      "autoPort": true,
+      "env": {
+        "CONFIG_DIR": "/private/tmp/claude-501/-Users-hoppmann-Documents-GitHub-ToDo-viewer/fba999ee-c696-4b4b-bf4e-988620e80785/scratchpad/sandbox/configs",
+        "BROWSE_START": "/private/tmp/claude-501/-Users-hoppmann-Documents-GitHub-ToDo-viewer/fba999ee-c696-4b4b-bf4e-988620e80785/scratchpad/sandbox/repos"
+      }
     }
   ]
 }

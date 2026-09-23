@@ -9,7 +9,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fastapi.testclient import TestClient
 
+from todo_viewer.api import create_app
 from todo_viewer.bootstrap import PROJECT_ROOT, Settings, build_container
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -31,10 +33,10 @@ class ApiClient:
         self.root = root
 
     def _wrap(self, resp: Any) -> Response:
-        return Response(resp.status_code, resp.get_json())
+        return Response(resp.status_code, resp.json())
 
     def get(self, url: str, **params: Any) -> Response:
-        return self._wrap(self._raw.get(url, query_string=params))
+        return self._wrap(self._raw.get(url, params=params))
 
     def post(self, url: str, body: Any) -> Response:
         return self._wrap(self._raw.post(url, json=body))
@@ -43,7 +45,7 @@ class ApiClient:
         return self._wrap(self._raw.put(url, json=body))
 
     def delete(self, url: str, **params: Any) -> Response:
-        return self._wrap(self._raw.delete(url, query_string=params))
+        return self._wrap(self._raw.delete(url, params=params))
 
 
 @dataclass
@@ -83,11 +85,8 @@ def settings(workspace: Workspace) -> Settings:
 
 @pytest.fixture
 def api(workspace: Workspace, settings: Settings) -> Iterator[ApiClient]:
-    from app import create_app
-
     app = create_app(build_container(settings), settings.frontend_dir)
-    app.config["TESTING"] = True
-    with app.test_client() as client:
+    with TestClient(app) as client:
         yield ApiClient(client, workspace.root)
 
 

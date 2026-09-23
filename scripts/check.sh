@@ -8,3 +8,6 @@ PY=${PYTHON_BIN:-.venv/bin}
 "$PY/mypy" --strict backend/todo_viewer
 (cd backend && "../$PY/lint-imports" --config ../pyproject.toml)
 "$PY/pytest"
+
+# Frontend: Typen, Lint, Tests
+(cd web && npx tsc -b && npx eslint . && npx vitest run)

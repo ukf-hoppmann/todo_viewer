@@ -5,6 +5,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from todo_viewer.application.container import Container
 from todo_viewer.application.services import (
     BacklogOverviewService,
     DocumentService,
@@ -39,17 +40,6 @@ class Settings:
             frontend_dir=PROJECT_ROOT / "frontend",
             browse_start=os.environ.get("BROWSE_START"),
         )
-
-
-@dataclass(frozen=True)
-class Container:
-    overview: BacklogOverviewService
-    item_edits: ItemEditService
-    sources: SourceService
-    source_lookup: SourceLookup
-    documents: DocumentService
-    folders: FolderBrowseService
-    ui_state: UiStateService
 
 
 def build_container(settings: Settings) -> Container:

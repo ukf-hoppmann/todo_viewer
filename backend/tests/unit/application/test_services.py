@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import PurePath
 
 import pytest
 
@@ -91,25 +92,35 @@ def test_add_source_rejects_problems_and_duplicates():
     assert (missing.value.code, no_todo.value.code) == ("missing_path", "no_todo")
 
 
-def test_update_keeps_extra_fields_and_remove_checks_path():
-    service, repo = _sources([Source("A", "/a", extra={"color": "red"}), Source("B", "/b")])
+def test_update_keeps_extra_fields_and_remove_by_id():
+    a, b = Source("A", "/a", extra={"color": "red"}), Source("B", "/b")
+    service, repo = _sources([a, b])
 
-    updated = service.update(0, "/a2", "A2")
+    updated = service.update(a.id, "/a2", "A2")
     with pytest.raises(SourceGoneError):
-        service.remove(1, expected_path="/other")
-    removed = service.remove(1, expected_path="/b")
+        service.remove("unknown")
+    removed = service.remove(b.id)
 
     assert updated.extra == {"color": "red"}
-    assert removed == Source("B", "/b")
+    assert removed == b
     assert repo.sources == [Source("A2", "/a2")]
 
 
-def test_lookup_by_index():
-    lookup = SourceLookup(InMemorySources([Source("A", "/a")]))
+def test_source_id_is_stable_and_path_based():
+    assert Source("A", "/a").id == Source("Renamed", "/a").id != Source("A", "/b").id
 
-    assert lookup.get(0) == Source("A", "/a")
+
+def test_lookup():
+    a = Source("A", "/repo/docs")
+    lookup = SourceLookup(InMemorySources([a]))
+
+    assert lookup.by_id(a.id) == lookup.by_index(0) == lookup.by_folder(PurePath("/repo/docs")) == a
     with pytest.raises(SourceGoneError):
-        lookup.get(1)
+        lookup.by_index(1)
+    with pytest.raises(SourceGoneError):
+        lookup.by_index(0, expected_path="/other")
+    with pytest.raises(SourceGoneError):
+        lookup.by_folder(PurePath("/elsewhere"))
 
 
 def test_item_edit_plans_with_archive_rules():

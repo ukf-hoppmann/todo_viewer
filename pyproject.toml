@@ -16,3 +16,23 @@ python_version = "3.11"
 mypy_path = "backend"
 explicit_package_bases = true
 ignore_missing_imports = true
+
+[tool.importlinter]
+root_package = "todo_viewer"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Onion layers: dependencies point inwards"
+type = "layers"
+layers = [
+    "todo_viewer.bootstrap",
+    "todo_viewer.api | todo_viewer.infrastructure",
+    "todo_viewer.application",
+    "todo_viewer.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain uses no third-party libraries"
+type = "forbidden"
+source_modules = ["todo_viewer.domain", "todo_viewer.application"]
+forbidden_modules = ["fastapi", "pydantic", "starlette", "uvicorn"]

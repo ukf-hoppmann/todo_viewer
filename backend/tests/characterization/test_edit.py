@@ -137,3 +137,17 @@ def test_edit_rejects_non_object(api):
     resp = api.post("/api/items/update", [1, 2])
 
     assert (resp.status_code, resp.body["code"]) == (400, "bad_request")
+
+
+def test_edit_outside_configured_sources_is_refused(api, workspace):
+    """Changed on purpose in Etappe 5: the legacy API used to write into any given file."""
+    configured = _setup(api, workspace, "backlog")
+    other = workspace.add_backlog("backlog", name="unconfigured")
+    item = _item(api, "TASK-001")
+    before = _files(other)
+
+    resp = _update(api, item, "status", "Open", source_file=str(other / "TODO.md"))
+
+    assert (resp.status_code, resp.body["code"]) == (404, "source_gone")
+    assert _files(other) == before
+    assert configured != other

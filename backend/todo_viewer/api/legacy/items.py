@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -8,16 +8,15 @@ from fastapi.responses import JSONResponse
 from todo_viewer.domain.editing import Field
 from todo_viewer.domain.errors import ConfigMissingError, EntryMovedError, UnknownFormatError
 from todo_viewer.domain.item import ItemFormat, ItemRef, Location
-from todo_viewer.domain.source import Source
-from todo_viewer.infrastructure.markdown.syntax import ARCHIVE_FILE, TODO_FILE
 
-from ..dependencies import ItemEdits, Overview
+from ..dependencies import ItemEdits, Lookup, Overview
 from ..errors import error_response
-from ..schemas import DataOut, ItemOut, ItemResult, ItemUpdateIn, ListedItemOut, SourceStatusOut
+from .schemas import DataOut, ItemOut, ItemResult, ItemUpdateIn, ListedItemOut, SourceStatusOut
 
-router = APIRouter(prefix="/api", tags=["items"])
+router = APIRouter(prefix="/api", tags=["legacy"])
 
-LEGACY_FILES = {TODO_FILE: Location.ACTIVE, ARCHIVE_FILE: Location.ARCHIVE}
+# The legacy API addresses items by file path; v2 uses source id + location instead.
+LEGACY_FILES = {"TODO.md": Location.ACTIVE, "archive.md": Location.ARCHIVE}
 
 
 @router.get("/data", response_model=DataOut, responses={404: {"description": "config.json missing"}})
@@ -41,8 +40,7 @@ def data(overview: Overview) -> DataOut | JSONResponse:
 
 
 @router.post("/items/update", response_model=ItemResult)
-def update_item(body: ItemUpdateIn, edits: ItemEdits) -> ItemResult | JSONResponse:
-    # Legacy addressing by file path; replaced by source index + item ref in API v2.
+def update_item(body: ItemUpdateIn, edits: ItemEdits, lookup: Lookup) -> ItemResult | JSONResponse:
     path = Path(body.source_file)
     location = LEGACY_FILES.get(path.name)
     if body.field in Field.EDITABLE:
@@ -53,7 +51,8 @@ def update_item(body: ItemUpdateIn, edits: ItemEdits) -> ItemResult | JSONRespon
         if location is None:
             raise EntryMovedError()
 
-    source = Source(project=body.project, path=str(path.parent))
+    # Only files of configured sources may be written.
+    source = lookup.by_folder(PurePath(path.parent))
     ref = ItemRef(body.id, location or Location.ACTIVE, body.line)
     try:
         result = edits.edit(source, ref, body.field, body.value, body.resolution)

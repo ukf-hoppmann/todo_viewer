@@ -16,7 +16,7 @@ frontend/          React + Vite + TypeScript (ab Etappe 6)
 ```
 
 Abhängigkeiten zeigen nur nach innen: `api`/`infrastructure` → `application` → `domain`.
-Wird ab Etappe 5 per `import-linter` geprüft.
+Wird per `import-linter` geprüft (`scripts/check.sh`: ruff, mypy --strict, import-linter, pytest).
 
 ## Etappen
 
@@ -27,8 +27,8 @@ Wird ab Etappe 5 per `import-linter` geprüft.
 | 2 | Markdown-Adapter: parser.py in kleine Klassen, atomares Schreiben + Lock | erledigt |
 | 3 | Application-Services + Ports, JSON-Adapter für Config/UI-State, Composition Root | erledigt |
 | 4 | FastAPI, alte Endpoints kompatibel, Docker | erledigt |
-| 5 | API v2: stabile Item-Referenzen, OpenAPI → TS-Typen, import-linter | offen |
-| 6 | React-Grundgerüst: Vite/TS/TanStack Query, Layout, Filter, i18n, UI-State, Docker multi-stage | offen |
+| 5 | API v2 (`/api/v2`): stabile Quell-IDs, Item-Referenzen, 409 bei Konflikten, import-linter | erledigt |
+| 6 | React-Grundgerüst: Vite/TS/TanStack Query, OpenAPI → TS-Typen, Layout, Filter, i18n, UI-State, Docker multi-stage | offen |
 | 7 | React-Views: Baum, Kanban, Graph, Detail/Edit, Dialoge | offen |
 | 8 | Aufräumen: altes Frontend + Kompat-Endpoints entfernen, README, CI | offen |
 
@@ -44,5 +44,6 @@ Wird ab Etappe 5 per `import-linter` geprüft.
   Zeilenenden vor der Erkennung). Behoben in Etappe 2.
 - Schreiben war nicht atomar und überschrieb parallele externe Änderungen still.
   Seit Etappe 2: temp-Datei + `os.replace`, mtime/size-Prüfung → Fehlercode `file_changed`.
-- `/api/items/update` schreibt in jede übergebene Datei, nicht nur in konfigurierte
-  Quellen. Wird in Etappe 5 mit Quell-Referenzen statt Dateipfaden behoben.
+- `/api/items/update` schrieb in jede übergebene Datei, nicht nur in konfigurierte
+  Quellen. Seit Etappe 5 nur noch in konfigurierte Quellen (`source_gone` sonst);
+  v2 adressiert Items per Quell-ID + Ref und kennt keine Dateipfade mehr.

@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
+from todo_viewer.application.container import Container
 from todo_viewer.application.services import (
     BacklogOverviewService,
     DocumentService,
@@ -14,7 +15,6 @@ from todo_viewer.application.services import (
     SourceService,
     UiStateService,
 )
-from todo_viewer.bootstrap import Container
 
 
 def container(request: Request) -> Container:

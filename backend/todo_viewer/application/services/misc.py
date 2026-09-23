@@ -12,8 +12,8 @@ class DocumentService:
         self._lookup = lookup
         self._documents = documents
 
-    def read(self, source_index: int, relative_path: str) -> str:
-        return self._documents.read(self._lookup.get(source_index), relative_path)
+    def read(self, source_id: str, relative_path: str) -> str:
+        return self._documents.read(self._lookup.by_id(source_id), relative_path)
 
 
 class FolderBrowseService:

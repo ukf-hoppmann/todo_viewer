@@ -24,16 +24,20 @@ class ForbiddenError(DomainError):
     """The request is valid but not allowed."""
 
 
+class ConflictError(DomainError):
+    """The request clashes with the current state (external edits, duplicates)."""
+
+
 # --- items ---
 
-class EntryMovedError(DomainError):
+class EntryMovedError(ConflictError):
     code = "entry_moved"
 
     def __init__(self, message: str = "Entry not found (file was probably changed externally)."):
         super().__init__(message)
 
 
-class FileChangedError(DomainError):
+class FileChangedError(ConflictError):
     code = "file_changed"
 
     def __init__(self) -> None:
@@ -84,7 +88,7 @@ class ConfigMissingError(NotFoundError):
         super().__init__("config.json not found")
 
 
-class DuplicateSourceError(DomainError):
+class DuplicateSourceError(ConflictError):
     code = "duplicate"
 
     def __init__(self) -> None:

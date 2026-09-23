@@ -845,8 +845,9 @@ function renderTree(items) {
     group.className = "project-group";
 
     const projItems = byProject[project];
+    // Fortschritt immer über alle Tasks des Projekts, unabhängig von den Filtern.
     // Optionale Kinder blockieren ihren Parent nie und zählen nicht zum Fortschritt.
-    const counted = projItems.filter(i => i.required_for_parent !== false);
+    const counted = ITEMS.filter(i => i.project === project && i.required_for_parent !== false);
     const total = counted.length;
     const done = counted.filter(i => isDone(i.status)).length;
 

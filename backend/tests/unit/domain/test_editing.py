@@ -3,7 +3,12 @@ from __future__ import annotations
 import pytest
 
 from todo_viewer.domain.editing import ChangeSet, EditPlanner
-from todo_viewer.domain.errors import CheckboxStatusOnlyError, NotEditableError, ResolutionRequiredError
+from todo_viewer.domain.errors import (
+    CheckboxStatusOnlyError,
+    InvalidValueError,
+    NotEditableError,
+    ResolutionRequiredError,
+)
 from todo_viewer.domain.item import Item, ItemFormat, Location
 
 
@@ -29,6 +34,13 @@ def test_checkbox_allows_only_status():
 def test_priority_is_a_plain_field_change():
     assert planner.plan(_item(), "priority", "Urgent", None, archive_supported=True) == \
         ChangeSet(set_fields=(("priority", "Urgent"),))
+
+
+def test_required_for_parent_accepts_only_yes_or_no():
+    assert planner.plan(_item(), "required_for_parent", "No", None, archive_supported=True) == \
+        ChangeSet(set_fields=(("required_for_parent", "No"),))
+    with pytest.raises(InvalidValueError):
+        planner.plan(_item(), "required_for_parent", "true", None, archive_supported=True)
 
 
 def test_terminal_status_without_archive_is_a_plain_change():

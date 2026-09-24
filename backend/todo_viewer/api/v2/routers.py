@@ -44,7 +44,10 @@ def backlog(overview: Overview) -> BacklogOut:
 
 @router.post("/items/edit", tags=["items"])
 def edit_item(body: ItemEditIn, edits: ItemEdits, lookup: Lookup) -> ItemOut:
-    """Edits status or priority. Completed/Rejected need a resolution and move the item to the archive."""
+    """Edits status, priority or required_for_parent (Yes/No).
+
+    Completed/Rejected need a resolution and move the item to the archive.
+    """
     source = lookup.by_id(body.ref.source_id)
     result = edits.edit(source, body.ref.to_domain(), body.field, body.value, body.resolution)
     return ItemOut.of(source, result.item, result.archive_supported)

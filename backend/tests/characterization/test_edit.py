@@ -49,6 +49,8 @@ EDIT_CASES = [
     ("reopen_from_archive", "backlog", "TASK-000", "status", "Open", None, "active"),
     ("reopen_last_archive_entry", "backlog", "STORY-000", "status", "In progress", None, "active"),
     ("terminal_within_archive", "backlog", "STORY-000", "status", "Completed", "Needed after all", "archive"),
+    ("required_existing", "backlog", "TASK-002", "required_for_parent", "Yes", None, "active"),
+    ("required_inserted", "backlog", "TASK-003", "required_for_parent", "No", None, "active"),
     ("priority_in_archive", "backlog", "TASK-000", "priority", "Important", None, "archive"),
     ("complete_without_archive", "no_archive", "TASK-010", "status", "Completed", None, "active"),
     ("checkbox_check", "checklist", "TODO:5", "status", "Completed", None, "active"),
@@ -66,7 +68,8 @@ def test_edit_rewrites_files(api, workspace, golden, name, fixture, item_id, fie
     assert resp.status_code == 200, resp.body
     golden(f"edit/{name}.md", _files(folder))
     assert resp.body["ref"]["location"] == location
-    assert resp.body[field] == (value.rstrip(".") if field == "priority" else value)
+    expected = {"priority": value.rstrip("."), "required_for_parent": value == "Yes"}.get(field, value)
+    assert resp.body[field] == expected
     assert resp.body == _item(api, item_id)
 
 
@@ -104,6 +107,7 @@ def test_edit_errors_leave_files_untouched(api, workspace):
         ("resolution_required", 400, dict(field="status", value="Completed")),
         ("resolution_required", 400, dict(field="status", value="Rejected", resolution="  ")),
         ("bad_request", 400, dict(field="title", value="x")),
+        ("invalid_value", 400, dict(field="required_for_parent", value="Maybe")),
         ("entry_moved", 409, dict(field="status", value="Open", line=item["ref"]["line"] + 1)),
         ("entry_moved", 409, dict(field="status", value="Open", line=9999)),
         ("entry_moved", 409, dict(field="status", value="Open", id="TASK-999")),

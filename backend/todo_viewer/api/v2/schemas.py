@@ -11,7 +11,7 @@ from todo_viewer.domain.source import Source, SourceProblem
 
 LocationName = Literal["active", "archive"]
 FormatName = Literal["backlog_v2", "checkbox"]
-EditableFieldName = Literal["status", "priority"]
+EditableFieldName = Literal["status", "priority", "required_for_parent"]
 
 
 class ErrorOut(BaseModel):

@@ -154,7 +154,8 @@
           "field": {
             "enum": [
               "status",
-              "priority"
+              "priority",
+              "required_for_parent"
             ],
             "title": "Field",
             "type": "string"
@@ -716,7 +717,7 @@
     },
     "/api/v2/items/edit": {
       "post": {
-        "description": "Edits status or priority. Completed/Rejected need a resolution and move the item to the archive.",
+        "description": "Edits status, priority or required_for_parent (Yes/No).\n\nCompleted/Rejected need a resolution and move the item to the archive.",
         "operationId": "edit_item_api_v2_items_edit_post",
         "requestBody": {
           "content": {

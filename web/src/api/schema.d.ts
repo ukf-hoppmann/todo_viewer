@@ -55,7 +55,9 @@ export interface paths {
         put?: never;
         /**
          * Edit Item
-         * @description Edits status or priority. Completed/Rejected need a resolution and move the item to the archive.
+         * @description Edits status, priority or required_for_parent (Yes/No).
+         *
+         *     Completed/Rejected need a resolution and move the item to the archive.
          */
         post: operations["edit_item_api_v2_items_edit_post"];
         delete?: never;
@@ -198,7 +200,7 @@ export interface components {
              * Field
              * @enum {string}
              */
-            field: "status" | "priority";
+            field: "status" | "priority" | "required_for_parent";
             ref: components["schemas"]["ItemRefModel"];
             /** Resolution */
             resolution?: string | null;

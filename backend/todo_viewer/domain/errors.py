@@ -51,6 +51,13 @@ class NotEditableError(DomainError):
         super().__init__(f"Field '{field}' is not editable.")
 
 
+class InvalidValueError(DomainError):
+    code = "invalid_value"
+
+    def __init__(self, field: str, allowed: tuple[str, ...]):
+        super().__init__(f"Invalid value for '{field}'; allowed: {', '.join(allowed)}.", field=field)
+
+
 class CheckboxStatusOnlyError(DomainError):
     code = "checkbox_status_only"
 

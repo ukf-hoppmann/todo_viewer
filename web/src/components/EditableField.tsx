@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { EditableField as FieldName } from "../api/client";
 import { useEditItem } from "../api/queries";
-import { type Item, needsResolution } from "../domain/model";
+import { editValue, type Item, needsResolution } from "../domain/model";
 import { describeError, useI18n } from "../i18n/i18n";
 import { usePausePolling } from "../state/pollingPause";
 import { ResolutionDialog } from "./ResolutionDialog";
@@ -22,7 +22,7 @@ export function EditableField({ item, field, ariaLabel, options, label }: Editab
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   usePausePolling(focused || edit.isPending);
 
-  const current = item[field] ?? "";
+  const current = editValue(item, field);
 
   const save = (value: string, resolution: string | null) =>
     edit.mutate({ ref: item.ref, field, value, resolution });

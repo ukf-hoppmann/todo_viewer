@@ -1,5 +1,5 @@
 import { lazy, type ReactNode, Suspense, useState } from "react";
-import { type Item, priorityOptions, statusOptions, type Uid } from "../domain/model";
+import { type Item, priorityOptions, statusOptions, type Uid, YES_NO } from "../domain/model";
 import { useI18n } from "../i18n/i18n";
 import { documentLinks } from "./documentLinks";
 
@@ -82,9 +82,17 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
           </button>
         </Field>
       )}
-      {item.required_for_parent != null && (
-        <TextField label={L("Required for parent")} value={item.required_for_parent ? t("yes") : t("no")} />
-      )}
+      {item.format === "checkbox" ? null : item.parent || item.required_for_parent != null ? (
+        <Field label={L("Required for parent")}>
+          <EditableField
+            item={item}
+            field="required_for_parent"
+            ariaLabel={L("Required for parent")}
+            options={[...YES_NO]}
+            label={(v) => t(v === "Yes" ? "yes" : "no")}
+          />
+        </Field>
+      ) : null}
 
       {item.dependencyUids.length > 0 && (
         <Field label={L("Dependencies")}>

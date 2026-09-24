@@ -62,6 +62,41 @@ describe("DetailPanel editing", () => {
     expect(await request.clone().json()).toEqual({ ref: item.ref, field: "status", value: "Completed", resolution: "Done" });
   });
 
+  it("edits required-for-parent as Yes/No", async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      const body = await request.clone().json();
+      return new Response(JSON.stringify({ ...apiItem("TASK-2"), required_for_parent: body.value === "Yes" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const item = items[2]!;
+    renderWithProviders(
+      <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
+    );
+
+    const select = screen.getByRole("combobox", { name: "Pflicht für Parent" });
+    expect((select as HTMLSelectElement).value).toBe("No");
+    await userEvent.selectOptions(select, "Ja");
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(await fetchMock.mock.calls[0]![0].clone().json()).toEqual({
+      ref: item.ref,
+      field: "required_for_parent",
+      value: "Yes",
+      resolution: null,
+    });
+  });
+
+  it("offers required-for-parent only for items with a parent", () => {
+    const item = items[0]!;
+    renderWithProviders(
+      <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
+    );
+    expect(screen.queryByRole("combobox", { name: "Pflicht für Parent" })).not.toBeInTheDocument();
+  });
+
   it("shows translated API errors", async () => {
     vi.stubGlobal("fetch", vi.fn(async () =>
       new Response(JSON.stringify({ code: "entry_moved", message: "x", details: {} }), {

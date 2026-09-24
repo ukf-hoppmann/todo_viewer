@@ -3,16 +3,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .errors import CheckboxStatusOnlyError, NotEditableError, ResolutionRequiredError
+from .errors import CheckboxStatusOnlyError, InvalidValueError, NotEditableError, ResolutionRequiredError
 from .item import Item, ItemFormat, Location, Status
 
 
 class Field:
     STATUS = "status"
     PRIORITY = "priority"
+    REQUIRED_FOR_PARENT = "required_for_parent"
     RESOLUTION = "resolution"
 
-    EDITABLE = frozenset({STATUS, PRIORITY})
+    EDITABLE = frozenset({STATUS, PRIORITY, REQUIRED_FOR_PARENT})
+    # Fields with a fixed set of values, spelled as in the file.
+    ALLOWED_VALUES = {REQUIRED_FOR_PARENT: ("Yes", "No")}
 
 
 @dataclass(frozen=True)
@@ -34,6 +37,10 @@ class EditPlanner:
             if field != Field.STATUS:
                 raise CheckboxStatusOnlyError()
             return ChangeSet(set_fields=((field, value),))
+
+        allowed = Field.ALLOWED_VALUES.get(field)
+        if allowed is not None and value not in allowed:
+            raise InvalidValueError(field, allowed)
 
         if field != Field.STATUS or not archive_supported:
             return ChangeSet(set_fields=((field, value),))

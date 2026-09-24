@@ -91,6 +91,7 @@ abgebildet.
 - **Baum**: Epic → Story → Task Hierarchie pro Projekt, mit Fortschrittsbalken.
   Optionale Kinder (`Required for parent: No`) sind gestrichelt angebunden,
   gedimmt und haben einen hohlen Status-Punkt; sie zählen nicht zum Fortschritt.
+  Abgelehnte Items (`Rejected`) zählen ebenfalls nicht mit.
 - **Abhängigkeiten**: Gerichteter Graph aus dem `Dependencies`-Feld (zeigt nur
   Tasks mit tatsächlichen Abhängigkeiten, isolierte Tasks werden ausgeblendet).
 - **Kanban**: Spalten nach Status (Open, In progress, Awaiting confirmation,

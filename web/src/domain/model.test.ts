@@ -81,8 +81,10 @@ describe("model", () => {
     expect(p?.roots[0]?.children.map((n) => [n.item.ref.id, n.optional])).toEqual([["TASK-1", false], ["TASK-2", true]]);
   });
 
-  it("counts progress over all items, skipping optional ones", () => {
+  it("counts progress over all items, skipping optional and rejected ones", () => {
     expect(projectProgress(items, "P")).toEqual({ done: 1, total: 3 });
+    const withRejected = toItems([apiItem("A-1", { status: "Completed" }), apiItem("A-2", { status: "Rejected" }), apiItem("A-3")]);
+    expect(projectProgress(withRejected, "P")).toEqual({ done: 1, total: 2 });
   });
 
   it("groups by status in key order", () => {

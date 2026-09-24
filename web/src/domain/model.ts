@@ -101,10 +101,10 @@ export interface Progress {
 
 /**
  * Progress of a project over all its items, independent of the filters.
- * Optional children never block their parent and do not count.
+ * Optional children never block their parent and do not count; neither do rejected items.
  */
 export function projectProgress(allItems: readonly Item[], project: string): Progress {
-  const counted = allItems.filter((i) => i.project === project && i.required_for_parent !== false);
+  const counted = allItems.filter((i) => i.project === project && i.required_for_parent !== false && i.status !== "Rejected");
   return { done: counted.filter((i) => i.status === "Completed").length, total: counted.length };
 }
 

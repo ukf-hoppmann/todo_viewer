@@ -131,7 +131,7 @@ input[type=text], textarea {
   font-size: 12px; color: var(--text); width: 200px; cursor: pointer;
 }
 .graph-node.selected { background: var(--selected); }
-.graph-node .g-id { color: var(--text-dim); font-size: 10.5px; }
+.graph-node .g-id { color: var(--text-dim); font-size: 10.5px; display: flex; align-items: center; }
 .react-flow__attribution { display: none; }
 
 /* ---------- detail panel ---------- */

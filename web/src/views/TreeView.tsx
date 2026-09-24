@@ -40,7 +40,7 @@ function TreeNodeRow({ node, onSelect }: { node: TreeNode; onSelect: (uid: Uid) 
   const { item, optional, children } = node;
   const hasChildren = children.length > 0;
   const collapsed = hasChildren && state.collapsed.has(item.uid);
-  const color = statusColor(item.status);
+  const color = priorityColor(item.priority);
 
   return (
     <div className={`tree-node${optional ? " optional" : ""}`}>
@@ -55,11 +55,15 @@ function TreeNodeRow({ node, onSelect }: { node: TreeNode; onSelect: (uid: Uid) 
           {hasChildren ? (collapsed ? "▸" : "▾") : ""}
         </button>
         <button className={`node-row${item.uid === state.selectedId ? " selected" : ""}`} onClick={() => onSelect(item.uid)}>
-          <span className="dot" title={vocab("status", item.status)} style={{ background: color, ["--dot-color" as string]: color }} />
+          <span
+            className="dot"
+            title={item.priority ? `${vocab("field", "Priority")}: ${vocab("priority", item.priority)}` : ""}
+            style={{ background: color, ["--dot-color" as string]: color }}
+          />
           <span
             className="node-type"
-            title={item.priority ? `${vocab("field", "Priority")}: ${vocab("priority", item.priority)}` : ""}
-            style={item.priority ? { background: priorityColor(item.priority), color: "var(--on-color)" } : undefined}
+            title={vocab("status", item.status)}
+            style={{ background: statusColor(item.status), color: "var(--on-color)" }}
           >
             {vocab("type", item.type)}
           </span>

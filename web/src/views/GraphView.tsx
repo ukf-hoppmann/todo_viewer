@@ -11,7 +11,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { memo, useMemo } from "react";
-import { statusColor } from "../domain/colors";
+import { priorityColor, statusColor } from "../domain/colors";
 import { dependencyGraph, type Item, type Uid } from "../domain/model";
 import { useI18n } from "../i18n/i18n";
 import { useUiState } from "../state/useUiStateStore";
@@ -23,11 +23,19 @@ const TITLE_LIMIT = 28;
 
 const ItemNodeView = memo(function ItemNodeView({ data }: NodeProps<ItemNode>) {
   const { item, selected } = data;
+  const { vocab } = useI18n();
   const title = item.title.length > TITLE_LIMIT ? `${item.title.slice(0, TITLE_LIMIT)}…` : item.title;
   return (
     <div className={`graph-node${selected ? " selected" : ""}`} style={{ borderColor: statusColor(item.status) }} title={item.title}>
       <Handle type="target" position={Position.Left} />
-      <div className="g-id">{item.ref.id}</div>
+      <div className="g-id">
+        <span
+          className="dot"
+          title={item.priority ? `${vocab("field", "Priority")}: ${vocab("priority", item.priority)}` : ""}
+          style={{ background: priorityColor(item.priority) }}
+        />
+        {item.ref.id}
+      </div>
       <div>{title}</div>
       <Handle type="source" position={Position.Right} />
     </div>

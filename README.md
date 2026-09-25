@@ -94,6 +94,12 @@ abgebildet.
   Abgelehnte Items (`Rejected`) zählen ebenfalls nicht mit.
 - **Abhängigkeiten**: Gerichteter Graph aus dem `Dependencies`-Feld (zeigt nur
   Tasks mit tatsächlichen Abhängigkeiten, isolierte Tasks werden ausgeblendet).
+  Das Layout (ELK, von links nach rechts) hält Kantenkreuzungen gering; alle
+  Knoten ohne Abhängigkeiten stehen in der linken Spalte, unabhängige Teilgraphen
+  untereinander. Der ausgewählte, der überfahrene und alle zusätzlich markierten
+  Knoten werden mit ihren Kanten und direkten Nachbarn hervorgehoben, der Rest
+  wird abgeblendet. Klick wählt aus bzw. wieder ab, ⌘-/Strg-/⇧-Klick markiert
+  weitere Knoten, Esc oder ein Klick ins Leere setzt alles zurück.
 - **Kanban**: Spalten nach Status (Open, In progress, Awaiting confirmation,
   Completed, Rejected).
 

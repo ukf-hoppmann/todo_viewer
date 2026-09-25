@@ -1,10 +1,6 @@
 {
   "sources": [
     {
-      "project": "LLM_Tests",
-      "path": "/Users/hoppmann/Documents/GitHub/LLM_Tests/docs"
-    },
-    {
       "project": "EZF-Backend",
       "path": "/Users/hoppmann/Documents/GitHub/EZF-Backend/docs/Anselm"
     },
@@ -15,6 +11,10 @@
     {
       "project": "Claude_Harness",
       "path": "/Users/hoppmann/Documents/GitHub/Claude_Harness/docs/todo"
+    },
+    {
+      "project": "ToDo_viewer",
+      "path": "/Users/hoppmann/Documents/GitHub/ToDo_viewer/docs/todo"
     }
   ]
 }

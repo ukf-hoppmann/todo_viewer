@@ -124,13 +124,17 @@ input[type=text], textarea {
 
 /* ---------- graph ---------- */
 .graph-view { padding: 0; }
-.graph-info { font-size: 12px; color: var(--text-dim); padding: 8px 12px; border-bottom: 1px solid var(--panel-border); }
+.graph-info {
+  font-size: 12px; color: var(--text-dim); padding: 8px 12px; border-bottom: 1px solid var(--panel-border);
+  display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
 .graph-canvas { flex: 1; min-height: 0; }
 .graph-node {
   background: var(--surface); border: 1.5px solid; border-radius: 6px; padding: 6px 10px;
-  font-size: 12px; color: var(--text); width: 200px; cursor: pointer;
+  font-size: 12px; color: var(--text); width: 200px; cursor: pointer; transition: opacity 0.12s;
 }
 .graph-node.selected { background: var(--selected); }
+.graph-node.dimmed { opacity: 0.35; }
 .graph-node .g-id { color: var(--text-dim); font-size: 10.5px; display: flex; align-items: center; }
 .react-flow__attribution { display: none; }
 

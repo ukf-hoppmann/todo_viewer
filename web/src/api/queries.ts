@@ -1,6 +1,6 @@
 // TanStack Query hooks: the only place components talk to the API.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ItemFields, unwrap } from "./client";
+import { api, type ItemFields, type Schemas, unwrap } from "./client";
 
 export const POLL_INTERVAL_MS = 5000;
 
@@ -34,6 +34,14 @@ export function useEditItem() {
   return useMutation({
     mutationFn: ({ sourceId, id, ...body }: EditItemRequest) =>
       unwrap(api.PATCH("/api/v2/items/{source_id}/{item_id}", { params: { path: { source_id: sourceId, item_id: id } }, body })),
+    onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
+  });
+}
+
+export function useCreateItem() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Schemas["ItemCreateIn"]) => unwrap(api.POST("/api/v2/items", { body })),
     onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
   });
 }

@@ -264,3 +264,4 @@ select.field-edit:disabled { opacity: .6; cursor: wait; }
 .edit-form .field-error { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .chip-remove { border: none; background: none; color: var(--text-dim); cursor: pointer; padding: 0 0 0 4px; font-size: 11px; }
 .chip-remove:hover { color: var(--status-rejected); }
+.tabs .new-btn { margin-left: auto; }

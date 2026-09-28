@@ -4,6 +4,7 @@ import { toItems } from "../domain/model";
 import { apiItem, renderWithProviders } from "../test/render";
 import { TreeView } from "../views/TreeView";
 import { DetailPanel } from "./DetailPanel";
+import { CreateItemDialog } from "./CreateItemDialog";
 import { DocumentDialog } from "./DocumentDialog";
 import { Sidebar } from "./Sidebar";
 
@@ -84,13 +85,18 @@ describe("Sidebar project marking", () => {
   });
 });
 
+const SOURCES = [
+  { id: "s", project: "P", path: "/p", item_count: 3, problem: null },
+  { id: "t", project: "Q", path: "/q", item_count: 0, problem: null },
+];
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
 function renderPanel(item: (typeof items)[number]) {
   renderWithProviders(
-    <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
+    <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
   );
 }
 
@@ -180,7 +186,7 @@ describe("DetailPanel edit mode", () => {
     vi.stubGlobal("fetch", fetchMock);
     const standalone = toItems([apiItem("TASK-9")])[0]!;
     renderWithProviders(
-      <DetailPanel item={standalone} items={[...items, standalone]} byUid={new Map()} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
+      <DetailPanel item={standalone} items={[...items, standalone]} byUid={new Map()} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
     );
 
     await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
@@ -258,5 +264,46 @@ describe("DocumentDialog", () => {
 
     await userEvent.click(screen.getByRole("tab", { name: "Spec" }));
     expect(await screen.findByText("Content of TASK-7_spec.md")).toBeInTheDocument();
+  });
+});
+
+describe("CreateItemDialog", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("creates a new item without parent and selects it", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () =>
+      jsonResponse(apiItem("STORY-7", { project: "Q", source_id: "t" }), 201));
+    vi.stubGlobal("fetch", fetchMock);
+    const onCreated = vi.fn();
+    renderWithProviders(<CreateItemDialog sources={SOURCES} sourceId="s" parent={null} onClose={vi.fn()} onCreated={onCreated} />);
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Projekt" }), "t");
+    await userEvent.type(screen.getByRole("textbox", { name: "Titel" }), "New story");
+    await userEvent.type(screen.getByRole("textbox", { name: "Bereich" }), "Core");
+    await userEvent.type(screen.getByRole("textbox", { name: "Ziel" }), "Goal");
+    await userEvent.type(screen.getByRole("textbox", { name: "Fertigstellungskriterien" }), "Done");
+    await userEvent.click(screen.getByRole("button", { name: "Anlegen" }));
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledWith("Q::STORY-7"));
+    const request = fetchMock.mock.calls[0]![0];
+    expect([request.method, new URL(request.url).pathname]).toEqual(["POST", "/api/v2/items"]);
+    expect(await request.clone().json()).toEqual({
+      source_id: "t", type: "Story", title: "New story", area: "Core", goal: "Goal", completion_criteria: "Done", priority: "Normal",
+    });
+  });
+
+  it("prefills a child and offers only fitting types", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () =>
+      jsonResponse({ code: "value_required", message: "x", details: { field: "title" } }, 400));
+    vi.stubGlobal("fetch", fetchMock);
+    const epic = items[0]!;
+    renderWithProviders(<CreateItemDialog sources={SOURCES} sourceId="s" parent={epic} onClose={vi.fn()} onCreated={vi.fn()} />);
+
+    expect(screen.queryByRole("combobox", { name: "Projekt" })).not.toBeInTheDocument();
+    expect([...(screen.getByRole("combobox", { name: "Typ" }) as HTMLSelectElement).options].map((o) => o.value)).toEqual(["Story", "Task"]);
+    await userEvent.click(screen.getByRole("button", { name: "Anlegen" }));
+
+    expect(await screen.findByText(/Dieses Feld darf nicht leer sein/)).toBeInTheDocument();
+    expect(await fetchMock.mock.calls[0]![0].clone().json()).toMatchObject({ parent: "EPIC-1", required_for_parent: "Yes" });
   });
 });

@@ -30,6 +30,7 @@ class Field:
     # Maintained by the server when documents are written, not editable directly.
     NOTES = "notes"
     SPEC = "spec"
+    DELETED = "deleted"
 
     EDITABLE = frozenset({TITLE, STATUS, PRIORITY, REQUIRED_FOR_PARENT, GOAL, COMPLETION_CRITERIA, SUMMARY, AREA,
                           PARENT, DEPENDENCIES})

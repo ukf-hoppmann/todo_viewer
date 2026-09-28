@@ -7,7 +7,7 @@ from datetime import date
 
 import pytest
 
-from todo_viewer.application.services import ItemService, SourceLookup, SourceService
+from todo_viewer.application.services import ItemService, SourceLookup, SourceService, TrashService
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.creation import ItemFactory
 from todo_viewer.domain.editing import ChangeSet, EditPlanner
@@ -24,6 +24,7 @@ from todo_viewer.domain.errors import (
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.source import Source, SourceProblem
+from todo_viewer.domain.trash import TrashPlanner
 
 
 class InMemorySources:
@@ -71,8 +72,15 @@ class FakeBacklogs:
         self.items.append(item)
         return item
 
-    def delete(self, source: Source, item: Item) -> None:
-        self.items.remove(item)
+    def apply_all(self, source: Source, plan: list[tuple[Item, ChangeSet]]) -> list[Item]:
+        changed = [c.applied_to(i) for i, c in plan]
+        by_id = {i.id: i for i in changed}
+        self.items = [by_id.get(i.id, i) for i in self.items]
+        return changed
+
+    def delete(self, source: Source, items: list[Item]) -> None:
+        for item in items:
+            self.items.remove(item)
 
 
 class FakeDocuments:
@@ -152,8 +160,7 @@ def test_lookup_by_id():
 
 def _items(items: list[Item], archive: bool = True) -> tuple[ItemService, FakeBacklogs]:
     backlogs = FakeBacklogs(items, archive=archive)
-    service = ItemService(backlogs, FakeDocuments(), EditPlanner(), LifecycleRules(), ItemFactory(),
-                          lambda: date(2026, 9, 28))
+    service = ItemService(backlogs, EditPlanner(), LifecycleRules(), ItemFactory(), lambda: date(2026, 9, 28))
     return service, backlogs
 
 
@@ -214,21 +221,30 @@ def test_item_create_assigns_id_and_checks_rules():
     assert [i.id for i in backlogs.items] == ["STORY-001", "TASK-001"]
 
 
-def test_item_delete_checks_version_and_references_first():
+def test_trash_delete_restore_and_purge_with_children():
     story = Item(id="S", title="s", project="p", item_type="Story")
     task = Item(id="T", title="t", project="p", parent="S", required_for_parent=True)
     backlogs = FakeBacklogs([story, task])
     documents = FakeDocuments()
-    service = ItemService(backlogs, documents, EditPlanner(), LifecycleRules(), ItemFactory())
+    trash = TrashService(backlogs, documents, TrashPlanner(LifecycleRules()), lambda: date(2026, 9, 28))
+    src = Source("p", "/p")
 
     with pytest.raises(VersionConflictError):
-        service.delete(Source("p", "/p"), "T", "outdated")
-    with pytest.raises(LifecycleViolationError):
-        service.delete(Source("p", "/p"), "S", story.version)
-    deleted = service.delete(Source("p", "/p"), "T", task.version)
+        trash.delete(src, "S", "outdated", cascade=True)
+    with pytest.raises(LifecycleViolationError) as warning:
+        trash.delete(src, "S", story.version, cascade=False)
+    deleted = trash.delete(src, "S", story.version, cascade=True)
+    in_trash = trash.in_trash(src)
+    restored = trash.restore(src, "S", in_trash[0].item.version)
+    trash.delete(src, "S", restored[0].item.version, cascade=True)
+    purged = trash.purge(src, "S", trash.in_trash(src)[0].item.version)
 
-    assert deleted.item == task
-    assert ([i.id for i in backlogs.items], documents.deleted) == (["S"], ["T"])
+    assert warning.value.code == "has_children"
+    assert [(r.item.id, r.item.deleted) for r in deleted] == [("S", "2026-09-28"), ("T", "2026-09-28")]
+    assert [r.item.id for r in in_trash] == ["S", "T"]
+    assert [(r.item.id, r.item.deleted) for r in restored] == [("S", None), ("T", None)]
+    assert [r.item.id for r in purged] == ["S", "T"]
+    assert (backlogs.items, documents.deleted) == ([], ["S", "T"])
 
 
 def test_item_edit_rejects_field_before_touching_storage():

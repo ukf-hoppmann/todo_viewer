@@ -243,40 +243,102 @@ def test_spec_create_replace_and_conflicts(api, workspace):
     assert (notes.status_code, notes.body["code"]) == (400, "not_editable")
 
 
+def _trash(api, item: dict, cascade: bool = False):
+    return api.delete(f"/api/v2/items/{item['source_id']}/{item['id']}", version=item["version"],
+                      cascade=str(cascade).lower())
+
+
+def _in_trash(api, source_id: str) -> dict:
+    return {i["id"]: i for i in api.get("/api/v2/trash", source_id=source_id).body}
+
+
 @pytest.mark.parametrize(("name", "item_id"),
                          [("delete_active", "TASK-002"), ("delete_last_archive_entry", "STORY-000")])
-def test_delete_cuts_entry_and_folder(api, workspace, golden, name, item_id):
+def test_trash_then_purge_removes_entry_and_folder(api, workspace, golden, name, item_id):
     folder = _setup(workspace, "backlog")
     if item_id == "STORY-000":  # TASK-001 depends on both archived entries
         _patch(api, _item(api, "TASK-001"), {"dependencies": []})
     item = _item(api, item_id)
+    source_id = item["source_id"]
 
-    resp = api.delete(f"/api/v2/items/{item['source_id']}/{item_id}", version=item["version"])
+    trashed = _trash(api, item)
+    golden(f"edit/trash_{name}.md", _files(folder))
+    in_trash = _in_trash(api, source_id)[item_id]
+    purged = api.delete(f"/api/v2/trash/{source_id}/{item_id}", version=in_trash["version"])
 
-    assert resp.status_code == 200, resp.body
-    assert resp.body["id"] == item_id
+    assert (trashed.status_code, [i["id"] for i in trashed.body]) == (200, [item_id]), trashed.body
+    assert trashed.body[0]["deleted"] and trashed.body[0]["archived"]
+    assert item_id not in {i["id"] for i in api.get("/api/v2/backlog").body["items"]}
+    assert item_id not in {i["id"] for i in api.get("/api/v2/index").body["items"]}
+    assert (purged.status_code, [i["id"] for i in purged.body]) == (200, [item_id]), purged.body
     golden(f"edit/{name}.md", _files(folder))
     assert not (folder / "items" / item_id).exists()
-    assert api.get(f"/api/v2/items/{item['source_id']}/{item_id}").body["code"] == "item_not_found"
+    assert api.get(f"/api/v2/items/{source_id}/{item_id}").body["code"] == "item_not_found"
 
 
-def test_delete_errors_leave_files_untouched(api, workspace):
+def test_trash_cascade_and_restore(api, workspace):
+    folder = _setup(workspace, "backlog")
+    story = _item(api, "STORY-001")
+    source_id = story["source_id"]
+    _patch(api, _item(api, "TASK-001"), {"dependencies": []})  # outside dependencies would block
+    before = _files(folder)
+
+    warning = _trash(api, _item(api, "STORY-001"))
+    epic_blocks = _trash(api, _item(api, "STORY-001"), cascade=True)  # EPIC-001 is In progress
+    _patch(api, _item(api, "EPIC-001"), {"status": "Open"})
+    trashed = _trash(api, _item(api, "STORY-001"), cascade=True)
+    edit_in_trash = _patch(api, _in_trash(api, source_id)["TASK-001"], {"priority": "Urgent"})
+    child_first = api.post(f"/api/v2/trash/{source_id}/TASK-001/restore",
+                           {"version": _in_trash(api, source_id)["TASK-001"]["version"]})
+    restored = api.post(f"/api/v2/trash/{source_id}/STORY-001/restore",
+                        {"version": _in_trash(api, source_id)["STORY-001"]["version"]})
+
+    assert (warning.status_code, warning.body["code"]) == (409, "has_children")
+    assert warning.body["details"] == {"id": "STORY-001", "items": "TASK-001, TASK-002, TASK-003, TASK-000"}
+    assert (epic_blocks.status_code, epic_blocks.body["code"]) == (409, "epic_without_required_child")
+    assert [i["id"] for i in trashed.body] == ["STORY-001", "TASK-001", "TASK-002", "TASK-003", "TASK-000"]
+    assert (edit_in_trash.status_code, edit_in_trash.body["code"]) == (409, "item_deleted")
+    assert (child_first.status_code, child_first.body["code"]) == (409, "parent_deleted")
+    assert restored.status_code == 200, restored.body
+    assert sorted((i["id"], i["deleted"], i["archived"]) for i in restored.body) == [
+        ("STORY-001", None, False), ("TASK-000", None, True),  # completed items stay in the archive
+        ("TASK-001", None, False), ("TASK-002", None, False), ("TASK-003", None, False)]
+    assert _in_trash(api, source_id) == {}
+    assert _files(folder) != before  # entries were moved around, but all are back in use:
+    assert {i["id"] for i in api.get("/api/v2/backlog").body["items"]} >= {"STORY-001", "TASK-001", "TASK-003"}
+
+
+def test_trash_errors_leave_files_untouched(api, workspace):
     folder = _setup(workspace, "backlog")
     before = _files(folder)
     url = f"/api/v2/items/{_item(api, 'TASK-001')['source_id']}"
+    trash_url = f"/api/v2/trash/{_item(api, 'TASK-001')['source_id']}"
 
     referenced = api.delete(f"{url}/TASK-001", version=_item(api, "TASK-001")["version"])
     stale = api.delete(f"{url}/TASK-003", version="outdated")
     no_version = api.delete(f"{url}/TASK-003")
     missing = api.delete(f"{url}/TASK-999", version="x")
+    not_in_trash = api.delete(f"{trash_url}/TASK-003", version=_item(api, "TASK-003")["version"])
 
     assert (referenced.status_code, referenced.body["code"]) == (409, "item_referenced")
     assert referenced.body["details"] == {"id": "TASK-001", "items": "TASK-002"}
     assert (stale.status_code, stale.body["code"]) == (409, "version_conflict")
     assert (no_version.status_code, no_version.body["code"]) == (400, "bad_request")
     assert (missing.status_code, missing.body["code"]) == (404, "item_not_found")
+    assert (not_in_trash.status_code, not_in_trash.body["code"]) == (409, "item_not_deleted")
     assert _files(folder) == before
     assert (folder / "items" / "TASK-002").is_dir()
+
+
+def test_trash_without_archive_marks_in_place(api, workspace):
+    folder = _setup(workspace, "no_archive")
+    item = _item(api, "TASK-010")
+
+    trashed = _trash(api, item)
+
+    assert (trashed.status_code, trashed.body[0]["deleted"], trashed.body[0]["archived"]) == \
+        (200, trashed.body[0]["deleted"], False)
+    assert "  - Deleted: " in (folder / "TODO.md").read_text(encoding="utf-8")
 
 
 def test_edit_twice_reopen_after_archive(api, workspace, golden):

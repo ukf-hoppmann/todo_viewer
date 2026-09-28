@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import os
 import shutil
 from pathlib import Path
@@ -297,10 +298,9 @@ def test_repository_delete_cuts_active_and_archived_entries(backlog):
     stale = repo.get(backlog, "TASK-003")
     repo.apply(backlog, stale, ChangeSet(set_fields=(("priority", "Urgent"),)))
 
-    repo.delete(backlog, active)
-    repo.delete(backlog, archived)
+    repo.delete(backlog, [active, archived])
     with pytest.raises(VersionConflictError):
-        repo.delete(backlog, stale)
+        repo.delete(backlog, [stale])
 
     ids = {i.id for i in repo.load(backlog).items}
     assert "TASK-002" not in ids and "STORY-000" not in ids and "TASK-003" in ids
@@ -320,3 +320,18 @@ def test_document_store_deletes_the_item_folder(backlog):
     for bad in ("..", "../b", "", "a/b"):
         with pytest.raises(DocumentForbiddenError):
             store.delete_item_folder(backlog, bad)
+
+
+def test_repository_apply_all_marks_and_moves_several_entries(backlog):
+    repo = build_markdown_repository(Path("/"))
+    task, done = repo.get(backlog, "TASK-003"), repo.get(backlog, "TASK-000")
+    mark = ChangeSet(set_fields=(("deleted", "2026-09-28"),))
+
+    changed = repo.apply_all(backlog, [(task, dataclasses.replace(mark, move_to=Location.ARCHIVE)), (done, mark)])
+
+    assert [(i.id, i.deleted, i.location) for i in changed] == [
+        ("TASK-003", "2026-09-28", Location.ARCHIVE), ("TASK-000", "2026-09-28", Location.ARCHIVE)]
+    assert "- `TASK-003` **" not in (Path(backlog.path) / "TODO.md").read_text(encoding="utf-8")
+    assert "  - Deleted: 2026-09-28." in (Path(backlog.path) / "archive.md").read_text(encoding="utf-8")
+    with pytest.raises(VersionConflictError):
+        repo.apply_all(backlog, [(task, mark)])  # stale: already changed

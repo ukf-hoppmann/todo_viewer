@@ -15,10 +15,11 @@ from todo_viewer.domain.documents import (
     spec_path,
 )
 from todo_viewer.domain.editing import ChangeSet, EditPlanner, Field, FieldValue
-from todo_viewer.domain.errors import DocumentNotFoundError, NotEditableError
+from todo_viewer.domain.errors import DocumentNotFoundError, LifecycleViolationError, NotEditableError
 from todo_viewer.domain.item import Item
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.source import Source
+from todo_viewer.domain.trash import live
 
 from ..ports import BacklogRepository, DocumentStore
 
@@ -52,7 +53,7 @@ class DocumentService:
                    version: str | None) -> DocumentResult:
         """Replaces a spec in `version`, or creates a new one (`version` None) and lists it in the item's Spec."""
         backlog = self._backlogs.load(source)
-        item = backlog.find(item_id)
+        item = self._writable(backlog.find(item_id))
         known = next((d for d in item_documents(item) if d.name == name), None)
         if known is not None and known.kind is not DocumentKind.SPEC:
             raise NotEditableError(name)
@@ -68,7 +69,7 @@ class DocumentService:
                      decided: Sequence[str], open_points: Sequence[str], summary: str | None) -> DocumentResult:
         """Appends a dated entry; the first entry creates the file and needs a summary on the item."""
         backlog = self._backlogs.load(source)
-        item = backlog.find(item_id)
+        item = self._writable(backlog.find(item_id))
         entry = NotesEntry.create(self._today().isoformat(), topic, discussed, decided, open_points)
         path = notes_path(item)
         fields: list[tuple[str, FieldValue]] = []
@@ -86,7 +87,14 @@ class DocumentService:
     def _check(self, items: Sequence[Item], item: Item, changes: ChangeSet | None) -> None:
         if changes is not None:
             after = changes.applied_to(item)
-            self._rules.check_change(items, [after if i is item else i for i in items])
+            in_use = live(items)
+            self._rules.check_change(in_use, [after if i is item else i for i in in_use])
+
+    @staticmethod
+    def _writable(item: Item) -> Item:
+        if item.deleted:
+            raise LifecycleViolationError("item_deleted", item.id)
+        return item
 
     @staticmethod
     def _ref(item: Item, name: str) -> DocumentRef:

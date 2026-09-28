@@ -87,7 +87,8 @@ stören nicht.
 
 Agenten pflegen Backlogs über die API unter `http://localhost:5411/api/v2`
 statt die Dateien direkt zu bearbeiten: Überblick, Anlegen, Ändern (mit
-Versions-Token), Notizen und Specs, Löschen. Der Server prüft dabei die Regeln
+Versions-Token), Notizen und Specs, Löschen über einen Papierkorb
+(wiederherstellen oder endgültig löschen, jeweils samt Kindern). Der Server prüft dabei die Regeln
 des Backlog-Formats. Ablauf und Endpunkte: [Schnittstellen](docs/techdocs/interfaces.md#nutzung-durch-agenten).
 Der Port ist nur lokal erreichbar.
 

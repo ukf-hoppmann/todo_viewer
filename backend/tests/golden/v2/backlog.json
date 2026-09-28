@@ -6,6 +6,7 @@
       "area": "Core",
       "completion_criteria": "All stories done.",
       "created": "2026-01-10",
+      "deleted": null,
       "dependencies": [],
       "documents": [],
       "extra_fields": {},
@@ -22,7 +23,7 @@
       "summary": null,
       "title": "Viewer foundation",
       "type": "Epic",
-      "version": "a084318cf4f9d5c8"
+      "version": "687060e9410674bf"
     },
     {
       "archive_supported": true,
@@ -30,6 +31,7 @@
       "area": null,
       "completion_criteria": null,
       "created": null,
+      "deleted": null,
       "dependencies": [],
       "documents": [],
       "extra_fields": {},
@@ -46,7 +48,7 @@
       "summary": "Reads TODO.md and archive.md.",
       "title": "Parse backlog files",
       "type": "Story",
-      "version": "654ec925438a49c0"
+      "version": "2c7fc03460929f0d"
     },
     {
       "archive_supported": true,
@@ -54,6 +56,7 @@
       "area": null,
       "completion_criteria": null,
       "created": null,
+      "deleted": null,
       "dependencies": [
         "TASK-000",
         "STORY-000"
@@ -76,7 +79,7 @@
       "summary": null,
       "title": "Write the parser",
       "type": "Task",
-      "version": "7aa20541d1f1767f"
+      "version": "9e73646d4cf0f9fd"
     },
     {
       "archive_supported": true,
@@ -84,6 +87,7 @@
       "area": null,
       "completion_criteria": null,
       "created": null,
+      "deleted": null,
       "dependencies": [
         "TASK-001"
       ],
@@ -115,7 +119,7 @@
       "summary": null,
       "title": "Optional polish",
       "type": "Task",
-      "version": "49fcad98df869162"
+      "version": "8b65b60965972519"
     },
     {
       "archive_supported": true,
@@ -123,6 +127,7 @@
       "area": null,
       "completion_criteria": null,
       "created": null,
+      "deleted": null,
       "dependencies": [],
       "documents": [],
       "extra_fields": {},
@@ -139,7 +144,7 @@
       "summary": null,
       "title": "No priority yet",
       "type": "Task",
-      "version": "5ebf9113fda3be0e"
+      "version": "0468a82dc28e513d"
     },
     {
       "archive_supported": true,
@@ -147,6 +152,7 @@
       "area": null,
       "completion_criteria": null,
       "created": null,
+      "deleted": null,
       "dependencies": [],
       "documents": [],
       "extra_fields": {},
@@ -163,7 +169,7 @@
       "summary": null,
       "title": "Set up repository",
       "type": "Task",
-      "version": "91914d66beb7ef2f"
+      "version": "773a22d84b5594d1"
     },
     {
       "archive_supported": true,
@@ -171,6 +177,7 @@
       "area": null,
       "completion_criteria": null,
       "created": null,
+      "deleted": null,
       "dependencies": [],
       "documents": [],
       "extra_fields": {},
@@ -187,7 +194,7 @@
       "summary": null,
       "title": "Discarded idea",
       "type": "Story",
-      "version": "12f5f03970cf2ca8"
+      "version": "365c55fc845d22ca"
     },
     {
       "archive_supported": false,
@@ -195,6 +202,7 @@
       "area": null,
       "completion_criteria": null,
       "created": null,
+      "deleted": null,
       "dependencies": [],
       "documents": [],
       "extra_fields": {},
@@ -211,7 +219,7 @@
       "summary": null,
       "title": "Lonely task",
       "type": "Task",
-      "version": "317da3b6a13a3db8"
+      "version": "ba8f089fcc8a84f1"
     }
   ],
   "sources": [

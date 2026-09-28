@@ -10,7 +10,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
 ## Work items
 - `EPIC-002` **Backlog-Pflege in der UI**
   - Type: Epic.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-27.
   - Area: Web-UI.
   - Priority: Normal.

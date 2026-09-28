@@ -167,6 +167,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Completion criteria: Löschen ohne Verweise entfernt genau den
     Eintrag; Löschen mit Verweisen liefert einen Konfliktfehler, der
     die verweisenden IDs nennt.
+  - Summary: Ein Item wird samt seiner Notes- und Spec-Dateien gelöscht,
+    aber nicht, solange andere Items darauf verweisen.
+  - Notes: `items/STORY-008/STORY-008_notes.md`.
 - `STORY-009` **Notes und Specs über das Item schreiben**
   - Type: Story.
   - Parent: `EPIC-001`.
@@ -203,6 +206,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Projektverantwortlichen entschieden und umgesetzt; README bzw.
     techdocs beschreiben die Agent-Nutzung; ein Agent kann damit einen
     vollständigen Pflege-Durchlauf ohne Dateizugriff ausführen.
+  - Summary: Agenten sprechen den dauerhaft laufenden Container per HTTP
+    an; der Umgang mit einem nicht erreichbaren Server liegt im Harness.
+  - Notes: `items/STORY-010/STORY-010_notes.md`.
 - `EPIC-002` **Backlog-Pflege in der UI**
   - Type: Epic.
   - Status: Open.

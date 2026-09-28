@@ -105,11 +105,11 @@ function renderPanel(item: (typeof items)[number]) {
 describe("DetailPanel edit mode", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("changes nothing outside the edit mode", () => {
+  it("keeps title and texts to the edit mode", () => {
     renderPanel(items[2]!);
 
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Parent" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "✎ Bearbeiten" })).toBeInTheDocument();
   });
 
@@ -243,6 +243,120 @@ describe("DetailPanel edit mode", () => {
 
     expect(await screen.findByText(/EPIC-1 kann nicht geschlossen werden, solange Kinder aktiv sind: STORY-1, TASK-1\./)).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Titel" })).toBeInTheDocument();
+  });
+});
+
+describe("DetailPanel direct changes", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const quickItems = toItems([
+    apiItem("EPIC-1", { type: "Epic", area: "Web" }),
+    apiItem("TASK-1", { parent: "EPIC-1", required_for_parent: true, area: "Backend", dependencies: ["TASK-2"] }),
+    apiItem("TASK-2", { parent: "EPIC-1", required_for_parent: false, area: "Web" }),
+  ]);
+  const task = quickItems[1]!;
+
+  function renderQuick() {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(apiItem("TASK-1")));
+    vi.stubGlobal("fetch", fetchMock);
+    renderWithProviders(
+      <DetailPanel item={task} items={quickItems} byUid={new Map(quickItems.map((i) => [i.uid, i]))} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
+    );
+    const sent = async () => {
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+      const request = fetchMock.mock.calls[0]![0] as Request;
+      expect(request.method).toBe("PATCH");
+      return request.clone().json();
+    };
+    return { fetchMock, sent };
+  }
+
+  it("saves a status change at once, with only that field", async () => {
+    const { sent } = renderQuick();
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Status" }), "In progress");
+
+    expect(await sent()).toEqual({ version: task.version, fields: { status: "In progress" }, resolution: null });
+  });
+
+  it("asks for a resolution before completing and sends nothing on cancel", async () => {
+    const { fetchMock, sent } = renderQuick();
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Status" }), "Completed");
+    await userEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect((screen.getByRole("combobox", { name: "Status" }) as HTMLSelectElement).value).toBe("Open");
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Status" }), "Completed");
+    const text = screen.getByRole("textbox", { name: "Entscheidung (Resolution)" });
+    expect((text as HTMLTextAreaElement).value).toMatch(/^Confirmed by the project owner on \d{4}-\d{2}-\d{2}\.$/);
+    await userEvent.clear(text);
+    await userEvent.type(text, "Done");
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    expect(await sent()).toEqual({ version: task.version, fields: { status: "Completed" }, resolution: "Done" });
+  });
+
+  it("saves priority and required-for-parent at once", async () => {
+    const { fetchMock } = renderQuick();
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Priorität" }), "Urgent");
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "Pflicht für Parent" })).toBeEnabled());
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pflicht für Parent" }), "No");
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    expect((await (fetchMock.mock.calls[0]![0] as Request).clone().json()).fields).toEqual({ priority: "Urgent" });
+    expect((await (fetchMock.mock.calls[1]![0] as Request).clone().json()).fields).toEqual({ required_for_parent: "No" });
+  });
+
+  it("shows a conflict next to the field", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ code: "version_conflict", message: "x", details: { id: "TASK-1" } }, 409)));
+    renderWithProviders(
+      <DetailPanel item={task} items={quickItems} byUid={new Map()} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
+    );
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Priorität" }), "Urgent");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/inzwischen geändert/);
+  });
+
+  it("removes and adds dependencies at once", async () => {
+    const { fetchMock } = renderQuick();
+
+    await userEvent.click(screen.getByRole("button", { name: "Abhängigkeit TASK-2 entfernen" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "＋ Abhängigkeit hinzufügen" })).toBeEnabled());
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "＋ Abhängigkeit hinzufügen" }), "EPIC-1");
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    expect((await (fetchMock.mock.calls[0]![0] as Request).clone().json()).fields).toEqual({ dependencies: [] });
+    expect((await (fetchMock.mock.calls[1]![0] as Request).clone().json()).fields).toEqual({ dependencies: ["TASK-2", "EPIC-1"] });
+  });
+
+  it("offers the backlog's areas and saves a chosen one", async () => {
+    const { sent } = renderQuick();
+    const area = screen.getByRole("combobox", { name: "Bereich" });
+
+    expect(within(area).getAllByRole("option").map((o) => o.textContent)).toEqual(["Backend", "Web", "＋ Neuer Bereich…"]);
+    await userEvent.selectOptions(area, "Web");
+
+    expect((await sent()).fields).toEqual({ area: "Web" });
+  });
+
+  it("saves a new area on Enter and cancels it on Escape", async () => {
+    const { fetchMock, sent } = renderQuick();
+    const newArea = () => screen.getByRole("textbox", { name: /Neuer Bereich/ });
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Bereich" }), "＋ Neuer Bereich…");
+    await userEvent.type(newArea(), "Docs{Escape}");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Bereich" }), "＋ Neuer Bereich…");
+    await userEvent.type(newArea(), " Docs {Enter}");
+
+    expect((await sent()).fields).toEqual({ area: "Docs" });
   });
 });
 

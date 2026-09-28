@@ -67,14 +67,20 @@ Ansicht, Auswahl, Sprache) gespeichert wird.
 
 ## Bearbeiten
 
-Bearbeitet wird nur im Bearbeiten-Modus: „✎ Bearbeiten“ im Detail-Panel
-öffnet ein Formular für Titel, Status, Priorität, Bereich, Parent (mit
-„Pflicht für Parent“), Abhängigkeiten, Ziel, Fertigstellungskriterien und
-Kurzfassung. Erst „Speichern“ schreibt alle Änderungen in einem Schritt,
-„Abbrechen“ verwirft sie; außerhalb des Modus ist nichts änderbar. Wird ein
-Eintrag auf `Completed` oder `Rejected` gesetzt, fragt das Formular nach
-einer `Resolution` und der Eintrag wandert nach `archive.md`; ein Zurücksetzen
-auf einen offenen Status holt ihn (ohne Resolution) zurück nach `TODO.md`.
+Status, Priorität, Bereich, „Pflicht für Parent“ und Abhängigkeiten lassen
+sich direkt im Detail-Panel ändern; jede Änderung wird sofort gespeichert.
+Der Bereich wird aus den Bereichen desselben Backlogs gewählt, „＋ Neuer
+Bereich…“ legt einen neuen an (Enter speichert, Esc bricht ab). Schlägt eine
+Änderung fehl, etwa weil der Eintrag inzwischen geändert wurde, steht die
+Meldung am Feld und es gilt wieder der Stand der Datei.
+Alles andere ändert der Bearbeiten-Modus: „✎ Bearbeiten“ öffnet ein Formular
+für Titel, Status, Priorität, Bereich, Parent (mit „Pflicht für Parent“),
+Abhängigkeiten, Ziel, Fertigstellungskriterien und Kurzfassung. Erst
+„Speichern“ schreibt alle Änderungen in einem Schritt, „Abbrechen“ verwirft
+sie. Wird ein Eintrag auf `Completed` oder `Rejected` gesetzt, fragt das
+Formular bzw. ein Dialog nach einer `Resolution` und der Eintrag wandert nach
+`archive.md`; ein Zurücksetzen auf einen offenen Status holt ihn (ohne
+Resolution) zurück nach `TODO.md`.
 Notizen und Specs lassen sich im Dokument-Dialog schreiben: „📝 ＋ Notiz-Eintrag“
 hängt einen datierten Eintrag (Thema, Besprochen, Entschieden, Offen) an,
 „✎ Bearbeiten“ ändert den ganzen Text einer Notiz oder Spec mit

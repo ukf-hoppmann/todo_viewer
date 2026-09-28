@@ -1,6 +1,7 @@
 import type { ApiItem } from "../api/client";
 import { apiItem } from "../test/render";
 import {
+  areaOptions,
   changedFields,
   childTypes,
   createRequest,
@@ -10,6 +11,7 @@ import {
   newItemDraft,
   notesRequest,
   parentCandidates,
+  quickChange,
   rebaseDraft,
   specName,
 } from "./editing";
@@ -65,6 +67,37 @@ describe("editing", () => {
     expect(rebased.title).toBe("My title");
     expect(rebased.goal).toBe("Their goal");
     expect(changedFields(theirs, rebased)).toEqual({ title: "My title" });
+  });
+});
+
+describe("quick edit", () => {
+  it("offers the areas of the same backlog, sorted, without duplicates or blanks", () => {
+    const [a, b, c, d, e] = toItems([
+      apiItem("TASK-1", { area: "Web" }),
+      apiItem("TASK-2", { area: "Backend" }),
+      apiItem("TASK-3", { area: "Web" }),
+      apiItem("TASK-4", { area: null }),
+      apiItem("TASK-5", { area: "Foreign", source_id: "other", key: "other/TASK-5" } as Partial<ApiItem>),
+    ]);
+
+    expect(areaOptions(a!, [a!, b!, c!, d!, e!])).toEqual(["Backend", "Web"]);
+  });
+
+  it("always offers the item's own area", () => {
+    const [a] = toItems([apiItem("TASK-1", { area: "Solo" })]);
+
+    expect(areaOptions(a!, [])).toEqual(["Solo"]);
+  });
+
+  it("sends exactly the changed field", () => {
+    expect(quickChange(task!, { status: "In progress" })).toEqual({ status: "In progress" });
+    expect(quickChange(task!, { required_for_parent: "No" })).toEqual({ required_for_parent: "No" });
+    expect(quickChange(task!, { area: " B " })).toEqual({ area: "B" });
+    expect(quickChange(task!, { dependencies: [] })).toEqual({ dependencies: [] });
+  });
+
+  it("sends nothing for an unchanged value", () => {
+    expect(quickChange(task!, { status: task!.status, area: "A" })).toEqual({});
   });
 });
 

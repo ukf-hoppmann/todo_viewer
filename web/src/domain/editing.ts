@@ -62,6 +62,19 @@ export function rebaseDraft(oldBase: Item, newBase: Item, draft: ItemDraft): Ite
   return Object.fromEntries((Object.keys(draft) as (keyof ItemDraft)[]).map((k) => [k, pick(k)])) as unknown as ItemDraft;
 }
 
+// ---------- quick edit (outside the edit mode) ----------
+
+/** One field changed directly in the detail panel; same rules as the edit form. */
+export function quickChange(item: Item, patch: Partial<ItemDraft>): Partial<ItemFields> {
+  return changedFields(item, { ...draftOf(item), ...patch });
+}
+
+/** Areas to choose from: those of the same backlog plus the item's own, sorted. */
+export function areaOptions(item: Item, items: readonly Item[]): string[] {
+  const areas = items.filter((i) => i.source_id === item.source_id).map((i) => i.area);
+  return [...new Set([...areas, item.area].filter((a): a is string => !!a?.trim()))].sort((a, b) => a.localeCompare(b));
+}
+
 const PARENT_TYPES: Record<string, readonly string[]> = { Epic: [], Story: ["Epic"], Task: ["Epic", "Story"] };
 
 /** Possible parents: same backlog, allowed type, never the item itself or one of its descendants. */

@@ -177,6 +177,14 @@ select.field-edit {
   border-radius: 6px; padding: 4px 6px; font-size: 13px; cursor: pointer;
 }
 select.field-edit:disabled { opacity: .6; cursor: wait; }
+input.field-edit {
+  background: var(--bg); color: var(--text); border: 1px solid var(--accent);
+  border-radius: 6px; padding: 4px 6px; font-size: 13px; width: 100%; box-sizing: border-box;
+}
+.chip-list + select.field-edit { margin-top: 6px; }
+.chip-list:empty { display: none; }
+.chip-link { background: none; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+.chip-link:hover { text-decoration: underline; }
 .field-status { color: var(--text-dim); font-size: 11px; margin-left: 6px; }
 .field-error { color: var(--status-rejected); font-size: 12px; margin-top: 4px; white-space: normal; }
 

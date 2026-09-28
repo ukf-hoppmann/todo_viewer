@@ -12,6 +12,7 @@ import type { DocumentMode } from "./DocumentDialog";
 // marked + DOMPurify are only loaded when a document is opened.
 const DocumentDialog = lazy(() => import("./DocumentDialog").then((m) => ({ default: m.DocumentDialog })));
 import { ItemEditForm } from "./ItemEditForm";
+import { QuickArea, QuickDependencies, QuickPriority, QuickRequired, QuickStatus, useQuickEdit } from "./QuickFields";
 
 interface DetailPanelProps {
   item: Item;
@@ -42,6 +43,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
   const [editing, setEditing] = useState(false);
   const [creatingChild, setCreatingChild] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const quick = useQuickEdit(item);
   const L = (field: string) => vocab("field", field);
   const parent = item.parentUid ? byUid.get(item.parentUid) : undefined;
   const children = items.filter((i) => i.parentUid === item.uid);
@@ -98,10 +100,16 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
 
       {!editing && (
         <>
-      <TextField label={L("Status")} value={vocab("status", item.status)} />
-      <TextField label={L("Priority")} value={vocab("priority", item.priority)} />
+      <Field label={L("Status")}>
+        <QuickStatus item={item} quick={quick} />
+      </Field>
+      <Field label={L("Priority")}>
+        <QuickPriority item={item} quick={quick} />
+      </Field>
       <TextField label={L("Resolution")} value={item.resolution} />
-      <TextField label={L("Area")} value={item.area} />
+      <Field label={L("Area")}>
+        <QuickArea item={item} items={items} quick={quick} />
+      </Field>
 
       {item.parentUid && (
         <Field label={L("Parent")}>
@@ -111,21 +119,15 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
           </button>
         </Field>
       )}
-      {item.required_for_parent != null && (
-        <TextField label={L("Required for parent")} value={t(item.required_for_parent ? "yes" : "no")} />
-      )}
-
-      {item.dependencyUids.length > 0 && (
-        <Field label={L("Dependencies")}>
-          <span className="chip-list">
-            {item.dependencyUids.map((uid) => (
-              <button key={uid} className="chip" onClick={() => onSelect(uid)}>
-                {byUid.get(uid)?.id ?? uid}
-              </button>
-            ))}
-          </span>
+      {item.parentUid && (
+        <Field label={L("Required for parent")}>
+          <QuickRequired item={item} quick={quick} />
         </Field>
       )}
+
+      <Field label={L("Dependencies")}>
+        <QuickDependencies item={item} items={items} quick={quick} onSelect={onSelect} />
+      </Field>
 
       {children.length > 0 && (
         <Field label={t("detail.children")}>

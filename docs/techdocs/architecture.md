@@ -24,7 +24,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 | Dateisystem-Adapter | Ordner-Browser, Projektname aus dem umgebenden Git-Repo | `backend/todo_viewer/infrastructure/filesystem/` |
 | HTTP-API | FastAPI-Router `/api/v2`, Pydantic-Schemas, zentrale Fehlerübersetzung, Auslieferung von `web/dist` | `backend/todo_viewer/api/` |
 | Composition Root | Setzt Adapter und Services per Konstruktor-Injection zusammen; liest Einstellungen aus der Umgebung | `backend/todo_viewer/bootstrap.py`, `backend/main.py` |
-| Frontend | React 19 + Vite + TypeScript, TanStack Query; Views Baum, Graph (React Flow + ELK), Kanban, Papierkorb; Detail-Panel mit Bearbeiten-Modus, Dialoge zum Anlegen, Löschen und für Dokumente | `web/src/` |
+| Frontend | React 19 + Vite + TypeScript, TanStack Query; Views Baum, Graph (React Flow + ELK), Kanban, Papierkorb; Detail-Panel mit direkt änderbaren Feldern (Status, Priorität, Bereich, Pflicht für Parent, Abhängigkeiten) und Bearbeiten-Modus, Dialoge zum Anlegen, Löschen und für Dokumente | `web/src/` |
 | Frontend-Domain | Filter, Baum, Fortschritt, Abhängigkeitsgraph, Edit-Regeln als reine Funktionen | `web/src/domain/` |
 | API-Client | Aus dem OpenAPI-Schema generierte Typen (`schema.d.ts`), Client, Query-Hooks | `web/src/api/` |
 

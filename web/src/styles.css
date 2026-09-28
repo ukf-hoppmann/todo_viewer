@@ -170,6 +170,9 @@ input[type=text], textarea {
   padding: 2px 9px; font-size: 12px; cursor: pointer; color: inherit;
 }
 .chip:hover { border-color: var(--accent); }
+.child-chip { display: inline-flex; align-items: center; }
+.child-chip .dot { width: 7px; height: 7px; margin-right: 5px; }
+.child-chip.deleted { border-style: dashed; color: var(--text-dim); text-decoration: line-through; cursor: default; }
 .doc-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
 .close-btn { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px; }
 select.field-edit {

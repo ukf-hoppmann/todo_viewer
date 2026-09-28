@@ -1,6 +1,7 @@
 import type { ApiItem } from "../api/client";
 import {
   buildTrees,
+  childEntries,
   collapsibleUids,
   defaultResolution,
   dependencyGraph,
@@ -119,6 +120,35 @@ describe("model", () => {
     expect(needsResolution(items[0]!, "Rejected")).toBe(true);
     expect(needsResolution(odd!, "Completed")).toBe(false);
     expect(defaultResolution("Completed", new Date("2026-09-23T10:00:00Z"))).toBe("Confirmed by the project owner on 2026-09-23.");
+  });
+});
+
+describe("childEntries", () => {
+  const [parent, open, done] = toItems([
+    apiItem("STORY-1", { type: "Story" }),
+    apiItem("TASK-1", { parent: "STORY-1" }),
+    apiItem("TASK-2", { parent: "STORY-1", status: "Completed", archived: true }),
+  ]);
+  const trashed = toItems([
+    apiItem("TASK-3", { parent: "STORY-1", deleted: "2026-09-20" }),
+    apiItem("TASK-4", { parent: "TASK-3", deleted: "2026-09-20" }),
+    apiItem("TASK-5", { parent: "STORY-1", deleted: "2026-09-20", source_id: "other", key: "other/TASK-5" } as Partial<ApiItem>),
+  ]);
+
+  it("lists the direct children, deleted ones of the same backlog after the others", () => {
+    const entries = childEntries(parent!, [parent!, open!, done!], trashed);
+
+    expect(entries.map((e) => [e.item.id, e.deleted])).toEqual([
+      ["TASK-1", false],
+      ["TASK-2", false],
+      ["TASK-3", true],
+    ]);
+  });
+
+  it("shows an item that is still listed as active only once", () => {
+    const stale = toItems([apiItem("TASK-3", { parent: "STORY-1" })]);
+
+    expect(childEntries(parent!, [parent!, ...stale], trashed).map((e) => [e.item.id, e.deleted])).toEqual([["TASK-3", false]]);
   });
 });
 

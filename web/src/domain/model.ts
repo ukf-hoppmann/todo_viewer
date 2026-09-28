@@ -196,6 +196,24 @@ export function dependencyGraph(visible: readonly Item[]): DependencyGraph {
   return { nodes: visible.filter((i) => connected.has(i.uid)), edges };
 }
 
+// ---------- children ----------
+
+export interface ChildEntry {
+  item: Item;
+  deleted: boolean;
+}
+
+/** Direct children; those in the trash of the same backlog come after the others (an ID only once). */
+export function childEntries(item: Item, items: readonly Item[], trashed: readonly Item[]): ChildEntry[] {
+  const isChild = (i: Item) => i.source_id === item.source_id && i.parent === item.id;
+  const live = items.filter(isChild);
+  const liveIds = new Set(live.map((i) => i.id));
+  return [
+    ...live.map((i) => ({ item: i, deleted: false })),
+    ...trashed.filter((i) => isChild(i) && !liveIds.has(i.id)).map((i) => ({ item: i, deleted: true })),
+  ];
+}
+
 // ---------- editing ----------
 
 export function statusOptions(item: Item): string[] {

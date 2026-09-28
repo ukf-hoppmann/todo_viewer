@@ -1,6 +1,8 @@
 import { lazy, type ReactNode, Suspense, useState } from "react";
+import { useTrash } from "../api/queries";
+import { statusColor } from "../domain/colors";
 import { childTypes } from "../domain/editing";
-import type { Item, Uid } from "../domain/model";
+import { childEntries, type Item, toItems, type Uid } from "../domain/model";
 import type { SourceStatus } from "../api/client";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { DeleteDialog } from "./DeleteDialog";
@@ -46,7 +48,8 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
   const quick = useQuickEdit(item);
   const L = (field: string) => vocab("field", field);
   const parent = item.parentUid ? byUid.get(item.parentUid) : undefined;
-  const children = items.filter((i) => i.parentUid === item.uid);
+  const [trash] = useTrash([item.source_id]);
+  const children = childEntries(item, items, toItems(trash?.data ?? []));
   const docs = documentLinks(item, t("doc.notes"), t("doc.spec"));
 
   return (
@@ -132,12 +135,21 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
       {children.length > 0 && (
         <Field label={t("detail.children")}>
           <span className="chip-list">
-            {children.map((c) => (
-              <button key={c.key} className="chip" onClick={() => onSelect(c.uid)}>
-                {c.id}
-                {c.required_for_parent === false ? ` (${t("optional")})` : ""}
-              </button>
-            ))}
+            {children.map(({ item: c, deleted }) => {
+              const label = `${c.id}${c.required_for_parent === false ? ` (${t("optional")})` : ""}`;
+              const status = deleted ? t("trash.deletedOn", { date: c.deleted ?? "" }) : vocab("status", c.status);
+              return deleted ? (
+                <span key={`deleted:${c.key}`} className="chip child-chip deleted" title={`${c.title} — ${status}`}>
+                  {label}
+                </span>
+              ) : (
+                <button key={c.key} className="chip child-chip" title={`${c.title} — ${status}`}
+                  style={{ borderColor: statusColor(c.status) }} onClick={() => onSelect(c.uid)}>
+                  <span className="dot" style={{ background: statusColor(c.status) }} />
+                  {label}
+                </button>
+              );
+            })}
           </span>
         </Field>
       )}

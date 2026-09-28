@@ -158,6 +158,9 @@ abgebildet.
 
 Klick auf ein Item öffnet das Detail-Panel rechts mit allen geparsten Feldern
 (inkl. aller Freitext-Felder wie `Implementation`, `Verification`, `Context` etc.).
+Unter „Untergeordnet“ trägt jedes direkte Kind Rahmen und Punkt in der Farbe
+seines Status (Tooltip: Titel und Status); Kinder im Papierkorb stehen
+gestrichelt und durchgestrichen am Ende (Tooltip: Löschdatum).
 
 ## Architektur
 

@@ -96,6 +96,12 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
+/** Answers the trash request of the detail panel itself; every other request goes to `handler`. */
+function stubApi(handler: (request: Request) => Promise<Response>, trash: unknown[] = []) {
+  vi.stubGlobal("fetch", async (request: Request) =>
+    new URL(request.url).pathname === "/api/v2/trash" ? jsonResponse(trash) : handler(request));
+}
+
 function renderPanel(item: (typeof items)[number]) {
   renderWithProviders(
     <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
@@ -123,7 +129,7 @@ describe("DetailPanel edit mode", () => {
 
   it("saves all changed fields in one request and leaves the edit mode", async () => {
     const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(apiItem("TASK-2")));
-    vi.stubGlobal("fetch", fetchMock);
+    stubApi(fetchMock);
     const item = items[2]!;
     renderPanel(item);
 
@@ -150,7 +156,7 @@ describe("DetailPanel edit mode", () => {
 
   it("discards the changes on cancel", async () => {
     const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
+    stubApi(fetchMock);
     renderPanel(items[2]!);
 
     await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
@@ -163,7 +169,7 @@ describe("DetailPanel edit mode", () => {
 
   it("asks for a resolution when completing", async () => {
     const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(apiItem("TASK-2")));
-    vi.stubGlobal("fetch", fetchMock);
+    stubApi(fetchMock);
     const item = items[2]!;
     renderPanel(item);
 
@@ -185,7 +191,7 @@ describe("DetailPanel edit mode", () => {
 
   it("sends required-for-parent together with a new parent", async () => {
     const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(apiItem("TASK-2")));
-    vi.stubGlobal("fetch", fetchMock);
+    stubApi(fetchMock);
     const standalone = toItems([apiItem("TASK-9")])[0]!;
     renderWithProviders(
       <DetailPanel item={standalone} items={[...items, standalone]} byUid={new Map()} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
@@ -213,7 +219,7 @@ describe("DetailPanel edit mode", () => {
         ? jsonResponse(current)
         : jsonResponse({ code: "version_conflict", message: "x", details: { id: "TASK-2" } }, 409);
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubApi(fetchMock);
     renderPanel(item);
 
     await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
@@ -233,7 +239,7 @@ describe("DetailPanel edit mode", () => {
   });
 
   it("shows rule violations with the blocking items", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () =>
+    stubApi(vi.fn(async () =>
       jsonResponse({ code: "children_still_active", message: "x", details: { id: "EPIC-1", items: "STORY-1, TASK-1" } }, 409)));
     renderPanel(items[0]!);
 
@@ -243,6 +249,23 @@ describe("DetailPanel edit mode", () => {
 
     expect(await screen.findByText(/EPIC-1 kann nicht geschlossen werden, solange Kinder aktiv sind: STORY-1, TASK-1\./)).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Titel" })).toBeInTheDocument();
+  });
+});
+
+describe("DetailPanel children", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("marks children by status and lists deleted ones from the trash", async () => {
+    stubApi(vi.fn(), [apiItem("TASK-9", { parent: "EPIC-1", deleted: "2026-09-20" })]);
+    renderPanel(items[0]!);
+
+    const done = screen.getByRole("button", { name: "TASK-1" });
+    expect(done).toHaveAttribute("title", "Title TASK-1 — Abgeschlossen");
+    expect(done.style.borderColor).toBe("var(--status-done)");
+    expect(screen.getByRole("button", { name: "TASK-2 (optional)" })).toHaveAttribute("title", "Title TASK-2 — Offen");
+    const deleted = await screen.findByText("TASK-9");
+    expect(deleted).toHaveClass("deleted");
+    expect(deleted).toHaveAttribute("title", "Title TASK-9 — gelöscht am 2026-09-20");
   });
 });
 
@@ -258,7 +281,7 @@ describe("DetailPanel direct changes", () => {
 
   function renderQuick() {
     const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(apiItem("TASK-1")));
-    vi.stubGlobal("fetch", fetchMock);
+    stubApi(fetchMock);
     renderWithProviders(
       <DetailPanel item={task} items={quickItems} byUid={new Map(quickItems.map((i) => [i.uid, i]))} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
     );
@@ -311,7 +334,7 @@ describe("DetailPanel direct changes", () => {
   });
 
   it("shows a conflict next to the field", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ code: "version_conflict", message: "x", details: { id: "TASK-1" } }, 409)));
+    stubApi(vi.fn(async () => jsonResponse({ code: "version_conflict", message: "x", details: { id: "TASK-1" } }, 409)));
     renderWithProviders(
       <DetailPanel item={task} items={quickItems} byUid={new Map()} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
     );

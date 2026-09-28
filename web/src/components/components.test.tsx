@@ -445,6 +445,28 @@ describe("CreateItemDialog", () => {
     expect(await screen.findByText(/Dieses Feld darf nicht leer sein/)).toBeInTheDocument();
     expect(await fetchMock.mock.calls[0]![0].clone().json()).toMatchObject({ parent: "EPIC-1", required_for_parent: "Yes" });
   });
+
+  it("offers to reopen a closed parent and creates the item afterwards", async () => {
+    let posts = 0;
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async (request) => {
+      if (request.method === "POST" && posts++ === 0)
+        return jsonResponse({ code: "parent_closed", message: "x", details: { id: "STORY-7", items: "EPIC-1" } }, 409);
+      if (request.method === "POST") return jsonResponse(apiItem("STORY-7", { parent: "EPIC-1" }), 201);
+      return jsonResponse(apiItem("EPIC-1", { type: "Epic", version: "v1" }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const onCreated = vi.fn();
+    renderWithProviders(<CreateItemDialog sources={SOURCES} sourceId="s" parent={items[0]!} onClose={vi.fn()} onCreated={onCreated} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Anlegen" }));
+    expect(await screen.findByText(/EPIC-1 ist abgeschlossen. Wieder öffnen/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Wieder öffnen und anlegen" }));
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledWith("P::STORY-7"));
+    const calls = fetchMock.mock.calls.map(([r]) => `${r.method} ${new URL(r.url).pathname}`);
+    expect(calls).toEqual(["POST /api/v2/items", "GET /api/v2/items/s/EPIC-1", "PATCH /api/v2/items/s/EPIC-1", "POST /api/v2/items"]);
+    expect(await fetchMock.mock.calls[2]![0].clone().json()).toEqual({ version: "v1", fields: { status: "In progress" }, resolution: null });
+  });
 });
 
 describe("DeleteDialog", () => {

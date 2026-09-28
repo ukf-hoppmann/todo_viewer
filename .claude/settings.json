@@ -1,5 +1,8 @@
 {
   "enabledPlugins": {
     "claude-harness@claude-harness-dev": true
+  },
+  "worktree": {
+    "baseRef": "head"
   }
 }

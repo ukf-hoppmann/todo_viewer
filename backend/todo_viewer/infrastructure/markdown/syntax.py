@@ -21,9 +21,9 @@ FIELD_RE = re.compile(r"^ {2}- ([A-Za-z][A-Za-z ]*?):\s?(.*)$")
 WORK_ITEMS_HEADER_RE = re.compile(r"^## Work items\s*$", re.MULTILINE)
 NO_ENTRIES_LINE = "No entries."
 # Any structured backlog format version ("... backlog format version 2",
-# "Claude_Harness backlog format version 1", localized "Backlog-Format Version 1",
-# ...); the entry syntax is identical.
-BACKLOG_MARKER_RE = re.compile(r"backlog[\s-]+format\s+version\s+\d+", re.IGNORECASE)
+# "Claude_Harness backlog format version 1", localized "Backlog-Format Version 1"
+# or "Backlogformat Version 1", ...); the entry syntax is identical.
+BACKLOG_MARKER_RE = re.compile(r"backlog[\s-]*format\s+version\s+\d+", re.IGNORECASE)
 
 # Labels used when a field has to be inserted into an entry.
 FIELD_LABELS = {

@@ -1,6 +1,40 @@
 {
   "components": {
     "schemas": {
+      "BacklogCreateIn": {
+        "properties": {
+          "language": {
+            "default": "en",
+            "description": "Language of the headings and prose in the new files",
+            "enum": [
+              "en",
+              "de"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "BacklogCreateIn",
+        "type": "object"
+      },
       "BacklogOut": {
         "properties": {
           "items": {
@@ -1060,6 +1094,88 @@
         "summary": "Backlog",
         "tags": [
           "items"
+        ]
+      }
+    },
+    "/api/v2/backlogs": {
+      "post": {
+        "description": "Creates an empty backlog (TODO.md, archive.md, items/) in the folder, creating it if needed,\nand adds it as a source. Refused with 409 backlog_exists if the folder already holds a TODO.md.",
+        "operationId": "create_backlog_api_v2_backlogs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BacklogCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Backlog",
+        "tags": [
+          "sources"
         ]
       }
     },

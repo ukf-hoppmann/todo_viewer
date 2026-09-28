@@ -12,6 +12,7 @@ from todo_viewer.domain.errors import (
     DuplicateItemError,
     FileChangedError,
     InvalidSourceError,
+    InvalidValueError,
     ItemNotFoundError,
     VersionConflictError,
 )
@@ -69,6 +70,28 @@ def test_text_file_write_is_atomic_and_keeps_mode(tmp_path):
     assert [p.name for p in tmp_path.iterdir()] == ["f.md"]  # no temp file left behind
 
 
+# ---------- initialize ----------
+
+def test_initialize_keeps_an_existing_archive_and_rejects_bad_targets(tmp_path):
+    repo = build_markdown_repository(tmp_path)
+    folder = tmp_path / "docs"
+    folder.mkdir()
+    (folder / "archive.md").write_text("kept\n", encoding="utf-8")
+    (tmp_path / "file").write_text("", encoding="utf-8")
+
+    repo.initialize(Source("P", str(folder)), "en")
+    with pytest.raises(InvalidSourceError) as not_a_dir:
+        repo.initialize(Source("P", str(tmp_path / "file")), "en")
+    with pytest.raises(InvalidValueError):
+        repo.initialize(Source("P", str(tmp_path / "other")), "fr")
+
+    assert (folder / "archive.md").read_text(encoding="utf-8") == "kept\n"
+    assert repo.check(Source("P", str(folder))) is None
+    assert repo.load(Source("P", str(folder))).items == []
+    assert not_a_dir.value.code == "not_a_dir"
+    assert not (tmp_path / "other").exists()
+
+
 # ---------- small parts ----------
 
 def test_detector():
@@ -76,6 +99,7 @@ def test_detector():
 
     assert detector.is_backlog("backlog format version 2\n- `T-1` **x**\n")
     assert detector.is_backlog("Claude_Harness-Backlog-Format Version 1.\n\nNo entries.\n")
+    assert detector.is_backlog("Format: Claude_Harness-Backlogformat Version 1.\n")
     assert not detector.is_backlog("- [ ] a")
 
 

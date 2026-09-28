@@ -28,6 +28,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `POST /items/{source_id}/{item_id}/notes` | Datierten Notes-Eintrag anhängen. |
 | `GET /sources` | Konfigurierte Quellen. |
 | `POST /sources` | Quelle hinzufügen (`path`, optional `project`; ohne Namen der des Git-Repos). |
+| `POST /backlogs` | Neuen, leeren Backlog anlegen und als Quelle eintragen. Antwort 201 mit der Quelle. |
 | `PUT /sources/{source_id}` | Quelle ändern. |
 | `DELETE /sources/{source_id}` | Quelle entfernen. |
 | `GET /folders?path=…` | Unterordner für den Ordner-Browser, mit Markierung, ob eine `TODO.md` enthalten ist. |
@@ -97,6 +98,14 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     `items/<ID>/<ID>_notes.md` an und trägt `Notes` ein; hat das Item noch keine
     Summary, ist `summary` Pflicht.
   - Quellen: `{path, project?}`; `source_id` ist eine stabile, pfadbasierte ID.
+  - `POST /backlogs`: `{path, project?, language?}` mit `language` `en`
+    (Standard) oder `de`. Legt den Ordner bei Bedarf an und schreibt
+    `TODO.md` und `archive.md` mit Format-Kennung, `## Work items` und
+    `No entries.` (wie die Vorlagen des Claude_Harness) sowie den Ordner
+    `items/`. Eine vorhandene `archive.md` bleibt unverändert. Abgelehnt mit
+    409 `duplicate`, wenn der Ordner schon als Quelle eingetragen ist, und mit
+    409 `backlog_exists`, wenn er schon eine `TODO.md` enthält (dann
+    `POST /sources` verwenden).
 - Ausgabe:
   - Items mit `key` (`<source_id>/<id>`), `source_id`, `id`, `version`,
     `archived`, `deleted` (Datum oder `null`), `project`, den geparsten Feldern, `documents`
@@ -116,7 +125,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 400 | `bad_request` (Validierung, auch unbekannte Felder), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `config_missing`, `file_not_found`, `item_not_found` |
-| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen) |
+| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`) |
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 
@@ -134,7 +143,10 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   (Entscheidung: [STORY-010](../todo/items/STORY-010/STORY-010_notes.md)).
 - Eingabe: Die `source_id` eines Projekts steht in `GET /sources` beim Eintrag,
   dessen `path` der Backlog-Ordner ist (z. B. `<repo>/docs/todo`). Fehlt er,
-  legt `POST /sources` mit `{path}` ihn an. Ein typischer Durchlauf:
+  legt `POST /sources` mit `{path}` ihn an; gibt es noch keinen Backlog,
+  erzeugt `POST /backlogs` mit `{path, language?}` die Dateien und trägt die
+  Quelle ein. So entsteht die `TODO.md` immer im lesbaren Format. Ein
+  typischer Durchlauf:
 
   1. Überblick: `GET /index?source_id=…` (nur ID, Typ, Status, Titel, Parent, Area).
   2. Einzelnes Item samt `version`: `GET /items/{source_id}/{id}`.
@@ -164,8 +176,8 @@ Build, antwortet der Server mit 503 und einem Hinweis.
 - Aufruf / Endpunkt: ein Ordner mit `TODO.md`; `archive.md` im selben Ordner
   wird mitgelesen; `Notes`/`Spec` verweisen auf Dateien unter `items/<ID>/`.
 - Eingabe: Claude_Harness-Backlog-Format (Version 1/2); die Datei muss die
-  Format-Kennung enthalten (z. B. „backlog format version 2“ oder
-  „Backlog-Format Version 1“). Jeder Eintrag hat eine ID, die im Backlog
+  Format-Kennung enthalten (z. B. „backlog format version 2“,
+  „Backlog-Format Version 1“ oder „Backlogformat Version 1“). Jeder Eintrag hat eine ID, die im Backlog
   (`TODO.md` und `archive.md` zusammen) eindeutig ist. Einfache Checklisten
   ohne IDs werden nicht unterstützt und als Problem `unsupported_format`
   gemeldet.

@@ -41,6 +41,9 @@ class BacklogRepository(Protocol):
     def delete(self, source: Source, items: Sequence[Item]) -> None:
         """Removes the items for good; raises VersionConflictError if one changed since it was read."""
 
+    def initialize(self, source: Source, language: str) -> None:
+        """Creates an empty backlog (with its folders) in `language`; raises BacklogExistsError if there is one."""
+
 
 class SourceRepository(Protocol):
     def all(self) -> list[Source]:

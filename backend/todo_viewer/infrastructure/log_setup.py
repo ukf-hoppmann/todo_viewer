@@ -58,10 +58,14 @@ def configure_logging(level: str, file: Path | None) -> None:
     root.handlers = [handler]
     root.setLevel(numeric)
     # uvicorn installs its own handlers; its records should go through ours.
-    for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+    for name in ("uvicorn", "uvicorn.error"):
         logger = logging.getLogger(name)
         logger.handlers.clear()
         logger.propagate = True
+    # The request middleware replaces the access log; without handlers uvicorn skips it.
+    access = logging.getLogger("uvicorn.access")
+    access.handlers.clear()
+    access.propagate = False
 
 
 def render_line(_: Any, __: str, event_dict: MutableMapping[str, Any]) -> str:

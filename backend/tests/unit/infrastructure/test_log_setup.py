@@ -70,6 +70,18 @@ def test_stdlib_records_use_the_same_format(tmp_path: Path) -> None:
     assert 'INFO "Started server process [42]" logger=uvicorn.error' in line
 
 
+def test_uvicorn_access_log_stays_off(tmp_path: Path) -> None:
+    # The request middleware writes one line per request; uvicorn's access log would double it.
+    log_file = tmp_path / "app.log"
+    configure_logging("INFO", log_file)
+
+    access = logging.getLogger("uvicorn.access")
+    access.info('%s - "%s %s HTTP/%s" %d', "172.21.0.1:1", "GET", "/api/v2/sources", "1.1", 200)
+
+    assert not access.hasHandlers()  # uvicorn skips access logging entirely without handlers
+    assert lines(log_file) == []
+
+
 def test_level_filters_lower_events(tmp_path: Path) -> None:
     log_file = tmp_path / "app.log"
     configure_logging("WARNING", log_file)

@@ -23,7 +23,7 @@ Weitere Befehle:
 ./todo.sh restart   # Container neu starten
 ./todo.sh down      # Container + Netzwerk entfernen (configs/ bleibt erhalten)
 ./todo.sh update    # nach Code-Änderungen neu bauen (--no-cache) und ersetzen
-./todo.sh logs      # Live-Logs
+./todo.sh logs      # Live-Log (logs/todo-viewer.log)
 ./todo.sh status    # läuft der Container?
 ./todo.sh open      # nur den Browser öffnen
 ```

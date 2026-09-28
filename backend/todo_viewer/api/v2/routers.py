@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Request
 
 from todo_viewer.domain.errors import ConfigMissingError
 from todo_viewer.domain.trash import live
 
 from ..dependencies import Documents, Folders, Items, Lookup, Overview, Sources, Trash, UiState
+from ..request_log import note
 from .schemas import (
     BacklogCreateIn,
     BacklogOut,
@@ -69,10 +70,12 @@ def index(overview: Overview, lookup: Lookup, source_id: str | None = None) -> I
 
 
 @router.post("/items", tags=["items"], status_code=201)
-def create_item(body: ItemCreateIn, items: Items, lookup: Lookup) -> ItemOut:
+def create_item(body: ItemCreateIn, items: Items, lookup: Lookup, request: Request) -> ItemOut:
     """Creates an Open item with the next free id of its type at the end of the active list."""
+    note(request, source=body.source_id, type=body.type)
     source = lookup.by_id(body.source_id)
     result = items.create(source, body.type, body.fields())
+    note(request, item=result.item.id)
     return ItemOut.of(source, result.item, result.archive_supported)
 
 
@@ -164,20 +167,27 @@ def list_sources(sources: Sources) -> list[SourceOut]:
 
 
 @router.post("/sources", tags=["sources"])
-def add_source(body: SourceIn, sources: Sources) -> SourceOut:
-    return SourceOut.of(sources.add(body.path, body.project))
+def add_source(body: SourceIn, sources: Sources, request: Request) -> SourceOut:
+    note(request, target=body.path)
+    out = SourceOut.of(sources.add(body.path, body.project))
+    note(request, source=out.id)
+    return out
 
 
 @router.post("/backlogs", tags=["sources"], status_code=201)
-def create_backlog(body: BacklogCreateIn, sources: Sources) -> SourceOut:
+def create_backlog(body: BacklogCreateIn, sources: Sources, request: Request) -> SourceOut:
     """Creates an empty backlog (TODO.md, archive.md, items/) in the folder, creating it if needed,
     and adds it as a source. Refused with 409 backlog_exists if the folder already holds a TODO.md.
     """
-    return SourceOut.of(sources.create_backlog(body.path, body.project, body.language))
+    note(request, target=body.path)
+    out = SourceOut.of(sources.create_backlog(body.path, body.project, body.language))
+    note(request, source=out.id)
+    return out
 
 
 @router.put("/sources/{source_id}", tags=["sources"])
-def update_source(source_id: str, body: SourceIn, sources: Sources) -> SourceOut:
+def update_source(source_id: str, body: SourceIn, sources: Sources, request: Request) -> SourceOut:
+    note(request, target=body.path)
     return SourceOut.of(sources.update(source_id, body.path, body.project))
 
 

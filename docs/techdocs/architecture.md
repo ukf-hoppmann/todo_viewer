@@ -23,6 +23,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 | Config-Adapter | `config.json` (Quellen, inkl. Migration alter Dateipfade) und `ui_state.json` | `backend/todo_viewer/infrastructure/config/` |
 | Dateisystem-Adapter | Ordner-Browser, Projektname aus dem umgebenden Git-Repo | `backend/todo_viewer/infrastructure/filesystem/` |
 | HTTP-API | FastAPI-Router `/api/v2`, Pydantic-Schemas, zentrale Fehlerübersetzung, Auslieferung von `web/dist` | `backend/todo_viewer/api/` |
+| Logging | Konfiguration (structlog über das Standard-`logging`, auch für uvicorn), key=value-Zeilen, Rotation; Request-Middleware mit Request-ID und einer Zeile pro Request | `backend/todo_viewer/infrastructure/log_setup.py`, `backend/todo_viewer/api/request_log.py` |
 | Composition Root | Setzt Adapter und Services per Konstruktor-Injection zusammen; liest Einstellungen aus der Umgebung | `backend/todo_viewer/bootstrap.py`, `backend/main.py` |
 | Frontend | React 19 + Vite + TypeScript, TanStack Query; Views Baum, Graph (React Flow + ELK), Kanban, Papierkorb; Detail-Panel mit direkt änderbaren Feldern (Status, Priorität, Bereich, Pflicht für Parent, Abhängigkeiten) und Bearbeiten-Modus, Dialoge zum Anlegen, Löschen und für Dokumente | `web/src/` |
 | Frontend-Domain | Filter, Baum, Fortschritt, Abhängigkeitsgraph, Edit-Regeln als reine Funktionen | `web/src/domain/` |
@@ -57,6 +58,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 - UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, markierte
   Projekte, Ansicht, Auswahl, Suche, Sprache): `configs/ui_state.json`, über die API gelesen und
   geschrieben.
+- Log: Datei aus `LOG_FILE` (im Container `./logs/` auf dem Host), nach Größe rotiert.
 - Im Container liegt `configs/` per Volume auf dem Host; die Nachbar-Repos sind
   unter demselben absoluten Pfad beschreibbar eingebunden.
 
@@ -68,4 +70,5 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 | Konstruktor-Injection ohne DI-Framework | Einfach nachvollziehbar, Services mit In-Memory-Fakes testbar | `backend/todo_viewer/bootstrap.py` |
 | Atomares Schreiben mit Konflikterkennung | Parallele Änderungen (z. B. durch Agenten) werden nicht überschrieben | [Architekturregeln](../development/architecture.md) |
 | Golden-Files für geschriebene Dateien | Dateiinhalte nach Edits bleiben bytegenau stabil | `backend/tests/characterization/` |
+| Logging mit structlog, eine key=value-Zeile pro Ereignis | Fehleranalyse per `grep` ohne ganze Datei zu lesen; Kontext (Request-ID) ohne eigenen Code; Domain und Application loggen nicht, Fehler werden an der API-Grenze protokolliert | [STORY-016-Notizen](../todo/items/STORY-016/STORY-016_notes.md) |
 | TS-Typen aus OpenAPI generiert | Frontend und API können nicht unbemerkt auseinanderlaufen (Test prüft Aktualität) | `backend/tests/api_v2/test_openapi.py` |

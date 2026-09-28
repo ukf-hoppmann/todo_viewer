@@ -6,6 +6,10 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 
 class JsonFile:
     """A JSON document on disk, replaced atomically on every write."""
@@ -28,6 +32,7 @@ class JsonFile:
                 json.dump(data, f, ensure_ascii=False, indent=2)
                 f.write("\n")
             os.replace(tmp_name, self.path)
+            log.debug("file_written", path=str(self.path))
         except BaseException:
             Path(tmp_name).unlink(missing_ok=True)
             raise

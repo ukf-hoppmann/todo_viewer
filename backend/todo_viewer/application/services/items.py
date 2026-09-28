@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import date
 
 from todo_viewer.domain.backlog import Backlog
+from todo_viewer.domain.creation import ItemFactory
 from todo_viewer.domain.editing import EditPlanner, Field
 from todo_viewer.domain.errors import NotEditableError, VersionConflictError
 from todo_viewer.domain.item import Item
@@ -42,14 +44,25 @@ class ItemResult:
 class ItemService:
     """Reads and edits single items addressed by id, following the domain's archive and lifecycle rules."""
 
-    def __init__(self, backlogs: BacklogRepository, planner: EditPlanner, rules: LifecycleRules):
+    def __init__(self, backlogs: BacklogRepository, planner: EditPlanner, rules: LifecycleRules,
+                 factory: ItemFactory, today: Callable[[], date] = date.today):
         self._backlogs = backlogs
         self._planner = planner
         self._rules = rules
+        self._factory = factory
+        self._today = today
 
     def get(self, source: Source, item_id: str) -> ItemResult:
         item = self._backlogs.get(source, item_id)
         return ItemResult(item, self._backlogs.archive_available(source))
+
+    def create(self, source: Source, item_type: str, fields: Mapping[str, object]) -> ItemResult:
+        """A new Open item with the next free id of its type, checked against the lifecycle rules."""
+        backlog = self._backlogs.load(source)
+        backlog.require_usable()
+        item = self._factory.create(item_type, fields, backlog.items, source.project, self._today().isoformat())
+        self._rules.check_change(backlog.items, [*backlog.items, item])
+        return ItemResult(self._backlogs.create(source, item), backlog.archive_available)
 
     def edit(self, source: Source, item_id: str, version: str, changes: Mapping[str, object],
              resolution: str | None) -> ItemResult:

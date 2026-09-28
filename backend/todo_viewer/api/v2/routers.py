@@ -14,6 +14,7 @@ from .schemas import (
     FolderListingOut,
     IndexItemOut,
     IndexOut,
+    ItemCreateIn,
     ItemEditIn,
     ItemOut,
     ProblemOut,
@@ -53,6 +54,14 @@ def index(overview: Overview, lookup: Lookup, source_id: str | None = None) -> I
     except ConfigMissingError:
         entries = []
     return IndexOut(items=[IndexItemOut.of(e.source, item) for e in entries for item in e.backlog.items])
+
+
+@router.post("/items", tags=["items"], status_code=201)
+def create_item(body: ItemCreateIn, items: Items, lookup: Lookup) -> ItemOut:
+    """Creates an Open item with the next free id of its type at the end of the active list."""
+    source = lookup.by_id(body.source_id)
+    result = items.create(source, body.type, body.fields())
+    return ItemOut.of(source, result.item, result.archive_supported)
 
 
 @router.get("/items/{source_id}/{item_id}", tags=["items"])

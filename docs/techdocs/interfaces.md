@@ -15,6 +15,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 |---|---|
 | `GET /backlog` | Alle Quellen (mit `item_count` und ggf. `problem`) und alle Items. Ohne `config.json` leer. |
 | `GET /index?source_id=…` | Schlanke Übersicht aller Items (aktiv und archiviert) mit nur `source_id`, `id`, `type`, `status`, `title`, `parent`, zum Einordnen neuer Arbeit; optional auf eine Quelle begrenzt. |
+| `POST /items` | Legt ein Epic, eine Story oder einen Task an; der Server vergibt die ID. Antwort 201 mit dem neuen Item. |
 | `GET /items/{source_id}/{item_id}` | Ein Item per ID, aktiv oder archiviert. |
 | `PATCH /items/{source_id}/{item_id}` | Ändert ein oder mehrere Felder eines Items in einem Schritt. |
 | `GET /sources` | Konfigurierte Quellen. |
@@ -46,6 +47,14 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     Änderung ab, wenn sie einen neuen Regelverstoß erzeugt; bereits
     bestehende Verstöße blockieren andere Änderungen nicht (Entscheidung:
     [STORY-005](../todo/items/STORY-005/STORY-005_notes.md)).
+  - `POST /items`: `{source_id, type ("Epic"|"Story"|"Task"), title, area,
+    goal, completion_criteria, priority?, parent?, required_for_parent?,
+    dependencies?, summary?, created?}`. Die ID ist die nächste freie Nummer
+    des Typs über aktive und archivierte Items (`STORY-007` usw.); Status ist
+    immer `Open`, `priority` standardmäßig `Normal`, `created` standardmäßig
+    heute. Mit `parent` ist `required_for_parent` Pflicht. Der Eintrag kommt
+    ans Ende des Abschnitts `## Work items` in `TODO.md`. Die Parent-Regeln
+    werden wie beim Bearbeiten geprüft.
   - Quellen: `{path, project?}`; `source_id` ist eine stabile, pfadbasierte ID.
 - Ausgabe:
   - Items mit `key` (`<source_id>/<id>`), `source_id`, `id`, `version`,

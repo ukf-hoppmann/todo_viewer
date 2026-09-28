@@ -15,6 +15,7 @@ from todo_viewer.application.services import (
     SourceService,
     UiStateService,
 )
+from todo_viewer.domain.creation import ItemFactory
 from todo_viewer.domain.editing import EditPlanner
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.infrastructure.config import JsonFile, JsonSourceRepository, JsonUiStateStore, LegacySourceMigrator
@@ -51,7 +52,7 @@ def build_container(settings: Settings) -> Container:
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
-        items=ItemService(backlogs, EditPlanner(), LifecycleRules()),
+        items=ItemService(backlogs, EditPlanner(), LifecycleRules(), ItemFactory()),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver)),
         source_lookup=lookup,
         documents=DocumentService(lookup, MarkdownDocumentStore(LayoutFactory(resolver))),

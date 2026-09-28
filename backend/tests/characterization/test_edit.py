@@ -177,6 +177,24 @@ def test_parent_cycle_is_rejected(api, workspace):
     assert cycle.body["details"] == {"id": "TASK-002", "items": "TASK-002, TASK-003"}
 
 
+@pytest.mark.parametrize(("name", "fixture", "body"), [
+    ("create_task", "backlog", {"type": "Task", "parent": "STORY-001", "required_for_parent": "No",
+                                "dependencies": ["TASK-001"], "summary": "Short.", "priority": "Important"}),
+    ("create_epic_at_file_end", "empty_archive", {"type": "Epic"}),
+], ids=["create_task", "create_epic_at_file_end"])
+def test_create_writes_entry(api, workspace, golden, name, fixture, body):
+    folder = _setup(workspace, fixture)
+    source_id = api.get("/api/v2/sources").body[0]["id"]
+
+    resp = api.post("/api/v2/items", {"source_id": source_id, "title": "Created entry", "area": "Core",
+                                      "goal": "A goal that is long enough to need more than one line in the "
+                                              "file, so it wraps like the backlog format expects.",
+                                      "completion_criteria": "Checked.", "created": "2026-09-28", **body})
+
+    assert resp.status_code == 201, resp.body
+    golden(f"edit/{name}.md", _files(folder))
+
+
 def test_edit_twice_reopen_after_archive(api, workspace, golden):
     folder = _setup(workspace, "backlog")
 

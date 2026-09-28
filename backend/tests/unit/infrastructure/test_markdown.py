@@ -14,7 +14,7 @@ from todo_viewer.domain.errors import (
     ItemNotFoundError,
     VersionConflictError,
 )
-from todo_viewer.domain.item import Location
+from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source
 from todo_viewer.infrastructure.markdown import build_markdown_repository
 from todo_viewer.infrastructure.markdown.detector import FormatDetector
@@ -136,6 +136,18 @@ def test_entry_editor_writes_title_ids_and_wrapped_text():
     assert lines[3] == "  - Dependencies: None."
 
 
+def test_mover_inserts_at_the_end_of_the_work_items_section():
+    mover = EntryMover()
+    with_other = ["## Work items", "", "- `T-1` **x**", "", "## Other", "", "text"]
+    empty = ["## Work items", "", "No entries.", ""]
+
+    mover.insert(with_other, ["- `T-2` **y**"])
+    mover.insert(empty, ["- `T-2` **y**"])
+
+    assert with_other == ["## Work items", "", "- `T-1` **x**", "", "- `T-2` **y**", "", "## Other", "", "text"]
+    assert empty == ["## Work items", "", "- `T-2` **y**", ""]
+
+
 def test_mover_writes_no_entries_marker_when_section_empties():
     lines = ["## Work items", "", "- `T-1` **x**", "  - Status: Open.", ""]
     mover = EntryMover()
@@ -213,3 +225,18 @@ def test_repository_relative_source_path(tmp_path):
 
     assert repo.check(Source(project="P", path="docs")) is None
     assert len(repo.load(Source(project="P", path="docs")).items) == 7
+
+
+def test_repository_creates_entry_and_refuses_taken_ids(backlog):
+    repo = build_markdown_repository(Path("/"))
+    new = Item(id="TASK-004", title="Created", project="P", item_type="Task", parent="STORY-001",
+               required_for_parent=True, created="2026-09-28", area="Core", priority="Normal",
+               goal="A goal.", completion_criteria="Checked.", dependencies=["TASK-001"])
+
+    created = repo.create(backlog, new)
+
+    assert created == new
+    assert repo.get(backlog, "TASK-004") == new
+    with pytest.raises(DuplicateItemError):
+        repo.create(backlog, Item(id="TASK-000", title="Taken in the archive", project="P", area="a", goal="g",
+                                  completion_criteria="c"))

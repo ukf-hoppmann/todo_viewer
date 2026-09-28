@@ -31,6 +31,9 @@ class BacklogRepository(Protocol):
         Raises VersionConflictError if the stored item no longer matches `item.version`.
         """
 
+    def create(self, source: Source, item: Item) -> Item:
+        """Stores a new active item; raises DuplicateItemError if its id is taken."""
+
 
 class SourceRepository(Protocol):
     def all(self) -> list[Source]:

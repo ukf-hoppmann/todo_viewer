@@ -3,11 +3,13 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import date
 
 import pytest
 
 from todo_viewer.application.services import ItemService, SourceLookup, SourceService
 from todo_viewer.domain.backlog import Backlog
+from todo_viewer.domain.creation import ItemFactory
 from todo_viewer.domain.editing import ChangeSet, EditPlanner
 from todo_viewer.domain.errors import (
     ConfigMissingError,
@@ -63,6 +65,10 @@ class FakeBacklogs:
 
     def apply(self, source: Source, item: Item, changes: ChangeSet) -> Item:
         self.applied.append(changes)
+        return item
+
+    def create(self, source: Source, item: Item) -> Item:
+        self.items.append(item)
         return item
 
 
@@ -127,7 +133,7 @@ def test_lookup_by_id():
 
 def _items(items: list[Item], archive: bool = True) -> tuple[ItemService, FakeBacklogs]:
     backlogs = FakeBacklogs(items, archive=archive)
-    return ItemService(backlogs, EditPlanner(), LifecycleRules()), backlogs
+    return ItemService(backlogs, EditPlanner(), LifecycleRules(), ItemFactory(), lambda: date(2026, 9, 28)), backlogs
 
 
 def test_item_get_by_id():
@@ -171,6 +177,20 @@ def test_item_edit_checks_lifecycle_rules_before_writing():
 
     assert err.value.details["id"] == "S"
     assert backlogs.applied == []
+
+
+def test_item_create_assigns_id_and_checks_rules():
+    story = Item(id="STORY-001", title="s", project="p", item_type="Story", status="Completed")
+    service, backlogs = _items([story])
+    fields = {"title": "New", "area": "a", "goal": "g", "completion_criteria": "c"}
+
+    created = service.create(Source("p", "/p"), "Task", fields)
+    with pytest.raises(LifecycleViolationError) as err:
+        service.create(Source("p", "/p"), "Task", {**fields, "parent": "STORY-001", "required_for_parent": "Yes"})
+
+    assert (created.item.id, created.item.created, created.item.status) == ("TASK-001", "2026-09-28", "Open")
+    assert (err.value.code, err.value.details["id"]) == ("children_still_active", "STORY-001")
+    assert [i.id for i in backlogs.items] == ["STORY-001", "TASK-001"]
 
 
 def test_item_edit_rejects_field_before_touching_storage():

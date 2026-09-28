@@ -5,6 +5,7 @@ import textwrap
 
 from todo_viewer.domain.editing import FieldValue
 from todo_viewer.domain.errors import DuplicateItemError, ItemNotFoundError
+from todo_viewer.domain.item import Item
 
 from .syntax import (
     ENTRY_HEADER_RE,
@@ -97,6 +98,30 @@ class BacklogEntryEditor:
         return None
 
 
+class EntryRenderer:
+    """Writes a new entry in the field order of the backlog format."""
+
+    def render(self, item: Item) -> list[str]:
+        lines = [f"- `{item.id}` **{item.title}**", *_field_lines("Type", _with_period(item.item_type))]
+        if item.item_type != "Epic":
+            lines += _field_lines("Parent", _with_period(_file_value("parent", item.parent)))
+            if item.parent:
+                lines += _field_lines("Required for parent", "Yes." if item.required_for_parent else "No.")
+        for label, key, value in (
+            ("Status", "status", item.status),
+            ("Created", "created", item.created),
+            ("Area", "area", item.area),
+            ("Priority", "priority", item.priority),
+            ("Dependencies", "dependencies", tuple(item.dependencies)),
+            ("Goal", "goal", item.goal),
+            ("Completion criteria", "completion_criteria", item.completion_criteria),
+            ("Summary", "summary", item.summary),
+        ):
+            if value is not None and (value or key == "dependencies"):
+                lines += _field_lines(label, _with_period(_file_value(key, value)))
+        return lines
+
+
 class EntryMover:
     """Moves a structured entry between the `## Work items` sections of two files."""
 
@@ -128,6 +153,24 @@ class EntryMover:
         while lines and not lines[-1].strip():
             lines.pop()
         lines.extend(["", *block, ""])
+
+    def insert(self, lines: list[str], block: list[str]) -> None:
+        """Adds a new entry at the end of the `## Work items` section (before a following heading)."""
+        section = self._section_start(lines)
+        end = next((i for i in range(section + 1, len(lines)) if lines[i].startswith("## ")), None) \
+            if section is not None else None
+        if section is None or end is None:
+            self.append(lines, block)
+            return
+        for i in range(section + 1, end):
+            if lines[i].strip() == NO_ENTRIES_LINE:
+                del lines[i]
+                end -= 1
+                break
+        stop = end
+        while stop > section + 1 and not lines[stop - 1].strip():
+            stop -= 1
+        lines[stop:end] = ["", *block, ""]
 
     @staticmethod
     def _section_start(lines: list[str]) -> int | None:

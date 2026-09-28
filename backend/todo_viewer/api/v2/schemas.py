@@ -144,6 +144,30 @@ class ItemFieldsIn(BaseModel):
         return {name: getattr(self, name) for name in type(self).model_fields if name in self.model_fields_set}
 
 
+class ItemCreateIn(BaseModel):
+    """A new item; the id is assigned by the server, the status is always Open."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_id: str
+    type: str = Field(description="Epic, Story or Task")
+    title: str
+    area: str
+    goal: str
+    completion_criteria: str
+    priority: str | None = Field(default=None, description="Default: Normal")
+    parent: str | None = None
+    required_for_parent: str | None = Field(default=None, description="Yes or No; required with a parent")
+    dependencies: list[str] = Field(default_factory=list)
+    summary: str | None = None
+    created: str | None = Field(default=None, description="YYYY-MM-DD; default: today")
+
+    def fields(self) -> dict[str, object]:
+        """The item fields sent, in declaration order."""
+        return {name: getattr(self, name) for name in type(self).model_fields
+                if name not in {"source_id", "type"} and name in self.model_fields_set}
+
+
 class ItemEditIn(BaseModel):
     version: str = Field(description="The item's version as last read; a changed item answers 409")
     fields: ItemFieldsIn

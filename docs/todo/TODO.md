@@ -143,7 +143,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-001`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-27.
   - Area: Backend-API.
   - Priority: Normal.
@@ -155,6 +155,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Completion criteria: Neu angelegte Items sind formatgültig, haben
     eine eindeutige ID und werden als Item zurückgegeben; ungültige
     Eingaben liefern Fehler mit stabilen Codes.
+  - Summary: Neue Epics, Stories und Tasks lassen sich über die API
+    anlegen; der Server vergibt die ID und prüft die Regeln.
 - `STORY-008` **Items löschen**
   - Type: Story.
   - Parent: `EPIC-001`.

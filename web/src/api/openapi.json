@@ -252,6 +252,17 @@
       "IndexItemOut": {
         "description": "The fields needed to place new work; see GET /backlog for the full item.",
         "properties": {
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -290,7 +301,8 @@
           "type",
           "status",
           "title",
-          "parent"
+          "parent",
+          "area"
         ],
         "title": "IndexItemOut",
         "type": "object"

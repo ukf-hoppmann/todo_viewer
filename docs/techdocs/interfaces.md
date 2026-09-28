@@ -15,7 +15,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 |---|---|
 | `GET /health` | Erreichbarkeit prüfen: `{status: "ok", api: "2"}`, ohne Dateizugriff. |
 | `GET /backlog` | Alle Quellen (mit `item_count` und ggf. `problem`) und alle Items. Ohne `config.json` leer. |
-| `GET /index?source_id=…` | Schlanke Übersicht aller Items (aktiv und archiviert) mit nur `source_id`, `id`, `type`, `status`, `title`, `parent`, zum Einordnen neuer Arbeit; optional auf eine Quelle begrenzt. |
+| `GET /index?source_id=…` | Schlanke Übersicht aller Items (aktiv und archiviert) mit nur `source_id`, `id`, `type`, `status`, `title`, `parent`, `area` (`null` ohne Area), zum Einordnen neuer Arbeit; optional auf eine Quelle begrenzt. |
 | `POST /items` | Legt ein Epic, eine Story oder einen Task an; der Server vergibt die ID. Antwort 201 mit dem neuen Item. |
 | `GET /items/{source_id}/{item_id}` | Ein Item per ID, aktiv oder archiviert. |
 | `DELETE /items/{source_id}/{item_id}?version=…&cascade=…` | Verschiebt ein Item (mit `cascade=true` samt Nachfahren) in den Papierkorb. |
@@ -136,7 +136,7 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   dessen `path` der Backlog-Ordner ist (z. B. `<repo>/docs/todo`). Fehlt er,
   legt `POST /sources` mit `{path}` ihn an. Ein typischer Durchlauf:
 
-  1. Überblick: `GET /index?source_id=…` (nur ID, Typ, Status, Titel, Parent).
+  1. Überblick: `GET /index?source_id=…` (nur ID, Typ, Status, Titel, Parent, Area).
   2. Einzelnes Item samt `version`: `GET /items/{source_id}/{id}`.
   3. Anlegen: `POST /items` mit `{source_id, type, title, area, goal,
      completion_criteria, …}`.

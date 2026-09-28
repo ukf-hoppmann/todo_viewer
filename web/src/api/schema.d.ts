@@ -415,6 +415,8 @@ export interface components {
          * @description The fields needed to place new work; see GET /backlog for the full item.
          */
         IndexItemOut: {
+            /** Area */
+            area: string | null;
             /** Id */
             id: string;
             /** Parent */

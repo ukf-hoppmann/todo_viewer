@@ -104,11 +104,12 @@ class IndexItemOut(BaseModel):
     status: str
     title: str
     parent: str | None
+    area: str | None
 
     @classmethod
     def of(cls, source: Source, item: Item) -> IndexItemOut:
         return cls(source_id=source.id, id=item.id, type=item.item_type, status=item.status, title=item.title,
-                   parent=item.parent)
+                   parent=item.parent, area=item.area)
 
 
 class IndexOut(BaseModel):

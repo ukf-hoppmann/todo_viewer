@@ -83,6 +83,14 @@ inzwischen geändert, bricht das Speichern mit einem Hinweis ab, statt dessen
 Änderung zu überschreiben; Änderungen an anderen Einträgen derselben Datei
 stören nicht.
 
+## Nutzung durch Agenten
+
+Agenten pflegen Backlogs über die API unter `http://localhost:5411/api/v2`
+statt die Dateien direkt zu bearbeiten: Überblick, Anlegen, Ändern (mit
+Versions-Token), Notizen und Specs, Löschen. Der Server prüft dabei die Regeln
+des Backlog-Formats. Ablauf und Endpunkte: [Schnittstellen](docs/techdocs/interfaces.md#nutzung-durch-agenten).
+Der Port ist nur lokal erreichbar.
+
 ## Sprache
 
 Status, Prioritäten, Typen und Feldnamen sind in den Dateien englisch und

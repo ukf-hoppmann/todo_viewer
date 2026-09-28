@@ -12,6 +12,7 @@ from .schemas import (
     DocumentOut,
     ErrorOut,
     FolderListingOut,
+    HealthOut,
     IndexItemOut,
     IndexOut,
     ItemCreateIn,
@@ -30,6 +31,12 @@ ERRORS: dict[int | str, dict[str, Any]] = {
 }
 
 router = APIRouter(prefix="/api/v2", responses=ERRORS)
+
+
+@router.get("/health", tags=["meta"])
+def health() -> HealthOut:
+    """Cheap reachability check for agents; touches no backlog files."""
+    return HealthOut(status="ok", api="2")
 
 
 @router.get("/backlog", tags=["items"])

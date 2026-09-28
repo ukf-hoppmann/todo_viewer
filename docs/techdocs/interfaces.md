@@ -13,6 +13,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 
 | Methode und Pfad | Zweck |
 |---|---|
+| `GET /health` | Erreichbarkeit prüfen: `{status: "ok", api: "2"}`, ohne Dateizugriff. |
 | `GET /backlog` | Alle Quellen (mit `item_count` und ggf. `problem`) und alle Items. Ohne `config.json` leer. |
 | `GET /index?source_id=…` | Schlanke Übersicht aller Items (aktiv und archiviert) mit nur `source_id`, `id`, `type`, `status`, `title`, `parent`, zum Einordnen neuer Arbeit; optional auf eine Quelle begrenzt. |
 | `POST /items` | Legt ein Epic, eine Story oder einen Task an; der Server vergibt die ID. Antwort 201 mit dem neuen Item. |
@@ -100,6 +101,39 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 
 Alle übrigen Pfade liefern das gebaute Frontend aus `web/dist`; fehlt der
 Build, antwortet der Server mit 503 und einem Hinweis.
+
+## Nutzung durch Agenten
+
+- Zweck: Agenten (z. B. der `todo`-Skill des Claude_Harness) pflegen Backlogs
+  über die HTTP-API statt die Dateien direkt zu bearbeiten.
+- Aufruf / Endpunkt: Der Container läuft dauerhaft (`restart: unless-stopped`)
+  und ist nur lokal erreichbar: `http://localhost:5411/api/v2`
+  (gleichwertig `http://todo.localhost:5411/api/v2`). Ob er läuft, zeigt
+  `GET /health`; wie ein Agent reagiert, wenn nicht, regelt das Harness
+  (Entscheidung: [STORY-010](../todo/items/STORY-010/STORY-010_notes.md)).
+- Eingabe: Die `source_id` eines Projekts steht in `GET /sources` beim Eintrag,
+  dessen `path` der Backlog-Ordner ist (z. B. `<repo>/docs/todo`). Fehlt er,
+  legt `POST /sources` mit `{path}` ihn an. Ein typischer Durchlauf:
+
+  1. Überblick: `GET /index?source_id=…` (nur ID, Typ, Status, Titel, Parent).
+  2. Einzelnes Item samt `version`: `GET /items/{source_id}/{id}`.
+  3. Anlegen: `POST /items` mit `{source_id, type, title, area, goal,
+     completion_criteria, …}`.
+  4. Ändern: `PATCH /items/{source_id}/{id}` mit `{version, fields: {…}}`,
+     z. B. `{"status": "In progress"}` oder `{"parent": "EPIC-001",
+     "required_for_parent": "Yes"}`.
+  5. Notizen: `POST /items/{source_id}/{id}/notes` mit
+     `{topic, discussed, decided, open, summary?}`; Specs über
+     `PUT /items/{source_id}/{id}/documents/<ID>_spec.md` mit
+     `{content, version}`.
+  6. Löschen: `DELETE /items/{source_id}/{id}?version=…`.
+- Ausgabe: wie bei der HTTP-API oben; jede Änderung liefert den neuen Stand
+  mit neuer `version`.
+- Fehler: Bei `version_conflict` (409) das Item neu lesen und die Änderung
+  prüfen, nicht blind wiederholen. Regelverstöße (409) nennen in
+  `details.items` die blockierenden Items. Die Parent-Regeln des
+  Backlog-Formats prüft der Server; der Agent muss sie nicht selbst
+  durchsetzen.
 
 ## Dateiformat: Backlog-Ordner
 

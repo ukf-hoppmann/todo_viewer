@@ -188,6 +188,27 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HealthOut": {
+        "properties": {
+          "api": {
+            "const": "2",
+            "description": "Major version of this API",
+            "title": "Api",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "api"
+        ],
+        "title": "HealthOut",
+        "type": "object"
+      },
       "IndexItemOut": {
         "description": "The fields needed to place new work; see GET /backlog for the full item.",
         "properties": {
@@ -1077,6 +1098,68 @@
         "summary": "Folders",
         "tags": [
           "sources"
+        ]
+      }
+    },
+    "/api/v2/health": {
+      "get": {
+        "description": "Cheap reachability check for agents; touches no backlog files.",
+        "operationId": "health_api_v2_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "meta"
         ]
       }
     },

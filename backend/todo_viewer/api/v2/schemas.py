@@ -12,6 +12,11 @@ from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
 
+class HealthOut(BaseModel):
+    status: Literal["ok"]
+    api: Literal["2"] = Field(description="Major version of this API")
+
+
 class ErrorOut(BaseModel):
     code: str
     message: str

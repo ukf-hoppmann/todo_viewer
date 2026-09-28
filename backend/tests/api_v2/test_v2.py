@@ -29,6 +29,10 @@ def test_backlog(api, workspace, golden):
     assert len(keys) == len(set(keys))
 
 
+def test_health(api):
+    assert api.get("/api/v2/health").body == {"status": "ok", "api": "2"}
+
+
 def test_backlog_without_config_is_empty(api):
     assert api.get("/api/v2/backlog").body == {"sources": [], "items": []}
     assert api.get("/api/v2/sources").body == []

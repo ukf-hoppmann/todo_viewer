@@ -211,6 +211,112 @@
         "title": "IndexOut",
         "type": "object"
       },
+      "ItemCreateIn": {
+        "additionalProperties": false,
+        "description": "A new item; the id is assigned by the server, the status is always Open.",
+        "properties": {
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "completion_criteria": {
+            "title": "Completion Criteria",
+            "type": "string"
+          },
+          "created": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "YYYY-MM-DD; default: today",
+            "title": "Created"
+          },
+          "dependencies": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dependencies",
+            "type": "array"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default: Normal",
+            "title": "Priority"
+          },
+          "required_for_parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Yes or No; required with a parent",
+            "title": "Required For Parent"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "description": "Epic, Story or Task",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "type",
+          "title",
+          "area",
+          "goal",
+          "completion_criteria"
+        ],
+        "title": "ItemCreateIn",
+        "type": "object"
+      },
       "ItemEditIn": {
         "properties": {
           "fields": {
@@ -952,6 +1058,88 @@
           }
         },
         "summary": "Index",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/api/v2/items": {
+      "post": {
+        "description": "Creates an Open item with the next free id of its type at the end of the active list.",
+        "operationId": "create_item_api_v2_items_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Item",
         "tags": [
           "items"
         ]

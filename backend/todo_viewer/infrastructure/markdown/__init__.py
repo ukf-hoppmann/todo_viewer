@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .detector import FormatDetector
-from .editors import BacklogEntryEditor, EntryLocator, EntryMover
+from .editors import BacklogEntryEditor, EntryLocator, EntryMover, EntryRenderer
 from .field_mapper import BacklogFieldMapper, PriorityNormalizer
 from .layout import LayoutFactory, SourcePathResolver
 from .parsers import BacklogParser
@@ -21,6 +21,7 @@ def build_markdown_repository(base_dir: Path) -> MarkdownBacklogRepository:
         locator=EntryLocator(),
         entry_editor=BacklogEntryEditor(),
         mover=EntryMover(),
+        renderer=EntryRenderer(),
         locks=KeyedLocks(),
     )
 

@@ -54,6 +54,48 @@ def test_index_lists_only_placement_fields(api, workspace):
     assert (gone.status_code, gone.body["code"]) == (404, "source_gone")
 
 
+def test_create_item(api, workspace):
+    (folder,) = _setup(workspace, "backlog")
+    source_id = api.get("/api/v2/sources").body[0]["id"]
+    body = {"source_id": source_id, "type": "Task", "title": "Write tests", "area": "Core",
+            "goal": "Tests exist.", "completion_criteria": "They pass.", "parent": "STORY-001",
+            "required_for_parent": "Yes", "dependencies": ["TASK-001"]}
+
+    created = api.post("/api/v2/items", body)
+    second = api.post("/api/v2/items", {**body, "title": "Second"})
+
+    assert created.status_code == 201, created.body
+    assert (created.body["id"], created.body["status"], created.body["priority"]) == ("TASK-004", "Open", "Normal")
+    assert second.body["id"] == "TASK-005"
+    assert api.get(f"/api/v2/items/{source_id}/TASK-004").body == created.body
+    todo = (folder / "TODO.md").read_text(encoding="utf-8")
+    assert todo.index("`TASK-005`") < todo.index("## Other section")
+
+
+def test_create_item_errors(api, workspace):
+    (folder,) = _setup(workspace, "backlog")
+    source_id = api.get("/api/v2/sources").body[0]["id"]
+    before = (folder / "TODO.md").read_bytes()
+    body = {"source_id": source_id, "type": "Task", "title": "x", "area": "a", "goal": "g",
+            "completion_criteria": "c"}
+
+    cases = [
+        (400, "invalid_value", {"type": "Bug"}),
+        (400, "bad_request", {"status": "Completed"}),
+        (400, "bad_request", {"goal": None}),
+        (400, "value_required", {"area": "  "}),
+        (404, "source_gone", {"source_id": "nope"}),
+        (409, "unknown_reference", {"parent": "STORY-999", "required_for_parent": "Yes"}),
+        (409, "required_for_parent_missing", {"parent": "STORY-001"}),
+        (409, "epic_with_parent", {"type": "Epic", "parent": "STORY-001", "required_for_parent": "Yes"}),
+    ]
+    for status, code, override in cases:
+        resp = api.post("/api/v2/items", {**body, **override})
+        assert (resp.status_code, resp.body.get("code")) == (status, code), (code, resp.body)
+
+    assert (folder / "TODO.md").read_bytes() == before
+
+
 def test_get_item_by_id(api, workspace):
     _setup(workspace, "backlog")
     active, archived = _item(api, "TASK-001"), _item(api, "TASK-000")

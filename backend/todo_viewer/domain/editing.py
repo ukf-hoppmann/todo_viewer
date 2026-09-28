@@ -79,7 +79,7 @@ class EditPlanner:
         for field, raw in changes.items():
             if field == Field.STATUS:
                 continue  # handled last: it may add a resolution and move the entry
-            value = self._value(field, raw)
+            value = self.normalize(field, raw)
             if value is None and field in Field.OPTIONAL_TEXT:
                 remove_fields.append(field)
                 continue
@@ -102,7 +102,8 @@ class EditPlanner:
 
         return ChangeSet(set_fields=tuple(set_fields), remove_fields=tuple(remove_fields), move_to=move_to)
 
-    def _value(self, field: str, raw: object) -> FieldValue:
+    def normalize(self, field: str, raw: object) -> FieldValue:
+        """Validates one field value and brings it into its stored form (None = no value)."""
         if field == Field.PARENT:
             return None if raw is None else self._id(field, raw)
         if field == Field.DEPENDENCIES:

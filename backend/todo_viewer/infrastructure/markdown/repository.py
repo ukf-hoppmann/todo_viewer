@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import ChangeSet
-from todo_viewer.domain.errors import ItemNotFoundError, VersionConflictError
+from todo_viewer.domain.errors import DuplicateItemError, ItemNotFoundError, VersionConflictError
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
 from .detector import FormatDetector
-from .editors import BacklogEntryEditor, EntryLocator, EntryMover
+from .editors import BacklogEntryEditor, EntryLocator, EntryMover, EntryRenderer
 from .layout import BacklogLayout, LayoutFactory
 from .parsers import BacklogParser
 from .syntax import TODO_FILE
@@ -25,6 +25,7 @@ class MarkdownBacklogRepository:
         locator: EntryLocator,
         entry_editor: BacklogEntryEditor,
         mover: EntryMover,
+        renderer: EntryRenderer,
         locks: KeyedLocks,
     ):
         self._layouts = layouts
@@ -34,6 +35,7 @@ class MarkdownBacklogRepository:
         self._locator = locator
         self._entry_editor = entry_editor
         self._mover = mover
+        self._renderer = renderer
         self._locks = locks
 
     # ---------- reading ----------
@@ -103,6 +105,17 @@ class MarkdownBacklogRepository:
             self._files.write(target)
             self._files.write(doc)
             return self._reload(source, layout, item.id, changes.move_to)
+
+    def create(self, source: Source, item: Item) -> Item:
+        """Adds a new active entry; raises DuplicateItemError if its id was taken in the meantime."""
+        layout = self._layouts.for_source(source)
+        with self._locks.hold(str(layout.folder)):
+            if any(i.id == item.id for i in self.load(source).items):
+                raise DuplicateItemError(item.id)
+            doc = self._files.read(layout.file(Location.ACTIVE))
+            self._mover.insert(doc.lines, self._renderer.render(item))
+            self._files.write(doc)
+            return self._reload(source, layout, item.id, Location.ACTIVE)
 
     def _reload(self, source: Source, layout: BacklogLayout, item_id: str, location: Location) -> Item:
         items = self._parse(self._files.read(layout.file(location)), source, location)

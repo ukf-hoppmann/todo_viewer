@@ -349,3 +349,26 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     index` im Claude_Harness zeigt die Area ohne weitere Änderung an.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt: GET
     /api/v2/index liefert area (fb61bd5).
+
+- `STORY-004` **Lean Index**
+  - Type: Story.
+  - Parent: `EPIC-001`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-27.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: `GET /api/v2/index` liefert für aktive und archivierte Items nur
+    `source_id`, `id`, `type`, `status`, `title`, `parent` und `area`,
+    optional gefiltert auf eine Quelle.
+  - Completion criteria: Der Endpunkt hat ein festes Schema im
+    OpenAPI-Vertrag, liefert genau diese Felder und ist durch API-Tests
+    abgedeckt.
+  - Notes: `items/STORY-004/STORY-004_notes.md`.
+  - Summary: Die Übersichtsliste aller Einträge soll schlank bleiben. Sie
+    zeigt nur das Nötigste, jetzt zusätzlich den Bereich, damit man
+    schneller sieht, welche Einträge man sich genauer ansehen muss.
+  - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt: Lean
+    Index mit festem Schema inkl. area, durch API-Tests abgedeckt (fb61bd5,
+    TASK-001).

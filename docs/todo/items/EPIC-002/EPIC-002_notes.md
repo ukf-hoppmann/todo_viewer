@@ -19,3 +19,20 @@
 
 - Zuschnitt der Stories (z. B. Anlegen, Löschen, Felder bearbeiten,
   Notes/Specs) und Bedienkonzept.
+
+## 2026-09-28 — Bedienkonzept
+
+### Discussed
+
+- Inline-Bearbeitung oder eigener Bearbeiten-Modus
+- Einstieg zum Anlegen
+- Ort des Papierkorbs
+- Art des Spec-Editors
+
+### Decided
+
+- Bearbeiten nur über einen eigenen Bearbeiten-Modus mit Speichern/Abbrechen; Inline-Bearbeitung ist zu riskant für versehentliche Änderungen.
+- Anlegen über „Neu“ oben (ohne Parent) und „Kind anlegen“ im Detail-Panel.
+- Papierkorb als eigene Ansicht neben Baum, Abhängigkeiten und Kanban.
+- Spec-Editor als Textfeld mit Markdown-Vorschau, ohne neue Bibliothek.
+- Stories STORY-012 bis STORY-015 angelegt.

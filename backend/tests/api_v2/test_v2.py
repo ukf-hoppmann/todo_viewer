@@ -74,7 +74,7 @@ def test_edit_archives_and_changes_version(api, workspace):
     item = _item(api, "TASK-001")
 
     resp = api.patch(f"/api/v2/items/{item['source_id']}/TASK-001",
-                     {"version": item["version"], "field": "status", "value": "Completed", "resolution": "Done"})
+                     {"version": item["version"], "fields": {"status": "Completed"}, "resolution": "Done"})
 
     assert resp.status_code == 200
     assert (resp.body["archived"], resp.body["key"]) == (True, item["key"])
@@ -89,19 +89,18 @@ def test_edit_errors(api, workspace):
     url = f"/api/v2/items/{item['source_id']}/TASK-001"
     version = item["version"]
 
-    stale = api.patch(url, {"version": "outdated", "field": "status", "value": "Open"})
-    unknown_source = api.patch("/api/v2/items/nope/TASK-001", {"version": version, "field": "status",
-                                                              "value": "Open"})
-    no_version = api.patch(url, {"field": "status", "value": "Open"})
-    no_resolution = api.patch(url, {"version": version, "field": "status", "value": "Rejected"})
-    bad_field = api.patch(url, {"version": version, "field": "title", "value": "x"})
+    stale = api.patch(url, {"version": "outdated", "fields": {"status": "Open"}})
+    unknown_source = api.patch("/api/v2/items/nope/TASK-001", {"version": version, "fields": {"status": "Open"}})
+    no_version = api.patch(url, {"fields": {"status": "Open"}})
+    no_resolution = api.patch(url, {"version": version, "fields": {"status": "Rejected"}})
+    bad_field = api.patch(url, {"version": version, "fields": {}})
 
     assert (stale.status_code, stale.body["code"]) == (409, "version_conflict")
     assert (unknown_source.status_code, unknown_source.body["code"]) == (404, "source_gone")
     assert (no_version.status_code, no_version.body["code"]) == (400, "bad_request")
     assert (no_resolution.status_code, no_resolution.body["code"]) == (400, "resolution_required")
     assert (bad_field.status_code, bad_field.body["code"]) == (400, "bad_request")
-    assert bad_field.body["details"] == {"field": "field"}
+    assert bad_field.body["details"] == {"field": "fields"}
     assert set(stale.body) == {"code", "message", "details"}
 
 

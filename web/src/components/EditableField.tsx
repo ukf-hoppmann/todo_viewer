@@ -25,7 +25,7 @@ export function EditableField({ item, field, ariaLabel, options, label }: Editab
   const current = editValue(item, field);
 
   const save = (value: string, resolution: string | null) =>
-    edit.mutate({ sourceId: item.source_id, id: item.id, version: item.version, field, value, resolution });
+    edit.mutate({ sourceId: item.source_id, id: item.id, version: item.version, fields: { [field]: value }, resolution });
 
   const onChange = (value: string) => {
     if (!value || value === current) return;

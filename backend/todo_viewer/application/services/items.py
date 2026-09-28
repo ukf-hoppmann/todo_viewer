@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from todo_viewer.domain.backlog import Backlog
@@ -50,15 +51,17 @@ class ItemService:
         item = self._backlogs.get(source, item_id)
         return ItemResult(item, self._backlogs.archive_available(source))
 
-    def edit(self, source: Source, item_id: str, version: str, field: str, value: str,
+    def edit(self, source: Source, item_id: str, version: str, changes: Mapping[str, object],
              resolution: str | None) -> ItemResult:
-        if field not in Field.EDITABLE:
-            raise NotEditableError(field)
+        """Applies all field changes at once, so e.g. parent and required_for_parent can change together."""
+        for field in changes:
+            if field not in Field.EDITABLE:
+                raise NotEditableError(field)
         backlog = self._backlogs.load(source)
         item = backlog.find(item_id)
         if item.version != version:
             raise VersionConflictError(item_id)
-        changes = self._planner.plan(item, field, value, resolution, backlog.archive_available)
-        after = changes.applied_to(item)
+        change_set = self._planner.plan(item, changes, resolution, backlog.archive_available)
+        after = change_set.applied_to(item)
         self._rules.check_change(backlog.items, [after if i is item else i for i in backlog.items])
-        return ItemResult(self._backlogs.apply(source, item, changes), backlog.archive_available)
+        return ItemResult(self._backlogs.apply(source, item, change_set), backlog.archive_available)

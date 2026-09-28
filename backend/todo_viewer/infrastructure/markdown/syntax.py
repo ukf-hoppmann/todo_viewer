@@ -31,7 +31,17 @@ FIELD_LABELS = {
     "priority": "Priority",
     "required_for_parent": "Required for parent",
     "resolution": "Resolution",
+    "goal": "Goal",
+    "completion_criteria": "Completion criteria",
+    "summary": "Summary",
+    "area": "Area",
+    "parent": "Parent",
+    "dependencies": "Dependencies",
 }
+# Fields whose values are item ids, written in backticks ("None" if empty).
+ID_FIELDS = frozenset({"parent", "dependencies"})
+# Long field values wrap at this width; continuation lines are indented by four spaces.
+LINE_WIDTH = 76
 
 
 def work_items_start(lines: list[str]) -> int:

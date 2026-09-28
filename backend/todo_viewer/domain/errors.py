@@ -69,6 +69,8 @@ class LifecycleViolationError(ConflictError):
         "required_for_parent_missing": "{id} has a parent but no 'Required for parent'.",
         "parent_cycle": "Parent references form a cycle: {items}.",
         "dependency_cycle": "Dependencies form a cycle: {items}.",
+        "unknown_reference": "{id} refers to unknown items: {items}.",
+        "summary_required_with_notes": "{id} has notes and therefore needs a summary.",
     }
 
     def __init__(self, code: str, item_id: str, related: tuple[str, ...] = ()):
@@ -89,6 +91,13 @@ class InvalidValueError(DomainError):
 
     def __init__(self, field: str, allowed: tuple[str, ...]):
         super().__init__(f"Invalid value for '{field}'; allowed: {', '.join(allowed)}.", field=field)
+
+
+class ValueRequiredError(DomainError):
+    code = "value_required"
+
+    def __init__(self, field: str):
+        super().__init__(f"Field '{field}' must not be empty.", field=field)
 
 
 class ResolutionRequiredError(DomainError):

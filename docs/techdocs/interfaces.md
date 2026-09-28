@@ -16,7 +16,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `GET /backlog` | Alle Quellen (mit `item_count` und ggf. `problem`) und alle Items. Ohne `config.json` leer. |
 | `GET /index?source_id=…` | Schlanke Übersicht aller Items (aktiv und archiviert) mit nur `source_id`, `id`, `type`, `status`, `title`, `parent`, zum Einordnen neuer Arbeit; optional auf eine Quelle begrenzt. |
 | `GET /items/{source_id}/{item_id}` | Ein Item per ID, aktiv oder archiviert. |
-| `PATCH /items/{source_id}/{item_id}` | Ändert `status`, `priority` oder `required_for_parent` (`Yes`/`No`) eines Items. |
+| `PATCH /items/{source_id}/{item_id}` | Ändert ein oder mehrere Felder eines Items in einem Schritt. |
 | `GET /sources` | Konfigurierte Quellen. |
 | `POST /sources` | Quelle hinzufügen (`path`, optional `project`; ohne Namen der des Git-Repos). |
 | `PUT /sources/{source_id}` | Quelle ändern. |
@@ -30,9 +30,18 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     und Ablageort (aktiv/Archiv) gehören nicht zum Vertrag. So kann der
     Speicher später ausgetauscht werden (Entscheidung:
     [EPIC-001](../todo/items/EPIC-001/EPIC-001_notes.md)).
-  - `PATCH /items/{source_id}/{item_id}`: `{version, field, value, resolution?}`.
+  - `PATCH /items/{source_id}/{item_id}`: `{version, fields, resolution?}`.
     `version` ist Pflicht und muss der zuletzt gelesenen Version entsprechen;
-    `resolution` ist Pflicht bei `Completed`/`Rejected`.
+    `resolution` ist Pflicht bei `Completed`/`Rejected`. `fields` enthält nur
+    die zu ändernden Felder: `title`, `status`, `priority`,
+    `required_for_parent` (`Yes`/`No`), `goal`, `completion_criteria`,
+    `summary`, `area`, `parent`, `dependencies` (Liste von IDs). `null`
+    entfernt `summary` bzw. `parent` (mit `parent` fällt auch
+    `required_for_parent` weg); Titel, Priorität, Goal, Completion criteria und
+    Area dürfen nicht leer werden. Unbekannte Felder werden abgelehnt. Alle
+    Felder werden zusammen geprüft und geschrieben, z. B. `parent` zusammen
+    mit `required_for_parent`. Texte werden auf eine logische Zeile
+    zusammengezogen und in der Datei mit vier Leerzeichen Einzug umbrochen.
     Der Server prüft die Parent-Regeln des Backlog-Formats und lehnt eine
     Änderung ab, wenn sie einen neuen Regelverstoß erzeugt; bereits
     bestehende Verstöße blockieren andere Änderungen nicht (Entscheidung:
@@ -52,11 +61,11 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 
 | HTTP | Codes |
 |---|---|
-| 400 | `bad_request` (Validierung), `invalid_value`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
+| 400 | `bad_request` (Validierung, auch unbekannte Felder), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `config_missing`, `file_not_found`, `item_not_found` |
 | 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen) |
-| 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle` |
+| 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 
 Alle übrigen Pfade liefern das gebaute Frontend aus `web/dist`; fehlt der

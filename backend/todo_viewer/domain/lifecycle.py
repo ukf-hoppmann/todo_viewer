@@ -31,9 +31,10 @@ class LifecycleRules:
             if i.parent:
                 children.setdefault(i.parent, []).append(i)
 
+        known = {i.id for i in items}
         found: set[Violation] = set()
         for i in items:
-            found.update(self._structure(i))
+            found.update(self._structure(i, known))
             found.update(self._as_parent(i, children.get(i.id, [])))
         found.update(self._cycles(items, lambda i: [i.parent] if i.parent else [], "parent_cycle"))
         found.update(self._cycles(items, lambda i: i.dependencies, "dependency_cycle"))
@@ -48,11 +49,17 @@ class LifecycleRules:
                 raise LifecycleViolationError(v.code, v.item_id, v.related)
 
     @staticmethod
-    def _structure(item: Item) -> Iterable[Violation]:
+    def _structure(item: Item, known: set[str]) -> Iterable[Violation]:
         if item.item_type == EPIC and item.parent:
             yield Violation("epic_with_parent", item.id)
         if item.parent and item.required_for_parent is None:
             yield Violation("required_for_parent_missing", item.id)
+        if item.notes and not item.summary:
+            yield Violation("summary_required_with_notes", item.id)
+        refs = ([item.parent] if item.parent else []) + item.dependencies
+        unknown = sorted({r for r in refs if r not in known})
+        if unknown:
+            yield Violation("unknown_reference", item.id, tuple(unknown))
 
     @staticmethod
     def _as_parent(parent: Item, children: list[Item]) -> Iterable[Violation]:

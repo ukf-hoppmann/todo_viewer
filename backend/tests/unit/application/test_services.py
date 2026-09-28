@@ -14,11 +14,13 @@ from todo_viewer.domain.errors import (
     DuplicateSourceError,
     InvalidSourceError,
     ItemNotFoundError,
+    LifecycleViolationError,
     NotEditableError,
     SourceGoneError,
     VersionConflictError,
 )
 from todo_viewer.domain.item import Item, Location
+from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.source import Source, SourceProblem
 
 
@@ -125,7 +127,7 @@ def test_lookup_by_id():
 
 def _items(items: list[Item], archive: bool = True) -> tuple[ItemService, FakeBacklogs]:
     backlogs = FakeBacklogs(items, archive=archive)
-    return ItemService(backlogs, EditPlanner()), backlogs
+    return ItemService(backlogs, EditPlanner(), LifecycleRules()), backlogs
 
 
 def test_item_get_by_id():
@@ -156,6 +158,18 @@ def test_item_edit_rejects_stale_version():
 
     with pytest.raises(VersionConflictError):
         service.edit(Source("p", "/p"), "T-1", "outdated", "status", "In progress", None)
+    assert backlogs.applied == []
+
+
+def test_item_edit_checks_lifecycle_rules_before_writing():
+    story = Item(id="S", title="s", project="p", item_type="Story", status="In progress")
+    task = Item(id="T", title="t", project="p", parent="S", required_for_parent=True, status="Open")
+    service, backlogs = _items([story, task])
+
+    with pytest.raises(LifecycleViolationError) as err:
+        service.edit(Source("p", "/p"), "S", story.version, "status", "Completed", "done")
+
+    assert err.value.details["id"] == "S"
     assert backlogs.applied == []
 
 

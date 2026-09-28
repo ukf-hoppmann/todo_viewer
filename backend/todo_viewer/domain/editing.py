@@ -1,6 +1,7 @@
 """Editing rules: turns an edit request into a storage-independent ChangeSet."""
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 
 from .errors import InvalidValueError, NotEditableError, ResolutionRequiredError
@@ -25,6 +26,17 @@ class ChangeSet:
     set_fields: tuple[tuple[str, str], ...] = ()
     remove_fields: tuple[str, ...] = ()
     move_to: Location | None = None
+
+    def applied_to(self, item: Item) -> Item:
+        """The item as it will be stored afterwards, for rule checks before anything is written."""
+        values: dict[str, object] = {}
+        for key, value in self.set_fields:
+            values[key] = (value == "Yes") if key == Field.REQUIRED_FOR_PARENT else value
+        for key in self.remove_fields:
+            values[key] = None
+        if self.move_to is not None:
+            values["location"] = self.move_to
+        return dataclasses.replace(item, **values)  # type: ignore[arg-type]
 
 
 class EditPlanner:

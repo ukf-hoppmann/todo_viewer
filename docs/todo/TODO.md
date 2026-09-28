@@ -104,7 +104,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-001`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-27.
   - Area: Backend-API.
   - Priority: Normal.
@@ -117,6 +117,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Completion criteria: Verstöße liefern Fehler mit stabilen Codes;
     jede Regel ist durch Domain-Tests abgedeckt; die UI übersetzt die
     neuen Codes.
+  - Summary: Der Server lehnt Änderungen ab, die gegen die Regeln für
+    Epics, Stories und ihre Kinder verstoßen, statt das dem Agenten zu
+    überlassen.
+  - Notes: `items/STORY-005/STORY-005_notes.md`.
 - `STORY-006` **Weitere Felder bearbeitbar**
   - Type: Story.
   - Parent: `EPIC-001`.

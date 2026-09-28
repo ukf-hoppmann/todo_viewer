@@ -32,6 +32,10 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
   - `PATCH /items/{source_id}/{item_id}`: `{version, field, value, resolution?}`.
     `version` ist Pflicht und muss der zuletzt gelesenen Version entsprechen;
     `resolution` ist Pflicht bei `Completed`/`Rejected`.
+    Der Server prüft die Parent-Regeln des Backlog-Formats und lehnt eine
+    Änderung ab, wenn sie einen neuen Regelverstoß erzeugt; bereits
+    bestehende Verstöße blockieren andere Änderungen nicht (Entscheidung:
+    [STORY-005](../todo/items/STORY-005/STORY-005_notes.md)).
   - Quellen: `{path, project?}`; `source_id` ist eine stabile, pfadbasierte ID.
 - Ausgabe:
   - Items mit `key` (`<source_id>/<id>`), `source_id`, `id`, `version`,
@@ -51,6 +55,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `config_missing`, `file_not_found`, `item_not_found` |
 | 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen) |
+| 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 
 Alle übrigen Pfade liefern das gebaute Frontend aus `web/dist`; fehlt der

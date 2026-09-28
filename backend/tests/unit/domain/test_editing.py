@@ -60,3 +60,14 @@ def test_active_status_restores_archived_item():
 def test_active_status_on_active_item_drops_resolution():
     assert planner.plan(_item(), "status", "In progress", "ignored", archive_supported=True) == \
         ChangeSet(set_fields=(("status", "In progress"),), remove_fields=("resolution",))
+
+
+def test_change_set_applied_to_item():
+    archived = ChangeSet(set_fields=(("status", "Completed"), ("resolution", "Done"), ("required_for_parent", "No")),
+                         move_to=Location.ARCHIVE).applied_to(_item())
+    reopened = ChangeSet(set_fields=(("status", "Open"),), remove_fields=("resolution",),
+                         move_to=Location.ACTIVE).applied_to(archived)
+
+    assert (archived.status, archived.resolution, archived.required_for_parent, archived.location) == \
+        ("Completed", "Done", False, Location.ARCHIVE)
+    assert (reopened.status, reopened.resolution, reopened.location) == ("Open", None, Location.ACTIVE)

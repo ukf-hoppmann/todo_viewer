@@ -6,6 +6,7 @@ from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import EditPlanner, Field
 from todo_viewer.domain.errors import NotEditableError, VersionConflictError
 from todo_viewer.domain.item import Item
+from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.source import Source
 
 from ..ports import BacklogRepository, SourceRepository
@@ -37,11 +38,12 @@ class ItemResult:
 
 
 class ItemService:
-    """Reads and edits single items addressed by id, following the domain's archive rules."""
+    """Reads and edits single items addressed by id, following the domain's archive and lifecycle rules."""
 
-    def __init__(self, backlogs: BacklogRepository, planner: EditPlanner):
+    def __init__(self, backlogs: BacklogRepository, planner: EditPlanner, rules: LifecycleRules):
         self._backlogs = backlogs
         self._planner = planner
+        self._rules = rules
 
     def get(self, source: Source, item_id: str) -> ItemResult:
         item = self._backlogs.get(source, item_id)
@@ -51,9 +53,11 @@ class ItemService:
              resolution: str | None) -> ItemResult:
         if field not in Field.EDITABLE:
             raise NotEditableError(field)
-        item = self._backlogs.get(source, item_id)
+        backlog = self._backlogs.load(source)
+        item = backlog.find(item_id)
         if item.version != version:
             raise VersionConflictError(item_id)
-        archive = self._backlogs.archive_available(source)
-        changes = self._planner.plan(item, field, value, resolution, archive)
-        return ItemResult(self._backlogs.apply(source, item, changes), archive)
+        changes = self._planner.plan(item, field, value, resolution, backlog.archive_available)
+        after = changes.applied_to(item)
+        self._rules.check_change(backlog.items, [after if i is item else i for i in backlog.items])
+        return ItemResult(self._backlogs.apply(source, item, changes), backlog.archive_available)

@@ -10,6 +10,10 @@ from pathlib import Path
 
 import pytest
 
+from todo_viewer.domain.editing import EditPlanner
+from todo_viewer.domain.source import Source
+from todo_viewer.infrastructure.markdown import build_markdown_repository
+
 
 def _setup(workspace, fixture: str) -> Path:
     folder = workspace.add_backlog(fixture)
@@ -45,7 +49,6 @@ EDIT_CASES = [
     ("status_active", "backlog", "STORY-001", "status", "In progress", None, False),
     ("complete_to_archive", "backlog", "TASK-001", "status", "Completed", "Merged in PR 1", True),
     ("complete_last_entry", "backlog", "TASK-003", "status", "Rejected", "Obsolete", True),
-    ("complete_first_entry", "backlog", "EPIC-001", "status", "Completed", "All done.", True),
     ("complete_into_empty_archive", "empty_archive", "TASK-020", "status", "Completed", "Done", True),
     ("reopen_from_archive", "backlog", "TASK-000", "status", "Open", None, False),
     ("reopen_last_archive_entry", "backlog", "STORY-000", "status", "In progress", None, False),
@@ -70,6 +73,32 @@ def test_edit_rewrites_files(api, workspace, golden, name, fixture, item_id, fie
     expected = {"priority": value.rstrip("."), "required_for_parent": value == "Yes"}.get(field, value)
     assert resp.body[field] == expected
     assert resp.body == _item(api, item_id)
+
+
+def test_complete_first_entry_file_mechanics(workspace, golden):
+    """Cutting the first entry; below the API because closing EPIC-001 breaks a lifecycle rule."""
+    folder = _setup(workspace, "backlog")
+    repo = build_markdown_repository(Path("/"))
+    source = Source("P", str(folder))
+    item = repo.get(source, "EPIC-001")
+
+    repo.apply(source, item, EditPlanner().plan(item, "status", "Completed", "All done.", archive_supported=True))
+
+    golden("edit/complete_first_entry.md", _files(folder))
+
+
+def test_lifecycle_violation_is_rejected_and_files_stay_untouched(api, workspace):
+    folder = _setup(workspace, "backlog")
+    before = _files(folder)
+
+    epic = _update(api, _item(api, "EPIC-001"), "status", "Completed", "All done.")
+    story = _update(api, _item(api, "STORY-001"), "status", "Awaiting confirmation")
+
+    assert (epic.status_code, epic.body["code"]) == (409, "children_still_active")
+    assert epic.body["details"] == {"id": "EPIC-001", "items": "STORY-001"}
+    assert (story.status_code, story.body["code"]) == (409, "required_children_not_done")
+    assert story.body["details"] == {"id": "STORY-001", "items": "TASK-001"}
+    assert _files(folder) == before
 
 
 def test_edit_twice_reopen_after_archive(api, workspace, golden):

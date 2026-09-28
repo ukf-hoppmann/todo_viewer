@@ -7,7 +7,7 @@ from .services import (
     BacklogOverviewService,
     DocumentService,
     FolderBrowseService,
-    ItemEditService,
+    ItemService,
     SourceLookup,
     SourceService,
     UiStateService,
@@ -17,7 +17,7 @@ from .services import (
 @dataclass(frozen=True)
 class Container:
     overview: BacklogOverviewService
-    item_edits: ItemEditService
+    items: ItemService
     sources: SourceService
     source_lookup: SourceLookup
     documents: DocumentService

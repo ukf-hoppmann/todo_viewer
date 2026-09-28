@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from todo_viewer.domain.backlog import Backlog, supports_archive
+from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import EditPlanner, Field
-from todo_viewer.domain.errors import NotEditableError
-from todo_viewer.domain.item import Item, ItemRef
+from todo_viewer.domain.errors import NotEditableError, VersionConflictError
+from todo_viewer.domain.item import Item
 from todo_viewer.domain.source import Source
 
 from ..ports import BacklogRepository, SourceRepository
@@ -31,23 +31,29 @@ class BacklogOverviewService:
 
 
 @dataclass(frozen=True)
-class EditResult:
+class ItemResult:
     item: Item
     archive_supported: bool
 
 
-class ItemEditService:
-    """Edits one field of an item, following the domain's archive rules."""
+class ItemService:
+    """Reads and edits single items addressed by id, following the domain's archive rules."""
 
     def __init__(self, backlogs: BacklogRepository, planner: EditPlanner):
         self._backlogs = backlogs
         self._planner = planner
 
-    def edit(self, source: Source, ref: ItemRef, field: str, value: str, resolution: str | None) -> EditResult:
+    def get(self, source: Source, item_id: str) -> ItemResult:
+        item = self._backlogs.get(source, item_id)
+        return ItemResult(item, self._backlogs.archive_available(source))
+
+    def edit(self, source: Source, item_id: str, version: str, field: str, value: str,
+             resolution: str | None) -> ItemResult:
         if field not in Field.EDITABLE:
             raise NotEditableError(field)
-        item = self._backlogs.find(source, ref)
+        item = self._backlogs.get(source, item_id)
+        if item.version != version:
+            raise VersionConflictError(item_id)
         archive = self._backlogs.archive_available(source)
-        changes = self._planner.plan(item, field, value, resolution, supports_archive(item, archive))
-        updated = self._backlogs.apply(source, item, changes)
-        return EditResult(updated, supports_archive(updated, archive))
+        changes = self._planner.plan(item, field, value, resolution, archive)
+        return ItemResult(self._backlogs.apply(source, item, changes), archive)

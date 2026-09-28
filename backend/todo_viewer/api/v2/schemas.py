@@ -1,4 +1,4 @@
-"""HTTP contract of API v2. Items are addressed by ItemRef, sources by their stable id."""
+"""HTTP contract of API v2. Items are addressed by source id + item id, sources by their stable id."""
 from __future__ import annotations
 
 from typing import Literal
@@ -6,11 +6,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from todo_viewer.application.ports import FolderListing
-from todo_viewer.domain.item import Item, ItemRef, Location
+from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
-LocationName = Literal["active", "archive"]
-FormatName = Literal["backlog_v2", "checkbox"]
 EditableFieldName = Literal["status", "priority", "required_for_parent"]
 
 
@@ -29,25 +27,13 @@ class ProblemOut(BaseModel):
         return cls(code=problem.code, message=problem.message) if problem else None
 
 
-class ItemRefModel(BaseModel):
-    source_id: str
-    location: LocationName
-    id: str
-    line: int
-
-    @classmethod
-    def of(cls, source: Source, ref: ItemRef) -> ItemRefModel:
-        return cls(source_id=source.id, location=ref.location.value, id=ref.id, line=ref.line)
-
-    def to_domain(self) -> ItemRef:
-        return ItemRef(self.id, Location(self.location), self.line)
-
-
 class ItemOut(BaseModel):
-    key: str = Field(description="Unique within the whole response: source/location/id")
-    ref: ItemRefModel
+    key: str = Field(description="Unique within the whole response: source_id/id")
+    source_id: str
+    id: str
+    version: str = Field(description="Changes with every change of the item; required for edits")
+    archived: bool
     project: str
-    format: FormatName
     type: str
     title: str
     status: str
@@ -69,10 +55,12 @@ class ItemOut(BaseModel):
     @classmethod
     def of(cls, source: Source, item: Item, archive_supported: bool) -> ItemOut:
         return cls(
-            key=f"{source.id}/{item.location.value}/{item.id}",
-            ref=ItemRefModel.of(source, item.ref),
+            key=f"{source.id}/{item.id}",
+            source_id=source.id,
+            id=item.id,
+            version=item.version,
+            archived=item.location is Location.ARCHIVE,
             project=source.project,
-            format=item.format.value,
             type=item.item_type,
             title=item.title,
             status=item.status,
@@ -114,7 +102,7 @@ class BacklogOut(BaseModel):
 
 
 class ItemEditIn(BaseModel):
-    ref: ItemRefModel
+    version: str = Field(description="The item's version as last read; a changed item answers 409")
     field: EditableFieldName
     value: str
     resolution: str | None = None

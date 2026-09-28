@@ -1,18 +1,17 @@
 """Backlog repository backed by TODO.md / archive.md files."""
 from __future__ import annotations
 
-from collections.abc import Mapping
-
 from todo_viewer.domain.backlog import Backlog
-from todo_viewer.domain.editing import ChangeSet, Field
-from todo_viewer.domain.errors import EntryMovedError
-from todo_viewer.domain.item import Item, ItemFormat, ItemRef, Location
+from todo_viewer.domain.editing import ChangeSet
+from todo_viewer.domain.errors import DuplicateItemError, InvalidSourceError, ItemNotFoundError, VersionConflictError
+from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
 from .detector import FormatDetector
-from .editors import BacklogEntryEditor, ChecklistEntryEditor, EntryLocator, EntryMover
+from .editors import BacklogEntryEditor, EntryLocator, EntryMover
 from .layout import BacklogLayout, LayoutFactory
-from .parsers import ItemParser
+from .parsers import BacklogParser
+from .syntax import TODO_FILE
 from .text_file import KeyedLocks, TextDocument, TextFileStore
 
 
@@ -22,31 +21,30 @@ class MarkdownBacklogRepository:
         layouts: LayoutFactory,
         files: TextFileStore,
         detector: FormatDetector,
-        parsers: Mapping[ItemFormat, ItemParser],
+        parser: BacklogParser,
         locator: EntryLocator,
         entry_editor: BacklogEntryEditor,
-        checklist_editor: ChecklistEntryEditor,
         mover: EntryMover,
         locks: KeyedLocks,
     ):
         self._layouts = layouts
         self._files = files
         self._detector = detector
-        self._parsers = parsers
+        self._parser = parser
         self._locator = locator
         self._entry_editor = entry_editor
-        self._checklist_editor = checklist_editor
         self._mover = mover
         self._locks = locks
 
     # ---------- reading ----------
 
     def check(self, source: Source) -> SourceProblem | None:
-        return self._layouts.for_source(source).problem()
+        layout = self._layouts.for_source(source)
+        return layout.problem() or self._format_problem(layout)
 
     def load(self, source: Source) -> Backlog:
         layout = self._layouts.for_source(source)
-        problem = layout.problem()
+        problem = layout.problem() or self._format_problem(layout)
         if problem:
             return Backlog(problem=problem)
 
@@ -61,24 +59,29 @@ class MarkdownBacklogRepository:
                 backlog.problem = SourceProblem("parse_error", f"{path.name}: {exc}")
         return backlog
 
+    def get(self, source: Source, item_id: str) -> Item:
+        backlog = self.load(source)
+        if backlog.problem:
+            raise InvalidSourceError(backlog.problem.message, code=backlog.problem.code)
+        found = [i for i in backlog.items if i.id == item_id]
+        if not found:
+            raise ItemNotFoundError(item_id)
+        if len(found) > 1:
+            raise DuplicateItemError(item_id)
+        return found[0]
+
     def archive_available(self, source: Source) -> bool:
         return self._layouts.for_source(source).archive_available()
 
-    def find(self, source: Source, ref: ItemRef) -> Item:
-        path = self._layouts.for_source(source).file(ref.location)
-        if not path.is_file():
-            raise EntryMovedError()
-        items = self._parse(self._files.read(path), source, ref.location)
-        found = next((i for i in items if i.id == ref.id and i.line == ref.line), None)
-        if found is None:
-            raise EntryMovedError()
-        return found
+    def _format_problem(self, layout: BacklogLayout) -> SourceProblem | None:
+        if self._detector.is_backlog(self._files.read(layout.file(Location.ACTIVE)).text):
+            return None
+        return SourceProblem("unsupported_format", f"{TODO_FILE} is not in the backlog format.")
 
     def _parse(self, doc: TextDocument, source: Source, location: Location) -> list[Item]:
-        fmt = self._detector.detect(doc.text, location)
-        if fmt is None:
+        if not self._detector.is_backlog(doc.text):
             return []
-        return self._parsers[fmt].parse(doc.lines, str(doc.path), source.project, location)
+        return self._parser.parse(doc.lines, source.project, location)
 
     # ---------- writing ----------
 
@@ -87,14 +90,10 @@ class MarkdownBacklogRepository:
         layout = self._layouts.for_source(source)
         with self._locks.hold(str(layout.folder)):
             doc = self._files.read(layout.file(item.location))
-            idx = self._locator.locate(doc.lines, item.ref, item.format, doc.path)
-
-            if item.format is ItemFormat.CHECKBOX:
-                for key, value in changes.set_fields:
-                    if key == Field.STATUS:
-                        self._checklist_editor.set_status(doc.lines, idx, value)
-                self._files.write(doc)
-                return self._reload(source, layout, item.id, item.location)
+            stored = next((i for i in self._parse(doc, source, item.location) if i.id == item.id), None)
+            if stored is None or stored.version != item.version:
+                raise VersionConflictError(item.id)
+            idx = self._locator.locate(doc.lines, item.id)
 
             for key, value in changes.set_fields:
                 self._entry_editor.set_field(doc.lines, idx, key, value)
@@ -117,5 +116,5 @@ class MarkdownBacklogRepository:
         items = self._parse(self._files.read(layout.file(location)), source, location)
         found = next((i for i in items if i.id == item_id), None)
         if found is None:
-            raise EntryMovedError("Entry not found after saving.")
+            raise ItemNotFoundError(item_id)
         return found

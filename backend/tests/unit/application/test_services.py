@@ -6,17 +6,19 @@ from contextlib import contextmanager
 
 import pytest
 
-from todo_viewer.application.services import ItemEditService, SourceLookup, SourceService
+from todo_viewer.application.services import ItemService, SourceLookup, SourceService
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import ChangeSet, EditPlanner
 from todo_viewer.domain.errors import (
     ConfigMissingError,
     DuplicateSourceError,
     InvalidSourceError,
+    ItemNotFoundError,
     NotEditableError,
     SourceGoneError,
+    VersionConflictError,
 )
-from todo_viewer.domain.item import Item, ItemRef, Location
+from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
 
@@ -48,8 +50,11 @@ class FakeBacklogs:
     def load(self, source: Source) -> Backlog:
         return Backlog(items=self.items, archive_available=self.archive)
 
-    def find(self, source: Source, ref: ItemRef) -> Item:
-        return next(i for i in self.items if i.ref == ref)
+    def get(self, source: Source, item_id: str) -> Item:
+        found = next((i for i in self.items if i.id == item_id), None)
+        if found is None:
+            raise ItemNotFoundError(item_id)
+        return found
 
     def archive_available(self, source: Source) -> bool:
         return self.archive
@@ -118,22 +123,45 @@ def test_lookup_by_id():
         lookup.by_id("unknown")
 
 
-def test_item_edit_plans_with_archive_rules():
-    item = Item(id="T-1", title="t", source_file="f", project="p", line=3)
-    backlogs = FakeBacklogs([item], archive=True)
-    service = ItemEditService(backlogs, EditPlanner())
+def _items(items: list[Item], archive: bool = True) -> tuple[ItemService, FakeBacklogs]:
+    backlogs = FakeBacklogs(items, archive=archive)
+    return ItemService(backlogs, EditPlanner()), backlogs
 
-    result = service.edit(Source("p", "/p"), item.ref, "status", "Completed", "done")
+
+def test_item_get_by_id():
+    item = Item(id="T-1", title="t", project="p", location=Location.ARCHIVE)
+    service, _ = _items([item], archive=False)
+
+    result = service.get(Source("p", "/p"), "T-1")
+
+    assert (result.item, result.archive_supported) == (item, False)
+    with pytest.raises(ItemNotFoundError):
+        service.get(Source("p", "/p"), "T-2")
+
+
+def test_item_edit_plans_with_archive_rules():
+    item = Item(id="T-1", title="t", project="p")
+    service, backlogs = _items([item])
+
+    result = service.edit(Source("p", "/p"), "T-1", item.version, "status", "Completed", "done")
 
     assert result.archive_supported
     assert backlogs.applied == [ChangeSet(set_fields=(("status", "Completed"), ("resolution", "done")),
                                           move_to=Location.ARCHIVE)]
 
 
+def test_item_edit_rejects_stale_version():
+    item = Item(id="T-1", title="t", project="p")
+    service, backlogs = _items([item])
+
+    with pytest.raises(VersionConflictError):
+        service.edit(Source("p", "/p"), "T-1", "outdated", "status", "In progress", None)
+    assert backlogs.applied == []
+
+
 def test_item_edit_rejects_field_before_touching_storage():
-    backlogs = FakeBacklogs([])
-    service = ItemEditService(backlogs, EditPlanner())
+    service, backlogs = _items([])
 
     with pytest.raises(NotEditableError):
-        service.edit(Source("p", "/p"), ItemRef("x", Location.ACTIVE, 1), "title", "x", None)
+        service.edit(Source("p", "/p"), "x", "v", "title", "x", None)
     assert backlogs.applied == []

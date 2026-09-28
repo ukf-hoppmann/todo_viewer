@@ -59,8 +59,9 @@ describe("DetailPanel editing", () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const request = fetchMock.mock.calls[0]![0];
-    expect(new URL(request.url).pathname).toBe("/api/v2/items/edit");
-    expect(await request.clone().json()).toEqual({ ref: item.ref, field: "status", value: "Completed", resolution: "Done" });
+    expect(request.method).toBe("PATCH");
+    expect(new URL(request.url).pathname).toBe(`/api/v2/items/s/${item.id}`);
+    expect(await request.clone().json()).toEqual({ version: item.version, field: "status", value: "Completed", resolution: "Done" });
   });
 
   it("edits required-for-parent as Yes/No", async () => {
@@ -83,7 +84,7 @@ describe("DetailPanel editing", () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(await fetchMock.mock.calls[0]![0].clone().json()).toEqual({
-      ref: item.ref,
+      version: item.version,
       field: "required_for_parent",
       value: "Yes",
       resolution: null,
@@ -100,7 +101,7 @@ describe("DetailPanel editing", () => {
 
   it("shows translated API errors", async () => {
     vi.stubGlobal("fetch", vi.fn(async () =>
-      new Response(JSON.stringify({ code: "entry_moved", message: "x", details: {} }), {
+      new Response(JSON.stringify({ code: "version_conflict", message: "x", details: {} }), {
         status: 409,
         headers: { "Content-Type": "application/json" },
       })));
@@ -111,6 +112,6 @@ describe("DetailPanel editing", () => {
 
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Priorität" }), "Urgent");
 
-    expect(await screen.findByText(/Eintrag nicht gefunden/)).toBeInTheDocument();
+    expect(await screen.findByText(/Der Eintrag wurde inzwischen geändert/)).toBeInTheDocument();
   });
 });

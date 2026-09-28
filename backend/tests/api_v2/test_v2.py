@@ -1,4 +1,4 @@
-"""API v2: items addressed by ref, sources by stable id, errors as {code, message, details}."""
+"""API v2: items addressed by source id + item id, sources by stable id, errors as {code, message, details}."""
 from __future__ import annotations
 
 import json
@@ -11,11 +11,11 @@ def _setup(workspace, *fixtures: str) -> list:
 
 
 def _item(api, item_id: str) -> dict:
-    return next(i for i in api.get("/api/v2/backlog").body["items"] if i["ref"]["id"] == item_id)
+    return next(i for i in api.get("/api/v2/backlog").body["items"] if i["id"] == item_id)
 
 
 def test_backlog(api, workspace, golden):
-    _setup(workspace, "backlog", "checklist")
+    _setup(workspace, "backlog", "no_archive")
 
     resp = api.get("/api/v2/backlog")
 
@@ -34,41 +34,63 @@ def test_backlog_without_config_is_empty(api):
     assert api.get("/api/v2/sources").body == []
 
 
-def test_edit_archives_and_returns_new_ref(api, workspace):
+def test_get_item_by_id(api, workspace):
+    _setup(workspace, "backlog")
+    active, archived = _item(api, "TASK-001"), _item(api, "TASK-000")
+    url = f"/api/v2/items/{active['source_id']}"
+
+    assert api.get(f"{url}/TASK-001").body == active
+    assert api.get(f"{url}/TASK-000").body == archived
+    assert (active["key"], active["archived"], archived["archived"]) == (f"{active['source_id']}/TASK-001",
+                                                                         False, True)
+    missing = api.get(f"{url}/TASK-999")
+    assert (missing.status_code, missing.body["code"]) == (404, "item_not_found")
+    assert missing.body["details"] == {"id": "TASK-999"}
+    assert api.get("/api/v2/items/nope/TASK-001").body["code"] == "source_gone"
+
+
+def test_edit_archives_and_changes_version(api, workspace):
     _setup(workspace, "backlog")
     item = _item(api, "TASK-001")
 
-    resp = api.post("/api/v2/items/edit",
-                    {"ref": item["ref"], "field": "status", "value": "Completed", "resolution": "Done"})
+    resp = api.patch(f"/api/v2/items/{item['source_id']}/TASK-001",
+                     {"version": item["version"], "field": "status", "value": "Completed", "resolution": "Done"})
 
     assert resp.status_code == 200
-    assert resp.body["ref"]["location"] == "archive"
-    assert resp.body["ref"]["line"] != item["ref"]["line"]
+    assert (resp.body["archived"], resp.body["key"]) == (True, item["key"])
+    assert resp.body["version"] != item["version"]
     assert (resp.body["status"], resp.body["resolution"]) == ("Completed", "Done.")
-    assert _item(api, "TASK-001")["ref"] == resp.body["ref"]
+    assert _item(api, "TASK-001") == resp.body
 
 
 def test_edit_errors(api, workspace):
     _setup(workspace, "backlog")
-    ref = _item(api, "TASK-001")["ref"]
+    item = _item(api, "TASK-001")
+    url = f"/api/v2/items/{item['source_id']}/TASK-001"
+    version = item["version"]
 
-    stale = api.post("/api/v2/items/edit", {"ref": {**ref, "line": ref["line"] + 1}, "field": "status",
-                                            "value": "Open"})
-    unknown_source = api.post("/api/v2/items/edit", {"ref": {**ref, "source_id": "nope"}, "field": "status",
-                                                     "value": "Open"})
-    no_resolution = api.post("/api/v2/items/edit", {"ref": ref, "field": "status", "value": "Rejected"})
-    bad_field = api.post("/api/v2/items/edit", {"ref": ref, "field": "title", "value": "x"})
+    stale = api.patch(url, {"version": "outdated", "field": "status", "value": "Open"})
+    unknown_source = api.patch("/api/v2/items/nope/TASK-001", {"version": version, "field": "status",
+                                                              "value": "Open"})
+    no_version = api.patch(url, {"field": "status", "value": "Open"})
+    no_resolution = api.patch(url, {"version": version, "field": "status", "value": "Rejected"})
+    bad_field = api.patch(url, {"version": version, "field": "title", "value": "x"})
 
-    assert (stale.status_code, stale.body["code"]) == (409, "entry_moved")
+    assert (stale.status_code, stale.body["code"]) == (409, "version_conflict")
     assert (unknown_source.status_code, unknown_source.body["code"]) == (404, "source_gone")
+    assert (no_version.status_code, no_version.body["code"]) == (400, "bad_request")
     assert (no_resolution.status_code, no_resolution.body["code"]) == (400, "resolution_required")
     assert (bad_field.status_code, bad_field.body["code"]) == (400, "bad_request")
     assert bad_field.body["details"] == {"field": "field"}
     assert set(stale.body) == {"code", "message", "details"}
 
 
+def test_old_edit_endpoint_is_gone(api):
+    assert api.post("/api/v2/items/edit", {}).status_code in (404, 405)
+
+
 def test_sources_by_id(api, workspace):
-    backlog, checklist = _setup(workspace, "backlog", "checklist")
+    backlog, second = _setup(workspace, "backlog", "no_archive")
     extra = workspace.add_backlog("no_archive", name="Extra")
     sources = api.get("/api/v2/sources").body
 
@@ -81,7 +103,7 @@ def test_sources_by_id(api, workspace):
     assert added.body["project"] == "Extra"
     assert (dup.status_code, dup.body["code"]) == (409, "duplicate")
     assert renamed.body == {"id": sources[0]["id"], "project": "Renamed", "path": str(backlog)}
-    assert removed.body["path"] == str(checklist)
+    assert removed.body["path"] == str(second)
     assert (gone.status_code, gone.body["code"]) == (404, "source_gone")
     assert [s["project"] for s in api.get("/api/v2/sources").body] == ["Renamed", "Extra"]
 

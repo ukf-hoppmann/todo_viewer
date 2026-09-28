@@ -44,26 +44,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/items/edit": {
+    "/api/v2/items/{source_id}/{item_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
         /**
-         * Edit Item
-         * @description Edits status, priority or required_for_parent (Yes/No).
-         *
-         *     Completed/Rejected need a resolution and move the item to the archive.
+         * Get Item
+         * @description One item by id, active or archived.
          */
-        post: operations["edit_item_api_v2_items_edit_post"];
+        get: operations["get_item_api_v2_items__source_id___item_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Edit Item
+         * @description Edits status, priority or required_for_parent (Yes/No) of the item in `version`.
+         *
+         *     Completed/Rejected need a resolution and move the item to the archive.
+         */
+        patch: operations["edit_item_api_v2_items__source_id___item_id__patch"];
         trace?: never;
     };
     "/api/v2/sources": {
@@ -201,16 +205,22 @@ export interface components {
              * @enum {string}
              */
             field: "status" | "priority" | "required_for_parent";
-            ref: components["schemas"]["ItemRefModel"];
             /** Resolution */
             resolution?: string | null;
             /** Value */
             value: string;
+            /**
+             * Version
+             * @description The item's version as last read; a changed item answers 409
+             */
+            version: string;
         };
         /** ItemOut */
         ItemOut: {
             /** Archive Supported */
             archive_supported: boolean;
+            /** Archived */
+            archived: boolean;
             /** Area */
             area: string | null;
             /** Completion Criteria */
@@ -223,16 +233,13 @@ export interface components {
             extra_fields: {
                 [key: string]: string;
             };
-            /**
-             * Format
-             * @enum {string}
-             */
-            format: "backlog_v2" | "checkbox";
             /** Goal */
             goal: string | null;
+            /** Id */
+            id: string;
             /**
              * Key
-             * @description Unique within the whole response: source/location/id
+             * @description Unique within the whole response: source_id/id
              */
             key: string;
             /** Notes */
@@ -243,11 +250,12 @@ export interface components {
             priority: string | null;
             /** Project */
             project: string;
-            ref: components["schemas"]["ItemRefModel"];
             /** Required For Parent */
             required_for_parent: boolean | null;
             /** Resolution */
             resolution: string | null;
+            /** Source Id */
+            source_id: string;
             /** Spec */
             spec: string[];
             /** Status */
@@ -258,20 +266,11 @@ export interface components {
             title: string;
             /** Type */
             type: string;
-        };
-        /** ItemRefModel */
-        ItemRefModel: {
-            /** Id */
-            id: string;
-            /** Line */
-            line: number;
             /**
-             * Location
-             * @enum {string}
+             * Version
+             * @description Changes with every change of the item; required for edits
              */
-            location: "active" | "archive";
-            /** Source Id */
-            source_id: string;
+            version: string;
         };
         /** ProblemOut */
         ProblemOut: {
@@ -453,11 +452,82 @@ export interface operations {
             };
         };
     };
-    edit_item_api_v2_items_edit_post: {
+    get_item_api_v2_items__source_id___item_id__get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                source_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_item_api_v2_items__source_id___item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                item_id: string;
+            };
             cookie?: never;
         };
         requestBody: {

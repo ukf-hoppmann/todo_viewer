@@ -30,11 +30,25 @@ class ConflictError(DomainError):
 
 # --- items ---
 
-class EntryMovedError(ConflictError):
-    code = "entry_moved"
+class ItemNotFoundError(NotFoundError):
+    code = "item_not_found"
 
-    def __init__(self, message: str = "Entry not found (file was probably changed externally)."):
-        super().__init__(message)
+    def __init__(self, item_id: str):
+        super().__init__(f"Item '{item_id}' not found.", id=item_id)
+
+
+class DuplicateItemError(ConflictError):
+    code = "duplicate_item"
+
+    def __init__(self, item_id: str):
+        super().__init__(f"Item '{item_id}' exists more than once in this backlog.", id=item_id)
+
+
+class VersionConflictError(ConflictError):
+    code = "version_conflict"
+
+    def __init__(self, item_id: str):
+        super().__init__(f"Item '{item_id}' was changed in the meantime. Reload and try again.", id=item_id)
 
 
 class FileChangedError(ConflictError):
@@ -56,13 +70,6 @@ class InvalidValueError(DomainError):
 
     def __init__(self, field: str, allowed: tuple[str, ...]):
         super().__init__(f"Invalid value for '{field}'; allowed: {', '.join(allowed)}.", field=field)
-
-
-class CheckboxStatusOnlyError(DomainError):
-    code = "checkbox_status_only"
-
-    def __init__(self) -> None:
-        super().__init__("Only the status is editable for checkbox lists.")
 
 
 class ResolutionRequiredError(DomainError):

@@ -44,6 +44,9 @@ class ApiClient:
     def put(self, url: str, body: Any) -> Response:
         return self._wrap(self._raw.put(url, json=body))
 
+    def patch(self, url: str, body: Any) -> Response:
+        return self._wrap(self._raw.patch(url, json=body))
+
     def delete(self, url: str, **params: Any) -> Response:
         return self._wrap(self._raw.delete(url, params=params))
 

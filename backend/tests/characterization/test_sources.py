@@ -35,6 +35,7 @@ def test_add_source_validation(api, workspace):
         "not_found": {"path": str(workspace.repos / "nope")},
         "not_a_dir": {"path": str(a_file)},
         "no_todo": {"path": str(plain)},
+        "unsupported_format": {"path": str(workspace.add_backlog("checklist"))},
     }
     for code, body in cases.items():
         resp = api.post("/api/v2/sources", body)
@@ -44,7 +45,7 @@ def test_add_source_validation(api, workspace):
 
 def test_update_source_keeps_unknown_keys(api, workspace):
     a = workspace.add_backlog("backlog", name="A")
-    b = workspace.add_backlog("checklist", name="B")
+    b = workspace.add_backlog("no_archive", name="B")
     workspace.write_config([
         {"project": "A", "path": str(a), "extra": "kept"},
         {"project": "B", "path": str(b)},
@@ -63,7 +64,7 @@ def test_update_source_keeps_unknown_keys(api, workspace):
 
 def test_remove_source(api, workspace):
     a = workspace.add_backlog("backlog", name="A")
-    b = workspace.add_backlog("checklist", name="B")
+    b = workspace.add_backlog("no_archive", name="B")
     workspace.write_config([{"project": "A", "path": str(a)}, {"project": "B", "path": str(b)}])
     ids = [s["id"] for s in api.get("/api/v2/sources").body]
 

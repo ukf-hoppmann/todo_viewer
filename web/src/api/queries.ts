@@ -1,6 +1,6 @@
 // TanStack Query hooks: the only place components talk to the API.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type EditableField, type ItemRef, unwrap } from "./client";
+import { api, type EditableField, unwrap } from "./client";
 
 export const POLL_INTERVAL_MS = 5000;
 
@@ -20,11 +20,21 @@ export function useBacklog(paused: boolean) {
   });
 }
 
+/** An edit of one item; `version` is the one last read, a changed item answers version_conflict. */
+export interface EditItemRequest {
+  sourceId: string;
+  id: string;
+  version: string;
+  field: EditableField;
+  value: string;
+  resolution: string | null;
+}
+
 export function useEditItem() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (body: { ref: ItemRef; field: EditableField; value: string; resolution: string | null }) =>
-      unwrap(api.POST("/api/v2/items/edit", { body })),
+    mutationFn: ({ sourceId, id, ...body }: EditItemRequest) =>
+      unwrap(api.PATCH("/api/v2/items/{source_id}/{item_id}", { params: { path: { source_id: sourceId, item_id: id } }, body })),
     onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
   });
 }

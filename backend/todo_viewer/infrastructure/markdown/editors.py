@@ -1,37 +1,30 @@
 """In-place edits on the lines of a markdown file. All methods mutate `lines`."""
 from __future__ import annotations
 
-from pathlib import Path
-
-from todo_viewer.domain.errors import EntryMovedError
-from todo_viewer.domain.item import ItemFormat, ItemRef, Status
+from todo_viewer.domain.errors import DuplicateItemError, ItemNotFoundError
 
 from .syntax import (
-    CHECKBOX_RE,
     ENTRY_HEADER_RE,
     FIELD_LABELS,
     FIELD_RE,
     NO_ENTRIES_LINE,
     WORK_ITEMS_HEADER_RE,
     field_key,
+    work_items_start,
 )
 
 
 class EntryLocator:
-    """Finds the line index of an entry and checks it is still the expected one."""
+    """Finds the line index of the entry with a given id by its header line."""
 
-    def locate(self, lines: list[str], ref: ItemRef, fmt: ItemFormat, path: Path) -> int:
-        idx = ref.line - 1
-        if idx < 0 or idx >= len(lines):
-            raise EntryMovedError("Line not found (file was probably changed externally).")
-        if fmt is ItemFormat.CHECKBOX:
-            ok = ref.id == f"{path.stem}:{ref.line}" and CHECKBOX_RE.match(lines[idx]) is not None
-        else:
-            header = ENTRY_HEADER_RE.match(lines[idx])
-            ok = header is not None and header.group(1) == ref.id
-        if not ok:
-            raise EntryMovedError()
-        return idx
+    def locate(self, lines: list[str], item_id: str) -> int:
+        found = [i for i in range(work_items_start(lines), len(lines))
+                 if (header := ENTRY_HEADER_RE.match(lines[i])) and header.group(1) == item_id]
+        if not found:
+            raise ItemNotFoundError(item_id)
+        if len(found) > 1:
+            raise DuplicateItemError(item_id)
+        return found[0]
 
 
 def block_end(lines: list[str], idx: int) -> int:
@@ -81,15 +74,6 @@ class BacklogEntryEditor:
                     j += 1
                 return i, j
         return None
-
-
-class ChecklistEntryEditor:
-    def set_status(self, lines: list[str], idx: int, status: str) -> None:
-        match = CHECKBOX_RE.match(lines[idx])
-        assert match is not None
-        indent, _old_mark, content = match.groups()
-        mark = "x" if status == Status.COMPLETED else " "
-        lines[idx] = f"{indent}- [{mark}] {content}"
 
 
 class EntryMover:

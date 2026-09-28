@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .errors import CheckboxStatusOnlyError, InvalidValueError, NotEditableError, ResolutionRequiredError
-from .item import Item, ItemFormat, Location, Status
+from .errors import InvalidValueError, NotEditableError, ResolutionRequiredError
+from .item import Item, Location, Status
 
 
 class Field:
@@ -33,11 +33,6 @@ class EditPlanner:
     def plan(self, item: Item, field: str, value: str, resolution: str | None, archive_supported: bool) -> ChangeSet:
         if field not in Field.EDITABLE:
             raise NotEditableError(field)
-        if item.format is ItemFormat.CHECKBOX:
-            if field != Field.STATUS:
-                raise CheckboxStatusOnlyError()
-            return ChangeSet(set_fields=((field, value),))
-
         allowed = Field.ALLOWED_VALUES.get(field)
         if allowed is not None and value not in allowed:
             raise InvalidValueError(field, allowed)

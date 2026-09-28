@@ -4,7 +4,6 @@ import type { ApiItem, EditableField, SourceStatus } from "../api/client";
 export const STATUS_KEYS = ["Open", "In progress", "Awaiting confirmation", "Completed", "Rejected"] as const;
 export const PRIORITY_KEYS = ["Urgent", "Important", "Normal", "Prospective"] as const;
 export const TERMINAL_STATUSES: ReadonlySet<string> = new Set(["Completed", "Rejected"]);
-export const CHECKBOX_STATUSES = ["Open", "Completed"] as const;
 /** "Required for parent" is stored as Yes/No in the file. */
 export const YES_NO = ["Yes", "No"] as const;
 
@@ -24,7 +23,7 @@ export function uidOf(project: string, id: string): Uid {
 export function toItems(apiItems: readonly ApiItem[]): Item[] {
   return apiItems.map((i) => ({
     ...i,
-    uid: uidOf(i.project, i.ref.id),
+    uid: uidOf(i.project, i.id),
     parentUid: i.parent ? uidOf(i.project, i.parent) : null,
     dependencyUids: i.dependencies.map((d) => uidOf(i.project, d)),
   }));
@@ -61,7 +60,7 @@ export function filterItems(items: readonly Item[], f: Filters): Item[] {
       !f.hiddenProjects.has(i.project) &&
       !f.hiddenStatuses.has(i.status) &&
       (i.priority == null || !f.hiddenPriorities.has(i.priority)) &&
-      (!q || i.title.toLowerCase().includes(q) || i.ref.id.toLowerCase().includes(q)),
+      (!q || i.title.toLowerCase().includes(q) || i.id.toLowerCase().includes(q)),
   );
 }
 
@@ -189,7 +188,7 @@ export function dependencyGraph(visible: readonly Item[]): DependencyGraph {
 // ---------- editing ----------
 
 export function statusOptions(item: Item): string[] {
-  const options: string[] = item.format === "checkbox" ? [...CHECKBOX_STATUSES] : [...STATUS_KEYS];
+  const options: string[] = [...STATUS_KEYS];
   if (item.status && !options.includes(item.status)) options.push(item.status);
   return options;
 }

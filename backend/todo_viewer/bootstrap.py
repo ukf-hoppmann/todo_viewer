@@ -10,7 +10,7 @@ from todo_viewer.application.services import (
     BacklogOverviewService,
     DocumentService,
     FolderBrowseService,
-    ItemEditService,
+    ItemService,
     SourceLookup,
     SourceService,
     UiStateService,
@@ -50,7 +50,7 @@ def build_container(settings: Settings) -> Container:
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
-        item_edits=ItemEditService(backlogs, EditPlanner()),
+        items=ItemService(backlogs, EditPlanner()),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver)),
         source_lookup=lookup,
         documents=DocumentService(lookup, MarkdownDocumentStore(LayoutFactory(resolver))),

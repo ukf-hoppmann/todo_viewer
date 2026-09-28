@@ -7,12 +7,18 @@ from pathlib import Path
 import pytest
 
 from todo_viewer.domain.editing import ChangeSet
-from todo_viewer.domain.errors import EntryMovedError, FileChangedError
-from todo_viewer.domain.item import ItemFormat, ItemRef, Location
+from todo_viewer.domain.errors import (
+    DuplicateItemError,
+    FileChangedError,
+    InvalidSourceError,
+    ItemNotFoundError,
+    VersionConflictError,
+)
+from todo_viewer.domain.item import Location
 from todo_viewer.domain.source import Source
 from todo_viewer.infrastructure.markdown import build_markdown_repository
 from todo_viewer.infrastructure.markdown.detector import FormatDetector
-from todo_viewer.infrastructure.markdown.editors import BacklogEntryEditor, EntryMover
+from todo_viewer.infrastructure.markdown.editors import BacklogEntryEditor, EntryLocator, EntryMover
 from todo_viewer.infrastructure.markdown.field_mapper import PriorityNormalizer, extract_paths
 from todo_viewer.infrastructure.markdown.text_file import TextFileStore
 
@@ -66,13 +72,21 @@ def test_text_file_write_is_atomic_and_keeps_mode(tmp_path):
 
 def test_detector():
     detector = FormatDetector()
-    backlog = "backlog format version 2\n- `T-1` **x**\n"
 
-    assert detector.detect(backlog, Location.ACTIVE) is ItemFormat.BACKLOG_V2
-    german = "Claude_Harness-Backlog-Format Version 1.\n- `T-1` **x**\n"
-    assert detector.detect(german, Location.ACTIVE) is ItemFormat.BACKLOG_V2
-    assert detector.detect("- [ ] a", Location.ACTIVE) is ItemFormat.CHECKBOX
-    assert detector.detect("No entries.", Location.ARCHIVE) is None
+    assert detector.is_backlog("backlog format version 2\n- `T-1` **x**\n")
+    assert detector.is_backlog("Claude_Harness-Backlog-Format Version 1.\n\nNo entries.\n")
+    assert not detector.is_backlog("- [ ] a")
+
+
+def test_locator_finds_entry_by_id_inside_work_items():
+    lines = ["- `T-1` **before the section**", "## Work items", "", "- `T-2` **x**", "- `T-1` **y**"]
+    locator = EntryLocator()
+
+    assert locator.locate(lines, "T-1") == 4
+    with pytest.raises(ItemNotFoundError):
+        locator.locate(lines, "T-9")
+    with pytest.raises(DuplicateItemError):
+        locator.locate([*lines, "- `T-2` **again**"], "T-2")
 
 
 def test_priority_normalizer_and_paths():
@@ -111,20 +125,51 @@ def backlog(tmp_path) -> Source:
     return Source(project="P", path=str(tmp_path / "b"))
 
 
-def test_repository_find_checks_line(backlog):
+def test_repository_get_by_id_in_both_files(backlog):
     repo = build_markdown_repository(Path("/"))
-    item = next(i for i in repo.load(backlog).items if i.id == "TASK-001")
 
-    assert repo.find(backlog, item.ref) == item
-    with pytest.raises(EntryMovedError):
-        repo.find(backlog, ItemRef("TASK-001", Location.ACTIVE, item.line + 1))
-    with pytest.raises(EntryMovedError):
-        repo.find(backlog, ItemRef("TASK-001", Location.ARCHIVE, item.line))
+    assert repo.get(backlog, "TASK-001").location is Location.ACTIVE
+    assert repo.get(backlog, "TASK-000").location is Location.ARCHIVE
+    with pytest.raises(ItemNotFoundError):
+        repo.get(backlog, "NOT-AN-ENTRY")  # before `## Work items`
+
+
+def test_repository_get_rejects_duplicate_ids(backlog):
+    todo = Path(backlog.path) / "TODO.md"
+    todo.write_text(todo.read_text(encoding="utf-8") + "\n- `TASK-000` **Same id as an archived item**\n",
+                    encoding="utf-8")
+    repo = build_markdown_repository(Path("/"))
+
+    with pytest.raises(DuplicateItemError):
+        repo.get(backlog, "TASK-000")
+
+
+def test_repository_apply_rejects_item_changed_in_the_meantime(backlog):
+    repo = build_markdown_repository(Path("/"))
+    item = repo.get(backlog, "TASK-001")
+    repo.apply(backlog, item, ChangeSet(set_fields=(("priority", "Urgent"),)))
+    before = (Path(backlog.path) / "TODO.md").read_bytes()
+
+    with pytest.raises(VersionConflictError):
+        repo.apply(backlog, item, ChangeSet(set_fields=(("priority", "Normal"),)))
+
+    assert (Path(backlog.path) / "TODO.md").read_bytes() == before
+
+
+def test_repository_rejects_files_without_backlog_format(tmp_path):
+    shutil.copytree(FIXTURES / "checklist", tmp_path / "c")
+    source = Source(project="C", path=str(tmp_path / "c"))
+    repo = build_markdown_repository(Path("/"))
+
+    assert repo.check(source).code == "unsupported_format"
+    assert repo.load(source).items == []
+    with pytest.raises(InvalidSourceError):
+        repo.get(source, "anything")
 
 
 def test_repository_move_returns_item_at_new_place(backlog):
     repo = build_markdown_repository(Path("/"))
-    item = next(i for i in repo.load(backlog).items if i.id == "TASK-001")
+    item = repo.get(backlog, "TASK-001")
 
     moved = repo.apply(backlog, item, ChangeSet(set_fields=(("status", "Completed"), ("resolution", "ok")),
                                                 move_to=Location.ARCHIVE))

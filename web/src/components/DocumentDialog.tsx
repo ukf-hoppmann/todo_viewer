@@ -17,7 +17,7 @@ export function DocumentDialog({ item, initialPath, onClose }: DocumentDialogPro
   const i18n = useI18n();
   const { t } = i18n;
   const [path, setPath] = useState(initialPath);
-  const doc = useDocument(item.ref.source_id, path);
+  const doc = useDocument(item.source_id, path);
   const links = documentLinks(item, t("doc.notes"), t("doc.spec"));
 
   const html = useMemo(
@@ -28,7 +28,7 @@ export function DocumentDialog({ item, initialPath, onClose }: DocumentDialogPro
   return (
     <Modal labelledBy="doc-title" onDismiss={onClose} className="doc">
       <div className="doc-head">
-        <h3 id="doc-title">{`${item.ref.id} — ${item.title}`}</h3>
+        <h3 id="doc-title">{`${item.id} — ${item.title}`}</h3>
         <button className="btn small" onClick={onClose}>
           {t("close")}
         </button>

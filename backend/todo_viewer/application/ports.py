@@ -7,7 +7,7 @@ from typing import Any, Protocol
 
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import ChangeSet
-from todo_viewer.domain.item import Item, ItemRef
+from todo_viewer.domain.item import Item
 from todo_viewer.domain.source import Source, SourceProblem
 
 
@@ -17,13 +17,19 @@ class BacklogRepository(Protocol):
 
     def load(self, source: Source) -> Backlog: ...
 
-    def find(self, source: Source, ref: ItemRef) -> Item:
-        """The item at `ref`; raises EntryMovedError if it is not there anymore."""
+    def get(self, source: Source, item_id: str) -> Item:
+        """The item with this id, active or archived.
+
+        Raises ItemNotFoundError, or DuplicateItemError if the id is not unique.
+        """
 
     def archive_available(self, source: Source) -> bool: ...
 
     def apply(self, source: Source, item: Item, changes: ChangeSet) -> Item:
-        """Persists the changes and returns the item as stored afterwards."""
+        """Persists the changes and returns the item as stored afterwards.
+
+        Raises VersionConflictError if the stored item no longer matches `item.version`.
+        """
 
 
 class SourceRepository(Protocol):

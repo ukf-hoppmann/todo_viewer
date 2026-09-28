@@ -1,13 +1,13 @@
-from .items import BacklogOverviewService, EditResult, ItemEditService, SourceBacklog
+from .items import BacklogOverviewService, ItemResult, ItemService, SourceBacklog
 from .misc import DocumentService, FolderBrowseService, UiStateService
 from .sources import SourceLookup, SourceService
 
 __all__ = [
     "BacklogOverviewService",
     "DocumentService",
-    "EditResult",
     "FolderBrowseService",
-    "ItemEditService",
+    "ItemResult",
+    "ItemService",
     "SourceBacklog",
     "SourceLookup",
     "SourceService",

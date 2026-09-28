@@ -3,17 +3,12 @@ from __future__ import annotations
 import pytest
 
 from todo_viewer.domain.editing import ChangeSet, EditPlanner
-from todo_viewer.domain.errors import (
-    CheckboxStatusOnlyError,
-    InvalidValueError,
-    NotEditableError,
-    ResolutionRequiredError,
-)
-from todo_viewer.domain.item import Item, ItemFormat, Location
+from todo_viewer.domain.errors import InvalidValueError, NotEditableError, ResolutionRequiredError
+from todo_viewer.domain.item import Item, Location
 
 
-def _item(fmt: ItemFormat = ItemFormat.BACKLOG_V2, location: Location = Location.ACTIVE) -> Item:
-    return Item(id="T-1", title="t", source_file="f", project="p", line=1, format=fmt, location=location)
+def _item(location: Location = Location.ACTIVE) -> Item:
+    return Item(id="T-1", title="t", project="p", location=location)
 
 
 planner = EditPlanner()
@@ -22,13 +17,6 @@ planner = EditPlanner()
 def test_rejects_non_editable_field():
     with pytest.raises(NotEditableError):
         planner.plan(_item(), "title", "x", None, archive_supported=True)
-
-
-def test_checkbox_allows_only_status():
-    with pytest.raises(CheckboxStatusOnlyError):
-        planner.plan(_item(ItemFormat.CHECKBOX), "priority", "Urgent", None, archive_supported=False)
-    assert planner.plan(_item(ItemFormat.CHECKBOX), "status", "Completed", None, archive_supported=False) == \
-        ChangeSet(set_fields=(("status", "Completed"),))
 
 
 def test_priority_is_a_plain_field_change():

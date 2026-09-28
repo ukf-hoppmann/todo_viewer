@@ -101,7 +101,10 @@ eines Eintrags öffnen sich in einem großen Dokument-Dialog.
 
 Änderungen, die gegen die Parent-Regeln des Backlog-Formats verstoßen, lehnt
 der Server mit einem Hinweis auf die blockierenden Einträge ab, z. B. ein
-Parent auf `Completed`, solange ein Kind noch aktiv ist.
+Parent auf `Completed`, solange ein Kind noch aktiv ist. Wird ein Eintrag
+unter einem abgeschlossenen Parent angelegt, fragt der Dialog, ob der Parent
+(und ggf. dessen geschlossene Vorfahren) wieder geöffnet werden soll, und legt
+den Eintrag danach an.
 
 Geschrieben wird atomar (temporäre Datei + Umbenennen), Zeilenenden (LF/CRLF)
 bleiben erhalten. Hat jemand anderes (z. B. ein Agent) denselben Eintrag

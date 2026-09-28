@@ -98,10 +98,12 @@ def test_create_item_errors(api, workspace):
         (409, "unknown_reference", {"parent": "STORY-999", "required_for_parent": "Yes"}),
         (409, "required_for_parent_missing", {"parent": "STORY-001"}),
         (409, "epic_with_parent", {"type": "Epic", "parent": "STORY-001", "required_for_parent": "Yes"}),
+        (409, "parent_closed", {"parent": "STORY-000", "required_for_parent": "No"}),
     ]
     for status, code, override in cases:
         resp = api.post("/api/v2/items", {**body, **override})
         assert (resp.status_code, resp.body.get("code")) == (status, code), (code, resp.body)
+    assert resp.body["details"] == {"id": "TASK-004", "items": "STORY-000"}  # the new item and what to reopen
 
     assert (folder / "TODO.md").read_bytes() == before
 

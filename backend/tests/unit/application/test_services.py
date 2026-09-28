@@ -238,7 +238,7 @@ def test_item_create_assigns_id_and_checks_rules():
         service.create(Source("p", "/p"), "Task", {**fields, "parent": "STORY-001", "required_for_parent": "Yes"})
 
     assert (created.item.id, created.item.created, created.item.status) == ("TASK-001", "2026-09-28", "Open")
-    assert (err.value.code, err.value.details["id"]) == ("children_still_active", "STORY-001")
+    assert (err.value.code, err.value.details) == ("parent_closed", {"id": "TASK-002", "items": "STORY-001"})
     assert [i.id for i in backlogs.items] == ["STORY-001", "TASK-001"]
 
 

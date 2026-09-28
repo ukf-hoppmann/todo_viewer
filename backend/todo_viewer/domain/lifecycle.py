@@ -53,9 +53,14 @@ class LifecycleRules:
         for v in self.violations([*before, *returning]):
             if v.item_id in back and v.code in OWN_RULES:
                 existing[(v.code, v.item_id)] = set(v.related)
+        was_closed = {i.id for i in before if Status.is_terminal(i.status)}
         for v in sorted(self.violations(after)):
             known = existing.get((v.code, v.item_id))
             if known is None or not set(v.related) <= known:
+                if v.code == "children_still_active" and v.item_id in was_closed:
+                    # the parent stayed closed; an active child was added to it, not the parent closed
+                    child = next(c for c in v.related if c not in (known or set()))
+                    raise LifecycleViolationError("parent_closed", child, _closed_ancestors(after, child))
                 raise LifecycleViolationError(v.code, v.item_id, v.related)
 
     def check_delete(self, items: Sequence[Item], item_id: str) -> None:
@@ -130,3 +135,14 @@ def _find_cycle(node: str, graph: dict[str, list[str]], path: list[str], on_path
 
 def _ids(items: Iterable[Item]) -> tuple[str, ...]:
     return tuple(sorted(i.id for i in items))
+
+
+def _closed_ancestors(items: Sequence[Item], item_id: str) -> tuple[str, ...]:
+    """The closed parents above an item up to the first open one, top-down: the order to reopen them."""
+    by_id = {i.id: i for i in items}
+    chain: list[str] = []
+    parent = by_id[item_id].parent
+    while parent in by_id and parent not in chain and Status.is_terminal(by_id[parent].status):
+        chain.append(parent)
+        parent = by_id[parent].parent
+    return tuple(reversed(chain))

@@ -11,7 +11,9 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY backend/requirements.txt backend/requirements.txt
-RUN pip install --no-cache-dir -r backend/requirements.txt
+# pip 24.0 aus dem Basis-Image hängt zeitweise beim Index von watchfiles; aktuelles pip nicht
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir -r backend/requirements.txt
 
 COPY backend backend
 COPY configs configs

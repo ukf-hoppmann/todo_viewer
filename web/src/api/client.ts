@@ -4,7 +4,6 @@ import type { components, paths } from "./schema";
 
 export type Schemas = components["schemas"];
 export type ApiItem = Schemas["ItemOut"];
-export type ItemRef = Schemas["ItemRefModel"];
 export type SourceStatus = Schemas["SourceStatusOut"];
 export type Source = Schemas["SourceOut"];
 export type FolderListing = Schemas["FolderListingOut"];

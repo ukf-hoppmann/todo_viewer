@@ -1,13 +1,10 @@
 """Work items as the domain sees them, independent of how they are stored."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import hashlib
+import json
+from dataclasses import asdict, dataclass, field
 from enum import StrEnum
-
-
-class ItemFormat(StrEnum):
-    BACKLOG_V2 = "backlog_v2"
-    CHECKBOX = "checkbox"
 
 
 class Location(StrEnum):
@@ -33,23 +30,13 @@ class Status:
         return status in cls.TERMINAL
 
 
-@dataclass(frozen=True)
-class ItemRef:
-    """Identifies one item inside a backlog. `line` guards against external edits."""
-
-    id: str
-    location: Location
-    line: int
-
-
 @dataclass
 class Item:
+    """One work item. Within a backlog it is identified by its id alone."""
+
     id: str
     title: str
-    source_file: str
     project: str
-    line: int
-    format: ItemFormat = ItemFormat.BACKLOG_V2
     item_type: str = "Task"
     status: str = Status.OPEN
     parent: str | None = None
@@ -68,5 +55,11 @@ class Item:
     location: Location = Location.ACTIVE
 
     @property
-    def ref(self) -> ItemRef:
-        return ItemRef(self.id, self.location, self.line)
+    def version(self) -> str:
+        """Changes whenever the stored item changes; guards edits against lost updates.
+
+        `project` is left out: it is the source's display name, not part of the item.
+        """
+        stored = {k: v for k, v in asdict(self).items() if k != "project"}
+        data = json.dumps(stored, sort_keys=True, ensure_ascii=False)
+        return hashlib.sha256(data.encode("utf-8")).hexdigest()[:16]

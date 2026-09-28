@@ -6,8 +6,8 @@ in die Backlog-Notizen. -->
 ## Überblick
 
 Der ToDo Viewer ist eine lokale Web-Anwendung, die Markdown-Backlogs
-(Claude_Harness-Backlog-Format: `TODO.md`, `archive.md`, `items/<ID>/`) und
-einfache Checklisten (`- [ ] Task`) aus mehreren Projekten liest, als Baum,
+(Claude_Harness-Backlog-Format: `TODO.md`, `archive.md`, `items/<ID>/`) aus
+mehreren Projekten liest, als Baum,
 Abhängigkeitsgraph oder Kanban anzeigt und Status, Priorität und
 `Required for parent` direkt in die Dateien zurückschreibt. Ein Python-Backend
 (FastAPI) stellt die API v2 bereit und liefert das gebaute React-Frontend aus.
@@ -34,10 +34,17 @@ Abhängigkeitsgraph oder Kanban anzeigt und Status, Priorität und
   für jede Quelle aus `config.json` die `TODO.md` und – falls vorhanden –
   `archive.md` und gibt Quellen samt Items zurück. Neu gerendert wird nur bei
   geänderten Daten.
-- Bearbeiten: `POST /api/v2/items/edit` → `ItemEditService` → `EditPlanner`
-  berechnet einen `ChangeSet` (bei `Completed`/`Rejected` mit Resolution und
-  Verschieben nach `archive.md`, beim Zurücksetzen zurück nach `TODO.md`) →
-  der Markdown-Adapter wendet ihn an und schreibt atomar.
+- Bearbeiten: `PATCH /api/v2/items/{source_id}/{item_id}` mit der zuletzt
+  gelesenen `version` → `ItemService` holt das Item per ID über den Port
+  `BacklogRepository` und vergleicht die Version → `EditPlanner` berechnet
+  einen `ChangeSet` (bei `Completed`/`Rejected` mit Resolution und Verschieben
+  ins Archiv, beim Zurücksetzen zurück) → der Markdown-Adapter sucht den
+  Eintrag über seine ID, prüft die Version erneut unter Lock und schreibt
+  atomar.
+- Items werden überall nur über Quelle und ID adressiert; Dateien, Zeilen und
+  Ablageorte kennt nur der Markdown-Adapter. Die Version ist ein Hash über den
+  Inhalt des Items (Domain), damit ein anderer Speicher denselben Vertrag
+  erfüllen kann.
 - Abhängigkeiten zeigen nur nach innen: `bootstrap` → `api` | `infrastructure`
   → `application` → `domain`.
 

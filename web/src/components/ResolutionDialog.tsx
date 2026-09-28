@@ -27,7 +27,7 @@ export function ResolutionDialog({ item, status, onConfirm, onCancel }: Resoluti
 
   return (
     <Modal labelledBy="resolution-title" onDismiss={onCancel}>
-      <h3 id="resolution-title">{t("resolution.title", { status: vocab("status", status), id: item.ref.id })}</h3>
+      <h3 id="resolution-title">{t("resolution.title", { status: vocab("status", status), id: item.id })}</h3>
       <div>
         <label className="field" htmlFor="resolution-text">
           {t("resolution.label")}
@@ -41,7 +41,7 @@ export function ResolutionDialog({ item, status, onConfirm, onCancel }: Resoluti
           onKeyDown={(e) => e.key === "Enter" && (e.metaKey || e.ctrlKey) && submit()}
         />
       </div>
-      {item.ref.location === "active" && <div className="hint">{t("resolution.hint")}</div>}
+      {!item.archived && <div className="hint">{t("resolution.hint")}</div>}
       <div className="modal-error">{error}</div>
       <div className="modal-actions">
         <button className="btn" onClick={onCancel}>

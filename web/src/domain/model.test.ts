@@ -16,10 +16,12 @@ import {
 
 function apiItem(id: string, overrides: Partial<ApiItem> = {}): ApiItem {
   return {
-    key: `s/active/${id}`,
-    ref: { source_id: "s", location: "active", id, line: 1 },
+    key: `s/${id}`,
+    source_id: "s",
+    id,
+    version: `v-${id}`,
+    archived: false,
     project: "P",
-    format: "backlog_v2",
     type: "Task",
     title: `Title ${id}`,
     status: "Open",
@@ -61,10 +63,10 @@ describe("model", () => {
   });
 
   it("filters by hidden values and search; items without priority survive priority filters", () => {
-    expect(filterItems(items, { ...noFilters, hiddenPriorities: new Set(["Urgent", "Custom"]) }).map((i) => i.ref.id))
+    expect(filterItems(items, { ...noFilters, hiddenPriorities: new Set(["Urgent", "Custom"]) }).map((i) => i.id))
       .toEqual(["EPIC-1", "TASK-2", "X-1"]);
-    expect(filterItems(items, { ...noFilters, search: "findme" }).map((i) => i.ref.id)).toEqual(["X-1"]);
-    expect(filterItems(items, { ...noFilters, search: "task-2" }).map((i) => i.ref.id)).toEqual(["TASK-2"]);
+    expect(filterItems(items, { ...noFilters, search: "findme" }).map((i) => i.id)).toEqual(["X-1"]);
+    expect(filterItems(items, { ...noFilters, search: "task-2" }).map((i) => i.id)).toEqual(["TASK-2"]);
   });
 
   it("offers filter values in key order", () => {
@@ -76,10 +78,10 @@ describe("model", () => {
   });
 
   it("builds trees; hidden parents promote children to roots; optional children are marked", () => {
-    const [other, p] = buildTrees(items.filter((i) => i.ref.id !== "EPIC-1"), items);
+    const [other, p] = buildTrees(items.filter((i) => i.id !== "EPIC-1"), items);
     expect(other?.project).toBe("Other");
-    expect(p?.roots.map((n) => n.item.ref.id)).toEqual(["STORY-1"]);
-    expect(p?.roots[0]?.children.map((n) => [n.item.ref.id, n.optional])).toEqual([["TASK-1", false], ["TASK-2", true]]);
+    expect(p?.roots.map((n) => n.item.id)).toEqual(["STORY-1"]);
+    expect(p?.roots[0]?.children.map((n) => [n.item.id, n.optional])).toEqual([["TASK-1", false], ["TASK-2", true]]);
   });
 
   it("counts progress over all items, skipping optional and rejected ones", () => {
@@ -107,14 +109,14 @@ describe("model", () => {
 
   it("keeps only connected items in the dependency graph", () => {
     expect(dependencyGraph(items)).toMatchObject({ edges: [{ from: "P::TASK-2", to: "P::TASK-1" }] });
-    expect(dependencyGraph(items).nodes.map((n) => n.ref.id)).toEqual(["TASK-1", "TASK-2"]);
+    expect(dependencyGraph(items).nodes.map((n) => n.id)).toEqual(["TASK-1", "TASK-2"]);
   });
 
   it("knows the editing rules", () => {
-    const [checkbox] = toItems([apiItem("TODO:3", { format: "checkbox", status: "Open", archive_supported: false })]);
-    expect(statusOptions(checkbox!)).toEqual(["Open", "Completed"]);
+    const [odd] = toItems([apiItem("X-1", { status: "Blocked", archive_supported: false })]);
+    expect(statusOptions(odd!)).toEqual(["Open", "In progress", "Awaiting confirmation", "Completed", "Rejected", "Blocked"]);
     expect(needsResolution(items[0]!, "Rejected")).toBe(true);
-    expect(needsResolution(checkbox!, "Completed")).toBe(false);
+    expect(needsResolution(odd!, "Completed")).toBe(false);
     expect(defaultResolution("Completed", new Date("2026-09-23T10:00:00Z"))).toBe("Confirmed by the project owner on 2026-09-23.");
   });
 });

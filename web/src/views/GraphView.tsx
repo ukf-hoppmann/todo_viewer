@@ -36,7 +36,7 @@ const ItemNodeView = memo(function ItemNodeView({ data }: NodeProps<ItemNode>) {
           title={item.priority ? `${vocab("field", "Priority")}: ${vocab("priority", item.priority)}` : ""}
           style={{ background: priorityColor(item.priority) }}
         />
-        {item.ref.id}
+        {item.id}
         {progress && <ProgressPie progress={progress} />}
       </div>
       <div>{title}</div>

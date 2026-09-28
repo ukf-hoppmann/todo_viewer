@@ -69,7 +69,7 @@ function TreeNodeRow({ node, onSelect }: { node: TreeNode; onSelect: (uid: Uid) 
           >
             {vocab("type", item.type)}
           </span>
-          <span className="node-title">{`${item.ref.id} — ${item.title}`}</span>
+          <span className="node-title">{`${item.id} — ${item.title}`}</span>
         </button>
       </div>
       {hasChildren && !collapsed && (

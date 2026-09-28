@@ -1,14 +1,13 @@
-"""Markdown syntax of the supported backlog formats.
+"""Markdown syntax of the structured backlog format ("backlog format version N"):
 
-1. Structured backlog format ("backlog format version N"):
-     - `STORY-001` **Title**
-       - Type: Story.
-       - Parent: `EPIC-001`.
-       - Status: Open.
-       - Goal: ... (continuation lines indented by four spaces)
-   A backlog folder holds `TODO.md` (active items) and `archive.md`
-   (Completed/Rejected items); both use this syntax.
-2. Fallback: plain nested markdown checklists ("- [ ] Task", "- [x] Done").
+  - `STORY-001` **Title**
+    - Type: Story.
+    - Parent: `EPIC-001`.
+    - Status: Open.
+    - Goal: ... (continuation lines indented by four spaces)
+
+A backlog folder holds `TODO.md` (active items) and `archive.md`
+(Completed/Rejected items); both use this syntax. Every entry carries an id.
 """
 from __future__ import annotations
 
@@ -19,7 +18,6 @@ ARCHIVE_FILE = "archive.md"
 
 ENTRY_HEADER_RE = re.compile(r"^- `([A-Za-z0-9_.\-]+)`\s+\*\*(.+?)\*\*\s*$", re.MULTILINE)
 FIELD_RE = re.compile(r"^ {2}- ([A-Za-z][A-Za-z ]*?):\s?(.*)$")
-CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X)\]\s+(.*)$")
 WORK_ITEMS_HEADER_RE = re.compile(r"^## Work items\s*$", re.MULTILINE)
 NO_ENTRIES_LINE = "No entries."
 # Any structured backlog format version ("... backlog format version 2",
@@ -34,6 +32,11 @@ FIELD_LABELS = {
     "required_for_parent": "Required for parent",
     "resolution": "Resolution",
 }
+
+
+def work_items_start(lines: list[str]) -> int:
+    """Index of the `## Work items` heading; entries before it are ignored (0 if absent)."""
+    return next((i for i, line in enumerate(lines) if WORK_ITEMS_HEADER_RE.match(line)), 0)
 
 
 def field_key(label: str) -> str:

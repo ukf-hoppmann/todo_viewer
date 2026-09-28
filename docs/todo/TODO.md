@@ -63,7 +63,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-001`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-27.
   - Area: Backend-API.
   - Priority: Normal.
@@ -78,6 +78,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     mit ID und Versions-Token; ein veraltetes Token führt zu einem
     Konfliktfehler; eine unbekannte ID liefert 404 mit stabilem Code;
     die UI nutzt die neue Adressierung; Golden-File-Tests bleiben grün.
+  - Summary: Einträge werden nur noch über ihre ID angesprochen, nicht mehr
+    über Datei und Zeile. Einfache Checklisten ohne IDs werden nicht mehr
+    unterstützt.
+  - Notes: `items/STORY-003/STORY-003_notes.md`.
 - `STORY-004` **Lean Index**
   - Type: Story.
   - Parent: `EPIC-001`.

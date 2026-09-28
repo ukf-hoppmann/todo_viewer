@@ -6,7 +6,7 @@ from fastapi import APIRouter, Body
 
 from todo_viewer.domain.errors import ConfigMissingError
 
-from ..dependencies import Documents, Folders, ItemEdits, Lookup, Overview, Sources, UiState
+from ..dependencies import Documents, Folders, Items, Lookup, Overview, Sources, UiState
 from .schemas import (
     BacklogOut,
     DocumentOut,
@@ -37,19 +37,27 @@ def backlog(overview: Overview) -> BacklogOut:
     return BacklogOut(
         sources=[SourceStatusOut(**SourceOut.of(e.source).model_dump(), item_count=len(e.backlog.items),
                                  problem=ProblemOut.of(e.backlog.problem)) for e in entries],
-        items=[ItemOut.of(e.source, item, e.backlog.supports_archive(item))
+        items=[ItemOut.of(e.source, item, e.backlog.archive_available)
                for e in entries for item in e.backlog.items],
     )
 
 
-@router.post("/items/edit", tags=["items"])
-def edit_item(body: ItemEditIn, edits: ItemEdits, lookup: Lookup) -> ItemOut:
-    """Edits status, priority or required_for_parent (Yes/No).
+@router.get("/items/{source_id}/{item_id}", tags=["items"])
+def get_item(source_id: str, item_id: str, items: Items, lookup: Lookup) -> ItemOut:
+    """One item by id, active or archived."""
+    source = lookup.by_id(source_id)
+    result = items.get(source, item_id)
+    return ItemOut.of(source, result.item, result.archive_supported)
+
+
+@router.patch("/items/{source_id}/{item_id}", tags=["items"])
+def edit_item(source_id: str, item_id: str, body: ItemEditIn, items: Items, lookup: Lookup) -> ItemOut:
+    """Edits status, priority or required_for_parent (Yes/No) of the item in `version`.
 
     Completed/Rejected need a resolution and move the item to the archive.
     """
-    source = lookup.by_id(body.ref.source_id)
-    result = edits.edit(source, body.ref.to_domain(), body.field, body.value, body.resolution)
+    source = lookup.by_id(source_id)
+    result = items.edit(source, item_id, body.version, body.field, body.value, body.resolution)
     return ItemOut.of(source, result.item, result.archive_supported)
 
 

@@ -84,7 +84,7 @@ export function App() {
                   item={selected}
                   items={model.items}
                   byUid={model.byUid}
-                  sourcePath={model.sources.find((s) => s.id === selected.ref.source_id)?.path}
+                  sourcePath={model.sources.find((s) => s.id === selected.source_id)?.path}
                   onSelect={select}
                   onClose={() => select(null)}
                 />

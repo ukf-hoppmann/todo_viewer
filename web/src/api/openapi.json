@@ -160,9 +160,6 @@
             "title": "Field",
             "type": "string"
           },
-          "ref": {
-            "$ref": "#/components/schemas/ItemRefModel"
-          },
           "resolution": {
             "anyOf": [
               {
@@ -177,10 +174,15 @@
           "value": {
             "title": "Value",
             "type": "string"
+          },
+          "version": {
+            "description": "The item's version as last read; a changed item answers 409",
+            "title": "Version",
+            "type": "string"
           }
         },
         "required": [
-          "ref",
+          "version",
           "field",
           "value"
         ],
@@ -191,6 +193,10 @@
         "properties": {
           "archive_supported": {
             "title": "Archive Supported",
+            "type": "boolean"
+          },
+          "archived": {
+            "title": "Archived",
             "type": "boolean"
           },
           "area": {
@@ -240,14 +246,6 @@
             "title": "Extra Fields",
             "type": "object"
           },
-          "format": {
-            "enum": [
-              "backlog_v2",
-              "checkbox"
-            ],
-            "title": "Format",
-            "type": "string"
-          },
           "goal": {
             "anyOf": [
               {
@@ -259,8 +257,12 @@
             ],
             "title": "Goal"
           },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
           "key": {
-            "description": "Unique within the whole response: source/location/id",
+            "description": "Unique within the whole response: source_id/id",
             "title": "Key",
             "type": "string"
           },
@@ -297,9 +299,6 @@
             "title": "Project",
             "type": "string"
           },
-          "ref": {
-            "$ref": "#/components/schemas/ItemRefModel"
-          },
           "required_for_parent": {
             "anyOf": [
               {
@@ -321,6 +320,10 @@
               }
             ],
             "title": "Resolution"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
           },
           "spec": {
             "items": {
@@ -351,13 +354,20 @@
           "type": {
             "title": "Type",
             "type": "string"
+          },
+          "version": {
+            "description": "Changes with every change of the item; required for edits",
+            "title": "Version",
+            "type": "string"
           }
         },
         "required": [
           "key",
-          "ref",
+          "source_id",
+          "id",
+          "version",
+          "archived",
           "project",
-          "format",
           "type",
           "title",
           "status",
@@ -377,38 +387,6 @@
           "archive_supported"
         ],
         "title": "ItemOut",
-        "type": "object"
-      },
-      "ItemRefModel": {
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "line": {
-            "title": "Line",
-            "type": "integer"
-          },
-          "location": {
-            "enum": [
-              "active",
-              "archive"
-            ],
-            "title": "Location",
-            "type": "string"
-          },
-          "source_id": {
-            "title": "Source Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "source_id",
-          "location",
-          "id",
-          "line"
-        ],
-        "title": "ItemRefModel",
         "type": "object"
       },
       "ProblemOut": {
@@ -715,10 +693,120 @@
         ]
       }
     },
-    "/api/v2/items/edit": {
-      "post": {
-        "description": "Edits status, priority or required_for_parent (Yes/No).\n\nCompleted/Rejected need a resolution and move the item to the archive.",
-        "operationId": "edit_item_api_v2_items_edit_post",
+    "/api/v2/items/{source_id}/{item_id}": {
+      "get": {
+        "description": "One item by id, active or archived.",
+        "operationId": "get_item_api_v2_items__source_id___item_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Item",
+        "tags": [
+          "items"
+        ]
+      },
+      "patch": {
+        "description": "Edits status, priority or required_for_parent (Yes/No) of the item in `version`.\n\nCompleted/Rejected need a resolution and move the item to the archive.",
+        "operationId": "edit_item_api_v2_items__source_id___item_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {

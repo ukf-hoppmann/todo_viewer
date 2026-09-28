@@ -34,7 +34,7 @@ export function KanbanView({ visible, items, onSelect }: KanbanViewProps) {
                 style={{ borderLeftColor: priorityColor(item.priority) }}
                 onClick={() => onSelect(item.uid)}
               >
-                <div className="k-id">{`${item.ref.id} · ${item.project}`}</div>
+                <div className="k-id">{`${item.id} · ${item.project}`}</div>
                 <div>{item.title}</div>
                 {(item.priority || cardProgress) && (
                   <div className="k-footer">

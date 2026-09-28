@@ -1,8 +1,9 @@
 # ToDo Viewer
 
 Lokale Web-UI zum Visualisieren von `TODO.md`-Backlogs im "backlog format version 2"
-(wie in `LLM_Tests`, `EZF-Backend`, `Agent_Harness`, `my_story_game` verwendet) plus
-Fallback für einfache Markdown-Checklisten (`- [ ] Task`).
+bzw. Claude_Harness-Backlog-Format (wie in `LLM_Tests`, `EZF-Backend`,
+`Agent_Harness`, `my_story_game` verwendet). Jeder Eintrag braucht eine ID;
+einfache Markdown-Checklisten werden nicht unterstützt.
 
 ## Quickstart (Docker)
 
@@ -73,9 +74,10 @@ Status holt ihn (ohne Resolution) zurück nach `TODO.md`. `Notes` und `Spec`
 eines Eintrags öffnen sich in einem großen Lese-Popup.
 
 Geschrieben wird atomar (temporäre Datei + Umbenennen), Zeilenenden (LF/CRLF)
-bleiben erhalten. Hat jemand anderes (z. B. ein Agent) die Datei zwischen
-Lesen und Schreiben geändert, bricht das Speichern mit einem Hinweis ab,
-statt dessen Änderung zu überschreiben.
+bleiben erhalten. Hat jemand anderes (z. B. ein Agent) denselben Eintrag
+inzwischen geändert, bricht das Speichern mit einem Hinweis ab, statt dessen
+Änderung zu überschreiben; Änderungen an anderen Einträgen derselben Datei
+stören nicht.
 
 ## Sprache
 

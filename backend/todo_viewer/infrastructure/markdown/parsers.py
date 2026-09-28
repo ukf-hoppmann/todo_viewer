@@ -1,17 +1,10 @@
-"""Parsers turning the lines of one markdown file into Items."""
+"""Parser turning the lines of one markdown file into Items."""
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Protocol
-
-from todo_viewer.domain.item import Item, ItemFormat, Location, Status
+from todo_viewer.domain.item import Item, Location
 
 from .field_mapper import BacklogFieldMapper
-from .syntax import CHECKBOX_RE, ENTRY_HEADER_RE, FIELD_RE, WORK_ITEMS_HEADER_RE
-
-
-class ItemParser(Protocol):
-    def parse(self, lines: list[str], source_file: str, project: str, location: Location) -> list[Item]: ...
+from .syntax import ENTRY_HEADER_RE, FIELD_RE, work_items_start
 
 
 class BacklogParser:
@@ -20,8 +13,8 @@ class BacklogParser:
     def __init__(self, fields: BacklogFieldMapper):
         self._fields = fields
 
-    def parse(self, lines: list[str], source_file: str, project: str, location: Location) -> list[Item]:
-        start = next((i for i, line in enumerate(lines) if WORK_ITEMS_HEADER_RE.match(line)), 0)
+    def parse(self, lines: list[str], project: str, location: Location) -> list[Item]:
+        start = work_items_start(lines)
         items: list[Item] = []
         current: Item | None = None
         fields: list[list[str]] = []  # [label, value] in file order
@@ -37,8 +30,7 @@ class BacklogParser:
             if entry_match:
                 flush()
                 entry_id, title = entry_match.groups()
-                current = Item(id=entry_id, title=title, source_file=source_file, project=project,
-                               line=lineno, location=location)
+                current = Item(id=entry_id, title=title, project=project, location=location)
                 fields = []
                 continue
 
@@ -64,35 +56,4 @@ class BacklogParser:
                 fields[-1][1] += " " + stripped
 
         flush()
-        return items
-
-
-class ChecklistParser:
-    """Nested `- [ ]` lists; indentation defines the parent. IDs are `<file stem>:<line>`."""
-
-    def parse(self, lines: list[str], source_file: str, project: str, location: Location) -> list[Item]:
-        items: list[Item] = []
-        stack: list[tuple[int, str]] = []  # (indent width, item id)
-        stem = Path(source_file).stem
-
-        for lineno, raw_line in enumerate(lines, start=1):
-            m = CHECKBOX_RE.match(raw_line)
-            if not m:
-                continue
-            indent, mark, text = m.groups()
-            item_id = f"{stem}:{lineno}"
-            while stack and stack[-1][0] >= len(indent):
-                stack.pop()
-            items.append(Item(
-                id=item_id,
-                title=text.strip(),
-                source_file=source_file,
-                project=project,
-                line=lineno,
-                format=ItemFormat.CHECKBOX,
-                status=Status.COMPLETED if mark.lower() == "x" else Status.OPEN,
-                parent=stack[-1][1] if stack else None,
-                location=location,
-            ))
-            stack.append((len(indent), item_id))
         return items

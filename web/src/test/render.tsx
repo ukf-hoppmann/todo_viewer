@@ -27,10 +27,12 @@ export function renderWithProviders(ui: ReactElement, initial: Partial<UiState> 
 
 export function apiItem(id: string, overrides: Partial<ApiItem> = {}): ApiItem {
   return {
-    key: `s/active/${id}`,
-    ref: { source_id: "s", location: "active", id, line: 1 },
+    key: `s/${id}`,
+    source_id: "s",
+    id,
+    version: `v-${id}`,
+    archived: false,
     project: "P",
-    format: "backlog_v2",
     type: "Task",
     title: `Title ${id}`,
     status: "Open",

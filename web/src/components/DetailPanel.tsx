@@ -44,7 +44,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
       </button>
       <h2>{item.title}</h2>
       <div className="detail-id">
-        {[item.ref.id, vocab("type", item.type), item.project, item.ref.location === "archive" ? t("detail.archived") : null]
+        {[item.id, vocab("type", item.type), item.project, item.archived ? t("detail.archived") : null]
           .filter(Boolean)
           .join(" · ")}
       </div>
@@ -64,13 +64,9 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
       <Field label={L("Status")}>
         <EditableField item={item} field="status" ariaLabel={L("Status")} options={statusOptions(item)} label={(v) => vocab("status", v)} />
       </Field>
-      {item.format === "checkbox" ? (
-        <TextField label={L("Priority")} value={vocab("priority", item.priority)} />
-      ) : (
-        <Field label={L("Priority")}>
-          <EditableField item={item} field="priority" ariaLabel={L("Priority")} options={priorityOptions(item)} label={(v) => vocab("priority", v)} />
-        </Field>
-      )}
+      <Field label={L("Priority")}>
+        <EditableField item={item} field="priority" ariaLabel={L("Priority")} options={priorityOptions(item)} label={(v) => vocab("priority", v)} />
+      </Field>
       <TextField label={L("Resolution")} value={item.resolution} />
       <TextField label={L("Area")} value={item.area} />
 
@@ -82,7 +78,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
           </button>
         </Field>
       )}
-      {item.format === "checkbox" ? null : item.parent || item.required_for_parent != null ? (
+      {item.parent || item.required_for_parent != null ? (
         <Field label={L("Required for parent")}>
           <EditableField
             item={item}
@@ -99,7 +95,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
           <span className="chip-list">
             {item.dependencyUids.map((uid) => (
               <button key={uid} className="chip" onClick={() => onSelect(uid)}>
-                {byUid.get(uid)?.ref.id ?? uid}
+                {byUid.get(uid)?.id ?? uid}
               </button>
             ))}
           </span>
@@ -111,7 +107,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
           <span className="chip-list">
             {children.map((c) => (
               <button key={c.key} className="chip" onClick={() => onSelect(c.uid)}>
-                {c.ref.id}
+                {c.id}
                 {c.required_for_parent === false ? ` (${t("optional")})` : ""}
               </button>
             ))}
@@ -127,7 +123,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
       ))}
       <TextField
         label={t("detail.source")}
-        value={`${sourcePath ?? item.project}\n${t(item.ref.location === "archive" ? "detail.archived" : "detail.active")}, ${t("detail.line")} ${item.ref.line}`}
+        value={`${sourcePath ?? item.project}\n${t(item.archived ? "detail.archived" : "detail.active")}`}
       />
 
       {openDoc && (

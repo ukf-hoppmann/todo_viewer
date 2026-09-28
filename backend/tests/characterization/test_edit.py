@@ -19,12 +19,13 @@ def _setup(workspace, fixture: str) -> Path:
 
 def _item(api, item_id: str) -> dict:
     items = api.get("/api/v2/backlog").body["items"]
-    return next(i for i in items if i["ref"]["id"] == item_id)
+    return next(i for i in items if i["id"] == item_id)
 
 
-def _update(api, item: dict, field: str, value, resolution: str | None = None, **ref_override):
-    body = {"ref": {**item["ref"], **ref_override}, "field": field, "value": value, "resolution": resolution}
-    return api.post("/api/v2/items/edit", body)
+def _update(api, item: dict, field: str, value, resolution: str | None = None, source_id: str | None = None,
+            item_id: str | None = None, **body_override):
+    body = {"version": item["version"], "field": field, "value": value, "resolution": resolution, **body_override}
+    return api.patch(f"/api/v2/items/{source_id or item['source_id']}/{item_id or item['id']}", body)
 
 
 def _files(folder: Path) -> str:
@@ -38,36 +39,34 @@ def _files(folder: Path) -> str:
 
 
 EDIT_CASES = [
-    # (golden name, fixture, item id, field, value, resolution, location afterwards)
-    ("priority_existing", "backlog", "TASK-001", "priority", "Urgent", None, "active"),
-    ("priority_inserted", "backlog", "TASK-003", "priority", "Prospective.", None, "active"),
-    ("status_active", "backlog", "STORY-001", "status", "In progress", None, "active"),
-    ("complete_to_archive", "backlog", "TASK-001", "status", "Completed", "Merged in PR 1", "archive"),
-    ("complete_last_entry", "backlog", "TASK-003", "status", "Rejected", "Obsolete", "archive"),
-    ("complete_first_entry", "backlog", "EPIC-001", "status", "Completed", "All done.", "archive"),
-    ("complete_into_empty_archive", "empty_archive", "TASK-020", "status", "Completed", "Done", "archive"),
-    ("reopen_from_archive", "backlog", "TASK-000", "status", "Open", None, "active"),
-    ("reopen_last_archive_entry", "backlog", "STORY-000", "status", "In progress", None, "active"),
-    ("terminal_within_archive", "backlog", "STORY-000", "status", "Completed", "Needed after all", "archive"),
-    ("required_existing", "backlog", "TASK-002", "required_for_parent", "Yes", None, "active"),
-    ("required_inserted", "backlog", "TASK-003", "required_for_parent", "No", None, "active"),
-    ("priority_in_archive", "backlog", "TASK-000", "priority", "Important", None, "archive"),
-    ("complete_without_archive", "no_archive", "TASK-010", "status", "Completed", None, "active"),
-    ("checkbox_check", "checklist", "TODO:5", "status", "Completed", None, "active"),
-    ("checkbox_uncheck", "checklist", "TODO:4", "status", "Open", None, "active"),
+    # (golden name, fixture, item id, field, value, resolution, archived afterwards)
+    ("priority_existing", "backlog", "TASK-001", "priority", "Urgent", None, False),
+    ("priority_inserted", "backlog", "TASK-003", "priority", "Prospective.", None, False),
+    ("status_active", "backlog", "STORY-001", "status", "In progress", None, False),
+    ("complete_to_archive", "backlog", "TASK-001", "status", "Completed", "Merged in PR 1", True),
+    ("complete_last_entry", "backlog", "TASK-003", "status", "Rejected", "Obsolete", True),
+    ("complete_first_entry", "backlog", "EPIC-001", "status", "Completed", "All done.", True),
+    ("complete_into_empty_archive", "empty_archive", "TASK-020", "status", "Completed", "Done", True),
+    ("reopen_from_archive", "backlog", "TASK-000", "status", "Open", None, False),
+    ("reopen_last_archive_entry", "backlog", "STORY-000", "status", "In progress", None, False),
+    ("terminal_within_archive", "backlog", "STORY-000", "status", "Completed", "Needed after all", True),
+    ("required_existing", "backlog", "TASK-002", "required_for_parent", "Yes", None, False),
+    ("required_inserted", "backlog", "TASK-003", "required_for_parent", "No", None, False),
+    ("priority_in_archive", "backlog", "TASK-000", "priority", "Important", None, True),
+    ("complete_without_archive", "no_archive", "TASK-010", "status", "Completed", None, False),
 ]
 
 
-@pytest.mark.parametrize(("name", "fixture", "item_id", "field", "value", "resolution", "location"), EDIT_CASES,
+@pytest.mark.parametrize(("name", "fixture", "item_id", "field", "value", "resolution", "archived"), EDIT_CASES,
                          ids=[c[0] for c in EDIT_CASES])
-def test_edit_rewrites_files(api, workspace, golden, name, fixture, item_id, field, value, resolution, location):
+def test_edit_rewrites_files(api, workspace, golden, name, fixture, item_id, field, value, resolution, archived):
     folder = _setup(workspace, fixture)
 
     resp = _update(api, _item(api, item_id), field, value, resolution)
 
     assert resp.status_code == 200, resp.body
     golden(f"edit/{name}.md", _files(folder))
-    assert resp.body["ref"]["location"] == location
+    assert resp.body["archived"] is archived
     expected = {"priority": value.rstrip("."), "required_for_parent": value == "Yes"}.get(field, value)
     assert resp.body[field] == expected
     assert resp.body == _item(api, item_id)
@@ -108,13 +107,12 @@ def test_edit_errors_leave_files_untouched(api, workspace):
         ("resolution_required", 400, dict(field="status", value="Rejected", resolution="  ")),
         ("bad_request", 400, dict(field="title", value="x")),
         ("invalid_value", 400, dict(field="required_for_parent", value="Maybe")),
-        ("entry_moved", 409, dict(field="status", value="Open", line=item["ref"]["line"] + 1)),
-        ("entry_moved", 409, dict(field="status", value="Open", line=9999)),
-        ("entry_moved", 409, dict(field="status", value="Open", id="TASK-999")),
-        ("entry_moved", 409, dict(field="status", value="Open", location="archive")),
+        ("version_conflict", 409, dict(field="status", value="Open", version="outdated")),
+        ("item_not_found", 404, dict(field="status", value="Open", item_id="TASK-999")),
+        ("item_not_found", 404, dict(field="status", value="Open", item_id="NOT-AN-ENTRY")),
         ("source_gone", 404, dict(field="status", value="Open", source_id="unknown")),
         ("bad_request", 400, dict(field="status", value=None)),
-        ("bad_request", 400, dict(field="status", value="Open", line="3x")),
+        ("bad_request", 400, dict(field="status", value="Open", version=None)),
     ]
     for code, status, override in cases:
         field = override.pop("field")
@@ -126,16 +124,38 @@ def test_edit_errors_leave_files_untouched(api, workspace):
     assert _files(folder) == before
 
 
-def test_checkbox_only_status(api, workspace):
-    _setup(workspace, "checklist")
+def test_external_change_of_the_item_is_a_version_conflict(api, workspace):
+    folder = _setup(workspace, "backlog")
+    item = _item(api, "TASK-001")
+    todo = folder / "TODO.md"
+    todo.write_text(todo.read_text(encoding="utf-8").replace("- `TASK-001` **", "- `TASK-001` **Renamed "),
+                    encoding="utf-8")
+    before = _files(folder)
 
-    resp = _update(api, _item(api, "TODO:3"), "priority", "Urgent")
+    resp = _update(api, item, "status", "In progress")
 
-    assert (resp.status_code, resp.body["code"]) == (400, "checkbox_status_only")
+    assert (resp.status_code, resp.body["code"]) == (409, "version_conflict")
+    assert _files(folder) == before
 
 
-def test_edit_rejects_non_object(api):
-    resp = api.post("/api/v2/items/edit", [1, 2])
+def test_external_change_of_another_item_does_not_block_the_edit(api, workspace):
+    folder = _setup(workspace, "backlog")
+    item = _item(api, "TASK-001")
+    todo = folder / "TODO.md"
+    todo.write_text("<!-- inserted line shifts every entry -->\n" + todo.read_text(encoding="utf-8"),
+                    encoding="utf-8")
+
+    resp = _update(api, item, "status", "In progress")
+
+    assert resp.status_code == 200, resp.body
+    assert resp.body["status"] == "In progress"
+
+
+def test_edit_rejects_non_object(api, workspace):
+    _setup(workspace, "backlog")
+    item = _item(api, "TASK-001")
+
+    resp = api.patch(f"/api/v2/items/{item['source_id']}/TASK-001", [1, 2])
 
     assert (resp.status_code, resp.body["code"]) == (400, "bad_request")
 

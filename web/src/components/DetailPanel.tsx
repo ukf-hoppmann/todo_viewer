@@ -7,6 +7,8 @@ import { DeleteDialog } from "./DeleteDialog";
 import { useI18n } from "../i18n/i18n";
 import { documentLinks } from "./documentLinks";
 
+import type { DocumentMode } from "./DocumentDialog";
+
 // marked + DOMPurify are only loaded when a document is opened.
 const DocumentDialog = lazy(() => import("./DocumentDialog").then((m) => ({ default: m.DocumentDialog })));
 import { ItemEditForm } from "./ItemEditForm";
@@ -36,7 +38,7 @@ function TextField({ label, value }: { label: string; value: string | null | und
 
 export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect, onClose }: DetailPanelProps) {
   const { t, vocab } = useI18n();
-  const [openDoc, setOpenDoc] = useState<string | null>(null);
+  const [openDoc, setOpenDoc] = useState<{ name: string | null; mode: DocumentMode } | null>(null);
   const [editing, setEditing] = useState(false);
   const [creatingChild, setCreatingChild] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -76,13 +78,21 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
       )}
       {!editing && item.summary && <div className="detail-summary">{item.summary}</div>}
 
-      {docs.length > 0 && (
+      {!editing && (
         <div className="doc-buttons">
           {docs.map((d) => (
-            <button key={d.name} className="btn small" onClick={() => setOpenDoc(d.name)}>
+            <button key={d.name} className="btn small" onClick={() => setOpenDoc({ name: d.name, mode: "view" })}>
               {d.kind === "notes" ? "📝" : "📐"} {d.label}
             </button>
           ))}
+          <button className="btn small" onClick={() => setOpenDoc({ name: null, mode: "note" })}>
+            {t("doc.addNote")}
+          </button>
+          {!docs.some((d) => d.kind === "spec") && (
+            <button className="btn small" onClick={() => setOpenDoc({ name: null, mode: "newSpec" })}>
+              {t("doc.addSpec")}
+            </button>
+          )}
         </div>
       )}
 
@@ -167,7 +177,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
       )}
       {openDoc && (
         <Suspense fallback={null}>
-          <DocumentDialog item={item} initialName={openDoc} onClose={() => setOpenDoc(null)} />
+          <DocumentDialog item={item} initialName={openDoc.name} initialMode={openDoc.mode} onClose={() => setOpenDoc(null)} />
         </Suspense>
       )}
     </aside>

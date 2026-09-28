@@ -159,3 +159,43 @@ export function groupTrash(items: readonly Item[]): { project: string; items: It
     items: [...byProject.get(project)!].sort((a, b) => (b.deleted ?? "").localeCompare(a.deleted ?? "") || a.id.localeCompare(b.id)),
   }));
 }
+
+// ---------- notes and specs ----------
+
+export interface NotesForm {
+  topic: string;
+  discussed: string;
+  decided: string;
+  open: string;
+  summary: string;
+}
+
+export type NotesRequest = Schemas["NotesEntryIn"];
+
+const bullets = (text: string) =>
+  text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+/** One notes entry; each non-empty line becomes a bullet. The summary is only sent where it is asked for. */
+export function notesRequest(form: NotesForm, hasSummary: boolean): NotesRequest {
+  const request: NotesRequest = {
+    topic: form.topic.trim(),
+    discussed: bullets(form.discussed),
+    decided: bullets(form.decided),
+    open: bullets(form.open),
+  };
+  if (!hasSummary && form.summary.trim()) request.summary = form.summary.trim();
+  return request;
+}
+
+/** `<ID>_spec.md`, or `<ID>_spec_<topic>.md` with the topic reduced to lowercase letters, digits and dashes. */
+export function specName(itemId: string, topic: string): string {
+  const slug = topic
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug ? `${itemId}_spec_${slug}.md` : `${itemId}_spec.md`;
+}

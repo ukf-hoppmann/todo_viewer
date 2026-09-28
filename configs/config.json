@@ -15,6 +15,10 @@
     {
       "project": "VariantFilter",
       "path": "/Users/hoppmann/Documents/GitHub/EZF-Backend/Plugins/VariantFilter/docs/todo"
+    },
+    {
+      "project": "ezf-ui",
+      "path": "/Users/hoppmann/Documents/GitHub/ezf-ui/docs/todo"
     }
   ]
 }

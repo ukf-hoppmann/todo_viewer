@@ -1,5 +1,8 @@
 import { lazy, type ReactNode, Suspense, useState } from "react";
+import { childTypes } from "../domain/editing";
 import type { Item, Uid } from "../domain/model";
+import type { SourceStatus } from "../api/client";
+import { CreateItemDialog } from "./CreateItemDialog";
 import { useI18n } from "../i18n/i18n";
 import { documentLinks } from "./documentLinks";
 
@@ -12,6 +15,7 @@ interface DetailPanelProps {
   items: Item[];
   byUid: Map<Uid, Item>;
   sourcePath: string | undefined;
+  sources: SourceStatus[];
   onSelect: (uid: Uid) => void;
   onClose: () => void;
 }
@@ -29,10 +33,11 @@ function TextField({ label, value }: { label: string; value: string | null | und
   return value ? <Field label={label}>{value}</Field> : null;
 }
 
-export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose }: DetailPanelProps) {
+export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect, onClose }: DetailPanelProps) {
   const { t, vocab } = useI18n();
   const [openDoc, setOpenDoc] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [creatingChild, setCreatingChild] = useState(false);
   const L = (field: string) => vocab("field", field);
   const parent = item.parentUid ? byUid.get(item.parentUid) : undefined;
   const children = items.filter((i) => i.parentUid === item.uid);
@@ -57,6 +62,11 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
           <button className="btn small" onClick={() => setEditing(true)}>
             {t("edit.button")}
           </button>
+          {childTypes(item).length > 0 && (
+            <button className="btn small" onClick={() => setCreatingChild(true)}>
+              {t("create.child")}
+            </button>
+          )}
         </div>
       )}
       {!editing && item.summary && <div className="detail-summary">{item.summary}</div>}
@@ -128,6 +138,18 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
         </>
       )}
 
+      {creatingChild && (
+        <CreateItemDialog
+          sources={sources}
+          sourceId={item.source_id}
+          parent={item}
+          onClose={() => setCreatingChild(false)}
+          onCreated={(uid) => {
+            setCreatingChild(false);
+            onSelect(uid);
+          }}
+        />
+      )}
       {openDoc && (
         <Suspense fallback={null}>
           <DocumentDialog item={item} initialName={openDoc} onClose={() => setOpenDoc(null)} />

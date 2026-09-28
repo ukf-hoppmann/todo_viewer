@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import type { SourceStatus } from "./api/client";
 import { useRemoveSource } from "./api/queries";
+import { CreateItemDialog } from "./components/CreateItemDialog";
 import { DetailPanel } from "./components/DetailPanel";
 import { Sidebar } from "./components/Sidebar";
 import { SourceDialog } from "./components/SourceDialog";
@@ -27,6 +28,7 @@ export function App() {
   const model = useBacklogModel(state);
   const removeSource = useRemoveSource();
   const [sourceDialog, setSourceDialog] = useState<SourceDialogState>(null);
+  const [creating, setCreating] = useState(false);
 
   const select = useCallback((uid: Uid | null) => dispatch({ type: "select", uid }), [dispatch]);
   const selected = state.selectedId ? model.byUid.get(state.selectedId) : undefined;
@@ -71,6 +73,9 @@ export function App() {
                   {i18n.t(TAB_LABELS[view])}
                 </button>
               ))}
+              <button className="btn small new-btn" disabled={!model.sources.some((s) => !s.problem)} onClick={() => setCreating(true)}>
+                {i18n.t("create.new")}
+              </button>
             </nav>
             <div className="content">
               {model.error && !model.items.length ? (
@@ -85,6 +90,7 @@ export function App() {
                   items={model.items}
                   byUid={model.byUid}
                   sourcePath={model.sources.find((s) => s.id === selected.source_id)?.path}
+                  sources={model.sources}
                   onSelect={select}
                   onClose={() => select(null)}
                 />
@@ -92,6 +98,18 @@ export function App() {
             </div>
           </main>
         </div>
+        {creating && (
+          <CreateItemDialog
+            sources={model.sources}
+            sourceId={selected?.source_id ?? model.sources.find((s) => !s.problem)?.id ?? ""}
+            parent={null}
+            onClose={() => setCreating(false)}
+            onCreated={(uid) => {
+              setCreating(false);
+              select(uid);
+            }}
+          />
+        )}
         {sourceDialog && (
           <SourceDialog
             source={sourceDialog.source}

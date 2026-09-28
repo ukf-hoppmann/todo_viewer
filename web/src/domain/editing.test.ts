@@ -1,6 +1,6 @@
 import type { ApiItem } from "../api/client";
 import { apiItem } from "../test/render";
-import { changedFields, dependencyCandidates, draftOf, parentCandidates, rebaseDraft } from "./editing";
+import { changedFields, childTypes, createRequest, dependencyCandidates, draftOf, newItemDraft, parentCandidates, rebaseDraft } from "./editing";
 import { toItems } from "./model";
 
 const [epic, story, task, sub, other, foreign] = toItems([
@@ -53,5 +53,30 @@ describe("editing", () => {
     expect(rebased.title).toBe("My title");
     expect(rebased.goal).toBe("Their goal");
     expect(changedFields(theirs, rebased)).toEqual({ title: "My title" });
+  });
+});
+
+describe("creating", () => {
+  it("offers child types that fit the parent", () => {
+    expect(childTypes(null)).toEqual(["Epic", "Story", "Task"]);
+    expect(childTypes(epic!)).toEqual(["Story", "Task"]);
+    expect(childTypes(story!)).toEqual(["Task"]);
+    expect(childTypes(task!)).toEqual([]);
+  });
+
+  it("prefills a new child from its parent", () => {
+    expect(newItemDraft(task!.source_id, story!)).toMatchObject({
+      source_id: "s", type: "Task", parent: "STORY-1", required_for_parent: "Yes", priority: "Normal", area: "",
+    });
+    expect(newItemDraft("s", null)).toMatchObject({ type: "Story", parent: "", required_for_parent: "" });
+  });
+
+  it("builds the create request with trimmed text and without empty optional fields", () => {
+    const draft = { ...newItemDraft("s", story!), title: " New ", area: "Core", goal: "G", completion_criteria: "C", summary: " " };
+
+    expect(createRequest(draft)).toEqual({
+      source_id: "s", type: "Task", title: "New", area: "Core", goal: "G", completion_criteria: "C",
+      priority: "Normal", parent: "STORY-1", required_for_parent: "Yes",
+    });
   });
 });

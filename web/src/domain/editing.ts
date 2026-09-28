@@ -1,5 +1,5 @@
 // Edit mode: a draft of the editable fields and the changes to send. Pure functions, no React.
-import type { ItemFields } from "../api/client";
+import type { ItemFields, Schemas } from "../api/client";
 import type { Item } from "./model";
 
 /** Everything the edit form shows; "" means "not set" (no parent, no summary, ...). */
@@ -85,4 +85,65 @@ function descendantUids(item: Item, items: readonly Item[]): Set<string> {
     parents = new Set(next.map((i) => i.uid));
   }
   return found;
+}
+
+// ---------- creating ----------
+
+const TYPES = ["Epic", "Story", "Task"] as const;
+
+/** Types a new item may have under `parent` (all types without a parent). */
+export function childTypes(parent: Item | null): string[] {
+  if (!parent) return [...TYPES];
+  return TYPES.filter((t) => (PARENT_TYPES[t] ?? []).includes(parent.type));
+}
+
+export interface NewItemDraft {
+  source_id: string;
+  type: string;
+  title: string;
+  area: string;
+  priority: string;
+  parent: string;
+  required_for_parent: "" | "Yes" | "No";
+  goal: string;
+  completion_criteria: string;
+  summary: string;
+}
+
+/** An empty new item; a child starts with the parent's source and area, required for it. */
+export function newItemDraft(sourceId: string, parent: Item | null): NewItemDraft {
+  const types = childTypes(parent);
+  return {
+    source_id: parent?.source_id ?? sourceId,
+    type: types.includes("Story") ? "Story" : (types[0] ?? "Task"),
+    title: "",
+    area: parent?.area ?? "",
+    priority: "Normal",
+    parent: parent?.id ?? "",
+    required_for_parent: parent ? "Yes" : "",
+    goal: "",
+    completion_criteria: "",
+    summary: "",
+  };
+}
+
+export type CreateRequest = Schemas["ItemCreateIn"];
+
+/** The create request: trimmed text, optional fields only when set. */
+export function createRequest(draft: NewItemDraft): CreateRequest {
+  const request: CreateRequest = {
+    source_id: draft.source_id,
+    type: draft.type,
+    title: draft.title.trim(),
+    area: draft.area.trim(),
+    goal: draft.goal.trim(),
+    completion_criteria: draft.completion_criteria.trim(),
+    priority: draft.priority,
+  };
+  if (draft.parent) {
+    request.parent = draft.parent;
+    if (draft.required_for_parent) request.required_for_parent = draft.required_for_parent;
+  }
+  if (draft.summary.trim()) request.summary = draft.summary.trim();
+  return request;
 }

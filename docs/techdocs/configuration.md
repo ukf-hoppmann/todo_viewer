@@ -33,7 +33,8 @@ Wird von der UI geschrieben, nicht von Hand gepflegt.
 |---|---|---|---|---|
 | `hiddenProjects`, `hiddenStatuses`, `hiddenPriorities` | Liste von Strings | leer | nein | Ausgeblendete Filterwerte (englische Werte) |
 | `collapsed` | Liste von Strings | leer | nein | Eingeklappte Knoten im Baum |
+| `markedProjects` | Liste von Strings | leer | nein | Markierte Projekte, auf die „Epics/Stories zuklappen/aufklappen“ wirken; leer = alle |
 | `search` | String | leer | nein | Suchbegriff |
 | `selectedId` | String oder `null` | `null` | nein | Ausgewähltes Item |
-| `currentView` | `tree`/`graph`/`kanban` | `tree` | nein | Aktive Ansicht |
+| `currentView` | `tree`/`graph`/`kanban`/`trash` | `tree` | nein | Aktive Ansicht |
 | `lang` | `de`/`en` | `de` | nein | Anzeigesprache |

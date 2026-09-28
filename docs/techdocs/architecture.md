@@ -8,8 +8,9 @@ in die Backlog-Notizen. -->
 Der ToDo Viewer ist eine lokale Web-Anwendung, die Markdown-Backlogs
 (Claude_Harness-Backlog-Format: `TODO.md`, `archive.md`, `items/<ID>/`) aus
 mehreren Projekten liest, als Baum,
-Abhängigkeitsgraph oder Kanban anzeigt und Status, Priorität und
-`Required for parent` direkt in die Dateien zurückschreibt. Ein Python-Backend
+Abhängigkeitsgraph oder Kanban anzeigt und Änderungen direkt in die Dateien
+zurückschreibt: Items anlegen, bearbeiten, in den Papierkorb verschieben,
+wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Python-Backend
 (FastAPI) stellt die API v2 bereit und liefert das gebaute React-Frontend aus.
 
 ## Komponenten
@@ -23,7 +24,7 @@ Abhängigkeitsgraph oder Kanban anzeigt und Status, Priorität und
 | Dateisystem-Adapter | Ordner-Browser, Projektname aus dem umgebenden Git-Repo | `backend/todo_viewer/infrastructure/filesystem/` |
 | HTTP-API | FastAPI-Router `/api/v2`, Pydantic-Schemas, zentrale Fehlerübersetzung, Auslieferung von `web/dist` | `backend/todo_viewer/api/` |
 | Composition Root | Setzt Adapter und Services per Konstruktor-Injection zusammen; liest Einstellungen aus der Umgebung | `backend/todo_viewer/bootstrap.py`, `backend/main.py` |
-| Frontend | React 19 + Vite + TypeScript, TanStack Query; Views Baum, Graph (React Flow + ELK), Kanban; Detail-Panel und Dialoge | `web/src/` |
+| Frontend | React 19 + Vite + TypeScript, TanStack Query; Views Baum, Graph (React Flow + ELK), Kanban, Papierkorb; Detail-Panel mit Bearbeiten-Modus, Dialoge zum Anlegen, Löschen und für Dokumente | `web/src/` |
 | Frontend-Domain | Filter, Baum, Fortschritt, Abhängigkeitsgraph, Edit-Regeln als reine Funktionen | `web/src/domain/` |
 | API-Client | Aus dem OpenAPI-Schema generierte Typen (`schema.d.ts`), Client, Query-Hooks | `web/src/api/` |
 
@@ -53,8 +54,8 @@ Abhängigkeitsgraph oder Kanban anzeigt und Status, Priorität und
 - Backlog-Daten: ausschließlich in den Markdown-Dateien der konfigurierten
   Projekte; der Viewer hält keinen eigenen Datenbestand.
 - Quellen: `configs/config.json`.
-- UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, Ansicht, Auswahl,
-  Suche, Sprache): `configs/ui_state.json`, über die API gelesen und
+- UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, markierte
+  Projekte, Ansicht, Auswahl, Suche, Sprache): `configs/ui_state.json`, über die API gelesen und
   geschrieben.
 - Im Container liegt `configs/` per Volume auf dem Host; die Nachbar-Repos sind
   unter demselben absoluten Pfad beschreibbar eingebunden.

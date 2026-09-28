@@ -62,7 +62,8 @@ automatisch auf deren Ordner umgestellt.
 Der `configs/`-Ordner ist per Volume in den Container gemountet und liegt
 physisch auf dem Host — er übersteht `./todo.sh down` und Rebuilds. Neben
 `config.json` liegt dort auch `ui_state.json`, in dem der UI-Zustand
-(ausgeblendete Filterwerte, Ansicht, Auswahl, Sprache) gespeichert wird.
+(ausgeblendete Filterwerte, eingeklappte Knoten, markierte Projekte,
+Ansicht, Auswahl, Sprache) gespeichert wird.
 
 ## Bearbeiten
 

@@ -250,3 +250,17 @@ select.field-edit:disabled { opacity: .6; cursor: wait; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #2a2e38; border-radius: 4px; }
+
+/* ---------- edit mode ---------- */
+.detail-actions { display: flex; gap: 6px; margin: 4px 0 12px; }
+.edit-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.edit-form .field { display: flex; flex-direction: column; gap: 4px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
+.edit-form input, .edit-form select, .edit-form textarea {
+  font: inherit; font-size: 13px; text-transform: none; letter-spacing: normal; color: var(--text);
+  background: var(--surface); border: 1px solid var(--panel-border); border-radius: 6px; padding: 5px 8px;
+}
+.edit-form textarea { min-height: 64px; resize: vertical; }
+.edit-form .hint { text-transform: none; letter-spacing: normal; font-size: 11px; }
+.edit-form .field-error { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.chip-remove { border: none; background: none; color: var(--text-dim); cursor: pointer; padding: 0 0 0 4px; font-size: 11px; }
+.chip-remove:hover { color: var(--status-rejected); }

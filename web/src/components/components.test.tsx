@@ -84,106 +84,157 @@ describe("Sidebar project marking", () => {
   });
 });
 
-describe("DetailPanel editing", () => {
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+}
+
+function renderPanel(item: (typeof items)[number]) {
+  renderWithProviders(
+    <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
+  );
+}
+
+describe("DetailPanel edit mode", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("asks for a resolution before completing and sends it with the item ref", async () => {
-    const fetchMock = vi.fn(async (request: Request) => {
-      const body = await request.clone().json();
-      return new Response(JSON.stringify({ ...apiItem("TASK-2"), status: body.value }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    });
+  it("changes nothing outside the edit mode", () => {
+    renderPanel(items[2]!);
+
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "✎ Bearbeiten" })).toBeInTheDocument();
+  });
+
+  it("shows an unset priority as empty instead of the first option", async () => {
+    renderPanel(items[2]!);
+
+    await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
+
+    expect((screen.getByRole("combobox", { name: "Priorität" }) as HTMLSelectElement).value).toBe("");
+  });
+
+  it("saves all changed fields in one request and leaves the edit mode", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(apiItem("TASK-2")));
     vi.stubGlobal("fetch", fetchMock);
     const item = items[2]!;
-    renderWithProviders(
-      <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
-    );
+    renderPanel(item);
 
+    await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
+    const save = screen.getByRole("button", { name: "Speichern" });
+    expect(save).toBeDisabled();
+    await userEvent.clear(screen.getByRole("textbox", { name: "Titel" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Titel" }), "Renamed");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Priorität" }), "Urgent");
+    await userEvent.type(screen.getByRole("textbox", { name: "Ziel" }), "A goal");
+    await userEvent.click(save);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const request = fetchMock.mock.calls[0]![0] as Request;
+    expect(request.method).toBe("PATCH");
+    expect(new URL(request.url).pathname).toBe(`/api/v2/items/s/${item.id}`);
+    expect(await request.clone().json()).toEqual({
+      version: item.version,
+      fields: { title: "Renamed", priority: "Urgent", goal: "A goal" },
+      resolution: null,
+    });
+    await waitFor(() => expect(screen.queryByRole("form")).not.toBeInTheDocument());
+  });
+
+  it("discards the changes on cancel", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    renderPanel(items[2]!);
+
+    await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Titel" }), " changed");
+    await userEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole("textbox", { name: "Titel" })).not.toBeInTheDocument();
+  });
+
+  it("asks for a resolution when completing", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(apiItem("TASK-2")));
+    vi.stubGlobal("fetch", fetchMock);
+    const item = items[2]!;
+    renderPanel(item);
+
+    await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Status" }), "Completed");
     const text = screen.getByRole("textbox", { name: "Entscheidung (Resolution)" });
     expect((text as HTMLTextAreaElement).value).toMatch(/^Confirmed by the project owner on \d{4}-\d{2}-\d{2}\.$/);
-
     await userEvent.clear(text);
-    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
-    expect(screen.getByText("Bitte eine Resolution angeben.")).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
-
     await userEvent.type(text, "Done");
     await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    const request = fetchMock.mock.calls[0]![0];
-    expect(request.method).toBe("PATCH");
-    expect(new URL(request.url).pathname).toBe(`/api/v2/items/s/${item.id}`);
-    expect(await request.clone().json()).toEqual({ version: item.version, fields: { status: "Completed" }, resolution: "Done" });
+    expect(await (fetchMock.mock.calls[0]![0] as Request).clone().json()).toEqual({
+      version: item.version,
+      fields: { status: "Completed" },
+      resolution: "Done",
+    });
   });
 
-  it("edits required-for-parent as Yes/No", async () => {
-    const fetchMock = vi.fn(async (request: Request) => {
-      const body = await request.clone().json();
-      return new Response(JSON.stringify({ ...apiItem("TASK-2"), required_for_parent: body.value === "Yes" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    });
+  it("sends required-for-parent together with a new parent", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(apiItem("TASK-2")));
     vi.stubGlobal("fetch", fetchMock);
-    const item = items[2]!;
+    const standalone = toItems([apiItem("TASK-9")])[0]!;
     renderWithProviders(
-      <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
+      <DetailPanel item={standalone} items={[...items, standalone]} byUid={new Map()} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
     );
 
-    const select = screen.getByRole("combobox", { name: "Pflicht für Parent" });
-    expect((select as HTMLSelectElement).value).toBe("No");
-    await userEvent.selectOptions(select, "Ja");
+    await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Parent" }), "EPIC-1");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pflicht für Parent" }), "No");
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    expect(await fetchMock.mock.calls[0]![0].clone().json()).toEqual({
-      version: item.version,
-      fields: { required_for_parent: "Yes" },
+    expect((await (fetchMock.mock.calls[0]![0] as Request).clone().json()).fields).toEqual({
+      parent: "EPIC-1",
+      required_for_parent: "No",
+    });
+  });
+
+  it("keeps the inputs on a version conflict and saves again on the current state", async () => {
+    const item = items[2]!;
+    const current = { ...apiItem("TASK-2", { parent: "EPIC-1", required_for_parent: false }), version: "v-new", goal: "Their goal" };
+    const fetchMock = vi.fn(async (request: Request) => {
+      if (request.method === "GET") return jsonResponse(current);
+      const body = await request.clone().json();
+      return body.version === "v-new"
+        ? jsonResponse(current)
+        : jsonResponse({ code: "version_conflict", message: "x", details: { id: "TASK-2" } }, 409);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderPanel(item);
+
+    await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Titel" }), " mine");
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Aktuellen Stand laden" }));
+
+    expect((screen.getByRole("textbox", { name: "Titel" }) as HTMLInputElement).value).toBe("Title TASK-2 mine");
+    expect((screen.getByRole("textbox", { name: "Ziel" }) as HTMLTextAreaElement).value).toBe("Their goal");
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(await (fetchMock.mock.calls[2]![0] as Request).clone().json()).toEqual({
+      version: "v-new",
+      fields: { title: "Title TASK-2 mine" },
       resolution: null,
     });
   });
 
-  it("offers required-for-parent only for items with a parent", () => {
-    const item = items[0]!;
-    renderWithProviders(
-      <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
-    );
-    expect(screen.queryByRole("combobox", { name: "Pflicht für Parent" })).not.toBeInTheDocument();
-  });
-
-  it("shows translated API errors", async () => {
+  it("shows rule violations with the blocking items", async () => {
     vi.stubGlobal("fetch", vi.fn(async () =>
-      new Response(JSON.stringify({ code: "version_conflict", message: "x", details: {} }), {
-        status: 409,
-        headers: { "Content-Type": "application/json" },
-      })));
-    const item = items[0]!;
-    renderWithProviders(
-      <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
-    );
+      jsonResponse({ code: "children_still_active", message: "x", details: { id: "EPIC-1", items: "STORY-1, TASK-1" } }, 409)));
+    renderPanel(items[0]!);
 
+    await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Priorität" }), "Urgent");
-
-    expect(await screen.findByText(/Der Eintrag wurde inzwischen geändert/)).toBeInTheDocument();
-  });
-
-  it("shows lifecycle violations with the blocking items", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () =>
-      new Response(JSON.stringify({ code: "children_still_active", message: "x", details: { id: "EPIC-1", items: "STORY-1, TASK-1" } }), {
-        status: 409,
-        headers: { "Content-Type": "application/json" },
-      })));
-    const item = items[0]!;
-    renderWithProviders(
-      <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
-    );
-
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Priorität" }), "Urgent");
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
 
     expect(await screen.findByText(/EPIC-1 kann nicht geschlossen werden, solange Kinder aktiv sind: STORY-1, TASK-1\./)).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Titel" })).toBeInTheDocument();
   });
 });
 

@@ -1,11 +1,11 @@
 import { lazy, type ReactNode, Suspense, useState } from "react";
-import { type Item, priorityOptions, statusOptions, type Uid, YES_NO } from "../domain/model";
+import type { Item, Uid } from "../domain/model";
 import { useI18n } from "../i18n/i18n";
 import { documentLinks } from "./documentLinks";
 
 // marked + DOMPurify are only loaded when a document is opened.
 const DocumentDialog = lazy(() => import("./DocumentDialog").then((m) => ({ default: m.DocumentDialog })));
-import { EditableField } from "./EditableField";
+import { ItemEditForm } from "./ItemEditForm";
 
 interface DetailPanelProps {
   item: Item;
@@ -32,6 +32,7 @@ function TextField({ label, value }: { label: string; value: string | null | und
 export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose }: DetailPanelProps) {
   const { t, vocab } = useI18n();
   const [openDoc, setOpenDoc] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const L = (field: string) => vocab("field", field);
   const parent = item.parentUid ? byUid.get(item.parentUid) : undefined;
   const children = items.filter((i) => i.parentUid === item.uid);
@@ -49,7 +50,16 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
           .join(" · ")}
       </div>
 
-      {item.summary && <div className="detail-summary">{item.summary}</div>}
+      {editing ? (
+        <ItemEditForm item={item} items={items} onDone={() => setEditing(false)} />
+      ) : (
+        <div className="detail-actions">
+          <button className="btn small" onClick={() => setEditing(true)}>
+            {t("edit.button")}
+          </button>
+        </div>
+      )}
+      {!editing && item.summary && <div className="detail-summary">{item.summary}</div>}
 
       {docs.length > 0 && (
         <div className="doc-buttons">
@@ -61,12 +71,10 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
         </div>
       )}
 
-      <Field label={L("Status")}>
-        <EditableField item={item} field="status" ariaLabel={L("Status")} options={statusOptions(item)} label={(v) => vocab("status", v)} />
-      </Field>
-      <Field label={L("Priority")}>
-        <EditableField item={item} field="priority" ariaLabel={L("Priority")} options={priorityOptions(item)} label={(v) => vocab("priority", v)} />
-      </Field>
+      {!editing && (
+        <>
+      <TextField label={L("Status")} value={vocab("status", item.status)} />
+      <TextField label={L("Priority")} value={vocab("priority", item.priority)} />
       <TextField label={L("Resolution")} value={item.resolution} />
       <TextField label={L("Area")} value={item.area} />
 
@@ -78,17 +86,9 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
           </button>
         </Field>
       )}
-      {item.parent || item.required_for_parent != null ? (
-        <Field label={L("Required for parent")}>
-          <EditableField
-            item={item}
-            field="required_for_parent"
-            ariaLabel={L("Required for parent")}
-            options={[...YES_NO]}
-            label={(v) => t(v === "Yes" ? "yes" : "no")}
-          />
-        </Field>
-      ) : null}
+      {item.required_for_parent != null && (
+        <TextField label={L("Required for parent")} value={t(item.required_for_parent ? "yes" : "no")} />
+      )}
 
       {item.dependencyUids.length > 0 && (
         <Field label={L("Dependencies")}>
@@ -125,6 +125,8 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
         label={t("detail.source")}
         value={`${sourcePath ?? item.project}\n${t(item.archived ? "detail.archived" : "detail.active")}`}
       />
+        </>
+      )}
 
       {openDoc && (
         <Suspense fallback={null}>

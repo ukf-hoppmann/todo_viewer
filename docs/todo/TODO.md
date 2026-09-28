@@ -41,8 +41,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: None.
-  - Goal: `GET /api/v2/index` liefert für aktive und archivierte Items
-    nur `source_id`, `id`, `type`, `status`, `title` und `parent`,
+  - Goal: `GET /api/v2/index` liefert für aktive und archivierte Items nur
+    `source_id`, `id`, `type`, `status`, `title`, `parent` und `area`,
     optional gefiltert auf eine Quelle.
   - Completion criteria: Der Endpunkt hat ein festes Schema im
     OpenAPI-Vertrag, liefert genau diese Felder und ist durch API-Tests
@@ -56,7 +56,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Task.
   - Parent: `STORY-004`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-28.
   - Area: Backend-API.
   - Priority: Normal.

@@ -1,9 +1,8 @@
 # ToDo Viewer
 
 Lokale Web-UI zum Visualisieren von `TODO.md`-Backlogs im "backlog format version 2"
-bzw. Claude_Harness-Backlog-Format (wie in `LLM_Tests`, `EZF-Backend`,
-`Agent_Harness`, `my_story_game` verwendet). Jeder Eintrag braucht eine ID;
-einfache Markdown-Checklisten werden nicht unterstützt.
+bzw. Claude_Harness-Backlog-Format. Jeder Eintrag braucht eine ID; einfache
+Markdown-Checklisten werden nicht unterstützt.
 
 ## Quickstart (Docker)
 

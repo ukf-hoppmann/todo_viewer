@@ -243,6 +243,41 @@ def test_spec_create_replace_and_conflicts(api, workspace):
     assert (notes.status_code, notes.body["code"]) == (400, "not_editable")
 
 
+@pytest.mark.parametrize(("name", "item_id"), [("delete_active", "TASK-002"), ("delete_last_archive_entry", "STORY-000")])
+def test_delete_cuts_entry_and_folder(api, workspace, golden, name, item_id):
+    folder = _setup(workspace, "backlog")
+    if item_id == "STORY-000":  # TASK-001 depends on both archived entries
+        _patch(api, _item(api, "TASK-001"), {"dependencies": []})
+    item = _item(api, item_id)
+
+    resp = api.delete(f"/api/v2/items/{item['source_id']}/{item_id}", version=item["version"])
+
+    assert resp.status_code == 200, resp.body
+    assert resp.body["id"] == item_id
+    golden(f"edit/{name}.md", _files(folder))
+    assert not (folder / "items" / item_id).exists()
+    assert api.get(f"/api/v2/items/{item['source_id']}/{item_id}").body["code"] == "item_not_found"
+
+
+def test_delete_errors_leave_files_untouched(api, workspace):
+    folder = _setup(workspace, "backlog")
+    before = _files(folder)
+    url = f"/api/v2/items/{_item(api, 'TASK-001')['source_id']}"
+
+    referenced = api.delete(f"{url}/TASK-001", version=_item(api, "TASK-001")["version"])
+    stale = api.delete(f"{url}/TASK-003", version="outdated")
+    no_version = api.delete(f"{url}/TASK-003")
+    missing = api.delete(f"{url}/TASK-999", version="x")
+
+    assert (referenced.status_code, referenced.body["code"]) == (409, "item_referenced")
+    assert referenced.body["details"] == {"id": "TASK-001", "items": "TASK-002"}
+    assert (stale.status_code, stale.body["code"]) == (409, "version_conflict")
+    assert (no_version.status_code, no_version.body["code"]) == (400, "bad_request")
+    assert (missing.status_code, missing.body["code"]) == (404, "item_not_found")
+    assert _files(folder) == before
+    assert (folder / "items" / "TASK-002").is_dir()
+
+
 def test_edit_twice_reopen_after_archive(api, workspace, golden):
     folder = _setup(workspace, "backlog")
 

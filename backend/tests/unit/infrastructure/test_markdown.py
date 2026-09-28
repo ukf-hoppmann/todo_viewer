@@ -289,3 +289,34 @@ def test_document_paths_stay_inside_the_backlog(backlog):
     for path in ("../x.md", "items/../../x.md", "items/a/b.json"):
         with pytest.raises(DocumentForbiddenError):
             _documents().write(backlog, path, "x", expected_version=None)
+
+
+def test_repository_delete_cuts_active_and_archived_entries(backlog):
+    repo = build_markdown_repository(Path("/"))
+    active, archived = repo.get(backlog, "TASK-002"), repo.get(backlog, "STORY-000")
+    stale = repo.get(backlog, "TASK-003")
+    repo.apply(backlog, stale, ChangeSet(set_fields=(("priority", "Urgent"),)))
+
+    repo.delete(backlog, active)
+    repo.delete(backlog, archived)
+    with pytest.raises(VersionConflictError):
+        repo.delete(backlog, stale)
+
+    ids = {i.id for i in repo.load(backlog).items}
+    assert "TASK-002" not in ids and "STORY-000" not in ids and "TASK-003" in ids
+
+
+def test_document_store_deletes_the_item_folder(backlog):
+    store = _documents()
+    folder = Path(backlog.path) / "items" / "TASK-002"
+    assert folder.is_dir()
+
+    store.delete_item_folder(backlog, "TASK-002")
+    store.delete_item_folder(backlog, "TASK-404")  # no folder: nothing to do
+
+    assert not folder.exists()
+    assert (Path(backlog.path) / "TODO.md").is_file()
+    from todo_viewer.domain.errors import DocumentForbiddenError
+    for bad in ("..", "../b", "", "a/b"):
+        with pytest.raises(DocumentForbiddenError):
+            store.delete_item_folder(backlog, bad)

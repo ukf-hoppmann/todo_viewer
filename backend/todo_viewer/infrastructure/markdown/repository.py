@@ -84,9 +84,7 @@ class MarkdownBacklogRepository:
         layout = self._layouts.for_source(source)
         with self._locks.hold(str(layout.folder)):
             doc = self._files.read(layout.file(item.location))
-            stored = next((i for i in self._parse(doc, source, item.location) if i.id == item.id), None)
-            if stored is None or stored.version != item.version:
-                raise VersionConflictError(item.id)
+            self._check_version(doc, source, item)
             idx = self._locator.locate(doc.lines, item.id)
 
             for key, value in changes.set_fields:
@@ -106,6 +104,15 @@ class MarkdownBacklogRepository:
             self._files.write(doc)
             return self._reload(source, layout, item.id, changes.move_to)
 
+    def delete(self, source: Source, item: Item) -> None:
+        """Removes the entry if it is still at `item.version`."""
+        layout = self._layouts.for_source(source)
+        with self._locks.hold(str(layout.folder)):
+            doc = self._files.read(layout.file(item.location))
+            self._check_version(doc, source, item)
+            self._mover.cut(doc.lines, self._locator.locate(doc.lines, item.id))
+            self._files.write(doc)
+
     def create(self, source: Source, item: Item) -> Item:
         """Adds a new active entry; raises DuplicateItemError if its id was taken in the meantime."""
         layout = self._layouts.for_source(source)
@@ -116,6 +123,11 @@ class MarkdownBacklogRepository:
             self._mover.insert(doc.lines, self._renderer.render(item))
             self._files.write(doc)
             return self._reload(source, layout, item.id, Location.ACTIVE)
+
+    def _check_version(self, doc: TextDocument, source: Source, item: Item) -> None:
+        stored = next((i for i in self._parse(doc, source, item.location) if i.id == item.id), None)
+        if stored is None or stored.version != item.version:
+            raise VersionConflictError(item.id)
 
     def _reload(self, source: Source, layout: BacklogLayout, item_id: str, location: Location) -> Item:
         items = self._parse(self._files.read(layout.file(location)), source, location)

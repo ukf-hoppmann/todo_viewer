@@ -34,6 +34,9 @@ class BacklogRepository(Protocol):
     def create(self, source: Source, item: Item) -> Item:
         """Stores a new active item; raises DuplicateItemError if its id is taken."""
 
+    def delete(self, source: Source, item: Item) -> None:
+        """Removes the item; raises VersionConflictError if it changed since `item` was read."""
+
 
 class SourceRepository(Protocol):
     def all(self) -> list[Source]:
@@ -52,6 +55,9 @@ class DocumentStore(Protocol):
 
     def append(self, source: Source, relative_path: str, text: str, header: str) -> str:
         """Appends to a document (a new one starts with `header`) and returns the new content."""
+
+    def delete_item_folder(self, source: Source, item_id: str) -> None:
+        """Deletes the item's document folder with all files in it, if there is one."""
 
 
 class ProjectNameSuggester(Protocol):

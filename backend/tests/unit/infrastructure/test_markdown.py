@@ -76,6 +76,7 @@ def test_detector():
 
     assert detector.is_backlog("backlog format version 2\n- `T-1` **x**\n")
     assert detector.is_backlog("Claude_Harness-Backlog-Format Version 1.\n\nNo entries.\n")
+    assert detector.is_backlog("Format: Claude_Harness-Backlogformat Version 1.\n")
     assert not detector.is_backlog("- [ ] a")
 
 

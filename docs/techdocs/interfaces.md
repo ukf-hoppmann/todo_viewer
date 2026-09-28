@@ -164,8 +164,8 @@ Build, antwortet der Server mit 503 und einem Hinweis.
 - Aufruf / Endpunkt: ein Ordner mit `TODO.md`; `archive.md` im selben Ordner
   wird mitgelesen; `Notes`/`Spec` verweisen auf Dateien unter `items/<ID>/`.
 - Eingabe: Claude_Harness-Backlog-Format (Version 1/2); die Datei muss die
-  Format-Kennung enthalten (z. B. „backlog format version 2“ oder
-  „Backlog-Format Version 1“). Jeder Eintrag hat eine ID, die im Backlog
+  Format-Kennung enthalten (z. B. „backlog format version 2“,
+  „Backlog-Format Version 1“ oder „Backlogformat Version 1“). Jeder Eintrag hat eine ID, die im Backlog
   (`TODO.md` und `archive.md` zusammen) eindeutig ist. Einfache Checklisten
   ohne IDs werden nicht unterstützt und als Problem `unsupported_format`
   gemeldet.

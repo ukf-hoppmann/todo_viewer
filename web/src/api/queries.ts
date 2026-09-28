@@ -47,6 +47,21 @@ export function useCreateItem() {
   });
 }
 
+/** Reopens closed items one after the other (top-down, as parent_closed lists them) by setting In progress. */
+export function useReopenItems() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sourceId, ids }: { sourceId: string; ids: readonly string[] }) => {
+      for (const id of ids) {
+        const path = { source_id: sourceId, item_id: id };
+        const { version } = await unwrap(api.GET("/api/v2/items/{source_id}/{item_id}", { params: { path } }));
+        await unwrap(api.PATCH("/api/v2/items/{source_id}/{item_id}", { params: { path }, body: { version, fields: { status: "In progress" }, resolution: null } }));
+      }
+    },
+    onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
+  });
+}
+
 /** The trash of every given source. */
 export function useTrash(sourceIds: readonly string[]) {
   return useQueries({

@@ -65,6 +65,8 @@ class LifecycleViolationError(ConflictError):
         "epic_without_required_child": "Epic {id} needs at least one required child before it leaves Open.",
         "required_children_not_done": "Required children of {id} are not far enough: {items}.",
         "children_still_active": "{id} cannot be closed while children are active: {items}.",
+        "parent_closed": "{id} cannot be active below a closed parent. Reopen {items} first (in this order, "
+                         "e.g. set status 'In progress'), then retry.",
         "epic_with_parent": "Epic {id} cannot have a parent.",
         "required_for_parent_missing": "{id} has a parent but no 'Required for parent'.",
         "parent_cycle": "Parent references form a cycle: {items}.",

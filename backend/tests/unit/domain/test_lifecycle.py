@@ -104,8 +104,38 @@ def test_reopening_a_child_of_a_completed_parent_is_rejected():
     with pytest.raises(LifecycleViolationError) as err:
         rules.check_change(before, with_status(before, "A", "In progress"))
 
-    assert err.value.code in {"children_still_active", "required_children_not_done"}
-    assert err.value.details["id"] == "S"
+    assert (err.value.code, err.value.details) == ("parent_closed", {"id": "A", "items": "S"})
+
+
+def test_adding_an_active_child_to_a_closed_parent_names_the_closed_ancestors_top_down():
+    before = [item("E", "Epic", "Completed"), item("S", "Story", "Completed", parent="E"),
+              item("A", status="Completed", parent="S")]
+
+    with pytest.raises(LifecycleViolationError) as err:
+        rules.check_change(before, [*before, item("T", parent="S", required=False)])
+
+    assert (err.value.code, err.value.details) == ("parent_closed", {"id": "T", "items": "E, S"})
+    assert "Reopen E, S first" in err.value.message
+
+
+def test_closed_ancestors_stop_at_the_first_open_one():
+    before = [item("E", "Epic", "In progress"), item("S", "Story", "Rejected", parent="E"),
+              item("S2", "Story", "In progress")]
+    moved = [dataclasses.replace(i, parent="S", required_for_parent=False) if i.id == "S2" else i for i in before]
+
+    with pytest.raises(LifecycleViolationError) as err:
+        rules.check_change(before, moved)
+
+    assert err.value.details == {"id": "S2", "items": "S"}
+
+
+def test_closing_a_parent_with_active_children_stays_children_still_active():
+    before = [item("S", "Story", "In progress"), item("A", status="Open", parent="S", required=False)]
+
+    with pytest.raises(LifecycleViolationError) as err:
+        rules.check_change(before, with_status(before, "S", "Rejected"))
+
+    assert (err.value.code, err.value.details) == ("children_still_active", {"id": "S", "items": "A"})
 
 
 def test_existing_violations_do_not_block_unrelated_or_improving_changes():
@@ -123,7 +153,7 @@ def test_extending_an_existing_violation_is_rejected():
     with pytest.raises(LifecycleViolationError) as err:
         rules.check_change(before, with_status(before, "B", "Open"))
 
-    assert "B" in err.value.details["items"]
+    assert (err.value.code, err.value.details) == ("parent_closed", {"id": "B", "items": "S"})
 
 
 def test_references_must_exist():

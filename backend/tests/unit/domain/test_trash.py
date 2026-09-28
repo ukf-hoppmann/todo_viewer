@@ -123,4 +123,4 @@ def test_restore_is_refused_if_the_parent_was_closed_meanwhile():
     with pytest.raises(LifecycleViolationError) as err:
         trash.restore(items, "T")
 
-    assert err.value.details["id"] == "S"
+    assert (err.value.code, err.value.details) == ("parent_closed", {"id": "T", "items": "S"})

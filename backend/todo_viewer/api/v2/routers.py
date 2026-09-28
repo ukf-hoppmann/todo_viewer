@@ -12,6 +12,8 @@ from .schemas import (
     DocumentOut,
     ErrorOut,
     FolderListingOut,
+    IndexItemOut,
+    IndexOut,
     ItemEditIn,
     ItemOut,
     ProblemOut,
@@ -40,6 +42,17 @@ def backlog(overview: Overview) -> BacklogOut:
         items=[ItemOut.of(e.source, item, e.backlog.archive_available)
                for e in entries for item in e.backlog.items],
     )
+
+
+@router.get("/index", tags=["items"])
+def index(overview: Overview, lookup: Lookup, source_id: str | None = None) -> IndexOut:
+    """Lean overview of all items (active and archived) for placing new work; optionally one source."""
+    only = lookup.by_id(source_id) if source_id is not None else None
+    try:
+        entries = overview.overview(only)
+    except ConfigMissingError:
+        entries = []
+    return IndexOut(items=[IndexItemOut.of(e.source, item) for e in entries for item in e.backlog.items])
 
 
 @router.get("/items/{source_id}/{item_id}", tags=["items"])

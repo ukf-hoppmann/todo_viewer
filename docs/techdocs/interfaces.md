@@ -14,6 +14,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | Methode und Pfad | Zweck |
 |---|---|
 | `GET /backlog` | Alle Quellen (mit `item_count` und ggf. `problem`) und alle Items. Ohne `config.json` leer. |
+| `GET /index?source_id=…` | Schlanke Übersicht aller Items (aktiv und archiviert) mit nur `source_id`, `id`, `type`, `status`, `title`, `parent`, zum Einordnen neuer Arbeit; optional auf eine Quelle begrenzt. |
 | `GET /items/{source_id}/{item_id}` | Ein Item per ID, aktiv oder archiviert. |
 | `PATCH /items/{source_id}/{item_id}` | Ändert `status`, `priority` oder `required_for_parent` (`Yes`/`No`) eines Items. |
 | `GET /sources` | Konfigurierte Quellen. |

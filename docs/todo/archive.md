@@ -214,3 +214,26 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     an; der Umgang mit einem nicht erreichbaren Server liegt im Harness.
   - Notes: `items/STORY-010/STORY-010_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+
+- `STORY-011` **Papierkorb: Löschen markiert, Wiederherstellen und endgültig Löschen**
+  - Type: Story.
+  - Parent: `EPIC-001`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-28.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-008`.
+  - Goal: Löschen markiert ein Item als gelöscht, statt es zu entfernen.
+    Gelöschte Items liegen in einem Papierkorb mit eigener Route, aus dem
+    sie wiederhergestellt oder endgültig gelöscht werden. Löschen und
+    Wiederherstellen kaskadieren auf Kind-Items; vorher warnt die API und
+    verlangt eine Bestätigung.
+  - Completion criteria: Gelöschte Items verschwinden aus Übersicht und
+    Index und erscheinen im Papierkorb; Wiederherstellen und endgültiges
+    Löschen funktionieren samt Kindern; ohne Bestätigung liefert die API
+    eine Warnung mit den betroffenen Kindern; Tests und Doku sind vorhanden.
+  - Summary: Gelöschte Einträge landen erst im Papierkorb und können
+    zurückgeholt werden.
+  - Notes: `items/STORY-011/STORY-011_notes.md`.
+  - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.

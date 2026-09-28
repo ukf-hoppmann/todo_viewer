@@ -10,7 +10,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
 ## Work items
 - `EPIC-001` **Backlog-Pflege per API statt direkter Dateizugriffe**
   - Type: Epic.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-27.
   - Area: Backend-API.
   - Priority: Normal.
@@ -48,25 +48,3 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Alles, was künftig ein Agent über die API am Backlog
     ändern kann, soll auch direkt in der Oberfläche möglich sein.
   - Notes: `items/EPIC-002/EPIC-002_notes.md`.
-
-- `STORY-011` **Papierkorb: Löschen markiert, Wiederherstellen und endgültig Löschen**
-  - Type: Story.
-  - Parent: `EPIC-001`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-28.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `STORY-008`.
-  - Goal: Löschen markiert ein Item als gelöscht, statt es zu entfernen.
-    Gelöschte Items liegen in einem Papierkorb mit eigener Route, aus dem
-    sie wiederhergestellt oder endgültig gelöscht werden. Löschen und
-    Wiederherstellen kaskadieren auf Kind-Items; vorher warnt die API und
-    verlangt eine Bestätigung.
-  - Completion criteria: Gelöschte Items verschwinden aus Übersicht und
-    Index und erscheinen im Papierkorb; Wiederherstellen und endgültiges
-    Löschen funktionieren samt Kindern; ohne Bestätigung liefert die API
-    eine Warnung mit den betroffenen Kindern; Tests und Doku sind vorhanden.
-  - Summary: Gelöschte Einträge landen erst im Papierkorb und können
-    zurückgeholt werden.
-  - Notes: `items/STORY-011/STORY-011_notes.md`.

@@ -4,10 +4,14 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
+import structlog
+
 from todo_viewer.application.ports import FolderEntry, FolderListing
 
 from ..markdown.layout import SourcePathResolver
 from ..markdown.syntax import TODO_FILE
+
+log = structlog.get_logger(__name__)
 
 
 class LocalFolderBrowser:
@@ -31,10 +35,12 @@ class LocalFolderBrowser:
                 try:
                     if entry.is_dir():
                         dirs.append(FolderEntry(entry.name, (entry / TODO_FILE).is_file()))
-                except OSError:
+                except OSError as exc:
+                    log.debug("folder_entry_unreadable", path=str(entry), error=str(exc))
                     continue
         except OSError as exc:
             error = str(exc)
+            log.warning("folder_unreadable", path=str(target), error=error)
 
         return FolderListing(
             path=str(target),

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+import structlog
+
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import ChangeSet
 from todo_viewer.domain.errors import (
@@ -22,6 +24,8 @@ from .parsers import BacklogParser
 from .syntax import TODO_FILE
 from .templates import EmptyBacklogTemplates
 from .text_file import KeyedLocks, TextDocument, TextFileStore
+
+log = structlog.get_logger(__name__)
 
 
 class MarkdownBacklogRepository:
@@ -70,6 +74,9 @@ class MarkdownBacklogRepository:
                 backlog.items.extend(self._parse(self._files.read(path), source, location))
             except Exception as exc:  # surfaced to the UI instead of crashing
                 backlog.problem = SourceProblem("parse_error", f"{path.name}: {exc}")
+                log.warning("backlog_unparsable", source=source.id, path=str(path),
+                            error=f"{type(exc).__name__}: {exc}")
+                log.debug("backlog_unparsable_trace", path=str(path), exc_info=exc)
         return backlog
 
     def get(self, source: Source, item_id: str) -> Item:

@@ -10,7 +10,11 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
+import structlog
+
 from todo_viewer.domain.errors import FileChangedError
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -56,11 +60,13 @@ class TextFileStore:
         self.ensure_unchanged(doc)
         self._replace(doc.path, doc.newline.join(doc.lines).encode("utf-8"), keep_mode=True)
         doc.stamp = FileStamp.of(doc.path)
+        log.info("file_written", path=str(doc.path))
 
     def create(self, path: Path, text: str) -> None:
         """Writes a new file (and its folders) atomically."""
         path.parent.mkdir(parents=True, exist_ok=True)
         self._replace(path, text.encode("utf-8"), keep_mode=False)
+        log.info("file_written", path=str(path), created=True)
 
     @staticmethod
     def _replace(path: Path, data: bytes, keep_mode: bool) -> None:

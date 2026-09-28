@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 
 from todo_viewer.domain.errors import ConflictError, DomainError, ForbiddenError, NotFoundError
 
+from .request_log import note
+
 
 def error_response(code: str, message: str, status: int, details: dict[str, str]) -> JSONResponse:
     return JSONResponse({"code": code, "message": message, "details": details}, status_code=status)
@@ -24,17 +26,20 @@ def status_for(exc: DomainError) -> int:
 
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
-    async def domain_error(_: Request, exc: DomainError) -> JSONResponse:
+    async def domain_error(request: Request, exc: DomainError) -> JSONResponse:
+        note(request, code=exc.code, message=exc.message, details=exc.details)
         return error_response(exc.code, exc.message, status_for(exc), exc.details)
 
     @app.exception_handler(OSError)
-    async def os_error(_: Request, exc: OSError) -> JSONResponse:
+    async def os_error(request: Request, exc: OSError) -> JSONResponse:
         # e.g. no write permission on a backlog folder
+        note(request, code="write_failed", message=str(exc), exc_info=exc)
         return error_response("write_failed", str(exc), 500, {})
 
     @app.exception_handler(RequestValidationError)
-    async def validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+    async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
         first = exc.errors()[0] if exc.errors() else {}
         where = ".".join(str(p) for p in first.get("loc", ()) if p != "body")
         message = f"invalid request: {where} {first.get('msg', '')}".strip()
+        note(request, code="bad_request", message=message, details={"field": where})
         return error_response("bad_request", message, 400, {"field": where})

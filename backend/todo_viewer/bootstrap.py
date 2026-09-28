@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import os
+import platform
 from dataclasses import dataclass
 from pathlib import Path
+
+import structlog
 
 from todo_viewer.application.container import Container
 from todo_viewer.application.services import (
@@ -22,6 +25,7 @@ from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.trash import TrashPlanner
 from todo_viewer.infrastructure.config import JsonFile, JsonSourceRepository, JsonUiStateStore, LegacySourceMigrator
 from todo_viewer.infrastructure.filesystem import GitProjectNameSuggester, LocalFolderBrowser, browse_start_from
+from todo_viewer.infrastructure.log_setup import configure_logging
 from todo_viewer.infrastructure.markdown import KeyedLocks, build_markdown_documents, build_markdown_repository
 from todo_viewer.infrastructure.markdown.layout import SourcePathResolver
 
@@ -34,6 +38,8 @@ class Settings:
     config_dir: Path
     frontend_dir: Path
     browse_start: str | None
+    log_file: Path | None = None
+    log_level: str = "INFO"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -42,7 +48,18 @@ class Settings:
             config_dir=Path(os.environ.get("CONFIG_DIR", PROJECT_ROOT / "configs")),
             frontend_dir=Path(os.environ.get("FRONTEND_DIR", PROJECT_ROOT / "web" / "dist")),
             browse_start=os.environ.get("BROWSE_START"),
+            log_file=Path(os.environ["LOG_FILE"]) if os.environ.get("LOG_FILE") else None,
+            log_level=os.environ.get("LOG_LEVEL", "INFO"),
         )
+
+
+def start_logging(settings: Settings) -> None:
+    """Configures logging and records the settings the server runs with."""
+    configure_logging(settings.log_level, settings.log_file)
+    structlog.get_logger(__name__).info(
+        "startup", api="2", python=platform.python_version(), config_dir=str(settings.config_dir),
+        frontend_dir=str(settings.frontend_dir), browse_start=settings.browse_start,
+        log_file=str(settings.log_file) if settings.log_file else None, log_level=settings.log_level.upper())
 
 
 def build_container(settings: Settings) -> Container:

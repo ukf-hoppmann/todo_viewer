@@ -9,6 +9,8 @@
   `restart: unless-stopped` auf Port 5411, nur an `127.0.0.1` gebunden (die API
   kann Items ändern und löschen), und bindet ein:
   - `./configs` → `/app/configs` (Quellen und UI-Zustand bleiben auf dem Host),
+  - `./logs` → `/app/logs` (Logdatei `todo-viewer.log`; bleibt beim Entfernen
+    des Containers erhalten, per `.gitignore` nicht im Repo),
   - `/Users/hoppmann/Documents/GitHub` unter demselben Pfad, beschreibbar
     (Bearbeitungen landen in den Backlog-Dateien der Nachbar-Repos).
 - Aufruf im Browser: `http://todo.localhost:5411`.
@@ -20,11 +22,48 @@
 ## Laufender Betrieb
 
 - Starten/Stoppen über `./todo.sh` (siehe [README](../../README.md)).
-- Status: `./todo.sh status`; Logs: `./todo.sh logs`.
+- Status: `./todo.sh status`; Live-Log: `./todo.sh logs` (folgt `logs/todo-viewer.log`).
 - Erreichbarkeit: `GET /api/v2/health` antwortet mit `{"status": "ok", "api": "2"}`,
   ohne Backlog-Dateien zu lesen.
 - Das Frontend wird pro Anfrage gesucht: ein späteres `npm --prefix web run build`
   wird ohne Neustart ausgeliefert.
+
+## Log
+
+Das Backend schreibt pro Ereignis eine Zeile (Format und Level: siehe
+[Konfiguration](configuration.md), `LOG_FILE`/`LOG_LEVEL`):
+
+```
+<UTC-Zeit> <LEVEL> <event> logger=<modul> req=<id> key=value ...
+```
+
+Werte mit Leerzeichen, `=` oder `"` stehen in Anführungszeichen; verschachtelte
+`details` werden zu `details.<schlüssel>=…`. Ein Stacktrace folgt eingerückt
+(4 Leerzeichen) unter seiner Zeile.
+
+| Event | Level | Wann | Felder |
+|---|---|---|---|
+| `startup` | INFO | Serverstart | `api`, `python`, `config_dir`, `frontend_dir`, `browse_start`, `log_file`, `log_level` |
+| `request` | ERROR / WARNING / INFO / DEBUG | Jeder Request: 5xx (mit Stacktrace) / 4xx / schreibend / lesend sowie `PUT /ui-state` | `method`, `path`, `query`, `status`, `ms`; bei Fehlern `code`, `message`, `details.*`; beim Anlegen `source`, `type`, `item`; bei Quellen `target`, `source` |
+| `file_written` | INFO (JSON-Konfiguration: DEBUG) | Datei geschrieben | `path`, `created` bei neuen Dateien |
+| `backlog_unparsable` | WARNING | Backlog-Datei lässt sich nicht parsen (Projekt zeigt ⚠) | `source`, `path`, `error`; Stacktrace als `backlog_unparsable_trace` auf DEBUG |
+| `ui_state_unreadable` | WARNING | `ui_state.json` defekt oder nicht lesbar; die UI startet leer | `path`, `error` |
+| `folder_unreadable` | WARNING | Ordner-Browser kann einen Ordner nicht auflisten | `path`, `error` |
+
+Alle Zeilen eines Requests tragen dieselbe `req`. Meldungen von uvicorn
+erscheinen im selben Format mit `logger=uvicorn.error`.
+
+Suchen, ohne die Datei ganz zu lesen:
+
+```bash
+grep -E ' (ERROR|WARNING) ' logs/todo-viewer.log | tail -20   # letzte Probleme
+grep -A30 ' ERROR ' logs/todo-viewer.log | tail -60            # Fehler mit Stacktrace
+grep 'code=version_conflict' logs/todo-viewer.log              # nach Fehlercode
+grep 'STORY-016' logs/todo-viewer.log                          # nach Item-ID (Pfad oder item=)
+grep ' req=1a2b3c4d ' logs/todo-viewer.log                     # alles zu einem Request
+```
+
+Ältere Einträge stehen in `todo-viewer.log.1` … `.5`.
 
 ## Fehlerbilder
 

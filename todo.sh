@@ -6,6 +6,7 @@ cd "$(dirname "$0")"
 
 URL="http://todo.localhost:5411"
 SERVICE="todo-viewer"
+LOG_FILE="logs/todo-viewer.log"
 
 usage() {
   cat <<EOF
@@ -17,7 +18,7 @@ Befehle:
   restart   Container neu starten
   down      Container + Netzwerk entfernen (configs/ auf dem Host bleiben erhalten)
   update    Neu bauen (--no-cache) und Container ersetzen, z.B. nach Code-Änderungen
-  logs      Live-Logs anzeigen (Strg+C zum Beenden)
+  logs      Live-Log aus $LOG_FILE anzeigen (Strg+C zum Beenden)
   status    Laufender Zustand des Containers
   open      Nur den Browser öffnen (Container muss bereits laufen)
 EOF
@@ -49,7 +50,14 @@ cmd_update() {
 }
 
 cmd_logs() {
-  docker compose logs -f "$SERVICE"
+  # Der Server schreibt in die Logdatei; die Konsole des Containers zeigt nur
+  # Meldungen, bevor das Logging konfiguriert ist (docker compose logs).
+  if [ ! -f "$LOG_FILE" ]; then
+    echo "$LOG_FILE fehlt noch; Container-Ausgabe:"
+    docker compose logs "$SERVICE"
+    return
+  fi
+  tail -n 50 -F "$LOG_FILE"
 }
 
 cmd_status() {

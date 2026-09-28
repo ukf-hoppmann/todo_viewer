@@ -12,12 +12,14 @@ from todo_viewer.application.container import Container
 
 from . import v2
 from .errors import install_error_handlers
+from .request_log import RequestLogMiddleware
 
 
 def create_app(container: Container, frontend_dir: Path) -> FastAPI:
     app = FastAPI(title="ToDo Viewer", version="2.0")
     app.state.container = container
     install_error_handlers(app)
+    app.add_middleware(RequestLogMiddleware)
     app.include_router(v2.router)
     # Mounted last: everything that is not an API route is a frontend file.
     app.mount("/", FrontendFiles(frontend_dir), name="frontend")

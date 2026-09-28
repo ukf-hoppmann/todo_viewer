@@ -44,6 +44,13 @@ def spec_path(item: Item, name: str) -> str:
     return f"items/{item.id}/{name}"
 
 
+def new_document(item: Item, name: str) -> DocumentRef:
+    """Where a new document goes: `<ID>_notes.md` for the first notes, otherwise a spec name."""
+    if name == f"{item.id}_notes.md" and not item.notes:
+        return DocumentRef(name, DocumentKind.NOTES, notes_path(item))
+    return DocumentRef(name, DocumentKind.SPEC, spec_path(item, name))
+
+
 def new_notes_file(item: Item) -> str:
     return f"# {item.id} — {item.title}\n"
 

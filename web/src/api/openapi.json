@@ -25,6 +25,46 @@
         "title": "BacklogOut",
         "type": "object"
       },
+      "DocumentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "description": "The whole new text of the document",
+            "title": "Content",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sets the item summary; needed for the first notes",
+            "title": "Summary"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Version last read; null to create a new document",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "content",
+          "version"
+        ],
+        "title": "DocumentIn",
+        "type": "object"
+      },
       "DocumentOut": {
         "properties": {
           "content": {
@@ -887,33 +927,6 @@
         "title": "SourceStatusOut",
         "type": "object"
       },
-      "SpecIn": {
-        "additionalProperties": false,
-        "properties": {
-          "content": {
-            "title": "Content",
-            "type": "string"
-          },
-          "version": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Version last read; null to create a new spec",
-            "title": "Version"
-          }
-        },
-        "required": [
-          "content",
-          "version"
-        ],
-        "title": "SpecIn",
-        "type": "object"
-      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -1768,8 +1781,8 @@
         ]
       },
       "put": {
-        "description": "Replaces a spec in `version`, or creates `<ID>_spec.md` / `<ID>_spec_<topic>.md` (version null).",
-        "operationId": "write_spec_api_v2_items__source_id___item_id__documents__name__put",
+        "description": "Replaces a notes or spec document in `version` with the whole new text.\n\nWith version null it creates `<ID>_notes.md` (first notes; the item needs a summary) or\n`<ID>_spec.md` / `<ID>_spec_<topic>.md`. New dated notes entries: POST \u2026/notes.",
+        "operationId": "write_document_api_v2_items__source_id___item_id__documents__name__put",
         "parameters": [
           {
             "in": "path",
@@ -1803,7 +1816,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SpecIn"
+                "$ref": "#/components/schemas/DocumentIn"
               }
             }
           },
@@ -1871,7 +1884,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Write Spec",
+        "summary": "Write Document",
         "tags": [
           "documents"
         ]

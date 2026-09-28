@@ -273,3 +273,10 @@ select.field-edit:disabled { opacity: .6; cursor: wait; }
 .trash-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px solid var(--panel-border); }
 .trash-row .trash-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trash-row .trash-meta { color: var(--text-dim); font-size: 11px; }
+
+/* ---------- documents ---------- */
+.doc-tab-actions { margin-left: auto; display: flex; gap: 6px; }
+.spec-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.spec-editor textarea { min-height: 320px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.spec-preview { border: 1px solid var(--panel-border); border-radius: 6px; padding: 8px 12px; overflow: auto; max-height: 420px; }
+@media (max-width: 720px) { .spec-editor { grid-template-columns: 1fr; } }

@@ -212,11 +212,12 @@ class DocumentOut(DocumentRefOut):
         return cls(name=result.ref.name, kind=result.ref.kind.value, content=result.content, version=result.version)
 
 
-class SpecIn(BaseModel):
+class DocumentIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    content: str
-    version: str | None = Field(description="Version last read; null to create a new spec")
+    content: str = Field(description="The whole new text of the document")
+    version: str | None = Field(description="Version last read; null to create a new document")
+    summary: str | None = Field(default=None, description="Sets the item summary; needed for the first notes")
 
 
 class NotesEntryIn(BaseModel):

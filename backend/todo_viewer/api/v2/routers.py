@@ -10,6 +10,7 @@ from todo_viewer.domain.trash import live
 from ..dependencies import Documents, Folders, Items, Lookup, Overview, Sources, Trash, UiState
 from .schemas import (
     BacklogOut,
+    DocumentIn,
     DocumentOut,
     ErrorOut,
     FolderListingOut,
@@ -24,7 +25,6 @@ from .schemas import (
     SourceIn,
     SourceOut,
     SourceStatusOut,
-    SpecIn,
     VersionIn,
 )
 
@@ -134,10 +134,14 @@ def read_document(source_id: str, item_id: str, name: str, documents: Documents,
 
 
 @router.put("/items/{source_id}/{item_id}/documents/{name}", tags=["documents"])
-def write_spec(source_id: str, item_id: str, name: str, body: SpecIn, documents: Documents,
-               lookup: Lookup) -> DocumentOut:
-    """Replaces a spec in `version`, or creates `<ID>_spec.md` / `<ID>_spec_<topic>.md` (version null)."""
-    result = documents.write_spec(lookup.by_id(source_id), item_id, name, body.content, body.version)
+def write_document(source_id: str, item_id: str, name: str, body: DocumentIn, documents: Documents,
+                   lookup: Lookup) -> DocumentOut:
+    """Replaces a notes or spec document in `version` with the whole new text.
+
+    With version null it creates `<ID>_notes.md` (first notes; the item needs a summary) or
+    `<ID>_spec.md` / `<ID>_spec_<topic>.md`. New dated notes entries: POST …/notes.
+    """
+    result = documents.write(lookup.by_id(source_id), item_id, name, body.content, body.version, body.summary)
     return DocumentOut.of_result(result)
 
 

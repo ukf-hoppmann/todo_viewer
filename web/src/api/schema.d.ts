@@ -150,10 +150,13 @@ export interface paths {
          */
         get: operations["read_document_api_v2_items__source_id___item_id__documents__name__get"];
         /**
-         * Write Spec
-         * @description Replaces a spec in `version`, or creates `<ID>_spec.md` / `<ID>_spec_<topic>.md` (version null).
+         * Write Document
+         * @description Replaces a notes or spec document in `version` with the whole new text.
+         *
+         *     With version null it creates `<ID>_notes.md` (first notes; the item needs a summary) or
+         *     `<ID>_spec.md` / `<ID>_spec_<topic>.md`. New dated notes entries: POST …/notes.
          */
-        put: operations["write_spec_api_v2_items__source_id___item_id__documents__name__put"];
+        put: operations["write_document_api_v2_items__source_id___item_id__documents__name__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -305,6 +308,24 @@ export interface components {
             items: components["schemas"]["ItemOut"][];
             /** Sources */
             sources: components["schemas"]["SourceStatusOut"][];
+        };
+        /** DocumentIn */
+        DocumentIn: {
+            /**
+             * Content
+             * @description The whole new text of the document
+             */
+            content: string;
+            /**
+             * Summary
+             * @description Sets the item summary; needed for the first notes
+             */
+            summary?: string | null;
+            /**
+             * Version
+             * @description Version last read; null to create a new document
+             */
+            version: string | null;
         };
         /** DocumentOut */
         DocumentOut: {
@@ -613,16 +634,6 @@ export interface components {
             problem: components["schemas"]["ProblemOut"] | null;
             /** Project */
             project: string;
-        };
-        /** SpecIn */
-        SpecIn: {
-            /** Content */
-            content: string;
-            /**
-             * Version
-             * @description Version last read; null to create a new spec
-             */
-            version: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1246,7 +1257,7 @@ export interface operations {
             };
         };
     };
-    write_spec_api_v2_items__source_id___item_id__documents__name__put: {
+    write_document_api_v2_items__source_id___item_id__documents__name__put: {
         parameters: {
             query?: never;
             header?: never;
@@ -1259,7 +1270,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SpecIn"];
+                "application/json": components["schemas"]["DocumentIn"];
             };
         };
         responses: {

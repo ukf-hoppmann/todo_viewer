@@ -75,6 +75,12 @@ Kurzfassung. Erst „Speichern“ schreibt alle Änderungen in einem Schritt,
 Eintrag auf `Completed` oder `Rejected` gesetzt, fragt das Formular nach
 einer `Resolution` und der Eintrag wandert nach `archive.md`; ein Zurücksetzen
 auf einen offenen Status holt ihn (ohne Resolution) zurück nach `TODO.md`.
+Notizen und Specs lassen sich im Dokument-Dialog schreiben: „📝 ＋ Notiz-Eintrag“
+hängt einen datierten Eintrag (Thema, Besprochen, Entschieden, Offen) an,
+„✎ Bearbeiten“ ändert den ganzen Text einer Notiz oder Spec mit
+Markdown-Vorschau, „📐 ＋ Spec anlegen“ legt eine neue Spec an. Hat jemand das
+Dokument inzwischen geändert, bleibt der eigene Text stehen; „Aktuellen Stand
+anzeigen“ zeigt die fremde Fassung, erst „Trotzdem speichern“ überschreibt sie.
 „🗑 Löschen“ im Detail-Panel verschiebt einen Eintrag in den Papierkorb. Hat
 er Kinder, nennt der Dialog sie zuerst und löscht sie erst nach einer zweiten
 Bestätigung mit.
@@ -85,7 +91,7 @@ ID vergibt der Server; das neue Item wird danach ausgewählt.
 Hat jemand den Eintrag inzwischen geändert, bleiben die Eingaben erhalten;
 „Aktuellen Stand laden“ übernimmt die fremden Änderungen an nicht bearbeiteten
 Feldern, danach kann erneut gespeichert werden. `Notes` und `Spec`
-eines Eintrags öffnen sich in einem großen Lese-Popup.
+eines Eintrags öffnen sich in einem großen Dokument-Dialog.
 
 Änderungen, die gegen die Parent-Regeln des Backlog-Formats verstoßen, lehnt
 der Server mit einem Hinweis auf die blockierenden Einträge ab, z. B. ein

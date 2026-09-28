@@ -372,3 +372,98 @@ describe("TrashView", () => {
     expect(await screen.findByText("Der Papierkorb ist leer.")).toBeInTheDocument();
   });
 });
+
+describe("DocumentDialog writing", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("appends a notes entry and asks for a summary when the item has none", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () =>
+      jsonResponse({ name: "TASK-7_notes.md", kind: "notes", content: "# TASK-7\n\n## 2026-09-28 — Plan\n", version: "n1" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const [item] = toItems([apiItem("TASK-7")]);
+    renderWithProviders(<DocumentDialog item={item!} initialName={null} initialMode="note" onClose={vi.fn()} />);
+
+    await userEvent.type(screen.getByRole("textbox", { name: "Thema" }), "Plan");
+    await userEvent.type(screen.getByRole("textbox", { name: /Entschieden/ }), "Use regex{enter}Keep it small");
+    await userEvent.type(screen.getByRole("textbox", { name: "Kurzfassung" }), "Parser work");
+    await userEvent.click(screen.getByRole("button", { name: "Eintrag anhängen" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const request = fetchMock.mock.calls[0]![0];
+    expect([request.method, new URL(request.url).pathname]).toEqual(["POST", "/api/v2/items/s/TASK-7/notes"]);
+    expect(await request.clone().json()).toEqual({
+      topic: "Plan", discussed: [], decided: ["Use regex", "Keep it small"], open: [], summary: "Parser work",
+    });
+  });
+
+  it("creates a spec named after its topic", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () =>
+      jsonResponse({ name: "TASK-7_spec_data-model.md", kind: "spec", content: "# Model", version: "s1" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const [item] = toItems([apiItem("TASK-7", { summary: "S" })]);
+    renderWithProviders(<DocumentDialog item={item!} initialName={null} initialMode="newSpec" onClose={vi.fn()} />);
+
+    await userEvent.type(screen.getByRole("textbox", { name: /Thema/ }), "Data model");
+    await userEvent.type(screen.getByRole("textbox", { name: "Markdown" }), "# Model");
+    expect(screen.getByRole("heading", { name: "Model" })).toBeInTheDocument(); // preview
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const request = fetchMock.mock.calls[0]![0];
+    expect([request.method, new URL(request.url).pathname]).toEqual(["PUT", "/api/v2/items/s/TASK-7/documents/TASK-7_spec_data-model.md"]);
+    expect(await request.clone().json()).toEqual({ content: "# Model", version: null });
+  });
+
+  it("keeps the text on a spec conflict and overwrites only after showing the current state", async () => {
+    let saved = 0;
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async (request) => {
+      if (request.method === "GET") {
+        return jsonResponse({ name: "TASK-7_spec.md", kind: "spec", content: saved ? "# Theirs" : "# Mine old", version: saved ? "v2" : "v1" });
+      }
+      saved += 1;
+      const body = await request.clone().json();
+      return body.version === "v2"
+        ? jsonResponse({ name: "TASK-7_spec.md", kind: "spec", content: body.content, version: "v3" })
+        : jsonResponse({ code: "version_conflict", message: "x", details: {} }, 409);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const [item] = toItems([apiItem("TASK-7", { documents: [{ name: "TASK-7_spec.md", kind: "spec" }] })]);
+    renderWithProviders(<DocumentDialog item={item!} initialName="TASK-7_spec.md" onClose={vi.fn()} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "✎ Bearbeiten" }));
+    const editor = screen.getByRole("textbox", { name: "Markdown" });
+    await userEvent.clear(editor);
+    await userEvent.type(editor, "# Mine new");
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Aktuellen Stand anzeigen" }));
+
+    expect(await screen.findByRole("heading", { name: "Theirs" })).toBeInTheDocument();
+    expect((screen.getByRole("textbox", { name: "Markdown" }) as HTMLTextAreaElement).value).toBe("# Mine new");
+    await userEvent.click(screen.getByRole("button", { name: "Trotzdem speichern" }));
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Markdown" })).not.toBeInTheDocument());
+    const puts = fetchMock.mock.calls.map(([r]) => r).filter((r) => r.method === "PUT");
+    expect(await puts[1]!.clone().json()).toEqual({ content: "# Mine new", version: "v2" });
+  });
+
+  it("edits a notes document as a whole: get the text, put the new one", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async (request) =>
+      request.method === "GET"
+        ? jsonResponse({ name: "TASK-7_notes.md", kind: "notes", content: "# Notes\n\n- old", version: "n1" })
+        : jsonResponse({ name: "TASK-7_notes.md", kind: "notes", content: (await request.clone().json()).content, version: "n2" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const [item] = toItems([apiItem("TASK-7", { summary: "S", documents: [{ name: "TASK-7_notes.md", kind: "notes" }] })]);
+    renderWithProviders(<DocumentDialog item={item!} initialName="TASK-7_notes.md" onClose={vi.fn()} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "✎ Bearbeiten" }));
+    const editor = screen.getByRole("textbox", { name: "Markdown" });
+    expect((editor as HTMLTextAreaElement).value).toBe("# Notes\n\n- old");
+    await userEvent.clear(editor);
+    await userEvent.type(editor, "# Notes{enter}{enter}- corrected");
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([r]) => r.method === "PUT")).toBe(true));
+    const put = fetchMock.mock.calls.map(([r]) => r).find((r) => r.method === "PUT")!;
+    expect(new URL(put.url).pathname).toBe("/api/v2/items/s/TASK-7/documents/TASK-7_notes.md");
+    expect(await put.clone().json()).toEqual({ content: "# Notes\n\n- corrected", version: "n1" });
+  });
+});

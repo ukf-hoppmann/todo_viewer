@@ -89,6 +89,35 @@ export function usePurgeItem() {
   );
 }
 
+function useDocumentMutation<T extends { sourceId: string; itemId: string }>(call: (args: T) => Promise<Schemas["DocumentOut"]>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: call,
+    onSuccess: (doc, { sourceId, itemId }) => client.setQueryData(keys.document(sourceId, itemId, doc.name), doc),
+    onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
+  });
+}
+
+/** Appends a dated notes entry (the first one creates the notes document). */
+export function useAppendNotes() {
+  return useDocumentMutation(({ sourceId, itemId, body }: { sourceId: string; itemId: string; body: Schemas["NotesEntryIn"] }) =>
+    unwrap(api.POST("/api/v2/items/{source_id}/{item_id}/notes", { params: { path: { source_id: sourceId, item_id: itemId } }, body })),
+  );
+}
+
+/** Replaces a notes or spec document in `version` with the whole new text, or creates it (`version` null). */
+export function useWriteDocument() {
+  return useDocumentMutation(
+    ({ sourceId, itemId, name, content, version }: { sourceId: string; itemId: string; name: string; content: string; version: string | null }) =>
+      unwrap(
+        api.PUT("/api/v2/items/{source_id}/{item_id}/documents/{name}", {
+          params: { path: { source_id: sourceId, item_id: itemId, name } },
+          body: { content, version },
+        }),
+      ),
+  );
+}
+
 export function useSaveSource() {
   const client = useQueryClient();
   return useMutation({
@@ -129,6 +158,13 @@ export function useDocument(sourceId: string, itemId: string, name: string | nul
       ),
     enabled: name !== null,
   });
+}
+
+/** The current content of a document (e.g. after a version conflict). */
+export async function fetchDocument(sourceId: string, itemId: string, name: string) {
+  return unwrap(
+    api.GET("/api/v2/items/{source_id}/{item_id}/documents/{name}", { params: { path: { source_id: sourceId, item_id: itemId, name } } }),
+  );
 }
 
 /** The current state of one item (e.g. after a version conflict). */

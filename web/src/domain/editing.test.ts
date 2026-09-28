@@ -1,6 +1,18 @@
 import type { ApiItem } from "../api/client";
 import { apiItem } from "../test/render";
-import { changedFields, childTypes, createRequest, dependencyCandidates, draftOf, groupTrash, newItemDraft, parentCandidates, rebaseDraft } from "./editing";
+import {
+  changedFields,
+  childTypes,
+  createRequest,
+  dependencyCandidates,
+  draftOf,
+  groupTrash,
+  newItemDraft,
+  notesRequest,
+  parentCandidates,
+  rebaseDraft,
+  specName,
+} from "./editing";
 import { toItems } from "./model";
 
 const [epic, story, task, sub, other, foreign] = toItems([
@@ -93,5 +105,22 @@ describe("trash", () => {
       ["A", ["TASK-3"]],
       ["P", ["TASK-2", "TASK-1"]],
     ]);
+  });
+});
+
+describe("documents", () => {
+  it("turns the notes form into an entry with one bullet per line", () => {
+    expect(notesRequest({ topic: " Plan ", discussed: "A\n\n  B ", decided: "", open: "C", summary: "" }, true)).toEqual({
+      topic: "Plan", discussed: ["A", "B"], decided: [], open: ["C"],
+    });
+    expect(notesRequest({ topic: "T", discussed: "", decided: "x", open: "", summary: " Sum " }, false)).toEqual({
+      topic: "T", discussed: [], decided: ["x"], open: [], summary: "Sum",
+    });
+  });
+
+  it("names new specs by the format", () => {
+    expect(specName("STORY-3", "")).toBe("STORY-3_spec.md");
+    expect(specName("STORY-3", " Data model ")).toBe("STORY-3_spec_data-model.md");
+    expect(specName("STORY-3", "API/v2!")).toBe("STORY-3_spec_api-v2.md");
   });
 });

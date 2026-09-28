@@ -90,21 +90,24 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     und lassen sich zurückholen oder endgültig entfernen.
   - Notes: `items/STORY-014/STORY-014_notes.md`.
 
-- `STORY-015` **Notes-Einträge und Specs in der UI schreiben**
+- `STORY-015` **Notes und Specs in der UI schreiben und ändern**
   - Type: Story.
   - Parent: `EPIC-002`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-28.
   - Area: Web-UI.
   - Priority: Normal.
   - Dependencies: `STORY-009`.
   - Goal: Im Dokument-Dialog lässt sich ein Notes-Eintrag (Thema, Discussed,
-    Decided, Open) anhängen und eine Spec in einem Textfeld mit
-    Markdown-Vorschau bearbeiten oder neu anlegen. Beim ersten Notes-Eintrag
-    fragt die UI nach einer Summary, falls keine vorhanden ist.
-  - Completion criteria: Notes-Einträge und Specs lassen sich in der UI
-    schreiben; Versionskonflikte bei Specs werden gemeldet, ohne die Eingabe
-    zu verlieren; Komponententests vorhanden.
+    Decided, Open) anhängen, und Notizen wie Specs lassen sich als ganzer
+    Text mit Markdown-Vorschau ändern oder neu anlegen: GET holt den Text,
+    PUT schreibt den neuen. Beim ersten Notes-Dokument fragt die UI nach
+    einer Summary, falls keine vorhanden ist.
+  - Completion criteria: Notes-Einträge anhängen sowie Notizen und Specs
+    ändern und anlegen funktioniert in der UI und per API; Versionskonflikte
+    werden gemeldet, ohne die Eingabe zu verlieren; Komponententests
+    vorhanden.
   - Summary: Notizen und Specs lassen sich direkt in der Oberfläche
-    schreiben.
+    schreiben und nachträglich ändern.
+  - Notes: `items/STORY-015/STORY-015_notes.md`.

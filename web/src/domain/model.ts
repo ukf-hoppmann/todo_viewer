@@ -1,5 +1,5 @@
 // Frontend view of the backlog: pure functions, no React, no fetching.
-import type { ApiItem, EditableField, SourceStatus } from "../api/client";
+import type { ApiItem, SourceStatus } from "../api/client";
 
 export const STATUS_KEYS = ["Open", "In progress", "Awaiting confirmation", "Completed", "Rejected"] as const;
 export const PRIORITY_KEYS = ["Urgent", "Important", "Normal", "Prospective"] as const;
@@ -208,12 +208,6 @@ export function priorityOptions(item: Item): string[] {
   const options: string[] = [...PRIORITY_KEYS];
   if (item.priority && !options.includes(item.priority)) options.push(item.priority);
   return options;
-}
-
-/** Current value of an editable field, spelled as in the file ("" if unset). */
-export function editValue(item: Item, field: EditableField): string {
-  if (field === "required_for_parent") return item.required_for_parent == null ? "" : item.required_for_parent ? "Yes" : "No";
-  return item[field] ?? "";
 }
 
 export function needsResolution(item: Item, status: string): boolean {

@@ -8,8 +8,6 @@ export type SourceStatus = Schemas["SourceStatusOut"];
 export type Source = Schemas["SourceOut"];
 export type FolderListing = Schemas["FolderListingOut"];
 export type ItemFields = Schemas["ItemFieldsIn"];
-/** The fields the detail panel edits with a select. */
-export type EditableField = Extract<keyof ItemFields, "status" | "priority" | "required_for_parent">;
 
 // Absolute base URL (Request needs one outside browsers); fetch is looked up per call
 // instead of being captured at import, so tests can stub it.

@@ -31,7 +31,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-002`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-28.
   - Area: Web-UI.
   - Priority: Normal.
@@ -48,6 +48,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Konflikt ab.
   - Summary: Einträge lassen sich über einen eigenen Bearbeiten-Modus
     ändern, nicht durch versehentliches Klicken.
+  - Notes: `items/STORY-012/STORY-012_notes.md`.
 
 - `STORY-013` **Items in der UI anlegen**
   - Type: Story.

@@ -80,6 +80,11 @@ export function useDocument(sourceId: string, itemId: string, name: string | nul
   });
 }
 
+/** The current state of one item (e.g. after a version conflict). */
+export async function fetchItem(sourceId: string, itemId: string) {
+  return unwrap(api.GET("/api/v2/items/{source_id}/{item_id}", { params: { path: { source_id: sourceId, item_id: itemId } } }));
+}
+
 export async function fetchUiState(): Promise<Record<string, unknown>> {
   return unwrap(api.GET("/api/v2/ui-state"));
 }

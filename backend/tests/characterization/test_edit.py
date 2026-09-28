@@ -243,7 +243,8 @@ def test_spec_create_replace_and_conflicts(api, workspace):
     assert (notes.status_code, notes.body["code"]) == (400, "not_editable")
 
 
-@pytest.mark.parametrize(("name", "item_id"), [("delete_active", "TASK-002"), ("delete_last_archive_entry", "STORY-000")])
+@pytest.mark.parametrize(("name", "item_id"),
+                         [("delete_active", "TASK-002"), ("delete_last_archive_entry", "STORY-000")])
 def test_delete_cuts_entry_and_folder(api, workspace, golden, name, item_id):
     folder = _setup(workspace, "backlog")
     if item_id == "STORY-000":  # TASK-001 depends on both archived entries

@@ -2,7 +2,7 @@ import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { useMemo, useState } from "react";
 import { ApiError } from "../api/client";
-import { fetchDocument, useAppendNotes, useDocument, useWriteSpec } from "../api/queries";
+import { fetchDocument, useAppendNotes, useDocument, useWriteDocument } from "../api/queries";
 import { type NotesForm, notesRequest, specName } from "../domain/editing";
 import type { Item } from "../domain/model";
 import { describeError, useI18n } from "../i18n/i18n";
@@ -29,8 +29,8 @@ export function DocumentDialog({ item, initialName, initialMode = "view", onClos
   const i18n = useI18n();
   const { t } = i18n;
   const [name, setName] = useState(initialName);
-  const [mode, setMode] = useState<DocumentMode | "editSpec">(initialMode);
-  const doc = useDocument(item.source_id, item.id, mode === "view" || mode === "editSpec" ? name : null);
+  const [mode, setMode] = useState<DocumentMode | "edit">(initialMode);
+  const doc = useDocument(item.source_id, item.id, mode === "view" || mode === "edit" ? name : null);
   const links = documentLinks(item, t("doc.notes"), t("doc.spec"));
   const current = links.find((l) => l.name === name);
   const show = (next: string) => {
@@ -66,8 +66,8 @@ export function DocumentDialog({ item, initialName, initialMode = "view", onClos
           <button className="btn small" onClick={() => setMode("newSpec")}>
             {t("doc.addSpec")}
           </button>
-          {mode === "view" && current?.kind === "spec" && doc.data && (
-            <button className="btn small" onClick={() => setMode("editSpec")}>
+          {mode === "view" && current && doc.data && (
+            <button className="btn small" onClick={() => setMode("edit")}>
               {t("edit.button")}
             </button>
           )}
@@ -83,9 +83,9 @@ export function DocumentDialog({ item, initialName, initialMode = "view", onClos
         )}
         {mode === "view" && !name && <p className="empty-hint">{t("doc.none")}</p>}
         {mode === "note" && <NoteForm item={item} onDone={show} onCancel={() => setMode("view")} />}
-        {mode === "newSpec" && <SpecEditor item={item} name={null} content="" version={null} onDone={show} onCancel={() => setMode("view")} />}
-        {mode === "editSpec" && name && doc.data && (
-          <SpecEditor item={item} name={name} content={doc.data.content} version={doc.data.version} onDone={show} onCancel={() => setMode("view")} />
+        {mode === "newSpec" && <DocumentEditor item={item} name={null} content="" version={null} onDone={show} onCancel={() => setMode("view")} />}
+        {mode === "edit" && name && doc.data && (
+          <DocumentEditor item={item} name={name} content={doc.data.content} version={doc.data.version} onDone={show} onCancel={() => setMode("view")} />
         )}
       </div>
     </Modal>
@@ -143,7 +143,7 @@ function NoteForm({ item, onDone, onCancel }: { item: Item; onDone: (name: strin
   );
 }
 
-interface SpecEditorProps {
+interface DocumentEditorProps {
   item: Item;
   /** Null for a new spec; its name then comes from the topic. */
   name: string | null;
@@ -153,11 +153,12 @@ interface SpecEditorProps {
   onCancel: () => void;
 }
 
-/** Text with a markdown preview; a version conflict keeps the text and can show the current state. */
-function SpecEditor({ item, name, content, version, onDone, onCancel }: SpecEditorProps) {
+/** Edits the whole text of a notes or spec document (or a new spec) with a markdown preview.
+ *  A version conflict keeps the text and can show the current state before saving anyway. */
+function DocumentEditor({ item, name, content, version, onDone, onCancel }: DocumentEditorProps) {
   const i18n = useI18n();
   const { t } = i18n;
-  const write = useWriteSpec();
+  const write = useWriteDocument();
   const [text, setText] = useState(content);
   const [topic, setTopic] = useState("");
   const [base, setBase] = useState(version);
@@ -175,7 +176,7 @@ function SpecEditor({ item, name, content, version, onDone, onCancel }: SpecEdit
   return (
     <form
       className="edit-form"
-      aria-label={t("doc.editSpec")}
+      aria-label={t("doc.edit")}
       onSubmit={(e) => {
         e.preventDefault();
         write.mutate({ sourceId: item.source_id, itemId: item.id, name: target, content: text, version: base }, { onSuccess: (doc) => onDone(doc.name) });

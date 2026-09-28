@@ -105,8 +105,8 @@ export function useAppendNotes() {
   );
 }
 
-/** Replaces a spec in `version`, or creates it (`version` null). */
-export function useWriteSpec() {
+/** Replaces a notes or spec document in `version` with the whole new text, or creates it (`version` null). */
+export function useWriteDocument() {
   return useDocumentMutation(
     ({ sourceId, itemId, name, content, version }: { sourceId: string; itemId: string; name: string; content: string; version: string | null }) =>
       unwrap(

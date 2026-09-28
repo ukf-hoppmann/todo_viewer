@@ -24,7 +24,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `DELETE /trash/{source_id}/{item_id}?version=…` | Löscht ein Item im Papierkorb samt Nachfahren und Ordnern `items/<ID>/` endgültig. |
 | `PATCH /items/{source_id}/{item_id}` | Ändert ein oder mehrere Felder eines Items in einem Schritt. |
 | `GET /items/{source_id}/{item_id}/documents/{name}` | Notes- oder Spec-Dokument eines Items lesen, mit `version`. |
-| `PUT /items/{source_id}/{item_id}/documents/{name}` | Spec ersetzen oder neu anlegen. |
+| `PUT /items/{source_id}/{item_id}/documents/{name}` | Notizen oder Spec mit dem ganzen neuen Text ersetzen oder neu anlegen. |
 | `POST /items/{source_id}/{item_id}/notes` | Datierten Notes-Eintrag anhängen. |
 | `GET /sources` | Konfigurierte Quellen. |
 | `POST /sources` | Quelle hinzufügen (`path`, optional `project`; ohne Namen der des Git-Repos). |
@@ -83,11 +83,14 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     (sonst 409 `item_not_deleted`) und entfernt Eintrag und Nachfahren samt
     ihrer Ordner `items/<ID>/`; abgelehnt, solange andere Items verweisen.
   - Dokumente werden über Item und Namen adressiert (Dateiname wie
-    `STORY-003_spec.md`), nie über Pfade. `PUT …/documents/{name}`:
-    `{content, version}`; `version` ist die zuletzt gelesene Version, `null`
-    legt eine neue Spec an. Neue Specs heißen `<ID>_spec.md` oder
-    `<ID>_spec_<thema>.md` und werden im Feld `Spec` des Items eingetragen.
-    Notes sind nur per `POST …/notes` erweiterbar:
+    `STORY-003_spec.md`), nie über Pfade. Arbeitsweise zum Ändern: `GET
+    …/documents/{name}` holt Text und `version`, `PUT …/documents/{name}` mit
+    `{content, version, summary?}` ersetzt den ganzen Text (Notizen wie Specs);
+    bei geänderter Version 409 `version_conflict`. `version: null` legt ein
+    neues Dokument an: `<ID>_notes.md` für die ersten Notizen (dann ist wie beim
+    Anhängen eine Summary nötig) oder `<ID>_spec.md` bzw. `<ID>_spec_<thema>.md`;
+    es wird im Feld `Notes` bzw. `Spec` des Items eingetragen.
+    Neue Notiz-Einträge hängt `POST …/notes` an:
     `{topic, discussed?, decided?, open?, summary?}`; der Server setzt das
     Datum und schreibt `## <Datum> — <Thema>` mit den Abschnitten
     `### Discussed`/`### Decided`/`### Open`. Der erste Eintrag legt
@@ -140,10 +143,10 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   4. Ändern: `PATCH /items/{source_id}/{id}` mit `{version, fields: {…}}`,
      z. B. `{"status": "In progress"}` oder `{"parent": "EPIC-001",
      "required_for_parent": "Yes"}`.
-  5. Notizen: `POST /items/{source_id}/{id}/notes` mit
-     `{topic, discussed, decided, open, summary?}`; Specs über
-     `PUT /items/{source_id}/{id}/documents/<ID>_spec.md` mit
-     `{content, version}`.
+  5. Notizen: neuer Eintrag per `POST /items/{source_id}/{id}/notes` mit
+     `{topic, discussed, decided, open, summary?}`; Notizen und Specs ändern:
+     `GET …/documents/{name}` holen, `PUT …/documents/{name}` mit
+     `{content, version}` zurückschreiben.
   6. Löschen: `DELETE /items/{source_id}/{id}?version=…` (Papierkorb; bei
      Kindern erst Warnung, dann mit `cascade=true`); wiederherstellen oder
      endgültig löschen über `/trash`.

@@ -220,6 +220,38 @@ def test_first_notes_entry_creates_file_and_fields(api, workspace, golden):
     golden("edit/notes_fields.md", _files(folder))
 
 
+def test_notes_are_replaced_as_a_whole_with_their_version(api, workspace):
+    folder = _setup(workspace, "backlog")
+    url = f"{_docs(api, 'TASK-002')}/documents/notes.md"
+    current = api.get(url).body
+
+    replaced = api.put(url, {"content": "# Rewritten notes\n", "version": current["version"]})
+    stale = api.put(url, {"content": "# Again\n", "version": current["version"]})
+
+    assert replaced.status_code == 200, replaced.body
+    assert (replaced.body["kind"], replaced.body["content"]) == ("notes", "# Rewritten notes\n")
+    assert (folder / "items" / "TASK-002" / "notes.md").read_text(encoding="utf-8") == "# Rewritten notes\n"
+    assert (stale.status_code, stale.body["code"]) == (409, "version_conflict")
+
+
+def test_first_notes_by_put_need_the_notes_name_and_a_summary(api, workspace):
+    folder = _setup(workspace, "backlog")
+    url = f"{_docs(api, 'TASK-001')}/documents"
+
+    wrong_name = api.put(f"{url}/notes.md", {"content": "x", "version": None})
+    no_summary = api.put(f"{url}/TASK-001_notes.md", {"content": "# Notes\n", "version": None})
+    created = api.put(f"{url}/TASK-001_notes.md", {"content": "# Notes\n", "version": None,
+                                                    "summary": "Parses the files."})
+
+    assert (wrong_name.status_code, wrong_name.body["code"]) == (400, "invalid_value")
+    assert (no_summary.status_code, no_summary.body["code"]) == (409, "summary_required_with_notes")
+    assert created.status_code == 200, created.body
+    assert (folder / "items" / "TASK-001" / "TASK-001_notes.md").read_text(encoding="utf-8") == "# Notes\n"
+    item = _item(api, "TASK-001")
+    assert (item["summary"], item["documents"]) == \
+        ("Parses the files.", [{"name": "TASK-001_notes.md", "kind": "notes"}])
+
+
 def test_spec_create_replace_and_conflicts(api, workspace):
     folder = _setup(workspace, "backlog")
     url = _docs(api, "TASK-001")
@@ -230,7 +262,7 @@ def test_spec_create_replace_and_conflicts(api, workspace):
     replaced = api.put(f"{url}/documents/TASK-001_spec.md", {"content": "# Spec v2\n",
                                                               "version": created.body["version"]})
     bad_name = api.put(f"{url}/documents/spec.md", {"content": "x", "version": None})
-    notes = api.put(f"{_docs(api, 'TASK-002')}/documents/notes.md", {"content": "x", "version": None})
+    notes_exist = api.put(f"{_docs(api, 'TASK-002')}/documents/notes.md", {"content": "x", "version": None})
 
     assert created.status_code == 200, created.body
     assert (again.status_code, again.body["code"]) == (409, "version_conflict")
@@ -240,7 +272,7 @@ def test_spec_create_replace_and_conflicts(api, workspace):
     assert _item(api, "TASK-001")["documents"] == [{"name": "TASK-001_spec.md", "kind": "spec"}]
     assert api.get(f"{url}/documents/TASK-001_spec.md").body == replaced.body
     assert (bad_name.status_code, bad_name.body["code"]) == (400, "invalid_value")
-    assert (notes.status_code, notes.body["code"]) == (400, "not_editable")
+    assert (notes_exist.status_code, notes_exist.body["code"]) == (409, "version_conflict")
 
 
 def _trash(api, item: dict, cascade: bool = False):

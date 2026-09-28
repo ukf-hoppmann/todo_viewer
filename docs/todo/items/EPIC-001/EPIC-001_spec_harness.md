@@ -37,10 +37,12 @@ konkurrierende Änderungen über Versions-Tokens.
 - Notes: `POST /items/{source_id}/{id}/notes` mit
   `{topic, discussed, decided, open, summary?}`; Datum setzt der Server. Der
   erste Eintrag legt `items/<ID>/<ID>_notes.md` an, trägt `Notes` ein und
-  verlangt eine Summary. Freie Umstrukturierung einer Notes-Datei ist über
-  die API nicht vorgesehen (nur Anhängen).
-- Specs: `PUT /items/{source_id}/{id}/documents/<ID>_spec[_thema].md` mit
-  `{content, version}` (`null` = neu). Andere Namen sind nicht erlaubt.
+  verlangt eine Summary.
+- Notizen und Specs ändern: `GET …/documents/{name}` holt Text und Version,
+  `PUT …/documents/{name}` mit `{content, version}` ersetzt den ganzen Text
+  (Nachtrag 2026-09-28, `STORY-015`). Neu anlegen mit `version: null`:
+  `<ID>_notes.md` (erste Notizen, Summary nötig) oder
+  `<ID>_spec[_thema].md`. Andere Namen sind nicht erlaubt.
 - Status Completed/Rejected braucht `resolution`; der Server archiviert und
   holt beim Zurücksetzen zurück.
 

@@ -10,12 +10,12 @@ from todo_viewer.domain.documents import (
     NotesEntry,
     content_version,
     item_documents,
+    new_document,
     new_notes_file,
     notes_path,
-    spec_path,
 )
 from todo_viewer.domain.editing import ChangeSet, EditPlanner, Field, FieldValue
-from todo_viewer.domain.errors import DocumentNotFoundError, LifecycleViolationError, NotEditableError
+from todo_viewer.domain.errors import DocumentNotFoundError, LifecycleViolationError
 from todo_viewer.domain.item import Item
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.source import Source
@@ -49,21 +49,28 @@ class DocumentService:
         ref = self._ref(self._backlogs.get(source, item_id), name)
         return DocumentResult(ref, self._documents.read(source, ref.path))
 
-    def write_spec(self, source: Source, item_id: str, name: str, content: str,
-                   version: str | None) -> DocumentResult:
-        """Replaces a spec in `version`, or creates a new one (`version` None) and lists it in the item's Spec."""
+    def write(self, source: Source, item_id: str, name: str, content: str, version: str | None,
+              summary: str | None = None) -> DocumentResult:
+        """Replaces a notes or spec document in `version`, or creates one (`version` None).
+
+        A new document is `<ID>_notes.md` (the item's first notes) or `<ID>_spec[_<topic>].md` and is
+        listed in the item's Notes/Spec field; first notes need a summary on the item.
+        """
         backlog = self._backlogs.load(source)
         item = self._writable(backlog.find(item_id))
-        known = next((d for d in item_documents(item) if d.name == name), None)
-        if known is not None and known.kind is not DocumentKind.SPEC:
-            raise NotEditableError(name)
-        path = known.path if known else spec_path(item, name)
-        changes = None if known else ChangeSet(set_fields=((Field.SPEC, (*item.spec, path)),))
-        self._check(backlog.items, item, changes)
-        self._documents.write(source, path, content, version)
+        ref = next((d for d in item_documents(item) if d.name == name), None) or new_document(item, name)
+        fields: list[tuple[str, FieldValue]] = []
+        if ref not in item_documents(item):
+            field, paths = (Field.NOTES, item.notes) if ref.kind is DocumentKind.NOTES else (Field.SPEC, item.spec)
+            fields.append((field, (*paths, ref.path)))
+        if summary is not None:
+            fields.append((Field.SUMMARY, self._planner.normalize(Field.SUMMARY, summary)))
+        changes = ChangeSet(set_fields=tuple(fields)) if fields else None
+        self._check(backlog.items, item, changes)  # before any file is touched
+        self._documents.write(source, ref.path, content, version)
         if changes:
             self._backlogs.apply(source, item, changes)
-        return DocumentResult(DocumentRef(name, DocumentKind.SPEC, path), content)
+        return DocumentResult(ref, content)
 
     def append_notes(self, source: Source, item_id: str, topic: str, discussed: Sequence[str],
                      decided: Sequence[str], open_points: Sequence[str], summary: str | None) -> DocumentResult:

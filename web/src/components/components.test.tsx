@@ -444,4 +444,26 @@ describe("DocumentDialog writing", () => {
     const puts = fetchMock.mock.calls.map(([r]) => r).filter((r) => r.method === "PUT");
     expect(await puts[1]!.clone().json()).toEqual({ content: "# Mine new", version: "v2" });
   });
+
+  it("edits a notes document as a whole: get the text, put the new one", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async (request) =>
+      request.method === "GET"
+        ? jsonResponse({ name: "TASK-7_notes.md", kind: "notes", content: "# Notes\n\n- old", version: "n1" })
+        : jsonResponse({ name: "TASK-7_notes.md", kind: "notes", content: (await request.clone().json()).content, version: "n2" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const [item] = toItems([apiItem("TASK-7", { summary: "S", documents: [{ name: "TASK-7_notes.md", kind: "notes" }] })]);
+    renderWithProviders(<DocumentDialog item={item!} initialName="TASK-7_notes.md" onClose={vi.fn()} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "✎ Bearbeiten" }));
+    const editor = screen.getByRole("textbox", { name: "Markdown" });
+    expect((editor as HTMLTextAreaElement).value).toBe("# Notes\n\n- old");
+    await userEvent.clear(editor);
+    await userEvent.type(editor, "# Notes{enter}{enter}- corrected");
+    await userEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([r]) => r.method === "PUT")).toBe(true));
+    const put = fetchMock.mock.calls.map(([r]) => r).find((r) => r.method === "PUT")!;
+    expect(new URL(put.url).pathname).toBe("/api/v2/items/s/TASK-7/documents/TASK-7_notes.md");
+    expect(await put.clone().json()).toEqual({ content: "# Notes\n\n- corrected", version: "n1" });
+  });
 });

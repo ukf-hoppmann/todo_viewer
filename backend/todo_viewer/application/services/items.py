@@ -26,9 +26,10 @@ class BacklogOverviewService:
         self._sources = sources
         self._backlogs = backlogs
 
-    def overview(self) -> list[SourceBacklog]:
+    def overview(self, only: Source | None = None) -> list[SourceBacklog]:
+        """All sources, or just `only`."""
         return [SourceBacklog(index, source, self._backlogs.load(source))
-                for index, source in enumerate(self._sources.all())]
+                for index, source in enumerate(self._sources.all()) if only is None or source == only]
 
 
 @dataclass(frozen=True)

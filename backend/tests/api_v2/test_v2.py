@@ -34,6 +34,26 @@ def test_backlog_without_config_is_empty(api):
     assert api.get("/api/v2/sources").body == []
 
 
+def test_index_lists_only_placement_fields(api, workspace):
+    _setup(workspace, "backlog", "no_archive")
+    sources = {s["project"]: s["id"] for s in api.get("/api/v2/sources").body}
+
+    full = api.get("/api/v2/index")
+    one = api.get("/api/v2/index", source_id=sources["no_archive"])
+    gone = api.get("/api/v2/index", source_id="nope")
+
+    assert full.status_code == 200
+    assert set(full.body) == {"items"}
+    assert all(set(i) == {"source_id", "id", "type", "status", "title", "parent"} for i in full.body["items"])
+    by_id = {i["id"]: i for i in full.body["items"] if i["source_id"] == sources["backlog"]}
+    assert by_id["TASK-001"] == {"source_id": sources["backlog"], "id": "TASK-001", "type": "Task",
+                                 "status": "In progress", "title": "Write the parser", "parent": "STORY-001"}
+    assert "TASK-000" in by_id  # archived items are part of the index
+    assert len(full.body["items"]) == len(api.get("/api/v2/backlog").body["items"])
+    assert {i["source_id"] for i in one.body["items"]} == {sources["no_archive"]}
+    assert (gone.status_code, gone.body["code"]) == (404, "source_gone")
+
+
 def test_get_item_by_id(api, workspace):
     _setup(workspace, "backlog")
     active, archived = _item(api, "TASK-001"), _item(api, "TASK-000")

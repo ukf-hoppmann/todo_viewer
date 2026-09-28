@@ -81,6 +81,26 @@ class ItemOut(BaseModel):
         )
 
 
+class IndexItemOut(BaseModel):
+    """The fields needed to place new work; see GET /backlog for the full item."""
+
+    source_id: str
+    id: str
+    type: str
+    status: str
+    title: str
+    parent: str | None
+
+    @classmethod
+    def of(cls, source: Source, item: Item) -> IndexItemOut:
+        return cls(source_id=source.id, id=item.id, type=item.item_type, status=item.status, title=item.title,
+                   parent=item.parent)
+
+
+class IndexOut(BaseModel):
+    items: list[IndexItemOut]
+
+
 class SourceOut(BaseModel):
     id: str
     project: str

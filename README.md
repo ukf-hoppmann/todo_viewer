@@ -75,6 +75,9 @@ Kurzfassung. Erst „Speichern“ schreibt alle Änderungen in einem Schritt,
 Eintrag auf `Completed` oder `Rejected` gesetzt, fragt das Formular nach
 einer `Resolution` und der Eintrag wandert nach `archive.md`; ein Zurücksetzen
 auf einen offenen Status holt ihn (ohne Resolution) zurück nach `TODO.md`.
+„🗑 Löschen“ im Detail-Panel verschiebt einen Eintrag in den Papierkorb. Hat
+er Kinder, nennt der Dialog sie zuerst und löscht sie erst nach einer zweiten
+Bestätigung mit.
 Neue Einträge legt „＋ Neu“ in der Leiste über den Ansichten an (ohne
 Parent, Projekt wählbar); „＋ Kind anlegen“ im Detail-Panel eines Epics oder
 einer Story legt ein Kind mit passendem Typ an und übernimmt den Bereich. Die
@@ -137,6 +140,9 @@ abgebildet.
   weitere Knoten, Esc oder ein Klick ins Leere setzt alles zurück.
 - **Kanban**: Spalten nach Status (Open, In progress, Awaiting confirmation,
   Completed, Rejected).
+- **Papierkorb**: Gelöschte Items aller Projekte mit Löschdatum.
+  „Wiederherstellen“ holt ein Item samt Kindern zurück, „Endgültig löschen“
+  entfernt es nach einer Bestätigung samt Kindern, Notizen und Specs.
 
 Klick auf ein Item öffnet das Detail-Panel rechts mit allen geparsten Feldern
 (inkl. aller Freitext-Felder wie `Implementation`, `Verification`, `Context` etc.).

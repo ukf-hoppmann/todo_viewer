@@ -147,3 +147,15 @@ export function createRequest(draft: NewItemDraft): CreateRequest {
   if (draft.summary.trim()) request.summary = draft.summary.trim();
   return request;
 }
+
+// ---------- trash ----------
+
+/** Trashed items per project (alphabetical), most recently deleted first. */
+export function groupTrash(items: readonly Item[]): { project: string; items: Item[] }[] {
+  const byProject = new Map<string, Item[]>();
+  for (const item of items) byProject.set(item.project, [...(byProject.get(item.project) ?? []), item]);
+  return [...byProject.keys()].sort().map((project) => ({
+    project,
+    items: [...byProject.get(project)!].sort((a, b) => (b.deleted ?? "").localeCompare(a.deleted ?? "") || a.id.localeCompare(b.id)),
+  }));
+}

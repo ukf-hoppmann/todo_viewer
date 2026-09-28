@@ -265,3 +265,11 @@ select.field-edit:disabled { opacity: .6; cursor: wait; }
 .chip-remove { border: none; background: none; color: var(--text-dim); cursor: pointer; padding: 0 0 0 4px; font-size: 11px; }
 .chip-remove:hover { color: var(--status-rejected); }
 .tabs .new-btn { margin-left: auto; }
+
+/* ---------- trash ---------- */
+.btn.danger { border-color: var(--status-rejected); color: var(--status-rejected); }
+.btn.danger:hover { background: var(--status-rejected); color: white; }
+.warn-box { border: 1px solid var(--status-progress); border-radius: 6px; padding: 8px 10px; margin: 8px 0; }
+.trash-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px solid var(--panel-border); }
+.trash-row .trash-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trash-row .trash-meta { color: var(--text-dim); font-size: 11px; }

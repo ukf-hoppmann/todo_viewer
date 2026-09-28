@@ -1,6 +1,6 @@
 import type { ApiItem } from "../api/client";
 import { apiItem } from "../test/render";
-import { changedFields, childTypes, createRequest, dependencyCandidates, draftOf, newItemDraft, parentCandidates, rebaseDraft } from "./editing";
+import { changedFields, childTypes, createRequest, dependencyCandidates, draftOf, groupTrash, newItemDraft, parentCandidates, rebaseDraft } from "./editing";
 import { toItems } from "./model";
 
 const [epic, story, task, sub, other, foreign] = toItems([
@@ -78,5 +78,20 @@ describe("creating", () => {
       source_id: "s", type: "Task", title: "New", area: "Core", goal: "G", completion_criteria: "C",
       priority: "Normal", parent: "STORY-1", required_for_parent: "Yes",
     });
+  });
+});
+
+describe("trash", () => {
+  it("groups by project, newest deletions first", () => {
+    const trashed = toItems([
+      apiItem("TASK-1", { deleted: "2026-09-01" }),
+      apiItem("TASK-2", { deleted: "2026-09-20" }),
+      apiItem("TASK-3", { deleted: "2026-09-10", project: "A" }),
+    ]);
+
+    expect(groupTrash(trashed).map((g) => [g.project, g.items.map((i) => i.id)])).toEqual([
+      ["A", ["TASK-3"]],
+      ["P", ["TASK-2", "TASK-1"]],
+    ]);
   });
 });

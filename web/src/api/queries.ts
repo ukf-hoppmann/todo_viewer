@@ -1,5 +1,5 @@
 // TanStack Query hooks: the only place components talk to the API.
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ItemFields, type Schemas, unwrap } from "./client";
 
 export const POLL_INTERVAL_MS = 5000;
@@ -9,6 +9,7 @@ const keys = {
   uiState: ["ui-state"] as const,
   folders: (path: string | null) => ["folders", path] as const,
   document: (sourceId: string, itemId: string, name: string) => ["document", sourceId, itemId, name] as const,
+  trash: (sourceId: string) => ["trash", sourceId] as const,
 };
 
 /** All sources and items. Polls; structural sharing keeps unchanged data referentially stable. */
@@ -44,6 +45,48 @@ export function useCreateItem() {
     mutationFn: (body: Schemas["ItemCreateIn"]) => unwrap(api.POST("/api/v2/items", { body })),
     onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
   });
+}
+
+/** The trash of every given source. */
+export function useTrash(sourceIds: readonly string[]) {
+  return useQueries({
+    queries: sourceIds.map((sourceId) => ({
+      queryKey: keys.trash(sourceId),
+      queryFn: () => unwrap(api.GET("/api/v2/trash", { params: { query: { source_id: sourceId } } })),
+    })),
+  });
+}
+
+type ItemAddress = { sourceId: string; id: string; version: string };
+
+function useTrashMutation<T extends ItemAddress>(call: (args: T) => Promise<unknown>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: call,
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.backlog });
+      void client.invalidateQueries({ queryKey: ["trash"] });
+    },
+  });
+}
+
+/** Moves an item to the trash; `cascade` includes its descendants (otherwise has_children lists them). */
+export function useDeleteItem() {
+  return useTrashMutation(({ sourceId, id, version, cascade }: ItemAddress & { cascade: boolean }) =>
+    unwrap(api.DELETE("/api/v2/items/{source_id}/{item_id}", { params: { path: { source_id: sourceId, item_id: id }, query: { version, cascade } } })),
+  );
+}
+
+export function useRestoreItem() {
+  return useTrashMutation(({ sourceId, id, version }: ItemAddress) =>
+    unwrap(api.POST("/api/v2/trash/{source_id}/{item_id}/restore", { params: { path: { source_id: sourceId, item_id: id } }, body: { version } })),
+  );
+}
+
+export function usePurgeItem() {
+  return useTrashMutation(({ sourceId, id, version }: ItemAddress) =>
+    unwrap(api.DELETE("/api/v2/trash/{source_id}/{item_id}", { params: { path: { source_id: sourceId, item_id: id }, query: { version } } })),
+  );
 }
 
 export function useSaveSource() {

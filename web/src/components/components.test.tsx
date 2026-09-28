@@ -1,10 +1,12 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toItems } from "../domain/model";
 import { apiItem, renderWithProviders } from "../test/render";
 import { TreeView } from "../views/TreeView";
 import { DetailPanel } from "./DetailPanel";
+import { TrashView } from "../views/TrashView";
 import { CreateItemDialog } from "./CreateItemDialog";
+import { DeleteDialog } from "./DeleteDialog";
 import { DocumentDialog } from "./DocumentDialog";
 import { Sidebar } from "./Sidebar";
 
@@ -305,5 +307,68 @@ describe("CreateItemDialog", () => {
 
     expect(await screen.findByText(/Dieses Feld darf nicht leer sein/)).toBeInTheDocument();
     expect(await fetchMock.mock.calls[0]![0].clone().json()).toMatchObject({ parent: "EPIC-1", required_for_parent: "Yes" });
+  });
+});
+
+describe("DeleteDialog", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("warns about children and deletes them only after confirmation", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async (request) =>
+      new URL(request.url).searchParams.get("cascade") === "true"
+        ? jsonResponse([apiItem("EPIC-1"), apiItem("TASK-1")])
+        : jsonResponse({ code: "has_children", message: "x", details: { id: "EPIC-1", items: "TASK-1, TASK-2" } }, 409));
+    vi.stubGlobal("fetch", fetchMock);
+    const onDeleted = vi.fn();
+    renderWithProviders(<DeleteDialog item={items[0]!} onClose={vi.fn()} onDeleted={onDeleted} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "In den Papierkorb" }));
+    expect(await screen.findByText(/Kinder, die mitgelöscht würden: TASK-1, TASK-2/)).toBeInTheDocument();
+    expect(onDeleted).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Samt Kindern in den Papierkorb" }));
+
+    await waitFor(() => expect(onDeleted).toHaveBeenCalled());
+    const urls = fetchMock.mock.calls.map(([r]) => new URL(r.url));
+    expect(urls.map((u) => [u.pathname, u.searchParams.get("cascade"), u.searchParams.get("version")])).toEqual([
+      ["/api/v2/items/s/EPIC-1", "false", "v-EPIC-1"],
+      ["/api/v2/items/s/EPIC-1", "true", "v-EPIC-1"],
+    ]);
+  });
+});
+
+describe("TrashView", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("lists deleted items, restores them and purges only after confirmation", async () => {
+    const trashed = apiItem("TASK-5", { deleted: "2026-09-28", archived: true, title: "Old idea" });
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async (request) => {
+      const url = new URL(request.url);
+      if (url.pathname === "/api/v2/trash") return jsonResponse(url.searchParams.get("source_id") === "s" ? [trashed] : []);
+      return jsonResponse([trashed]);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderWithProviders(<TrashView sources={SOURCES} />);
+
+    expect(await screen.findByText("TASK-5 — Old idea")).toBeInTheDocument();
+    expect(screen.getByText("gelöscht am 2026-09-28")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Wiederherstellen" }));
+    await userEvent.click(screen.getByRole("button", { name: "Endgültig löschen" }));
+    expect(screen.getByText(/lässt sich nicht rückgängig machen/)).toBeInTheDocument();
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Endgültig löschen" }));
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([r]) => r.method === "DELETE")).toBe(true));
+    const writes = fetchMock.mock.calls.map(([r]) => r).filter((r) => r.method !== "GET");
+    expect(writes.map((r) => [r.method, new URL(r.url).pathname])).toEqual([
+      ["POST", "/api/v2/trash/s/TASK-5/restore"],
+      ["DELETE", "/api/v2/trash/s/TASK-5"],
+    ]);
+    expect(await writes[0]!.clone().json()).toEqual({ version: "v-TASK-5" });
+  });
+
+  it("shows a hint when the trash is empty", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse([])));
+    renderWithProviders(<TrashView sources={SOURCES} />);
+
+    expect(await screen.findByText("Der Papierkorb ist leer.")).toBeInTheDocument();
   });
 });

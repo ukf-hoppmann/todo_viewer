@@ -3,6 +3,7 @@ import { childTypes } from "../domain/editing";
 import type { Item, Uid } from "../domain/model";
 import type { SourceStatus } from "../api/client";
 import { CreateItemDialog } from "./CreateItemDialog";
+import { DeleteDialog } from "./DeleteDialog";
 import { useI18n } from "../i18n/i18n";
 import { documentLinks } from "./documentLinks";
 
@@ -38,6 +39,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
   const [openDoc, setOpenDoc] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [creatingChild, setCreatingChild] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const L = (field: string) => vocab("field", field);
   const parent = item.parentUid ? byUid.get(item.parentUid) : undefined;
   const children = items.filter((i) => i.parentUid === item.uid);
@@ -67,6 +69,9 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
               {t("create.child")}
             </button>
           )}
+          <button className="btn small danger" onClick={() => setDeleting(true)}>
+            {t("delete.button")}
+          </button>
         </div>
       )}
       {!editing && item.summary && <div className="detail-summary">{item.summary}</div>}
@@ -138,6 +143,16 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
         </>
       )}
 
+      {deleting && (
+        <DeleteDialog
+          item={item}
+          onClose={() => setDeleting(false)}
+          onDeleted={() => {
+            setDeleting(false);
+            onClose();
+          }}
+        />
+      )}
       {creatingChild && (
         <CreateItemDialog
           sources={sources}

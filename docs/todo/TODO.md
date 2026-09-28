@@ -179,7 +179,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-001`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-27.
   - Area: Backend-API.
   - Priority: Normal.
@@ -193,6 +193,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Kenntnis von Dateipfaden lesen und schreiben; konkurrierende
     Änderungen liefern Konfliktfehler; das Format der Notes entspricht
     dem Backlog-Format.
+  - Summary: Notizen und Specs lassen sich über das Item lesen und
+    schreiben, ohne Dateipfade zu kennen.
+  - Notes: `items/STORY-009/STORY-009_notes.md`.
 - `STORY-010` **API-Zugang für Agenten**
   - Type: Story.
   - Parent: `EPIC-001`.

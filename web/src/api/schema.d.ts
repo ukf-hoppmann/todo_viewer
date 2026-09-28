@@ -110,6 +110,50 @@ export interface paths {
         patch: operations["edit_item_api_v2_items__source_id___item_id__patch"];
         trace?: never;
     };
+    "/api/v2/items/{source_id}/{item_id}/documents/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Document
+         * @description A notes or spec document of the item, with its version.
+         */
+        get: operations["read_document_api_v2_items__source_id___item_id__documents__name__get"];
+        /**
+         * Write Spec
+         * @description Replaces a spec in `version`, or creates `<ID>_spec.md` / `<ID>_spec_<topic>.md` (version null).
+         */
+        put: operations["write_spec_api_v2_items__source_id___item_id__documents__name__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/items/{source_id}/{item_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Append Notes
+         * @description Appends a dated Discussed/Decided/Open entry to the item's notes (created on first use).
+         */
+        post: operations["append_notes_api_v2_items__source_id___item_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/sources": {
         parameters: {
             query?: never;
@@ -141,26 +185,6 @@ export interface paths {
         post?: never;
         /** Remove Source */
         delete: operations["remove_source_api_v2_sources__source_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/sources/{source_id}/document": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Document
-         * @description A notes/spec markdown file inside the backlog folder.
-         */
-        get: operations["document_api_v2_sources__source_id__document_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -199,8 +223,34 @@ export interface components {
         DocumentOut: {
             /** Content */
             content: string;
-            /** Path */
-            path: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "notes" | "spec";
+            /**
+             * Name
+             * @description Document name within the item, e.g. STORY-003_spec.md
+             */
+            name: string;
+            /**
+             * Version
+             * @description Changes with the content; required to replace a spec
+             */
+            version: string;
+        };
+        /** DocumentRefOut */
+        DocumentRefOut: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "notes" | "spec";
+            /**
+             * Name
+             * @description Document name within the item, e.g. STORY-003_spec.md
+             */
+            name: string;
         };
         /** ErrorOut */
         ErrorOut: {
@@ -360,6 +410,11 @@ export interface components {
             created: string | null;
             /** Dependencies */
             dependencies: string[];
+            /**
+             * Documents
+             * @description Notes and specs; read them via /documents/{name}
+             */
+            documents: components["schemas"]["DocumentRefOut"][];
             /** Extra Fields */
             extra_fields: {
                 [key: string]: string;
@@ -373,8 +428,6 @@ export interface components {
              * @description Unique within the whole response: source_id/id
              */
             key: string;
-            /** Notes */
-            notes: string[];
             /** Parent */
             parent: string | null;
             /** Priority */
@@ -387,8 +440,6 @@ export interface components {
             resolution: string | null;
             /** Source Id */
             source_id: string;
-            /** Spec */
-            spec: string[];
             /** Status */
             status: string;
             /** Summary */
@@ -402,6 +453,25 @@ export interface components {
              * @description Changes with every change of the item; required for edits
              */
             version: string;
+        };
+        /**
+         * NotesEntryIn
+         * @description One dated notes entry; the date is set by the server.
+         */
+        NotesEntryIn: {
+            /** Decided */
+            decided?: string[];
+            /** Discussed */
+            discussed?: string[];
+            /** Open */
+            open?: string[];
+            /**
+             * Summary
+             * @description Sets the item summary; required if it has none yet
+             */
+            summary?: string | null;
+            /** Topic */
+            topic: string;
         };
         /** ProblemOut */
         ProblemOut: {
@@ -437,6 +507,16 @@ export interface components {
             problem: components["schemas"]["ProblemOut"] | null;
             /** Project */
             project: string;
+        };
+        /** SpecIn */
+        SpecIn: {
+            /** Content */
+            content: string;
+            /**
+             * Version
+             * @description Version last read; null to create a new spec
+             */
+            version: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -859,6 +939,220 @@ export interface operations {
             };
         };
     };
+    read_document_api_v2_items__source_id___item_id__documents__name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                item_id: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_spec_api_v2_items__source_id___item_id__documents__name__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                item_id: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpecIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    append_notes_api_v2_items__source_id___item_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesEntryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_sources_api_v2_sources_get: {
         parameters: {
             query?: never;
@@ -1073,75 +1367,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourceOut"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    document_api_v2_sources__source_id__document_get: {
-        parameters: {
-            query: {
-                path: string;
-            };
-            header?: never;
-            path: {
-                source_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DocumentOut"];
                 };
             };
             /** @description Bad Request */

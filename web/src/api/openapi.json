@@ -31,16 +31,55 @@
             "title": "Content",
             "type": "string"
           },
-          "path": {
-            "title": "Path",
+          "kind": {
+            "enum": [
+              "notes",
+              "spec"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "description": "Document name within the item, e.g. STORY-003_spec.md",
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "description": "Changes with the content; required to replace a spec",
+            "title": "Version",
             "type": "string"
           }
         },
         "required": [
-          "path",
-          "content"
+          "name",
+          "kind",
+          "content",
+          "version"
         ],
         "title": "DocumentOut",
+        "type": "object"
+      },
+      "DocumentRefOut": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "notes",
+              "spec"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "description": "Document name within the item, e.g. STORY-003_spec.md",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind"
+        ],
+        "title": "DocumentRefOut",
         "type": "object"
       },
       "ErrorOut": {
@@ -519,6 +558,14 @@
             "title": "Dependencies",
             "type": "array"
           },
+          "documents": {
+            "description": "Notes and specs; read them via /documents/{name}",
+            "items": {
+              "$ref": "#/components/schemas/DocumentRefOut"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
           "extra_fields": {
             "additionalProperties": {
               "type": "string"
@@ -545,13 +592,6 @@
             "description": "Unique within the whole response: source_id/id",
             "title": "Key",
             "type": "string"
-          },
-          "notes": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Notes",
-            "type": "array"
           },
           "parent": {
             "anyOf": [
@@ -605,13 +645,6 @@
             "title": "Source Id",
             "type": "string"
           },
-          "spec": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Spec",
-            "type": "array"
-          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -661,12 +694,59 @@
           "completion_criteria",
           "summary",
           "resolution",
-          "notes",
-          "spec",
+          "documents",
           "extra_fields",
           "archive_supported"
         ],
         "title": "ItemOut",
+        "type": "object"
+      },
+      "NotesEntryIn": {
+        "additionalProperties": false,
+        "description": "One dated notes entry; the date is set by the server.",
+        "properties": {
+          "decided": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Decided",
+            "type": "array"
+          },
+          "discussed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Discussed",
+            "type": "array"
+          },
+          "open": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Open",
+            "type": "array"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sets the item summary; required if it has none yet",
+            "title": "Summary"
+          },
+          "topic": {
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic"
+        ],
+        "title": "NotesEntryIn",
         "type": "object"
       },
       "ProblemOut": {
@@ -771,6 +851,33 @@
           "problem"
         ],
         "title": "SourceStatusOut",
+        "type": "object"
+      },
+      "SpecIn": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Version last read; null to create a new spec",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "content",
+          "version"
+        ],
+        "title": "SpecIn",
         "type": "object"
       },
       "ValidationError": {
@@ -1337,6 +1444,318 @@
         ]
       }
     },
+    "/api/v2/items/{source_id}/{item_id}/documents/{name}": {
+      "get": {
+        "description": "A notes or spec document of the item, with its version.",
+        "operationId": "read_document_api_v2_items__source_id___item_id__documents__name__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Document",
+        "tags": [
+          "documents"
+        ]
+      },
+      "put": {
+        "description": "Replaces a spec in `version`, or creates `<ID>_spec.md` / `<ID>_spec_<topic>.md` (version null).",
+        "operationId": "write_spec_api_v2_items__source_id___item_id__documents__name__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpecIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Write Spec",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v2/items/{source_id}/{item_id}/notes": {
+      "post": {
+        "description": "Appends a dated Discussed/Decided/Open entry to the item's notes (created on first use).",
+        "operationId": "append_notes_api_v2_items__source_id___item_id__notes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotesEntryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Append Notes",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
     "/api/v2/sources": {
       "get": {
         "operationId": "list_sources_api_v2_sources_get",
@@ -1648,98 +2067,6 @@
           }
         },
         "summary": "Update Source",
-        "tags": [
-          "sources"
-        ]
-      }
-    },
-    "/api/v2/sources/{source_id}/document": {
-      "get": {
-        "description": "A notes/spec markdown file inside the backlog folder.",
-        "operationId": "document_api_v2_sources__source_id__document_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "source_id",
-            "required": true,
-            "schema": {
-              "title": "Source Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "path",
-            "required": true,
-            "schema": {
-              "title": "Path",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocumentOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Document",
         "tags": [
           "sources"
         ]

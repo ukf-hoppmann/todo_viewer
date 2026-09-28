@@ -1,19 +1,9 @@
-"""Small pass-through use cases: documents, folder browsing, UI state."""
+"""Small pass-through use cases: folder browsing, UI state."""
 from __future__ import annotations
 
 from typing import Any
 
-from ..ports import DocumentStore, FolderBrowser, FolderListing, UiStateStore
-from .sources import SourceLookup
-
-
-class DocumentService:
-    def __init__(self, lookup: SourceLookup, documents: DocumentStore):
-        self._lookup = lookup
-        self._documents = documents
-
-    def read(self, source_id: str, relative_path: str) -> str:
-        return self._documents.read(self._lookup.by_id(source_id), relative_path)
+from ..ports import FolderBrowser, FolderListing, UiStateStore
 
 
 class FolderBrowseService:

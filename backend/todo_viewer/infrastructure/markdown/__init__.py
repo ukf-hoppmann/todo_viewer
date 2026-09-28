@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .detector import FormatDetector
+from .documents import MarkdownDocumentStore
 from .editors import BacklogEntryEditor, EntryLocator, EntryMover, EntryRenderer
 from .field_mapper import BacklogFieldMapper, PriorityNormalizer
 from .layout import LayoutFactory, SourcePathResolver
@@ -12,7 +13,8 @@ from .repository import MarkdownBacklogRepository
 from .text_file import KeyedLocks, TextFileStore
 
 
-def build_markdown_repository(base_dir: Path) -> MarkdownBacklogRepository:
+def build_markdown_repository(base_dir: Path, locks: KeyedLocks | None = None) -> MarkdownBacklogRepository:
+    """`locks` should be shared with the document store of the same backlogs."""
     return MarkdownBacklogRepository(
         layouts=LayoutFactory(SourcePathResolver(base_dir)),
         files=TextFileStore(),
@@ -22,8 +24,13 @@ def build_markdown_repository(base_dir: Path) -> MarkdownBacklogRepository:
         entry_editor=BacklogEntryEditor(),
         mover=EntryMover(),
         renderer=EntryRenderer(),
-        locks=KeyedLocks(),
+        locks=locks or KeyedLocks(),
     )
 
 
-__all__ = ["MarkdownBacklogRepository", "build_markdown_repository"]
+def build_markdown_documents(base_dir: Path, locks: KeyedLocks) -> MarkdownDocumentStore:
+    return MarkdownDocumentStore(LayoutFactory(SourcePathResolver(base_dir)), TextFileStore(), locks)
+
+
+__all__ = ["KeyedLocks", "MarkdownBacklogRepository", "MarkdownDocumentStore", "build_markdown_documents",
+           "build_markdown_repository"]

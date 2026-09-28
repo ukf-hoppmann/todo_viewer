@@ -8,7 +8,7 @@ const keys = {
   backlog: ["backlog"] as const,
   uiState: ["ui-state"] as const,
   folders: (path: string | null) => ["folders", path] as const,
-  document: (sourceId: string, path: string) => ["document", sourceId, path] as const,
+  document: (sourceId: string, itemId: string, name: string) => ["document", sourceId, itemId, name] as const,
 };
 
 /** All sources and items. Polls; structural sharing keeps unchanged data referentially stable. */
@@ -66,12 +66,17 @@ export function useFolders(path: string | null, enabled: boolean) {
   });
 }
 
-export function useDocument(sourceId: string, path: string | null) {
+/** A notes or spec document of an item, addressed by its name. */
+export function useDocument(sourceId: string, itemId: string, name: string | null) {
   return useQuery({
-    queryKey: keys.document(sourceId, path ?? ""),
+    queryKey: keys.document(sourceId, itemId, name ?? ""),
     queryFn: () =>
-      unwrap(api.GET("/api/v2/sources/{source_id}/document", { params: { path: { source_id: sourceId }, query: { path: path ?? "" } } })),
-    enabled: path !== null,
+      unwrap(
+        api.GET("/api/v2/items/{source_id}/{item_id}/documents/{name}", {
+          params: { path: { source_id: sourceId, item_id: itemId, name: name ?? "" } },
+        }),
+      ),
+    enabled: name !== null,
   });
 }
 

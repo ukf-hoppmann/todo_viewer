@@ -54,18 +54,29 @@ class TextFileStore:
 
     def write(self, doc: TextDocument) -> None:
         self.ensure_unchanged(doc)
-        data = doc.newline.join(doc.lines).encode("utf-8")
-        fd, tmp_name = tempfile.mkstemp(prefix=f".{doc.path.name}.", suffix=".tmp", dir=doc.path.parent)
+        self._replace(doc.path, doc.newline.join(doc.lines).encode("utf-8"), keep_mode=True)
+        doc.stamp = FileStamp.of(doc.path)
+
+    def create(self, path: Path, text: str) -> None:
+        """Writes a new file (and its folders) atomically."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self._replace(path, text.encode("utf-8"), keep_mode=False)
+
+    @staticmethod
+    def _replace(path: Path, data: bytes, keep_mode: bool) -> None:
+        fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
         tmp = Path(tmp_name)
         try:
             with os.fdopen(fd, "wb") as f:
                 f.write(data)
-            shutil.copymode(doc.path, tmp)
-            os.replace(tmp, doc.path)
+            if keep_mode:
+                shutil.copymode(path, tmp)
+            else:
+                tmp.chmod(0o644)
+            os.replace(tmp, path)
         except BaseException:
             tmp.unlink(missing_ok=True)
             raise
-        doc.stamp = FileStamp.of(doc.path)
 
 
 class KeyedLocks:

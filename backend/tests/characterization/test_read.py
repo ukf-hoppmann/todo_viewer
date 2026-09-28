@@ -62,22 +62,23 @@ def test_documents(api, workspace):
     folder = workspace.add_backlog("backlog")
     workspace.write_config([{"project": "Backlog", "path": str(folder)}])
     source_id = api.get("/api/v2/sources").body[0]["id"]
-    url = f"/api/v2/sources/{source_id}/document"
+    url = f"/api/v2/items/{source_id}/TASK-002/documents"
 
-    ok = api.get(url, path="items/TASK-002/notes.md")
-    missing = api.get(url, path="items/TASK-002/spec.md")
-    escape = api.get(url, path="../../../etc/passwd.md")
-    wrong_type = api.get(url, path="TODO.json")
-    bad_source = api.get("/api/v2/sources/nope/document", path="TODO.md")
-    no_path = api.get(url)
+    ok = api.get(f"{url}/notes.md")
+    missing = api.get(f"{url}/spec.md")  # listed in the item, file does not exist
+    unknown = api.get(f"{url}/other.md")
+    bad_item = api.get(f"/api/v2/items/{source_id}/TASK-999/documents/notes.md")
+    bad_source = api.get("/api/v2/items/nope/TASK-002/documents/notes.md")
 
-    assert ok.body == {"path": "items/TASK-002/notes.md", "content": "# Notes for TASK-002\n\nSome *markdown* notes.\n"}
+    assert ok.body == {"name": "notes.md", "kind": "notes",
+                       "content": "# Notes for TASK-002\n\nSome *markdown* notes.\n", "version": ok.body["version"]}
+    assert [d for d in api.get(f"/api/v2/items/{source_id}/TASK-002").body["documents"]] == [
+        {"name": "notes.md", "kind": "notes"}, {"name": "spec.md", "kind": "spec"},
+        {"name": "extra.md", "kind": "spec"}]
     assert (missing.status_code, missing.body["code"]) == (404, "file_not_found")
-    assert missing.body["details"] == {"path": "items/TASK-002/spec.md"}
-    assert (escape.status_code, escape.body["code"]) == (403, "forbidden")
-    assert (wrong_type.status_code, wrong_type.body["code"]) == (403, "forbidden")
+    assert (unknown.status_code, unknown.body["code"]) == (404, "file_not_found")
+    assert (bad_item.status_code, bad_item.body["code"]) == (404, "item_not_found")
     assert (bad_source.status_code, bad_source.body["code"]) == (404, "source_gone")
-    assert (no_path.status_code, no_path.body["code"]) == (400, "bad_request")
 
 
 def test_folders(api, workspace, golden):

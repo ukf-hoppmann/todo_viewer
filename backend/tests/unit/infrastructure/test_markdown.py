@@ -240,3 +240,52 @@ def test_repository_creates_entry_and_refuses_taken_ids(backlog):
     with pytest.raises(DuplicateItemError):
         repo.create(backlog, Item(id="TASK-000", title="Taken in the archive", project="P", area="a", goal="g",
                                   completion_criteria="c"))
+
+
+# ---------- documents ----------
+
+def _documents():
+    from todo_viewer.infrastructure.markdown.documents import MarkdownDocumentStore
+    from todo_viewer.infrastructure.markdown.layout import LayoutFactory, SourcePathResolver
+    from todo_viewer.infrastructure.markdown.text_file import KeyedLocks
+
+    return MarkdownDocumentStore(LayoutFactory(SourcePathResolver(Path("/"))), TextFileStore(), KeyedLocks())
+
+
+def test_document_write_creates_folders_and_checks_versions(backlog):
+    from todo_viewer.domain.documents import content_version
+
+    store = _documents()
+    path = "items/TASK-009/TASK-009_spec.md"
+
+    store.write(backlog, path, "v1\n", expected_version=None)
+    with pytest.raises(VersionConflictError):
+        store.write(backlog, path, "again\n", expected_version=None)  # exists already
+    with pytest.raises(VersionConflictError):
+        store.write(backlog, path, "v2\n", expected_version=content_version("other"))
+    store.write(backlog, path, "v2\n", expected_version=content_version("v1\n"))
+
+    assert store.read(backlog, path) == "v2\n"
+    with pytest.raises(VersionConflictError):
+        store.write(backlog, "items/TASK-009/missing.md", "x", expected_version=content_version("x"))
+
+
+def test_document_append_starts_new_files_with_a_header(backlog):
+    store = _documents()
+    path = "items/TASK-009/TASK-009_notes.md"
+
+    first = store.append(backlog, path, "## entry 1\n", header="# TASK-009 — t\n")
+    second = store.append(backlog, path, "## entry 2\n", header="# ignored\n")
+
+    assert first == "# TASK-009 — t\n\n## entry 1\n"
+    assert second == "# TASK-009 — t\n\n## entry 1\n\n## entry 2\n"
+    assert store.append(backlog, "items/TASK-002/notes.md", "## e\n", header="#") == \
+        "# Notes for TASK-002\n\nSome *markdown* notes.\n\n## e\n"
+
+
+def test_document_paths_stay_inside_the_backlog(backlog):
+    from todo_viewer.domain.errors import DocumentForbiddenError
+
+    for path in ("../x.md", "items/../../x.md", "items/a/b.json"):
+        with pytest.raises(DocumentForbiddenError):
+            _documents().write(backlog, path, "x", expected_version=None)

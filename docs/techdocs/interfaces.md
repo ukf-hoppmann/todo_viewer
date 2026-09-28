@@ -18,11 +18,13 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `POST /items` | Legt ein Epic, eine Story oder einen Task an; der Server vergibt die ID. Antwort 201 mit dem neuen Item. |
 | `GET /items/{source_id}/{item_id}` | Ein Item per ID, aktiv oder archiviert. |
 | `PATCH /items/{source_id}/{item_id}` | Ändert ein oder mehrere Felder eines Items in einem Schritt. |
+| `GET /items/{source_id}/{item_id}/documents/{name}` | Notes- oder Spec-Dokument eines Items lesen, mit `version`. |
+| `PUT /items/{source_id}/{item_id}/documents/{name}` | Spec ersetzen oder neu anlegen. |
+| `POST /items/{source_id}/{item_id}/notes` | Datierten Notes-Eintrag anhängen. |
 | `GET /sources` | Konfigurierte Quellen. |
 | `POST /sources` | Quelle hinzufügen (`path`, optional `project`; ohne Namen der des Git-Repos). |
 | `PUT /sources/{source_id}` | Quelle ändern. |
 | `DELETE /sources/{source_id}` | Quelle entfernen. |
-| `GET /sources/{source_id}/document?path=…` | Notes-/Spec-Markdown innerhalb des Backlog-Ordners lesen. |
 | `GET /folders?path=…` | Unterordner für den Ordner-Browser, mit Markierung, ob eine `TODO.md` enthalten ist. |
 | `GET /ui-state`, `PUT /ui-state` | UI-Zustand lesen bzw. vollständig ersetzen (freies JSON-Objekt). |
 
@@ -55,11 +57,24 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     heute. Mit `parent` ist `required_for_parent` Pflicht. Der Eintrag kommt
     ans Ende des Abschnitts `## Work items` in `TODO.md`. Die Parent-Regeln
     werden wie beim Bearbeiten geprüft.
+  - Dokumente werden über Item und Namen adressiert (Dateiname wie
+    `STORY-003_spec.md`), nie über Pfade. `PUT …/documents/{name}`:
+    `{content, version}`; `version` ist die zuletzt gelesene Version, `null`
+    legt eine neue Spec an. Neue Specs heißen `<ID>_spec.md` oder
+    `<ID>_spec_<thema>.md` und werden im Feld `Spec` des Items eingetragen.
+    Notes sind nur per `POST …/notes` erweiterbar:
+    `{topic, discussed?, decided?, open?, summary?}`; der Server setzt das
+    Datum und schreibt `## <Datum> — <Thema>` mit den Abschnitten
+    `### Discussed`/`### Decided`/`### Open`. Der erste Eintrag legt
+    `items/<ID>/<ID>_notes.md` an und trägt `Notes` ein; hat das Item noch keine
+    Summary, ist `summary` Pflicht.
   - Quellen: `{path, project?}`; `source_id` ist eine stabile, pfadbasierte ID.
 - Ausgabe:
   - Items mit `key` (`<source_id>/<id>`), `source_id`, `id`, `version`,
-    `archived`, `project`, den geparsten Feldern, `extra_fields` für alle
-    weiteren Freitext-Felder und `archive_supported`.
+    `archived`, `project`, den geparsten Feldern, `documents`
+    (`[{name, kind: "notes"|"spec"}]`), `extra_fields` für alle weiteren
+    Freitext-Felder und `archive_supported`.
+  - Dokumente: `{name, kind, content, version}`.
   - `version` ist ein Hash über den gespeicherten Inhalt des Items und ändert
     sich mit jeder Änderung daran; Änderungen an anderen Items lassen sie
     unverändert.

@@ -329,3 +329,23 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ändern kann, soll auch direkt in der Oberfläche möglich sein.
   - Notes: `items/EPIC-002/EPIC-002_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+
+- `TASK-001` **Area im Lean Index**
+  - Type: Task.
+  - Parent: `STORY-004`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-28.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: `GET /api/v2/index` liefert je Item zusätzlich `area`
+    (`IndexItemOut` in `backend/todo_viewer/api/v2/schemas.py`), damit sich
+    aus der flachen Liste besser einschätzen lässt, welche Items relevant
+    sind, bevor einzelne mit `show` geladen werden.
+  - Completion criteria: Das OpenAPI-Schema des Index enthält `area`;
+    API-Tests prüfen `area` für aktive und archivierte Items;
+    `docs/techdocs/interfaces.md` beschreibt das Feld; `backlog_api.py
+    index` im Claude_Harness zeigt die Area ohne weitere Änderung an.
+  - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt: GET
+    /api/v2/index liefert area (fb61bd5).

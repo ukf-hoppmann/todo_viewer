@@ -44,3 +44,15 @@
 ### Decided
 
 - Auf Wunsch des Projektverantwortlichen wiedereröffnet; der Index bekommt das Feld area über einen Pflicht-Task unter STORY-004. Das Ziel von STORY-004 bleibt unverändert.
+
+## 2026-09-28 — Abschlussprüfung und Klarstellung des Kriteriums
+
+### Discussed
+
+- Alle Pflichtkinder sind abgeschlossen; Items werden vollständig über die API gepflegt.
+- Wörtlich enthielten /sources und /folders ein Feld path (Backlog-Ordner einer Quelle, Ordnerauswahl der UI). Ohne diesen Pfad lässt sich eine dateibasierte Quelle nicht registrieren.
+
+### Decided
+
+- Der Projektverantwortliche hat entschieden: Das Kriterium gilt für den Item-Vertrag; der Ordnerpfad der Quellen-Konfiguration ist ausgenommen.
+- Kein Item-Endpunkt enthält path, line oder location (geprüft am OpenAPI-Schema); EPIC-001 wartet auf Bestätigung.

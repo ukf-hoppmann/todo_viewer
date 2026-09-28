@@ -1,10 +1,6 @@
 {
   "sources": [
     {
-      "project": "EZF-Backend",
-      "path": "/Users/hoppmann/Documents/GitHub/EZF-Backend/docs/Anselm"
-    },
-    {
       "project": "my_story_game",
       "path": "/Users/hoppmann/Documents/GitHub/my_story_game/docs"
     },
@@ -15,6 +11,10 @@
     {
       "project": "ToDo_viewer",
       "path": "/Users/hoppmann/Documents/GitHub/ToDo_viewer/docs/todo"
+    },
+    {
+      "project": "VariantFilter",
+      "path": "/Users/hoppmann/Documents/GitHub/EZF-Backend/Plugins/VariantFilter/docs/todo"
     }
   ]
 }

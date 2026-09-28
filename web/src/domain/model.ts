@@ -2,7 +2,7 @@
 import type { ApiItem, EditableField, SourceStatus } from "../api/client";
 
 export const STATUS_KEYS = ["Open", "In progress", "Awaiting confirmation", "Completed", "Rejected"] as const;
-export const PRIORITY_KEYS = ["Urgent", "Important", "Prospective"] as const;
+export const PRIORITY_KEYS = ["Urgent", "Important", "Normal", "Prospective"] as const;
 export const TERMINAL_STATUSES: ReadonlySet<string> = new Set(["Completed", "Rejected"]);
 export const CHECKBOX_STATUSES = ["Open", "Completed"] as const;
 /** "Required for parent" is stored as Yes/No in the file. */
@@ -85,6 +85,8 @@ export interface TreeNode {
   item: Item;
   /** Required for parent: No — drawn dashed and dimmed, not counted for progress. */
   optional: boolean;
+  /** Progress over all descendants; null for items without counted children. */
+  progress: Progress | null;
   children: TreeNode[];
 }
 
@@ -108,8 +110,39 @@ export function projectProgress(allItems: readonly Item[], project: string): Pro
   return { done: counted.filter((i) => i.status === "Completed").length, total: counted.length };
 }
 
+/**
+ * Progress of each item over its descendants, independent of the filters.
+ * Optional and rejected children are skipped together with their subtrees.
+ * Items without counted descendants have no entry.
+ */
+export function itemProgress(allItems: readonly Item[]): Map<Uid, Progress> {
+  const children = new Map<Uid, Item[]>();
+  for (const item of allItems) {
+    if (item.parentUid && item.required_for_parent !== false && item.status !== "Rejected") {
+      children.set(item.parentUid, [...(children.get(item.parentUid) ?? []), item]);
+    }
+  }
+  const result = new Map<Uid, Progress>();
+  const visit = (uid: Uid, seen: Set<Uid>): Progress => {
+    const cached = result.get(uid);
+    if (cached) return cached;
+    const progress = { done: 0, total: 0 };
+    for (const child of children.get(uid) ?? []) {
+      if (seen.has(child.uid)) continue; // guards against parent cycles in the files
+      const sub = visit(child.uid, new Set(seen).add(child.uid));
+      progress.done += sub.done + (child.status === "Completed" ? 1 : 0);
+      progress.total += sub.total + 1;
+    }
+    if (progress.total > 0) result.set(uid, progress);
+    return progress;
+  };
+  for (const item of allItems) visit(item.uid, new Set([item.uid]));
+  return result;
+}
+
 /** Groups the visible items by project; items whose parent is hidden become roots. */
 export function buildTrees(visible: readonly Item[], allItems: readonly Item[]): ProjectTree[] {
+  const progressByUid = itemProgress(allItems);
   const byProject = new Map<string, Item[]>();
   for (const item of visible) byProject.set(item.project, [...(byProject.get(item.project) ?? []), item]);
 
@@ -125,6 +158,7 @@ export function buildTrees(visible: readonly Item[], allItems: readonly Item[]):
       (byParent.get(parent) ?? []).map((item) => ({
         item,
         optional: parent !== null && item.required_for_parent === false,
+        progress: progressByUid.get(item.uid) ?? null,
         children: level(item.uid),
       }));
     return { project, progress: projectProgress(allItems, project), roots: level(null) };

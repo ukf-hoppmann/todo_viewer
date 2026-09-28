@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { priorityColor, statusColor } from "../domain/colors";
+import { ProgressPie } from "../components/ProgressPie";
 import { buildTrees, type Item, type TreeNode, type Uid } from "../domain/model";
 import { useI18n } from "../i18n/i18n";
 import { useUiState } from "../state/useUiStateStore";
@@ -37,7 +38,7 @@ export function TreeView({ visible, items, onSelect }: TreeViewProps) {
 function TreeNodeRow({ node, onSelect }: { node: TreeNode; onSelect: (uid: Uid) => void }) {
   const { vocab } = useI18n();
   const { state, dispatch } = useUiState();
-  const { item, optional, children } = node;
+  const { item, optional, progress, children } = node;
   const hasChildren = children.length > 0;
   const collapsed = hasChildren && state.collapsed.has(item.uid);
   const color = priorityColor(item.priority);
@@ -60,6 +61,7 @@ function TreeNodeRow({ node, onSelect }: { node: TreeNode; onSelect: (uid: Uid) 
             title={item.priority ? `${vocab("field", "Priority")}: ${vocab("priority", item.priority)}` : ""}
             style={{ background: color, ["--dot-color" as string]: color }}
           />
+          {progress && <ProgressPie progress={progress} />}
           <span
             className="node-type"
             title={vocab("status", item.status)}
@@ -80,3 +82,4 @@ function TreeNodeRow({ node, onSelect }: { node: TreeNode; onSelect: (uid: Uid) 
     </div>
   );
 }
+

@@ -12,18 +12,19 @@ import {
 import "@xyflow/react/dist/style.css";
 import { type MouseEvent, memo, useCallback, useEffect, useMemo, useState } from "react";
 import { priorityColor, statusColor } from "../domain/colors";
-import { dependencyGraph, type Item, type Uid } from "../domain/model";
+import { ProgressPie } from "../components/ProgressPie";
+import { dependencyGraph, itemProgress, type Item, type Progress, type Uid } from "../domain/model";
 import { useI18n } from "../i18n/i18n";
 import { useUiState } from "../state/useUiStateStore";
 import { focusNeighborhood, layoutGraph } from "./graphLayout";
 
-type ItemNode = Node<{ item: Item; selected: boolean; dimmed: boolean }, "item">;
+type ItemNode = Node<{ item: Item; progress: Progress | null; selected: boolean; dimmed: boolean }, "item">;
 type Positions = Map<Uid, { x: number; y: number }>;
 
 const TITLE_LIMIT = 28;
 
 const ItemNodeView = memo(function ItemNodeView({ data }: NodeProps<ItemNode>) {
-  const { item, selected, dimmed } = data;
+  const { item, progress, selected, dimmed } = data;
   const { vocab } = useI18n();
   const title = item.title.length > TITLE_LIMIT ? `${item.title.slice(0, TITLE_LIMIT)}…` : item.title;
   return (
@@ -36,6 +37,7 @@ const ItemNodeView = memo(function ItemNodeView({ data }: NodeProps<ItemNode>) {
           style={{ background: priorityColor(item.priority) }}
         />
         {item.ref.id}
+        {progress && <ProgressPie progress={progress} />}
       </div>
       <div>{title}</div>
       <Handle type="source" position={Position.Right} />
@@ -47,6 +49,8 @@ const NODE_TYPES = { item: ItemNodeView };
 
 interface GraphViewProps {
   visible: Item[];
+  /** All items, unfiltered; progress is computed over these. */
+  items: Item[];
   onSelect: (uid: Uid | null) => void;
 }
 
@@ -57,10 +61,11 @@ const NO_UIDS: ReadonlySet<Uid> = new Set();
  * The selected node, nodes marked with a modifier click, and the hovered node are highlighted
  * together with their edges and direct neighbors.
  */
-export function GraphView({ visible, onSelect }: GraphViewProps) {
+export function GraphView({ visible, items, onSelect }: GraphViewProps) {
   const { t } = useI18n();
   const { state } = useUiState();
   const graph = useMemo(() => dependencyGraph(visible), [visible]);
+  const progress = useMemo(() => itemProgress(items), [items]);
   const [layout, setLayout] = useState<{ graph: typeof graph; positions: Positions } | null>(null);
   const [hoveredId, setHoveredId] = useState<Uid | null>(null);
   const [marked, setMarked] = useState<ReadonlySet<Uid>>(NO_UIDS);
@@ -117,13 +122,14 @@ export function GraphView({ visible, onSelect }: GraphViewProps) {
         position: layout?.positions.get(item.uid) ?? { x: 0, y: 0 },
         data: {
           item,
+          progress: progress.get(item.uid) ?? null,
           selected: item.uid === state.selectedId || marked.has(item.uid),
           dimmed: neighborhood.size > 0 && !neighborhood.has(item.uid),
         },
         draggable: false,
         connectable: false,
       })),
-    [layout, state.selectedId, marked, neighborhood],
+    [layout, progress, state.selectedId, marked, neighborhood],
   );
   const edges: Edge[] = useMemo(
     () =>

@@ -6,6 +6,7 @@ import {
   filterItems,
   filterOptions,
   groupByStatus,
+  itemProgress,
   needsResolution,
   projectProgress,
   sortByKeyOrder,
@@ -85,6 +86,19 @@ describe("model", () => {
     expect(projectProgress(items, "P")).toEqual({ done: 1, total: 3 });
     const withRejected = toItems([apiItem("A-1", { status: "Completed" }), apiItem("A-2", { status: "Rejected" }), apiItem("A-3")]);
     expect(projectProgress(withRejected, "P")).toEqual({ done: 1, total: 2 });
+  });
+
+  it("counts item progress over required, non-rejected descendants", () => {
+    const progress = itemProgress(items);
+    expect(progress.get("P::EPIC-1")).toEqual({ done: 1, total: 2 });
+    expect(progress.get("P::STORY-1")).toEqual({ done: 0, total: 1 });
+    expect(progress.has("P::TASK-1")).toBe(false);
+    const withRejected = toItems([
+      apiItem("E-1", { type: "Epic" }),
+      apiItem("S-1", { parent: "E-1", status: "Rejected" }),
+      apiItem("T-1", { parent: "S-1", status: "Completed" }),
+    ]);
+    expect(itemProgress(withRejected).has("P::E-1")).toBe(false);
   });
 
   it("groups by status in key order", () => {

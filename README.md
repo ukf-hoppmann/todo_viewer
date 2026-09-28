@@ -89,6 +89,9 @@ abgebildet.
 ## Views
 
 - **Baum**: Epic → Story → Task Hierarchie pro Projekt, mit Fortschrittsbalken.
+  Items mit Kindern zeigen zwischen Prioritäts-Punkt und Typ-Badge einen
+  Fortschrittskreis (Tortendiagramm) mit „erledigt/gesamt“ über alle Nachkommen;
+  Kanban-Karten und Graph-Knoten zeigen ihn ebenfalls.
   Optionale Kinder (`Required for parent: No`) sind gestrichelt angebunden,
   gedimmt und haben einen hohlen Status-Punkt; sie zählen nicht zum Fortschritt.
   Abgelehnte Items (`Rejected`) zählen ebenfalls nicht mit.

@@ -9,6 +9,7 @@ const STATUS_COLORS: Record<string, string> = {
 const PRIORITY_COLORS: Record<string, string> = {
   Urgent: "var(--prio-urgent)",
   Important: "var(--prio-important)",
+  Normal: "var(--prio-normal)",
   Prospective: "var(--prio-later)",
 };
 

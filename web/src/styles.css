@@ -15,6 +15,7 @@
   --status-rejected: #d5544a;
   --prio-urgent: #e05a4e;
   --prio-important: #d5a13a;
+  --prio-normal: #a06bd5;
   --prio-later: #4a7fd5;
   --prio-none: #3a3f4a;
   --on-color: #14161b;
@@ -97,6 +98,8 @@ input[type=text], textarea {
 .node-row.selected { background: var(--selected); }
 .node-type { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #2a2e38; color: var(--text-dim); }
 .node-title { flex: 1; }
+.node-progress { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.progress-pie { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--panel-border); }
 .node-children { margin-left: 20px; }
 .node-children > .tree-node { border-left: 1px solid var(--panel-border); padding-left: 6px; }
 .node-children > .tree-node.optional { border-left: 1px dashed #4a505c; }
@@ -120,7 +123,8 @@ input[type=text], textarea {
 }
 .kanban-card:hover, .kanban-card.selected { border-color: var(--accent); }
 .kanban-card .k-id { color: var(--text-dim); font-size: 10.5px; margin-bottom: 2px; }
-.prio-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; color: var(--on-color); margin-top: 6px; }
+.k-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+.prio-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; color: var(--on-color); }
 
 /* ---------- graph ---------- */
 .graph-view { padding: 0; }
@@ -136,6 +140,7 @@ input[type=text], textarea {
 .graph-node.selected { background: var(--selected); }
 .graph-node.dimmed { opacity: 0.35; }
 .graph-node .g-id { color: var(--text-dim); font-size: 10.5px; display: flex; align-items: center; }
+.graph-node .g-id .node-progress { margin-left: auto; }
 .react-flow__attribution { display: none; }
 
 /* ---------- detail panel ---------- */

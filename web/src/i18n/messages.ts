@@ -150,7 +150,7 @@ export const VOCAB_DE: Record<"status" | "priority" | "type" | "field", Vocab> =
     Completed: "Abgeschlossen",
     Rejected: "Abgelehnt",
   },
-  priority: { Urgent: "Dringend", Important: "Wichtig", Prospective: "Perspektivisch" },
+  priority: { Urgent: "Dringend", Important: "Wichtig", Normal: "Normal", Prospective: "Perspektivisch" },
   type: { Epic: "Epic", Story: "Story", Task: "Task" },
   field: {
     Type: "Typ",

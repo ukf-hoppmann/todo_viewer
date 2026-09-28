@@ -17,6 +17,7 @@ describe("TreeView", () => {
     renderWithProviders(<TreeView visible={items} items={items} onSelect={onSelect} />);
 
     expect(screen.getByText("P (1/2)")).toBeInTheDocument();
+    expect(screen.getByText("EPIC-1 — Title EPIC-1").closest(".node-row")?.querySelector(".node-progress")).toHaveTextContent("1/1");
     expect(screen.getByText("TASK-2 — Title TASK-2").closest(".tree-node")).toHaveClass("optional");
 
     await userEvent.click(screen.getByRole("button", { name: "collapse" }));

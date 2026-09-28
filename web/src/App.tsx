@@ -40,10 +40,10 @@ export function App() {
 
   const views: Record<View, () => React.ReactNode> = {
     tree: () => <TreeView visible={model.visible} items={model.items} onSelect={select} />,
-    kanban: () => <KanbanView visible={model.visible} onSelect={select} />,
+    kanban: () => <KanbanView visible={model.visible} items={model.items} onSelect={select} />,
     graph: () => (
       <Suspense fallback={<div className="view" />}>
-        <GraphView visible={model.visible} onSelect={select} />
+        <GraphView visible={model.visible} items={model.items} onSelect={select} />
       </Suspense>
     ),
   };

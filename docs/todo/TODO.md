@@ -34,7 +34,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
 - `STORY-017` **Klare Antwort und Wiederöffnen-Angebot bei geschlossenem Parent**
   - Type: Story.
   - Parent: None.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-28.
   - Area: Backend-API.
   - Priority: Normal.

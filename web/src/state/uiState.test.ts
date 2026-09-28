@@ -24,6 +24,7 @@ describe("uiState", () => {
       lang: "en",
     });
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "nope", lang: "fr" })).toEqual(INITIAL_UI_STATE);
+    expect(mergeStored(INITIAL_UI_STATE, { currentView: "trash" }).currentView).toBe("trash");
     expect(mergeStored(INITIAL_UI_STATE, "broken")).toBe(INITIAL_UI_STATE);
   });
 

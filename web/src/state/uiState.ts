@@ -2,7 +2,7 @@
 // so configs/ui_state.json keeps working across the switch.
 import type { Lang } from "../i18n/messages";
 
-export const VIEWS = ["tree", "graph", "kanban"] as const;
+export const VIEWS = ["tree", "graph", "kanban", "trash"] as const;
 export type View = (typeof VIEWS)[number];
 export type HiddenKind = "hiddenProjects" | "hiddenStatuses" | "hiddenPriorities";
 

@@ -55,6 +55,17 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     Änderung ab, wenn sie einen neuen Regelverstoß erzeugt; bereits
     bestehende Verstöße blockieren andere Änderungen nicht (Entscheidung:
     [STORY-005](../todo/items/STORY-005/STORY-005_notes.md)).
+  - Wieder öffnen: Ein Status ohne Endstatus (z. B. `In progress`) öffnet ein
+    abgeschlossenes Epic, eine Story oder einen Task wieder, egal ob es aktiv
+    oder archiviert ist; ein archiviertes Item wandert dabei zurück nach
+    `TODO.md`, und `Resolution` wird entfernt. Unter einem geschlossenen Parent
+    (Completed/Rejected) darf kein aktives Item stehen: Anlegen, Umhängen,
+    Wiederöffnen eines Kindes oder Wiederherstellen aus dem Papierkorb
+    lehnt der Server dann mit 409 `parent_closed` ab. `details.id` ist das
+    betroffene Item, `details.items` nennt die geschlossenen Vorfahren bis zum
+    ersten offenen, von oben nach unten; in dieser Reihenfolge wieder öffnen
+    und die Änderung wiederholen. Wer dagegen einen Parent mit aktiven
+    Kindern schließen will, bekommt `children_still_active`.
   - `POST /items`: `{source_id, type ("Epic"|"Story"|"Task"), title, area,
     goal, completion_criteria, priority?, parent?, required_for_parent?,
     dependencies?, summary?, created?}`. Die ID ist die nächste freie Nummer
@@ -126,7 +137,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `config_missing`, `file_not_found`, `item_not_found` |
 | 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`) |
-| 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
+| 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 
 Alle übrigen Pfade liefern das gebaute Frontend aus `web/dist`; fehlt der
@@ -155,11 +166,16 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   4. Ändern: `PATCH /items/{source_id}/{id}` mit `{version, fields: {…}}`,
      z. B. `{"status": "In progress"}` oder `{"parent": "EPIC-001",
      "required_for_parent": "Yes"}`.
-  5. Notizen: neuer Eintrag per `POST /items/{source_id}/{id}/notes` mit
+  5. Wieder öffnen: ebenfalls `PATCH` mit `{"status": "In progress"}`, für
+     Epics, Stories und Tasks, auch archivierte. Antwortet der Server beim
+     Anlegen oder Ändern mit 409 `parent_closed`, stehen die geschlossenen
+     Vorfahren in `details.items` (von oben nach unten): nach Rückfrage beim
+     Projekteigner einzeln wieder öffnen, dann die Änderung wiederholen.
+  6. Notizen: neuer Eintrag per `POST /items/{source_id}/{id}/notes` mit
      `{topic, discussed, decided, open, summary?}`; Notizen und Specs ändern:
      `GET …/documents/{name}` holen, `PUT …/documents/{name}` mit
      `{content, version}` zurückschreiben.
-  6. Löschen: `DELETE /items/{source_id}/{id}?version=…` (Papierkorb; bei
+  7. Löschen: `DELETE /items/{source_id}/{id}?version=…` (Papierkorb; bei
      Kindern erst Warnung, dann mit `cascade=true`); wiederherstellen oder
      endgültig löschen über `/trash`.
 - Ausgabe: wie bei der HTTP-API oben; jede Änderung liefert den neuen Stand

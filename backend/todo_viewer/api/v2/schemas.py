@@ -204,6 +204,10 @@ class SourceIn(BaseModel):
     project: str | None = None
 
 
+class BacklogCreateIn(SourceIn):
+    language: Literal["en", "de"] = Field("en", description="Language of the headings and prose in the new files")
+
+
 class DocumentOut(DocumentRefOut):
     content: str
     version: str = Field(description="Changes with the content; required to replace a spec")

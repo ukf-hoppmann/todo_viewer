@@ -10,6 +10,7 @@ from .field_mapper import BacklogFieldMapper, PriorityNormalizer
 from .layout import LayoutFactory, SourcePathResolver
 from .parsers import BacklogParser
 from .repository import MarkdownBacklogRepository
+from .templates import EmptyBacklogTemplates
 from .text_file import KeyedLocks, TextFileStore
 
 
@@ -24,6 +25,7 @@ def build_markdown_repository(base_dir: Path, locks: KeyedLocks | None = None) -
         entry_editor=BacklogEntryEditor(),
         mover=EntryMover(),
         renderer=EntryRenderer(),
+        templates=EmptyBacklogTemplates(),
         locks=locks or KeyedLocks(),
     )
 

@@ -5,7 +5,13 @@ from collections.abc import Sequence
 
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import ChangeSet
-from todo_viewer.domain.errors import DuplicateItemError, ItemNotFoundError, VersionConflictError
+from todo_viewer.domain.errors import (
+    BacklogExistsError,
+    DuplicateItemError,
+    InvalidSourceError,
+    ItemNotFoundError,
+    VersionConflictError,
+)
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
@@ -14,6 +20,7 @@ from .editors import BacklogEntryEditor, EntryLocator, EntryMover, EntryRenderer
 from .layout import BacklogLayout, LayoutFactory
 from .parsers import BacklogParser
 from .syntax import TODO_FILE
+from .templates import EmptyBacklogTemplates
 from .text_file import KeyedLocks, TextDocument, TextFileStore
 
 
@@ -28,6 +35,7 @@ class MarkdownBacklogRepository:
         entry_editor: BacklogEntryEditor,
         mover: EntryMover,
         renderer: EntryRenderer,
+        templates: EmptyBacklogTemplates,
         locks: KeyedLocks,
     ):
         self._layouts = layouts
@@ -38,6 +46,7 @@ class MarkdownBacklogRepository:
         self._entry_editor = entry_editor
         self._mover = mover
         self._renderer = renderer
+        self._templates = templates
         self._locks = locks
 
     # ---------- reading ----------
@@ -138,6 +147,20 @@ class MarkdownBacklogRepository:
             self._mover.insert(doc.lines, self._renderer.render(item))
             self._files.write(doc)
             return self._reload(source, layout, item.id, Location.ACTIVE)
+
+    def initialize(self, source: Source, language: str) -> None:
+        """Creates TODO.md, archive.md (unless present) and items/ in a new or existing folder."""
+        layout = self._layouts.for_source(source)
+        texts = self._templates.for_language(language)
+        if layout.folder.exists() and not layout.folder.is_dir():
+            raise InvalidSourceError("Path is not a folder.", code="not_a_dir")
+        with self._locks.hold(str(layout.folder)):
+            if layout.file(Location.ACTIVE).exists():
+                raise BacklogExistsError()
+            for location in (Location.ARCHIVE, Location.ACTIVE):  # TODO.md last: it marks the backlog as complete
+                if not layout.file(location).exists():
+                    self._files.create(layout.file(location), texts[location])
+            layout.items_folder().mkdir(exist_ok=True)
 
     def _check_version(self, doc: TextDocument, source: Source, item: Item) -> None:
         stored = next((i for i in self._parse(doc, source, item.location) if i.id == item.id), None)

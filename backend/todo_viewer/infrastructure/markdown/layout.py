@@ -30,6 +30,10 @@ class BacklogLayout:
     def file(self, location: Location) -> Path:
         return self.folder / self.FILES[location]
 
+    def items_folder(self) -> Path:
+        """Per-item notes and specs live in items/<ID>/."""
+        return self.folder / "items"
+
     def archive_available(self) -> bool:
         return all(self.file(loc).exists() for loc in Location)
 

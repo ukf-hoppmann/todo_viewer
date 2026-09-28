@@ -38,6 +38,17 @@ class SourceService:
             sources.append(source)
         return source
 
+    def create_backlog(self, path: str, project: str | None, language: str) -> Source:
+        """Creates an empty backlog in the folder and adds it as a source."""
+        path = self._normalized(path)
+        with self._sources.edit() as sources:
+            if any(s.path == path for s in sources):
+                raise DuplicateSourceError()
+            self._backlogs.initialize(Source(project="", path=path), language)
+            source = self._validated(path, project)
+            sources.append(source)
+        return source
+
     def update(self, source_id: str, path: str, project: str | None) -> Source:
         candidate = self._validated(path, project)
         with self._sources.edit() as sources:
@@ -58,10 +69,15 @@ class SourceService:
             raise SourceGoneError()
         return index
 
-    def _validated(self, path: str, project: str | None) -> Source:
+    @staticmethod
+    def _normalized(path: str) -> str:
         path = path.strip().rstrip("/")
         if not path:
             raise InvalidSourceError("Path is missing.", code="missing_path")
+        return path
+
+    def _validated(self, path: str, project: str | None) -> Source:
+        path = self._normalized(path)
         source = Source(project="", path=path)
         problem = self._backlogs.check(source)
         if problem:

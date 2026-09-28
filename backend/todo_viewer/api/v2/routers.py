@@ -9,6 +9,7 @@ from todo_viewer.domain.trash import live
 
 from ..dependencies import Documents, Folders, Items, Lookup, Overview, Sources, Trash, UiState
 from .schemas import (
+    BacklogCreateIn,
     BacklogOut,
     DocumentIn,
     DocumentOut,
@@ -165,6 +166,14 @@ def list_sources(sources: Sources) -> list[SourceOut]:
 @router.post("/sources", tags=["sources"])
 def add_source(body: SourceIn, sources: Sources) -> SourceOut:
     return SourceOut.of(sources.add(body.path, body.project))
+
+
+@router.post("/backlogs", tags=["sources"], status_code=201)
+def create_backlog(body: BacklogCreateIn, sources: Sources) -> SourceOut:
+    """Creates an empty backlog (TODO.md, archive.md, items/) in the folder, creating it if needed,
+    and adds it as a source. Refused with 409 backlog_exists if the folder already holds a TODO.md.
+    """
+    return SourceOut.of(sources.create_backlog(body.path, body.project, body.language))
 
 
 @router.put("/sources/{source_id}", tags=["sources"])

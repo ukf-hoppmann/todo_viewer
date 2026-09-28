@@ -48,6 +48,10 @@ class FakeBacklogs:
         self.items = items or []
         self.archive = archive
         self.applied: list[ChangeSet] = []
+        self.initialized: list[tuple[str, str]] = []
+
+    def initialize(self, source: Source, language: str) -> None:
+        self.initialized.append((source.path, language))
 
     def check(self, source: Source) -> SourceProblem | None:
         return SourceProblem("no_todo", "No TODO.md in this folder.") if "plain" in source.path else None
@@ -129,6 +133,23 @@ def test_add_source_rejects_problems_and_duplicates():
         service.add("/a", "B")
 
     assert (missing.value.code, no_todo.value.code) == ("missing_path", "no_todo")
+
+
+def test_create_backlog_initializes_folder_and_adds_source():
+    backlogs = FakeBacklogs()
+    repo = InMemorySources([Source("A", "/a")])
+    service = SourceService(repo, backlogs, Names())
+
+    created = service.create_backlog(" /new/docs/todo/ ", None, "de")
+    with pytest.raises(DuplicateSourceError):
+        service.create_backlog("/a", None, "en")
+    with pytest.raises(InvalidSourceError) as missing:
+        service.create_backlog(" ", None, "en")
+
+    assert created == Source("suggested", "/new/docs/todo")
+    assert repo.sources == [Source("A", "/a"), created]
+    assert backlogs.initialized == [("/new/docs/todo", "de")]
+    assert missing.value.code == "missing_path"
 
 
 def test_update_keeps_extra_fields_and_remove_by_id():

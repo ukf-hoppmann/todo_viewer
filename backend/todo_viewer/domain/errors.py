@@ -135,6 +135,13 @@ class DuplicateSourceError(ConflictError):
         super().__init__("This folder is already configured.")
 
 
+class BacklogExistsError(ConflictError):
+    code = "backlog_exists"
+
+    def __init__(self) -> None:
+        super().__init__("This folder already holds a TODO.md; add it as a source instead.")
+
+
 class InvalidSourceError(DomainError):
     """The backlog folder is unusable; `code` says why (missing_path, not_found, not_a_dir, no_todo)."""
 

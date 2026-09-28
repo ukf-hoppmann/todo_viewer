@@ -179,6 +179,39 @@ def test_sources_by_id(api, workspace):
     assert [s["project"] for s in api.get("/api/v2/sources").body] == ["Renamed", "Extra"]
 
 
+def test_create_backlog(api, workspace):
+    existing = workspace.add_backlog("backlog")
+    before = (existing / "TODO.md").read_bytes()
+    (workspace.repos / "New" / ".git").mkdir(parents=True)
+    folder = workspace.repos / "New" / "docs" / "todo"
+
+    created = api.post("/api/v2/backlogs", {"path": str(folder)})
+    german = api.post("/api/v2/backlogs", {"path": str(workspace.repos / "Neu"), "project": "Neu",
+                                           "language": "de"})
+    dup = api.post("/api/v2/backlogs", {"path": str(folder)})
+    exists = api.post("/api/v2/backlogs", {"path": str(existing)})
+    bad_language = api.post("/api/v2/backlogs", {"path": str(workspace.repos / "X"), "language": "fr"})
+    item = api.post("/api/v2/items", {"source_id": created.body["id"], "type": "Epic", "title": "First",
+                                      "area": "Core", "goal": "g", "completion_criteria": "c"})
+
+    assert created.status_code == 201
+    assert created.body == {"id": created.body["id"], "project": "New", "path": str(folder)}
+    assert sorted(p.name for p in folder.iterdir()) == ["TODO.md", "archive.md", "items"]
+    assert "Claude_Harness backlog format version 1" in (folder / "TODO.md").read_text(encoding="utf-8")
+    assert (workspace.repos / "Neu" / "TODO.md").read_text(encoding="utf-8").startswith("# Projekt-Backlog\n")
+    assert german.body["project"] == "Neu"
+    assert (dup.status_code, dup.body["code"]) == (409, "duplicate")
+    assert (exists.status_code, exists.body["code"]) == (409, "backlog_exists")
+    assert (existing / "TODO.md").read_bytes() == before
+    assert (bad_language.status_code, bad_language.body["code"]) == (400, "bad_request")
+    assert not (workspace.repos / "X").exists()
+    assert (item.status_code, item.body["id"]) == (201, "EPIC-001")
+    sources = {s["project"]: s for s in api.get("/api/v2/backlog").body["sources"]}
+    assert (sources["New"]["item_count"], sources["New"]["problem"]) == (1, None)
+    assert "- `EPIC-001` **First**" in (folder / "TODO.md").read_text(encoding="utf-8")
+    assert "No entries." not in (folder / "TODO.md").read_text(encoding="utf-8")
+
+
 def test_folders_and_ui_state(api, workspace):
     _setup(workspace, "backlog")
 

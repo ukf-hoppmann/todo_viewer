@@ -58,6 +58,25 @@ class FileChangedError(ConflictError):
         super().__init__("The file was changed externally while saving. Please try again.")
 
 
+class LifecycleViolationError(ConflictError):
+    """A change would break a parent lifecycle or structure rule; `code` names the rule."""
+
+    MESSAGES = {
+        "epic_without_required_child": "Epic {id} needs at least one required child before it leaves Open.",
+        "required_children_not_done": "Required children of {id} are not far enough: {items}.",
+        "children_still_active": "{id} cannot be closed while children are active: {items}.",
+        "epic_with_parent": "Epic {id} cannot have a parent.",
+        "required_for_parent_missing": "{id} has a parent but no 'Required for parent'.",
+        "parent_cycle": "Parent references form a cycle: {items}.",
+        "dependency_cycle": "Dependencies form a cycle: {items}.",
+    }
+
+    def __init__(self, code: str, item_id: str, related: tuple[str, ...] = ()):
+        items = ", ".join(related)
+        message = self.MESSAGES.get(code, "Rule {code} violated by {id}.").format(id=item_id, items=items, code=code)
+        super().__init__(message, code=code, id=item_id, items=items)
+
+
 class NotEditableError(DomainError):
     code = "not_editable"
 

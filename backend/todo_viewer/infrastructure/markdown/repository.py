@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import ChangeSet
-from todo_viewer.domain.errors import DuplicateItemError, InvalidSourceError, ItemNotFoundError, VersionConflictError
+from todo_viewer.domain.errors import ItemNotFoundError, VersionConflictError
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
@@ -60,15 +60,7 @@ class MarkdownBacklogRepository:
         return backlog
 
     def get(self, source: Source, item_id: str) -> Item:
-        backlog = self.load(source)
-        if backlog.problem:
-            raise InvalidSourceError(backlog.problem.message, code=backlog.problem.code)
-        found = [i for i in backlog.items if i.id == item_id]
-        if not found:
-            raise ItemNotFoundError(item_id)
-        if len(found) > 1:
-            raise DuplicateItemError(item_id)
-        return found[0]
+        return self.load(source).find(item_id)
 
     def archive_available(self, source: Source) -> bool:
         return self._layouts.for_source(source).archive_available()

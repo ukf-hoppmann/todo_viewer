@@ -169,4 +169,20 @@ describe("DetailPanel editing", () => {
 
     expect(await screen.findByText(/Der Eintrag wurde inzwischen geändert/)).toBeInTheDocument();
   });
+
+  it("shows lifecycle violations with the blocking items", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () =>
+      new Response(JSON.stringify({ code: "children_still_active", message: "x", details: { id: "EPIC-1", items: "STORY-1, TASK-1" } }), {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+      })));
+    const item = items[0]!;
+    renderWithProviders(
+      <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" onSelect={vi.fn()} onClose={vi.fn()} />,
+    );
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Priorität" }), "Urgent");
+
+    expect(await screen.findByText(/EPIC-1 kann nicht geschlossen werden, solange Kinder aktiv sind: STORY-1, TASK-1\./)).toBeInTheDocument();
+  });
 });

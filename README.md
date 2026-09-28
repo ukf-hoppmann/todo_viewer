@@ -73,6 +73,10 @@ und verschiebt ihn nach `archive.md`; ein Zurücksetzen auf einen offenen
 Status holt ihn (ohne Resolution) zurück nach `TODO.md`. `Notes` und `Spec`
 eines Eintrags öffnen sich in einem großen Lese-Popup.
 
+Änderungen, die gegen die Parent-Regeln des Backlog-Formats verstoßen, lehnt
+der Server mit einem Hinweis auf die blockierenden Einträge ab, z. B. ein
+Parent auf `Completed`, solange ein Kind noch aktiv ist.
+
 Geschrieben wird atomar (temporäre Datei + Umbenennen), Zeilenenden (LF/CRLF)
 bleiben erhalten. Hat jemand anderes (z. B. ein Agent) denselben Eintrag
 inzwischen geändert, bricht das Speichern mit einem Hinweis ab, statt dessen

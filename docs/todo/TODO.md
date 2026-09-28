@@ -29,6 +29,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     dass die Markdown-Dateien später durch eine Datenbank ersetzt werden
     können.
   - Notes: `items/EPIC-001/EPIC-001_notes.md`.
+  - Spec: `items/EPIC-001/EPIC-001_spec_harness.md`.
 - `EPIC-002` **Backlog-Pflege in der UI**
   - Type: Epic.
   - Status: Open.

@@ -69,6 +69,8 @@ def test_detector():
     backlog = "backlog format version 2\n- `T-1` **x**\n"
 
     assert detector.detect(backlog, Location.ACTIVE) is ItemFormat.BACKLOG_V2
+    german = "Claude_Harness-Backlog-Format Version 1.\n- `T-1` **x**\n"
+    assert detector.detect(german, Location.ACTIVE) is ItemFormat.BACKLOG_V2
     assert detector.detect("- [ ] a", Location.ACTIVE) is ItemFormat.CHECKBOX
     assert detector.detect("No entries.", Location.ARCHIVE) is None
 

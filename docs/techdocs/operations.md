@@ -6,7 +6,8 @@
   `npm ci` + `npm run build`), dann das Backend-Image (`python:3.11-slim`), das
   API und `web/dist` ausliefert.
 - `docker-compose.yml` startet den Dienst `todo-viewer` mit
-  `restart: unless-stopped` auf Port 5411 und bindet ein:
+  `restart: unless-stopped` auf Port 5411, nur an `127.0.0.1` gebunden (die API
+  kann Items ändern und löschen), und bindet ein:
   - `./configs` → `/app/configs` (Quellen und UI-Zustand bleiben auf dem Host),
   - `/Users/hoppmann/Documents/GitHub` unter demselben Pfad, beschreibbar
     (Bearbeitungen landen in den Backlog-Dateien der Nachbar-Repos).
@@ -20,8 +21,8 @@
 
 - Starten/Stoppen über `./todo.sh` (siehe [README](../../README.md)).
 - Status: `./todo.sh status`; Logs: `./todo.sh logs`.
-- Es gibt keinen eigenen Health-Endpunkt; `GET /api/v2/backlog` antwortet auch
-  ohne `config.json` (leerer Backlog).
+- Erreichbarkeit: `GET /api/v2/health` antwortet mit `{"status": "ok", "api": "2"}`,
+  ohne Backlog-Dateien zu lesen.
 - Das Frontend wird pro Anfrage gesucht: ein späteres `npm --prefix web run build`
   wird ohne Neustart ausgeliefert.
 

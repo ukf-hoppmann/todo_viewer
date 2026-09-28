@@ -43,7 +43,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Notes: `items/STORY-002/STORY-002_notes.md`.
 - `EPIC-001` **Backlog-Pflege per API statt direkter Dateizugriffe**
   - Type: Epic.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-09-27.
   - Area: Backend-API.
   - Priority: Normal.
@@ -200,7 +200,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-001`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-27.
   - Area: Backend-API.
   - Priority: Normal.

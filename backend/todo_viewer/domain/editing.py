@@ -27,6 +27,9 @@ class Field:
     AREA = "area"
     PARENT = "parent"
     DEPENDENCIES = "dependencies"
+    # Maintained by the server when documents are written, not editable directly.
+    NOTES = "notes"
+    SPEC = "spec"
 
     EDITABLE = frozenset({TITLE, STATUS, PRIORITY, REQUIRED_FOR_PARENT, GOAL, COMPLETION_CRITERIA, SUMMARY, AREA,
                           PARENT, DEPENDENCIES})
@@ -51,7 +54,7 @@ class ChangeSet:
         for key, value in self.set_fields:
             if key == Field.REQUIRED_FOR_PARENT:
                 values[key] = value == "Yes"
-            elif key == Field.DEPENDENCIES:
+            elif key in (Field.DEPENDENCIES, Field.NOTES, Field.SPEC):
                 values[key] = list(value or ())
             else:
                 values[key] = value

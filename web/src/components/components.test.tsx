@@ -4,6 +4,7 @@ import { toItems } from "../domain/model";
 import { apiItem, renderWithProviders } from "../test/render";
 import { TreeView } from "../views/TreeView";
 import { DetailPanel } from "./DetailPanel";
+import { DocumentDialog } from "./DocumentDialog";
 import { Sidebar } from "./Sidebar";
 
 const items = toItems([
@@ -183,5 +184,28 @@ describe("DetailPanel editing", () => {
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Priorität" }), "Urgent");
 
     expect(await screen.findByText(/EPIC-1 kann nicht geschlossen werden, solange Kinder aktiv sind: STORY-1, TASK-1\./)).toBeInTheDocument();
+  });
+});
+
+describe("DocumentDialog", () => {
+  it("loads documents by item and name and switches between them", async () => {
+    const fetchMock = vi.fn(async (request: Request) => {
+      const name = decodeURIComponent(new URL(request.url).pathname.split("/").pop()!);
+      return new Response(JSON.stringify({ name, kind: "spec", content: `# Content of ${name}`, version: "v" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const [item] = toItems([
+      apiItem("TASK-7", { documents: [{ name: "TASK-7_notes.md", kind: "notes" }, { name: "TASK-7_spec.md", kind: "spec" }] }),
+    ]);
+    renderWithProviders(<DocumentDialog item={item!} initialName="TASK-7_notes.md" onClose={vi.fn()} />);
+
+    expect(await screen.findByText("Content of TASK-7_notes.md")).toBeInTheDocument();
+    expect(new URL(fetchMock.mock.calls[0]![0].url).pathname).toBe("/api/v2/items/s/TASK-7/documents/TASK-7_notes.md");
+
+    await userEvent.click(screen.getByRole("tab", { name: "Spec" }));
+    expect(await screen.findByText("Content of TASK-7_spec.md")).toBeInTheDocument();
   });
 });

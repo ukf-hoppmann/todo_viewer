@@ -53,9 +53,9 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
 
       {docs.length > 0 && (
         <div className="doc-buttons">
-          {docs.map((d, n) => (
-            <button key={d.path} className="btn small" onClick={() => setOpenDoc(d.path)}>
-              {n < item.notes.length ? "📝" : "📐"} {d.label}
+          {docs.map((d) => (
+            <button key={d.name} className="btn small" onClick={() => setOpenDoc(d.name)}>
+              {d.kind === "notes" ? "📝" : "📐"} {d.label}
             </button>
           ))}
         </div>
@@ -128,7 +128,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, onSelect, onClose 
 
       {openDoc && (
         <Suspense fallback={null}>
-          <DocumentDialog item={item} initialPath={openDoc} onClose={() => setOpenDoc(null)} />
+          <DocumentDialog item={item} initialName={openDoc} onClose={() => setOpenDoc(null)} />
         </Suspense>
       )}
     </aside>

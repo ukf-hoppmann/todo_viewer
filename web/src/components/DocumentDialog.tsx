@@ -9,15 +9,15 @@ import { Modal } from "./Modal";
 
 interface DocumentDialogProps {
   item: Item;
-  initialPath: string;
+  initialName: string;
   onClose: () => void;
 }
 
-export function DocumentDialog({ item, initialPath, onClose }: DocumentDialogProps) {
+export function DocumentDialog({ item, initialName, onClose }: DocumentDialogProps) {
   const i18n = useI18n();
   const { t } = i18n;
-  const [path, setPath] = useState(initialPath);
-  const doc = useDocument(item.source_id, path);
+  const [name, setName] = useState(initialName);
+  const doc = useDocument(item.source_id, item.id, name);
   const links = documentLinks(item, t("doc.notes"), t("doc.spec"));
 
   const html = useMemo(
@@ -36,12 +36,12 @@ export function DocumentDialog({ item, initialPath, onClose }: DocumentDialogPro
       <div className="doc-tabs" role="tablist">
         {links.map((link) => (
           <button
-            key={link.path}
+            key={link.name}
             role="tab"
-            aria-selected={link.path === path}
-            className={`doc-tab${link.path === path ? " active" : ""}`}
-            title={link.path}
-            onClick={() => setPath(link.path)}
+            aria-selected={link.name === name}
+            className={`doc-tab${link.name === name ? " active" : ""}`}
+            title={link.name}
+            onClick={() => setName(link.name)}
           >
             {link.label}
           </button>
@@ -49,7 +49,7 @@ export function DocumentDialog({ item, initialPath, onClose }: DocumentDialogPro
       </div>
       <div className="doc-body">
         {doc.isLoading && <div className="md">{t("doc.loading")}</div>}
-        {doc.error && <div className="md">{t("err.generic", { e: `${describeError(i18n, doc.error)} (${path})` })}</div>}
+        {doc.error && <div className="md">{t("err.generic", { e: `${describeError(i18n, doc.error)} (${name})` })}</div>}
         {doc.data && <div className="md" dangerouslySetInnerHTML={{ __html: html }} />}
       </div>
     </Modal>

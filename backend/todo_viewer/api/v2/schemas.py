@@ -1,9 +1,13 @@
 """HTTP contract of API v2. Items are addressed by source id + item id, sources by their stable id."""
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from todo_viewer.application.ports import FolderListing
+from todo_viewer.application.services import DocumentResult
+from todo_viewer.domain.documents import DocumentRef, item_documents
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
@@ -21,6 +25,15 @@ class ProblemOut(BaseModel):
     @classmethod
     def of(cls, problem: SourceProblem | None) -> ProblemOut | None:
         return cls(code=problem.code, message=problem.message) if problem else None
+
+
+class DocumentRefOut(BaseModel):
+    name: str = Field(description="Document name within the item, e.g. STORY-003_spec.md")
+    kind: Literal["notes", "spec"]
+
+    @classmethod
+    def of(cls, ref: DocumentRef) -> DocumentRefOut:
+        return cls(name=ref.name, kind=ref.kind.value)
 
 
 class ItemOut(BaseModel):
@@ -43,8 +56,7 @@ class ItemOut(BaseModel):
     completion_criteria: str | None
     summary: str | None
     resolution: str | None
-    notes: list[str]
-    spec: list[str]
+    documents: list[DocumentRefOut] = Field(description="Notes and specs; read them via /documents/{name}")
     extra_fields: dict[str, str]
     archive_supported: bool
 
@@ -70,8 +82,7 @@ class ItemOut(BaseModel):
             completion_criteria=item.completion_criteria,
             summary=item.summary,
             resolution=item.resolution,
-            notes=item.notes,
-            spec=item.spec,
+            documents=[DocumentRefOut.of(d) for d in item_documents(item)],
             extra_fields=item.extra_fields,
             archive_supported=archive_supported,
         )
@@ -179,9 +190,32 @@ class SourceIn(BaseModel):
     project: str | None = None
 
 
-class DocumentOut(BaseModel):
-    path: str
+class DocumentOut(DocumentRefOut):
     content: str
+    version: str = Field(description="Changes with the content; required to replace a spec")
+
+    @classmethod
+    def of_result(cls, result: DocumentResult) -> DocumentOut:
+        return cls(name=result.ref.name, kind=result.ref.kind.value, content=result.content, version=result.version)
+
+
+class SpecIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    content: str
+    version: str | None = Field(description="Version last read; null to create a new spec")
+
+
+class NotesEntryIn(BaseModel):
+    """One dated notes entry; the date is set by the server."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    topic: str
+    discussed: list[str] = Field(default_factory=list)
+    decided: list[str] = Field(default_factory=list)
+    open: list[str] = Field(default_factory=list)
+    summary: str | None = Field(default=None, description="Sets the item summary; required if it has none yet")
 
 
 class FolderEntryOut(BaseModel):

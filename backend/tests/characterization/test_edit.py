@@ -195,6 +195,54 @@ def test_create_writes_entry(api, workspace, golden, name, fixture, body):
     golden(f"edit/{name}.md", _files(folder))
 
 
+def _docs(api, item_id: str) -> str:
+    return f"/api/v2/items/{api.get('/api/v2/sources').body[0]['id']}/{item_id}"
+
+
+def test_first_notes_entry_creates_file_and_fields(api, workspace, golden):
+    folder = _setup(workspace, "backlog")
+    url = _docs(api, "TASK-001")
+
+    without_summary = api.post(f"{url}/notes", {"topic": "Design", "decided": ["Use regex"]})
+    first = api.post(f"{url}/notes", {"topic": "Design", "discussed": ["Regex or parser"],
+                                       "decided": ["Use regex"], "summary": "Parses the files."})
+    second = api.post(f"{url}/notes", {"topic": "Follow-up", "open": ["Error messages"]})
+
+    assert (without_summary.status_code, without_summary.body["code"]) == (409, "summary_required_with_notes")
+    assert first.status_code == 200, first.body
+    assert second.body["name"] == "TASK-001_notes.md"
+    notes = (folder / "items" / "TASK-001" / "TASK-001_notes.md").read_text(encoding="utf-8")
+    assert notes == second.body["content"]
+    assert notes.startswith("# TASK-001 — Write the parser\n\n## ") and "\n### Open\n\n- Error messages\n" in notes
+    item = _item(api, "TASK-001")
+    assert (item["summary"], item["documents"]) == \
+        ("Parses the files.", [{"name": "TASK-001_notes.md", "kind": "notes"}])
+    golden("edit/notes_fields.md", _files(folder))
+
+
+def test_spec_create_replace_and_conflicts(api, workspace):
+    folder = _setup(workspace, "backlog")
+    url = _docs(api, "TASK-001")
+
+    created = api.put(f"{url}/documents/TASK-001_spec.md", {"content": "# Spec\n", "version": None})
+    again = api.put(f"{url}/documents/TASK-001_spec.md", {"content": "# Other\n", "version": None})
+    stale = api.put(f"{url}/documents/TASK-001_spec.md", {"content": "# Other\n", "version": "outdated"})
+    replaced = api.put(f"{url}/documents/TASK-001_spec.md", {"content": "# Spec v2\n",
+                                                              "version": created.body["version"]})
+    bad_name = api.put(f"{url}/documents/spec.md", {"content": "x", "version": None})
+    notes = api.put(f"{_docs(api, 'TASK-002')}/documents/notes.md", {"content": "x", "version": None})
+
+    assert created.status_code == 200, created.body
+    assert (again.status_code, again.body["code"]) == (409, "version_conflict")
+    assert (stale.status_code, stale.body["code"]) == (409, "version_conflict")
+    assert replaced.body["content"] == "# Spec v2\n"
+    assert (folder / "items" / "TASK-001" / "TASK-001_spec.md").read_text(encoding="utf-8") == "# Spec v2\n"
+    assert _item(api, "TASK-001")["documents"] == [{"name": "TASK-001_spec.md", "kind": "spec"}]
+    assert api.get(f"{url}/documents/TASK-001_spec.md").body == replaced.body
+    assert (bad_name.status_code, bad_name.body["code"]) == (400, "invalid_value")
+    assert (notes.status_code, notes.body["code"]) == (400, "not_editable")
+
+
 def test_edit_twice_reopen_after_archive(api, workspace, golden):
     folder = _setup(workspace, "backlog")
 

@@ -17,10 +17,12 @@ from .schemas import (
     ItemCreateIn,
     ItemEditIn,
     ItemOut,
+    NotesEntryIn,
     ProblemOut,
     SourceIn,
     SourceOut,
     SourceStatusOut,
+    SpecIn,
 )
 
 ERRORS: dict[int | str, dict[str, Any]] = {
@@ -83,6 +85,29 @@ def edit_item(source_id: str, item_id: str, body: ItemEditIn, items: Items, look
     return ItemOut.of(source, result.item, result.archive_supported)
 
 
+@router.get("/items/{source_id}/{item_id}/documents/{name}", tags=["documents"])
+def read_document(source_id: str, item_id: str, name: str, documents: Documents, lookup: Lookup) -> DocumentOut:
+    """A notes or spec document of the item, with its version."""
+    return DocumentOut.of_result(documents.read(lookup.by_id(source_id), item_id, name))
+
+
+@router.put("/items/{source_id}/{item_id}/documents/{name}", tags=["documents"])
+def write_spec(source_id: str, item_id: str, name: str, body: SpecIn, documents: Documents,
+               lookup: Lookup) -> DocumentOut:
+    """Replaces a spec in `version`, or creates `<ID>_spec.md` / `<ID>_spec_<topic>.md` (version null)."""
+    result = documents.write_spec(lookup.by_id(source_id), item_id, name, body.content, body.version)
+    return DocumentOut.of_result(result)
+
+
+@router.post("/items/{source_id}/{item_id}/notes", tags=["documents"])
+def append_notes(source_id: str, item_id: str, body: NotesEntryIn, documents: Documents,
+                 lookup: Lookup) -> DocumentOut:
+    """Appends a dated Discussed/Decided/Open entry to the item's notes (created on first use)."""
+    result = documents.append_notes(lookup.by_id(source_id), item_id, body.topic, body.discussed, body.decided,
+                                    body.open, body.summary)
+    return DocumentOut.of_result(result)
+
+
 @router.get("/sources", tags=["sources"])
 def list_sources(sources: Sources) -> list[SourceOut]:
     try:
@@ -104,12 +129,6 @@ def update_source(source_id: str, body: SourceIn, sources: Sources) -> SourceOut
 @router.delete("/sources/{source_id}", tags=["sources"])
 def remove_source(source_id: str, sources: Sources) -> SourceOut:
     return SourceOut.of(sources.remove(source_id))
-
-
-@router.get("/sources/{source_id}/document", tags=["sources"])
-def document(source_id: str, path: str, documents: Documents) -> DocumentOut:
-    """A notes/spec markdown file inside the backlog folder."""
-    return DocumentOut(path=path, content=documents.read(source_id, path))
 
 
 @router.get("/folders", tags=["sources"])

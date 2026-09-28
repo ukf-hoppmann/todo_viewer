@@ -47,6 +47,12 @@ class DocumentStore(Protocol):
     def read(self, source: Source, relative_path: str) -> str:
         """A notes/spec file inside the source; raises DocumentForbidden/NotFound errors."""
 
+    def write(self, source: Source, relative_path: str, content: str, expected_version: str | None) -> None:
+        """Replaces a document still at `expected_version` (None: must not exist); else VersionConflictError."""
+
+    def append(self, source: Source, relative_path: str, text: str, header: str) -> str:
+        """Appends to a document (a new one starts with `header`) and returns the new content."""
+
 
 class ProjectNameSuggester(Protocol):
     def suggest(self, path: str) -> str: ...

@@ -37,9 +37,11 @@ FIELD_LABELS = {
     "area": "Area",
     "parent": "Parent",
     "dependencies": "Dependencies",
+    "notes": "Notes",
+    "spec": "Spec",
 }
-# Fields whose values are item ids, written in backticks ("None" if empty).
-ID_FIELDS = frozenset({"parent", "dependencies"})
+# Fields whose values are item ids or file paths, written in backticks ("None" if empty).
+ID_FIELDS = frozenset({"parent", "dependencies", "notes", "spec"})
 # Long field values wrap at this width; continuation lines are indented by four spaces.
 LINE_WIDTH = 76
 

@@ -20,9 +20,8 @@ from todo_viewer.domain.editing import EditPlanner
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.infrastructure.config import JsonFile, JsonSourceRepository, JsonUiStateStore, LegacySourceMigrator
 from todo_viewer.infrastructure.filesystem import GitProjectNameSuggester, LocalFolderBrowser, browse_start_from
-from todo_viewer.infrastructure.markdown import build_markdown_repository
-from todo_viewer.infrastructure.markdown.documents import MarkdownDocumentStore
-from todo_viewer.infrastructure.markdown.layout import LayoutFactory, SourcePathResolver
+from todo_viewer.infrastructure.markdown import KeyedLocks, build_markdown_documents, build_markdown_repository
+from todo_viewer.infrastructure.markdown.layout import SourcePathResolver
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -46,16 +45,18 @@ class Settings:
 
 def build_container(settings: Settings) -> Container:
     resolver = SourcePathResolver(settings.base_dir)
-    backlogs = build_markdown_repository(settings.base_dir)
+    locks = KeyedLocks()  # shared: backlog files and documents of a folder are written under one lock
+    backlogs = build_markdown_repository(settings.base_dir, locks)
+    planner, rules = EditPlanner(), LifecycleRules()
     source_repo = JsonSourceRepository(JsonFile(settings.config_dir / "config.json"), LegacySourceMigrator())
     lookup = SourceLookup(source_repo)
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
-        items=ItemService(backlogs, EditPlanner(), LifecycleRules(), ItemFactory()),
+        items=ItemService(backlogs, planner, rules, ItemFactory(planner)),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver)),
         source_lookup=lookup,
-        documents=DocumentService(lookup, MarkdownDocumentStore(LayoutFactory(resolver))),
+        documents=DocumentService(backlogs, build_markdown_documents(settings.base_dir, locks), planner, rules),
         folders=FolderBrowseService(LocalFolderBrowser(browse_start_from(settings.browse_start), resolver)),
         ui_state=UiStateService(JsonUiStateStore(JsonFile(settings.config_dir / "ui_state.json"))),
     )

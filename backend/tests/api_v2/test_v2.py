@@ -169,19 +169,21 @@ def test_sources_by_id(api, workspace):
     assert [s["project"] for s in api.get("/api/v2/sources").body] == ["Renamed", "Extra"]
 
 
-def test_document_folders_and_ui_state(api, workspace):
+def test_folders_and_ui_state(api, workspace):
     _setup(workspace, "backlog")
-    source_id = api.get("/api/v2/sources").body[0]["id"]
 
-    doc = api.get(f"/api/v2/sources/{source_id}/document", path="items/TASK-002/notes.md")
-    forbidden = api.get(f"/api/v2/sources/{source_id}/document", path="../x.md")
     folders = api.get("/api/v2/folders")
     saved = api.put("/api/v2/ui-state", {"view": "tree"})
 
-    assert doc.body["content"].startswith("# Notes for TASK-002")
-    assert (forbidden.status_code, forbidden.body["code"]) == (403, "forbidden")
     assert [d["name"] for d in folders.body["dirs"]] == ["backlog"]
     assert saved.body == api.get("/api/v2/ui-state").body == {"view": "tree"}
+
+
+def test_old_document_endpoint_is_gone(api, workspace):
+    _setup(workspace, "backlog")
+    source_id = api.get("/api/v2/sources").body[0]["id"]
+
+    assert api.get(f"/api/v2/sources/{source_id}/document", path="items/TASK-002/notes.md").status_code in (404, 405)
 
 
 def test_serves_frontend_and_reports_missing_build(api, settings):

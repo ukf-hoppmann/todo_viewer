@@ -48,7 +48,7 @@ class VersionConflictError(ConflictError):
     code = "version_conflict"
 
     def __init__(self, item_id: str):
-        super().__init__(f"Item '{item_id}' was changed in the meantime. Reload and try again.", id=item_id)
+        super().__init__(f"'{item_id}' was changed in the meantime. Reload and try again.", id=item_id)
 
 
 class FileChangedError(ConflictError):

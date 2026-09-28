@@ -112,21 +112,30 @@ function ProjectFilters({ projects, sources, onEdit, onRemove }: ProjectFiltersP
       {projects.flatMap((project) => {
         const own = sources.filter((s) => s.project === project);
         const rows: (SourceStatus | null)[] = own.length ? own : [null];
+        const marked = state.markedProjects.has(project);
         return rows.map((source, idx) => {
           const problem = source?.problem ?? null;
           const problemText = problem ? errorText(problem.code, problem.message) : "";
           return (
             <div key={source?.id ?? project}>
-              <div className={`source-row${problem ? " broken" : ""}`}>
-                <label title={source ? source.path + (problem ? `\n⚠ ${problemText}` : "") : ""}>
+              <div className={`source-row${problem ? " broken" : ""}${marked ? " marked" : ""}`}>
+                <div className="source-label" title={source ? source.path + (problem ? `\n⚠ ${problemText}` : "") : ""}>
                   <input
                     type="checkbox"
+                    aria-label={project}
                     checked={!state.hiddenProjects.has(project)}
                     onChange={() => dispatch({ type: "toggleHidden", kind: "hiddenProjects", value: project })}
                   />
-                  <span className="name">{rows.length > 1 ? `${project} (${idx + 1})` : project}</span>
+                  <button
+                    className="name"
+                    aria-pressed={marked}
+                    title={t("filter.mark")}
+                    onClick={() => dispatch({ type: "toggleMarked", project })}
+                  >
+                    {rows.length > 1 ? `${project} (${idx + 1})` : project}
+                  </button>
                   {problem && <span className="warn">⚠</span>}
-                </label>
+                </div>
                 {source && (
                   <>
                     <button className="icon-btn" title={t("source.edit.title")} aria-label={t("source.edit.title")} onClick={() => onEdit(source)}>

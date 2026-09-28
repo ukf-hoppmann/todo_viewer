@@ -5,6 +5,7 @@ describe("uiState", () => {
     const state = mergeStored(INITIAL_UI_STATE, {
       hiddenProjects: ["A", 3],
       collapsed: ["P::EPIC-1"],
+      markedProjects: ["A"],
       search: "x",
       selectedId: "P::TASK-1",
       currentView: "kanban",
@@ -16,6 +17,7 @@ describe("uiState", () => {
       hiddenStatuses: [],
       hiddenPriorities: [],
       collapsed: ["P::EPIC-1"],
+      markedProjects: ["A"],
       search: "x",
       selectedId: "P::TASK-1",
       currentView: "kanban",
@@ -31,5 +33,16 @@ describe("uiState", () => {
     expect([...uiReducer(hidden, { type: "toggleHidden", kind: "hiddenStatuses", value: "Rejected" }).hiddenStatuses]).toEqual([]);
     const shown = uiReducer({ ...INITIAL_UI_STATE, hiddenProjects: new Set(["A"]) }, { type: "showProject", project: "A" });
     expect(shown.hiddenProjects.size).toBe(0);
+  });
+
+  it("marks projects and collapses or expands a set of nodes at once", () => {
+    const marked = uiReducer(INITIAL_UI_STATE, { type: "toggleMarked", project: "A" });
+    expect([...marked.markedProjects]).toEqual(["A"]);
+    expect(uiReducer(marked, { type: "toggleMarked", project: "A" }).markedProjects.size).toBe(0);
+
+    const start = { ...INITIAL_UI_STATE, collapsed: new Set(["x"]) };
+    const closed = uiReducer(start, { type: "setCollapsed", uids: ["a", "b"], collapsed: true });
+    expect([...closed.collapsed]).toEqual(["x", "a", "b"]);
+    expect([...uiReducer(closed, { type: "setCollapsed", uids: ["a", "b"], collapsed: false }).collapsed]).toEqual(["x"]);
   });
 });

@@ -12,7 +12,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
 - `STORY-001` **Bessere Platzierung der Fortschritts-Pie-Charts**
   - Type: Story.
   - Parent: None.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-25.
   - Area: Web-UI.
   - Priority: Normal.
@@ -29,7 +29,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
 - `STORY-002` **Alle Tasks/Stories ein- und ausklappen**
   - Type: Story.
   - Parent: None.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-25.
   - Area: Web-UI.
   - Priority: Normal.
@@ -38,6 +38,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Stories auf bzw. zu.
   - Completion criteria: Die Option ist in der UI vorhanden; ein Klick
     klappt alle Einträge auf, ein weiterer alle zu.
+  - Summary: Zwei Buttons im Baum klappen alle Epics bzw. alle Stories
+    auf oder zu – für markierte Projekte oder, ohne Markierung, für alle.
+  - Notes: `items/STORY-002/STORY-002_notes.md`.
 - `EPIC-001` **Backlog-Pflege per API statt direkter Dateizugriffe**
   - Type: Epic.
   - Status: Open.

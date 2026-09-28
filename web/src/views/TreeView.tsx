@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { priorityColor, statusColor } from "../domain/colors";
 import { ProgressPie } from "../components/ProgressPie";
-import { buildTrees, type Item, type TreeNode, type Uid } from "../domain/model";
+import { buildTrees, collapsibleUids, type Item, type TreeNode, type Uid } from "../domain/model";
 import { useI18n } from "../i18n/i18n";
+import type { MessageKey } from "../i18n/messages";
 import { useUiState } from "../state/useUiStateStore";
 
 interface TreeViewProps {
@@ -20,6 +21,7 @@ export function TreeView({ visible, items, onSelect }: TreeViewProps) {
 
   return (
     <div className="view tree-view">
+      <CollapseBar items={items} />
       {trees.map(({ project, progress, roots }) => (
         <section key={project} className="project-group">
           <div className="project-title">{`${project} (${progress.done}/${progress.total})`}</div>
@@ -61,7 +63,6 @@ function TreeNodeRow({ node, onSelect }: { node: TreeNode; onSelect: (uid: Uid) 
             title={item.priority ? `${vocab("field", "Priority")}: ${vocab("priority", item.priority)}` : ""}
             style={{ background: color, ["--dot-color" as string]: color }}
           />
-          {progress && <ProgressPie progress={progress} />}
           <span
             className="node-type"
             title={vocab("status", item.status)}
@@ -70,6 +71,7 @@ function TreeNodeRow({ node, onSelect }: { node: TreeNode; onSelect: (uid: Uid) 
             {vocab("type", item.type)}
           </span>
           <span className="node-title">{`${item.id} — ${item.title}`}</span>
+          {progress && <ProgressPie progress={progress} />}
         </button>
       </div>
       {hasChildren && !collapsed && (
@@ -83,3 +85,34 @@ function TreeNodeRow({ node, onSelect }: { node: TreeNode; onSelect: (uid: Uid) 
   );
 }
 
+const COLLAPSE_LABELS: Record<"Epic" | "Story", [MessageKey, MessageKey]> = {
+  Epic: ["tree.collapseEpic", "tree.expandEpic"],
+  Story: ["tree.collapseStory", "tree.expandStory"],
+};
+
+/** Collapses or expands all epics or stories of the marked projects (all projects when none is marked). */
+function CollapseBar({ items }: { items: Item[] }) {
+  const { t } = useI18n();
+  const { state, dispatch } = useUiState();
+  const scope = [...state.markedProjects].sort().join(", ") || t("tree.scopeAll");
+
+  return (
+    <div className="collapse-bar">
+      {(["Epic", "Story"] as const).map((type) => {
+        const uids = collapsibleUids(items, type, state.markedProjects);
+        const allCollapsed = uids.length > 0 && uids.every((uid) => state.collapsed.has(uid));
+        return (
+          <button
+            key={type}
+            className="btn small"
+            disabled={uids.length === 0}
+            title={t("tree.scope", { p: scope })}
+            onClick={() => dispatch({ type: "setCollapsed", uids, collapsed: !allCollapsed })}
+          >
+            {t(COLLAPSE_LABELS[type][allCollapsed ? 1 : 0])}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

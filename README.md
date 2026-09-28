@@ -91,9 +91,15 @@ abgebildet.
 ## Views
 
 - **Baum**: Epic → Story → Task Hierarchie pro Projekt, mit Fortschrittsbalken.
-  Items mit Kindern zeigen zwischen Prioritäts-Punkt und Typ-Badge einen
-  Fortschrittskreis (Tortendiagramm) mit „erledigt/gesamt“ über alle Nachkommen;
-  Kanban-Karten und Graph-Knoten zeigen ihn ebenfalls.
+  Items mit Kindern zeigen direkt hinter dem Titel einen Fortschrittskreis
+  (Tortendiagramm) mit „erledigt/gesamt“ über alle Nachkommen; Kanban-Karten
+  und Graph-Knoten zeigen ihn ebenfalls.
+  „Epics zuklappen/aufklappen“ und „Stories zuklappen/aufklappen“ über dem Baum
+  klappen alle Epics bzw. Stories auf einmal zu oder auf, auch ausgefilterte.
+  Sie wirken auf die in der Seitenleiste markierten Projekte (Klick auf den
+  Projektnamen markiert bzw. hebt die Markierung auf, mehrere möglich), ohne
+  Markierung auf alle Projekte. Die Markierung wird mit dem UI-Zustand
+  gespeichert; die Checkbox blendet ein Projekt weiterhin nur ein oder aus.
   Optionale Kinder (`Required for parent: No`) sind gestrichelt angebunden,
   gedimmt und haben einen hohlen Status-Punkt; sie zählen nicht zum Fortschritt.
   Abgelehnte Items (`Rejected`) zählen ebenfalls nicht mit.

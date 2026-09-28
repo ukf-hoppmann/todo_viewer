@@ -12,6 +12,8 @@ export interface UiState {
   hiddenPriorities: ReadonlySet<string>;
   /** Collapsed tree nodes (item uids). */
   collapsed: ReadonlySet<string>;
+  /** Projects the tree's collapse buttons act on; empty means all. */
+  markedProjects: ReadonlySet<string>;
   search: string;
   selectedId: string | null;
   currentView: View;
@@ -23,13 +25,14 @@ export const INITIAL_UI_STATE: UiState = {
   hiddenStatuses: new Set(),
   hiddenPriorities: new Set(),
   collapsed: new Set(),
+  markedProjects: new Set(),
   search: "",
   selectedId: null,
   currentView: "tree",
   lang: "de",
 };
 
-const SET_KEYS = ["hiddenProjects", "hiddenStatuses", "hiddenPriorities", "collapsed"] as const;
+const SET_KEYS = ["hiddenProjects", "hiddenStatuses", "hiddenPriorities", "collapsed", "markedProjects"] as const;
 
 function stringSet(value: unknown): Set<string> | undefined {
   return Array.isArray(value) ? new Set(value.filter((v): v is string => typeof v === "string")) : undefined;
@@ -54,6 +57,7 @@ export function snapshot(state: UiState): Record<string, unknown> {
     hiddenStatuses: [...state.hiddenStatuses],
     hiddenPriorities: [...state.hiddenPriorities],
     collapsed: [...state.collapsed],
+    markedProjects: [...state.markedProjects],
     search: state.search,
     selectedId: state.selectedId,
     currentView: state.currentView,
@@ -66,6 +70,8 @@ export type UiAction =
   | { type: "toggleHidden"; kind: HiddenKind; value: string }
   | { type: "showProject"; project: string }
   | { type: "toggleCollapsed"; uid: string }
+  | { type: "setCollapsed"; uids: readonly string[]; collapsed: boolean }
+  | { type: "toggleMarked"; project: string }
   | { type: "search"; text: string }
   | { type: "select"; uid: string | null }
   | { type: "view"; view: View }
@@ -91,6 +97,16 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
     }
     case "toggleCollapsed":
       return { ...state, collapsed: toggled(state.collapsed, action.uid) };
+    case "setCollapsed": {
+      const collapsed = new Set(state.collapsed);
+      for (const uid of action.uids) {
+        if (action.collapsed) collapsed.add(uid);
+        else collapsed.delete(uid);
+      }
+      return { ...state, collapsed };
+    }
+    case "toggleMarked":
+      return { ...state, markedProjects: toggled(state.markedProjects, action.project) };
     case "search":
       return { ...state, search: action.text };
     case "select":

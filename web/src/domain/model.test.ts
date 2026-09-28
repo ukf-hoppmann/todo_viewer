@@ -1,6 +1,7 @@
 import type { ApiItem } from "../api/client";
 import {
   buildTrees,
+  collapsibleUids,
   defaultResolution,
   dependencyGraph,
   filterItems,
@@ -118,5 +119,25 @@ describe("model", () => {
     expect(needsResolution(items[0]!, "Rejected")).toBe(true);
     expect(needsResolution(odd!, "Completed")).toBe(false);
     expect(defaultResolution("Completed", new Date("2026-09-23T10:00:00Z"))).toBe("Confirmed by the project owner on 2026-09-23.");
+  });
+});
+
+describe("collapsibleUids", () => {
+  const all = toItems([
+    apiItem("EPIC-1", { type: "Epic" }),
+    apiItem("EPIC-2", { type: "Epic" }),
+    apiItem("STORY-1", { type: "Story", parent: "EPIC-1" }),
+    apiItem("TASK-1", { parent: "STORY-1" }),
+    apiItem("EPIC-1", { type: "Epic", project: "Q", key: "t/EPIC-1", source_id: "t" }),
+    apiItem("STORY-1", { type: "Story", project: "Q", key: "t/STORY-1", source_id: "t", parent: "EPIC-1" }),
+  ]);
+
+  it("returns items of the type that have children, in all projects when none is given", () => {
+    expect(collapsibleUids(all, "Epic", new Set())).toEqual(["P::EPIC-1", "Q::EPIC-1"]);
+    expect(collapsibleUids(all, "Story", new Set())).toEqual(["P::STORY-1"]);
+  });
+
+  it("limits the result to the given projects", () => {
+    expect(collapsibleUids(all, "Epic", new Set(["Q"]))).toEqual(["Q::EPIC-1"]);
   });
 });

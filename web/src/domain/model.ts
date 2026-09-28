@@ -164,6 +164,17 @@ export function buildTrees(visible: readonly Item[], allItems: readonly Item[]):
   });
 }
 
+/**
+ * Items of one type that have children, over all items (filtered ones too, so they stay
+ * collapsed when shown again). Limited to the given projects; an empty set means all.
+ */
+export function collapsibleUids(allItems: readonly Item[], type: string, projects: ReadonlySet<string>): Uid[] {
+  const parents = new Set(allItems.flatMap((i) => (i.parentUid ? [i.parentUid] : [])));
+  return allItems
+    .filter((i) => i.type === type && parents.has(i.uid) && (projects.size === 0 || projects.has(i.project)))
+    .map((i) => i.uid);
+}
+
 // ---------- kanban / graph ----------
 
 export function groupByStatus(items: readonly Item[]): { status: string; items: Item[] }[] {

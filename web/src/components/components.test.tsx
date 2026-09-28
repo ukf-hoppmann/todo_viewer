@@ -4,6 +4,7 @@ import { toItems } from "../domain/model";
 import { apiItem, renderWithProviders } from "../test/render";
 import { TreeView } from "../views/TreeView";
 import { DetailPanel } from "./DetailPanel";
+import { Sidebar } from "./Sidebar";
 
 const items = toItems([
   apiItem("EPIC-1", { type: "Epic" }),
@@ -25,6 +26,60 @@ describe("TreeView", () => {
 
     await userEvent.click(screen.getByText("EPIC-1 — Title EPIC-1"));
     expect(onSelect).toHaveBeenCalledWith("P::EPIC-1");
+  });
+});
+
+describe("TreeView collapse buttons", () => {
+  const nested = toItems([
+    apiItem("EPIC-1", { type: "Epic" }),
+    apiItem("STORY-1", { type: "Story", parent: "EPIC-1" }),
+    apiItem("TASK-1", { parent: "STORY-1" }),
+    apiItem("EPIC-1", { type: "Epic", project: "Q", key: "t/EPIC-1", source_id: "t" }),
+    apiItem("TASK-9", { project: "Q", key: "t/TASK-9", source_id: "t", parent: "EPIC-1" }),
+  ]);
+
+  it("collapses and expands all epics and stories", async () => {
+    renderWithProviders(<TreeView visible={nested} items={nested} onSelect={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Stories zuklappen" }));
+    expect(screen.queryByText("TASK-1 — Title TASK-1")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Stories aufklappen" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Epics zuklappen" }));
+    expect(screen.queryByText("STORY-1 — Title STORY-1")).not.toBeInTheDocument();
+    expect(screen.queryByText("TASK-9 — Title TASK-9")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Epics aufklappen" }));
+    expect(screen.getByText("STORY-1 — Title STORY-1")).toBeInTheDocument();
+    expect(screen.queryByText("TASK-1 — Title TASK-1")).not.toBeInTheDocument();
+  });
+
+  it("acts only on marked projects", async () => {
+    renderWithProviders(<TreeView visible={nested} items={nested} onSelect={vi.fn()} />, { markedProjects: new Set(["Q"]) });
+
+    await userEvent.click(screen.getByRole("button", { name: "Epics zuklappen" }));
+    expect(screen.queryByText("TASK-9 — Title TASK-9")).not.toBeInTheDocument();
+    expect(screen.getByText("STORY-1 — Title STORY-1")).toBeInTheDocument();
+  });
+});
+
+describe("Sidebar project marking", () => {
+  it("marks a project by clicking its name without hiding it", async () => {
+    renderWithProviders(
+      <Sidebar
+        options={{ projects: ["P"], statuses: [], priorities: [] }}
+        sources={[]}
+        onAddSource={vi.fn()}
+        onEditSource={vi.fn()}
+        onRemoveSource={vi.fn()}
+      />,
+    );
+    const name = screen.getByRole("button", { name: "P" });
+    await userEvent.click(name);
+    expect(name).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("checkbox", { name: "P" })).toBeChecked();
+    await userEvent.click(name);
+    expect(name).toHaveAttribute("aria-pressed", "false");
   });
 });
 

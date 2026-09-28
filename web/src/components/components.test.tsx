@@ -116,7 +116,7 @@ describe("DetailPanel editing", () => {
     const request = fetchMock.mock.calls[0]![0];
     expect(request.method).toBe("PATCH");
     expect(new URL(request.url).pathname).toBe(`/api/v2/items/s/${item.id}`);
-    expect(await request.clone().json()).toEqual({ version: item.version, field: "status", value: "Completed", resolution: "Done" });
+    expect(await request.clone().json()).toEqual({ version: item.version, fields: { status: "Completed" }, resolution: "Done" });
   });
 
   it("edits required-for-parent as Yes/No", async () => {
@@ -140,8 +140,7 @@ describe("DetailPanel editing", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(await fetchMock.mock.calls[0]![0].clone().json()).toEqual({
       version: item.version,
-      field: "required_for_parent",
-      value: "Yes",
+      fields: { required_for_parent: "Yes" },
       resolution: null,
     });
   });

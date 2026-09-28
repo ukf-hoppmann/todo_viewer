@@ -124,3 +124,19 @@ def test_extending_an_existing_violation_is_rejected():
         rules.check_change(before, with_status(before, "B", "Open"))
 
     assert "B" in err.value.details["items"]
+
+
+def test_references_must_exist():
+    items = [item("S", "Story"), item("T", parent="S", dependencies=("S", "GONE")), item("U", parent="NOPE")]
+
+    assert rules.violations(items) == {
+        Violation("unknown_reference", "T", ("GONE",)),
+        Violation("unknown_reference", "U", ("NOPE",)),
+    }
+
+
+def test_summary_is_required_with_notes():
+    with_notes = dataclasses.replace(item("T"), notes=["items/T/T_notes.md"])
+
+    assert rules.violations([with_notes]) == {Violation("summary_required_with_notes", "T")}
+    assert rules.violations([dataclasses.replace(with_notes, summary="Short.")]) == set()

@@ -1,12 +1,17 @@
 """In-place edits on the lines of a markdown file. All methods mutate `lines`."""
 from __future__ import annotations
 
+import textwrap
+
+from todo_viewer.domain.editing import FieldValue
 from todo_viewer.domain.errors import DuplicateItemError, ItemNotFoundError
 
 from .syntax import (
     ENTRY_HEADER_RE,
     FIELD_LABELS,
     FIELD_RE,
+    ID_FIELDS,
+    LINE_WIDTH,
     NO_ENTRIES_LINE,
     WORK_ITEMS_HEADER_RE,
     field_key,
@@ -42,20 +47,36 @@ def _with_period(value: str) -> str:
     return value if value.endswith(".") else value + "."
 
 
+def _file_value(key: str, value: FieldValue) -> str:
+    """How a value is spelled in the file (ids in backticks, "None" for no reference)."""
+    if key in ID_FIELDS:
+        ids = [value] if isinstance(value, str) else list(value or ())
+        return ", ".join(f"`{i}`" for i in ids) if ids else "None"
+    return str(value or "").strip()
+
+
+def _field_lines(label: str, value: str) -> list[str]:
+    return textwrap.wrap(value, width=LINE_WIDTH, initial_indent=f"  - {label}: ", subsequent_indent="    ",
+                         break_long_words=False, break_on_hyphens=False) or [f"  - {label}: "]
+
+
 class BacklogEntryEditor:
     """Sets or removes `  - Key: value.` fields of one structured entry."""
 
-    def set_field(self, lines: list[str], idx: int, key: str, value: str) -> None:
+    def set_field(self, lines: list[str], idx: int, key: str, value: FieldValue) -> None:
+        if key == "title":
+            lines[idx] = ENTRY_HEADER_RE.sub(lambda m: f"- `{m.group(1)}` **{value}**", lines[idx])
+            return
         end = block_end(lines, idx)
         found = self._find_field(lines, idx + 1, end, key)
-        value = _with_period(value.strip())
+        text = _with_period(_file_value(key, value))
         if found is not None:
             first, stop = found
             match = FIELD_RE.match(lines[first])
             assert match is not None
-            lines[first:stop] = [f"  - {match.group(1)}: {value}"]
+            lines[first:stop] = _field_lines(match.group(1), text)
         else:
-            lines.insert(end, f"  - {FIELD_LABELS[key]}: {value}")
+            lines[end:end] = _field_lines(FIELD_LABELS[key], text)
 
     def remove_field(self, lines: list[str], idx: int, key: str) -> None:
         end = block_end(lines, idx)

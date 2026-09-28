@@ -1,6 +1,6 @@
 // TanStack Query hooks: the only place components talk to the API.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type EditableField, unwrap } from "./client";
+import { api, type ItemFields, unwrap } from "./client";
 
 export const POLL_INTERVAL_MS = 5000;
 
@@ -25,8 +25,7 @@ export interface EditItemRequest {
   sourceId: string;
   id: string;
   version: string;
-  field: EditableField;
-  value: string;
+  fields: Partial<ItemFields>;
   resolution: string | null;
 }
 

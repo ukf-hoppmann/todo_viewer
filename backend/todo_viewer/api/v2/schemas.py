@@ -1,15 +1,11 @@
 """HTTP contract of API v2. Items are addressed by source id + item id, sources by their stable id."""
 from __future__ import annotations
 
-from typing import Literal
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from todo_viewer.application.ports import FolderListing
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
-
-EditableFieldName = Literal["status", "priority", "required_for_parent"]
 
 
 class ErrorOut(BaseModel):
@@ -121,11 +117,37 @@ class BacklogOut(BaseModel):
     items: list[ItemOut]
 
 
+class ItemFieldsIn(BaseModel):
+    """Fields to change; only the ones sent are changed. null clears optional fields (summary, parent)."""
+
+    model_config = ConfigDict(extra="forbid")  # a misspelled field must not be ignored silently
+
+    title: str | None = None
+    status: str | None = None
+    priority: str | None = None
+    required_for_parent: str | None = Field(default=None, description="Yes or No")
+    goal: str | None = None
+    completion_criteria: str | None = None
+    summary: str | None = None
+    area: str | None = None
+    parent: str | None = None
+    dependencies: list[str] | None = None
+
+    @model_validator(mode="after")
+    def _not_empty(self) -> ItemFieldsIn:
+        if not self.model_fields_set:
+            raise ValueError("at least one field is required")
+        return self
+
+    def changes(self) -> dict[str, object]:
+        """The fields sent, in declaration order so the file is written deterministically."""
+        return {name: getattr(self, name) for name in type(self).model_fields if name in self.model_fields_set}
+
+
 class ItemEditIn(BaseModel):
     version: str = Field(description="The item's version as last read; a changed item answers 409")
-    field: EditableFieldName
-    value: str
-    resolution: str | None = None
+    fields: ItemFieldsIn
+    resolution: str | None = Field(default=None, description="Required when status becomes Completed/Rejected")
 
 
 class SourceIn(BaseModel):

@@ -28,7 +28,7 @@ def _item(api, item_id: str) -> dict:
 
 def _update(api, item: dict, field: str, value, resolution: str | None = None, source_id: str | None = None,
             item_id: str | None = None, **body_override):
-    body = {"version": item["version"], "field": field, "value": value, "resolution": resolution, **body_override}
+    body = {"version": item["version"], "fields": {field: value}, "resolution": resolution, **body_override}
     return api.patch(f"/api/v2/items/{source_id or item['source_id']}/{item_id or item['id']}", body)
 
 
@@ -82,7 +82,7 @@ def test_complete_first_entry_file_mechanics(workspace, golden):
     source = Source("P", str(folder))
     item = repo.get(source, "EPIC-001")
 
-    repo.apply(source, item, EditPlanner().plan(item, "status", "Completed", "All done.", archive_supported=True))
+    repo.apply(source, item, EditPlanner().plan(item, {"status": "Completed"}, "All done.", archive_supported=True))
 
     golden("edit/complete_first_entry.md", _files(folder))
 
@@ -99,6 +99,82 @@ def test_lifecycle_violation_is_rejected_and_files_stay_untouched(api, workspace
     assert (story.status_code, story.body["code"]) == (409, "required_children_not_done")
     assert story.body["details"] == {"id": "STORY-001", "items": "TASK-001"}
     assert _files(folder) == before
+
+
+def _patch(api, item: dict, fields: dict, resolution: str | None = None):
+    return api.patch(f"/api/v2/items/{item['source_id']}/{item['id']}",
+                     {"version": item["version"], "fields": fields, "resolution": resolution})
+
+
+def test_free_fields_rewrite_files(api, workspace, golden):
+    folder = _setup(workspace, "backlog")
+
+    resp = _patch(api, _item(api, "TASK-003"), {
+        "title": "Renamed task",
+        "goal": "A goal that is long enough to need more than one line in the file, so it wraps like "
+                "the backlog format expects.",
+        "completion_criteria": "Checked by a test.",
+        "summary": "Short summary.",
+        "area": "Parser",
+        "dependencies": ["TASK-001", "TASK-000"],
+        "required_for_parent": "No",
+    })
+
+    assert resp.status_code == 200, resp.body
+    golden("edit/free_fields.md", _files(folder))
+    assert (resp.body["title"], resp.body["dependencies"], resp.body["required_for_parent"]) == \
+        ("Renamed task", ["TASK-001", "TASK-000"], False)
+    assert resp.body == _item(api, "TASK-003")
+
+
+def test_parent_changes(api, workspace):
+    _setup(workspace, "backlog")
+
+    moved = _patch(api, _item(api, "TASK-002"), {"parent": "EPIC-001", "required_for_parent": "Yes"})
+    standalone = _patch(api, _item(api, "TASK-003"), {"parent": None})
+
+    assert (moved.status_code, moved.body["parent"], moved.body["required_for_parent"]) == (200, "EPIC-001", True)
+    assert (standalone.status_code, standalone.body["parent"], standalone.body["required_for_parent"]) == \
+        (200, None, None)
+
+
+def test_rule_violations_of_free_fields(api, workspace):
+    folder = _setup(workspace, "backlog")
+    before = _files(folder)
+
+    cases = [
+        ("unknown_reference", "TASK-001", {"parent": "STORY-999"}),
+        ("unknown_reference", "TASK-001", {"dependencies": ["NOPE"]}),
+        ("epic_with_parent", "EPIC-001", {"parent": "STORY-001"}),
+        ("dependency_cycle", "TASK-000", {"dependencies": ["TASK-002"]}),
+        ("invalid_value", "TASK-001", {"parent": "not an id"}),
+    ]
+    for code, item_id, fields in cases:
+        resp = _patch(api, _item(api, item_id), fields)
+        assert resp.body.get("code") == code, (code, item_id, resp.body)
+
+    assert _files(folder) == before
+
+
+def test_summary_cannot_be_removed_while_notes_exist(api, workspace):
+    _setup(workspace, "backlog")
+
+    added = _patch(api, _item(api, "TASK-002"), {"summary": "Explains the polish."})
+    removed = _patch(api, _item(api, "TASK-002"), {"summary": None})
+
+    assert added.status_code == 200, added.body
+    assert (removed.status_code, removed.body["code"]) == (409, "summary_required_with_notes")
+
+
+def test_parent_cycle_is_rejected(api, workspace):
+    _setup(workspace, "backlog")
+
+    first = _patch(api, _item(api, "TASK-002"), {"parent": "TASK-003"})
+    cycle = _patch(api, _item(api, "TASK-003"), {"parent": "TASK-002", "required_for_parent": "No"})
+
+    assert first.status_code == 200, first.body
+    assert (cycle.status_code, cycle.body["code"]) == (409, "parent_cycle")
+    assert cycle.body["details"] == {"id": "TASK-002", "items": "TASK-002, TASK-003"}
 
 
 def test_edit_twice_reopen_after_archive(api, workspace, golden):
@@ -134,13 +210,14 @@ def test_edit_errors_leave_files_untouched(api, workspace):
     cases = [
         ("resolution_required", 400, dict(field="status", value="Completed")),
         ("resolution_required", 400, dict(field="status", value="Rejected", resolution="  ")),
-        ("bad_request", 400, dict(field="title", value="x")),
+        ("bad_request", 400, dict(field="created", value="2026-01-01")),
+        ("value_required", 400, dict(field="title", value="  ")),
         ("invalid_value", 400, dict(field="required_for_parent", value="Maybe")),
         ("version_conflict", 409, dict(field="status", value="Open", version="outdated")),
         ("item_not_found", 404, dict(field="status", value="Open", item_id="TASK-999")),
         ("item_not_found", 404, dict(field="status", value="Open", item_id="NOT-AN-ENTRY")),
         ("source_gone", 404, dict(field="status", value="Open", source_id="unknown")),
-        ("bad_request", 400, dict(field="status", value=None)),
+        ("value_required", 400, dict(field="status", value=None)),
         ("bad_request", 400, dict(field="status", value="Open", version=None)),
     ]
     for code, status, override in cases:

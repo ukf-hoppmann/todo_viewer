@@ -107,6 +107,35 @@ def test_entry_editor_replaces_continuation_lines_and_inserts_missing_fields():
                      "rest"]
 
 
+def test_entry_editor_writes_title_ids_and_wrapped_text():
+    lines = ["- `T-1` **Old**", "  - Type: Task.", "  - Parent: `S-1`.", "  - Dependencies: None.",
+             "  - Goal: short.", "", "rest"]
+    editor = BacklogEntryEditor()
+    long_goal = "A goal that is long enough to need more than one line in the file, " \
+                "so it wraps like the backlog format expects"
+
+    editor.set_field(lines, 0, "title", "New title")
+    editor.set_field(lines, 0, "parent", None)
+    editor.set_field(lines, 0, "dependencies", ("A-1", "B-2"))
+    editor.set_field(lines, 0, "goal", long_goal)
+    editor.set_field(lines, 0, "summary", "Short")
+
+    assert lines == [
+        "- `T-1` **New title**",
+        "  - Type: Task.",
+        "  - Parent: None.",
+        "  - Dependencies: `A-1`, `B-2`.",
+        "  - Goal: A goal that is long enough to need more than one line in the file,",
+        "    so it wraps like the backlog format expects.",
+        "  - Summary: Short.",
+        "",
+        "rest",
+    ]
+    assert all(len(line) <= 76 for line in lines)
+    editor.set_field(lines, 0, "dependencies", ())
+    assert lines[3] == "  - Dependencies: None."
+
+
 def test_mover_writes_no_entries_marker_when_section_empties():
     lines = ["## Work items", "", "- `T-1` **x**", "  - Status: Open.", ""]
     mover = EntryMover()

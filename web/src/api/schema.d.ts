@@ -83,7 +83,7 @@ export interface paths {
         head?: never;
         /**
          * Edit Item
-         * @description Edits status, priority or required_for_parent (Yes/No) of the item in `version`.
+         * @description Changes one or more fields of the item in `version`; all changes are checked and written together.
          *
          *     Completed/Rejected need a resolution and move the item to the archive.
          */
@@ -243,20 +243,46 @@ export interface components {
         };
         /** ItemEditIn */
         ItemEditIn: {
+            fields: components["schemas"]["ItemFieldsIn"];
             /**
-             * Field
-             * @enum {string}
+             * Resolution
+             * @description Required when status becomes Completed/Rejected
              */
-            field: "status" | "priority" | "required_for_parent";
-            /** Resolution */
             resolution?: string | null;
-            /** Value */
-            value: string;
             /**
              * Version
              * @description The item's version as last read; a changed item answers 409
              */
             version: string;
+        };
+        /**
+         * ItemFieldsIn
+         * @description Fields to change; only the ones sent are changed. null clears optional fields (summary, parent).
+         */
+        ItemFieldsIn: {
+            /** Area */
+            area?: string | null;
+            /** Completion Criteria */
+            completion_criteria?: string | null;
+            /** Dependencies */
+            dependencies?: string[] | null;
+            /** Goal */
+            goal?: string | null;
+            /** Parent */
+            parent?: string | null;
+            /** Priority */
+            priority?: string | null;
+            /**
+             * Required For Parent
+             * @description Yes or No
+             */
+            required_for_parent?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Title */
+            title?: string | null;
         };
         /** ItemOut */
         ItemOut: {

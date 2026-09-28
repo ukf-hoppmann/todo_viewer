@@ -213,14 +213,8 @@
       },
       "ItemEditIn": {
         "properties": {
-          "field": {
-            "enum": [
-              "status",
-              "priority",
-              "required_for_parent"
-            ],
-            "title": "Field",
-            "type": "string"
+          "fields": {
+            "$ref": "#/components/schemas/ItemFieldsIn"
           },
           "resolution": {
             "anyOf": [
@@ -231,11 +225,8 @@
                 "type": "null"
               }
             ],
+            "description": "Required when status becomes Completed/Rejected",
             "title": "Resolution"
-          },
-          "value": {
-            "title": "Value",
-            "type": "string"
           },
           "version": {
             "description": "The item's version as last read; a changed item answers 409",
@@ -245,10 +236,131 @@
         },
         "required": [
           "version",
-          "field",
-          "value"
+          "fields"
         ],
         "title": "ItemEditIn",
+        "type": "object"
+      },
+      "ItemFieldsIn": {
+        "additionalProperties": false,
+        "description": "Fields to change; only the ones sent are changed. null clears optional fields (summary, parent).",
+        "properties": {
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
+          "completion_criteria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Criteria"
+          },
+          "dependencies": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dependencies"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "required_for_parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Yes or No",
+            "title": "Required For Parent"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "ItemFieldsIn",
         "type": "object"
       },
       "ItemOut": {
@@ -937,7 +1049,7 @@
         ]
       },
       "patch": {
-        "description": "Edits status, priority or required_for_parent (Yes/No) of the item in `version`.\n\nCompleted/Rejected need a resolution and move the item to the archive.",
+        "description": "Changes one or more fields of the item in `version`; all changes are checked and written together.\n\nCompleted/Rejected need a resolution and move the item to the archive.",
         "operationId": "edit_item_api_v2_items__source_id___item_id__patch",
         "parameters": [
           {

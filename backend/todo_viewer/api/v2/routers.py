@@ -65,12 +65,12 @@ def get_item(source_id: str, item_id: str, items: Items, lookup: Lookup) -> Item
 
 @router.patch("/items/{source_id}/{item_id}", tags=["items"])
 def edit_item(source_id: str, item_id: str, body: ItemEditIn, items: Items, lookup: Lookup) -> ItemOut:
-    """Edits status, priority or required_for_parent (Yes/No) of the item in `version`.
+    """Changes one or more fields of the item in `version`; all changes are checked and written together.
 
     Completed/Rejected need a resolution and move the item to the archive.
     """
     source = lookup.by_id(source_id)
-    result = items.edit(source, item_id, body.version, body.field, body.value, body.resolution)
+    result = items.edit(source, item_id, body.version, body.fields.changes(), body.resolution)
     return ItemOut.of(source, result.item, result.archive_supported)
 
 

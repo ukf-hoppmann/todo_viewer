@@ -145,7 +145,7 @@ def test_item_edit_plans_with_archive_rules():
     item = Item(id="T-1", title="t", project="p")
     service, backlogs = _items([item])
 
-    result = service.edit(Source("p", "/p"), "T-1", item.version, "status", "Completed", "done")
+    result = service.edit(Source("p", "/p"), "T-1", item.version, {"status": "Completed"}, "done")
 
     assert result.archive_supported
     assert backlogs.applied == [ChangeSet(set_fields=(("status", "Completed"), ("resolution", "done")),
@@ -157,7 +157,7 @@ def test_item_edit_rejects_stale_version():
     service, backlogs = _items([item])
 
     with pytest.raises(VersionConflictError):
-        service.edit(Source("p", "/p"), "T-1", "outdated", "status", "In progress", None)
+        service.edit(Source("p", "/p"), "T-1", "outdated", {"status": "In progress"}, None)
     assert backlogs.applied == []
 
 
@@ -167,7 +167,7 @@ def test_item_edit_checks_lifecycle_rules_before_writing():
     service, backlogs = _items([story, task])
 
     with pytest.raises(LifecycleViolationError) as err:
-        service.edit(Source("p", "/p"), "S", story.version, "status", "Completed", "done")
+        service.edit(Source("p", "/p"), "S", story.version, {"status": "Completed"}, "done")
 
     assert err.value.details["id"] == "S"
     assert backlogs.applied == []
@@ -177,5 +177,5 @@ def test_item_edit_rejects_field_before_touching_storage():
     service, backlogs = _items([])
 
     with pytest.raises(NotEditableError):
-        service.edit(Source("p", "/p"), "x", "v", "title", "x", None)
+        service.edit(Source("p", "/p"), "x", "v", {"created": "x"}, None)
     assert backlogs.applied == []

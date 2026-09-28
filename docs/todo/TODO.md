@@ -125,7 +125,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-001`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-27.
   - Area: Backend-API.
   - Priority: Normal.
@@ -136,6 +136,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Completion criteria: Jedes Feld ist per API änderbar, Änderungen
     betreffen nur das Feld (Golden Files), Lifecycle-Regeln greifen bei
     Parent- und Dependency-Änderungen.
+  - Summary: Über die API lassen sich jetzt auch Titel, Texte, Area,
+    Parent und Abhängigkeiten ändern, mehrere Felder in einem Schritt.
+  - Notes: `items/STORY-006/STORY-006_notes.md`.
 - `STORY-007` **Items anlegen**
   - Type: Story.
   - Parent: `EPIC-001`.

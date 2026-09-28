@@ -1,6 +1,7 @@
 """Ports: what the application needs from the outside world. Adapters implement them."""
 from __future__ import annotations
 
+from collections.abc import Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -31,11 +32,14 @@ class BacklogRepository(Protocol):
         Raises VersionConflictError if the stored item no longer matches `item.version`.
         """
 
+    def apply_all(self, source: Source, plan: Sequence[tuple[Item, ChangeSet]]) -> list[Item]:
+        """Like `apply` for several items at once, all or nothing."""
+
     def create(self, source: Source, item: Item) -> Item:
         """Stores a new active item; raises DuplicateItemError if its id is taken."""
 
-    def delete(self, source: Source, item: Item) -> None:
-        """Removes the item; raises VersionConflictError if it changed since `item` was read."""
+    def delete(self, source: Source, items: Sequence[Item]) -> None:
+        """Removes the items for good; raises VersionConflictError if one changed since it was read."""
 
 
 class SourceRepository(Protocol):

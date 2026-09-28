@@ -1,6 +1,8 @@
 """Backlog repository backed by TODO.md / archive.md files."""
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import ChangeSet
 from todo_viewer.domain.errors import DuplicateItemError, ItemNotFoundError, VersionConflictError
@@ -81,37 +83,50 @@ class MarkdownBacklogRepository:
 
     def apply(self, source: Source, item: Item, changes: ChangeSet) -> Item:
         """Applies a ChangeSet to the stored entry and returns the item as stored afterwards."""
+        return self.apply_all(source, [(item, changes)])[0]
+
+    def apply_all(self, source: Source, plan: Sequence[tuple[Item, ChangeSet]]) -> list[Item]:
+        """Applies several ChangeSets in one go under one lock; each item must still be at its version."""
         layout = self._layouts.for_source(source)
         with self._locks.hold(str(layout.folder)):
-            doc = self._files.read(layout.file(item.location))
-            self._check_version(doc, source, item)
-            idx = self._locator.locate(doc.lines, item.id)
+            docs = {loc: self._files.read(layout.file(loc)) for loc in Location if layout.file(loc).is_file()}
+            for item, _ in plan:
+                self._check_version(docs[item.location], source, item)
+            touched: list[Location] = []
+            for item, changes in plan:
+                doc = docs[item.location]
+                idx = self._locator.locate(doc.lines, item.id)
+                for key, value in changes.set_fields:
+                    self._entry_editor.set_field(doc.lines, idx, key, value)
+                for key in changes.remove_fields:
+                    self._entry_editor.remove_field(doc.lines, idx, key)
+                touched.append(item.location)
+                if changes.move_to is not None and changes.move_to is not item.location:
+                    self._mover.append(docs[changes.move_to].lines, self._mover.cut(doc.lines, idx))
+                    touched.append(changes.move_to)
+            # Write destinations before sources so a moved entry is never lost.
+            order = [loc for loc in (Location.ARCHIVE, Location.ACTIVE) if loc in touched]
+            if len(order) > 1:
+                for loc in order:
+                    self._files.ensure_unchanged(docs[loc])
+            moved_to_archive = any(c.move_to is Location.ARCHIVE for _, c in plan)
+            for loc in order if moved_to_archive else reversed(order):
+                self._files.write(docs[loc])
+            return [self._reload(source, layout, item.id, changes.move_to or item.location)
+                    for item, changes in plan]
 
-            for key, value in changes.set_fields:
-                self._entry_editor.set_field(doc.lines, idx, key, value)
-            for key in changes.remove_fields:
-                self._entry_editor.remove_field(doc.lines, idx, key)
-
-            if changes.move_to is None or changes.move_to is item.location:
+    def delete(self, source: Source, items: Sequence[Item]) -> None:
+        """Removes the entries (each still at its version) in one go."""
+        layout = self._layouts.for_source(source)
+        with self._locks.hold(str(layout.folder)):
+            docs = {loc: self._files.read(layout.file(loc)) for loc in {i.location for i in items}}
+            for item in items:
+                self._check_version(docs[item.location], source, item)
+            for item in items:
+                doc = docs[item.location]
+                self._mover.cut(doc.lines, self._locator.locate(doc.lines, item.id))
+            for doc in docs.values():
                 self._files.write(doc)
-                return self._reload(source, layout, item.id, item.location)
-
-            target = self._files.read(layout.file(changes.move_to))
-            self._mover.append(target.lines, self._mover.cut(doc.lines, idx))
-            self._files.ensure_unchanged(doc)
-            # Write the destination first so the entry is never lost.
-            self._files.write(target)
-            self._files.write(doc)
-            return self._reload(source, layout, item.id, changes.move_to)
-
-    def delete(self, source: Source, item: Item) -> None:
-        """Removes the entry if it is still at `item.version`."""
-        layout = self._layouts.for_source(source)
-        with self._locks.hold(str(layout.folder)):
-            doc = self._files.read(layout.file(item.location))
-            self._check_version(doc, source, item)
-            self._mover.cut(doc.lines, self._locator.locate(doc.lines, item.id))
-            self._files.write(doc)
 
     def create(self, source: Source, item: Item) -> Item:
         """Adds a new active entry; raises DuplicateItemError if its id was taken in the meantime."""

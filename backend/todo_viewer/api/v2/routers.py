@@ -5,8 +5,9 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Body
 
 from todo_viewer.domain.errors import ConfigMissingError
+from todo_viewer.domain.trash import live
 
-from ..dependencies import Documents, Folders, Items, Lookup, Overview, Sources, UiState
+from ..dependencies import Documents, Folders, Items, Lookup, Overview, Sources, Trash, UiState
 from .schemas import (
     BacklogOut,
     DocumentOut,
@@ -24,6 +25,7 @@ from .schemas import (
     SourceOut,
     SourceStatusOut,
     SpecIn,
+    VersionIn,
 )
 
 ERRORS: dict[int | str, dict[str, Any]] = {
@@ -47,10 +49,10 @@ def backlog(overview: Overview) -> BacklogOut:
     except ConfigMissingError:
         entries = []
     return BacklogOut(
-        sources=[SourceStatusOut(**SourceOut.of(e.source).model_dump(), item_count=len(e.backlog.items),
+        sources=[SourceStatusOut(**SourceOut.of(e.source).model_dump(), item_count=len(live(e.backlog.items)),
                                  problem=ProblemOut.of(e.backlog.problem)) for e in entries],
         items=[ItemOut.of(e.source, item, e.backlog.archive_available)
-               for e in entries for item in e.backlog.items],
+               for e in entries for item in live(e.backlog.items)],
     )
 
 
@@ -62,7 +64,7 @@ def index(overview: Overview, lookup: Lookup, source_id: str | None = None) -> I
         entries = overview.overview(only)
     except ConfigMissingError:
         entries = []
-    return IndexOut(items=[IndexItemOut.of(e.source, item) for e in entries for item in e.backlog.items])
+    return IndexOut(items=[IndexItemOut.of(e.source, item) for e in entries for item in live(e.backlog.items)])
 
 
 @router.post("/items", tags=["items"], status_code=201)
@@ -81,15 +83,37 @@ def get_item(source_id: str, item_id: str, items: Items, lookup: Lookup) -> Item
     return ItemOut.of(source, result.item, result.archive_supported)
 
 
-@router.delete("/items/{source_id}/{item_id}", tags=["items"])
-def delete_item(source_id: str, item_id: str, version: str, items: Items, lookup: Lookup) -> ItemOut:
-    """Deletes the item in `version` together with its notes/spec folder; returns the deleted item.
+@router.delete("/items/{source_id}/{item_id}", tags=["trash"])
+def delete_item(source_id: str, item_id: str, version: str, trash: Trash, lookup: Lookup,
+                cascade: bool = False) -> list[ItemOut]:
+    """Moves the item in `version` to the trash and returns the items moved.
 
-    Refused (409 item_referenced) while other items refer to it as parent or dependency.
+    With children the answer is 409 has_children listing them; repeat with cascade=true to move them too.
+    Refused (409 item_referenced) while items outside the trash depend on it.
     """
     source = lookup.by_id(source_id)
-    result = items.delete(source, item_id, version)
-    return ItemOut.of(source, result.item, result.archive_supported)
+    return [ItemOut.of(source, r.item, r.archive_supported) for r in trash.delete(source, item_id, version, cascade)]
+
+
+@router.get("/trash", tags=["trash"])
+def list_trash(trash: Trash, lookup: Lookup, source_id: str) -> list[ItemOut]:
+    """Items in the trash of a source."""
+    source = lookup.by_id(source_id)
+    return [ItemOut.of(source, r.item, r.archive_supported) for r in trash.in_trash(source)]
+
+
+@router.post("/trash/{source_id}/{item_id}/restore", tags=["trash"])
+def restore_item(source_id: str, item_id: str, body: VersionIn, trash: Trash, lookup: Lookup) -> list[ItemOut]:
+    """Takes the item and its descendants out of the trash; refused while its parent is in the trash."""
+    source = lookup.by_id(source_id)
+    return [ItemOut.of(source, r.item, r.archive_supported) for r in trash.restore(source, item_id, body.version)]
+
+
+@router.delete("/trash/{source_id}/{item_id}", tags=["trash"])
+def purge_item(source_id: str, item_id: str, version: str, trash: Trash, lookup: Lookup) -> list[ItemOut]:
+    """Deletes the item and its descendants for good, with their items/<ID>/ folders; returns them."""
+    source = lookup.by_id(source_id)
+    return [ItemOut.of(source, r.item, r.archive_supported) for r in trash.purge(source, item_id, version)]
 
 
 @router.patch("/items/{source_id}/{item_id}", tags=["items"])

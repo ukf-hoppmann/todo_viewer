@@ -7,12 +7,13 @@ from datetime import date
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.creation import ItemFactory
 from todo_viewer.domain.editing import EditPlanner, Field
-from todo_viewer.domain.errors import NotEditableError, VersionConflictError
+from todo_viewer.domain.errors import LifecycleViolationError, NotEditableError, VersionConflictError
 from todo_viewer.domain.item import Item
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.source import Source
+from todo_viewer.domain.trash import live
 
-from ..ports import BacklogRepository, DocumentStore, SourceRepository
+from ..ports import BacklogRepository, SourceRepository
 
 
 @dataclass(frozen=True)
@@ -44,10 +45,9 @@ class ItemResult:
 class ItemService:
     """Reads and edits single items addressed by id, following the domain's archive and lifecycle rules."""
 
-    def __init__(self, backlogs: BacklogRepository, documents: DocumentStore, planner: EditPlanner,
-                 rules: LifecycleRules, factory: ItemFactory, today: Callable[[], date] = date.today):
+    def __init__(self, backlogs: BacklogRepository, planner: EditPlanner, rules: LifecycleRules,
+                 factory: ItemFactory, today: Callable[[], date] = date.today):
         self._backlogs = backlogs
-        self._documents = documents
         self._planner = planner
         self._rules = rules
         self._factory = factory
@@ -62,19 +62,8 @@ class ItemService:
         backlog = self._backlogs.load(source)
         backlog.require_usable()
         item = self._factory.create(item_type, fields, backlog.items, source.project, self._today().isoformat())
-        self._rules.check_change(backlog.items, [*backlog.items, item])
+        self._rules.check_change(live(backlog.items), [*live(backlog.items), item])
         return ItemResult(self._backlogs.create(source, item), backlog.archive_available)
-
-    def delete(self, source: Source, item_id: str, version: str) -> ItemResult:
-        """Deletes the item and its `items/<ID>/` folder; refused while other items refer to it."""
-        backlog = self._backlogs.load(source)
-        item = backlog.find(item_id)
-        if item.version != version:
-            raise VersionConflictError(item_id)
-        self._rules.check_delete(backlog.items, item_id)
-        self._backlogs.delete(source, item)
-        self._documents.delete_item_folder(source, item_id)
-        return ItemResult(item, backlog.archive_available)
 
     def edit(self, source: Source, item_id: str, version: str, changes: Mapping[str, object],
              resolution: str | None) -> ItemResult:
@@ -86,7 +75,10 @@ class ItemService:
         item = backlog.find(item_id)
         if item.version != version:
             raise VersionConflictError(item_id)
+        if item.deleted:
+            raise LifecycleViolationError("item_deleted", item_id)
         change_set = self._planner.plan(item, changes, resolution, backlog.archive_available)
         after = change_set.applied_to(item)
-        self._rules.check_change(backlog.items, [after if i is item else i for i in backlog.items])
+        in_use = live(backlog.items)
+        self._rules.check_change(in_use, [after if i is item else i for i in in_use])
         return ItemResult(self._backlogs.apply(source, item, change_set), backlog.archive_available)

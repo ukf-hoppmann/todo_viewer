@@ -39,6 +39,7 @@ FIELD_LABELS = {
     "dependencies": "Dependencies",
     "notes": "Notes",
     "spec": "Spec",
+    "deleted": "Deleted",
 }
 # Fields whose values are item ids or file paths, written in backticks ("None" if empty).
 ID_FIELDS = frozenset({"parent", "dependencies", "notes", "spec"})

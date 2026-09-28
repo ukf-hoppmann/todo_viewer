@@ -47,6 +47,7 @@ export function apiItem(id: string, overrides: Partial<ApiItem> = {}): ApiItem {
     summary: null,
     resolution: null,
     documents: [],
+    deleted: null,
     extra_fields: {},
     archive_supported: true,
     ...overrides,

@@ -62,6 +62,7 @@ class ItemOut(BaseModel):
     summary: str | None
     resolution: str | None
     documents: list[DocumentRefOut] = Field(description="Notes and specs; read them via /documents/{name}")
+    deleted: str | None = Field(description="Date the item was moved to the trash; null if in use")
     extra_fields: dict[str, str]
     archive_supported: bool
 
@@ -88,6 +89,7 @@ class ItemOut(BaseModel):
             summary=item.summary,
             resolution=item.resolution,
             documents=[DocumentRefOut.of(d) for d in item_documents(item)],
+            deleted=item.deleted,
             extra_fields=item.extra_fields,
             archive_supported=archive_supported,
         )
@@ -182,6 +184,12 @@ class ItemCreateIn(BaseModel):
         """The item fields sent, in declaration order."""
         return {name: getattr(self, name) for name in type(self).model_fields
                 if name not in {"source_id", "type"} and name in self.model_fields_set}
+
+
+class VersionIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: str
 
 
 class ItemEditIn(BaseModel):

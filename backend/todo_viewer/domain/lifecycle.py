@@ -15,6 +15,8 @@ EPIC = "Epic"
 # An epic leaves Open for one of these; Rejected is allowed without children.
 EPIC_NEEDS_REQUIRED_CHILD = frozenset({Status.IN_PROGRESS, Status.AWAITING_CONFIRMATION, Status.COMPLETED})
 DONE_FOR_AWAITING = frozenset({Status.AWAITING_CONFIRMATION, Status.COMPLETED})
+# Rules that depend on the item alone, not on other items.
+OWN_RULES = frozenset({"epic_with_parent", "required_for_parent_missing", "summary_required_with_notes"})
 
 
 @dataclass(frozen=True, order=True)
@@ -40,9 +42,17 @@ class LifecycleRules:
         found.update(self._cycles(items, lambda i: i.dependencies, "dependency_cycle"))
         return found
 
-    def check_change(self, before: Sequence[Item], after: Sequence[Item]) -> None:
-        """Raises LifecycleViolationError for the first violation the change introduces or extends."""
+    def check_change(self, before: Sequence[Item], after: Sequence[Item], returning: Sequence[Item] = ()) -> None:
+        """Raises LifecycleViolationError for the first violation the change introduces or extends.
+
+        `returning` are items that come back into use (restored from the trash): their own old flaws
+        (OWN_RULES) are not counted as new; rules between items still are.
+        """
         existing = {(v.code, v.item_id): set(v.related) for v in self.violations(before)}
+        back = {i.id for i in returning}
+        for v in self.violations([*before, *returning]):
+            if v.item_id in back and v.code in OWN_RULES:
+                existing[(v.code, v.item_id)] = set(v.related)
         for v in sorted(self.violations(after)):
             known = existing.get((v.code, v.item_id))
             if known is None or not set(v.related) <= known:

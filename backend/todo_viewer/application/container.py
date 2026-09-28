@@ -10,6 +10,7 @@ from .services import (
     ItemService,
     SourceLookup,
     SourceService,
+    TrashService,
     UiStateService,
 )
 
@@ -18,6 +19,7 @@ from .services import (
 class Container:
     overview: BacklogOverviewService
     items: ItemService
+    trash: TrashService
     sources: SourceService
     source_lookup: SourceLookup
     documents: DocumentService

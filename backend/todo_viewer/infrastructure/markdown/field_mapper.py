@@ -71,6 +71,7 @@ class BacklogFieldMapper:
             "resolution": lambda item, v: setattr(item, "resolution", v.strip()),
             "notes": lambda item, v: setattr(item, "notes", extract_paths(v)),
             "spec": lambda item, v: setattr(item, "spec", extract_paths(v)),
+            "deleted": lambda item, v: setattr(item, "deleted", clean(v)),
         }
 
     def apply(self, item: Item, fields: list[tuple[str, str]]) -> None:

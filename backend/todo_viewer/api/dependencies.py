@@ -13,6 +13,7 @@ from todo_viewer.application.services import (
     ItemService,
     SourceLookup,
     SourceService,
+    TrashService,
     UiStateService,
 )
 
@@ -31,6 +32,10 @@ def _overview(c: ContainerDep) -> BacklogOverviewService:
 
 def _items(c: ContainerDep) -> ItemService:
     return c.items
+
+
+def _trash(c: ContainerDep) -> TrashService:
+    return c.trash
 
 
 def _sources(c: ContainerDep) -> SourceService:
@@ -55,6 +60,7 @@ def _ui_state(c: ContainerDep) -> UiStateService:
 
 Overview = Annotated[BacklogOverviewService, Depends(_overview)]
 Items = Annotated[ItemService, Depends(_items)]
+Trash = Annotated[TrashService, Depends(_trash)]
 Sources = Annotated[SourceService, Depends(_sources)]
 Lookup = Annotated[SourceLookup, Depends(_source_lookup)]
 Documents = Annotated[DocumentService, Depends(_documents)]

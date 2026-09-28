@@ -72,6 +72,10 @@ class LifecycleViolationError(ConflictError):
         "unknown_reference": "{id} refers to unknown items: {items}.",
         "summary_required_with_notes": "{id} has notes and therefore needs a summary.",
         "item_referenced": "{id} cannot be deleted while other items refer to it: {items}.",
+        "has_children": "{id} has children that would be deleted too: {items}. Confirm with cascade.",
+        "item_deleted": "{id} is in the trash; restore it first.",
+        "item_not_deleted": "{id} is not in the trash.",
+        "parent_deleted": "The parent of {id} is in the trash; restore {items} instead.",
     }
 
     def __init__(self, code: str, item_id: str, related: tuple[str, ...] = ()):

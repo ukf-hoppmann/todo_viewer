@@ -53,6 +53,8 @@ class Item:
     spec: list[str] = field(default_factory=list)
     extra_fields: dict[str, str] = field(default_factory=dict)
     location: Location = Location.ACTIVE
+    # Date the item was moved to the trash; None for items in use.
+    deleted: str | None = None
 
     @property
     def version(self) -> str:

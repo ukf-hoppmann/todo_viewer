@@ -52,7 +52,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-001`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-28.
   - Area: Backend-API.
   - Priority: Normal.
@@ -68,3 +68,4 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     eine Warnung mit den betroffenen Kindern; Tests und Doku sind vorhanden.
   - Summary: Gelöschte Einträge landen erst im Papierkorb und können
     zurückgeholt werden.
+  - Notes: `items/STORY-011/STORY-011_notes.md`.

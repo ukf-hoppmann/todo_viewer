@@ -98,7 +98,13 @@ export interface paths {
         get: operations["get_item_api_v2_items__source_id___item_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Item
+         * @description Deletes the item in `version` together with its notes/spec folder; returns the deleted item.
+         *
+         *     Refused (409 item_referenced) while other items refer to it as parent or dependency.
+         */
+        delete: operations["delete_item_api_v2_items__source_id___item_id__delete"];
         options?: never;
         head?: never;
         /**
@@ -802,6 +808,76 @@ export interface operations {
     get_item_api_v2_items__source_id___item_id__get: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_item_api_v2_items__source_id___item_id__delete: {
+        parameters: {
+            query: {
+                version: string;
+            };
             header?: never;
             path: {
                 source_id: string;

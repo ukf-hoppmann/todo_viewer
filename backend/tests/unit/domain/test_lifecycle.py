@@ -140,3 +140,22 @@ def test_summary_is_required_with_notes():
 
     assert rules.violations([with_notes]) == {Violation("summary_required_with_notes", "T")}
     assert rules.violations([dataclasses.replace(with_notes, summary="Short.")]) == set()
+
+
+def test_deleting_a_referenced_item_is_rejected():
+    items = [item("S", "Story"), item("T", parent="S"), item("U", dependencies=("S",)), item("X")]
+
+    with pytest.raises(LifecycleViolationError) as err:
+        rules.check_delete(items, "S")
+    rules.check_delete(items, "X")
+
+    assert (err.value.code, err.value.details) == ("item_referenced", {"id": "S", "items": "T, U"})
+
+
+def test_deleting_the_last_required_child_of_a_running_epic_is_rejected():
+    items = [item("E", "Epic", "In progress"), item("S", "Story", parent="E")]
+
+    with pytest.raises(LifecycleViolationError) as err:
+        rules.check_delete(items, "S")
+
+    assert err.value.code == "epic_without_required_child"

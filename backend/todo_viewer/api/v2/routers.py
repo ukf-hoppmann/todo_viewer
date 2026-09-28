@@ -74,6 +74,17 @@ def get_item(source_id: str, item_id: str, items: Items, lookup: Lookup) -> Item
     return ItemOut.of(source, result.item, result.archive_supported)
 
 
+@router.delete("/items/{source_id}/{item_id}", tags=["items"])
+def delete_item(source_id: str, item_id: str, version: str, items: Items, lookup: Lookup) -> ItemOut:
+    """Deletes the item in `version` together with its notes/spec folder; returns the deleted item.
+
+    Refused (409 item_referenced) while other items refer to it as parent or dependency.
+    """
+    source = lookup.by_id(source_id)
+    result = items.delete(source, item_id, version)
+    return ItemOut.of(source, result.item, result.archive_supported)
+
+
 @router.patch("/items/{source_id}/{item_id}", tags=["items"])
 def edit_item(source_id: str, item_id: str, body: ItemEditIn, items: Items, lookup: Lookup) -> ItemOut:
     """Changes one or more fields of the item in `version`; all changes are checked and written together.

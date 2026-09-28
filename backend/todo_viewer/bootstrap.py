@@ -48,15 +48,16 @@ def build_container(settings: Settings) -> Container:
     locks = KeyedLocks()  # shared: backlog files and documents of a folder are written under one lock
     backlogs = build_markdown_repository(settings.base_dir, locks)
     planner, rules = EditPlanner(), LifecycleRules()
+    documents = build_markdown_documents(settings.base_dir, locks)
     source_repo = JsonSourceRepository(JsonFile(settings.config_dir / "config.json"), LegacySourceMigrator())
     lookup = SourceLookup(source_repo)
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
-        items=ItemService(backlogs, planner, rules, ItemFactory(planner)),
+        items=ItemService(backlogs, documents, planner, rules, ItemFactory(planner)),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver)),
         source_lookup=lookup,
-        documents=DocumentService(backlogs, build_markdown_documents(settings.base_dir, locks), planner, rules),
+        documents=DocumentService(backlogs, documents, planner, rules),
         folders=FolderBrowseService(LocalFolderBrowser(browse_start_from(settings.browse_start), resolver)),
         ui_state=UiStateService(JsonUiStateStore(JsonFile(settings.config_dir / "ui_state.json"))),
     )

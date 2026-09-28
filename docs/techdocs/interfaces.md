@@ -17,6 +17,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `GET /index?source_id=…` | Schlanke Übersicht aller Items (aktiv und archiviert) mit nur `source_id`, `id`, `type`, `status`, `title`, `parent`, zum Einordnen neuer Arbeit; optional auf eine Quelle begrenzt. |
 | `POST /items` | Legt ein Epic, eine Story oder einen Task an; der Server vergibt die ID. Antwort 201 mit dem neuen Item. |
 | `GET /items/{source_id}/{item_id}` | Ein Item per ID, aktiv oder archiviert. |
+| `DELETE /items/{source_id}/{item_id}?version=…` | Löscht ein Item samt Ordner `items/<ID>/`; liefert das gelöschte Item. |
 | `PATCH /items/{source_id}/{item_id}` | Ändert ein oder mehrere Felder eines Items in einem Schritt. |
 | `GET /items/{source_id}/{item_id}/documents/{name}` | Notes- oder Spec-Dokument eines Items lesen, mit `version`. |
 | `PUT /items/{source_id}/{item_id}/documents/{name}` | Spec ersetzen oder neu anlegen. |
@@ -57,6 +58,11 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     heute. Mit `parent` ist `required_for_parent` Pflicht. Der Eintrag kommt
     ans Ende des Abschnitts `## Work items` in `TODO.md`. Die Parent-Regeln
     werden wie beim Bearbeiten geprüft.
+  - `DELETE`: `version` ist Pflicht. Abgelehnt mit 409 `item_referenced`,
+    solange andere Items das Item als Parent oder Dependency nennen, und wie
+    beim Bearbeiten, wenn eine Parent-Regel bräche (z. B. letztes Pflichtkind
+    eines laufenden Epics). Gelöscht werden der Eintrag (aktiv oder
+    archiviert) und der ganze Ordner `items/<ID>/` mit allen Dateien darin.
   - Dokumente werden über Item und Namen adressiert (Dateiname wie
     `STORY-003_spec.md`), nie über Pfade. `PUT …/documents/{name}`:
     `{content, version}`; `version` ist die zuletzt gelesene Version, `null`
@@ -89,7 +95,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `config_missing`, `file_not_found`, `item_not_found` |
 | 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen) |
-| 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes` |
+| 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 
 Alle übrigen Pfade liefern das gebaute Frontend aus `web/dist`; fehlt der

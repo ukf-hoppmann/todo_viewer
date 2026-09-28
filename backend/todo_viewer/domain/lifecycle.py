@@ -48,6 +48,13 @@ class LifecycleRules:
             if known is None or not set(v.related) <= known:
                 raise LifecycleViolationError(v.code, v.item_id, v.related)
 
+    def check_delete(self, items: Sequence[Item], item_id: str) -> None:
+        """An item may only be deleted if nothing refers to it and no rule breaks without it."""
+        referrers = [i for i in items if i.parent == item_id or item_id in i.dependencies]
+        if referrers:
+            raise LifecycleViolationError("item_referenced", item_id, _ids(referrers))
+        self.check_change(items, [i for i in items if i.id != item_id])
+
     @staticmethod
     def _structure(item: Item, known: set[str]) -> Iterable[Violation]:
         if item.item_type == EPIC and item.parent:

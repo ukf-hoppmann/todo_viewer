@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 from todo_viewer.domain.documents import content_version
+from todo_viewer.domain.editing import ID_RE
 from todo_viewer.domain.errors import DocumentForbiddenError, DocumentNotFoundError, VersionConflictError
 from todo_viewer.domain.source import Source
 
@@ -54,6 +56,18 @@ class MarkdownDocumentStore:
             doc.lines = content.split("\n")
             self._files.write(doc)
             return content
+
+    def delete_item_folder(self, source: Source, item_id: str) -> None:
+        """Deletes `items/<ID>/` with everything in it, if it exists."""
+        if not ID_RE.match(item_id) or item_id in {".", ".."}:
+            raise DocumentForbiddenError()
+        items = (self._folder(source) / "items").resolve()
+        target = (items / item_id).resolve()
+        if target.parent != items:
+            raise DocumentForbiddenError()
+        with self._locks.hold(str(self._folder(source))):
+            if target.is_dir():
+                shutil.rmtree(target)
 
     def _folder(self, source: Source) -> Path:
         return self._layouts.for_source(source).folder

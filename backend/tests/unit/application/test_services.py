@@ -71,6 +71,25 @@ class FakeBacklogs:
         self.items.append(item)
         return item
 
+    def delete(self, source: Source, item: Item) -> None:
+        self.items.remove(item)
+
+
+class FakeDocuments:
+    def __init__(self) -> None:
+        self.deleted: list[str] = []
+
+    def read(self, source: Source, relative_path: str) -> str:
+        return ""
+
+    def write(self, source: Source, relative_path: str, content: str, expected_version: str | None) -> None: ...
+
+    def append(self, source: Source, relative_path: str, text: str, header: str) -> str:
+        return text
+
+    def delete_item_folder(self, source: Source, item_id: str) -> None:
+        self.deleted.append(item_id)
+
 
 class Names:
     def suggest(self, path: str) -> str:
@@ -133,7 +152,9 @@ def test_lookup_by_id():
 
 def _items(items: list[Item], archive: bool = True) -> tuple[ItemService, FakeBacklogs]:
     backlogs = FakeBacklogs(items, archive=archive)
-    return ItemService(backlogs, EditPlanner(), LifecycleRules(), ItemFactory(), lambda: date(2026, 9, 28)), backlogs
+    service = ItemService(backlogs, FakeDocuments(), EditPlanner(), LifecycleRules(), ItemFactory(),
+                          lambda: date(2026, 9, 28))
+    return service, backlogs
 
 
 def test_item_get_by_id():
@@ -191,6 +212,23 @@ def test_item_create_assigns_id_and_checks_rules():
     assert (created.item.id, created.item.created, created.item.status) == ("TASK-001", "2026-09-28", "Open")
     assert (err.value.code, err.value.details["id"]) == ("children_still_active", "STORY-001")
     assert [i.id for i in backlogs.items] == ["STORY-001", "TASK-001"]
+
+
+def test_item_delete_checks_version_and_references_first():
+    story = Item(id="S", title="s", project="p", item_type="Story")
+    task = Item(id="T", title="t", project="p", parent="S", required_for_parent=True)
+    backlogs = FakeBacklogs([story, task])
+    documents = FakeDocuments()
+    service = ItemService(backlogs, documents, EditPlanner(), LifecycleRules(), ItemFactory())
+
+    with pytest.raises(VersionConflictError):
+        service.delete(Source("p", "/p"), "T", "outdated")
+    with pytest.raises(LifecycleViolationError):
+        service.delete(Source("p", "/p"), "S", story.version)
+    deleted = service.delete(Source("p", "/p"), "T", task.version)
+
+    assert deleted.item == task
+    assert ([i.id for i in backlogs.items], documents.deleted) == (["S"], ["T"])
 
 
 def test_item_edit_rejects_field_before_touching_storage():

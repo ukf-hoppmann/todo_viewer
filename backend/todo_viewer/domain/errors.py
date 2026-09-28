@@ -71,6 +71,7 @@ class LifecycleViolationError(ConflictError):
         "dependency_cycle": "Dependencies form a cycle: {items}.",
         "unknown_reference": "{id} refers to unknown items: {items}.",
         "summary_required_with_notes": "{id} has notes and therefore needs a summary.",
+        "item_referenced": "{id} cannot be deleted while other items refer to it: {items}.",
     }
 
     def __init__(self, code: str, item_id: str, related: tuple[str, ...] = ()):

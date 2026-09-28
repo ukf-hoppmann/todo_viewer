@@ -12,7 +12,7 @@ from todo_viewer.domain.item import Item
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.source import Source
 
-from ..ports import BacklogRepository, SourceRepository
+from ..ports import BacklogRepository, DocumentStore, SourceRepository
 
 
 @dataclass(frozen=True)
@@ -44,9 +44,10 @@ class ItemResult:
 class ItemService:
     """Reads and edits single items addressed by id, following the domain's archive and lifecycle rules."""
 
-    def __init__(self, backlogs: BacklogRepository, planner: EditPlanner, rules: LifecycleRules,
-                 factory: ItemFactory, today: Callable[[], date] = date.today):
+    def __init__(self, backlogs: BacklogRepository, documents: DocumentStore, planner: EditPlanner,
+                 rules: LifecycleRules, factory: ItemFactory, today: Callable[[], date] = date.today):
         self._backlogs = backlogs
+        self._documents = documents
         self._planner = planner
         self._rules = rules
         self._factory = factory
@@ -63,6 +64,17 @@ class ItemService:
         item = self._factory.create(item_type, fields, backlog.items, source.project, self._today().isoformat())
         self._rules.check_change(backlog.items, [*backlog.items, item])
         return ItemResult(self._backlogs.create(source, item), backlog.archive_available)
+
+    def delete(self, source: Source, item_id: str, version: str) -> ItemResult:
+        """Deletes the item and its `items/<ID>/` folder; refused while other items refer to it."""
+        backlog = self._backlogs.load(source)
+        item = backlog.find(item_id)
+        if item.version != version:
+            raise VersionConflictError(item_id)
+        self._rules.check_delete(backlog.items, item_id)
+        self._backlogs.delete(source, item)
+        self._documents.delete_item_folder(source, item_id)
+        return ItemResult(item, backlog.archive_available)
 
     def edit(self, source: Source, item_id: str, version: str, changes: Mapping[str, object],
              resolution: str | None) -> ItemResult:

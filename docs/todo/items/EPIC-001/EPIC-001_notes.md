@@ -34,3 +34,13 @@
   gestartet, CLI-Adapter ohne Server) — wird in `STORY-010` entschieden.
 - UI-Funktionen für Anlegen, Löschen und Freitext-Bearbeitung laufen im
   eigenen Epic `EPIC-002` (2026-09-27 angelegt).
+
+## 2026-09-28 — Wiedereröffnet für Area im Index
+
+### Discussed
+
+- Claude_Harness TASK-015 lädt den Backlog zweistufig: erst die flache Liste, dann gezielt einzelne Items. Die Spalte Area hilft dabei, die Relevanz eines Items vor dem Laden einzuschätzen.
+
+### Decided
+
+- Auf Wunsch des Projektverantwortlichen wiedereröffnet; der Index bekommt das Feld area über einen Pflicht-Task unter STORY-004. Das Ziel von STORY-004 bleibt unverändert.

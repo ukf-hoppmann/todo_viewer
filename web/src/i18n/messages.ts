@@ -288,7 +288,7 @@ export const LANGS: readonly Lang[] = ["de", "en"];
 type Vocab = Record<string, string>;
 
 /** German display names of the English file vocabulary. */
-export const VOCAB_DE: Record<"status" | "priority" | "type" | "field", Vocab> = {
+export const VOCAB_DE: Record<"status" | "priority" | "type" | "field" | "section", Vocab> = {
   status: {
     Open: "Offen",
     "In progress": "In Arbeit",
@@ -298,6 +298,7 @@ export const VOCAB_DE: Record<"status" | "priority" | "type" | "field", Vocab> =
   },
   priority: { Urgent: "Dringend", Important: "Wichtig", Normal: "Normal", Prospective: "Perspektivisch" },
   type: { Epic: "Epic", Story: "Story", Task: "Task" },
+  section: { Discussed: "Besprochen", Decided: "Entschieden", Open: "Offen" },
   field: {
     Type: "Typ",
     Status: "Status",

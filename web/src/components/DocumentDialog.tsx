@@ -19,8 +19,23 @@ interface DocumentDialogProps {
   onClose: () => void;
 }
 
-function Markdown({ text }: { text: string }) {
-  const html = useMemo(() => DOMPurify.sanitize(marked.parse(text, { async: false })), [text]);
+/** Notes sections are stored with English headings; other levels and documents stay untouched. */
+function Markdown({ text, translate }: { text: string; translate?: (heading: string) => string }) {
+  const html = useMemo(() => {
+    const tokens = marked.lexer(text);
+    if (translate) {
+      for (const token of tokens) {
+        if (token.type === "heading" && token.depth === 3) {
+          const shown = translate(token.text);
+          if (shown !== token.text) {
+            token.text = shown;
+            token.tokens = [{ type: "text", raw: shown, text: shown }];
+          }
+        }
+      }
+    }
+    return DOMPurify.sanitize(marked.parser(tokens));
+  }, [text, translate]);
   return <div className="md" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
@@ -78,7 +93,7 @@ export function DocumentDialog({ item, initialName, initialMode = "view", onClos
           <>
             {doc.isLoading && <div className="md">{t("doc.loading")}</div>}
             {doc.error && <div className="md">{t("err.generic", { e: `${describeError(i18n, doc.error)} (${name})` })}</div>}
-            {doc.data && <Markdown text={doc.data.content} />}
+            {doc.data && <Markdown text={doc.data.content} translate={current?.kind === "notes" ? (h) => i18n.vocab("section", h) : undefined} />}
           </>
         )}
         {mode === "view" && !name && <p className="empty-hint">{t("doc.none")}</p>}

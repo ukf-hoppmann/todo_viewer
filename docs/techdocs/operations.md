@@ -15,9 +15,8 @@
     (Bearbeitungen landen in den Backlog-Dateien der Nachbar-Repos).
 - Aufruf im Browser: `http://todo.localhost:5411`.
 - Nach Code-Änderungen: `./todo.sh update` (Neubau ohne Cache).
-- CI: `.github/workflows/ci.yml` führt bei Push auf `main` und bei Pull
-  Requests `scripts/check.sh` aus (ruff, mypy --strict, import-linter, pytest,
-  tsc, eslint, vitest).
+- Prüfungen laufen lokal über `scripts/check.sh` (ruff, mypy --strict,
+  import-linter, pytest, tsc, eslint, vitest); es gibt keine CI.
 
 ## Laufender Betrieb
 

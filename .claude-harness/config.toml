@@ -12,10 +12,15 @@ todo = true
 daily = true
 techdocs = true
 development = true
+semver = true
 
-# Backlog folder, relative to docs.root.
+# Backlog folder, relative to docs.root. backend: "api" = the AI works through
+# the ToDo-Viewer's HTTP API at api_url (the server checks format and rules);
+# "files" = the AI edits the Markdown files directly and a hook checks them.
 [todo]
 path = "todo"
+backend = "api"
+api_url = "http://localhost:5411/api/v2"
 
 # Daily development reports, relative to docs.root.
 [daily]
@@ -31,11 +36,26 @@ documents = ["architecture", "interfaces", "configuration", "operations"]
 # Development suite: binding rules for the AI, always in English, relative to
 # docs.root. Parts are active while the suite is active unless set to false.
 # Known parts: architecture (rules in <path>/architecture.md), decomposition
-# (splitting work into small, separately testable steps).
+# (splitting work into small, separately testable steps), worktree (changes
+# with an approved plan run in a worktree and are merged back by the AI),
+# testing (where tests live and how the test folder is structured). tests: the
+# test folder relative to the project root, next to the source folder.
 [development]
 path = "development"
 architecture = true
 decomposition = true
+worktree = true
+testing = true
+tests = "tests"
+
+# Release versions (SemVer). file: version file relative to docs.root, holding
+# only MAJOR.MINOR.PATCH. sync: files relative to the project root that must
+# contain the same version (e.g. "package.json", "Cargo.toml"). paths: what
+# belongs to the released product; only commits there count as unreleased.
+[semver]
+file = "VERSION"
+sync = []
+paths = ["."]
 
 # Claude_Harness repository, one path per machine (absolute or starting with
 # "~"). The first path that exists here is used to hand harness wishes over to

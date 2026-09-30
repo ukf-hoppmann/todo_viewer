@@ -196,3 +196,13 @@ def test_the_backup_before_a_switch_records_no_sync(world: World):
     world.backup.create(world.stored(project))
 
     assert world.stored(project).baseline is None
+
+
+def test_a_project_whose_mirror_is_switched_off_has_none_although_its_folder_is_kept(world: World):
+    project = _database_project(world)
+    world.synced(project, TO_MD)
+    with world.sources.edit() as sources:
+        sources[0] = dataclasses.replace(sources[0], mirror_disabled=True)
+
+    assert world.state(project) is SyncState.NONE
+    assert world.stored(project).markdown_path == str(world.tmp / "md")

@@ -63,7 +63,7 @@ class SourceService:
         """A markdown project is registered by its folder; a database project needs a name only.
 
         `mirror` names the other side to keep: "database" for a markdown project, "markdown" (needs `sync_path`)
-        for a database one; "none" or nothing keeps none.
+        for a database one; "none" keeps none (a given `sync_path` is kept for later), nothing leaves the default.
         """
         source = self._mirrored(dataclasses.replace(self._validated(path, project, backend), id=self._new_id(),
                                                     sync_path=_optional_path(sync_path)), mirror)
@@ -95,7 +95,9 @@ class SourceService:
         changes; a `project` name is.
 
         `mirror` switches the other side on or off: "database" / "none" for a markdown project, "markdown" (needs
-        `sync_path`) / "none" for a database one; nothing leaves it as it is.
+        `sync_path`) / "none" for a database one; nothing leaves it as it is. Switching a database project's mirror
+        off keeps its folder (send it again with `sync_path`), so switching it on needs no new one; the folder goes
+        only when `sync_path` is emptied.
         """
         with self._sources.edit() as sources:
             index = self._index_of(sources, source_id)
@@ -145,11 +147,11 @@ class SourceService:
             raise InvalidValueError("mirror", allowed)
         if source.backend == "markdown":
             return dataclasses.replace(source, mirror_database=mirror == "database")
-        if mirror == "none":
-            return dataclasses.replace(source, sync_path=None)
+        if mirror == "none":  # the folder stays (as sent), only the mirror is off
+            return dataclasses.replace(source, mirror_disabled=True)
         if not source.sync_path:
             raise SyncPathMissingError()
-        return source
+        return dataclasses.replace(source, mirror_disabled=False)
 
     def remove(self, source_id: str) -> Source:
         with self._sources.edit() as sources:

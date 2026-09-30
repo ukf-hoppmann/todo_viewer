@@ -268,17 +268,38 @@ def test_the_database_mirror_of_a_markdown_project_is_switched_on_and_off_and_ot
     assert repo.sources == [off]
 
 
-def test_the_markdown_mirror_of_a_database_project_needs_a_folder_and_goes_with_it():
+def test_the_markdown_mirror_of_a_database_project_needs_a_folder():
     db = Source("A", "", backend="database", id="a", sync_path="/a")
     service, repo = _sources([db])
 
     with pytest.raises(SyncPathMissingError):
         service.update("a", "", "A", mirror="markdown", sync_path=None)
-    off = service.update("a", "", "A", mirror="none", sync_path="/a")
-    on = service.update("a", "", "A", mirror="markdown", sync_path="/b")
+    moved = service.update("a", "", "A", mirror="markdown", sync_path="/b")
 
-    assert (off.mirror, off.sync_path, on.mirror, on.sync_path) == ("none", None, "markdown", "/b")
+    assert (moved.mirror, moved.sync_path) == ("markdown", "/b")
+    assert repo.sources == [moved]
+
+
+def test_switching_the_markdown_mirror_off_keeps_the_folder_and_switching_it_on_needs_no_new_one():
+    db = Source("A", "", backend="database", id="a", sync_path="/a", baseline=BASELINE)
+    service, repo = _sources([db])
+
+    off = service.update("a", "", "A", mirror="none", sync_path="/a")
+    on = service.update("a", "", "A", mirror="markdown", sync_path="/a")
+
+    assert (off.mirror, off.sync_path, off.markdown_path, off.mirror_disabled) == ("none", "/a", "/a", True)
+    assert (on.mirror, on.sync_path, on.mirror_disabled) == ("markdown", "/a", False)
+    assert off.baseline is None and on.baseline is None  # the last sync does not carry over
     assert repo.sources == [on]
+
+
+def test_the_folder_goes_only_when_it_is_cleared_on_purpose():
+    db = Source("A", "", backend="database", id="a", sync_path="/a")
+    service, _ = _sources([db])
+
+    cleared = service.update("a", "", "A", sync_path="")
+
+    assert (cleared.sync_path, cleared.markdown_path, cleared.mirror) == (None, None, "none")
 
 
 def test_a_mirror_on_the_primary_side_is_refused():

@@ -136,7 +136,6 @@ export function App() {
           <SourceDialog
             source={sourceDialog.source}
             onClose={() => setSourceDialog(null)}
-            onOpenSync={(source, mode) => setSyncDialog({ source, mode })}
             onSaved={(project) => {
               dispatch({ type: "showProject", project });
               setSourceDialog(null);

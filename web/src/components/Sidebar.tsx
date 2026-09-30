@@ -151,12 +151,12 @@ function ProjectFilters({ projects, sources, onEdit, onRemove, onSync }: Project
                 </div>
                 {source && (
                   <>
-                    {source.backend === "database" && source.sync_path && (
+                    {source.mirror !== "none" && (
                       <button className="icon-btn" title={t("source.sync")} aria-label={t("source.sync")} onClick={() => onSync(source)}>
                         ⇄
                       </button>
                     )}
-                    <button className="icon-btn" title={t("source.edit.title")} aria-label={t("source.edit.title")} onClick={() => onEdit(source)}>
+                    <button className="icon-btn" title={t("source.rename.title")} aria-label={t("source.rename.title")} onClick={() => onEdit(source)}>
                       ✎
                     </button>
                     <button className="icon-btn danger" title={t("source.remove.title")} aria-label={t("source.remove.title")} onClick={() => onRemove(source)}>

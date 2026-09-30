@@ -17,7 +17,9 @@ export function Modal({ labelledBy, onDismiss, className = "", children }: Modal
 
   // The latest callback, so that a parent passing a new one on every render does not move this dialog in the stack.
   const dismiss = useRef(onDismiss);
-  dismiss.current = onDismiss;
+  useEffect(() => {
+    dismiss.current = onDismiss;
+  });
 
   useEffect(() => {
     const self = Symbol("dialog");

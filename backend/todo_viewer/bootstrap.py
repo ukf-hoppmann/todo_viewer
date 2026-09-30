@@ -13,6 +13,7 @@ import structlog
 from todo_viewer.application.container import Container
 from todo_viewer.application.services import (
     BacklogOverviewService,
+    BackupService,
     DocumentService,
     FolderBrowseService,
     ItemService,
@@ -33,15 +34,21 @@ from todo_viewer.infrastructure.database import (
     Database,
     DatabaseBacklogRepository,
     DatabaseDocumentStore,
+    DatabaseRawBackup,
     DatabaseSourceRepository,
     DatabaseUiStateStore,
     LegacyConfigImport,
 )
 from todo_viewer.infrastructure.filesystem import GitProjectNameSuggester, LocalFolderBrowser, browse_start_from
 from todo_viewer.infrastructure.log_setup import configure_logging
-from todo_viewer.infrastructure.markdown import KeyedLocks, build_markdown_documents, build_markdown_repository
-from todo_viewer.infrastructure.markdown.layout import SourcePathResolver
-from todo_viewer.infrastructure.routing import RoutingBacklogRepository, RoutingDocumentStore
+from todo_viewer.infrastructure.markdown import (
+    KeyedLocks,
+    MarkdownRawBackup,
+    build_markdown_documents,
+    build_markdown_repository,
+)
+from todo_viewer.infrastructure.markdown.layout import LayoutFactory, SourcePathResolver
+from todo_viewer.infrastructure.routing import RoutingBacklogRepository, RoutingDocumentStore, RoutingRawBackup
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -92,13 +99,16 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     source_repo = DatabaseSourceRepository(database, legacy.sources)
     lookup = SourceLookup(source_repo)
     sync = SyncService(backlogs, documents)
+    raw_backup = RoutingRawBackup({"markdown": MarkdownRawBackup(LayoutFactory(resolver)),
+                                   "database": DatabaseRawBackup()})
+    backup = BackupService(raw_backup, sync, settings.config_dir / "backups")
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
         items=ItemService(backlogs, planner, rules, ItemFactory(planner), today),
         trash=TrashService(backlogs, documents, TrashPlanner(rules), today),
         retype=RetypeService(backlogs, documents, RetypePlanner(), rules),
-        sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver), sync),
+        sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver), sync, backup),
         source_lookup=lookup,
         documents=DocumentService(backlogs, documents, planner, rules, today),
         sync=sync,

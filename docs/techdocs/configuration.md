@@ -28,7 +28,9 @@ der Standard.
 Ändert man `storage_url`, zeigt der Dienst danach auf eine andere (ggf. leere)
 Datenbank; Projekte und Inhalte wandern nicht mit. Der Sync-Ordner eines
 Datenbank-Projekts (`sync_path`) und alle anderen Projekteinstellungen stehen in
-der Datenbank, nicht in dieser Datei.
+der Datenbank, nicht in dieser Datei. Backups vor einem Wechsel der Primärquelle
+liegen unter `<CONFIG_DIR>/backups/` (ohne eigenen Schalter, siehe
+[Betrieb](operations.md)).
 
 Projekte stehen nicht mehr in dieser Datei, sondern in der Datenbank; sie
 werden über die UI bzw. `/api/v2/sources` verwaltet (siehe

@@ -13,6 +13,7 @@ from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.creation import ItemFactory
 from todo_viewer.domain.editing import ChangeSet, EditPlanner
 from todo_viewer.domain.errors import (
+    BackupFailedError,
     ConfigMissingError,
     DocumentNotFoundError,
     DuplicateSourceError,
@@ -146,15 +147,27 @@ class FakeSync:
         return self.in_sync_result
 
 
+class FakeBackup:
+    def __init__(self, error: BackupFailedError | None = None):
+        self.error = error
+        self.created: list[Source] = []
+
+    def create(self, source: Source) -> str:
+        if self.error:
+            raise self.error
+        self.created.append(source)
+        return "/backups/x"
+
+
 def _ids() -> Callable[[], str]:
     counter = itertools.count(1)
     return lambda: f"id-{next(counter)}"
 
 
-def _sources(initial: list[Source] | None = None, sync: FakeSync | None = None
+def _sources(initial: list[Source] | None = None, sync: FakeSync | None = None, backup: FakeBackup | None = None
              ) -> tuple[SourceService, InMemorySources]:
     repo = InMemorySources(initial)
-    return SourceService(repo, FakeBacklogs(), Names(), sync or FakeSync(), _ids()), repo
+    return SourceService(repo, FakeBacklogs(), Names(), sync or FakeSync(), backup or FakeBackup(), _ids()), repo
 
 
 def test_add_source_trims_and_suggests_name():
@@ -182,7 +195,7 @@ def test_add_source_rejects_problems_and_duplicates():
 def test_create_backlog_initializes_folder_and_adds_source():
     backlogs = FakeBacklogs()
     repo = InMemorySources([Source("A", "/a", id="a")])
-    service = SourceService(repo, backlogs, Names(), FakeSync(), _ids())
+    service = SourceService(repo, backlogs, Names(), FakeSync(), FakeBackup(), _ids())
 
     created = service.create_backlog(" /new/docs/todo/ ", None, "de")
     with pytest.raises(DuplicateSourceError):
@@ -298,6 +311,48 @@ def test_a_switch_to_markdown_cannot_take_a_folder_another_project_uses():
         service.update("a", "", None, "markdown", None)
 
     assert repo.sources == [other, db]
+
+
+def test_the_current_primary_source_is_backed_up_before_the_switch():
+    md = Source("A", "/a", id="a")
+    backup = FakeBackup()
+    service, repo = _sources([md], backup=backup)
+
+    switched = service.update("a", "/a", None, "database", None)
+
+    assert backup.created == [md] and repo.sources == [switched]
+
+
+def test_no_backup_is_made_when_the_switch_is_refused_anyway():
+    md = Source("A", "/a", id="a")
+    other, db = Source("B", "/a", id="b"), Source("C", "", backend="database", id="c", sync_path="/a")
+    backup = FakeBackup()
+
+    with pytest.raises(SyncRequiredError):
+        _sources([md], FakeSync(in_sync=False), backup)[0].update("a", "/a", None, "database", None)
+    with pytest.raises(DuplicateSourceError):
+        _sources([other, db], backup=backup)[0].update("c", "", None, "markdown", None)
+
+    assert backup.created == []
+
+
+def test_a_failed_backup_stops_the_switch_and_changes_nothing():
+    db = Source("A", "", backend="database", id="a", sync_path="/a")
+    service, repo = _sources([db], backup=FakeBackup(BackupFailedError("disk full")))
+
+    with pytest.raises(BackupFailedError) as error:
+        service.update("a", "", None, "markdown", None)
+
+    assert error.value.details == {"reason": "disk full"} and repo.sources == [db]
+
+
+def test_an_ordinary_change_makes_no_backup():
+    backup = FakeBackup()
+    service, _ = _sources([Source("A", "/a", id="a")], backup=backup)
+
+    service.update("a", "/a2", "A2")
+
+    assert backup.created == []
 
 
 def test_the_same_backend_is_no_switch():

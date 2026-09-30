@@ -8,3 +8,4 @@ configs/ui_state.json
 logs/
 configs/todo.db*
 configs/*.bak
+configs/backups/

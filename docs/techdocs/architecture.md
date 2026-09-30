@@ -48,6 +48,11 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   Ablageorte kennt nur der Markdown-Adapter. Die Version ist ein Hash über den
   Inhalt des Items (Domain), damit ein anderer Speicher denselben Vertrag
   erfüllen kann.
+- Notizen und Specs werden über Item-ID und Dokumentnamen adressiert (Port
+  `DocumentStore`); ein Item listet seine Dokumente in `notes`/`spec` nur mit
+  Namen. Dass sie in Markdown unter `items/<ID>/<Name>` liegen und bei einem
+  Typwechsel samt Pfaden in `Notes:`/`Spec:` mitwandern, weiß nur der
+  Markdown-Adapter (`infrastructure/markdown/document_paths.py`).
 - Abhängigkeiten zeigen nur nach innen: `bootstrap` → `api` | `infrastructure`
   → `application` → `domain`.
 

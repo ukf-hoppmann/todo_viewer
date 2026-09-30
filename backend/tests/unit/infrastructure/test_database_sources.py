@@ -1,0 +1,105 @@
+"""Projects and the UI state in the central database."""
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+import sqlalchemy as sa
+
+from todo_viewer.domain.errors import ProjectNotEmptyError
+from todo_viewer.domain.item import Item
+from todo_viewer.domain.source import Source
+from todo_viewer.infrastructure.database import Database, DatabaseBacklogRepository
+from todo_viewer.infrastructure.database.migrations import MIGRATIONS, migrate
+from todo_viewer.infrastructure.database.sources import DatabaseSourceRepository
+from todo_viewer.infrastructure.database.ui_state import DatabaseUiStateStore
+
+FILES = Source(project="Files", path="/repos/a/docs", id="aaaaaaaa-0000-4000-8000-000000000001",
+               extra={"color": "red"})
+CENTRAL = Source(project="Central", path="", backend="database", sync_path="/repos/b/docs",
+                 id="bbbbbbbb-0000-4000-8000-000000000002")
+
+
+@pytest.fixture
+def db(tmp_path: Path) -> Database:
+    return Database(f"sqlite:///{tmp_path / 'todo.db'}")
+
+
+def test_projects_are_stored_with_all_their_settings_in_order(db: Database):
+    repo = DatabaseSourceRepository(db)
+
+    with repo.edit() as sources:
+        sources += [FILES, CENTRAL]
+
+    assert repo.all() == [FILES, CENTRAL]
+    assert repo.all()[0].extra == {"color": "red"}
+    assert repo.all()[1].sync_path == "/repos/b/docs"
+
+
+def test_projects_can_be_changed_reordered_and_removed(db: Database):
+    repo = DatabaseSourceRepository(db)
+    with repo.edit() as sources:
+        sources += [FILES, CENTRAL]
+
+    with repo.edit() as sources:
+        sources[:] = [sources[1], sources[0].updated("Renamed", "/repos/c/docs")]
+    with repo.edit() as sources:
+        sources.pop(0)
+
+    assert repo.all() == [FILES.updated("Renamed", "/repos/c/docs")]
+
+
+def test_nothing_is_saved_when_the_edit_fails(db: Database):
+    repo = DatabaseSourceRepository(db)
+
+    with pytest.raises(RuntimeError), repo.edit() as sources:
+        sources.append(FILES)
+        raise RuntimeError("validation failed")
+
+    assert repo.all() == []
+
+
+def test_a_database_project_with_items_cannot_be_removed(db: Database):
+    repo = DatabaseSourceRepository(db)
+    with repo.edit() as sources:
+        sources += [FILES, CENTRAL]
+    DatabaseBacklogRepository(db).store_all(CENTRAL, [Item(id="TASK-001", title="t", project="Central")])
+
+    with pytest.raises(ProjectNotEmptyError) as err, repo.edit() as sources:
+        sources.remove(CENTRAL)
+
+    assert (err.value.code, err.value.details) == ("project_not_empty", {"project": "Central"})
+    assert repo.all() == [FILES, CENTRAL]
+
+
+def test_projects_created_only_for_items_are_not_listed(db: Database):
+    DatabaseBacklogRepository(db).store_all(CENTRAL, [])
+
+    assert DatabaseSourceRepository(db).all() == []
+
+
+def test_ui_state_is_empty_until_saved(db: Database):
+    store = DatabaseUiStateStore(db)
+
+    assert store.load() == {}
+    store.save({"hiddenStatuses": ["Completed"], "search": "x"})
+    store.save({"hiddenStatuses": ["Rejected"]})
+
+    assert store.load() == {"hiddenStatuses": ["Rejected"]}
+
+
+def test_a_version_1_database_is_upgraded_and_keeps_its_items(tmp_path: Path):
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'todo.db'}")
+    with engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE schema_version (version INTEGER NOT NULL)"))
+        conn.execute(sa.text("INSERT INTO schema_version (version) VALUES (1)"))
+        for statement in MIGRATIONS[1]:
+            conn.execute(sa.text(statement))
+        conn.execute(sa.text("INSERT INTO projects (id) VALUES ('old')"))
+        conn.execute(sa.text("INSERT INTO items (uid, project_id, label, item_type, title, status, location, position)"
+                             " VALUES ('u', 'old', 'TASK-001', 'Task', 'Kept', 'Open', 'active', 0)"))
+    with engine.begin() as conn:
+        migrate(conn)
+
+    old = Source(project="Old", path="", backend="database", id="old")
+    assert [i.title for i in DatabaseBacklogRepository(Database(str(engine.url))).load(old).items] == ["Kept"]

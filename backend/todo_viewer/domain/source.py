@@ -14,6 +14,8 @@ class Source:
     backend: str = "markdown"
     # Stable identifier, independent of name, path, and position in the list.
     id: str = ""
+    # Database projects only: folder their markdown files are synced with, if any.
+    sync_path: str | None = None
     # Unknown config keys are preserved when a source is rewritten.
     extra: dict[str, Any] = field(default_factory=dict, compare=False)
 

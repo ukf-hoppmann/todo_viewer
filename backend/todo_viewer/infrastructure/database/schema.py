@@ -5,7 +5,23 @@ import sqlalchemy as sa
 
 metadata = sa.MetaData()
 
-projects = sa.Table("projects", metadata, sa.Column("id", sa.String(64), primary_key=True))
+projects = sa.Table(
+    "projects", metadata,
+    sa.Column("id", sa.String(64), primary_key=True),
+    # NULL for rows that only hold items of a source that is not registered (tests, older databases).
+    sa.Column("name", sa.Text),
+    sa.Column("backend", sa.String(20)),
+    sa.Column("path", sa.Text),
+    sa.Column("sync_path", sa.Text),
+    sa.Column("position", sa.Integer),
+    sa.Column("extra", sa.Text),  # JSON object of unknown keys
+)
+
+ui_state = sa.Table(
+    "ui_state", metadata,
+    sa.Column("id", sa.Integer, primary_key=True),
+    sa.Column("data", sa.Text, nullable=False),  # JSON object
+)
 
 items = sa.Table(
     "items", metadata,

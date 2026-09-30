@@ -58,6 +58,16 @@ MIGRATIONS: dict[int, list[str]] = {
             PRIMARY KEY (item_uid, name)
         )""",
     ],
+    # Projects move from config.json into the database; rows without a name only hold items.
+    2: [
+        "ALTER TABLE projects ADD COLUMN name TEXT",
+        "ALTER TABLE projects ADD COLUMN backend VARCHAR(20)",
+        "ALTER TABLE projects ADD COLUMN path TEXT",
+        "ALTER TABLE projects ADD COLUMN sync_path TEXT",
+        "ALTER TABLE projects ADD COLUMN position INTEGER",
+        "ALTER TABLE projects ADD COLUMN extra TEXT",
+        "CREATE TABLE ui_state (id INTEGER PRIMARY KEY, data TEXT NOT NULL)",
+    ],
 }
 
 CURRENT_VERSION = max(MIGRATIONS)

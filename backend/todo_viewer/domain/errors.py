@@ -137,6 +137,14 @@ class ConfigMissingError(NotFoundError):
         super().__init__("config.json not found")
 
 
+class ProjectNotEmptyError(ConflictError):
+    code = "project_not_empty"
+
+    def __init__(self, project: str):
+        super().__init__(f"Project '{project}' still has items in the database and cannot be removed.",
+                         project=project)
+
+
 class DuplicateSourceError(ConflictError):
     code = "duplicate"
 

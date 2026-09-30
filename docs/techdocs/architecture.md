@@ -21,6 +21,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 | Application | Ports als Protocols (`BacklogRepository`, `SourceRepository`, `DocumentStore`, `FolderBrowser`, `ProjectNameSuggester`, `UiStateStore`), Use-Case-Services, `Container` | `backend/todo_viewer/application/` |
 | Routing-Adapter | Wählen je Projekt (`Source.backend`, Standard `markdown`) den Speicher-Adapter; unbekanntes Backend → Fehlercode `unknown_backend` | `backend/todo_viewer/infrastructure/routing.py` |
 | Markdown-Adapter | Formaterkennung, Parser, Feld-Mapping, Editoren, Verschieben ins/aus dem Archiv, atomares Schreiben | `backend/todo_viewer/infrastructure/markdown/` |
+| Datenbank-Adapter | Zentrale Datenbank (SQLAlchemy Core, SQLite): Items mit interner `uid` und Label, Verweise als Fremdschlüssel, Notizen/Specs an der `uid`, Schreiben in Transaktionen, versionierte Migrationen; öffnet die Datenbank erst beim ersten Zugriff | `backend/todo_viewer/infrastructure/database/` |
 | Config-Adapter | `config.json` (Quellen, inkl. Migration alter Dateipfade) und `ui_state.json` | `backend/todo_viewer/infrastructure/config/` |
 | Dateisystem-Adapter | Ordner-Browser, Projektname aus dem umgebenden Git-Repo | `backend/todo_viewer/infrastructure/filesystem/` |
 | HTTP-API | FastAPI-Router `/api/v2`, Pydantic-Schemas, zentrale Fehlerübersetzung, Auslieferung von `web/dist` | `backend/todo_viewer/api/` |
@@ -58,9 +59,10 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 
 ## Zustand und Speicherung
 
-- Backlog-Daten: ausschließlich in den Markdown-Dateien der konfigurierten
-  Projekte; der Viewer hält keinen eigenen Datenbestand.
-- Quellen: `configs/config.json`.
+- Backlog-Daten: je Projekt entweder in dessen Markdown-Dateien
+  (`backend: markdown`, Standard) oder in der zentralen Datenbank
+  (`backend: database`, `configs/todo.db`); es gibt keine zweite Kopie.
+- Quellen und Ort der Datenbank (`storage_url`): `configs/config.json`.
 - UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, markierte
   Projekte, Ansicht, Auswahl, Suche, Sprache): `configs/ui_state.json`, über die API gelesen und
   geschrieben.

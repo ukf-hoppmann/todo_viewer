@@ -8,13 +8,23 @@
 - `docker-compose.yml` startet den Dienst `todo-viewer` mit
   `restart: unless-stopped` auf Port 5411, nur an `127.0.0.1` gebunden (die API
   kann Items ändern und löschen), und bindet ein:
-  - `./configs` → `/app/configs` (Quellen und UI-Zustand bleiben auf dem Host),
+  - `./configs` → `/app/configs` (Quellen, UI-Zustand und die zentrale
+    Datenbank `todo.db` bleiben auf dem Host),
   - `./logs` → `/app/logs` (Logdatei `todo-viewer.log`; bleibt beim Entfernen
     des Containers erhalten, per `.gitignore` nicht im Repo),
   - `/Users/hoppmann/Documents/GitHub` unter demselben Pfad, beschreibbar
     (Bearbeitungen landen in den Backlog-Dateien der Nachbar-Repos).
 - Aufruf im Browser: `http://todo.localhost:5411`.
 - Nach Code-Änderungen: `./todo.sh update` (Neubau ohne Cache).
+- Zentrale Datenbank (nur bei Projekten mit `backend: database`): SQLite-Datei
+  `configs/todo.db` (bzw. `storage_url`), daneben im Betrieb `todo.db-wal` und
+  `todo.db-shm`. Das Schema wird beim ersten Zugriff automatisch auf den
+  aktuellen Stand migriert (Tabelle `schema_version`, nur vorwärts). Sicherung:
+  bei gestopptem Container alle drei Dateien kopieren, im laufenden Betrieb
+  `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
+- Nach einem Update mit neuen Python-Abhängigkeiten (z. B. SQLAlchemy) lokal
+  `.venv/bin/pip install -r backend/requirements-dev.txt`; das Image installiert
+  sie beim Neubau selbst.
 - Prüfungen laufen lokal über `scripts/check.sh` (ruff, mypy --strict,
   import-linter, pytest, tsc, eslint, vitest); es gibt keine CI.
 

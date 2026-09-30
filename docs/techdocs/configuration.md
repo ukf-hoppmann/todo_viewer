@@ -22,10 +22,13 @@
 |---|---|---|---|---|
 | `sources` | Liste von Objekten | leer | ja (Datei fehlt → leerer Backlog) | Konfigurierte Backlog-Quellen |
 | `sources[].project` | String | Name des umgebenden Git-Repos (beim Hinzufügen über die UI) | ja | Angezeigter Projektname |
-| `sources[].path` | absoluter Pfad | — | ja | Backlog-Ordner mit `TODO.md`. Zeigt ein älterer Eintrag auf eine `.md`/`.markdown`/`.txt`-Datei, wird er beim Laden auf deren Ordner umgestellt und gespeichert |
+| `sources[].path` | absoluter Pfad bzw. Schlüssel | — | ja | Markdown: Backlog-Ordner mit `TODO.md`. Zeigt ein älterer Eintrag auf eine `.md`/`.markdown`/`.txt`-Datei, wird er beim Laden auf deren Ordner umgestellt und gespeichert. Datenbank: frei gewählter Schlüssel des Projekts in der zentralen Datenbank (kein Ordner) |
+| `sources[].backend` | `markdown` oder `database` | `markdown` | nein | Wo das Projekt gespeichert ist. Fehlt der Schlüssel, ist es ein Markdown-Projekt; er wird nur für `database` geschrieben. Datenbank-Projekte werden vorerst nur in dieser Datei angelegt, nicht über die UI |
+| `storage_url` | SQLAlchemy-URL | `sqlite:///<CONFIG_DIR>/todo.db` | nein | Zentrale Datenbank für Projekte mit `backend: database`. Wird beim Start gelesen (Änderung braucht einen Neustart); die Datei entsteht erst, wenn ein Datenbank-Projekt benutzt wird. Zugangsdaten dürfen in der URL stehen; sie werden nicht geloggt |
 
 Unbekannte Schlüssel auf oberster Ebene und in Quell-Einträgen bleiben beim
-Schreiben erhalten. Änderungen an der Datei werden ohne Neustart übernommen.
+Schreiben erhalten. Änderungen an `sources` werden ohne Neustart übernommen,
+`storage_url` erst nach einem Neustart.
 
 ## `configs/ui_state.json`
 

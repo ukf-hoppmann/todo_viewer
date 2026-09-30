@@ -55,6 +55,8 @@ def test_create_stores_an_active_item_and_refuses_taken_ids(adapter: Adapter):
 
 def test_delete_removes_active_and_archived_items_but_not_stale_ones(adapter: Adapter):
     repo, source = adapter.repo, adapter.source
+    # Only items nobody refers to are deleted (the lifecycle rules ensure that): TASK-001 lets go of STORY-000.
+    repo.apply(source, repo.get(source, "TASK-001"), ChangeSet(set_fields=(("dependencies", ("TASK-000",)),)))
     active, archived = repo.get(source, "TASK-002"), repo.get(source, "STORY-000")
     stale = repo.get(source, "TASK-003")
     repo.apply(source, stale, ChangeSet(set_fields=(("priority", "Urgent"),)))

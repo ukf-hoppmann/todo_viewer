@@ -1,4 +1,7 @@
-"""Sources stored in config.json: {"sources": [{"project": ..., "path": ...}, ...]}."""
+"""Sources stored in config.json: {"sources": [{"project": ..., "path": ..., "backend": ...}, ...]}.
+
+`backend` is left out for markdown sources; for database sources `path` is the project's key.
+"""
 from __future__ import annotations
 
 import threading
@@ -13,6 +16,7 @@ from todo_viewer.domain.source import Source
 from .json_file import JsonFile
 
 LEGACY_FILE_SUFFIXES = {".md", ".markdown", ".txt"}
+MARKDOWN = "markdown"
 
 
 class LegacySourceMigrator:
@@ -57,9 +61,18 @@ class JsonSourceRepository:
 
     @staticmethod
     def _to_source(raw: dict[str, Any]) -> Source:
-        extra = {k: v for k, v in raw.items() if k not in ("project", "path")}
-        return Source(project=raw["project"], path=raw["path"], extra=extra)
+        extra = {k: v for k, v in raw.items() if k not in ("project", "path", "backend")}
+        return Source(project=raw["project"], path=raw["path"], backend=raw.get("backend", MARKDOWN), extra=extra)
 
     @staticmethod
     def _to_raw(source: Source) -> dict[str, Any]:
-        return {"project": source.project, "path": source.path, **source.extra}
+        backend = {} if source.backend == MARKDOWN else {"backend": source.backend}
+        return {"project": source.project, "path": source.path, **backend, **source.extra}
+
+
+def storage_url(file: JsonFile, default: str) -> str:
+    """The central database from `storage_url` in config.json; `default` if the file or key is missing."""
+    if not file.exists():
+        return default
+    url = file.read().get("storage_url")
+    return url if isinstance(url, str) and url.strip() else default

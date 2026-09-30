@@ -42,9 +42,18 @@ Eintrag entfernt. Ordner, die nicht (mehr) lesbar sind, bleiben ausgegraut mit
 ⚠ und Fehlermeldung in der Liste stehen. Ohne Projektname wird der Name des
 umgebenden Git-Repos verwendet.
 
-Die Projektliste liegt in der zentralen Datenbank `configs/todo.db`; über die
-API (`/api/v2/sources`) lassen sich auch Datenbank-Projekte anlegen, deren
-Items ganz in dieser Datenbank liegen. Projekte, die frühere Versionen in
+Die Projektliste liegt in der zentralen Datenbank `configs/todo.db`. Beim
+Hinzufügen wählst du den Speicherort: ein **Markdown-Ordner** oder die
+**Datenbank** (Name Pflicht, ein Sync-Ordner ist optional). Datenbank-Projekte
+tragen in der Liste das Kürzel „DB“. Ist ein Sync-Ordner eingetragen, öffnet ⇄
+den Abgleich mit dem Ordner: erst eine **Vorschau** (neu, geändert,
+unverändert; was nur auf dem Ziel liegt, steht als Warnung dabei und bleibt
+stehen, es sei denn, du löschst es), dann **Ausführen**. Im Bearbeiten-Dialog
+stellt „In die Datenbank übernehmen…“ bzw. „Als Markdown-Ordner ablegen…“ das
+Projekt um: Der Dialog synchronisiert, danach liegt das Projekt am anderen Ort;
+die Item-IDs bleiben gleich, die Markdown-Dateien bleiben liegen. Dieselben
+Schritte gibt es über die API (`/api/v2/sources`, `/sources/{id}/sync`).
+Projekte, die frühere Versionen in
 `configs/config.json` eingetragen hatten, werden beim ersten Start übernommen
 (Sicherung `config.json.bak`, siehe [Konfiguration](docs/techdocs/configuration.md)).
 

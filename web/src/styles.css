@@ -223,6 +223,15 @@ input.field-edit {
 .settings-content { flex: 1; overflow-y: auto; min-width: 0; }
 .settings-section h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
 .settings-section h4:first-child { margin-top: 0; }
+.project-card { border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px 12px; margin: 0 0 10px; }
+.project-card.focused { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.project-card header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.project-card h4 { margin: 0; font-size: 13.5px; text-transform: none; letter-spacing: 0; color: var(--text); }
+.project-state { font-size: 11.5px; color: var(--text-dim); }
+.project-state.mirror_changed, .project-state.both_changed, .project-state.unreadable { color: var(--status-inprogress, #e0a43a); }
+.project-state.in_sync { color: var(--status-completed, #4caf7d); }
+.project-card dd { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.project-actions { display: flex; gap: 8px; margin-top: 8px; }
 .settings-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; font-size: 13px; }
 .settings-facts dt { color: var(--text-dim); }
 .settings-facts dd { margin: 0; overflow-wrap: anywhere; }

@@ -66,6 +66,28 @@ describe("SourceDialog: choosing where a project is stored", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it("preselects the backend chosen in the settings, and the user can still pick the other", async () => {
+    stubApi(async () => saved());
+    renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />, {
+      defaultBackend: "database",
+    });
+
+    expect(screen.getByRole("radio", { name: "Datenbank" })).toBeChecked();
+    expect(screen.getByLabelText("Projektname")).toHaveAttribute("placeholder", "Name des Projekts");
+    await userEvent.click(screen.getByRole("radio", { name: "Markdown-Ordner" }));
+    expect(screen.getByRole("radio", { name: "Markdown-Ordner" })).toBeChecked();
+  });
+
+  it("does not change the backend of a project that exists", () => {
+    stubApi(async () => saved());
+    renderWithProviders(
+      <SourceDialog source={sourceStatus({ backend: "markdown", path: "/repos/a/docs", sync_path: null })} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />,
+      { defaultBackend: "database" },
+    );
+
+    expect(screen.getByText("Gespeichert in: Markdown-Ordner")).toBeInTheDocument();
+  });
+
   it("still adds a markdown project by its folder", async () => {
     const calls = stubApi(async () => saved({ backend: "markdown", path: "/repos/a/docs", sync_path: null }));
     renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />);
@@ -152,7 +174,7 @@ describe("Sidebar: projects in the database", () => {
   const files = sourceStatus({ id: "s2", project: "Files", backend: "markdown", path: "/repos/a/docs", sync_path: null });
   const show = (sources = [sourceStatus(), files], onSyncSource = vi.fn()) =>
     renderWithProviders(
-      <Sidebar options={options} sources={sources} onAddSource={vi.fn()} onEditSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={onSyncSource} />,
+      <Sidebar options={options} sources={sources} onAddSource={vi.fn()} onEditSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={onSyncSource} onOpenSettings={vi.fn()} />,
     );
 
   it("marks database projects and syncs only those that have a sync folder", async () => {

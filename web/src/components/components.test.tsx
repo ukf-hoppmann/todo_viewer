@@ -79,6 +79,7 @@ describe("Sidebar project marking", () => {
         onEditSource={vi.fn()}
         onRemoveSource={vi.fn()}
         onSyncSource={vi.fn()}
+        onOpenSettings={vi.fn()}
       />,
     );
     const name = screen.getByRole("button", { name: "P" });

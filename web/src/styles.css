@@ -42,6 +42,7 @@ button { font: inherit; }
 }
 .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 14px; }
 .sidebar-head h1 { font-size: 15px; margin: 0; }
+.sidebar-tools { display: flex; align-items: center; gap: 6px; }
 .lang-switch { display: flex; border: 1px solid var(--panel-border); border-radius: 6px; overflow: hidden; }
 .lang-switch button { background: transparent; border: none; color: var(--text-dim); font-size: 11px; padding: 3px 8px; cursor: pointer; }
 .lang-switch button.active { background: var(--accent); color: white; }
@@ -210,6 +211,22 @@ input.field-edit {
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .modal .backend-choice { display: flex; gap: 16px; font-size: 13px; }
 .modal .backend-choice label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.modal.settings-dialog { width: min(760px, calc(100vw - 32px)); min-height: 360px; }
+.settings-body { display: flex; gap: 16px; flex: 1; min-height: 0; }
+.settings-nav { display: flex; flex-direction: column; gap: 4px; width: 150px; flex: none; }
+.settings-nav button {
+  text-align: left; background: transparent; border: 1px solid transparent; color: var(--text-dim);
+  border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 13px;
+}
+.settings-nav button:hover { background: var(--hover); color: var(--text); }
+.settings-nav button.active { background: var(--accent); color: white; }
+.settings-content { flex: 1; overflow-y: auto; min-width: 0; }
+.settings-section h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
+.settings-section h4:first-child { margin-top: 0; }
+.settings-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; font-size: 13px; }
+.settings-facts dt { color: var(--text-dim); }
+.settings-facts dd { margin: 0; overflow-wrap: anywhere; }
+.settings-facts dd.mono { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
 .modal .backend-fixed { font-size: 12px; color: var(--text-dim); }
 .modal .source-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .db-badge { font-size: 9.5px; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 0 4px; margin-left: 4px; }

@@ -3,6 +3,7 @@ import type { SourceStatus } from "../api/client";
 import { type Backend, useFolders, useSaveSource } from "../api/queries";
 import type { SyncMode } from "../domain/sync";
 import { describeError, useI18n } from "../i18n/i18n";
+import { useUiState } from "../state/useUiStateStore";
 import { Modal } from "./Modal";
 
 interface SourceDialogProps {
@@ -23,7 +24,8 @@ export function SourceDialog({ source, onSaved, onClose, onOpenSync }: SourceDia
   const { t, errorText } = i18n;
   const save = useSaveSource();
   const [project, setProject] = useState(source?.project ?? "");
-  const [chosenBackend, setChosenBackend] = useState<Backend>("markdown");
+  const { state: ui } = useUiState();
+  const [chosenBackend, setChosenBackend] = useState<Backend>(ui.defaultBackend);
   const backend: Backend = source?.backend ?? chosenBackend;
   const database = backend === "database";
   // The folder of a markdown project, or the sync folder of a database project.

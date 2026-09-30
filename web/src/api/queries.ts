@@ -7,6 +7,7 @@ export const POLL_INTERVAL_MS = 5000;
 const keys = {
   backlog: ["backlog"] as const,
   uiState: ["ui-state"] as const,
+  storage: ["storage"] as const,
   folders: (path: string | null) => ["folders", path] as const,
   document: (sourceId: string, itemId: string, name: string) => ["document", sourceId, itemId, name] as const,
   trash: (sourceId: string) => ["trash", sourceId] as const,
@@ -221,6 +222,15 @@ export function useRemoveSource() {
   return useMutation({
     mutationFn: (id: string) => unwrap(api.DELETE("/api/v2/sources/{source_id}", { params: { path: { source_id: id } } })),
     onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
+  });
+}
+
+/** Type, location and schema version of the central database; read once, it does not change while the server runs. */
+export function useStorageInfo() {
+  return useQuery({
+    queryKey: keys.storage,
+    queryFn: () => unwrap(api.GET("/api/v2/storage")),
+    staleTime: Infinity,
   });
 }
 

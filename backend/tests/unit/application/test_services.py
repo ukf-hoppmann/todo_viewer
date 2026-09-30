@@ -1,6 +1,7 @@
 """Service tests against in-memory fakes of the ports: no files, no web framework."""
 from __future__ import annotations
 
+import dataclasses
 import itertools
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
@@ -31,7 +32,7 @@ from todo_viewer.domain.errors import (
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.retype import RetypePlanner
-from todo_viewer.domain.source import Source, SourceProblem
+from todo_viewer.domain.source import Source, SourceProblem, SyncBaseline
 from todo_viewer.domain.sync import SyncDirection
 from todo_viewer.domain.trash import TrashPlanner
 
@@ -353,6 +354,38 @@ def test_an_ordinary_change_makes_no_backup():
     service.update("a", "/a2", "A2")
 
     assert backup.created == []
+
+
+BASELINE = SyncBaseline(at="2026-09-30T10:00:00+02:00", primary="aaaa", mirror="bbbb")
+
+
+def test_the_last_sync_is_forgotten_when_a_side_of_the_project_changes_but_not_on_a_rename():
+    db = Source("A", "", backend="database", id="a", sync_path="/a", baseline=BASELINE)
+    service, repo = _sources([db])
+
+    renamed = service.update("a", "", "Renamed", sync_path="/a")
+    moved = service.update("a", "", "Renamed", sync_path="/b")
+    repo.sources[0] = dataclasses.replace(moved, baseline=BASELINE)
+    dropped = service.update("a", "", "Renamed", mirror="none")
+
+    assert renamed.baseline == BASELINE
+    assert moved.baseline is None and dropped.baseline is None
+
+
+def test_the_last_sync_is_forgotten_when_the_mirror_of_a_markdown_project_is_switched():
+    service, repo = _sources([Source("A", "/a", id="a", mirror_database=True, baseline=BASELINE)])
+
+    kept = service.update("a", "/a", None, mirror="database")
+    off = service.update("a", "/a", None, mirror="none")
+
+    assert kept.baseline == BASELINE and off.baseline is None
+
+
+def test_the_last_sync_is_forgotten_when_the_primary_source_is_switched():
+    md = Source("A", "/a", id="a", mirror_database=True, baseline=BASELINE)
+    service, _ = _sources([md])
+
+    assert service.update("a", "/a", None, "database", None).baseline is None
 
 
 def test_the_same_backend_is_no_switch():

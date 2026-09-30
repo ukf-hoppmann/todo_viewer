@@ -8,6 +8,7 @@ from .services import (
     DocumentService,
     FolderBrowseService,
     ItemService,
+    RetypeService,
     SourceLookup,
     SourceService,
     TrashService,
@@ -20,6 +21,7 @@ class Container:
     overview: BacklogOverviewService
     items: ItemService
     trash: TrashService
+    retype: RetypeService
     sources: SourceService
     source_lookup: SourceLookup
     documents: DocumentService

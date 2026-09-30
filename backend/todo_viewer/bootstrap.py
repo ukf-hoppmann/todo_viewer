@@ -14,6 +14,7 @@ from todo_viewer.application.services import (
     DocumentService,
     FolderBrowseService,
     ItemService,
+    RetypeService,
     SourceLookup,
     SourceService,
     TrashService,
@@ -22,6 +23,7 @@ from todo_viewer.application.services import (
 from todo_viewer.domain.creation import ItemFactory
 from todo_viewer.domain.editing import EditPlanner
 from todo_viewer.domain.lifecycle import LifecycleRules
+from todo_viewer.domain.retype import RetypePlanner
 from todo_viewer.domain.trash import TrashPlanner
 from todo_viewer.infrastructure.config import JsonFile, JsonSourceRepository, JsonUiStateStore, LegacySourceMigrator
 from todo_viewer.infrastructure.filesystem import GitProjectNameSuggester, LocalFolderBrowser, browse_start_from
@@ -75,6 +77,7 @@ def build_container(settings: Settings) -> Container:
         overview=BacklogOverviewService(source_repo, backlogs),
         items=ItemService(backlogs, planner, rules, ItemFactory(planner)),
         trash=TrashService(backlogs, documents, TrashPlanner(rules)),
+        retype=RetypeService(backlogs, documents, RetypePlanner(), rules),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver)),
         source_lookup=lookup,
         documents=DocumentService(backlogs, documents, planner, rules),

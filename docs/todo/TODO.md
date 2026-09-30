@@ -30,31 +30,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     als Speicher wählbar, mit Sync in beide Richtungen auf Knopfdruck.
   - Spec: `items/EPIC-003/EPIC-003_spec.md`.
 
-- `STORY-024` **Speicher-Backend und Sync in der UI bedienen**
-  - Type: Story.
-  - Parent: `EPIC-003`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: `STORY-023`.
-  - Goal: Im UI lässt sich je Projekt das Backend wählen, der Sync-Pfad
-    einstellen und der Sync (to_md / from_md) mit Vorschau-Dialog und
-    Bestätigung auslösen. Fehlercodes werden übersetzt, TypeScript-Typen aus
-    OpenAPI neu generiert.
-  - Completion criteria: Alle Backend- und Sync-Funktionen sind ohne Konsole
-    über die UI nutzbar; UI-Tests decken Backend-Wahl, Vorschau und
-    Bestätigung ab.
-  - Summary: Backend-Wahl und Sync-Knöpfe im Projekt-Dialog.
-  - Spec: `items/STORY-024/STORY-024_spec.md`.
-  - Notes: `items/STORY-024/STORY-024_notes.md`.
-
 - `STORY-025` **Doku und Release für das wählbare Speicher-Backend**
   - Type: Story.
   - Parent: `EPIC-003`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.

@@ -698,3 +698,24 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     neuem backend.
   - Notes: `items/TASK-003/TASK-003_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+
+- `STORY-024` **Speicher-Backend und Sync in der UI bedienen**
+  - Type: Story.
+  - Parent: `EPIC-003`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `STORY-023`.
+  - Goal: Im UI lässt sich je Projekt das Backend wählen, der Sync-Pfad
+    einstellen und der Sync (to_md / from_md) mit Vorschau-Dialog und
+    Bestätigung auslösen. Fehlercodes werden übersetzt, TypeScript-Typen aus
+    OpenAPI neu generiert.
+  - Completion criteria: Alle Backend- und Sync-Funktionen sind ohne Konsole
+    über die UI nutzbar; UI-Tests decken Backend-Wahl, Vorschau und
+    Bestätigung ab.
+  - Summary: Backend-Wahl und Sync-Knöpfe im Projekt-Dialog.
+  - Spec: `items/STORY-024/STORY-024_spec.md`.
+  - Notes: `items/STORY-024/STORY-024_notes.md`.
+  - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.

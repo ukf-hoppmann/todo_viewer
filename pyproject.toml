@@ -36,3 +36,8 @@ name = "Domain uses no third-party libraries"
 type = "forbidden"
 source_modules = ["todo_viewer.domain", "todo_viewer.application"]
 forbidden_modules = ["fastapi", "pydantic", "starlette", "uvicorn", "sqlalchemy"]
+
+[[tool.importlinter.contracts]]
+name = "Storage adapters do not import each other"
+type = "independence"
+modules = ["todo_viewer.infrastructure.markdown", "todo_viewer.infrastructure.database"]

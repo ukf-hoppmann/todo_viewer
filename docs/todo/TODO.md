@@ -39,7 +39,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Web-UI.
   - Priority: Normal.
@@ -55,6 +55,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     primären Seite zur anderen. - Das Badge erscheint bei geändertem Spiegel
     und öffnet das Menü bei diesem Projekt. - Der Bearbeiten-Dialog enthält
     nur noch den Namen. - Web-Tests decken Karte, Richtung und Badge ab.
+  - Notes: `items/STORY-034/STORY-034_notes.md`.
+  - Summary: Das Einstellungsmenü hat einen Abschnitt Projekte mit einer
+    Karte je Projekt; ein Badge in der Sidebar zeigt einen geänderten
+    Spiegel und öffnet die Karte.
 
 - `STORY-035` **Doku und Release für Primärquelle, Spiegel und Einstellungsmenü**
   - Type: Story.

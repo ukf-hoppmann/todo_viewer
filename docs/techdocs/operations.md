@@ -21,7 +21,8 @@
   Betrieb `todo.db-wal` und `todo.db-shm`. Das Schema wird beim ersten Zugriff
   automatisch auf den aktuellen Stand migriert (Tabelle `schema_version`, nur
   vorwärts; Version 3 ergänzt die Spalte `mirror_database`, bestehende Projekte
-  bekommen keinen Datenbank-Spiegel). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
+  bekommen keinen Datenbank-Spiegel; Version 5 die Spalte `mirror_disabled`, bestehende
+  Datenbank-Projekte mit Ordner behalten ihren Spiegel eingeschaltet). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
   im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
 - Primärquelle eines Projekts wechseln (UI: ⚙ → Projekte → „Primärquelle
   wechseln…“; API: Sync, dann `PUT /sources/{id}` mit neuem `backend`): Der
@@ -31,8 +32,9 @@
   Datenbank“ bleibt der Ordner als Spiegel liegen (`sync_path`), nach
   „Datenbank → Markdown“ bleibt die Kopie in der Datenbank (Datenbank-Spiegel
   eingeschaltet). Den Spiegel abschalten: bei einem Datenbank-Spiegel löscht das
-  die Kopie in der Datenbank, bei einem Markdown-Spiegel nur den Eintrag des
-  Ordners (⚙ → Projekte). Beim Austragen eines Markdown-Projekts verschwindet
+  die Kopie in der Datenbank, bei einem Markdown-Spiegel schaltet es nur den Spiegel ab: der Ordner bleibt
+  gespeichert, „Spiegel einschalten“ braucht keinen neuen (den Ordner selbst löscht
+  „Ordner ändern…“ mit leerem Pfad; ⚙ → Projekte). Beim Austragen eines Markdown-Projekts verschwindet
   seine Kopie in der Datenbank mit, ein Datenbank-Projekt mit Items lässt sich
   nicht austragen. Der Export in einen neuen Ordner schreibt die Kopfzeilen von
   `TODO.md`/`archive.md` in der gewählten Sprache (die UI schickt ihre eigene, die

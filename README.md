@@ -147,7 +147,7 @@ Im Abschnitt „Projekte“ steht pro Projekt eine Karte: Primärquelle
 (Markdown-Ordner oder Datenbank) mit „Primärquelle wechseln…“ (erst Sync, vorher
 ein Backup der bisherigen Primärquelle unter `configs/backups/`), der
 Markdown-Ordner, der Spiegel (Datenbank-Spiegel ein/aus bzw. Markdown-Ordner als
-Spiegel), der Stand des Spiegels mit dem letzten Sync und „Sync…“ mit wählbarer
+Spiegel, der sich aus- und wieder einschalten lässt, ohne den Ordner neu zu wählen), der Stand des Spiegels mit dem letzten Sync und „Sync…“ mit wählbarer
 Richtung (Standard: von der Primärquelle zum Spiegel). Ein ⚠ hinter dem
 Projektnamen in der Sidebar heißt: der Spiegel wurde seit dem letzten Sync
 geändert (oder ist nicht lesbar); ein Klick öffnet die Karte dieses Projekts. Der

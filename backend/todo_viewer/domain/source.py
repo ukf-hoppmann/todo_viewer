@@ -26,6 +26,9 @@ class Source:
     sync_path: str | None = None
     # Markdown projects only: whether the database keeps a mirror of the project (written by a sync only).
     mirror_database: bool = False
+    # Database projects only: the mirror folder `sync_path` is kept but not used, so the mirror can be switched
+    # on again without choosing the folder anew.
+    mirror_disabled: bool = False
     # Unknown config keys are preserved when a source is rewritten.
     extra: dict[str, Any] = field(default_factory=dict, compare=False)
     # The state after the last sync, if the project was synced since it got its mirror; not part of its identity.
@@ -41,7 +44,7 @@ class Source:
         """The backend that mirrors the primary one: "markdown", "database", or "none"."""
         if self.backend == "markdown":
             return "database" if self.mirror_database else "none"
-        return "markdown" if self.sync_path else "none"
+        return "markdown" if self.sync_path and not self.mirror_disabled else "none"
 
     def updated(self, project: str, path: str) -> Source:
         return replace(self, project=project, path=path)

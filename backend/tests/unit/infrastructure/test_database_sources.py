@@ -207,3 +207,33 @@ def migrate_to(conn: sa.Connection, version: int) -> None:
         for statement in MIGRATIONS[number]:
             conn.execute(sa.text(statement))
         conn.execute(sa.text("UPDATE schema_version SET version = :v"), {"v": number})
+
+
+def test_a_database_project_with_its_mirror_off_keeps_the_folder_and_the_flag(db: Database):
+    repo = DatabaseSourceRepository(db)
+    off = dataclasses.replace(CENTRAL, mirror_disabled=True)
+
+    with repo.edit() as sources:
+        sources += [off, FILES]
+
+    stored = repo.all()
+    assert (stored[0].sync_path, stored[0].mirror_disabled, stored[0].mirror) == ("/repos/b/docs", True, "none")
+    assert stored[1].mirror_disabled is False
+    with repo.edit() as sources:
+        sources[0] = dataclasses.replace(sources[0], mirror_disabled=False)
+    assert repo.all()[0].mirror == "markdown"
+
+
+def test_projects_of_a_v4_database_keep_their_mirror_folder_switched_on(tmp_path: Path):
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'todo.db'}")
+    with engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE schema_version (version INTEGER NOT NULL)"))
+        conn.execute(sa.text("INSERT INTO schema_version (version) VALUES (0)"))
+        migrate_to(conn, 4)
+        conn.execute(sa.text("INSERT INTO projects (id, name, backend, path, sync_path, position) "
+                             "VALUES ('p1', 'Old', 'database', '', '/md', 0)"))
+    with engine.begin() as conn:
+        migrate(conn)
+
+    [old] = DatabaseSourceRepository(Database(str(engine.url))).all()
+    assert (old.sync_path, old.mirror_disabled, old.mirror) == ("/md", False, "markdown")

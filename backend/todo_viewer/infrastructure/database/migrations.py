@@ -78,6 +78,10 @@ MIGRATIONS: dict[int, list[str]] = {
         "ALTER TABLE projects ADD COLUMN synced_primary VARCHAR(64)",
         "ALTER TABLE projects ADD COLUMN synced_mirror VARCHAR(64)",
     ],
+    # A database project can keep its mirror folder while the mirror is off; existing projects keep it switched on.
+    5: [
+        "ALTER TABLE projects ADD COLUMN mirror_disabled BOOLEAN NOT NULL DEFAULT 0",
+    ],
 }
 
 CURRENT_VERSION = max(MIGRATIONS)

@@ -138,6 +138,19 @@ Das Zahnrad oben in der Sidebar öffnet das Einstellungsmenü. Im Abschnitt
 Anzeige; der Ort steht in `configs/config.json`) und der Speicherort, mit dem
 „Projekt hinzufügen“ vorbelegt ist (Markdown-Ordner oder Datenbank).
 
+Im Abschnitt „Projekte“ steht pro Projekt eine Karte: Primärquelle
+(Markdown-Ordner oder Datenbank) mit „Primärquelle wechseln…“ (erst Sync, vorher
+ein Backup der bisherigen Primärquelle unter `configs/backups/`), der
+Markdown-Ordner, der Spiegel (Datenbank-Spiegel ein/aus bzw. Markdown-Ordner als
+Spiegel), der Stand des Spiegels mit dem letzten Sync und „Sync…“ mit wählbarer
+Richtung (Standard: von der Primärquelle zum Spiegel). Ein ⚠ hinter dem
+Projektnamen in der Sidebar heißt: der Spiegel wurde seit dem letzten Sync
+geändert (oder ist nicht lesbar); ein Klick öffnet die Karte dieses Projekts. Der
+Stand wird beim Laden der Seite, bei Fensterfokus, beim Öffnen des Menüs, mit
+„Status prüfen“ und nach einem Sync geholt, nicht im Takt der Anzeige. Das
+Bearbeiten (✎) in der Sidebar ändert nur den Namen; Entfernen und die Reihenfolge
+bleiben dort.
+
 ## Sprache
 
 Status, Prioritäten, Typen und Feldnamen sind in den Dateien englisch und

@@ -36,3 +36,13 @@
 - Papierkorb als eigene Ansicht neben Baum, Abhängigkeiten und Kanban.
 - Spec-Editor als Textfeld mit Markdown-Vorschau, ohne neue Bibliothek.
 - Stories STORY-012 bis STORY-015 angelegt.
+
+## 2026-09-30 — Wiedergeöffnet für Typwechsel in der UI
+
+### Discussed
+
+- Der Typ eines Items lässt sich seit v0.1.1 per API ändern (retype); die UI bietet das noch nicht an.
+
+### Decided
+
+- EPIC-002 wird wieder geöffnet; die UI dafür kommt als eigene Story unter EPIC-002.

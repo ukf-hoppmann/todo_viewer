@@ -68,11 +68,60 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     nächste freie ID des Zieltyps; Header, `parent` und `dependencies` aller
     Items (aktiv, Archiv, Papierkorb), der Ordner `items/<ID>/` sowie
     ID-Erwähnungen in Notes und Specs des Backlogs werden atomar mitgezogen.
+    Die Antwort enthält einen Hinweis, dass Techdocs und andere Stellen
+    außerhalb des Backlogs die alte ID noch nennen können; UI und Agenten
+    können ihn anzeigen bzw. darauf aufbauen.
   - Completion criteria: Der Typwechsel liefert das Item mit neuer ID und
     Version und lässt keine Verweise auf die alte ID im Backlog zurück. Die
-    Lifecycle-Regeln (z. B. Epic ohne Parent, Epic mit Pflichtkind) werden
-    geprüft und verletzen sie, bleibt alles unverändert. Tests decken aktive
-    und archivierte Items, Kinder, Abhängigkeiten und Dokumente ab; OpenAPI
-    und Techdocs sind aktualisiert.
+    Antwort nennt alte und neue ID und trägt einen Hinweis mit stabilem Code
+    auf mögliche Verweise außerhalb des Backlogs. Die Lifecycle-Regeln (z.
+    B. Epic ohne Parent, Epic mit Pflichtkind) werden geprüft und verletzen
+    sie, bleibt alles unverändert. Tests decken aktive und archivierte
+    Items, Kinder, Abhängigkeiten und Dokumente ab; OpenAPI und Techdocs
+    sind aktualisiert.
   - Summary: Den Typ eines Items ändern, ohne dass Verweise im Backlog
     brechen.
+  - Notes: `items/TASK-002/TASK-002_notes.md`.
+
+- `EPIC-002` **Backlog-Pflege in der UI**
+  - Type: Epic.
+  - Status: In progress.
+  - Created: 2026-09-27.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: In der UI lassen sich Items anlegen und löschen, ihre
+    Freitext-Felder (Titel, Goal, Completion criteria, Summary, Area,
+    Parent, Dependencies) bearbeiten sowie Notes-Einträge und Specs
+    schreiben. Die UI nutzt dafür die Endpunkte aus `EPIC-001`.
+  - Completion criteria: Alle Pflichtkinder sind abgeschlossen; jede
+    genannte Funktion ist in der UI bedienbar, Fehlercodes der API
+    werden übersetzt angezeigt, und der Projektverantwortliche hat die
+    Bedienung geprüft.
+  - Summary: Alles, was künftig ein Agent über die API am Backlog
+    ändern kann, soll auch direkt in der Oberfläche möglich sein.
+  - Notes: `items/EPIC-002/EPIC-002_notes.md`.
+
+- `STORY-018` **Typ eines Items in der UI ändern**
+  - Type: Story.
+  - Parent: `EPIC-002`.
+  - Required for parent: Yes.
+  - Status: Open.
+  - Created: 2026-09-30.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-002`.
+  - Goal: Im Detail-Panel lässt sich der Typ eines Items ändern. Die UI ruft
+    den Typwechsel der API auf, wählt das Item danach unter seiner neuen ID
+    aus und zeigt den Hinweis der API, dass Techdocs und andere Stellen
+    außerhalb des Backlogs die alte ID noch nennen können.
+  - Completion criteria: Ein Item lässt sich im Detail-Panel auf einen
+    anderen Typ umstellen; danach ist es unter der neuen ID ausgewählt und
+    die Ansichten zeigen es dort. Regelverstöße der API (z. B. Epic mit
+    Parent) erscheinen als übersetzte Meldung ohne Änderung. Der Hinweis auf
+    mögliche Verweise außerhalb des Backlogs ist sichtbar und enthält die
+    alte und die neue ID. Texte sind in Deutsch und Englisch vorhanden;
+    Typecheck, Lint und Web-Tests sind grün.
+  - Summary: Den Typ eines Items direkt in der Oberfläche ändern, samt
+    Hinweis auf Verweise außerhalb des Backlogs.
+  - Notes: `items/STORY-018/STORY-018_notes.md`.

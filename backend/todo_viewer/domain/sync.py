@@ -46,10 +46,16 @@ class SyncPreview:
     token: str
 
 
-def sync_pair(source: Source) -> tuple[Source, Source]:
-    """The database project and the markdown folder it is synced with, as two sources of the same project."""
+def sync_pair(source: Source, direction: SyncDirection) -> tuple[Source, Source]:
+    """The database side and the markdown side of a project, as two sources with the project's id.
+
+    A database project is synced with its `sync_path` folder in both directions. A markdown project has no
+    database side of its own yet: its folder can be read into the database (`from_md`), which is how it is moved.
+    """
     if source.backend == "markdown":
-        raise SyncSameBackendError()
+        if direction is SyncDirection.TO_MD:
+            raise SyncSameBackendError()
+        return dataclasses.replace(source, backend="database", path="", sync_path=None), source
     if not source.sync_path:
         raise SyncPathMissingError()
     return source, dataclasses.replace(source, backend="markdown", path=source.sync_path, sync_path=None)

@@ -239,3 +239,41 @@ def test_projects_without_a_sync_folder_or_in_markdown_are_refused(setup: Setup)
         setup.service.preview(dataclasses.replace(setup.project, sync_path=None), TO_MD)
     with pytest.raises(SyncSameBackendError):
         setup.service.preview(Source(project="P", path=str(FIXTURE), id="m"), TO_MD)
+
+
+def test_a_markdown_project_is_read_into_the_database_under_its_id(setup: Setup):
+    setup.service.run(setup.project, TO_MD, setup.service.preview(setup.project, TO_MD).token, False, "en")
+    moving = Source(project="P", path=str(setup.tmp / "md"), id="moving")
+
+    preview = setup.service.preview(moving, FROM_MD)
+    setup.service.run(moving, FROM_MD, preview.token, False, "en")
+
+    assert len(preview.created) == len(setup.versions(setup.project))
+    database = dataclasses.replace(moving, backend="database", path="")
+    assert setup.versions(database) == setup.versions(setup.project)
+    assert setup.documents.read(database, "TASK-002", "notes.md").startswith("# Notes for TASK-002")
+
+
+def test_a_project_is_in_sync_when_nothing_would_change(setup: Setup):
+    assert not setup.service.in_sync(setup.project, TO_MD)  # the folder does not exist yet
+    setup.service.run(setup.project, TO_MD, setup.service.preview(setup.project, TO_MD).token, False, "en")
+
+    assert setup.service.in_sync(setup.project, TO_MD)
+    assert setup.service.in_sync(setup.project, FROM_MD)
+
+
+def test_a_difference_in_either_direction_or_in_a_document_is_not_in_sync(setup: Setup):
+    setup.service.run(setup.project, TO_MD, setup.service.preview(setup.project, TO_MD).token, False, "en")
+    (setup.tmp / "md" / "items" / "TASK-002" / "notes.md").write_text("# other\n", encoding="utf-8")
+    assert not setup.service.in_sync(setup.project, TO_MD)
+
+    setup.service.run(setup.project, FROM_MD, setup.service.preview(setup.project, FROM_MD).token, False, "en")
+    setup.backlogs.create(setup.project, Item(id="TASK-071", title="Only in the database", project="P"))
+
+    assert not setup.service.in_sync(setup.project, TO_MD)  # would be created in the folder
+    assert not setup.service.in_sync(setup.project, FROM_MD)  # would be missing in the folder
+
+
+def test_in_sync_of_a_broken_folder_is_an_error_not_a_no(setup: Setup):
+    with pytest.raises(SyncSourceInvalidError):
+        setup.service.in_sync(setup.project, FROM_MD)

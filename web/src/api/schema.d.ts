@@ -744,6 +744,11 @@ export interface components {
              */
             backend?: ("markdown" | "database") | null;
             /**
+             * Mirror
+             * @description The other side to keep as a mirror: database for a markdown project, markdown (needs sync_path) for a database one, none to drop it; unset leaves it as it is. Dropping the database mirror of a markdown project deletes the copy in the database. Not read when the backend changes
+             */
+            mirror?: ("none" | "markdown" | "database") | null;
+            /**
              * Path
              * @description Markdown projects: backlog folder with TODO.md; unused for database ones
              * @default
@@ -770,10 +775,27 @@ export interface components {
             /** Id */
             id: string;
             /**
+             * Markdown Path
+             * @description The markdown folder on either side: the primary source of a markdown project, the mirror of a database project; null if a database project has none
+             */
+            markdown_path: string | null;
+            /**
+             * Mirror
+             * @description The other side kept as a mirror; it is written by a sync only
+             * @enum {string}
+             */
+            mirror: "none" | "markdown" | "database";
+            /**
              * Path
              * @description Markdown projects: backlog folder; database projects: empty
              */
             path: string;
+            /**
+             * Primary
+             * @description The side that holds the truth (same as `backend`)
+             * @enum {string}
+             */
+            primary: "markdown" | "database";
             /** Project */
             project: string;
             /**
@@ -794,10 +816,27 @@ export interface components {
             /** Item Count */
             item_count: number;
             /**
+             * Markdown Path
+             * @description The markdown folder on either side: the primary source of a markdown project, the mirror of a database project; null if a database project has none
+             */
+            markdown_path: string | null;
+            /**
+             * Mirror
+             * @description The other side kept as a mirror; it is written by a sync only
+             * @enum {string}
+             */
+            mirror: "none" | "markdown" | "database";
+            /**
              * Path
              * @description Markdown projects: backlog folder; database projects: empty
              */
             path: string;
+            /**
+             * Primary
+             * @description The side that holds the truth (same as `backend`)
+             * @enum {string}
+             */
+            primary: "markdown" | "database";
             problem: components["schemas"]["ProblemOut"] | null;
             /** Project */
             project: string;

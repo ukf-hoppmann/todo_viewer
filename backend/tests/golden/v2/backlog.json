@@ -227,7 +227,10 @@
       "backend": "markdown",
       "id": "<SOURCE0>",
       "item_count": 7,
+      "markdown_path": "<ROOT>/repos/backlog/docs",
+      "mirror": "none",
       "path": "<ROOT>/repos/backlog/docs",
+      "primary": "markdown",
       "problem": null,
       "project": "backlog",
       "sync_path": null
@@ -236,7 +239,10 @@
       "backend": "markdown",
       "id": "<SOURCE1>",
       "item_count": 1,
+      "markdown_path": "<ROOT>/repos/no_archive/docs",
+      "mirror": "none",
       "path": "<ROOT>/repos/no_archive/docs",
+      "primary": "markdown",
       "problem": null,
       "project": "no_archive",
       "sync_path": null

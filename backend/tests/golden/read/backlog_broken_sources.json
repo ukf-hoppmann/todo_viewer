@@ -5,7 +5,10 @@
       "backend": "markdown",
       "id": "<SOURCE0>",
       "item_count": 0,
+      "markdown_path": "<ROOT>/repos/missing",
+      "mirror": "none",
       "path": "<ROOT>/repos/missing",
+      "primary": "markdown",
       "problem": {
         "code": "not_found",
         "message": "Folder not found."
@@ -17,7 +20,10 @@
       "backend": "markdown",
       "id": "<SOURCE1>",
       "item_count": 0,
+      "markdown_path": "<ROOT>/repos/plain",
+      "mirror": "none",
       "path": "<ROOT>/repos/plain",
+      "primary": "markdown",
       "problem": {
         "code": "no_todo",
         "message": "No TODO.md in this folder."
@@ -29,7 +35,10 @@
       "backend": "markdown",
       "id": "<SOURCE2>",
       "item_count": 0,
+      "markdown_path": "<ROOT>/repos",
+      "mirror": "none",
       "path": "<ROOT>/repos",
+      "primary": "markdown",
       "problem": {
         "code": "no_todo",
         "message": "No TODO.md in this folder."

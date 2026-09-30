@@ -258,6 +258,10 @@
       "primary": "markdown",
       "problem": null,
       "project": "Backlog",
+      "sync": {
+        "last_sync_at": null,
+        "state": "none"
+      },
       "sync_path": null
     },
     {
@@ -273,6 +277,10 @@
         "message": "TODO.md is not in the backlog format."
       },
       "project": "Checklist",
+      "sync": {
+        "last_sync_at": null,
+        "state": "none"
+      },
       "sync_path": null
     },
     {
@@ -285,6 +293,10 @@
       "primary": "markdown",
       "problem": null,
       "project": "NoArchive",
+      "sync": {
+        "last_sync_at": null,
+        "state": "none"
+      },
       "sync_path": null
     },
     {
@@ -297,6 +309,10 @@
       "primary": "markdown",
       "problem": null,
       "project": "EmptyArchive",
+      "sync": {
+        "last_sync_at": null,
+        "state": "none"
+      },
       "sync_path": null
     }
   ]

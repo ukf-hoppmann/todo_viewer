@@ -176,7 +176,8 @@ def test_sources_by_id(api, workspace):
     assert added.body["project"] == "Extra"
     assert (dup.status_code, dup.body["code"]) == (409, "duplicate")
     assert renamed.body == {"id": sources[0]["id"], "project": "Renamed", "path": str(backlog), "backend": "markdown",
-                            "sync_path": None, "primary": "markdown", "markdown_path": str(backlog), "mirror": "none"}
+                            "sync_path": None, "primary": "markdown", "markdown_path": str(backlog), "mirror": "none",
+                            "sync": {"state": "none", "last_sync_at": None}}
     assert removed.body["path"] == str(second)
     assert (gone.status_code, gone.body["code"]) == (404, "source_gone")
     assert [s["project"] for s in api.get("/api/v2/sources").body] == ["Renamed", "Extra"]
@@ -199,7 +200,8 @@ def test_create_backlog(api, workspace):
 
     assert created.status_code == 201
     assert created.body == {"id": created.body["id"], "project": "New", "path": str(folder), "backend": "markdown",
-                            "sync_path": None, "primary": "markdown", "markdown_path": str(folder), "mirror": "none"}
+                            "sync_path": None, "primary": "markdown", "markdown_path": str(folder), "mirror": "none",
+                            "sync": {"state": "none", "last_sync_at": None}}
     assert sorted(p.name for p in folder.iterdir()) == ["TODO.md", "archive.md", "items"]
     assert "Claude_Harness backlog format version 1" in (folder / "TODO.md").read_text(encoding="utf-8")
     assert (workspace.repos / "Neu" / "TODO.md").read_text(encoding="utf-8").startswith("# Projekt-Backlog\n")

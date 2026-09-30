@@ -1084,6 +1084,10 @@
             "title": "Project",
             "type": "string"
           },
+          "sync": {
+            "$ref": "#/components/schemas/SyncStatusOut",
+            "description": "Whether the mirror still matches the primary source; reading it changes and syncs nothing"
+          },
           "sync_path": {
             "anyOf": [
               {
@@ -1105,7 +1109,8 @@
           "sync_path",
           "primary",
           "markdown_path",
-          "mirror"
+          "mirror",
+          "sync"
         ],
         "title": "SourceOut",
         "type": "object"
@@ -1178,6 +1183,10 @@
             "title": "Project",
             "type": "string"
           },
+          "sync": {
+            "$ref": "#/components/schemas/SyncStatusOut",
+            "description": "Whether the mirror still matches the primary source; reading it changes and syncs nothing"
+          },
           "sync_path": {
             "anyOf": [
               {
@@ -1200,6 +1209,7 @@
           "primary",
           "markdown_path",
           "mirror",
+          "sync",
           "item_count",
           "problem"
         ],
@@ -1387,6 +1397,42 @@
           "missing"
         ],
         "title": "SyncSectionOut",
+        "type": "object"
+      },
+      "SyncStatusOut": {
+        "properties": {
+          "last_sync_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the project was last synced through this API; null if never",
+            "title": "Last Sync At"
+          },
+          "state": {
+            "description": "none: no mirror; in_sync; mirror_changed / primary_changed / both_changed: which side changed since the last sync (a sync through this API); unknown: never synced and the sides differ; unreadable: a side cannot be read",
+            "enum": [
+              "none",
+              "in_sync",
+              "mirror_changed",
+              "primary_changed",
+              "both_changed",
+              "unknown",
+              "unreadable"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "last_sync_at"
+        ],
+        "title": "SyncStatusOut",
         "type": "object"
       },
       "ValidationError": {

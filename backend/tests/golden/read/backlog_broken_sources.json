@@ -14,6 +14,10 @@
         "message": "Folder not found."
       },
       "project": "Missing",
+      "sync": {
+        "last_sync_at": null,
+        "state": "none"
+      },
       "sync_path": null
     },
     {
@@ -29,6 +33,10 @@
         "message": "No TODO.md in this folder."
       },
       "project": "NoTodo",
+      "sync": {
+        "last_sync_at": null,
+        "state": "none"
+      },
       "sync_path": null
     },
     {
@@ -44,6 +52,10 @@
         "message": "No TODO.md in this folder."
       },
       "project": "NotADir",
+      "sync": {
+        "last_sync_at": null,
+        "state": "none"
+      },
       "sync_path": null
     }
   ]

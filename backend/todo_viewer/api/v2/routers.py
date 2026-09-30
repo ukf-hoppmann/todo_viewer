@@ -8,7 +8,19 @@ from todo_viewer.domain.errors import ConfigMissingError
 from todo_viewer.domain.sync import SyncDirection, default_direction
 from todo_viewer.domain.trash import live
 
-from ..dependencies import Documents, Folders, Items, Lookup, Overview, Retype, Sources, Sync, Trash, UiState
+from ..dependencies import (
+    Documents,
+    Folders,
+    Items,
+    Lookup,
+    Overview,
+    Retype,
+    Sources,
+    Sync,
+    SyncStatus,
+    Trash,
+    UiState,
+)
 from ..request_log import note
 from .schemas import (
     BacklogCreateIn,
@@ -49,14 +61,15 @@ def health() -> HealthOut:
 
 
 @router.get("/backlog", tags=["items"])
-def backlog(overview: Overview) -> BacklogOut:
+def backlog(overview: Overview, sync_status: SyncStatus) -> BacklogOut:
     """All configured sources with their items. Without a config the backlog is empty."""
     try:
         entries = overview.overview()
     except ConfigMissingError:
         entries = []
     return BacklogOut(
-        sources=[SourceStatusOut(**SourceOut.of(e.source).model_dump(), item_count=len(live(e.backlog.items)),
+        sources=[SourceStatusOut(**SourceOut.of(e.source, sync_status.status(e.source)).model_dump(),
+                                 item_count=len(live(e.backlog.items)),
                                  problem=ProblemOut.of(e.backlog.problem)) for e in entries],
         items=[ItemOut.of(e.source, item, e.backlog.archive_available)
                for e in entries for item in live(e.backlog.items)],
@@ -178,18 +191,18 @@ def append_notes(source_id: str, item_id: str, body: NotesEntryIn, documents: Do
 
 
 @router.get("/sources", tags=["sources"])
-def list_sources(sources: Sources) -> list[SourceOut]:
+def list_sources(sources: Sources, sync_status: SyncStatus) -> list[SourceOut]:
     try:
-        return [SourceOut.of(s) for s in sources.all()]
+        return [SourceOut.of(s, sync_status.status(s)) for s in sources.all()]
     except ConfigMissingError:
         return []
 
 
 @router.post("/sources", tags=["sources"])
-def add_source(body: SourceIn, sources: Sources, request: Request) -> SourceOut:
+def add_source(body: SourceIn, sources: Sources, sync_status: SyncStatus, request: Request) -> SourceOut:
     note(request, target=body.path)
-    out = SourceOut.of(sources.add(body.path, body.project, body.backend or "markdown", body.sync_path,
-                                   body.mirror))
+    added = sources.add(body.path, body.project, body.backend or "markdown", body.sync_path, body.mirror)
+    out = SourceOut.of(added, sync_status.status(added))
     note(request, source=out.id)
     return out
 
@@ -206,9 +219,11 @@ def create_backlog(body: BacklogCreateIn, sources: Sources, request: Request) ->
 
 
 @router.put("/sources/{source_id}", tags=["sources"])
-def update_source(source_id: str, body: SourceIn, sources: Sources, request: Request) -> SourceOut:
+def update_source(source_id: str, body: SourceIn, sources: Sources, sync_status: SyncStatus,
+                  request: Request) -> SourceOut:
     note(request, target=body.path)
-    return SourceOut.of(sources.update(source_id, body.path, body.project, body.backend, body.sync_path, body.mirror))
+    updated = sources.update(source_id, body.path, body.project, body.backend, body.sync_path, body.mirror)
+    return SourceOut.of(updated, sync_status.status(updated))
 
 
 @router.delete("/sources/{source_id}", tags=["sources"])
@@ -217,7 +232,8 @@ def remove_source(source_id: str, sources: Sources) -> SourceOut:
 
 
 @router.post("/sources/{source_id}/sync", tags=["sources"])
-def sync_source(source_id: str, body: SyncIn, sync: Sync, lookup: Lookup, request: Request) -> SyncOut:
+def sync_source(source_id: str, body: SyncIn, sync: Sync, sync_status: SyncStatus, lookup: Lookup,
+                request: Request) -> SyncOut:
     """Copies all data of a database project between the database and its sync folder (`sync_path`).
 
     Without `confirm` this is a preview and changes nothing: what is created, what differs (`changed`: the target
@@ -232,7 +248,7 @@ def sync_source(source_id: str, body: SyncIn, sync: Sync, lookup: Lookup, reques
     note(request, source=source_id, direction=direction.value, confirm=body.confirm)
     if not body.confirm:
         return SyncOut.of(sync.preview(source, direction))
-    result = sync.run(source, direction, body.token, body.delete_missing, body.language)
+    result = sync_status.run(source, direction, body.token, body.delete_missing, body.language)
     return SyncOut.of(result.preview, result)
 
 

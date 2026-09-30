@@ -12,6 +12,7 @@ from .services import (
     SourceLookup,
     SourceService,
     SyncService,
+    SyncStatusService,
     TrashService,
     UiStateService,
 )
@@ -27,5 +28,6 @@ class Container:
     source_lookup: SourceLookup
     documents: DocumentService
     sync: SyncService
+    sync_status: SyncStatusService
     folders: FolderBrowseService
     ui_state: UiStateService

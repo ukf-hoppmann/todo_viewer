@@ -32,6 +32,7 @@ from todo_viewer.infrastructure.filesystem import GitProjectNameSuggester, Local
 from todo_viewer.infrastructure.log_setup import configure_logging
 from todo_viewer.infrastructure.markdown import KeyedLocks, build_markdown_documents, build_markdown_repository
 from todo_viewer.infrastructure.markdown.layout import SourcePathResolver
+from todo_viewer.infrastructure.routing import RoutingBacklogRepository, RoutingDocumentStore
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -69,9 +70,9 @@ def start_logging(settings: Settings) -> None:
 def build_container(settings: Settings, today: Callable[[], date] = date.today) -> Container:
     resolver = SourcePathResolver(settings.base_dir)
     locks = KeyedLocks()  # shared: backlog files and documents of a folder are written under one lock
-    backlogs = build_markdown_repository(settings.base_dir, locks)
+    backlogs = RoutingBacklogRepository({"markdown": build_markdown_repository(settings.base_dir, locks)})
     planner, rules = EditPlanner(), LifecycleRules()
-    documents = build_markdown_documents(settings.base_dir, locks)
+    documents = RoutingDocumentStore({"markdown": build_markdown_documents(settings.base_dir, locks)})
     source_repo = JsonSourceRepository(JsonFile(settings.config_dir / "config.json"), LegacySourceMigrator())
     lookup = SourceLookup(source_repo)
 

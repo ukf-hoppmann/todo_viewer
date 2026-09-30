@@ -6,6 +6,8 @@ import { DetailPanel } from "./components/DetailPanel";
 import { RetypeNotice } from "./components/RetypeNotice";
 import { Sidebar } from "./components/Sidebar";
 import { SourceDialog } from "./components/SourceDialog";
+import { SyncDialog } from "./components/SyncDialog";
+import type { SyncMode } from "./domain/sync";
 import { type Uid, uidOf } from "./domain/model";
 import { createI18n, describeError, I18nContext } from "./i18n/i18n";
 import type { MessageKey } from "./i18n/messages";
@@ -22,6 +24,7 @@ const GraphView = lazy(() => import("./views/GraphView").then((m) => ({ default:
 const TAB_LABELS: Record<View, MessageKey> = { tree: "tab.tree", graph: "tab.graph", kanban: "tab.kanban", trash: "tab.trash" };
 
 type SourceDialogState = { source: SourceStatus | null } | null;
+type SyncDialogState = { source: SourceStatus; mode: SyncMode } | null;
 
 export function App() {
   const [state, dispatch] = useUiStateStore();
@@ -30,6 +33,7 @@ export function App() {
   const model = useBacklogModel(state);
   const removeSource = useRemoveSource();
   const [sourceDialog, setSourceDialog] = useState<SourceDialogState>(null);
+  const [syncDialog, setSyncDialog] = useState<SyncDialogState>(null);
   const [creating, setCreating] = useState(false);
   // Kept here, not in the detail panel: the panel is rebuilt when the selection moves to the new id.
   const [retyped, setRetyped] = useState<Schemas["RetypeOut"] | null>(null);
@@ -38,7 +42,10 @@ export function App() {
   const selected = state.selectedId ? model.byUid.get(state.selectedId) : undefined;
 
   const onRemoveSource = (source: SourceStatus) => {
-    if (!window.confirm(i18n.t("source.confirmRemove", { p: source.project, path: source.path }))) return;
+    const text = source.backend === "database"
+      ? i18n.t("source.confirmRemoveDb", { p: source.project })
+      : i18n.t("source.confirmRemove", { p: source.project, path: source.path });
+    if (!window.confirm(text)) return;
     removeSource.mutate(source.id, {
       onError: (e) => window.alert(i18n.t("err.generic", { e: describeError(i18n, e) })),
     });
@@ -65,6 +72,7 @@ export function App() {
             onAddSource={() => setSourceDialog({ source: null })}
             onEditSource={(source) => setSourceDialog({ source })}
             onRemoveSource={onRemoveSource}
+            onSyncSource={(source) => setSyncDialog({ source, mode: "sync" })}
           />
           <main className="main">
             <nav className="tabs">
@@ -124,9 +132,21 @@ export function App() {
           <SourceDialog
             source={sourceDialog.source}
             onClose={() => setSourceDialog(null)}
+            onOpenSync={(source, mode) => setSyncDialog({ source, mode })}
             onSaved={(project) => {
               dispatch({ type: "showProject", project });
               setSourceDialog(null);
+            }}
+          />
+        )}
+        {syncDialog && (
+          <SyncDialog
+            source={syncDialog.source}
+            mode={syncDialog.mode}
+            onClose={() => setSyncDialog(null)}
+            onSwitched={(project) => {
+              dispatch({ type: "showProject", project });
+              setSyncDialog(null);
             }}
           />
         )}

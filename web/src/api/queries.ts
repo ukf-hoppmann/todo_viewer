@@ -147,14 +147,72 @@ export function useWriteDocument() {
   );
 }
 
+export type Backend = Schemas["SourceIn"]["backend"] & string;
+
+export interface SaveSourceRequest {
+  /** null = add a new project. */
+  id: string | null;
+  project: string;
+  /** Markdown projects: the backlog folder. Unused for database projects. */
+  path: string;
+  /** Only a new project chooses its backend; a change of an existing one goes through useSwitchBackend. */
+  backend?: Backend;
+  /** Database projects: the folder their markdown files are synced with ("" = none). */
+  syncPath?: string;
+}
+
 export function useSaveSource() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, path, project }: { id: string | null; path: string; project: string }) =>
-      id
-        ? unwrap(api.PUT("/api/v2/sources/{source_id}", { params: { path: { source_id: id } }, body: { path, project } }))
-        : unwrap(api.POST("/api/v2/sources", { body: { path, project } })),
+    mutationFn: ({ id, path, project, backend, syncPath }: SaveSourceRequest) => {
+      const body = { path, project, backend, sync_path: syncPath };
+      return id
+        ? unwrap(api.PUT("/api/v2/sources/{source_id}", { params: { path: { source_id: id } }, body }))
+        : unwrap(api.POST("/api/v2/sources", { body }));
+    },
     onSuccess: () => client.invalidateQueries({ queryKey: keys.backlog }),
+  });
+}
+
+export interface SyncRequest {
+  sourceId: string;
+  direction: Schemas["SyncIn"]["direction"];
+  /** false asks for a preview, true carries the sync out (with the token of the preview). */
+  confirm: boolean;
+  token?: string;
+  deleteMissing?: boolean;
+  language: "de" | "en";
+}
+
+function runSync({ sourceId, direction, confirm, token, deleteMissing, language }: SyncRequest) {
+  return unwrap(
+    api.POST("/api/v2/sources/{source_id}/sync", {
+      params: { path: { source_id: sourceId } },
+      body: { direction, confirm, token, delete_missing: deleteMissing ?? false, language },
+    }),
+  );
+}
+
+/** A preview (`confirm` false) or the sync itself; a sync changes the items, so the backlog reloads. */
+export function useSyncSource() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: runSync,
+    onSuccess: (result) => {
+      if (result.executed) void client.invalidateQueries({ queryKey: keys.backlog });
+    },
+  });
+}
+
+/** Syncs (with the token of the confirmed preview) and then moves the project to `backend`. */
+export function useSwitchBackend() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ backend, ...sync }: Omit<SyncRequest, "confirm"> & { backend: Backend }) => {
+      await runSync({ ...sync, confirm: true });
+      return unwrap(api.PUT("/api/v2/sources/{source_id}", { params: { path: { source_id: sync.sourceId } }, body: { path: "", backend } })); // the server takes the folder from the stored project
+    },
+    onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
   });
 }
 

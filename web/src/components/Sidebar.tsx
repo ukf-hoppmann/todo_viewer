@@ -12,9 +12,10 @@ interface SidebarProps {
   onAddSource: () => void;
   onEditSource: (source: SourceStatus) => void;
   onRemoveSource: (source: SourceStatus) => void;
+  onSyncSource: (source: SourceStatus) => void;
 }
 
-export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource }: SidebarProps) {
+export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource }: SidebarProps) {
   const { t, vocab } = useI18n();
   const { state, dispatch } = useUiState();
 
@@ -46,7 +47,7 @@ export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveS
             {t("source.add")}
           </button>
         </h2>
-        <ProjectFilters projects={options.projects} sources={sources} onEdit={onEditSource} onRemove={onRemoveSource} />
+        <ProjectFilters projects={options.projects} sources={sources} onEdit={onEditSource} onRemove={onRemoveSource} onSync={onSyncSource} />
       </section>
 
       <FilterGroup
@@ -100,10 +101,11 @@ interface ProjectFiltersProps {
   sources: SourceStatus[];
   onEdit: (source: SourceStatus) => void;
   onRemove: (source: SourceStatus) => void;
+  onSync: (source: SourceStatus) => void;
 }
 
 /** One row per source; a project can consist of several sources. */
-function ProjectFilters({ projects, sources, onEdit, onRemove }: ProjectFiltersProps) {
+function ProjectFilters({ projects, sources, onEdit, onRemove, onSync }: ProjectFiltersProps) {
   const { t, errorText } = useI18n();
   const { state, dispatch } = useUiState();
 
@@ -119,7 +121,7 @@ function ProjectFilters({ projects, sources, onEdit, onRemove }: ProjectFiltersP
           return (
             <div key={source?.id ?? project}>
               <div className={`source-row${problem ? " broken" : ""}${marked ? " marked" : ""}`}>
-                <div className="source-label" title={source ? source.path + (problem ? `\n⚠ ${problemText}` : "") : ""}>
+                <div className="source-label" title={source ? (source.backend === "database" ? (source.sync_path ?? "") : source.path) + (problem ? `\n⚠ ${problemText}` : "") : ""}>
                   <input
                     type="checkbox"
                     aria-label={project}
@@ -134,10 +136,20 @@ function ProjectFilters({ projects, sources, onEdit, onRemove }: ProjectFiltersP
                   >
                     {rows.length > 1 ? `${project} (${idx + 1})` : project}
                   </button>
+                  {source?.backend === "database" && (
+                    <span className="db-badge" title={t("source.badge.db.title")}>
+                      {t("source.badge.db")}
+                    </span>
+                  )}
                   {problem && <span className="warn">⚠</span>}
                 </div>
                 {source && (
                   <>
+                    {source.backend === "database" && source.sync_path && (
+                      <button className="icon-btn" title={t("source.sync")} aria-label={t("source.sync")} onClick={() => onSync(source)}>
+                        ⇄
+                      </button>
+                    )}
                     <button className="icon-btn" title={t("source.edit.title")} aria-label={t("source.edit.title")} onClick={() => onEdit(source)}>
                       ✎
                     </button>
@@ -147,7 +159,7 @@ function ProjectFilters({ projects, sources, onEdit, onRemove }: ProjectFiltersP
                   </>
                 )}
               </div>
-              {source && problem && <div className="source-error">{`${problemText} ${source.path}`}</div>}
+              {source && problem && <div className="source-error">{`${problemText} ${source.path || source.sync_path || ""}`}</div>}
             </div>
           );
         });

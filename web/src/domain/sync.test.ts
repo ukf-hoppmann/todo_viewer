@@ -1,5 +1,5 @@
 import type { Schemas } from "../api/client";
-import { canRun, changeCount, hasMissing, isInSync, switchDirection } from "./sync";
+import { canRun, changeCount, defaultDirection, hasMissing, isInSync, needsAttention, type SyncState, switchDirection } from "./sync";
 
 type Section = Schemas["SyncSectionOut"];
 const entry = (label: string, name: string | null = null) => ({ label, title: `Title ${label}`, name });
@@ -41,5 +41,18 @@ describe("sync preview helpers", () => {
   it("a markdown project is read into the database, a database project is written out", () => {
     expect(switchDirection("markdown")).toBe("from_md");
     expect(switchDirection("database")).toBe("to_md");
+  });
+});
+
+describe("sync direction and state", () => {
+  it("syncs from the primary source to the mirror unless told otherwise", () => {
+    expect(defaultDirection("database")).toBe("to_md");
+    expect(defaultDirection("markdown")).toBe("from_md");
+  });
+
+  it("asks for attention where something has to be done, not where the primary source simply moved on", () => {
+    const states: SyncState[] = ["none", "in_sync", "mirror_changed", "primary_changed", "both_changed", "unknown", "unreadable"];
+
+    expect(states.filter(needsAttention)).toEqual(["mirror_changed", "both_changed", "unreadable"]);
   });
 });

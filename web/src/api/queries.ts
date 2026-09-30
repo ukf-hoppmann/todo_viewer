@@ -1,5 +1,5 @@
 // TanStack Query hooks: the only place components talk to the API.
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ItemFields, type Schemas, unwrap } from "./client";
 
 export const POLL_INTERVAL_MS = 5000;
@@ -8,18 +8,40 @@ const keys = {
   backlog: ["backlog"] as const,
   uiState: ["ui-state"] as const,
   storage: ["storage"] as const,
+  syncStatus: ["sync-status"] as const,
   folders: (path: string | null) => ["folders", path] as const,
   document: (sourceId: string, itemId: string, name: string) => ["document", sourceId, itemId, name] as const,
   trash: (sourceId: string) => ["trash", sourceId] as const,
 };
 
+const fetchBacklog = () => unwrap(api.GET("/api/v2/backlog"));
+
 /** All sources and items. Polls; structural sharing keeps unchanged data referentially stable. */
 export function useBacklog(paused: boolean) {
   return useQuery({
     queryKey: keys.backlog,
-    queryFn: () => unwrap(api.GET("/api/v2/backlog")),
+    queryFn: fetchBacklog,
     refetchInterval: paused ? false : POLL_INTERVAL_MS,
   });
+}
+
+/** The projects, from the same data the polling query keeps fresh (no request of its own while that one runs). */
+export function useSourceList() {
+  return useQuery({ queryKey: keys.backlog, queryFn: fetchBacklog, select: (backlog) => backlog.sources });
+}
+
+/**
+ * Which side of each project with a mirror changed since its last sync. Reading it makes the server read both sides,
+ * so it is asked for on load, on window focus, by hand (`refetch`) and after a sync or change of a project, never on a timer.
+ */
+export function useSyncStatuses() {
+  return useQuery({ queryKey: keys.syncStatus, queryFn: () => unwrap(api.GET("/api/v2/sync-status")) });
+}
+
+/** After anything that changes a project or its sides: the projects and their sync state are read again. */
+function refreshSources(client: QueryClient) {
+  void client.invalidateQueries({ queryKey: keys.backlog });
+  void client.invalidateQueries({ queryKey: keys.syncStatus });
 }
 
 /** An edit of one item; `version` is the one last read, a changed item answers version_conflict. */
@@ -160,18 +182,20 @@ export interface SaveSourceRequest {
   backend?: Backend;
   /** Database projects: the folder their markdown files are synced with ("" = none). */
   syncPath?: string;
+  /** The other side to keep as a mirror; unset leaves it as it is. */
+  mirror?: Schemas["SourceIn"]["mirror"];
 }
 
 export function useSaveSource() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, path, project, backend, syncPath }: SaveSourceRequest) => {
-      const body = { path, project, backend, sync_path: syncPath };
+    mutationFn: ({ id, path, project, backend, syncPath, mirror }: SaveSourceRequest) => {
+      const body = { path, project, backend, sync_path: syncPath, mirror };
       return id
         ? unwrap(api.PUT("/api/v2/sources/{source_id}", { params: { path: { source_id: id } }, body }))
         : unwrap(api.POST("/api/v2/sources", { body }));
     },
-    onSuccess: () => client.invalidateQueries({ queryKey: keys.backlog }),
+    onSuccess: () => refreshSources(client),
   });
 }
 
@@ -200,7 +224,7 @@ export function useSyncSource() {
   return useMutation({
     mutationFn: runSync,
     onSuccess: (result) => {
-      if (result.executed) void client.invalidateQueries({ queryKey: keys.backlog });
+      if (result.executed) refreshSources(client);
     },
   });
 }
@@ -213,7 +237,7 @@ export function useSwitchBackend() {
       await runSync({ ...sync, confirm: true });
       return unwrap(api.PUT("/api/v2/sources/{source_id}", { params: { path: { source_id: sync.sourceId } }, body: { path: "", backend } })); // the server takes the folder from the stored project
     },
-    onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
+    onSettled: () => refreshSources(client),
   });
 }
 
@@ -221,7 +245,7 @@ export function useRemoveSource() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => unwrap(api.DELETE("/api/v2/sources/{source_id}", { params: { path: { source_id: id } } })),
-    onSettled: () => client.invalidateQueries({ queryKey: keys.backlog }),
+    onSettled: () => refreshSources(client),
   });
 }
 

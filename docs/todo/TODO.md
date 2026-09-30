@@ -35,32 +35,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     freigegeben. - Das Menü ist über eine Abschnittsliste erweiterbar; die
     Doku ist aktuell.
 
-- `STORY-032` **Sync-Status: Spiegel extern geändert erkennen**
-  - Type: Story.
-  - Parent: `EPIC-004`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `STORY-030`.
-  - Goal: Der Dienst erkennt, ob sich eine Seite seit dem letzten Sync
-    geändert hat (z. B. KI hat Markdown-Dateien bearbeitet) und liefert
-    Status und Zeitpunkt des letzten Syncs je Projekt. Er synchronisiert
-    dabei nie von selbst.
-  - Completion criteria: - GET /sources nennt je Projekt den Sync-Status (in
-    Sync, Spiegel geändert, primäre Quelle geändert, beide geändert) und den
-    letzten Sync-Zeitpunkt. - Die Erkennung braucht keinen Sync und ändert
-    keine Daten. - Tests decken alle vier Zustände ab.
-  - Notes: `items/STORY-032/STORY-032_notes.md`.
-  - Summary: Jedes Projekt mit Spiegel meldet, welche Seite sich seit dem
-    letzten Sync geändert hat; das Lesen ändert nichts.
-
 - `STORY-033` **Einstellungsmenü: erweiterbarer Rahmen und Abschnitt „Allgemein“**
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-09-30.
   - Area: Web-UI.
   - Priority: Normal.

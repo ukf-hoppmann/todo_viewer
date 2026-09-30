@@ -170,6 +170,36 @@ class InvalidSourceError(DomainError):
     """The backlog folder is unusable; `code` says why (missing_path, not_found, not_a_dir, no_todo)."""
 
 
+# --- sync ---
+
+class SyncPathMissingError(InvalidSourceError):
+    code = "sync_path_missing"
+
+    def __init__(self) -> None:
+        super().__init__("This project has no folder to sync with. Set one first.")
+
+
+class SyncSameBackendError(ConflictError):
+    code = "sync_same_backend"
+
+    def __init__(self) -> None:
+        super().__init__("This project is stored in markdown files; there is nothing to sync it with.")
+
+
+class SyncSourceInvalidError(InvalidSourceError):
+    code = "sync_source_invalid"
+
+    def __init__(self, reason: str, message: str):
+        super().__init__(f"Nothing was changed: {message}", reason=reason)
+
+
+class SyncStaleError(ConflictError):
+    code = "sync_stale"
+
+    def __init__(self) -> None:
+        super().__init__("Either side changed since the preview. Request a new preview.")
+
+
 # --- documents ---
 
 class DocumentForbiddenError(ForbiddenError):

@@ -87,6 +87,25 @@ def test_removing_a_markdown_project_drops_the_copy_a_sync_left_in_the_database(
         assert conn.execute(sa.text("SELECT count(*) FROM items")).scalar() == 0
 
 
+def test_switching_the_database_mirror_off_drops_the_copy_and_switching_it_on_keeps_what_is_there(db: Database):
+    repo = DatabaseSourceRepository(db)
+    with repo.edit() as sources:
+        sources.append(dataclasses.replace(FILES, mirror_database=True))
+    DatabaseBacklogRepository(db).store_all(FILES, [Item(id="TASK-001", title="copy", project="Files")])
+
+    with repo.edit() as sources:
+        sources[0] = dataclasses.replace(sources[0], project="Renamed")  # mirror stays on: the copy stays
+    with db.begin() as conn:
+        kept = conn.execute(sa.text("SELECT COUNT(*) FROM items")).scalar_one()
+    with repo.edit() as sources:
+        sources[0] = dataclasses.replace(sources[0], mirror_database=False)
+
+    assert kept == 1
+    with db.begin() as conn:
+        assert conn.execute(sa.text("SELECT COUNT(*) FROM items")).scalar_one() == 0
+    assert [(s.project, s.mirror_database) for s in repo.all()] == [("Renamed", False)]
+
+
 def test_projects_created_only_for_items_are_not_listed(db: Database):
     DatabaseBacklogRepository(db).store_all(CENTRAL, [])
 

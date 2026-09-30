@@ -8,7 +8,9 @@ from typing import Protocol
 from todo_viewer.domain.errors import (
     DuplicateSourceError,
     InvalidSourceError,
+    InvalidValueError,
     SourceGoneError,
+    SyncPathMissingError,
     SyncRequiredError,
     ValueRequiredError,
 )
@@ -50,10 +52,15 @@ class SourceService:
     def all(self) -> list[Source]:
         return self._sources.all()
 
-    def add(self, path: str, project: str | None, backend: str = "markdown", sync_path: str | None = None) -> Source:
-        """A markdown project is registered by its folder; a database project needs a name only."""
-        source = dataclasses.replace(self._validated(path, project, backend), id=self._new_id(),
-                                     sync_path=_optional_path(sync_path))
+    def add(self, path: str, project: str | None, backend: str = "markdown", sync_path: str | None = None,
+            mirror: str | None = None) -> Source:
+        """A markdown project is registered by its folder; a database project needs a name only.
+
+        `mirror` names the other side to keep: "database" for a markdown project, "markdown" (needs `sync_path`)
+        for a database one; "none" or nothing keeps none.
+        """
+        source = self._mirrored(dataclasses.replace(self._validated(path, project, backend), id=self._new_id(),
+                                                    sync_path=_optional_path(sync_path)), mirror)
         with self._sources.edit() as sources:
             if self._taken(sources, source.path):
                 raise DuplicateSourceError()
@@ -72,12 +79,16 @@ class SourceService:
         return source
 
     def update(self, source_id: str, path: str, project: str | None, backend: str | None = None,
-               sync_path: str | None = None) -> Source:
-        """Changes name, folder, and sync folder; with another `backend` the project is moved there instead.
+               sync_path: str | None = None, mirror: str | None = None) -> Source:
+        """Changes name, folder, sync folder, and mirror; with another `backend` the project is moved there instead.
 
         A move needs both sides in sync (SyncRequiredError otherwise): sync first, then switch. The project keeps
         its id, and its folder changes sides: `path` of a markdown project is the `sync_path` of a database one.
-        `path` and `sync_path` are not read when the backend changes; a `project` name is.
+        The former primary side stays as the mirror. `path`, `sync_path` and `mirror` are not read when the backend
+        changes; a `project` name is.
+
+        `mirror` switches the other side on or off: "database" / "none" for a markdown project, "markdown" (needs
+        `sync_path`) / "none" for a database one; nothing leaves it as it is.
         """
         with self._sources.edit() as sources:
             index = self._index_of(sources, source_id)
@@ -89,8 +100,9 @@ class SourceService:
             candidate = self._validated(path, project, current.backend)
             if self._taken([s for i, s in enumerate(sources) if i != index], candidate.path):
                 raise DuplicateSourceError()
-            sources[index] = dataclasses.replace(current.updated(candidate.project, candidate.path),
-                                                 sync_path=_optional_path(sync_path))
+            changed = dataclasses.replace(current.updated(candidate.project, candidate.path),
+                                          sync_path=_optional_path(sync_path))
+            sources[index] = self._mirrored(changed, mirror)
             return sources[index]
 
     def _switched(self, current: Source, others: list[Source], project: str | None, backend: str) -> Source:
@@ -99,16 +111,33 @@ class SourceService:
         if not self._sync.in_sync(current, SyncDirection.FROM_MD if to_database else SyncDirection.TO_MD):
             raise SyncRequiredError()
         name = (project or "").strip() or current.project
-        moved = (dataclasses.replace(current, project=name, backend=backend, path="", sync_path=current.path)
+        moved = (dataclasses.replace(current, project=name, backend=backend, path="", sync_path=current.path,
+                                     mirror_database=False)
                  if to_database else
                  dataclasses.replace(current, project=name, backend=backend, path=current.sync_path or "",
-                                     sync_path=None))
+                                     sync_path=None, mirror_database=True))
         problem = self._backlogs.check(moved)
         if problem:
             raise InvalidSourceError(problem.message, code=problem.code)
         if self._taken(others, moved.path):
             raise DuplicateSourceError()
         return moved
+
+    @staticmethod
+    def _mirrored(source: Source, mirror: str | None) -> Source:
+        """`source` with the mirror asked for; None leaves it as it is."""
+        if mirror is None:
+            return source
+        allowed = ("none", "database") if source.backend == "markdown" else ("none", "markdown")
+        if mirror not in allowed:
+            raise InvalidValueError("mirror", allowed)
+        if source.backend == "markdown":
+            return dataclasses.replace(source, mirror_database=mirror == "database")
+        if mirror == "none":
+            return dataclasses.replace(source, sync_path=None)
+        if not source.sync_path:
+            raise SyncPathMissingError()
+        return source
 
     def remove(self, source_id: str) -> Source:
         with self._sources.edit() as sources:

@@ -61,7 +61,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -76,6 +76,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     versionierter Migration unverändert weiter: Backend bleibt primär,
     sync_path wird zum Spiegel-Ordner. - Die Contract-Suite deckt beide
     Kombinationen ab; OpenAPI und TypeScript-Typen sind neu erzeugt.
+  - Notes: `items/STORY-029/STORY-029_notes.md`.
+  - Summary: Projekte kennen jetzt Primärquelle und optionalen Spiegel; die
+    API zeigt beides und lässt den Spiegel setzen.
 
 - `STORY-030` **Sync mit wählbarer Richtung, voller Umfang, Wechsel der Primärquelle**
   - Type: Story.

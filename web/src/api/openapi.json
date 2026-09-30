@@ -963,7 +963,25 @@
       },
       "SourceIn": {
         "properties": {
+          "backend": {
+            "anyOf": [
+              {
+                "enum": [
+                  "markdown",
+                  "database"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where the project is stored; on create default markdown, on update it must not change",
+            "title": "Backend"
+          },
           "path": {
+            "default": "",
+            "description": "Markdown projects: backlog folder with TODO.md; unused for database ones",
             "title": "Path",
             "type": "string"
           },
@@ -976,40 +994,81 @@
                 "type": "null"
               }
             ],
+            "description": "Name; suggested from the folder if empty (markdown only)",
             "title": "Project"
+          },
+          "sync_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Database projects: folder to sync markdown files with",
+            "title": "Sync Path"
           }
         },
-        "required": [
-          "path"
-        ],
         "title": "SourceIn",
         "type": "object"
       },
       "SourceOut": {
         "properties": {
+          "backend": {
+            "enum": [
+              "markdown",
+              "database"
+            ],
+            "title": "Backend",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "string"
           },
           "path": {
+            "description": "Markdown projects: backlog folder; database projects: empty",
             "title": "Path",
             "type": "string"
           },
           "project": {
             "title": "Project",
             "type": "string"
+          },
+          "sync_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Database projects: folder to sync markdown files with",
+            "title": "Sync Path"
           }
         },
         "required": [
           "id",
           "project",
-          "path"
+          "path",
+          "backend",
+          "sync_path"
         ],
         "title": "SourceOut",
         "type": "object"
       },
       "SourceStatusOut": {
         "properties": {
+          "backend": {
+            "enum": [
+              "markdown",
+              "database"
+            ],
+            "title": "Backend",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -1019,6 +1078,7 @@
             "type": "integer"
           },
           "path": {
+            "description": "Markdown projects: backlog folder; database projects: empty",
             "title": "Path",
             "type": "string"
           },
@@ -1035,12 +1095,26 @@
           "project": {
             "title": "Project",
             "type": "string"
+          },
+          "sync_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Database projects: folder to sync markdown files with",
+            "title": "Sync Path"
           }
         },
         "required": [
           "id",
           "project",
           "path",
+          "backend",
+          "sync_path",
           "item_count",
           "problem"
         ],

@@ -27,14 +27,15 @@ from todo_viewer.domain.editing import EditPlanner
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.retype import RetypePlanner
 from todo_viewer.domain.trash import TrashPlanner
-from todo_viewer.infrastructure.config import (
-    JsonFile,
-    JsonSourceRepository,
-    JsonUiStateStore,
-    LegacySourceMigrator,
-    storage_url,
+from todo_viewer.infrastructure.config import JsonFile, storage_url
+from todo_viewer.infrastructure.database import (
+    Database,
+    DatabaseBacklogRepository,
+    DatabaseDocumentStore,
+    DatabaseSourceRepository,
+    DatabaseUiStateStore,
+    LegacyConfigImport,
 )
-from todo_viewer.infrastructure.database import Database, DatabaseBacklogRepository, DatabaseDocumentStore
 from todo_viewer.infrastructure.filesystem import GitProjectNameSuggester, LocalFolderBrowser, browse_start_from
 from todo_viewer.infrastructure.log_setup import configure_logging
 from todo_viewer.infrastructure.markdown import KeyedLocks, build_markdown_documents, build_markdown_repository
@@ -78,14 +79,16 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     resolver = SourcePathResolver(settings.base_dir)
     locks = KeyedLocks()  # shared: backlog files and documents of a folder are written under one lock
     config = JsonFile(settings.config_dir / "config.json")
-    # Opened on first use only, so markdown-only setups never get a database file.
+    # Holds the projects of every backend; created and migrated on first use.
     database = Database(storage_url(config, f"sqlite:///{settings.config_dir / 'todo.db'}"))
+    # Earlier versions kept sources and UI state in JSON files; they are taken over on first access.
+    legacy = LegacyConfigImport(database, config, JsonFile(settings.config_dir / "ui_state.json"))
     backlogs = RoutingBacklogRepository({"markdown": build_markdown_repository(settings.base_dir, locks),
                                          "database": DatabaseBacklogRepository(database)})
     planner, rules = EditPlanner(), LifecycleRules()
     documents = RoutingDocumentStore({"markdown": build_markdown_documents(settings.base_dir, locks),
                                       "database": DatabaseDocumentStore(database)})
-    source_repo = JsonSourceRepository(config, LegacySourceMigrator())
+    source_repo = DatabaseSourceRepository(database, legacy.sources)
     lookup = SourceLookup(source_repo)
 
     return Container(
@@ -97,5 +100,5 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
         source_lookup=lookup,
         documents=DocumentService(backlogs, documents, planner, rules, today),
         folders=FolderBrowseService(LocalFolderBrowser(browse_start_from(settings.browse_start), resolver)),
-        ui_state=UiStateService(JsonUiStateStore(JsonFile(settings.config_dir / "ui_state.json"))),
+        ui_state=UiStateService(DatabaseUiStateStore(database, legacy.ui_state)),
     )

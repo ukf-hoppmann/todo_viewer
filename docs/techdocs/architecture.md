@@ -21,8 +21,8 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 | Application | Ports als Protocols (`BacklogRepository`, `SourceRepository`, `DocumentStore`, `FolderBrowser`, `ProjectNameSuggester`, `UiStateStore`), Use-Case-Services, `Container` | `backend/todo_viewer/application/` |
 | Routing-Adapter | Wählen je Projekt (`Source.backend`, Standard `markdown`) den Speicher-Adapter; unbekanntes Backend → Fehlercode `unknown_backend` | `backend/todo_viewer/infrastructure/routing.py` |
 | Markdown-Adapter | Formaterkennung, Parser, Feld-Mapping, Editoren, Verschieben ins/aus dem Archiv, atomares Schreiben | `backend/todo_viewer/infrastructure/markdown/` |
-| Datenbank-Adapter | Zentrale Datenbank (SQLAlchemy Core, SQLite): Items mit interner `uid` und Label, Verweise als Fremdschlüssel, Notizen/Specs an der `uid`, Schreiben in Transaktionen, versionierte Migrationen; öffnet die Datenbank erst beim ersten Zugriff | `backend/todo_viewer/infrastructure/database/` |
-| Config-Adapter | `config.json` (Quellen, inkl. Migration alter Dateipfade) und `ui_state.json` | `backend/todo_viewer/infrastructure/config/` |
+| Datenbank-Adapter | Zentrale Datenbank (SQLAlchemy Core, SQLite): Projektliste und UI-Zustand, Items mit interner `uid` und Label, Verweise als Fremdschlüssel, Notizen/Specs an der `uid`, Schreiben in Transaktionen, versionierte Migrationen; übernimmt beim ersten Zugriff `sources` aus `config.json` und `ui_state.json` früherer Versionen (`config_import.py`) | `backend/todo_viewer/infrastructure/database/` |
+| Config-Adapter | `config.json` (`storage_url`); liest die JSON-Dateien früherer Versionen für deren Übernahme in die Datenbank | `backend/todo_viewer/infrastructure/config/` |
 | Dateisystem-Adapter | Ordner-Browser, Projektname aus dem umgebenden Git-Repo | `backend/todo_viewer/infrastructure/filesystem/` |
 | HTTP-API | FastAPI-Router `/api/v2`, Pydantic-Schemas, zentrale Fehlerübersetzung, Auslieferung von `web/dist` | `backend/todo_viewer/api/` |
 | Logging | Konfiguration (structlog über das Standard-`logging`, auch für uvicorn), key=value-Zeilen, Rotation; Request-Middleware mit Request-ID und einer Zeile pro Request | `backend/todo_viewer/infrastructure/log_setup.py`, `backend/todo_viewer/api/request_log.py` |
@@ -35,7 +35,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 
 - Lesen: Das Frontend pollt `GET /api/v2/backlog` alle 5 Sekunden (pausiert,
   solange ein Dialog offen ist oder ein Feld bearbeitet wird). Das Backend liest
-  für jede Quelle aus `config.json` die `TODO.md` und – falls vorhanden –
+  für jedes Projekt aus der Datenbank die `TODO.md` und – falls vorhanden –
   `archive.md` und gibt Quellen samt Items zurück. Neu gerendert wird nur bei
   geänderten Daten.
 - Bearbeiten: `PATCH /api/v2/items/{source_id}/{item_id}` mit der zuletzt
@@ -62,10 +62,11 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 - Backlog-Daten: je Projekt entweder in dessen Markdown-Dateien
   (`backend: markdown`, Standard) oder in der zentralen Datenbank
   (`backend: database`, `configs/todo.db`); es gibt keine zweite Kopie.
-- Quellen und Ort der Datenbank (`storage_url`): `configs/config.json`.
+- Projektliste (Name, Backend, Ordner, `sync_path`, Reihenfolge; `source_id` =
+  UUID): zentrale Datenbank. Ort der Datenbank (`storage_url`): `configs/config.json`.
 - UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, markierte
-  Projekte, Ansicht, Auswahl, Suche, Sprache): `configs/ui_state.json`, über die API gelesen und
-  geschrieben.
+  Projekte, Ansicht, Auswahl, Suche, Sprache): zentrale Datenbank, über die API
+  gelesen und geschrieben.
 - Log: Datei aus `LOG_FILE` (im Container `./logs/` auf dem Host), nach Größe rotiert.
 - Im Container liegt `configs/` per Volume auf dem Host; die Nachbar-Repos sind
   unter demselben absoluten Pfad beschreibbar eingebunden.
@@ -77,7 +78,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 | Onion-Architektur, Schichtregeln per `import-linter` | Fachregeln unabhängig von HTTP und Dateiformat; anderer Speicher = neuer Adapter + eine Zeile in `bootstrap.py` | `pyproject.toml`, [Architekturregeln](../development/architecture/backend.md) |
 | Konstruktor-Injection ohne DI-Framework | Einfach nachvollziehbar, Services mit In-Memory-Fakes testbar | `backend/todo_viewer/bootstrap.py` |
 | Atomares Schreiben mit Konflikterkennung | Parallele Änderungen (z. B. durch Agenten) werden nicht überschrieben | [Architekturregeln](../development/architecture.md) |
-| Contract-Suite für die Speicher-Ports | Jeder Speicher-Adapter (Markdown und ein In-Memory-Fake, später die Datenbank) besteht dieselben Tests | `backend/tests/contract/`, `backend/tests/fakes.py` |
+| Contract-Suite für die Speicher-Ports | Jeder Speicher-Adapter (Markdown, Datenbank und ein In-Memory-Fake) besteht dieselben Tests | `backend/tests/contract/`, `backend/tests/fakes.py` |
 | Golden-Files für geschriebene Dateien | Dateiinhalte nach Edits bleiben bytegenau stabil | `backend/tests/characterization/` |
 | Logging mit structlog, eine key=value-Zeile pro Ereignis | Fehleranalyse per `grep` ohne ganze Datei zu lesen; Kontext (Request-ID) ohne eigenen Code; Domain und Application loggen nicht, Fehler werden an der API-Grenze protokolliert | [STORY-016-Notizen](../todo/items/STORY-016/STORY-016_notes.md) |
 | TS-Typen aus OpenAPI generiert | Frontend und API können nicht unbemerkt auseinanderlaufen (Test prüft Aktualität) | `backend/tests/api_v2/test_openapi.py` |

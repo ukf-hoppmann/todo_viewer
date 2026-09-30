@@ -137,6 +137,21 @@ class ConfigMissingError(NotFoundError):
         super().__init__("config.json not found")
 
 
+class BackendChangeNotSupportedError(ConflictError):
+    code = "backend_change_not_supported"
+
+    def __init__(self) -> None:
+        super().__init__("A project cannot be moved to another storage backend here; sync it instead.")
+
+
+class ProjectNotEmptyError(ConflictError):
+    code = "project_not_empty"
+
+    def __init__(self, project: str):
+        super().__init__(f"Project '{project}' still has items in the database and cannot be removed.",
+                         project=project)
+
+
 class DuplicateSourceError(ConflictError):
     code = "duplicate"
 

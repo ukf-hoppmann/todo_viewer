@@ -711,31 +711,74 @@ export interface components {
         };
         /** SourceIn */
         SourceIn: {
-            /** Path */
+            /**
+             * Backend
+             * @description Where the project is stored; on create default markdown, on update it must not change
+             */
+            backend?: ("markdown" | "database") | null;
+            /**
+             * Path
+             * @description Markdown projects: backlog folder with TODO.md; unused for database ones
+             * @default
+             */
             path: string;
-            /** Project */
+            /**
+             * Project
+             * @description Name; suggested from the folder if empty (markdown only)
+             */
             project?: string | null;
+            /**
+             * Sync Path
+             * @description Database projects: folder to sync markdown files with
+             */
+            sync_path?: string | null;
         };
         /** SourceOut */
         SourceOut: {
+            /**
+             * Backend
+             * @enum {string}
+             */
+            backend: "markdown" | "database";
             /** Id */
             id: string;
-            /** Path */
+            /**
+             * Path
+             * @description Markdown projects: backlog folder; database projects: empty
+             */
             path: string;
             /** Project */
             project: string;
+            /**
+             * Sync Path
+             * @description Database projects: folder to sync markdown files with
+             */
+            sync_path: string | null;
         };
         /** SourceStatusOut */
         SourceStatusOut: {
+            /**
+             * Backend
+             * @enum {string}
+             */
+            backend: "markdown" | "database";
             /** Id */
             id: string;
             /** Item Count */
             item_count: number;
-            /** Path */
+            /**
+             * Path
+             * @description Markdown projects: backlog folder; database projects: empty
+             */
             path: string;
             problem: components["schemas"]["ProblemOut"] | null;
             /** Project */
             project: string;
+            /**
+             * Sync Path
+             * @description Database projects: folder to sync markdown files with
+             */
+            sync_path: string | null;
         };
         /** ValidationError */
         ValidationError: {

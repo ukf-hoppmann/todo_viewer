@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from todo_viewer.domain.errors import DuplicateSourceError, InvalidSourceError, SourceGoneError
+import dataclasses
+import uuid
+from collections.abc import Callable
+
+from todo_viewer.domain.errors import (
+    BackendChangeNotSupportedError,
+    DuplicateSourceError,
+    InvalidSourceError,
+    SourceGoneError,
+    ValueRequiredError,
+)
 from todo_viewer.domain.source import Source
 
 from ..ports import BacklogRepository, ProjectNameSuggester, SourceRepository
@@ -22,18 +32,22 @@ class SourceLookup:
 class SourceService:
     """Adds, changes and removes configured backlog folders."""
 
-    def __init__(self, sources: SourceRepository, backlogs: BacklogRepository, names: ProjectNameSuggester):
+    def __init__(self, sources: SourceRepository, backlogs: BacklogRepository, names: ProjectNameSuggester,
+                 new_id: Callable[[], str] = lambda: str(uuid.uuid4())):
         self._sources = sources
         self._backlogs = backlogs
         self._names = names
+        self._new_id = new_id
 
     def all(self) -> list[Source]:
         return self._sources.all()
 
-    def add(self, path: str, project: str | None) -> Source:
-        source = self._validated(path, project)
+    def add(self, path: str, project: str | None, backend: str = "markdown", sync_path: str | None = None) -> Source:
+        """A markdown project is registered by its folder; a database project needs a name only."""
+        source = dataclasses.replace(self._validated(path, project, backend), id=self._new_id(),
+                                     sync_path=_optional_path(sync_path))
         with self._sources.edit() as sources:
-            if any(s.path == source.path for s in sources):
+            if self._taken(sources, source.path):
                 raise DuplicateSourceError()
             sources.append(source)
         return source
@@ -45,17 +59,23 @@ class SourceService:
             if any(s.path == path for s in sources):
                 raise DuplicateSourceError()
             self._backlogs.initialize(Source(project="", path=path), language)
-            source = self._validated(path, project)
+            source = dataclasses.replace(self._validated(path, project), id=self._new_id())
             sources.append(source)
         return source
 
-    def update(self, source_id: str, path: str, project: str | None) -> Source:
-        candidate = self._validated(path, project)
+    def update(self, source_id: str, path: str, project: str | None, backend: str | None = None,
+               sync_path: str | None = None) -> Source:
+        """Changes name, folder, and sync folder; the backend stays (moving a project is a sync)."""
         with self._sources.edit() as sources:
             index = self._index_of(sources, source_id)
-            if any(i != index and s.path == candidate.path for i, s in enumerate(sources)):
+            current = sources[index]
+            if backend is not None and backend != current.backend:
+                raise BackendChangeNotSupportedError()
+            candidate = self._validated(path, project, current.backend)
+            if self._taken([s for i, s in enumerate(sources) if i != index], candidate.path):
                 raise DuplicateSourceError()
-            sources[index] = sources[index].updated(candidate.project, candidate.path)
+            sources[index] = dataclasses.replace(current.updated(candidate.project, candidate.path),
+                                                 sync_path=_optional_path(sync_path))
             return sources[index]
 
     def remove(self, source_id: str) -> Source:
@@ -76,10 +96,23 @@ class SourceService:
             raise InvalidSourceError("Path is missing.", code="missing_path")
         return path
 
-    def _validated(self, path: str, project: str | None) -> Source:
-        path = self._normalized(path)
-        source = Source(project="", path=path)
-        problem = self._backlogs.check(source)
+    @staticmethod
+    def _taken(sources: list[Source], path: str) -> bool:
+        """Only folders identify a project; projects without one (database) never clash."""
+        return bool(path) and any(s.path == path for s in sources)
+
+    def _validated(self, path: str, project: str | None, backend: str = "markdown") -> Source:
+        """What the storage needs is checked by its adapter (e.g. a folder with TODO.md for markdown)."""
+        path = path.strip().rstrip("/")
+        problem = self._backlogs.check(Source(project="", path=path, backend=backend))
         if problem:
             raise InvalidSourceError(problem.message, code=problem.code)
-        return Source(project=(project or "").strip() or self._names.suggest(path), path=path)
+        name = (project or "").strip() or (self._names.suggest(path) if path else "")
+        if not name:
+            raise ValueRequiredError("project")
+        return Source(project=name, path=path, backend=backend)
+
+
+def _optional_path(path: str | None) -> str | None:
+    path = (path or "").strip().rstrip("/")
+    return path or None

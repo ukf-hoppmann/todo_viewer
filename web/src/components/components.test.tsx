@@ -90,8 +90,8 @@ describe("Sidebar project marking", () => {
 });
 
 const SOURCES = [
-  { id: "s", project: "P", path: "/p", item_count: 3, problem: null },
-  { id: "t", project: "Q", path: "/q", item_count: 0, problem: null },
+  { id: "s", project: "P", path: "/p", backend: "markdown" as const, sync_path: null, item_count: 3, problem: null },
+  { id: "t", project: "Q", path: "/q", backend: "markdown" as const, sync_path: null, item_count: 0, problem: null },
 ];
 
 function jsonResponse(body: unknown, status = 200) {

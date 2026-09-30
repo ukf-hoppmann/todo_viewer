@@ -784,3 +784,27 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Spec: `items/EPIC-003/EPIC-003_spec.md`.
   - Notes: `items/EPIC-003/EPIC-003_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+
+- `STORY-029` **Primärquelle und Spiegel pro Projekt in Modell und API**
+  - Type: Story.
+  - Parent: `EPIC-004`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-028`.
+  - Goal: Jedes Projekt hat in Datenbank und API eine primäre Quelle und je
+    Seite einen optionalen Spiegel mit eigenem Speicherort (Markdown-Ordner
+    bzw. Datenbank). Beide Richtungen sind möglich. Bestehende Projekte
+    werden ohne Verlust übernommen.
+  - Completion criteria: - GET /sources nennt je Projekt Primärquelle und
+    Spiegel; POST/PUT setzen sie. - Ein Markdown-Projekt kann einen
+    Datenbank-Spiegel halten und umgekehrt. - Bestehende Projekte kommen per
+    versionierter Migration unverändert weiter: Backend bleibt primär,
+    sync_path wird zum Spiegel-Ordner. - Die Contract-Suite deckt beide
+    Kombinationen ab; OpenAPI und TypeScript-Typen sind neu erzeugt.
+  - Notes: `items/STORY-029/STORY-029_notes.md`.
+  - Summary: Projekte kennen jetzt Primärquelle und optionalen Spiegel; die
+    API zeigt beides und lässt den Spiegel setzen.
+  - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.1.

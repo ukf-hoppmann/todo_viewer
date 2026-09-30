@@ -13,14 +13,18 @@ from todo_viewer.domain.errors import (
     SyncStaleError,
 )
 from todo_viewer.domain.item import Item, Location
-from todo_viewer.domain.source import Source
+from todo_viewer.domain.source import Source, SyncBaseline
 from todo_viewer.domain.sync import (
     SyncDirection,
     SyncEntry,
+    SyncState,
     check_token,
+    classify,
     default_direction,
+    fingerprint,
     merged_items,
     plan_sync,
+    primary_and_mirror,
     sync_pair,
 )
 
@@ -177,3 +181,51 @@ def test_a_failed_backup_refuses_the_switch_and_names_the_reason():
     assert (error.code, isinstance(error, ConflictError), error.details) == ("backup_failed", True,
                                                                              {"reason": "disk full"})
     assert "disk full" in error.message and "Nothing was changed" in error.message
+
+
+def test_a_side_is_fingerprinted_by_its_items_and_documents_regardless_of_order():
+    a, b = item("TASK-001", "A"), item("TASK-002", "B")
+    docs = {("TASK-001", "notes.md"): "one", ("TASK-002", "notes.md"): "two"}
+
+    same = fingerprint([a, b], docs)
+
+    assert fingerprint([b, a], dict(reversed(list(docs.items())))) == same
+    assert fingerprint([a, item("TASK-002", "B changed")], docs) != same
+    assert fingerprint([a, b], {**docs, ("TASK-001", "notes.md"): "one, edited"}) != same
+    assert fingerprint([a, b], {**docs, ("TASK-001", "spec.md"): "new"}) != same
+    assert fingerprint([a], docs) != same
+
+
+BASE = SyncBaseline(at="2026-09-30T10:00:00+02:00", primary="p0", mirror="m0")
+
+
+@pytest.mark.parametrize("primary, mirror, state", [
+    ("p0", "m0", SyncState.IN_SYNC),
+    ("p0", "m1", SyncState.MIRROR_CHANGED),
+    ("p1", "m0", SyncState.PRIMARY_CHANGED),
+    ("p1", "m1", SyncState.BOTH_CHANGED),
+    ("x", "x", SyncState.IN_SYNC),  # both moved to the same content: nothing left to sync
+])
+def test_the_state_follows_which_side_moved_since_the_last_sync(primary, mirror, state):
+    assert classify(primary, mirror, BASE) is state
+
+
+def test_without_a_last_sync_equal_sides_are_in_sync_and_different_ones_unknown():
+    assert classify("x", "x", None) is SyncState.IN_SYNC
+    assert classify("x", "y", None) is SyncState.UNKNOWN
+
+
+def test_what_stayed_different_on_purpose_does_not_count_as_a_change():
+    assert classify("p0", "m0", BASE) is SyncState.IN_SYNC  # kept entries make the sides differ for good
+
+
+def test_primary_and_mirror_are_the_two_sides_of_a_project_with_a_mirror():
+    database = Source(project="P", path="", backend="database", id="a", sync_path="/md")
+    markdown = Source(project="P", path="/docs", id="b", mirror_database=True)
+
+    primary, mirror = primary_and_mirror(database)  # type: ignore[misc]
+    assert (primary.backend, mirror.backend, mirror.path) == ("database", "markdown", "/md")
+    primary, mirror = primary_and_mirror(markdown)  # type: ignore[misc]
+    assert (primary.backend, primary.path, mirror.backend) == ("markdown", "/docs", "database")
+    assert primary_and_mirror(Source(project="P", path="/docs")) is None
+    assert primary_and_mirror(Source(project="P", path="", backend="database")) is None

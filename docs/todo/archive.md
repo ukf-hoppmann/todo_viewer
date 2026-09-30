@@ -808,3 +808,28 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Projekte kennen jetzt Primärquelle und optionalen Spiegel; die
     API zeigt beides und lässt den Spiegel setzen.
   - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.1.
+
+- `STORY-030` **Sync mit wählbarer Richtung, voller Umfang, Wechsel der Primärquelle**
+  - Type: Story.
+  - Parent: `EPIC-004`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-029`.
+  - Goal: Der Sync läuft standardmäßig von der primären zur anderen Seite;
+    die Richtung ist pro Lauf wählbar (z. B. wenn eine KI die
+    Markdown-Dateien verändert hat). Er umfasst alles: Backlog, Archiv,
+    Notes, Specs und Papierkorb. Beim Wechsel der Primärquelle läuft vorher
+    ein Sync, damit die neue primäre Quelle aktuell ist.
+  - Completion criteria: - Vorschau und Ausführung gelten für beide
+    Richtungen und den gesamten Umfang, auch Notes, Specs und Papierkorb. -
+    Nichts wird ohne Bestätigung auf dem Ziel gelöscht. - Der Wechsel der
+    Primärquelle verlangt einen vorherigen Sync, sonst sync_required. - Es
+    gibt keinen automatischen Sync.
+  - Notes: `items/STORY-030/STORY-030_notes.md`.
+  - Summary: Der Sync hat eine Standardrichtung von der Primärquelle zum
+    Spiegel; alles andere war schon vorhanden und ist jetzt auch für
+    Markdown mit Datenbank-Spiegel getestet.
+  - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.2.

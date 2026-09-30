@@ -8,6 +8,8 @@ import { TrashView } from "../views/TrashView";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { DeleteDialog } from "./DeleteDialog";
 import { DocumentDialog } from "./DocumentDialog";
+import { RetypeDialog } from "./RetypeDialog";
+import { RetypeNotice } from "./RetypeNotice";
 import { Sidebar } from "./Sidebar";
 
 const items = toItems([
@@ -104,7 +106,7 @@ function stubApi(handler: (request: Request) => Promise<Response>, trash: unknow
 
 function renderPanel(item: (typeof items)[number]) {
   renderWithProviders(
-    <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
+    <DetailPanel item={item} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onRetyped={vi.fn()} onClose={vi.fn()} />,
   );
 }
 
@@ -194,7 +196,7 @@ describe("DetailPanel edit mode", () => {
     stubApi(fetchMock);
     const standalone = toItems([apiItem("TASK-9")])[0]!;
     renderWithProviders(
-      <DetailPanel item={standalone} items={[...items, standalone]} byUid={new Map()} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
+      <DetailPanel item={standalone} items={[...items, standalone]} byUid={new Map()} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onRetyped={vi.fn()} onClose={vi.fn()} />,
     );
 
     await userEvent.click(screen.getByRole("button", { name: "✎ Bearbeiten" }));
@@ -283,7 +285,7 @@ describe("DetailPanel direct changes", () => {
     const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(apiItem("TASK-1")));
     stubApi(fetchMock);
     renderWithProviders(
-      <DetailPanel item={task} items={quickItems} byUid={new Map(quickItems.map((i) => [i.uid, i]))} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
+      <DetailPanel item={task} items={quickItems} byUid={new Map(quickItems.map((i) => [i.uid, i]))} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onRetyped={vi.fn()} onClose={vi.fn()} />,
     );
     const sent = async () => {
       await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
@@ -336,7 +338,7 @@ describe("DetailPanel direct changes", () => {
   it("shows a conflict next to the field", async () => {
     stubApi(vi.fn(async () => jsonResponse({ code: "version_conflict", message: "x", details: { id: "TASK-1" } }, 409)));
     renderWithProviders(
-      <DetailPanel item={task} items={quickItems} byUid={new Map()} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onClose={vi.fn()} />,
+      <DetailPanel item={task} items={quickItems} byUid={new Map()} sourcePath="/x" sources={SOURCES} onSelect={vi.fn()} onRetyped={vi.fn()} onClose={vi.fn()} />,
     );
 
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Priorität" }), "Urgent");
@@ -492,6 +494,78 @@ describe("DeleteDialog", () => {
       ["/api/v2/items/s/EPIC-1", "false", "v-EPIC-1"],
       ["/api/v2/items/s/EPIC-1", "true", "v-EPIC-1"],
     ]);
+  });
+});
+
+describe("type change", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const notice = {
+    code: "external_references_may_remain",
+    message: "References outside the backlog are not updated.",
+    details: { old_id: "TASK-2", new_id: "STORY-2" },
+  };
+  const retyped = { item: apiItem("STORY-2", { type: "Story", parent: "EPIC-1" }), old_id: "TASK-2", notices: [notice] };
+
+  it("sends version and the chosen type and reports the result", async () => {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => jsonResponse(retyped));
+    vi.stubGlobal("fetch", fetchMock);
+    const onRetyped = vi.fn();
+    renderWithProviders(<RetypeDialog item={items[2]!} onClose={vi.fn()} onRetyped={onRetyped} />);
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Neuer Typ" }), "Story");
+    await userEvent.click(screen.getByRole("button", { name: "Typ ändern" }));
+
+    await waitFor(() => expect(onRetyped).toHaveBeenCalledWith(retyped));
+    const request = fetchMock.mock.calls[0]![0];
+    expect([request.method, new URL(request.url).pathname]).toEqual(["POST", "/api/v2/items/s/TASK-2/retype"]);
+    expect(await request.clone().json()).toEqual({ version: "v-TASK-2", type: "Story" });
+  });
+
+  it("offers no epic below a parent", () => {
+    renderWithProviders(<RetypeDialog item={items[2]!} onClose={vi.fn()} onRetyped={vi.fn()} />);
+
+    const options = within(screen.getByRole("combobox", { name: "Neuer Typ" })).getAllByRole("option");
+    expect(options.map((o) => o.textContent)).toEqual(["Story"]);
+  });
+
+  it("shows a translated error and changes nothing", async () => {
+    vi.stubGlobal("fetch", async () =>
+      jsonResponse({ code: "item_folder_exists", message: "x", details: { id: "STORY-2" } }, 409));
+    const onRetyped = vi.fn();
+    renderWithProviders(<RetypeDialog item={items[2]!} onClose={vi.fn()} onRetyped={onRetyped} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Typ ändern" }));
+
+    expect(await screen.findByText(/Für STORY-2 gibt es schon einen Dokumentenordner/)).toBeInTheDocument();
+    expect(onRetyped).not.toHaveBeenCalled();
+  });
+
+  it("tells old and new id and warns about references outside the backlog until closed", async () => {
+    const onClose = vi.fn();
+    renderWithProviders(<RetypeNotice result={retyped} onClose={onClose} />);
+
+    expect(screen.getByRole("dialog", { name: "TASK-2 heißt jetzt STORY-2" })).toBeInTheDocument();
+    expect(screen.getByText(/Verweise auf TASK-2 außerhalb des Backlogs/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Schließen" }));
+
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("falls back to the server message for an unknown notice", () => {
+    const unknown = { ...retyped, notices: [{ code: "something_new", message: "Server says so.", details: {} }] };
+    renderWithProviders(<RetypeNotice result={unknown} onClose={vi.fn()} />);
+
+    expect(screen.getByText("Server says so.")).toBeInTheDocument();
+  });
+
+  it("opens from the detail panel", async () => {
+    stubApi(vi.fn());
+    renderPanel(items[2]!);
+
+    await userEvent.click(screen.getByRole("button", { name: "🔁 Typ ändern" }));
+
+    expect(screen.getByRole("dialog", { name: "Typ von TASK-2 ändern" })).toBeInTheDocument();
   });
 });
 

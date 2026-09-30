@@ -3,9 +3,10 @@ import { useTrash } from "../api/queries";
 import { statusColor } from "../domain/colors";
 import { childTypes } from "../domain/editing";
 import { childEntries, type Item, toItems, type Uid } from "../domain/model";
-import type { SourceStatus } from "../api/client";
+import type { Schemas, SourceStatus } from "../api/client";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { DeleteDialog } from "./DeleteDialog";
+import { RetypeDialog } from "./RetypeDialog";
 import { useI18n } from "../i18n/i18n";
 import { documentLinks } from "./documentLinks";
 
@@ -23,6 +24,8 @@ interface DetailPanelProps {
   sourcePath: string | undefined;
   sources: SourceStatus[];
   onSelect: (uid: Uid) => void;
+  /** The item now has another type and id; the answer carries the notices to show. */
+  onRetyped: (result: Schemas["RetypeOut"]) => void;
   onClose: () => void;
 }
 
@@ -39,12 +42,13 @@ function TextField({ label, value }: { label: string; value: string | null | und
   return value ? <Field label={label}>{value}</Field> : null;
 }
 
-export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect, onClose }: DetailPanelProps) {
+export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect, onRetyped, onClose }: DetailPanelProps) {
   const { t, vocab } = useI18n();
   const [openDoc, setOpenDoc] = useState<{ name: string | null; mode: DocumentMode } | null>(null);
   const [editing, setEditing] = useState(false);
   const [creatingChild, setCreatingChild] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [retyping, setRetyping] = useState(false);
   const quick = useQuickEdit(item);
   const L = (field: string) => vocab("field", field);
   const parent = item.parentUid ? byUid.get(item.parentUid) : undefined;
@@ -76,6 +80,9 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
               {t("create.child")}
             </button>
           )}
+          <button className="btn small" onClick={() => setRetyping(true)}>
+            {t("retype.button")}
+          </button>
           <button className="btn small danger" onClick={() => setDeleting(true)}>
             {t("delete.button")}
           </button>
@@ -174,6 +181,16 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
           onDeleted={() => {
             setDeleting(false);
             onClose();
+          }}
+        />
+      )}
+      {retyping && (
+        <RetypeDialog
+          item={item}
+          onClose={() => setRetyping(false)}
+          onRetyped={(result) => {
+            setRetyping(false);
+            onRetyped(result);
           }}
         />
       )}

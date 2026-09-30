@@ -1,11 +1,12 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
-import type { SourceStatus } from "./api/client";
+import type { Schemas, SourceStatus } from "./api/client";
 import { useRemoveSource } from "./api/queries";
 import { CreateItemDialog } from "./components/CreateItemDialog";
 import { DetailPanel } from "./components/DetailPanel";
+import { RetypeNotice } from "./components/RetypeNotice";
 import { Sidebar } from "./components/Sidebar";
 import { SourceDialog } from "./components/SourceDialog";
-import type { Uid } from "./domain/model";
+import { type Uid, uidOf } from "./domain/model";
 import { createI18n, describeError, I18nContext } from "./i18n/i18n";
 import type { MessageKey } from "./i18n/messages";
 import { useBacklogModel } from "./state/useBacklogModel";
@@ -30,6 +31,8 @@ export function App() {
   const removeSource = useRemoveSource();
   const [sourceDialog, setSourceDialog] = useState<SourceDialogState>(null);
   const [creating, setCreating] = useState(false);
+  // Kept here, not in the detail panel: the panel is rebuilt when the selection moves to the new id.
+  const [retyped, setRetyped] = useState<Schemas["RetypeOut"] | null>(null);
 
   const select = useCallback((uid: Uid | null) => dispatch({ type: "select", uid }), [dispatch]);
   const selected = state.selectedId ? model.byUid.get(state.selectedId) : undefined;
@@ -94,6 +97,10 @@ export function App() {
                   sourcePath={model.sources.find((s) => s.id === selected.source_id)?.path}
                   sources={model.sources}
                   onSelect={select}
+                  onRetyped={(result) => {
+                    select(uidOf(result.item.project, result.item.id));
+                    setRetyped(result);
+                  }}
                   onClose={() => select(null)}
                 />
               )}
@@ -112,6 +119,7 @@ export function App() {
             }}
           />
         )}
+        {retyped && <RetypeNotice result={retyped} onClose={() => setRetyped(null)} />}
         {sourceDialog && (
           <SourceDialog
             source={sourceDialog.source}

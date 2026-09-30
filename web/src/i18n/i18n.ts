@@ -9,6 +9,8 @@ export interface I18n {
   vocab: (kind: VocabKind, value: string | null | undefined) => string;
   /** Translated text for an error code, falling back to the server message; details fill {placeholders}. */
   errorText: (code: string | null | undefined, fallback: string, details?: Record<string, string>) => string;
+  /** Translated text for a notice code of a successful answer, falling back to the server message. */
+  noticeText: (code: string, fallback: string, details?: Record<string, string>) => string;
 }
 
 export function createI18n(lang: Lang): I18n {
@@ -26,7 +28,11 @@ export function createI18n(lang: Lang): I18n {
     if (!code || !(key in MESSAGES[lang])) return fallback;
     return t(key, details) + (code === "parse_error" && fallback ? `: ${fallback}` : "");
   };
-  return { lang, t, vocab, errorText };
+  const noticeText: I18n["noticeText"] = (code, fallback, details) => {
+    const key = `notice.${code}` as MessageKey;
+    return key in MESSAGES[lang] ? t(key, details) : fallback;
+  };
+  return { lang, t, vocab, errorText, noticeText };
 }
 
 export function describeError(i18n: I18n, error: unknown): string {

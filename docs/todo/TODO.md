@@ -9,25 +9,4 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
 
 ## Work items
 
-- `EPIC-003` **Wählbares Speicher-Backend: Markdown oder zentrale Datenbank**
-  - Type: Epic.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Jedes Projekt kann wahlweise in Markdown-Dateien (wie bisher) oder
-    in einer zentralen lokalen Datenbank gespeichert werden. Die Datenbank
-    nimmt die komplette Struktur auf (Items, Archiv, Papierkorb, Notizen,
-    Specs). Per Knopfdruck oder API-Aufruf lässt sich ein Projekt zwischen
-    Datenbank und Markdown synchronisieren (to_md / from_md).
-  - Completion criteria: Ein Projekt lässt sich je nach Wahl mit Markdown
-    oder SQLite betreiben. Sync in beide Richtungen ist per API und UI
-    möglich und ergibt beim Roundtrip md -> db -> md dieselben Items
-    (gleiche Versionen) und Dokumente; Export -> Import -> Export ergibt
-    identische Dateien. Die Architekturregeln erlauben beide Backends, Doku
-    und Release sind aktualisiert.
-  - Summary: Neben den Markdown-Dateien wird eine zentrale SQLite-Datenbank
-    als Speicher wählbar, mit Sync in beide Richtungen auf Knopfdruck.
-  - Spec: `items/EPIC-003/EPIC-003_spec.md`.
-  - Notes: `items/EPIC-003/EPIC-003_notes.md`.
+No entries.

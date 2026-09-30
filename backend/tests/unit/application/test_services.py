@@ -182,11 +182,7 @@ def test_update_keeps_extra_fields_and_remove_by_id():
 
     assert updated.extra == {"color": "red"}
     assert removed == b
-    assert repo.sources == [Source("A2", "/a2")]
-
-
-def test_source_id_is_stable_and_path_based():
-    assert Source("A", "/a").id == Source("Renamed", "/a").id != Source("A", "/b").id
+    assert repo.sources == [Source("A2", "/a2", id=a.id)]
 
 
 def test_lookup_by_id():

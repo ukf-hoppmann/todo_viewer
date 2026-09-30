@@ -15,7 +15,7 @@ from todo_viewer.infrastructure.database.repository import DatabaseBacklogReposi
 from todo_viewer.infrastructure.markdown import build_markdown_repository
 
 FIXTURE = Path(__file__).parents[2] / "fixtures" / "backlog"
-SOURCE = Source(project="P", path="db-project", backend="database")
+SOURCE = Source(project="P", path="", backend="database", id="0b6c1f52-0000-4000-8000-000000000001")
 
 
 @pytest.fixture
@@ -55,7 +55,7 @@ def test_every_field_survives_storing(repo: DatabaseBacklogRepository):
 
 def test_projects_are_kept_apart(repo: DatabaseBacklogRepository):
     repo.store_all(SOURCE, [Item(id="TASK-001", title="Mine", project="P")])
-    other = dataclasses.replace(SOURCE, path="other-project")
+    other = dataclasses.replace(SOURCE, id="0b6c1f52-0000-4000-8000-000000000002")
 
     repo.store_all(other, [Item(id="TASK-001", title="Theirs", project="Q")])
 

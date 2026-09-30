@@ -12,13 +12,14 @@ class Source:
     path: str
     # Where the project is stored: "markdown" (files in `path`) or "database".
     backend: str = "markdown"
+    # Stable identifier, independent of name, path, and position in the list.
+    id: str = ""
     # Unknown config keys are preserved when a source is rewritten.
     extra: dict[str, Any] = field(default_factory=dict, compare=False)
 
-    @property
-    def id(self) -> str:
-        """Stable identifier derived from the folder, independent of the position in the config."""
-        return hashlib.sha1(self.path.encode("utf-8")).hexdigest()[:12]
+    def __post_init__(self) -> None:
+        if not self.id:  # transitional: sources without a stored id are identified by their folder
+            object.__setattr__(self, "id", hashlib.sha1(self.path.encode("utf-8")).hexdigest()[:12])
 
     def updated(self, project: str, path: str) -> Source:
         return replace(self, project=project, path=path)

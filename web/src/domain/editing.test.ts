@@ -13,6 +13,7 @@ import {
   parentCandidates,
   quickChange,
   rebaseDraft,
+  retypeTargets,
   specName,
 } from "./editing";
 import { toItems } from "./model";
@@ -28,6 +29,13 @@ const [epic, story, task, sub, other, foreign] = toItems([
 const all = [epic!, story!, task!, sub!, other!, foreign!];
 
 describe("editing", () => {
+  it("offers the other types for a type change, but no epic below a parent", () => {
+    expect(retypeTargets(epic!)).toEqual(["Story", "Task"]);
+    expect(retypeTargets(story!)).toEqual(["Task"]); // has a parent: an epic must not
+    expect(retypeTargets(task!)).toEqual(["Story"]);
+    expect(retypeTargets(other!)).toEqual(["Epic", "Story"]);
+  });
+
   it("sends nothing when nothing changed", () => {
     expect(changedFields(task!, draftOf(task!))).toEqual({});
   });

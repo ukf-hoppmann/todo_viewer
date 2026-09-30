@@ -187,6 +187,24 @@ class EntryMover:
             lines.pop()
         lines.extend(["", *block, ""])
 
+    def replace_entries(self, lines: list[str], entries: list[list[str]]) -> list[str]:
+        """The file with its `## Work items` section holding exactly `entries`.
+
+        Text before the heading and headings (with their text) after the section stay. Without the heading it
+        is added at the end.
+        """
+        section = self._section_start(lines)
+        if section is None:
+            text = list(lines)
+            while text and not text[-1].strip():
+                text.pop()
+            head, tail = [*text, "", "## Work items"], []
+        else:
+            end = next((i for i in range(section + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+            head, tail = lines[:section + 1], lines[end:]
+        body = [line for entry in entries for line in ("", *entry)] if entries else ["", NO_ENTRIES_LINE]
+        return [*head, *body, "", *tail]
+
     def insert(self, lines: list[str], block: list[str]) -> None:
         """Adds a new entry at the end of the `## Work items` section (before a following heading)."""
         section = self._section_start(lines)

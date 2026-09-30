@@ -73,6 +73,9 @@ class InMemoryBacklogRepository:
             raise BacklogExistsError()
         self._items[source.id] = []
 
+    def write_backlog(self, source: Source, items: Sequence[Item], language: str) -> None:
+        self._items[source.id] = [dataclasses.replace(i, project=source.project) for i in items]
+
     @staticmethod
     def _check_versions(stored: list[Item], items: Sequence[Item]) -> None:
         by_id = {i.id: i for i in stored}

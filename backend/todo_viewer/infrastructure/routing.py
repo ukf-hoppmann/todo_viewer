@@ -55,6 +55,9 @@ class RoutingBacklogRepository:
     def initialize(self, source: Source, language: str) -> None:
         self._for(source).initialize(source, language)
 
+    def write_backlog(self, source: Source, items: Sequence[Item], language: str) -> None:
+        self._for(source).write_backlog(source, items, language)
+
 
 class RoutingDocumentStore:
     def __init__(self, backends: Mapping[str, DocumentStore]):

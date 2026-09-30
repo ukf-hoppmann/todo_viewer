@@ -118,6 +118,23 @@ class DatabaseBacklogRepository:
                 raise BacklogExistsError()
             conn.execute(sa.insert(projects).values(id=source.id))
 
+    def write_backlog(self, source: Source, backlog: Sequence[Item], language: str) -> None:
+        """Makes the project hold exactly these items in one transaction; stored items keep their uid and documents."""
+        with self._db.begin() as conn:
+            _ensure_project(conn, source)
+            stored = {item.id: uid for uid, item in _Rows(conn, source).all()}
+            uids = {item.id: stored.get(item.id) or self._uids() for item in backlog}
+            for position, item in enumerate(backlog):
+                if item.id in stored:
+                    conn.execute(sa.update(items).where(items.c.uid == uids[item.id])
+                                 .values(position=position, **_values(source, item, uids)))
+                    _write_parts(conn, uids[item.id], item, uids)
+                else:
+                    _insert(conn, source, uids[item.id], item, position, uids)
+            gone = [uid for label, uid in stored.items() if label not in uids]
+            if gone:
+                conn.execute(sa.delete(items).where(items.c.uid.in_(gone)))
+
     @staticmethod
     def _current(conn: sa.Connection, source: Source, expected: Sequence[Item]) -> dict[str, str]:
         """Label -> uid of the expected items; raises VersionConflictError if one changed or is gone."""

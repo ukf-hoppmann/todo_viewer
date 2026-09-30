@@ -44,6 +44,13 @@ class BacklogRepository(Protocol):
     def initialize(self, source: Source, language: str) -> None:
         """Creates an empty backlog (with its folders) in `language`; raises BacklogExistsError if there is one."""
 
+    def write_backlog(self, source: Source, items: Sequence[Item], language: str) -> None:
+        """Makes the backlog hold exactly `items` (each in its own location, in the given order).
+
+        Items already stored stay the same items, with their documents; the others go. Missing files of a
+        markdown backlog are created in `language`. Raises the source's problem if the backlog is unusable.
+        """
+
 
 class SourceRepository(Protocol):
     def all(self) -> list[Source]:

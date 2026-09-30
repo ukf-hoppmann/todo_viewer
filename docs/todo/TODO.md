@@ -39,7 +39,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -52,6 +52,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Sync, Spiegel geändert, primäre Quelle geändert, beide geändert) und den
     letzten Sync-Zeitpunkt. - Die Erkennung braucht keinen Sync und ändert
     keine Daten. - Tests decken alle vier Zustände ab.
+  - Notes: `items/STORY-032/STORY-032_notes.md`.
+  - Summary: Jedes Projekt mit Spiegel meldet, welche Seite sich seit dem
+    letzten Sync geändert hat; das Lesen ändert nichts.
 
 - `STORY-033` **Einstellungsmenü: erweiterbarer Rahmen und Abschnitt „Allgemein“**
   - Type: Story.

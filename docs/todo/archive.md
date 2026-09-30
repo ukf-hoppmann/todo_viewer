@@ -16,16 +16,15 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Area: Web-UI.
   - Priority: Normal.
   - Dependencies: None.
-  - Goal: Die Fortschritts-Pie-Charts sitzen sichtbar beim zugehörigen
-    Namen (z. B. direkt dahinter oder am Namen ausgerichtet) statt
-    abgesetzt davon. Die genaue Platzierung wird vorher besprochen.
-  - Completion criteria: Die abgestimmte Platzierung ist in den
-    betroffenen Ansichten umgesetzt und vom Projektverantwortlichen
-    geprüft.
-  - Summary: Die kleinen Fortschrittskreise sollen näher an den Namen
-    der Einträge rücken. Wie genau, ist noch offen.
-  - Notes: `items/STORY-001/STORY-001_notes.md`.
+  - Goal: Die Fortschritts-Pie-Charts sitzen sichtbar beim zugehörigen Namen
+    (z. B. direkt dahinter oder am Namen ausgerichtet) statt abgesetzt
+    davon. Die genaue Platzierung wird vorher besprochen.
+  - Completion criteria: Die abgestimmte Platzierung ist in den betroffenen
+    Ansichten umgesetzt und vom Projektverantwortlichen geprüft.
+  - Summary: Die kleinen Fortschrittskreise sollen näher an den Namen der
+    Einträge rücken. Wie genau, ist noch offen.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-001/STORY-001_notes.md`.
 
 - `STORY-002` **Alle Tasks/Stories ein- und ausklappen**
   - Type: Story.
@@ -35,14 +34,14 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Area: Web-UI.
   - Priority: Normal.
   - Dependencies: None.
-  - Goal: Eine Bedienoption klappt mit einem Klick alle Tasks und
-    Stories auf bzw. zu.
+  - Goal: Eine Bedienoption klappt mit einem Klick alle Tasks und Stories
+    auf bzw. zu.
   - Completion criteria: Die Option ist in der UI vorhanden; ein Klick
     klappt alle Einträge auf, ein weiterer alle zu.
-  - Summary: Zwei Buttons im Baum klappen alle Epics bzw. alle Stories
-    auf oder zu – für markierte Projekte oder, ohne Markierung, für alle.
-  - Notes: `items/STORY-002/STORY-002_notes.md`.
+  - Summary: Zwei Buttons im Baum klappen alle Epics bzw. alle Stories auf
+    oder zu – für markierte Projekte oder, ohne Markierung, für alle.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-002/STORY-002_notes.md`.
 
 - `STORY-003` **Items nur über ID adressieren**
   - Type: Story.
@@ -53,21 +52,21 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: None.
-  - Goal: Items werden in API, Application-Ports und UI nur über
-    `source_id` und ID angesprochen. `location` und `line` verschwinden
-    aus dem Vertrag; „archiviert“ ist ein Attribut des Items. Externe
-    Änderungen werden über ein undurchsichtiges Versions-Token erkannt.
-    `GET /api/v2/items/{source_id}/{id}` liefert ein einzelnes Item,
-    egal ob aktiv oder archiviert.
-  - Completion criteria: Einzelabruf und Bearbeiten funktionieren nur
-    mit ID und Versions-Token; ein veraltetes Token führt zu einem
-    Konfliktfehler; eine unbekannte ID liefert 404 mit stabilem Code;
-    die UI nutzt die neue Adressierung; Golden-File-Tests bleiben grün.
+  - Goal: Items werden in API, Application-Ports und UI nur über `source_id`
+    und ID angesprochen. `location` und `line` verschwinden aus dem Vertrag;
+    „archiviert“ ist ein Attribut des Items. Externe Änderungen werden über
+    ein undurchsichtiges Versions-Token erkannt. `GET
+    /api/v2/items/{source_id}/{id}` liefert ein einzelnes Item, egal ob
+    aktiv oder archiviert.
+  - Completion criteria: Einzelabruf und Bearbeiten funktionieren nur mit ID
+    und Versions-Token; ein veraltetes Token führt zu einem Konfliktfehler;
+    eine unbekannte ID liefert 404 mit stabilem Code; die UI nutzt die neue
+    Adressierung; Golden-File-Tests bleiben grün.
   - Summary: Einträge werden nur noch über ihre ID angesprochen, nicht mehr
     über Datei und Zeile. Einfache Checklisten ohne IDs werden nicht mehr
     unterstützt.
-  - Notes: `items/STORY-003/STORY-003_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-003/STORY-003_notes.md`.
 
 - `STORY-005` **Parent-Lifecycle-Regeln im Domain erzwingen**
   - Type: Story.
@@ -79,18 +78,17 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Priority: Normal.
   - Dependencies: None.
   - Goal: Die Regeln des Backlog-Formats (Epic ohne Parent, Pflichtfeld
-    `Required for parent`, Pflichtkind vor Verlassen von Open,
-    Blockade durch offene oder abgelehnte Pflichtkinder, kein Abschluss
-    mit aktiven Kindern, keine Zyklen in Parent und Dependencies)
-    werden im Domain geprüft und bei jeder Änderung durchgesetzt.
-  - Completion criteria: Verstöße liefern Fehler mit stabilen Codes;
-    jede Regel ist durch Domain-Tests abgedeckt; die UI übersetzt die
-    neuen Codes.
-  - Summary: Der Server lehnt Änderungen ab, die gegen die Regeln für
-    Epics, Stories und ihre Kinder verstoßen, statt das dem Agenten zu
-    überlassen.
-  - Notes: `items/STORY-005/STORY-005_notes.md`.
+    `Required for parent`, Pflichtkind vor Verlassen von Open, Blockade
+    durch offene oder abgelehnte Pflichtkinder, kein Abschluss mit aktiven
+    Kindern, keine Zyklen in Parent und Dependencies) werden im Domain
+    geprüft und bei jeder Änderung durchgesetzt.
+  - Completion criteria: Verstöße liefern Fehler mit stabilen Codes; jede
+    Regel ist durch Domain-Tests abgedeckt; die UI übersetzt die neuen
+    Codes.
+  - Summary: Der Server lehnt Änderungen ab, die gegen die Regeln für Epics,
+    Stories und ihre Kinder verstoßen, statt das dem Agenten zu überlassen.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-005/STORY-005_notes.md`.
 
 - `STORY-006` **Weitere Felder bearbeitbar**
   - Type: Story.
@@ -102,15 +100,15 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Priority: Normal.
   - Dependencies: `STORY-003`, `STORY-005`.
   - Goal: Über die API lassen sich zusätzlich Titel, Goal, Completion
-    criteria, Summary, Area, Parent und Dependencies ändern;
-    Dependencies werden als Liste übergeben.
+    criteria, Summary, Area, Parent und Dependencies ändern; Dependencies
+    werden als Liste übergeben.
   - Completion criteria: Jedes Feld ist per API änderbar, Änderungen
     betreffen nur das Feld (Golden Files), Lifecycle-Regeln greifen bei
     Parent- und Dependency-Änderungen.
-  - Summary: Über die API lassen sich jetzt auch Titel, Texte, Area,
-    Parent und Abhängigkeiten ändern, mehrere Felder in einem Schritt.
-  - Notes: `items/STORY-006/STORY-006_notes.md`.
+  - Summary: Über die API lassen sich jetzt auch Titel, Texte, Area, Parent
+    und Abhängigkeiten ändern, mehrere Felder in einem Schritt.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-006/STORY-006_notes.md`.
 
 - `STORY-008` **Items löschen**
   - Type: Story.
@@ -121,16 +119,16 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: `STORY-003`.
-  - Goal: `DELETE /api/v2/items/{source_id}/{id}` entfernt ein Item.
-    Solange andere Items per Parent oder Dependencies darauf verweisen,
-    wird das Löschen mit einem Konfliktfehler abgelehnt.
-  - Completion criteria: Löschen ohne Verweise entfernt genau den
-    Eintrag; Löschen mit Verweisen liefert einen Konfliktfehler, der
-    die verweisenden IDs nennt.
+  - Goal: `DELETE /api/v2/items/{source_id}/{id}` entfernt ein Item. Solange
+    andere Items per Parent oder Dependencies darauf verweisen, wird das
+    Löschen mit einem Konfliktfehler abgelehnt.
+  - Completion criteria: Löschen ohne Verweise entfernt genau den Eintrag;
+    Löschen mit Verweisen liefert einen Konfliktfehler, der die verweisenden
+    IDs nennt.
   - Summary: Ein Item wird samt seiner Notes- und Spec-Dateien gelöscht,
     aber nicht, solange andere Items darauf verweisen.
-  - Notes: `items/STORY-008/STORY-008_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-008/STORY-008_notes.md`.
 
 - `STORY-009` **Notes und Specs über das Item schreiben**
   - Type: Story.
@@ -142,18 +140,17 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Priority: Normal.
   - Dependencies: `STORY-003`.
   - Goal: Notes und Specs werden über das Item adressiert statt über
-    Dateipfade: Lesen und Ersetzen von Specs mit Versions-Token sowie
-    ein strukturierter Endpunkt, der einen datierten Notes-Eintrag
-    (Discussed/Decided/Open) anhängt. Der Server pflegt dabei die
-    Felder `Notes`, `Spec` und die Pflicht zur `Summary`.
-  - Completion criteria: Notes-Einträge und Specs lassen sich ohne
-    Kenntnis von Dateipfaden lesen und schreiben; konkurrierende
-    Änderungen liefern Konfliktfehler; das Format der Notes entspricht
-    dem Backlog-Format.
+    Dateipfade: Lesen und Ersetzen von Specs mit Versions-Token sowie ein
+    strukturierter Endpunkt, der einen datierten Notes-Eintrag
+    (Discussed/Decided/Open) anhängt. Der Server pflegt dabei die Felder
+    `Notes`, `Spec` und die Pflicht zur `Summary`.
+  - Completion criteria: Notes-Einträge und Specs lassen sich ohne Kenntnis
+    von Dateipfaden lesen und schreiben; konkurrierende Änderungen liefern
+    Konfliktfehler; das Format der Notes entspricht dem Backlog-Format.
   - Summary: Notizen und Specs lassen sich über das Item lesen und
     schreiben, ohne Dateipfade zu kennen.
-  - Notes: `items/STORY-009/STORY-009_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-009/STORY-009_notes.md`.
 
 - `STORY-010` **API-Zugang für Agenten**
   - Type: Story.
@@ -165,18 +162,18 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Priority: Normal.
   - Dependencies: `STORY-003`, `STORY-004`, `STORY-005`, `STORY-006`,
     `STORY-007`, `STORY-008`, `STORY-009`.
-  - Goal: Ein Agent kann die API zuverlässig erreichen und nutzen; es
-    ist geklärt und umgesetzt, wie der Server für Agenten verfügbar ist
+  - Goal: Ein Agent kann die API zuverlässig erreichen und nutzen; es ist
+    geklärt und umgesetzt, wie der Server für Agenten verfügbar ist
     (dauerhaft laufend, bei Bedarf gestartet oder anderer Weg), und die
     Nutzung ist in den techdocs beschrieben.
   - Completion criteria: Die Zugangsvariante ist mit dem
-    Projektverantwortlichen entschieden und umgesetzt; README bzw.
-    techdocs beschreiben die Agent-Nutzung; ein Agent kann damit einen
-    vollständigen Pflege-Durchlauf ohne Dateizugriff ausführen.
-  - Summary: Agenten sprechen den dauerhaft laufenden Container per HTTP
-    an; der Umgang mit einem nicht erreichbaren Server liegt im Harness.
-  - Notes: `items/STORY-010/STORY-010_notes.md`.
+    Projektverantwortlichen entschieden und umgesetzt; README bzw. techdocs
+    beschreiben die Agent-Nutzung; ein Agent kann damit einen vollständigen
+    Pflege-Durchlauf ohne Dateizugriff ausführen.
+  - Summary: Agenten sprechen den dauerhaft laufenden Container per HTTP an;
+    der Umgang mit einem nicht erreichbaren Server liegt im Harness.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-010/STORY-010_notes.md`.
 
 - `STORY-011` **Papierkorb: Löschen markiert, Wiederherstellen und endgültig Löschen**
   - Type: Story.
@@ -198,8 +195,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     eine Warnung mit den betroffenen Kindern; Tests und Doku sind vorhanden.
   - Summary: Gelöschte Einträge landen erst im Papierkorb und können
     zurückgeholt werden.
-  - Notes: `items/STORY-011/STORY-011_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-011/STORY-011_notes.md`.
 
 - `STORY-012` **Felder im Bearbeiten-Modus ändern**
   - Type: Story.
@@ -222,8 +219,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Konflikt ab.
   - Summary: Einträge lassen sich über einen eigenen Bearbeiten-Modus
     ändern, nicht durch versehentliches Klicken.
-  - Notes: `items/STORY-012/STORY-012_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-012/STORY-012_notes.md`.
 
 - `STORY-013` **Items in der UI anlegen**
   - Type: Story.
@@ -242,8 +239,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Pflichtfelder und Regelverstöße werden im Dialog gemeldet;
     Komponententests vorhanden.
   - Summary: Neue Einträge lassen sich direkt in der Oberfläche anlegen.
-  - Notes: `items/STORY-013/STORY-013_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-013/STORY-013_notes.md`.
 
 - `STORY-014` **Löschen und Papierkorb-Ansicht**
   - Type: Story.
@@ -264,8 +261,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     verlangt eine Bestätigung; Komponententests vorhanden.
   - Summary: Gelöschte Einträge landen in einer eigenen Papierkorb-Ansicht
     und lassen sich zurückholen oder endgültig entfernen.
-  - Notes: `items/STORY-014/STORY-014_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-014/STORY-014_notes.md`.
 
 - `STORY-015` **Notes und Specs in der UI schreiben und ändern**
   - Type: Story.
@@ -287,8 +284,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     vorhanden.
   - Summary: Notizen und Specs lassen sich direkt in der Oberfläche
     schreiben und nachträglich ändern.
-  - Notes: `items/STORY-015/STORY-015_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt.
+  - Notes: `items/STORY-015/STORY-015_notes.md`.
 
 - `TASK-001` **Area im Lean Index**
   - Type: Task.
@@ -325,13 +322,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Completion criteria: Der Endpunkt hat ein festes Schema im
     OpenAPI-Vertrag, liefert genau diese Felder und ist durch API-Tests
     abgedeckt.
-  - Notes: `items/STORY-004/STORY-004_notes.md`.
   - Summary: Die Übersichtsliste aller Einträge soll schlank bleiben. Sie
     zeigt nur das Nötigste, jetzt zusätzlich den Bereich, damit man
     schneller sieht, welche Einträge man sich genauer ansehen muss.
   - Resolution: Vom Projektverantwortlichen am 2026-09-28 bestätigt: Lean
     Index mit festem Schema inkl. area, durch API-Tests abgedeckt (fb61bd5,
     TASK-001).
+  - Notes: `items/STORY-004/STORY-004_notes.md`.
 
 - `STORY-017` **Klare Antwort und Wiederöffnen-Angebot bei geschlossenem Parent**
   - Type: Story.
@@ -393,8 +390,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     protokollieren, dass sich Fehler allein über das Log (per grep, ohne
     vollständiges Lesen) analysieren lassen. Die Logdatei liegt in ./logs
     außerhalb des Containers.
-  - Notes: `items/STORY-016/STORY-016_notes.md`.
   - Resolution: Confirmed by the project owner on 2026-09-28.
+  - Notes: `items/STORY-016/STORY-016_notes.md`.
 
 - `TASK-002` **Typ eines Items ändern**
   - Type: Task.
@@ -423,8 +420,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     sind aktualisiert.
   - Summary: Den Typ eines Items ändern, ohne dass Verweise im Backlog
     brechen.
-  - Notes: `items/TASK-002/TASK-002_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-30 bestätigt.
+  - Notes: `items/TASK-002/TASK-002_notes.md`.
 
 - `STORY-007` **Items anlegen**
   - Type: Story.
@@ -435,17 +432,17 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: `STORY-003`, `STORY-005`.
-  - Goal: `POST /api/v2/items` legt ein Epic, eine Story oder einen
-    Task an. Der Server vergibt die nächste freie ID des Typs über
-    aktive und archivierte Items, setzt Status Open und das heutige
-    Datum als Standard für Created.
-  - Completion criteria: Neu angelegte Items sind formatgültig, haben
-    eine eindeutige ID und werden als Item zurückgegeben; ungültige
-    Eingaben liefern Fehler mit stabilen Codes.
-  - Summary: Neue Epics, Stories und Tasks lassen sich über die API
-    anlegen; der Server vergibt die ID und prüft die Regeln.
-  - Notes: `items/STORY-007/STORY-007_notes.md`.
+  - Goal: `POST /api/v2/items` legt ein Epic, eine Story oder einen Task an.
+    Der Server vergibt die nächste freie ID des Typs über aktive und
+    archivierte Items, setzt Status Open und das heutige Datum als Standard
+    für Created.
+  - Completion criteria: Neu angelegte Items sind formatgültig, haben eine
+    eindeutige ID und werden als Item zurückgegeben; ungültige Eingaben
+    liefern Fehler mit stabilen Codes.
+  - Summary: Neue Epics, Stories und Tasks lassen sich über die API anlegen;
+    der Server vergibt die ID und prüft die Regeln.
   - Resolution: Vom Projektverantwortlichen am 2026-09-30 bestätigt.
+  - Notes: `items/STORY-007/STORY-007_notes.md`.
 
 - `EPIC-001` **Backlog-Pflege per API statt direkter Dateizugriffe**
   - Type: Epic.
@@ -454,11 +451,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: None.
-  - Goal: Agenten (Ablösung der Schreibzugriffe des todo-Skills) und
-    die UI lesen und pflegen Backlogs vollständig über `/api/v2`. Der
-    Vertrag adressiert Items nur über `source_id` und ID und kennt
-    weder Dateien, Zeilen noch Locations, sodass `TODO.md` später durch
-    eine Datenbank ersetzt werden kann, ohne die API zu ändern.
+  - Goal: Agenten (Ablösung der Schreibzugriffe des todo-Skills) und die UI
+    lesen und pflegen Backlogs vollständig über `/api/v2`. Der Vertrag
+    adressiert Items nur über `source_id` und ID und kennt weder Dateien,
+    Zeilen noch Locations, sodass `TODO.md` später durch eine Datenbank
+    ersetzt werden kann, ohne die API zu ändern.
   - Completion criteria: Alle Pflichtkinder sind abgeschlossen; ein Agent
     kann Items lesen, anlegen, bearbeiten, löschen und Notes/Specs
     schreiben, ohne Backlog-Dateien direkt anzufassen; kein Item-Endpunkt
@@ -466,12 +463,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     in `/sources` und `/folders` gehört zur Konfiguration und ist
     ausgenommen).
   - Summary: Statt dass der Agent die Backlog-Dateien selbst bearbeitet,
-    geht alles über die API des ToDo-Viewers. Die API wird so gebaut,
-    dass die Markdown-Dateien später durch eine Datenbank ersetzt werden
-    können.
+    geht alles über die API des ToDo-Viewers. Die API wird so gebaut, dass
+    die Markdown-Dateien später durch eine Datenbank ersetzt werden können.
+  - Resolution: Vom Projektverantwortlichen am 2026-09-30 bestätigt.
   - Notes: `items/EPIC-001/EPIC-001_notes.md`.
   - Spec: `items/EPIC-001/EPIC-001_spec_harness.md`.
-  - Resolution: Vom Projektverantwortlichen am 2026-09-30 bestätigt.
 
 - `STORY-018` **Typ eines Items in der UI ändern**
   - Type: Story.
@@ -495,8 +491,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Typecheck, Lint und Web-Tests sind grün.
   - Summary: Den Typ eines Items direkt in der Oberfläche ändern, samt
     Hinweis auf Verweise außerhalb des Backlogs.
-  - Notes: `items/STORY-018/STORY-018_notes.md`.
   - Resolution: Vom Projektverantwortlichen am 2026-09-30 bestätigt.
+  - Notes: `items/STORY-018/STORY-018_notes.md`.
 
 - `EPIC-002` **Backlog-Pflege in der UI**
   - Type: Epic.
@@ -510,13 +506,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Parent, Dependencies) bearbeiten sowie Notes-Einträge und Specs
     schreiben. Die UI nutzt dafür die Endpunkte aus `EPIC-001`.
   - Completion criteria: Alle Pflichtkinder sind abgeschlossen; jede
-    genannte Funktion ist in der UI bedienbar, Fehlercodes der API
-    werden übersetzt angezeigt, und der Projektverantwortliche hat die
-    Bedienung geprüft.
-  - Summary: Alles, was künftig ein Agent über die API am Backlog
-    ändern kann, soll auch direkt in der Oberfläche möglich sein.
-  - Notes: `items/EPIC-002/EPIC-002_notes.md`.
+    genannte Funktion ist in der UI bedienbar, Fehlercodes der API werden
+    übersetzt angezeigt, und der Projektverantwortliche hat die Bedienung
+    geprüft.
+  - Summary: Alles, was künftig ein Agent über die API am Backlog ändern
+    kann, soll auch direkt in der Oberfläche möglich sein.
   - Resolution: Vom Projektverantwortlichen am 2026-09-30 bestätigt.
+  - Notes: `items/EPIC-002/EPIC-002_notes.md`.
 
 - `STORY-019` **Architekturregeln für wählbares Speicher-Backend öffnen**
   - Type: Story.
@@ -537,10 +533,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Doku) sind konsistent.
   - Summary: Regel 1 und der Backend-Scope werden so geändert, dass Markdown
     und Datenbank gleichrangige Backends sind.
-  - Spec: `items/STORY-019/STORY-019_spec.md`.
   - Resolution: Architekturregeln (Regel 1, Backend-Scope Abschnitt 5,
     import-linter) am 2026-09-30 vom Projekteigner bestätigt; Commit
     f64b4cc.
+  - Spec: `items/STORY-019/STORY-019_spec.md`.
 
 - `STORY-020` **Port-Vertrag als Contract-Suite und Routing je Projekt**
   - Type: Story.
@@ -560,9 +556,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ist unverändert, Source hat das Feld backend (Standard markdown).
   - Summary: Bestehende Tests werden zu einem wiederverwendbaren Maßstab für
     neue Adapter; Routing je Projekt kommt dazu.
-  - Spec: `items/STORY-020/STORY-020_spec.md`.
   - Resolution: Vom Projekteigner bestätigt am 2026-09-30; umgesetzt in
     Merge d44626d, Release v0.2.2.
+  - Spec: `items/STORY-020/STORY-020_spec.md`.
 
 - `STORY-027` **Dokument-Port itembasiert statt pfadbasiert**
   - Type: Story.
@@ -586,9 +582,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     prüft den neuen Port für Markdown und den Fake.
   - Summary: Umbau vor dem Datenbank-Adapter: Dokumente werden über Item und
     Namen angesprochen, die Ablage entscheidet der Adapter.
-  - Notes: `items/STORY-027/STORY-027_notes.md`.
   - Resolution: Vom Projekteigner bestätigt am 2026-09-30; umgesetzt in
     Merge 909e4c8.
+  - Notes: `items/STORY-027/STORY-027_notes.md`.
 
 - `STORY-021` **SQLite-Adapter für Items, Archiv, Papierkorb und Dokumente**
   - Type: Story.
@@ -611,10 +607,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     anlegen, ändern, archivieren, löschen, Dokumente).
   - Summary: Neuer DB-Adapter, der dieselbe Contract-Suite besteht wie
     Markdown.
-  - Spec: `items/STORY-021/STORY-021_spec.md`.
-  - Notes: `items/STORY-021/STORY-021_notes.md`.
   - Resolution: Vom Projekteigner bestätigt am 2026-09-30; umgesetzt in
     Merge 95fcb7a, Release v0.3.0.
+  - Notes: `items/STORY-021/STORY-021_notes.md`.
+  - Spec: `items/STORY-021/STORY-021_spec.md`.
 
 - `STORY-022` **Projekte und UI-State in der zentralen Datenbank**
   - Type: Story.
@@ -636,9 +632,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     werden migriert; ui_state kommt aus der DB.
   - Summary: Ein zentraler Ort für Projekte, Einstellungen und Inhalte;
     Sync-Pfad je Projekt konfigurierbar.
-  - Spec: `items/STORY-022/STORY-022_spec.md`.
-  - Notes: `items/STORY-022/STORY-022_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+  - Notes: `items/STORY-022/STORY-022_notes.md`.
+  - Spec: `items/STORY-022/STORY-022_spec.md`.
 
 - `STORY-023` **Sync zwischen Datenbank und Markdown (to_md / from_md)**
   - Type: Story.
@@ -666,9 +662,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     wird mit klarem Fehlercode abgelehnt.
   - Summary: Zweiseitiger Sync auf Knopfdruck, keine automatische
     Spiegelung.
-  - Spec: `items/STORY-023/STORY-023_spec.md`.
-  - Notes: `items/STORY-023/STORY-023_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+  - Notes: `items/STORY-023/STORY-023_notes.md`.
+  - Spec: `items/STORY-023/STORY-023_spec.md`.
 
 - `TASK-003` **Backend-Wechsel per PUT nach Sync**
   - Type: Task.
@@ -696,8 +692,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Fehlerfälle ab; Techdocs und OpenAPI sind angepasst.
   - Summary: Backend-Wechsel ohne neue Projekt-Id: erst Sync, dann PUT mit
     neuem backend.
-  - Notes: `items/TASK-003/TASK-003_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+  - Notes: `items/TASK-003/TASK-003_notes.md`.
 
 - `STORY-024` **Speicher-Backend und Sync in der UI bedienen**
   - Type: Story.
@@ -716,9 +712,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     über die UI nutzbar; UI-Tests decken Backend-Wahl, Vorschau und
     Bestätigung ab.
   - Summary: Backend-Wahl und Sync-Knöpfe im Projekt-Dialog.
-  - Spec: `items/STORY-024/STORY-024_spec.md`.
-  - Notes: `items/STORY-024/STORY-024_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+  - Notes: `items/STORY-024/STORY-024_notes.md`.
+  - Spec: `items/STORY-024/STORY-024_spec.md`.
 
 - `STORY-025` **Doku und Release für das wählbare Speicher-Backend**
   - Type: Story.
@@ -735,9 +731,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Completion criteria: Doku entspricht dem Ist-Zustand, Release ist
     getaggt, das eigene Backlog wurde probeweise in die DB übernommen.
   - Summary: Dokumentation und Release des Epics.
-  - Spec: `items/STORY-025/STORY-025_spec.md`.
-  - Notes: `items/STORY-025/STORY-025_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+  - Notes: `items/STORY-025/STORY-025_notes.md`.
+  - Spec: `items/STORY-025/STORY-025_spec.md`.
 
 - `STORY-026` **Postgres als zweiter Datenbank-Typ (optional)**
   - Type: Story.
@@ -755,11 +751,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     grün; Postgres-Tests werden übersprungen, wenn kein Server erreichbar
     ist.
   - Summary: Optionaler zweiter Datenbank-Typ.
-  - Spec: `items/STORY-026/STORY-026_spec.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 vorerst verworfen: SQLite
     genügt für den lokalen Einzelbetrieb; Postgres nur bei echtem Bedarf neu
     aufnehmen.
   - Notes: `items/STORY-026/STORY-026_notes.md`.
+  - Spec: `items/STORY-026/STORY-026_spec.md`.
 
 - `EPIC-003` **Wählbares Speicher-Backend: Markdown oder zentrale Datenbank**
   - Type: Epic.
@@ -781,9 +777,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     und Release sind aktualisiert.
   - Summary: Neben den Markdown-Dateien wird eine zentrale SQLite-Datenbank
     als Speicher wählbar, mit Sync in beide Richtungen auf Knopfdruck.
-  - Spec: `items/EPIC-003/EPIC-003_spec.md`.
-  - Notes: `items/EPIC-003/EPIC-003_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+  - Notes: `items/EPIC-003/EPIC-003_notes.md`.
+  - Spec: `items/EPIC-003/EPIC-003_spec.md`.
 
 - `STORY-029` **Primärquelle und Spiegel pro Projekt in Modell und API**
   - Type: Story.
@@ -804,10 +800,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     versionierter Migration unverändert weiter: Backend bleibt primär,
     sync_path wird zum Spiegel-Ordner. - Die Contract-Suite deckt beide
     Kombinationen ab; OpenAPI und TypeScript-Typen sind neu erzeugt.
-  - Notes: `items/STORY-029/STORY-029_notes.md`.
   - Summary: Projekte kennen jetzt Primärquelle und optionalen Spiegel; die
     API zeigt beides und lässt den Spiegel setzen.
   - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.1.
+  - Notes: `items/STORY-029/STORY-029_notes.md`.
 
 - `STORY-030` **Sync mit wählbarer Richtung, voller Umfang, Wechsel der Primärquelle**
   - Type: Story.
@@ -828,11 +824,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Nichts wird ohne Bestätigung auf dem Ziel gelöscht. - Der Wechsel der
     Primärquelle verlangt einen vorherigen Sync, sonst sync_required. - Es
     gibt keinen automatischen Sync.
-  - Notes: `items/STORY-030/STORY-030_notes.md`.
   - Summary: Der Sync hat eine Standardrichtung von der Primärquelle zum
     Spiegel; alles andere war schon vorhanden und ist jetzt auch für
     Markdown mit Datenbank-Spiegel getestet.
   - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.2.
+  - Notes: `items/STORY-030/STORY-030_notes.md`.
 
 - `STORY-028` **Architekturregeln: Primärquelle und Spiegel statt genau einem Backend**
   - Type: Story.
@@ -852,10 +848,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ohne Bestätigung) bleibt. - Die Änderung ist vom Projekteigner
     freigegeben, bevor sie gilt. - Die Contract-Suite nennt, was für einen
     Spiegel zusätzlich gilt.
-  - Notes: `items/STORY-028/STORY-028_notes.md`.
   - Summary: Regel 1 der Architektur kennt jetzt Primärquelle und Spiegel
     pro Projekt.
   - Resolution: Vom Projekteigner bestätigt.
+  - Notes: `items/STORY-028/STORY-028_notes.md`.
 
 - `STORY-031` **Backup vor dem Wechsel der Primärquelle**
   - Type: Story.
@@ -873,10 +869,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     dokumentierten Ort. - Schlägt das Backup fehl, findet kein Wechsel
     statt; die Antwort nennt den Grund. - Ein Test prüft, dass sich aus dem
     Backup der alte Stand herstellen lässt.
-  - Notes: `items/STORY-031/STORY-031_notes.md`.
   - Summary: Vor jedem Wechsel der Primärquelle wird die bisherige
     gesichert; scheitert das, wird nichts umgeschaltet.
   - Resolution: Vom Projekteigner bestätigt.
+  - Notes: `items/STORY-031/STORY-031_notes.md`.
 
 - `STORY-032` **Sync-Status: Spiegel extern geändert erkennen**
   - Type: Story.
@@ -895,10 +891,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Sync, Spiegel geändert, primäre Quelle geändert, beide geändert) und den
     letzten Sync-Zeitpunkt. - Die Erkennung braucht keinen Sync und ändert
     keine Daten. - Tests decken alle vier Zustände ab.
-  - Notes: `items/STORY-032/STORY-032_notes.md`.
   - Summary: Jedes Projekt mit Spiegel meldet, welche Seite sich seit dem
     letzten Sync geändert hat; das Lesen ändert nichts.
   - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.5.
+  - Notes: `items/STORY-032/STORY-032_notes.md`.
 
 - `STORY-033` **Einstellungsmenü: erweiterbarer Rahmen und Abschnitt „Allgemein“**
   - Type: Story.
@@ -920,11 +916,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Änderung erscheint. - „Allgemein“ zeigt Datenbank-Typ und -Ort nur
     lesend und speichert das Standard-Backend im UI-Zustand. - Das
     Standard-Backend ist beim Hinzufügen eines Projekts vorausgewählt.
-  - Notes: `items/STORY-033/STORY-033_notes.md`.
   - Summary: Die Sidebar hat ein Zahnrad, das ein Einstellungsmenü mit
     erweiterbarer Abschnittsliste öffnet; Allgemein zeigt die Datenbank
     lesend und stellt den Standard-Speicherort für neue Projekte ein.
   - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.6.
+  - Notes: `items/STORY-033/STORY-033_notes.md`.
 
 - `STORY-034` **Menüabschnitt „Projekte“: Primärquelle, Pfade und Sync je Projekt**
   - Type: Story.
@@ -946,11 +942,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     primären Seite zur anderen. - Das Badge erscheint bei geändertem Spiegel
     und öffnet das Menü bei diesem Projekt. - Der Bearbeiten-Dialog enthält
     nur noch den Namen. - Web-Tests decken Karte, Richtung und Badge ab.
-  - Notes: `items/STORY-034/STORY-034_notes.md`.
   - Summary: Das Einstellungsmenü hat einen Abschnitt Projekte mit einer
     Karte je Projekt; ein Badge in der Sidebar zeigt einen geänderten
     Spiegel und öffnet die Karte.
   - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.7.
+  - Notes: `items/STORY-034/STORY-034_notes.md`.
 
 - `STORY-035` **Doku und Release für Primärquelle, Spiegel und Einstellungsmenü**
   - Type: Story.
@@ -966,37 +962,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Schnittstellen, Betrieb) beschreiben Primärquelle, Spiegel,
     Sync-Richtung, Status und Backup. - Ein Tagesbericht und ein Release
     (SemVer) sind erledigt.
-  - Notes: `items/STORY-035/STORY-035_notes.md`.
   - Summary: README und Techdocs beschreiben Primärquelle, Spiegel,
     Sync-Richtung, Status und Backup durchgehend; Releases und Tagesberichte
     sind erledigt.
   - Resolution: Vom Projekteigner bestätigt; README und Techdocs aktuell,
     Releases v0.6.1 bis v0.6.7.
-
-- `EPIC-004` **Primärquelle und Spiegel pro Projekt, Einstellungsmenü**
-  - Type: Epic.
-  - Status: Completed.
-  - Created: 2026-09-30.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Jedes Projekt hat eine primäre Quelle (Datenbank oder Markdown)
-    und darf die andere Seite als Spiegel halten. Ein eigenes
-    Einstellungsmenü bündelt alles Speicher-Bezogene: Primärquelle je
-    Projekt, Pfade der Markdown-Seite, Sync mit wählbarer Richtung und den
-    Sync-Status. Ziel im Alltag: auf der Datenbank arbeiten, Markdown als
-    aktueller Spiegel. Das Menü ist in Abschnitten aufgebaut, damit weitere
-    Einstellungen ohne Umbau dazukommen.
-  - Completion criteria: - Pro Projekt lässt sich die primäre Quelle im Menü
-    wählen; beim Wechsel läuft vorher ein Sync, und vorher wird ein Backup
-    angelegt. - Beide Seiten dürfen als Spiegel gehalten werden; der Sync
-    läuft standardmäßig von der primären zur anderen Seite, die Richtung ist
-    pro Lauf wählbar. - Ein Projekt, dessen Spiegel seit dem letzten Sync
-    extern geändert wurde, trägt in der Sidebar ein Badge, das das Menü bei
-    diesem Projekt öffnet. - Der Sync umfasst alles (Backlog, Archiv, Notes,
-    Specs, Papierkorb). - Es gibt nie einen automatischen Sync; die
-    Architekturregeln sind entsprechend angepasst und vom Projekteigner
-    freigegeben. - Das Menü ist über eine Abschnittsliste erweiterbar; die
-    Doku ist aktuell.
-  - Resolution: Vom Projekteigner bestätigt; alle Stories abgeschlossen,
-    umgesetzt mit v0.6.1 bis v0.6.7.
+  - Notes: `items/STORY-035/STORY-035_notes.md`.

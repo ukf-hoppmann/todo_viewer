@@ -42,9 +42,10 @@ Applies to `backend/**` in addition to `../architecture.md`.
   (`[tool.importlinter]`).
 - `domain` and `application` MUST NOT use SQLAlchemy or any database driver.
   Enforced by: `pyproject.toml` (`[tool.importlinter]`).
-- The backend MUST be chosen only by a routing adapter wired in
-  `bootstrap.py`; services and domain code MUST NOT branch on
-  `Source.backend`.
+- The storage adapter MUST be chosen only by a routing adapter wired in
+  `bootstrap.py`; services MUST NOT call different adapters depending on
+  `Source.backend`. Domain code MAY use `Source.backend` to describe the
+  project model (primary source, mirror, folders of each side).
 - Sync between backends MUST be a use case in `application` working on two
   ports, not logic inside an adapter.
 - The database's internal keys (`uid`) MUST NOT appear in `domain`,

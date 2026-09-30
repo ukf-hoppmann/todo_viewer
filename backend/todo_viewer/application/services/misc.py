@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..ports import FolderBrowser, FolderListing, UiStateStore
+from ..ports import FolderBrowser, FolderListing, StorageDescription, StorageInfo, UiStateStore
 
 
 class FolderBrowseService:
@@ -12,6 +12,14 @@ class FolderBrowseService:
 
     def browse(self, path: str | None) -> FolderListing:
         return self._browser.browse((path or "").strip() or None)
+
+
+class StorageService:
+    def __init__(self, info: StorageInfo):
+        self._info = info
+
+    def describe(self) -> StorageDescription:
+        return self._info.describe()
 
 
 class UiStateService:

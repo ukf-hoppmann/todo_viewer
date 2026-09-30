@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from todo_viewer.application.ports import FolderListing
+from todo_viewer.application.ports import FolderListing, StorageDescription
 from todo_viewer.application.services import DocumentResult, RetypeResult, SyncResult, SyncStatus
 from todo_viewer.domain.documents import DocumentRef, item_documents
 from todo_viewer.domain.item import Item, Location
@@ -130,6 +130,16 @@ class SyncStatusOut(BaseModel):
     @classmethod
     def of(cls, source: Source, status: SyncStatus) -> SyncStatusOut:
         return cls(source_id=source.id, state=status.state.value, last_sync_at=status.last_sync_at)
+
+
+class StorageOut(BaseModel):
+    kind: str = Field(description="Type of the central database, e.g. sqlite")
+    location: str = Field(description="The database file (sqlite) or its URL without a password")
+    schema_version: int = Field(description="Version of the database schema (number of applied migrations)")
+
+    @classmethod
+    def of(cls, storage: StorageDescription) -> StorageOut:
+        return cls(kind=storage.kind, location=storage.location, schema_version=storage.schema_version)
 
 
 class SourceOut(BaseModel):

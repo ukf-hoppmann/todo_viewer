@@ -11,6 +11,7 @@ from .services import (
     RetypeService,
     SourceLookup,
     SourceService,
+    StorageService,
     SyncService,
     SyncStatusService,
     TrashService,
@@ -30,4 +31,5 @@ class Container:
     sync: SyncService
     sync_status: SyncStatusService
     folders: FolderBrowseService
+    storage: StorageService
     ui_state: UiStateService

@@ -1206,6 +1206,32 @@
         "title": "SourceStatusOut",
         "type": "object"
       },
+      "StorageOut": {
+        "properties": {
+          "kind": {
+            "description": "Type of the central database, e.g. sqlite",
+            "title": "Kind",
+            "type": "string"
+          },
+          "location": {
+            "description": "The database file (sqlite) or its URL without a password",
+            "title": "Location",
+            "type": "string"
+          },
+          "schema_version": {
+            "description": "Version of the database schema (number of applied migrations)",
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "location",
+          "schema_version"
+        ],
+        "title": "StorageOut",
+        "type": "object"
+      },
       "SyncEntryOut": {
         "properties": {
           "label": {
@@ -3168,6 +3194,68 @@
         "summary": "Source Sync Status",
         "tags": [
           "sources"
+        ]
+      }
+    },
+    "/api/v2/storage": {
+      "get": {
+        "description": "Type, location (no password) and schema version of the central database; read-only.",
+        "operationId": "storage_api_v2_storage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Storage",
+        "tags": [
+          "meta"
         ]
       }
     },

@@ -14,6 +14,7 @@ from todo_viewer.application.services import (
     RetypeService,
     SourceLookup,
     SourceService,
+    StorageService,
     SyncService,
     SyncStatusService,
     TrashService,
@@ -69,6 +70,10 @@ def _folders(c: ContainerDep) -> FolderBrowseService:
     return c.folders
 
 
+def _storage(c: ContainerDep) -> StorageService:
+    return c.storage
+
+
 def _ui_state(c: ContainerDep) -> UiStateService:
     return c.ui_state
 
@@ -83,4 +88,5 @@ Documents = Annotated[DocumentService, Depends(_documents)]
 Sync = Annotated[SyncService, Depends(_sync)]
 SyncStatus = Annotated[SyncStatusService, Depends(_sync_status)]
 Folders = Annotated[FolderBrowseService, Depends(_folders)]
+Storage = Annotated[StorageService, Depends(_storage)]
 UiState = Annotated[UiStateService, Depends(_ui_state)]

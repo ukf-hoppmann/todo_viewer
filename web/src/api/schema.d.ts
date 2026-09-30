@@ -317,6 +317,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Storage
+         * @description Type, location (no password) and schema version of the central database; read-only.
+         */
+        get: operations["storage_api_v2_storage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/sync-status": {
         parameters: {
             query?: never;
@@ -888,6 +908,24 @@ export interface components {
              * @description Database projects: folder to sync markdown files with
              */
             sync_path: string | null;
+        };
+        /** StorageOut */
+        StorageOut: {
+            /**
+             * Kind
+             * @description Type of the central database, e.g. sqlite
+             */
+            kind: string;
+            /**
+             * Location
+             * @description The database file (sqlite) or its URL without a password
+             */
+            location: string;
+            /**
+             * Schema Version
+             * @description Version of the database schema (number of applied migrations)
+             */
+            schema_version: number;
         };
         /** SyncEntryOut */
         SyncEntryOut: {
@@ -2304,6 +2342,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    storage_api_v2_storage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };

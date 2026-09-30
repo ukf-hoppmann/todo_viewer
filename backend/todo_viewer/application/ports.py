@@ -85,6 +85,14 @@ class DocumentStore(Protocol):
         """
 
 
+class RawBackup(Protocol):
+    """A byte-exact copy of a project's files, for the backends that keep the project in files."""
+
+    def copy(self, source: Source, target: str) -> bool:
+        """Copies the project into the new folder `target` and returns True; False if the backend has no files to
+        copy (the caller then exports the data instead). Raises OSError if a copy cannot be made or differs."""
+
+
 class ProjectNameSuggester(Protocol):
     def suggest(self, path: str) -> str: ...
 
@@ -122,6 +130,7 @@ __all__ = [
     "FolderEntry",
     "FolderListing",
     "ProjectNameSuggester",
+    "RawBackup",
     "SourceRepository",
     "UiStateStore",
 ]

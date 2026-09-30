@@ -25,6 +25,11 @@ class SyncCheck(Protocol):
         """True if a sync of the project in `direction` would find nothing to do."""
 
 
+class BackupMaker(Protocol):
+    def create(self, source: Source) -> str:
+        """Saves the project's current primary source; raises BackupFailedError if that is not possible."""
+
+
 class SourceLookup:
     """Finds configured sources by their stable id."""
 
@@ -42,11 +47,12 @@ class SourceService:
     """Adds, changes and removes configured backlog folders."""
 
     def __init__(self, sources: SourceRepository, backlogs: BacklogRepository, names: ProjectNameSuggester,
-                 sync: SyncCheck, new_id: Callable[[], str] = lambda: str(uuid.uuid4())):
+                 sync: SyncCheck, backup: BackupMaker, new_id: Callable[[], str] = lambda: str(uuid.uuid4())):
         self._sources = sources
         self._backlogs = backlogs
         self._names = names
         self._sync = sync
+        self._backup = backup
         self._new_id = new_id
 
     def all(self) -> list[Source]:
@@ -84,7 +90,8 @@ class SourceService:
 
         A move needs both sides in sync (SyncRequiredError otherwise): sync first, then switch. The project keeps
         its id, and its folder changes sides: `path` of a markdown project is the `sync_path` of a database one.
-        The former primary side stays as the mirror. `path`, `sync_path` and `mirror` are not read when the backend
+        The current primary source is backed up first (BackupFailedError: nothing is changed). The former primary
+        side stays as the mirror. `path`, `sync_path` and `mirror` are not read when the backend
         changes; a `project` name is.
 
         `mirror` switches the other side on or off: "database" / "none" for a markdown project, "markdown" (needs
@@ -106,7 +113,8 @@ class SourceService:
             return sources[index]
 
     def _switched(self, current: Source, others: list[Source], project: str | None, backend: str) -> Source:
-        """The project on the other backend; nothing is changed unless both sides are in sync."""
+        """The project on the other backend; nothing is changed unless both sides are in sync and the current
+        primary source is backed up."""
         to_database = backend == "database"
         if not self._sync.in_sync(current, SyncDirection.FROM_MD if to_database else SyncDirection.TO_MD):
             raise SyncRequiredError()
@@ -121,6 +129,7 @@ class SourceService:
             raise InvalidSourceError(problem.message, code=problem.code)
         if self._taken(others, moved.path):
             raise DuplicateSourceError()
+        self._backup.create(current)
         return moved
 
     @staticmethod

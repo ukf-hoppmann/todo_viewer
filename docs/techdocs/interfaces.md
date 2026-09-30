@@ -143,7 +143,8 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     `backend` fehlen. Ein anderer Wert als der gespeicherte stellt das Projekt
     um (Entscheidung: [TASK-003](../todo/items/TASK-003/TASK-003_notes.md)):
     nur wenn beide Seiten gleich sind, sonst 409 `sync_required` und nichts
-    ändert sich. Vorher also synchronisieren: Markdown → Datenbank mit
+    ändert sich. Davor sichert der Dienst die bisherige Primärquelle (Ort und
+    Inhalt: [Betrieb](operations.md)); scheitert das, gilt 409 `backup_failed`. Vorher also synchronisieren: Markdown → Datenbank mit
     `from_md` (der Sync liest bei einem Markdown-Projekt den Ordner in die
     Datenbank), Datenbank → Markdown mit `to_md`. Beim Umstellen wandert der
     Ordner von `path` nach `sync_path` bzw. zurück; `path` und `sync_path` im
@@ -236,7 +237,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 400 | `bad_request` (Validierung, auch unbekannte Felder), `sync_path_missing` (Projekt hat keinen `sync_path`), `sync_source_invalid` (Quelle oder Ziel des Syncs nicht lesbar), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `file_not_found`, `item_not_found` |
-| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `sync_required` (Backend per `PUT` umstellen, obwohl die Seiten sich unterscheiden), `sync_same_backend` (Markdown-Projekt mit `to_md`: Markdown-Projekte lassen sich nur in die Datenbank lesen), `sync_stale` (Sync: eine Seite änderte sich seit der Vorschau) |
+| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `sync_required` (Backend per `PUT` umstellen, obwohl die Seiten sich unterscheiden), `backup_failed` (Backend per `PUT` umstellen, aber das Backup der bisherigen Primärquelle schlug fehl; `details.reason`, nichts geändert), `sync_same_backend` (Markdown-Projekt mit `to_md`: Markdown-Projekte lassen sich nur in die Datenbank lesen), `sync_stale` (Sync: eine Seite änderte sich seit der Vorschau) |
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 

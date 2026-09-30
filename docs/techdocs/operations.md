@@ -25,8 +25,9 @@
   im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
 - Speicherort eines Projekts wechseln (UI: ✎ → „In die Datenbank übernehmen…“
   bzw. „Als Markdown-Ordner ablegen…“; API: Sync, dann `PUT /sources/{id}` mit
-  neuem `backend`): vorher die Datenbankdatei sichern (siehe oben). Der Wechsel
-  löscht nichts. Die Markdown-Dateien bleiben nach dem Übernehmen liegen und
+  neuem `backend`): Der Dienst sichert die bisherige Primärquelle selbst (siehe
+  nächster Punkt); die Datenbankdatei zusätzlich zu sichern (siehe oben) schadet
+  nicht. Der Wechsel löscht nichts. Die Markdown-Dateien bleiben nach dem Übernehmen liegen und
   werden zum Sync-Ordner; die Daten in der Datenbank bleiben nach dem Ablegen als
   Markdown liegen (sie werden nicht mehr gelesen, ein späteres Zurückstellen
   zeigt sie in der Vorschau als Unterschied). Beim Austragen eines
@@ -37,6 +38,20 @@
   Einträge und Dokumente sind inhaltlich gleich, Zeilenumbrüche und die
   Reihenfolge der Felder sind normalisiert. Ein bestehender Sync-Ordner behält
   seinen Kopftext.
+- Backup beim Wechsel der Primärquelle: Vor jedem Wechsel (`PUT /sources/{id}`
+  mit neuem `backend`, nachdem Sync und Prüfungen bestanden sind) legt der Dienst
+  unter `<CONFIG_DIR>/backups/<Projekt>_<id8>/<JJJJMMTT-HHMMSS>/` einen
+  Backlog-Ordner ab (`TODO.md`, `archive.md`, `items/…`). Bei einem
+  Markdown-Projekt ist er eine Byte-Kopie der Dateien (nur diese, jede Kopie
+  wird gegen das Original geprüft), bei einem Datenbank-Projekt ein
+  Markdown-Export mit Papierkorb, Archiv, Notes und Specs, danach gegen die
+  Datenbank geprüft. Schlägt das fehl (z. B. kein Schreibrecht, Platte voll),
+  antwortet der Wechsel mit 409 `backup_failed` (`details.reason`), nichts
+  wird umgestellt und ein angefangener Backup-Ordner wird entfernt.
+  Wiederherstellen: den Backup-Ordner als Markdown-Projekt eintragen
+  (`POST /sources` mit `path`) oder mit Sync in ein Datenbank-Projekt lesen.
+  Backups werden nicht automatisch gelöscht; `configs/backups/` steht in der
+  `.gitignore`.
 - Erster Start nach dem Update von einer Version mit Projekten in
   `config.json`: Projekte und UI-Zustand werden in die Datenbank übernommen,
   alle `source_id`s ändern sich einmal (Agenten schlagen sie über den Pfad

@@ -5,6 +5,7 @@ import dataclasses
 import pytest
 
 from todo_viewer.domain.errors import (
+    BackupFailedError,
     ConflictError,
     SyncPathMissingError,
     SyncRequiredError,
@@ -168,3 +169,11 @@ def test_the_default_direction_goes_from_the_primary_source_to_the_mirror():
     assert default_direction(database) is SyncDirection.TO_MD
     assert default_direction(markdown) is SyncDirection.FROM_MD
     assert default_direction(dataclasses.replace(markdown, mirror_database=False)) is SyncDirection.FROM_MD
+
+
+def test_a_failed_backup_refuses_the_switch_and_names_the_reason():
+    error = BackupFailedError("disk full")
+
+    assert (error.code, isinstance(error, ConflictError), error.details) == ("backup_failed", True,
+                                                                             {"reason": "disk full"})
+    assert "disk full" in error.message and "Nothing was changed" in error.message

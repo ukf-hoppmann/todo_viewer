@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from .backup import MarkdownRawBackup
 from .detector import FormatDetector
 from .documents import MarkdownDocumentStore
 from .editors import BacklogEntryEditor, EntryLocator, EntryMover, EntryRenderer
@@ -34,5 +35,5 @@ def build_markdown_documents(base_dir: Path, locks: KeyedLocks) -> MarkdownDocum
     return MarkdownDocumentStore(LayoutFactory(SourcePathResolver(base_dir)), TextFileStore(), locks)
 
 
-__all__ = ["KeyedLocks", "MarkdownBacklogRepository", "MarkdownDocumentStore", "build_markdown_documents",
-           "build_markdown_repository"]
+__all__ = ["KeyedLocks", "MarkdownBacklogRepository", "MarkdownDocumentStore", "MarkdownRawBackup",
+           "build_markdown_documents", "build_markdown_repository"]

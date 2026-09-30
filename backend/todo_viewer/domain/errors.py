@@ -193,6 +193,14 @@ class SyncRequiredError(ConflictError):
         super().__init__("The two sides differ. Sync them first, then switch the backend.")
 
 
+class BackupFailedError(ConflictError):
+    code = "backup_failed"
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"Nothing was changed: the backup of the current primary source failed ({reason}).",
+                         reason=reason)
+
+
 class SyncStaleError(ConflictError):
     code = "sync_stale"
 

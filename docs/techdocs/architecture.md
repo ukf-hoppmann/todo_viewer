@@ -74,7 +74,9 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   Dokument-Ports. Die Markdown-Seite rendert dafür alle Felder
   (`EntryRenderer.render_full`), den Text um die Einträge lässt sie stehen.
   Das Umstellen des Backends (`SourceService.update`) verlangt vorher einen
-  Sync (`SyncService.in_sync`) und tauscht nur die Ordnerseite: `path` ⇄
+  Sync (`SyncService.in_sync`) und sichert die bisherige Primärquelle
+  (`BackupService`: Byte-Kopie über den Port `RawBackup`, den der
+  Markdown-Adapter erfüllt, sonst Export über `SyncService`) und tauscht nur die Ordnerseite: `path` ⇄
   `sync_path`, gleiche `source_id`; die bisherige Seite bleibt Spiegel. Ein
   Markdown-Projekt kann dazu per `from_md` in die Datenbank gelesen werden;
   mit Datenbank-Spiegel geht der Sync auch zurück (`to_md`).

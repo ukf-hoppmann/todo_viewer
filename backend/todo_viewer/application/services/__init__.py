@@ -1,3 +1,4 @@
+from .backup import BackupService
 from .documents import DocumentResult, DocumentService
 from .items import BacklogOverviewService, ItemResult, ItemService, SourceBacklog
 from .misc import FolderBrowseService, UiStateService
@@ -7,6 +8,7 @@ from .sync import SyncResult, SyncService
 from .trash import TrashService
 
 __all__ = [
+    "BackupService",
     "BacklogOverviewService",
     "DocumentResult",
     "DocumentService",

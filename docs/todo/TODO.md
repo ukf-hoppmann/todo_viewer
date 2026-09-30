@@ -30,35 +30,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     als Speicher wählbar, mit Sync in beide Richtungen auf Knopfdruck.
   - Spec: `items/EPIC-003/EPIC-003_spec.md`.
 
-- `STORY-021` **SQLite-Adapter für Items, Archiv, Papierkorb und Dokumente**
-  - Type: Story.
-  - Parent: `EPIC-003`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `STORY-020`, `STORY-027`.
-  - Goal: Ein Datenbank-Adapter (SQLAlchemy Core, SQLite) implementiert
-    BacklogRepository und DocumentStore, inklusive Archiv, Papierkorb,
-    Notizen und Specs. Die Daten werden normalisiert in Tabellen gespeichert
-    (Items mit UUID und Label, Beziehungen, Zusatzfelder, Dokumente) mit
-    versioniertem Schema (Migrationen) und einer Spalte position für die
-    Reihenfolge. apply_all läuft in einer Transaktion, Versionskonflikte
-    über Item.version.
-  - Completion criteria: Die Contract-Suite ist für SQLite grün; ein Projekt
-    mit backend=database funktioniert über die API Ende zu Ende (lesen,
-    anlegen, ändern, archivieren, löschen, Dokumente).
-  - Summary: Neuer DB-Adapter, der dieselbe Contract-Suite besteht wie
-    Markdown.
-  - Spec: `items/STORY-021/STORY-021_spec.md`.
-  - Notes: `items/STORY-021/STORY-021_notes.md`.
-
 - `STORY-022` **Projekte und UI-State in der zentralen Datenbank**
   - Type: Story.
   - Parent: `EPIC-003`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.

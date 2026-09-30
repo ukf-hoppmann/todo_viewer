@@ -30,32 +30,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     als Speicher wählbar, mit Sync in beide Richtungen auf Knopfdruck.
   - Spec: `items/EPIC-003/EPIC-003_spec.md`.
 
-- `STORY-019` **Architekturregeln für wählbares Speicher-Backend öffnen**
-  - Type: Story.
-  - Parent: `EPIC-003`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Die Architekturregeln erlauben je Projekt wahlweise Markdown oder
-    eine zentrale Datenbank hinter dem BacklogRepository-Port. Regel 1
-    (Markdown als einzige Wahrheit) wird entsprechend umformuliert; das
-    Backend-Scope-Dokument bekommt Regeln für DB-Adapter und Migrationen.
-  - Completion criteria: architecture.md und
-    docs/development/architecture/backend.md sind angepasst und vom
-    Projekteigner freigegeben; Verweise auf die bisherige Regel 1 (Tests,
-    Doku) sind konsistent.
-  - Summary: Regel 1 und der Backend-Scope werden so geändert, dass Markdown
-    und Datenbank gleichrangige Backends sind.
-  - Spec: `items/STORY-019/STORY-019_spec.md`.
-
 - `STORY-020` **Port-Vertrag als Contract-Suite und Routing je Projekt**
   - Type: Story.
   - Parent: `EPIC-003`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.

@@ -20,7 +20,8 @@
   Projektliste, UI-Zustand und den Inhalten der Datenbank-Projekte, daneben im
   Betrieb `todo.db-wal` und `todo.db-shm`. Das Schema wird beim ersten Zugriff
   automatisch auf den aktuellen Stand migriert (Tabelle `schema_version`, nur
-  vorwärts). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
+  vorwärts; Version 3 ergänzt die Spalte `mirror_database`, bestehende Projekte
+  bekommen keinen Datenbank-Spiegel). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
   im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
 - Speicherort eines Projekts wechseln (UI: ✎ → „In die Datenbank übernehmen…“
   bzw. „Als Markdown-Ordner ablegen…“; API: Sync, dann `PUT /sources/{id}` mit

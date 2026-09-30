@@ -66,6 +66,11 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   Datenbank-Spiegel eines Markdown-Projekts: Spalte `mirror_database`,
   Markdown-Spiegel eines Datenbank-Projekts: `sync_path`); er wird nur durch
   einen Sync geschrieben, sonst gibt es keine weitere Kopie.
+- Sync-Status: `SyncStatusService` (`application/services/syncstatus.py`)
+  vergleicht die Fingerabdrücke (`domain/sync.py`: `fingerprint`, `classify`)
+  beider Seiten jetzt mit denen direkt nach dem letzten Sync (`Source.baseline`,
+  Spalten in `projects`). Aufgezeichnet wird nur, wenn der Sync über diesen
+  Dienst läuft (nicht beim Backup); Lesen schreibt nie.
 - Abgleich Datenbank ⇄ Markdown: nur auf Anforderung (`POST /sources/{id}/sync`),
   nie automatisch. `SyncService` (`application/services/sync.py`) arbeitet mit
   denselben Ports auf zwei Quellen desselben Projekts (Datenbank und

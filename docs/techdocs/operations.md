@@ -38,6 +38,14 @@
   Einträge und Dokumente sind inhaltlich gleich, Zeilenumbrüche und die
   Reihenfolge der Felder sind normalisiert. Ein bestehender Sync-Ordner behält
   seinen Kopftext.
+- Sync-Status: Nach jedem Sync über die API speichert die Datenbank einen
+  Fingerabdruck beider Seiten und die Zeit (Spalten `last_sync_at`,
+  `synced_primary`, `synced_mirror`); der Status (`GET /sources`, `GET /backlog`)
+  liest dafür bei jedem Aufruf beide Seiten eines Projekts mit Spiegel. Bei
+  sehr großen Backlogs kostet das Zeit, die UI fragt alle 5 s. `unknown`
+  verschwindet mit dem ersten Sync (oder sobald beide Seiten gleich sind);
+  `unreadable` heißt: der Markdown-Ordner fehlt teilweise oder ist kein
+  Backlog, ein Sync liest ihn dann nicht.
 - Backup beim Wechsel der Primärquelle: Vor jedem Wechsel (`PUT /sources/{id}`
   mit neuem `backend`, nachdem Sync und Prüfungen bestanden sind) legt der Dienst
   unter `<CONFIG_DIR>/backups/<Projekt>_<id8>/<JJJJMMTT-HHMMSS>/` einen

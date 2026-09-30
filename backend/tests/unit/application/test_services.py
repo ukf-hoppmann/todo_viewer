@@ -59,6 +59,8 @@ class FakeBacklogs:
         self.initialized.append((source.path, language))
 
     def check(self, source: Source) -> SourceProblem | None:
+        if not source.path:
+            return SourceProblem("missing_path", "Path is missing.")
         return SourceProblem("no_todo", "No TODO.md in this folder.") if "plain" in source.path else None
 
     def load(self, source: Source) -> Backlog:

@@ -224,18 +224,22 @@
   ],
   "sources": [
     {
+      "backend": "markdown",
       "id": "<SOURCE0>",
       "item_count": 7,
       "path": "<ROOT>/repos/backlog/docs",
       "problem": null,
-      "project": "backlog"
+      "project": "backlog",
+      "sync_path": null
     },
     {
+      "backend": "markdown",
       "id": "<SOURCE1>",
       "item_count": 1,
       "path": "<ROOT>/repos/no_archive/docs",
       "problem": null,
-      "project": "no_archive"
+      "project": "no_archive",
+      "sync_path": null
     }
   ]
 }

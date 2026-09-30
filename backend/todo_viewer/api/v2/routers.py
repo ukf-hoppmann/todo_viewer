@@ -185,7 +185,7 @@ def list_sources(sources: Sources) -> list[SourceOut]:
 @router.post("/sources", tags=["sources"])
 def add_source(body: SourceIn, sources: Sources, request: Request) -> SourceOut:
     note(request, target=body.path)
-    out = SourceOut.of(sources.add(body.path, body.project))
+    out = SourceOut.of(sources.add(body.path, body.project, body.backend or "markdown", body.sync_path))
     note(request, source=out.id)
     return out
 
@@ -204,7 +204,7 @@ def create_backlog(body: BacklogCreateIn, sources: Sources, request: Request) ->
 @router.put("/sources/{source_id}", tags=["sources"])
 def update_source(source_id: str, body: SourceIn, sources: Sources, request: Request) -> SourceOut:
     note(request, target=body.path)
-    return SourceOut.of(sources.update(source_id, body.path, body.project))
+    return SourceOut.of(sources.update(source_id, body.path, body.project, body.backend, body.sync_path))
 
 
 @router.delete("/sources/{source_id}", tags=["sources"])

@@ -2,6 +2,7 @@
   "items": [],
   "sources": [
     {
+      "backend": "markdown",
       "id": "<SOURCE0>",
       "item_count": 0,
       "path": "<ROOT>/repos/missing",
@@ -9,9 +10,11 @@
         "code": "not_found",
         "message": "Folder not found."
       },
-      "project": "Missing"
+      "project": "Missing",
+      "sync_path": null
     },
     {
+      "backend": "markdown",
       "id": "<SOURCE1>",
       "item_count": 0,
       "path": "<ROOT>/repos/plain",
@@ -19,9 +22,11 @@
         "code": "no_todo",
         "message": "No TODO.md in this folder."
       },
-      "project": "NoTodo"
+      "project": "NoTodo",
+      "sync_path": null
     },
     {
+      "backend": "markdown",
       "id": "<SOURCE2>",
       "item_count": 0,
       "path": "<ROOT>/repos",
@@ -29,7 +34,8 @@
         "code": "no_todo",
         "message": "No TODO.md in this folder."
       },
-      "project": "NotADir"
+      "project": "NotADir",
+      "sync_path": null
     }
   ]
 }

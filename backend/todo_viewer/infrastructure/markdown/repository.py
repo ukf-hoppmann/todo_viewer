@@ -57,6 +57,8 @@ class MarkdownBacklogRepository:
     # ---------- reading ----------
 
     def check(self, source: Source) -> SourceProblem | None:
+        if not source.path.strip():
+            return SourceProblem("missing_path", "Path is missing.")
         layout = self._layouts.for_source(source)
         return layout.problem() or self._format_problem(layout)
 

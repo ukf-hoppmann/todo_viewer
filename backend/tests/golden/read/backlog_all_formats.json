@@ -249,13 +249,16 @@
   ],
   "sources": [
     {
+      "backend": "markdown",
       "id": "<SOURCE0>",
       "item_count": 7,
       "path": "<ROOT>/repos/backlog/docs",
       "problem": null,
-      "project": "Backlog"
+      "project": "Backlog",
+      "sync_path": null
     },
     {
+      "backend": "markdown",
       "id": "<SOURCE1>",
       "item_count": 0,
       "path": "<ROOT>/repos/checklist/docs",
@@ -263,21 +266,26 @@
         "code": "unsupported_format",
         "message": "TODO.md is not in the backlog format."
       },
-      "project": "Checklist"
+      "project": "Checklist",
+      "sync_path": null
     },
     {
+      "backend": "markdown",
       "id": "<SOURCE2>",
       "item_count": 1,
       "path": "<ROOT>/repos/no_archive/docs",
       "problem": null,
-      "project": "NoArchive"
+      "project": "NoArchive",
+      "sync_path": null
     },
     {
+      "backend": "markdown",
       "id": "<SOURCE3>",
       "item_count": 1,
       "path": "<ROOT>/repos/empty_archive/docs",
       "problem": null,
-      "project": "EmptyArchive"
+      "project": "EmptyArchive",
+      "sync_path": null
     }
   ]
 }

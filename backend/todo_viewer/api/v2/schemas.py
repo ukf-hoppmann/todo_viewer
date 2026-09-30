@@ -193,6 +193,13 @@ class VersionIn(BaseModel):
     version: str
 
 
+class ItemRetypeIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: str = Field(description="The item's version as last read; a changed item answers 409")
+    type: str = Field(description="The new type: Epic, Story or Task; differs from the current one")
+
+
 class ItemEditIn(BaseModel):
     version: str = Field(description="The item's version as last read; a changed item answers 409")
     fields: ItemFieldsIn

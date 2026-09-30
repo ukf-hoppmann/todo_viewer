@@ -68,6 +68,9 @@ class BacklogEntryEditor:
         if key == "title":
             lines[idx] = ENTRY_HEADER_RE.sub(lambda m: f"- `{m.group(1)}` **{value}**", lines[idx])
             return
+        if key == "id":
+            lines[idx] = ENTRY_HEADER_RE.sub(lambda m: f"- `{value}` **{m.group(2)}**", lines[idx])
+            return
         end = block_end(lines, idx)
         found = self._find_field(lines, idx + 1, end, key)
         text = _with_period(_file_value(key, value))

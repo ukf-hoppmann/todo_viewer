@@ -118,7 +118,7 @@ Agenten pflegen Backlogs über die API unter `http://localhost:5411/api/v2`
 statt die Dateien direkt zu bearbeiten: neuen Backlog anlegen
 (`POST /backlogs` erzeugt `TODO.md`, `archive.md` und `items/` und trägt die
 Quelle ein), Überblick, Anlegen, Ändern (mit
-Versions-Token), Notizen und Specs, Löschen über einen Papierkorb
+Versions-Token), Typ ändern (neue ID, Verweise folgen), Notizen und Specs, Löschen über einen Papierkorb
 (wiederherstellen oder endgültig löschen, jeweils samt Kindern). Der Server prüft dabei die Regeln
 des Backlog-Formats. Ablauf und Endpunkte: [Schnittstellen](docs/techdocs/interfaces.md#nutzung-durch-agenten).
 Der Port ist nur lokal erreichbar.

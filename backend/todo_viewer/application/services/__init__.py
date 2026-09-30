@@ -1,6 +1,7 @@
 from .documents import DocumentResult, DocumentService
 from .items import BacklogOverviewService, ItemResult, ItemService, SourceBacklog
 from .misc import FolderBrowseService, UiStateService
+from .retype import RetypeService
 from .sources import SourceLookup, SourceService
 from .trash import TrashService
 
@@ -11,6 +12,7 @@ __all__ = [
     "FolderBrowseService",
     "ItemResult",
     "ItemService",
+    "RetypeService",
     "SourceBacklog",
     "SourceLookup",
     "SourceService",

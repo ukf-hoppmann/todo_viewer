@@ -205,6 +205,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/items/{source_id}/{item_id}/retype": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retype Item
+         * @description Changes the type of the item in `version`. The type is the id's prefix, so the item gets the next free id
+         *     of the new type, and every reference to the old id follows: parent and dependencies of other items, free texts,
+         *     notes and specs (their content and the items/<ID>/ folder). The answer is the item under its new id.
+         *
+         *     Refused when the new type breaks a lifecycle rule (e.g. an epic with a parent) or the item is in the trash.
+         */
+        post: operations["retype_item_api_v2_items__source_id___item_id__retype_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/sources": {
         parameters: {
             query?: never;
@@ -615,6 +639,19 @@ export interface components {
             /**
              * Version
              * @description Changes with every change of the item; required for edits
+             */
+            version: string;
+        };
+        /** ItemRetypeIn */
+        ItemRetypeIn: {
+            /**
+             * Type
+             * @description The new type: Epic, Story or Task; differs from the current one
+             */
+            type: string;
+            /**
+             * Version
+             * @description The item's version as last read; a changed item answers 409
              */
             version: string;
         };
@@ -1459,6 +1496,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retype_item_api_v2_items__source_id___item_id__retype_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemRetypeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
                 };
             };
             /** @description Bad Request */

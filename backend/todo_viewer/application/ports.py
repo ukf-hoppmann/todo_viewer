@@ -1,7 +1,7 @@
 """Ports: what the application needs from the outside world. Adapters implement them."""
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -65,6 +65,12 @@ class DocumentStore(Protocol):
 
     def delete_item_folder(self, source: Source, item_id: str) -> None:
         """Deletes the item's document folder with all files in it, if there is one."""
+
+    def rename_item_folder(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
+        """Moves `items/<old_id>/` to `items/<new_id>/` and renames files in it (old name -> new name).
+
+        Does nothing if there is no folder; raises ItemFolderExistsError if the target folder exists.
+        """
 
 
 class ProjectNameSuggester(Protocol):

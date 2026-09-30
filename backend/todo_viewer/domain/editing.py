@@ -31,6 +31,9 @@ class Field:
     NOTES = "notes"
     SPEC = "spec"
     DELETED = "deleted"
+    # Only set by a retype (new id and type together), never through a plain edit.
+    ID = "id"
+    TYPE = "type"
 
     EDITABLE = frozenset({TITLE, STATUS, PRIORITY, REQUIRED_FOR_PARENT, GOAL, COMPLETION_CRITERIA, SUMMARY, AREA,
                           PARENT, DEPENDENCIES})
@@ -57,6 +60,8 @@ class ChangeSet:
                 values[key] = value == "Yes"
             elif key in (Field.DEPENDENCIES, Field.NOTES, Field.SPEC):
                 values[key] = list(value or ())
+            elif key == Field.TYPE:
+                values["item_type"] = value
             else:
                 values[key] = value
         for key in self.remove_fields:

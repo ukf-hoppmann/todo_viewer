@@ -51,6 +51,13 @@ class VersionConflictError(ConflictError):
         super().__init__(f"'{item_id}' was changed in the meantime. Reload and try again.", id=item_id)
 
 
+class ItemFolderExistsError(ConflictError):
+    code = "item_folder_exists"
+
+    def __init__(self, item_id: str):
+        super().__init__(f"A document folder for '{item_id}' exists already.", id=item_id)
+
+
 class FileChangedError(ConflictError):
     code = "file_changed"
 

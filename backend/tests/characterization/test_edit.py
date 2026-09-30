@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from todo_viewer.domain.editing import EditPlanner
+from todo_viewer.domain.retype import RetypePlanner
 from todo_viewer.domain.source import Source
 from todo_viewer.infrastructure.markdown import build_markdown_repository
 
@@ -475,3 +476,22 @@ def test_write_failure_is_reported_and_files_stay_intact(api, workspace):
 
     assert (resp.status_code, resp.body["code"]) == (500, "write_failed")
     assert _files(folder) == before
+
+
+@pytest.mark.parametrize(("name", "item_id", "new_type", "new_id"), [
+    ("retype_active_with_references", "STORY-001", "Task", "TASK-004"),
+    ("retype_archived_dependency", "STORY-000", "Epic", "EPIC-002"),
+])
+def test_retype_rewrites_header_type_and_references(workspace, golden, name, item_id, new_type, new_id):
+    """Below the service: the entry, its parent/dependency mentions and its position stay as they are."""
+    folder = _setup(workspace, "backlog")
+    repo = build_markdown_repository(Path("/"))
+    source = Source("P", str(folder))
+    plan = RetypePlanner().plan(repo.load(source).items, item_id, new_type)
+
+    stored = repo.apply_all(source, list(plan.changes))
+
+    golden(f"edit/{name}.md", _files(folder))
+    assert plan.new_id == new_id
+    assert [(i.id, i.item_type) for i in stored if i.id == new_id] == [(new_id, new_type)]
+    assert repo.get(source, new_id).item_type == new_type

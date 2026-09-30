@@ -1,19 +1,21 @@
 """Service tests against in-memory fakes of the ports: no files, no web framework."""
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from datetime import date
 
 import pytest
 
-from todo_viewer.application.services import ItemService, SourceLookup, SourceService, TrashService
+from todo_viewer.application.services import ItemService, RetypeService, SourceLookup, SourceService, TrashService
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.creation import ItemFactory
 from todo_viewer.domain.editing import ChangeSet, EditPlanner
 from todo_viewer.domain.errors import (
     ConfigMissingError,
+    DocumentNotFoundError,
     DuplicateSourceError,
+    FileChangedError,
     InvalidSourceError,
     ItemNotFoundError,
     LifecycleViolationError,
@@ -23,6 +25,7 @@ from todo_viewer.domain.errors import (
 )
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.lifecycle import LifecycleRules
+from todo_viewer.domain.retype import RetypePlanner
 from todo_viewer.domain.source import Source, SourceProblem
 from todo_viewer.domain.trash import TrashPlanner
 
@@ -48,6 +51,7 @@ class FakeBacklogs:
         self.items = items or []
         self.archive = archive
         self.applied: list[ChangeSet] = []
+        self.fail_apply_all = False
         self.initialized: list[tuple[str, str]] = []
 
     def initialize(self, source: Source, language: str) -> None:
@@ -77,10 +81,12 @@ class FakeBacklogs:
         return item
 
     def apply_all(self, source: Source, plan: list[tuple[Item, ChangeSet]]) -> list[Item]:
-        changed = [c.applied_to(i) for i, c in plan]
-        by_id = {i.id: i for i in changed}
-        self.items = [by_id.get(i.id, i) for i in self.items]
-        return changed
+        if self.fail_apply_all:
+            raise FileChangedError()
+        changed = [(i.id, c.applied_to(i)) for i, c in plan]
+        by_old_id = dict(changed)
+        self.items = [by_old_id.get(i.id, i) for i in self.items]
+        return [i for _, i in changed]
 
     def delete(self, source: Source, items: list[Item]) -> None:
         for item in items:
@@ -88,19 +94,30 @@ class FakeBacklogs:
 
 
 class FakeDocuments:
-    def __init__(self) -> None:
+    def __init__(self, files: dict[str, str] | None = None) -> None:
         self.deleted: list[str] = []
+        self.files = files or {}
+        self.renamed: list[tuple[str, str, dict[str, str]]] = []
 
     def read(self, source: Source, relative_path: str) -> str:
-        return ""
+        if relative_path not in self.files:
+            raise DocumentNotFoundError(relative_path)
+        return self.files[relative_path]
 
-    def write(self, source: Source, relative_path: str, content: str, expected_version: str | None) -> None: ...
+    def write(self, source: Source, relative_path: str, content: str, expected_version: str | None) -> None:
+        self.files[relative_path] = content
 
     def append(self, source: Source, relative_path: str, text: str, header: str) -> str:
         return text
 
     def delete_item_folder(self, source: Source, item_id: str) -> None:
         self.deleted.append(item_id)
+
+    def rename_item_folder(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
+        self.renamed.append((old_id, new_id, dict(renames)))
+        for path in [p for p in self.files if p.startswith(f"items/{old_id}/")]:
+            name = path.rsplit("/", 1)[-1]
+            self.files[f"items/{new_id}/{renames.get(name, name)}"] = self.files.pop(path)
 
 
 class Names:
@@ -274,3 +291,94 @@ def test_item_edit_rejects_field_before_touching_storage():
     with pytest.raises(NotEditableError):
         service.edit(Source("p", "/p"), "x", "v", {"created": "x"}, None)
     assert backlogs.applied == []
+
+
+# ---------- retype ----------
+
+def _retype_service(items: list[Item], files: dict[str, str] | None = None):
+    backlogs, documents = FakeBacklogs(items), FakeDocuments(files)
+    return RetypeService(backlogs, documents, RetypePlanner(), LifecycleRules()), backlogs, documents
+
+
+def _retype_items() -> list[Item]:
+    return [
+        Item(id="STORY-001", title="Story", project="p", item_type="Story", required_for_parent=None,
+             notes=["items/STORY-001/STORY-001_notes.md"], summary="s"),
+        Item(id="TASK-001", title="Child", project="p", parent="STORY-001", required_for_parent=True),
+        Item(id="TASK-002", title="Other", project="p", dependencies=["STORY-001"],
+             notes=["items/TASK-002/TASK-002_notes.md"], summary="s"),
+    ]
+
+
+def test_retype_gives_a_new_id_and_follows_references_and_documents():
+    files = {"items/STORY-001/STORY-001_notes.md": "# STORY-001 — Story\n\nSiehe STORY-001.\n",
+             "items/TASK-002/TASK-002_notes.md": "# TASK-002 — Other\n\nWartet auf `STORY-001`.\n"}
+    service, backlogs, documents = _retype_service(_retype_items(), files)
+    version = backlogs.items[0].version
+
+    result = service.retype(Source("P", "/p"), "STORY-001", version, "Task")
+
+    assert (result.item.id, result.item.item_type) == ("TASK-003", "Task")
+    assert result.item.notes == ["items/TASK-003/TASK-003_notes.md"]
+    assert [(i.id, i.parent, i.dependencies) for i in backlogs.items] == [
+        ("TASK-003", None, []), ("TASK-001", "TASK-003", []), ("TASK-002", None, ["TASK-003"])]
+    assert documents.renamed == [("STORY-001", "TASK-003", {"STORY-001_notes.md": "TASK-003_notes.md"})]
+    assert documents.files == {
+        "items/TASK-003/TASK-003_notes.md": "# TASK-003 — Story\n\nSiehe TASK-003.\n",
+        "items/TASK-002/TASK-002_notes.md": "# TASK-002 — Other\n\nWartet auf `TASK-003`.\n"}
+
+
+def test_retype_without_documents_on_disk_still_works():
+    service, backlogs, documents = _retype_service(_retype_items())
+
+    result = service.retype(Source("P", "/p"), "STORY-001", backlogs.items[0].version, "Task")
+
+    assert result.item.id == "TASK-003"
+    assert documents.files == {}
+
+
+def test_retype_checks_lifecycle_rules_before_touching_anything():
+    items = _retype_items()
+    service, backlogs, documents = _retype_service(items, {"items/TASK-002/TASK-002_notes.md": "x STORY-001"})
+    before = list(backlogs.items)
+
+    with pytest.raises(LifecycleViolationError) as err:
+        service.retype(Source("P", "/p"), "TASK-001", backlogs.items[1].version, "Epic")  # an epic has no parent
+
+    assert err.value.code == "epic_with_parent"
+    assert backlogs.items == before
+    assert documents.renamed == [] and documents.files == {"items/TASK-002/TASK-002_notes.md": "x STORY-001"}
+
+
+def test_retype_does_not_count_flaws_the_item_already_had_under_its_old_id():
+    items = _retype_items()
+    items[2].summary = None  # has notes but no summary: a flaw of the files, not of the retype
+    service, backlogs, _ = _retype_service(items)
+
+    result = service.retype(Source("P", "/p"), "TASK-002", backlogs.items[2].version, "Story")
+
+    assert result.item.id == "STORY-002"
+
+
+def test_retype_rejects_stale_version():
+    service, backlogs, documents = _retype_service(_retype_items())
+
+    with pytest.raises(VersionConflictError):
+        service.retype(Source("P", "/p"), "STORY-001", "stale", "Task")
+
+    assert documents.renamed == []
+
+
+def test_retype_restores_the_folder_if_the_backlog_cannot_be_written():
+    files = {"items/STORY-001/STORY-001_notes.md": "# STORY-001\n"}
+    service, backlogs, documents = _retype_service(_retype_items(), files)
+    backlogs.fail_apply_all = True
+    version = backlogs.items[0].version
+
+    with pytest.raises(FileChangedError):
+        service.retype(Source("P", "/p"), "STORY-001", version, "Task")
+
+    assert documents.renamed == [
+        ("STORY-001", "TASK-003", {"STORY-001_notes.md": "TASK-003_notes.md"}),
+        ("TASK-003", "STORY-001", {"TASK-003_notes.md": "STORY-001_notes.md"})]
+    assert documents.files == {"items/STORY-001/STORY-001_notes.md": "# STORY-001\n"}

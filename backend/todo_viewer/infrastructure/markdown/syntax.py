@@ -27,6 +27,7 @@ BACKLOG_MARKER_RE = re.compile(r"backlog[\s-]*format\s+version\s+\d+", re.IGNORE
 
 # Labels used when a field has to be inserted into an entry.
 FIELD_LABELS = {
+    "type": "Type",
     "status": "Status",
     "priority": "Priority",
     "required_for_parent": "Required for parent",

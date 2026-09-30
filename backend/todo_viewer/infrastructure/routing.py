@@ -63,17 +63,17 @@ class RoutingDocumentStore:
     def _for(self, source: Source) -> DocumentStore:
         return _adapter_for(self._backends, source)
 
-    def read(self, source: Source, relative_path: str) -> str:
-        return self._for(source).read(source, relative_path)
+    def read(self, source: Source, item_id: str, name: str) -> str:
+        return self._for(source).read(source, item_id, name)
 
-    def write(self, source: Source, relative_path: str, content: str, expected_version: str | None) -> None:
-        self._for(source).write(source, relative_path, content, expected_version)
+    def write(self, source: Source, item_id: str, name: str, content: str, expected_version: str | None) -> None:
+        self._for(source).write(source, item_id, name, content, expected_version)
 
-    def append(self, source: Source, relative_path: str, text: str, header: str) -> str:
-        return self._for(source).append(source, relative_path, text, header)
+    def append(self, source: Source, item_id: str, name: str, text: str, header: str) -> str:
+        return self._for(source).append(source, item_id, name, text, header)
 
-    def delete_item_folder(self, source: Source, item_id: str) -> None:
-        self._for(source).delete_item_folder(source, item_id)
+    def delete_documents(self, source: Source, item_id: str) -> None:
+        self._for(source).delete_documents(source, item_id)
 
-    def rename_item_folder(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
-        self._for(source).rename_item_folder(source, old_id, new_id, renames)
+    def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
+        self._for(source).relabel_documents(source, old_id, new_id, renames)

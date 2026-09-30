@@ -12,7 +12,7 @@ from todo_viewer.domain.documents import (
     item_documents,
     new_document,
     new_notes_file,
-    notes_path,
+    notes_key,
 )
 from todo_viewer.domain.editing import ChangeSet, EditPlanner, Field, FieldValue
 from todo_viewer.domain.errors import DocumentNotFoundError, LifecycleViolationError
@@ -47,7 +47,7 @@ class DocumentService:
 
     def read(self, source: Source, item_id: str, name: str) -> DocumentResult:
         ref = self._ref(self._backlogs.get(source, item_id), name)
-        return DocumentResult(ref, self._documents.read(source, ref.path))
+        return DocumentResult(ref, self._documents.read(source, item_id, ref.key))
 
     def write(self, source: Source, item_id: str, name: str, content: str, version: str | None,
               summary: str | None = None) -> DocumentResult:
@@ -61,13 +61,13 @@ class DocumentService:
         ref = next((d for d in item_documents(item) if d.name == name), None) or new_document(item, name)
         fields: list[tuple[str, FieldValue]] = []
         if ref not in item_documents(item):
-            field, paths = (Field.NOTES, item.notes) if ref.kind is DocumentKind.NOTES else (Field.SPEC, item.spec)
-            fields.append((field, (*paths, ref.path)))
+            field, keys = (Field.NOTES, item.notes) if ref.kind is DocumentKind.NOTES else (Field.SPEC, item.spec)
+            fields.append((field, (*keys, ref.key)))
         if summary is not None:
             fields.append((Field.SUMMARY, self._planner.normalize(Field.SUMMARY, summary)))
         changes = ChangeSet(set_fields=tuple(fields)) if fields else None
-        self._check(backlog.items, item, changes)  # before any file is touched
-        self._documents.write(source, ref.path, content, version)
+        self._check(backlog.items, item, changes)  # before any document is touched
+        self._documents.write(source, item.id, ref.key, content, version)
         if changes:
             self._backlogs.apply(source, item, changes)
         return DocumentResult(ref, content)
@@ -78,18 +78,18 @@ class DocumentService:
         backlog = self._backlogs.load(source)
         item = self._writable(backlog.find(item_id))
         entry = NotesEntry.create(self._today().isoformat(), topic, discussed, decided, open_points)
-        path = notes_path(item)
+        key = notes_key(item)
         fields: list[tuple[str, FieldValue]] = []
         if not item.notes:
-            fields.append((Field.NOTES, (path,)))
+            fields.append((Field.NOTES, (key,)))
         if summary is not None:
             fields.append((Field.SUMMARY, self._planner.normalize(Field.SUMMARY, summary)))
         changes = ChangeSet(set_fields=tuple(fields)) if fields else None
-        self._check(backlog.items, item, changes)  # before any file is touched
-        content = self._documents.append(source, path, entry.render(), header=new_notes_file(item))
+        self._check(backlog.items, item, changes)  # before any document is touched
+        content = self._documents.append(source, item.id, key, entry.render(), header=new_notes_file(item))
         if changes:
             self._backlogs.apply(source, item, changes)
-        return DocumentResult(DocumentRef(path.rsplit("/", 1)[-1], DocumentKind.NOTES, path), content)
+        return DocumentResult(DocumentRef(key.rsplit("/", 1)[-1], DocumentKind.NOTES, key), content)
 
     def _check(self, items: Sequence[Item], item: Item, changes: ChangeSet | None) -> None:
         if changes is not None:

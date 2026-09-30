@@ -29,8 +29,8 @@ class RecordingDocuments:
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def read(self, source: Source, relative_path: str) -> str:
-        return f"{self.name}:{relative_path}"
+    def read(self, source: Source, item_id: str, name: str) -> str:
+        return f"{self.name}:{item_id}/{name}"
 
 
 def _adapters(**named: Any) -> dict[str, Any]:
@@ -52,8 +52,8 @@ def test_backlog_calls_go_to_the_adapter_of_the_sources_backend():
 def test_document_calls_go_to_the_adapter_of_the_sources_backend():
     routing = RoutingDocumentStore(_adapters(markdown=RecordingDocuments("files"), database=RecordingDocuments("db")))
 
-    assert routing.read(Source(project="P", path="docs"), "a.md") == "files:a.md"
-    assert routing.read(Source(project="P", path="", backend="database"), "a.md") == "db:a.md"
+    assert routing.read(Source(project="P", path="docs"), "T-1", "a.md") == "files:T-1/a.md"
+    assert routing.read(Source(project="P", path="", backend="database"), "T-1", "a.md") == "db:T-1/a.md"
 
 
 def test_unknown_backend_is_reported_with_a_stable_code():

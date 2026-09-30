@@ -254,7 +254,7 @@ def test_renaming_an_item_folder_moves_files_that_are_not_documents_too(backlog)
     items = Path(backlog.path) / "items"
     (items / "TASK-002").joinpath("unlisted.txt").write_text("keep", encoding="utf-8")
 
-    _documents().rename_item_folder(backlog, "TASK-002", "STORY-009", {"notes.md": "STORY-009_notes.md"})
+    _documents().relabel_documents(backlog, "TASK-002", "STORY-009", {"notes.md": "STORY-009_notes.md"})
 
     assert not (items / "TASK-002").exists()
     assert sorted(p.name for p in (items / "STORY-009").iterdir()) == ["STORY-009_notes.md", "unlisted.txt"]

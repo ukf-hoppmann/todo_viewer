@@ -6,36 +6,37 @@ from todo_viewer.domain.documents import (
     DocumentKind,
     DocumentRef,
     NotesEntry,
+    check_spec_name,
     content_version,
     item_documents,
     new_notes_file,
-    notes_path,
-    spec_path,
+    notes_key,
 )
 from todo_viewer.domain.errors import InvalidValueError, ValueRequiredError
 from todo_viewer.domain.item import Item
 
 
 def test_documents_of_an_item_are_named_by_file_name():
-    item = Item(id="T-1", title="t", project="p", notes=["items/T-1/T-1_notes.md"],
-                spec=["items/T-1/T-1_spec.md", "items/T-1/T-1_spec_api.md"])
+    item = Item(id="T-1", title="t", project="p", notes=["T-1_notes.md"],
+                spec=["T-1_spec.md", "docs/T-1_spec_api.md"])
 
     assert item_documents(item) == [
-        DocumentRef("T-1_notes.md", DocumentKind.NOTES, "items/T-1/T-1_notes.md"),
-        DocumentRef("T-1_spec.md", DocumentKind.SPEC, "items/T-1/T-1_spec.md"),
-        DocumentRef("T-1_spec_api.md", DocumentKind.SPEC, "items/T-1/T-1_spec_api.md"),
+        DocumentRef("T-1_notes.md", DocumentKind.NOTES, "T-1_notes.md"),
+        DocumentRef("T-1_spec.md", DocumentKind.SPEC, "T-1_spec.md"),
+        DocumentRef("T-1_spec_api.md", DocumentKind.SPEC, "docs/T-1_spec_api.md"),
     ]
 
 
-def test_default_paths_and_spec_names():
+def test_default_notes_and_spec_names():
     item = Item(id="T-1", title="t", project="p")
 
-    assert notes_path(item) == "items/T-1/T-1_notes.md"
-    assert spec_path(item, "T-1_spec.md") == "items/T-1/T-1_spec.md"
-    assert spec_path(item, "T-1_spec_data-model.md") == "items/T-1/T-1_spec_data-model.md"
+    assert notes_key(item) == "T-1_notes.md"
+    assert notes_key(Item(id="T-1", title="t", project="p", notes=["notes.md"])) == "notes.md"
+    assert check_spec_name(item, "T-1_spec.md") == "T-1_spec.md"
+    assert check_spec_name(item, "T-1_spec_data-model.md") == "T-1_spec_data-model.md"
     for bad in ("spec.md", "T-2_spec.md", "T-1_spec.txt", "../T-1_spec.md", "T-1_notes.md"):
         with pytest.raises(InvalidValueError):
-            spec_path(item, bad)
+            check_spec_name(item, bad)
 
 
 def test_notes_entry_renders_the_format():

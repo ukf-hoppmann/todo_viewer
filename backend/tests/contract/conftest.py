@@ -34,9 +34,9 @@ def _markdown(tmp_path: Path) -> Adapter:
 def _memory() -> Adapter:
     source = Source(project="P", path="memory")
     seed = build_markdown_repository(Path("/")).load(Source(project="P", path=str(FIXTURE))).items
-    files = {f"items/{p.parent.name}/{p.name}": p.read_text(encoding="utf-8")
-             for p in sorted((FIXTURE / "items").glob("*/*.md"))}
-    return Adapter(InMemoryBacklogRepository(seed), InMemoryDocumentStore(files), source)
+    documents = {(p.parent.name, p.name): p.read_text(encoding="utf-8")
+                 for p in sorted((FIXTURE / "items").glob("*/*.md"))}
+    return Adapter(InMemoryBacklogRepository(seed), InMemoryDocumentStore(documents), source)
 
 
 @pytest.fixture(params=["markdown", "memory"])

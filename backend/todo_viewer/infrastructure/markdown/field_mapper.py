@@ -6,6 +6,7 @@ from collections.abc import Callable, Mapping
 
 from todo_viewer.domain.item import Item
 
+from .document_paths import name_of
 from .syntax import field_key
 
 BACKTICK_ID_RE = re.compile(r"`([A-Za-z0-9_.\-]+)`")
@@ -69,8 +70,8 @@ class BacklogFieldMapper:
             "completion_criteria": lambda item, v: setattr(item, "completion_criteria", v.strip()),
             "summary": lambda item, v: setattr(item, "summary", v.strip()),
             "resolution": lambda item, v: setattr(item, "resolution", v.strip()),
-            "notes": lambda item, v: setattr(item, "notes", extract_paths(v)),
-            "spec": lambda item, v: setattr(item, "spec", extract_paths(v)),
+            "notes": lambda item, v: setattr(item, "notes", [name_of(item.id, p) for p in extract_paths(v)]),
+            "spec": lambda item, v: setattr(item, "spec", [name_of(item.id, p) for p in extract_paths(v)]),
             "deleted": lambda item, v: setattr(item, "deleted", clean(v)),
         }
 

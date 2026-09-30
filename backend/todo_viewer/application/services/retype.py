@@ -24,7 +24,8 @@ class RetypeResult:
 
 @dataclass(frozen=True)
 class _DocumentText:
-    path: str  # where the document lives after the retype
+    item_id: str  # where the document is after the retype
+    name: str
     content: str
     version: str  # of the text that was read
 
@@ -42,7 +43,7 @@ class RetypeService:
     def retype(self, source: Source, item_id: str, version: str, new_type: str) -> RetypeResult:
         """Nothing is written before the plan passed the lifecycle rules and every document was read.
 
-        The document folder moves first and moves back if the backlog files cannot be written. If the
+        The documents move first and move back if the backlog cannot be written. If the
         final rewrite of document texts fails, the backlog stays consistent but a text may still name the old id.
         """
         backlog = self._backlogs.load(source)
@@ -57,26 +58,26 @@ class RetypeService:
                                  [after.get(i.id, i) for i in in_use])
         texts = self._rewritten_texts(source, plan, item_id)
 
-        self._documents.rename_item_folder(source, item_id, plan.new_id, plan.file_renames)
+        self._documents.relabel_documents(source, item_id, plan.new_id, plan.document_renames)
         try:
             stored = self._backlogs.apply_all(source, list(plan.changes))
         except Exception:
-            self._documents.rename_item_folder(source, plan.new_id, item_id,
-                                               {new: old for old, new in plan.file_renames.items()})
+            self._documents.relabel_documents(source, plan.new_id, item_id,
+                                              {new: old for old, new in plan.document_renames.items()})
             raise
         for text in texts:
-            self._documents.write(source, text.path, text.content, text.version)
+            self._documents.write(source, text.item_id, text.name, text.content, text.version)
         return RetypeResult(next(i for i in stored if i.id == plan.new_id), backlog.archive_available, item_id,
                             plan.notices)
 
     def _rewritten_texts(self, source: Source, plan: RetypePlan, item_id: str) -> list[_DocumentText]:
         texts = []
-        for old_path, new_path in plan.document_paths.items():
+        for doc in plan.documents:
             try:
-                content = self._documents.read(source, old_path)
+                content = self._documents.read(source, doc.item_id, doc.name)
             except DocumentNotFoundError:
-                continue  # listed in the item but not on disk: nothing to rewrite
+                continue  # listed in the item but not stored: nothing to rewrite
             rewritten = rewrite_ids(content, item_id, plan.new_id)
             if rewritten != content:
-                texts.append(_DocumentText(new_path, rewritten, content_version(content)))
+                texts.append(_DocumentText(doc.new_item_id, doc.new_name, rewritten, content_version(content)))
         return texts

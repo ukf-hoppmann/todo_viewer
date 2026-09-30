@@ -5,7 +5,7 @@ import pytest
 from todo_viewer.domain.editing import ChangeSet
 from todo_viewer.domain.errors import InvalidValueError, LifecycleViolationError
 from todo_viewer.domain.item import Item, Location
-from todo_viewer.domain.retype import RetypePlanner, rewrite_ids
+from todo_viewer.domain.retype import DocumentMove, RetypePlanner, rewrite_ids
 
 planner = RetypePlanner()
 
@@ -88,40 +88,42 @@ def test_text_fields_mentioning_the_old_id_follow():
     assert "TASK-002" not in {i.id for i, _ in plan.changes}
 
 
-def test_documents_of_the_item_move_with_it_and_others_keep_their_paths():
-    own = item("STORY-008", "Story", notes=["items/STORY-008/STORY-008_notes.md"],
-               spec=["items/STORY-008/STORY-008_spec.md", "items/STORY-008/STORY-008_spec_api.md"])
-    other = item("TASK-001", notes=["items/TASK-001/TASK-001_notes.md"])
+def test_documents_of_the_item_move_with_it_and_others_stay():
+    own = item("STORY-008", "Story", notes=["STORY-008_notes.md"],
+               spec=["STORY-008_spec.md", "STORY-008_spec_api.md", "spec.md"])
+    other = item("TASK-001", notes=["TASK-001_notes.md"])
 
     plan = planner.plan([own, other], "STORY-008", "Task")
 
-    assert dict(changes_of(plan, "STORY-008").set_fields)["notes"] == ("items/TASK-002/TASK-002_notes.md",)
+    assert dict(changes_of(plan, "STORY-008").set_fields)["notes"] == ("TASK-002_notes.md",)
     assert dict(changes_of(plan, "STORY-008").set_fields)["spec"] == (
-        "items/TASK-002/TASK-002_spec.md", "items/TASK-002/TASK-002_spec_api.md")
-    assert plan.file_renames == {"STORY-008_notes.md": "TASK-002_notes.md",
-                                 "STORY-008_spec.md": "TASK-002_spec.md",
-                                 "STORY-008_spec_api.md": "TASK-002_spec_api.md"}
-    assert plan.document_paths == {
-        "items/STORY-008/STORY-008_notes.md": "items/TASK-002/TASK-002_notes.md",
-        "items/STORY-008/STORY-008_spec.md": "items/TASK-002/TASK-002_spec.md",
-        "items/STORY-008/STORY-008_spec_api.md": "items/TASK-002/TASK-002_spec_api.md",
-        "items/TASK-001/TASK-001_notes.md": "items/TASK-001/TASK-001_notes.md"}
+        "TASK-002_spec.md", "TASK-002_spec_api.md", "spec.md")
+    assert plan.document_renames == {"STORY-008_notes.md": "TASK-002_notes.md",
+                                     "STORY-008_spec.md": "TASK-002_spec.md",
+                                     "STORY-008_spec_api.md": "TASK-002_spec_api.md"}
+    assert plan.documents == (
+        DocumentMove("STORY-008", "STORY-008_notes.md", "TASK-002", "TASK-002_notes.md"),
+        DocumentMove("STORY-008", "STORY-008_spec.md", "TASK-002", "TASK-002_spec.md"),
+        DocumentMove("STORY-008", "STORY-008_spec_api.md", "TASK-002", "TASK-002_spec_api.md"),
+        DocumentMove("STORY-008", "spec.md", "TASK-002", "spec.md"),
+        DocumentMove("TASK-001", "TASK-001_notes.md", "TASK-001", "TASK-001_notes.md"))
 
 
 def test_item_without_documents_has_nothing_to_rename():
     plan = planner.plan([item("STORY-008", "Story")], "STORY-008", "Task")
 
-    assert plan.file_renames == {}
-    assert plan.document_paths == {}
+    assert plan.document_renames == {}
+    assert plan.documents == ()
 
 
-def test_documents_outside_the_item_folder_keep_their_path():
-    own = item("STORY-008", "Story", notes=["notes/alt.md"])
+def test_documents_stored_elsewhere_keep_their_name():
+    own = item("STORY-008", "Story", notes=["notes/STORY-008.md"])
 
     plan = planner.plan([own], "STORY-008", "Task")
 
     assert "notes" not in dict(changes_of(plan, "STORY-008").set_fields)
-    assert plan.document_paths == {"notes/alt.md": "notes/alt.md"}
+    assert plan.document_renames == {}
+    assert plan.documents == (DocumentMove("STORY-008", "notes/STORY-008.md", "TASK-001", "notes/STORY-008.md"),)
 
 
 # ---------- refusals ----------

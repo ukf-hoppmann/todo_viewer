@@ -61,7 +61,11 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 
 - Backlog-Daten: je Projekt entweder in dessen Markdown-Dateien
   (`backend: markdown`, Standard) oder in der zentralen Datenbank
-  (`backend: database`, `configs/todo.db`); es gibt keine zweite Kopie.
+  (`backend: database`, `configs/todo.db`). Diese Primärquelle hält die
+  Wahrheit. Die andere Seite darf als Spiegel geführt werden (`mirror`;
+  Datenbank-Spiegel eines Markdown-Projekts: Spalte `mirror_database`,
+  Markdown-Spiegel eines Datenbank-Projekts: `sync_path`); er wird nur durch
+  einen Sync geschrieben, sonst gibt es keine weitere Kopie.
 - Abgleich Datenbank ⇄ Markdown: nur auf Anforderung (`POST /sources/{id}/sync`),
   nie automatisch. `SyncService` (`application/services/sync.py`) arbeitet mit
   denselben Ports auf zwei Quellen desselben Projekts (Datenbank und
@@ -71,8 +75,9 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   (`EntryRenderer.render_full`), den Text um die Einträge lässt sie stehen.
   Das Umstellen des Backends (`SourceService.update`) verlangt vorher einen
   Sync (`SyncService.in_sync`) und tauscht nur die Ordnerseite: `path` ⇄
-  `sync_path`, gleiche `source_id`. Ein Markdown-Projekt kann dazu per
-  `from_md` in die Datenbank gelesen werden.
+  `sync_path`, gleiche `source_id`; die bisherige Seite bleibt Spiegel. Ein
+  Markdown-Projekt kann dazu per `from_md` in die Datenbank gelesen werden;
+  mit Datenbank-Spiegel geht der Sync auch zurück (`to_md`).
 - Projektliste (Name, Backend, Ordner, `sync_path`, Reihenfolge; `source_id` =
   UUID): zentrale Datenbank. Ort der Datenbank (`storage_url`): `configs/config.json`.
 - UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, markierte

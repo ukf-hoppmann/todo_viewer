@@ -82,6 +82,12 @@ def test_documents_of_missing_items_are_not_listed_separately():
     assert preview.missing_documents == ()
 
 
+def test_documents_of_new_items_are_new():
+    preview = plan_sync([item("TASK-001", "t")], [], {("TASK-001", "TASK-001_notes.md"): "x"}, {})
+
+    assert preview.created_documents == (SyncEntry("document", "TASK-001", "t", "TASK-001_notes.md"),)
+
+
 def test_skipped_entries_are_passed_through():
     skipped = (SyncEntry("document", "TASK-001", "t", "items/TASK-001/photo.png"),)
 

@@ -5,9 +5,10 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Body, Request
 
 from todo_viewer.domain.errors import ConfigMissingError
+from todo_viewer.domain.sync import SyncDirection
 from todo_viewer.domain.trash import live
 
-from ..dependencies import Documents, Folders, Items, Lookup, Overview, Retype, Sources, Trash, UiState
+from ..dependencies import Documents, Folders, Items, Lookup, Overview, Retype, Sources, Sync, Trash, UiState
 from ..request_log import note
 from .schemas import (
     BacklogCreateIn,
@@ -29,6 +30,8 @@ from .schemas import (
     SourceIn,
     SourceOut,
     SourceStatusOut,
+    SyncIn,
+    SyncOut,
     VersionIn,
 )
 
@@ -210,6 +213,26 @@ def update_source(source_id: str, body: SourceIn, sources: Sources, request: Req
 @router.delete("/sources/{source_id}", tags=["sources"])
 def remove_source(source_id: str, sources: Sources) -> SourceOut:
     return SourceOut.of(sources.remove(source_id))
+
+
+@router.post("/sources/{source_id}/sync", tags=["sources"])
+def sync_source(source_id: str, body: SyncIn, sync: Sync, lookup: Lookup, request: Request) -> SyncOut:
+    """Copies all data of a database project between the database and its sync folder (`sync_path`).
+
+    Without `confirm` this is a preview and changes nothing: what is created, what differs (`changed`: the target
+    is overwritten) and what the target has that the origin lacks (`missing`), plus a `token`. With `confirm` and
+    that token the sync is carried out; if either side changed since the preview the answer is 409 sync_stale.
+    Missing entries are deleted only with `delete_missing`; otherwise they stay and are listed under `kept`.
+    Errors: sync_path_missing (400), sync_same_backend (409), sync_source_invalid (400, `details.reason` names the
+    problem, nothing was changed).
+    """
+    note(request, source=source_id, direction=body.direction, confirm=body.confirm)
+    source = lookup.by_id(source_id)
+    direction = SyncDirection(body.direction)
+    if not body.confirm:
+        return SyncOut.of(sync.preview(source, direction))
+    result = sync.run(source, direction, body.token, body.delete_missing, body.language)
+    return SyncOut.of(result.preview, result)
 
 
 @router.get("/folders", tags=["sources"])

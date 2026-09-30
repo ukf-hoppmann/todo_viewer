@@ -60,7 +60,7 @@ def plan_sync(source_items: Sequence[Item], target_items: Sequence[Item], source
     """What a sync from source to target creates, changes, and finds missing on the source side.
 
     Items are equal if their versions are; documents if their contents are. The documents of items that are
-    missing on either side are not listed on their own.
+    missing on the source side are not listed on their own; those of new items count as new.
     """
     target = {i.id: i for i in target_items}
     source = {i.id: i for i in source_items}
@@ -82,8 +82,6 @@ def plan_sync(source_items: Sequence[Item], target_items: Sequence[Item], source
     missing_docs: list[SyncEntry] = []
     unchanged_docs = 0
     for (label, name), content in source_docs.items():
-        if label not in target:
-            continue
         current = target_docs.get((label, name))
         entry = SyncEntry("document", label, source[label].title, name)
         if current is None:

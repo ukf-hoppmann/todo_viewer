@@ -1121,6 +1121,185 @@
         "title": "SourceStatusOut",
         "type": "object"
       },
+      "SyncEntryOut": {
+        "properties": {
+          "label": {
+            "description": "The item's id",
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Documents: the document name; items: null",
+            "title": "Name"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "title",
+          "name"
+        ],
+        "title": "SyncEntryOut",
+        "type": "object"
+      },
+      "SyncIn": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm": {
+            "default": false,
+            "description": "false: only preview; true: carry out the sync",
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "delete_missing": {
+            "default": false,
+            "description": "Also delete what the target has and the origin lacks; otherwise it stays",
+            "title": "Delete Missing",
+            "type": "boolean"
+          },
+          "direction": {
+            "description": "to_md: write the database project into its sync folder; from_md: read the folder into the project",
+            "enum": [
+              "to_md",
+              "from_md"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "language": {
+            "default": "en",
+            "description": "Language of the headings in markdown files created",
+            "enum": [
+              "en",
+              "de"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The token of the preview being confirmed (required with confirm)",
+            "title": "Token"
+          }
+        },
+        "required": [
+          "direction"
+        ],
+        "title": "SyncIn",
+        "type": "object"
+      },
+      "SyncOut": {
+        "properties": {
+          "deleted": {
+            "description": "Missing entries removed from the target",
+            "items": {
+              "$ref": "#/components/schemas/SyncEntryOut"
+            },
+            "title": "Deleted",
+            "type": "array"
+          },
+          "documents": {
+            "$ref": "#/components/schemas/SyncSectionOut"
+          },
+          "executed": {
+            "description": "false for a preview",
+            "title": "Executed",
+            "type": "boolean"
+          },
+          "items": {
+            "$ref": "#/components/schemas/SyncSectionOut"
+          },
+          "kept": {
+            "description": "Missing entries left on the target",
+            "items": {
+              "$ref": "#/components/schemas/SyncEntryOut"
+            },
+            "title": "Kept",
+            "type": "array"
+          },
+          "skipped": {
+            "description": "Documents the sync cannot carry (a path, not readable, missing)",
+            "items": {
+              "$ref": "#/components/schemas/SyncEntryOut"
+            },
+            "title": "Skipped",
+            "type": "array"
+          },
+          "token": {
+            "description": "Identifies the state of both sides; send it back to confirm this preview",
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "executed",
+          "token",
+          "items",
+          "documents",
+          "skipped",
+          "deleted",
+          "kept"
+        ],
+        "title": "SyncOut",
+        "type": "object"
+      },
+      "SyncSectionOut": {
+        "properties": {
+          "changed": {
+            "description": "Exist on both sides and differ; the target is overwritten",
+            "items": {
+              "$ref": "#/components/schemas/SyncEntryOut"
+            },
+            "title": "Changed",
+            "type": "array"
+          },
+          "created": {
+            "items": {
+              "$ref": "#/components/schemas/SyncEntryOut"
+            },
+            "title": "Created",
+            "type": "array"
+          },
+          "missing": {
+            "description": "Only on the target; kept unless delete_missing is set",
+            "items": {
+              "$ref": "#/components/schemas/SyncEntryOut"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "unchanged": {
+            "title": "Unchanged",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "created",
+          "changed",
+          "unchanged",
+          "missing"
+        ],
+        "title": "SyncSectionOut",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -2681,6 +2860,99 @@
           }
         },
         "summary": "Update Source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v2/sources/{source_id}/sync": {
+      "post": {
+        "description": "Copies all data of a database project between the database and its sync folder (`sync_path`).\n\nWithout `confirm` this is a preview and changes nothing: what is created, what differs (`changed`: the target\nis overwritten) and what the target has that the origin lacks (`missing`), plus a `token`. With `confirm` and\nthat token the sync is carried out; if either side changed since the preview the answer is 409 sync_stale.\nMissing entries are deleted only with `delete_missing`; otherwise they stay and are listed under `kept`.\nErrors: sync_path_missing (400), sync_same_backend (409), sync_source_invalid (400, `details.reason` names the\nproblem, nothing was changed).",
+        "operationId": "sync_source_api_v2_sources__source_id__sync_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sync Source",
         "tags": [
           "sources"
         ]

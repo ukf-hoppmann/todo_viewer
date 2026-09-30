@@ -719,3 +719,44 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Spec: `items/STORY-024/STORY-024_spec.md`.
   - Notes: `items/STORY-024/STORY-024_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+
+- `STORY-025` **Doku und Release für das wählbare Speicher-Backend**
+  - Type: Story.
+  - Parent: `EPIC-003`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-024`.
+  - Goal: README und Techdocs beschreiben Backend-Wahl, storage_url,
+    DB-Sicherung, Sync-Ablauf und Migration; Tagesbericht und Release
+    (voraussichtlich 0.3.0).
+  - Completion criteria: Doku entspricht dem Ist-Zustand, Release ist
+    getaggt, das eigene Backlog wurde probeweise in die DB übernommen.
+  - Summary: Dokumentation und Release des Epics.
+  - Spec: `items/STORY-025/STORY-025_spec.md`.
+  - Notes: `items/STORY-025/STORY-025_notes.md`.
+  - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+
+- `STORY-026` **Postgres als zweiter Datenbank-Typ (optional)**
+  - Type: Story.
+  - Parent: `EPIC-003`.
+  - Required for parent: No.
+  - Status: Rejected.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-021`.
+  - Goal: Der DB-Adapter läuft zusätzlich gegen Postgres (Treiber,
+    URL-Konfiguration, Dialekt-Unterschiede in den Migrationen); dieselbe
+    Contract-Suite. Nur nötig, wenn Postgres tatsächlich gebraucht wird.
+  - Completion criteria: Die Contract-Suite ist für SQLite und Postgres
+    grün; Postgres-Tests werden übersprungen, wenn kein Server erreichbar
+    ist.
+  - Summary: Optionaler zweiter Datenbank-Typ.
+  - Spec: `items/STORY-026/STORY-026_spec.md`.
+  - Resolution: Vom Projektinhaber am 2026-09-30 vorerst verworfen: SQLite
+    genügt für den lokalen Einzelbetrieb; Postgres nur bei echtem Bedarf neu
+    aufnehmen.
+  - Notes: `items/STORY-026/STORY-026_notes.md`.

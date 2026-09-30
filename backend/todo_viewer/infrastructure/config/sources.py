@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -62,12 +63,18 @@ class JsonSourceRepository:
     @staticmethod
     def _to_source(raw: dict[str, Any]) -> Source:
         extra = {k: v for k, v in raw.items() if k not in ("project", "path", "backend")}
-        return Source(project=raw["project"], path=raw["path"], backend=raw.get("backend", MARKDOWN), extra=extra)
+        return Source(project=raw["project"], path=raw["path"], backend=raw.get("backend", MARKDOWN),
+                      id=legacy_source_id(raw["path"]), extra=extra)
 
     @staticmethod
     def _to_raw(source: Source) -> dict[str, Any]:
         backend = {} if source.backend == MARKDOWN else {"backend": source.backend}
         return {"project": source.project, "path": source.path, **backend, **source.extra}
+
+
+def legacy_source_id(path: str) -> str:
+    """How sources were identified while they lived in config.json: by a hash of their path."""
+    return hashlib.sha1(path.encode("utf-8")).hexdigest()[:12]
 
 
 def storage_url(file: JsonFile, default: str) -> str:

@@ -27,7 +27,7 @@ class DatabaseSourceRepository:
         with self._lock:
             self._before_access()
             with self._db.begin() as conn:
-                return _read(conn)
+                return read_sources(conn)
 
     @contextmanager
     def edit(self) -> Iterator[list[Source]]:
@@ -38,20 +38,20 @@ class DatabaseSourceRepository:
         with self._lock:
             self._before_access()
             with self._db.begin() as conn:
-                before = _read(conn)
+                before = read_sources(conn)
             working = list(before)
             yield working
             with self._db.begin() as conn:
-                _write(conn, before, working)
+                write_sources(conn, before, working)
 
 
-def _read(conn: sa.Connection) -> list[Source]:
+def read_sources(conn: sa.Connection) -> list[Source]:
     rows = conn.execute(sa.select(projects).where(projects.c.name.is_not(None)).order_by(projects.c.position))
     return [Source(project=row.name, path=row.path or "", backend=row.backend, id=row.id, sync_path=row.sync_path,
                    extra=json.loads(row.extra) if row.extra else {}) for row in rows]
 
 
-def _write(conn: sa.Connection, before: list[Source], after: list[Source]) -> None:
+def write_sources(conn: sa.Connection, before: list[Source], after: list[Source]) -> None:
     kept = {s.id for s in after}
     for source in before:
         if source.id not in kept:

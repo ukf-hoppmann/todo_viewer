@@ -51,6 +51,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Ein zentraler Ort für Projekte, Einstellungen und Inhalte;
     Sync-Pfad je Projekt konfigurierbar.
   - Spec: `items/STORY-022/STORY-022_spec.md`.
+  - Notes: `items/STORY-022/STORY-022_notes.md`.
 
 - `STORY-023` **Sync zwischen Datenbank und Markdown (to_md / from_md)**
   - Type: Story.

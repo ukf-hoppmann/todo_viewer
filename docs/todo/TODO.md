@@ -61,7 +61,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -73,6 +73,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     dokumentierten Ort. - Schlägt das Backup fehl, findet kein Wechsel
     statt; die Antwort nennt den Grund. - Ein Test prüft, dass sich aus dem
     Backup der alte Stand herstellen lässt.
+  - Notes: `items/STORY-031/STORY-031_notes.md`.
+  - Summary: Vor jedem Wechsel der Primärquelle wird die bisherige
+    gesichert; scheitert das, wird nichts umgeschaltet.
 
 - `STORY-032` **Sync-Status: Spiegel extern geändert erkennen**
   - Type: Story.

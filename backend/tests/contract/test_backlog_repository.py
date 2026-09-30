@@ -151,3 +151,13 @@ def test_write_backlog_can_empty_a_backlog(adapter: Adapter):
 
     backlog = adapter.repo.load(adapter.source)
     assert backlog.items == [] and backlog.problem is None
+
+
+def test_an_emptied_backlog_takes_a_complete_one_back_as_a_mirror_target_with_the_same_versions(adapter: Adapter):
+    repo, source = adapter.repo, adapter.source
+    complete = repo.load(source).items
+    repo.write_backlog(source, [], "en")
+
+    repo.write_backlog(source, complete, "en")
+
+    assert _by_location(repo.load(source).items) == _by_location(complete)

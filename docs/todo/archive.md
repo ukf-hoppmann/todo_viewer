@@ -899,3 +899,29 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Jedes Projekt mit Spiegel meldet, welche Seite sich seit dem
     letzten Sync geändert hat; das Lesen ändert nichts.
   - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.5.
+
+- `STORY-033` **Einstellungsmenü: erweiterbarer Rahmen und Abschnitt „Allgemein“**
+  - Type: Story.
+  - Parent: `EPIC-004`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `STORY-029`.
+  - Goal: Ein Einstellungsmenü (Zahnrad in der Sidebar) besteht aus
+    Abschnitten, die in einer Liste registriert werden; ein neuer Abschnitt
+    ist ein neuer Eintrag. Der erste Abschnitt „Allgemein“ zeigt den
+    Datenbank-Ort nur lesend (Bearbeiten bleibt in der config.json) und
+    stellt das Standard-Backend für neue Projekte ein.
+  - Completion criteria: - Das Menü öffnet sich über die Sidebar und zeigt
+    die Abschnitte als Navigation. - Abschnitte werden aus einer Liste
+    gerendert; ein Test zeigt, dass ein zusätzlicher Eintrag ohne weitere
+    Änderung erscheint. - „Allgemein“ zeigt Datenbank-Typ und -Ort nur
+    lesend und speichert das Standard-Backend im UI-Zustand. - Das
+    Standard-Backend ist beim Hinzufügen eines Projekts vorausgewählt.
+  - Notes: `items/STORY-033/STORY-033_notes.md`.
+  - Summary: Die Sidebar hat ein Zahnrad, das ein Einstellungsmenü mit
+    erweiterbarer Abschnittsliste öffnet; Allgemein zeigt die Datenbank
+    lesend und stellt den Standard-Speicherort für neue Projekte ein.
+  - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.6.

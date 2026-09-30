@@ -35,36 +35,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     freigegeben. - Das Menü ist über eine Abschnittsliste erweiterbar; die
     Doku ist aktuell.
 
-- `STORY-033` **Einstellungsmenü: erweiterbarer Rahmen und Abschnitt „Allgemein“**
-  - Type: Story.
-  - Parent: `EPIC-004`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: `STORY-029`.
-  - Goal: Ein Einstellungsmenü (Zahnrad in der Sidebar) besteht aus
-    Abschnitten, die in einer Liste registriert werden; ein neuer Abschnitt
-    ist ein neuer Eintrag. Der erste Abschnitt „Allgemein“ zeigt den
-    Datenbank-Ort nur lesend (Bearbeiten bleibt in der config.json) und
-    stellt das Standard-Backend für neue Projekte ein.
-  - Completion criteria: - Das Menü öffnet sich über die Sidebar und zeigt
-    die Abschnitte als Navigation. - Abschnitte werden aus einer Liste
-    gerendert; ein Test zeigt, dass ein zusätzlicher Eintrag ohne weitere
-    Änderung erscheint. - „Allgemein“ zeigt Datenbank-Typ und -Ort nur
-    lesend und speichert das Standard-Backend im UI-Zustand. - Das
-    Standard-Backend ist beim Hinzufügen eines Projekts vorausgewählt.
-  - Notes: `items/STORY-033/STORY-033_notes.md`.
-  - Summary: Die Sidebar hat ein Zahnrad, das ein Einstellungsmenü mit
-    erweiterbarer Abschnittsliste öffnet; Allgemein zeigt die Datenbank
-    lesend und stellt den Standard-Speicherort für neue Projekte ein.
-
 - `STORY-034` **Menüabschnitt „Projekte“: Primärquelle, Pfade und Sync je Projekt**
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-09-30.
   - Area: Web-UI.
   - Priority: Normal.

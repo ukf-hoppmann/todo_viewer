@@ -175,7 +175,7 @@ describe("Sidebar: projects in the database", () => {
   const files = sourceStatus({ id: "s2", project: "Files", backend: "markdown", path: "/repos/a/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/a/docs", mirror: "none" });
   const show = (sources = [sourceStatus(), files], onSyncSource = vi.fn()) =>
     renderWithProviders(
-      <Sidebar options={options} sources={sources} onAddSource={vi.fn()} onEditSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={onSyncSource} onOpenSettings={vi.fn()} />,
+      <Sidebar options={options} sources={sources} onAddSource={vi.fn()} onEditSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={onSyncSource} onOpenSettings={vi.fn()} syncStates={new Map()} onOpenProject={vi.fn()} />,
     );
 
   it("marks database projects and syncs only those that have a sync folder", async () => {

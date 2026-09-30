@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import type { Schemas, SourceStatus } from "./api/client";
-import { useRemoveSource } from "./api/queries";
+import { useRemoveSource, useSyncStatuses } from "./api/queries";
 import { CreateItemDialog } from "./components/CreateItemDialog";
 import { DetailPanel } from "./components/DetailPanel";
 import { RetypeNotice } from "./components/RetypeNotice";
@@ -8,7 +8,7 @@ import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { Sidebar } from "./components/Sidebar";
 import { SourceDialog } from "./components/SourceDialog";
 import { SyncDialog } from "./components/SyncDialog";
-import type { SyncMode } from "./domain/sync";
+import type { SyncMode, SyncState } from "./domain/sync";
 import { type Uid, uidOf } from "./domain/model";
 import { createI18n, describeError, I18nContext } from "./i18n/i18n";
 import type { MessageKey } from "./i18n/messages";
@@ -36,7 +36,10 @@ export function App() {
   const [sourceDialog, setSourceDialog] = useState<SourceDialogState>(null);
   const [syncDialog, setSyncDialog] = useState<SyncDialogState>(null);
   const [creating, setCreating] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  // null = closed; focusId is the project the menu was opened for (from its badge), if any.
+  const [settings, setSettings] = useState<{ focusId?: string } | null>(null);
+  const syncStatuses = useSyncStatuses();
+  const syncStates = useMemo(() => new Map<string, SyncState>(syncStatuses.data?.map((s) => [s.source_id, s.state])), [syncStatuses.data]);
   // Kept here, not in the detail panel: the panel is rebuilt when the selection moves to the new id.
   const [retyped, setRetyped] = useState<Schemas["RetypeOut"] | null>(null);
 
@@ -75,7 +78,9 @@ export function App() {
             onEditSource={(source) => setSourceDialog({ source })}
             onRemoveSource={onRemoveSource}
             onSyncSource={(source) => setSyncDialog({ source, mode: "sync" })}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={() => setSettings({})}
+            syncStates={syncStates}
+            onOpenProject={(source) => setSettings({ focusId: source.id })}
           />
           <main className="main">
             <nav className="tabs">
@@ -130,7 +135,13 @@ export function App() {
             }}
           />
         )}
-        {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+        {settings && (
+          <SettingsDialog
+            initialSection={settings.focusId ? "projects" : undefined}
+            focusId={settings.focusId}
+            onClose={() => setSettings(null)}
+          />
+        )}
         {retyped && <RetypeNotice result={retyped} onClose={() => setRetyped(null)} />}
         {sourceDialog && (
           <SourceDialog

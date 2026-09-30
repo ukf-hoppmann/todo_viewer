@@ -2,6 +2,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Schemas, SourceStatus } from "../api/client";
 import { renderWithProviders, sourceStatus } from "../test/render";
+import type { SyncState } from "../domain/sync";
+import { Sidebar } from "./Sidebar";
 import { ProjectsSection } from "./settings/ProjectsSection";
 import { SETTINGS_SECTIONS } from "./settings/sections";
 import { SettingsDialog } from "./settings/SettingsDialog";
@@ -245,3 +247,46 @@ describe("Settings: the section list", () => {
     expect(await screen.findByRole("group", { name: "Files" })).toHaveAttribute("aria-current", "true");
   });
 });
+
+describe("Sidebar: the badge for a changed mirror", () => {
+  const options = { projects: ["Central", "Files"], statuses: [], priorities: [] };
+  const show = (states: [string, SyncState][], onOpenProject = vi.fn()) =>
+    renderWithProviders(
+      <Sidebar
+        options={options}
+        sources={[central, files]}
+        syncStates={new Map(states)}
+        onAddSource={vi.fn()}
+        onEditSource={vi.fn()}
+        onRemoveSource={vi.fn()}
+        onSyncSource={vi.fn()}
+        onOpenSettings={vi.fn()}
+        onOpenProject={onOpenProject}
+      />,
+    );
+
+  it.each(["mirror_changed", "both_changed", "unreadable"] as const)("marks a project whose state is %s", (state) => {
+    show([["s1", state]]);
+
+    expect(screen.getAllByRole("button", { name: /Central: .* Einstellungen/ })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /Files: .* Einstellungen/ })).not.toBeInTheDocument();
+  });
+
+  it.each(["none", "in_sync", "primary_changed", "unknown"] as const)("does not mark a project whose state is %s", (state) => {
+    show([["s1", state], ["s2", state]]);
+
+    expect(screen.queryByRole("button", { name: /: .* Einstellungen/ })).not.toBeInTheDocument();
+  });
+
+  it("names the state and opens the settings at that project", async () => {
+    const onOpenProject = vi.fn();
+    show([["s1", "mirror_changed"]], onOpenProject);
+
+    const badge = screen.getByRole("button", { name: /Central: .* Einstellungen/ });
+    expect(badge).toHaveAttribute("title", "Spiegel geändert seit dem letzten Sync");
+    await userEvent.click(badge);
+
+    expect(onOpenProject).toHaveBeenCalledWith(central);
+  });
+});
+

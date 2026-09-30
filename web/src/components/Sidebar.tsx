@@ -1,6 +1,7 @@
 import type { SourceStatus } from "../api/client";
 import { priorityColor, statusColor } from "../domain/colors";
 import type { FilterOptions } from "../domain/model";
+import { needsAttention, type SyncState } from "../domain/sync";
 import { useI18n } from "../i18n/i18n";
 import { LANGS } from "../i18n/messages";
 import { useUiState } from "../state/useUiStateStore";
@@ -14,9 +15,13 @@ interface SidebarProps {
   onRemoveSource: (source: SourceStatus) => void;
   onSyncSource: (source: SourceStatus) => void;
   onOpenSettings: () => void;
+  /** The sync state of each project by source id; a project whose mirror needs attention gets a badge. */
+  syncStates: ReadonlyMap<string, SyncState>;
+  /** Opens the settings at this project. */
+  onOpenProject: (source: SourceStatus) => void;
 }
 
-export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource, onOpenSettings }: SidebarProps) {
+export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource, onOpenSettings, syncStates, onOpenProject }: SidebarProps) {
   const { t, vocab } = useI18n();
   const { state, dispatch } = useUiState();
 
@@ -53,7 +58,15 @@ export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveS
             {t("source.add")}
           </button>
         </h2>
-        <ProjectFilters projects={options.projects} sources={sources} onEdit={onEditSource} onRemove={onRemoveSource} onSync={onSyncSource} />
+        <ProjectFilters
+          projects={options.projects}
+          sources={sources}
+          syncStates={syncStates}
+          onEdit={onEditSource}
+          onRemove={onRemoveSource}
+          onSync={onSyncSource}
+          onOpenProject={onOpenProject}
+        />
       </section>
 
       <FilterGroup
@@ -108,10 +121,12 @@ interface ProjectFiltersProps {
   onEdit: (source: SourceStatus) => void;
   onRemove: (source: SourceStatus) => void;
   onSync: (source: SourceStatus) => void;
+  syncStates: ReadonlyMap<string, SyncState>;
+  onOpenProject: (source: SourceStatus) => void;
 }
 
 /** One row per source; a project can consist of several sources. */
-function ProjectFilters({ projects, sources, onEdit, onRemove, onSync }: ProjectFiltersProps) {
+function ProjectFilters({ projects, sources, syncStates, onEdit, onRemove, onSync, onOpenProject }: ProjectFiltersProps) {
   const { t, errorText } = useI18n();
   const { state, dispatch } = useUiState();
 
@@ -148,6 +163,16 @@ function ProjectFilters({ projects, sources, onEdit, onRemove, onSync }: Project
                     </span>
                   )}
                   {problem && <span className="warn">⚠</span>}
+                  {source && !problem && needsAttention(syncStates.get(source.id) ?? "none") && (
+                    <button
+                      className="sync-badge"
+                      title={t(`sync.state.${syncStates.get(source.id) ?? "none"}`)}
+                      aria-label={t("projects.badge", { p: source.project })}
+                      onClick={() => onOpenProject(source)}
+                    >
+                      ⚠
+                    </button>
+                  )}
                 </div>
                 {source && (
                   <>

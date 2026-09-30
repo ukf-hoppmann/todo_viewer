@@ -223,6 +223,7 @@ input.field-edit {
 .settings-content { flex: 1; overflow-y: auto; min-width: 0; }
 .settings-section h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
 .settings-section h4:first-child { margin-top: 0; }
+.sync-badge { background: transparent; border: none; color: var(--status-inprogress, #e0a43a); cursor: pointer; font-size: 12px; padding: 0 3px; }
 .project-card { border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px 12px; margin: 0 0 10px; }
 .project-card.focused { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .project-card header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }

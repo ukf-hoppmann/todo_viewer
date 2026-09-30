@@ -208,3 +208,65 @@ describe("SyncDialog: switching the storage of a project", () => {
     expect(onSwitched).not.toHaveBeenCalled();
   });
 });
+
+describe("SyncDialog: the direction", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const markdownWithMirror = sourceStatus({
+    backend: "markdown", path: "/repos/a/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/a/docs", mirror: "database",
+  });
+
+  it("starts from the primary source to the mirror and says so", () => {
+    stubApi(server(answer()));
+    const { unmount } = renderWithProviders(<SyncDialog source={sourceStatus()} mode="sync" onClose={vi.fn()} onSwitched={vi.fn()} />);
+
+    expect(screen.getByRole("radio", { name: /Datenbank → Ordner/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Datenbank → Ordner (Standard)" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Ordner → Datenbank" })).not.toBeChecked();
+    unmount();
+
+    renderWithProviders(<SyncDialog source={markdownWithMirror} mode="sync" onClose={vi.fn()} onSwitched={vi.fn()} />);
+    expect(screen.getByRole("radio", { name: "Ordner → Datenbank (Standard)" })).toBeChecked();
+    expect(screen.getByText("Sync-Ordner: /repos/a/docs")).toBeInTheDocument();
+  });
+
+  it("previews a markdown project with a database mirror from the folder, and the other way when asked", async () => {
+    const calls = stubApi(server(answer()));
+    renderWithProviders(<SyncDialog source={markdownWithMirror} mode="sync" onClose={vi.fn()} onSwitched={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    await userEvent.click(screen.getByRole("radio", { name: "Datenbank → Ordner" }));
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+
+    await waitFor(() => expect(calls).toHaveLength(2));
+    expect(calls.map((c) => c.body.direction)).toEqual(["from_md", "to_md"]);
+  });
+});
+
+describe("SyncDialog: switching saves the old primary source first", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("says that a backup is made before the switch", () => {
+    stubApi(server(answer()));
+    renderWithProviders(<SyncDialog source={sourceStatus()} mode="switch" onClose={vi.fn()} onSwitched={vi.fn()} />);
+
+    expect(screen.getByText(/legt der Dienst ein Backup der bisherigen Primärquelle an/)).toBeInTheDocument();
+  });
+
+  it("names why the backup failed, changes nothing, and stays open", async () => {
+    stubApi((request, body) =>
+      request.method === "PUT"
+        ? jsonResponse({ code: "backup_failed", message: "x", details: { reason: "disk full" } }, 409)
+        : jsonResponse(body.confirm ? { ...answer(), executed: true } : answer()),
+    );
+    const onSwitched = vi.fn();
+    renderWithProviders(<SyncDialog source={sourceStatus()} mode="switch" onClose={vi.fn()} onSwitched={onSwitched} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Übernehmen und umstellen" }));
+
+    expect(await screen.findByText(/Das Backup der bisherigen Primärquelle ist fehlgeschlagen.*disk full/)).toBeInTheDocument();
+    expect(onSwitched).not.toHaveBeenCalled();
+  });
+});
+

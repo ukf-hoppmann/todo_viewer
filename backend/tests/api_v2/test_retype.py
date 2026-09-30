@@ -28,12 +28,15 @@ def test_retype_moves_item_documents_and_references(api, workspace):
     resp = _retype(api, task, "Story")
 
     assert resp.status_code == 200, resp.body
-    assert (resp.body["id"], resp.body["type"]) == ("STORY-002", "Story")
-    assert [d["name"] for d in resp.body["documents"]] == ["notes.md", "spec.md", "extra.md"]
+    item = resp.body["item"]
+    assert (item["id"], item["type"], resp.body["old_id"]) == ("STORY-002", "Story", "TASK-002")
+    assert [(n["code"], n["details"]) for n in resp.body["notices"]] == [
+        ("external_references_may_remain", {"old_id": "TASK-002", "new_id": "STORY-002"})]
+    assert [d["name"] for d in resp.body["item"]["documents"]] == ["notes.md", "spec.md", "extra.md"]
     todo = (folder / "TODO.md").read_text(encoding="utf-8")
     assert "Notes: `items/STORY-002/notes.md`." in todo
     assert "Spec: `items/STORY-002/spec.md`, `items/STORY-002/extra.md`." in todo
-    assert resp.body == _item(api, "STORY-002")
+    assert resp.body["item"] == _item(api, "STORY-002")
     assert api.get(f"/api/v2/items/{task['source_id']}/TASK-002").body["code"] == "item_not_found"
     assert not (folder / "items" / "TASK-002").exists()
     text = api.get(f"/api/v2/items/{task['source_id']}/STORY-002/documents/notes.md").body["content"]
@@ -47,7 +50,7 @@ def test_retype_renames_parent_and_dependency_references(api, workspace):
 
     resp = _retype(api, story, "Task")
 
-    assert (resp.status_code, resp.body["id"]) == (200, "TASK-004")
+    assert (resp.status_code, resp.body["item"]["id"]) == (200, "TASK-004")
     assert {i["id"]: i["parent"] for i in api.get("/api/v2/backlog").body["items"] if i["id"] in
             {"TASK-001", "TASK-002", "TASK-003"}} == {"TASK-001": "TASK-004", "TASK-002": "TASK-004",
                                                       "TASK-003": "TASK-004"}
@@ -60,7 +63,7 @@ def test_retype_archived_item_keeps_its_place_in_the_archive(api, workspace):
 
     resp = _retype(api, task, "Story")
 
-    assert (resp.status_code, resp.body["id"], resp.body["archived"]) == (200, "STORY-002", True)
+    assert (resp.status_code, resp.body["item"]["id"], resp.body["item"]["archived"]) == (200, "STORY-002", True)
     archive = (folder / "archive.md").read_text(encoding="utf-8")
     assert "`STORY-002` **Set up repository**" in archive and "`TASK-000`" not in archive
     assert "TASK-000" not in (folder / "TODO.md").read_text(encoding="utf-8")  # TASK-001 depended on it

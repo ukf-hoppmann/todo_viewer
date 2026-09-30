@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import TypeVar
 
-from todo_viewer.application.ports import BacklogRepository, DocumentStore
+from todo_viewer.application.ports import BacklogRepository, DocumentStore, RawBackup
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import ChangeSet
 from todo_viewer.domain.errors import InvalidSourceError
@@ -83,3 +83,11 @@ class RoutingDocumentStore:
 
     def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
         self._for(source).relabel_documents(source, old_id, new_id, renames)
+
+
+class RoutingRawBackup:
+    def __init__(self, backends: Mapping[str, RawBackup]):
+        self._backends = backends
+
+    def copy(self, source: Source, target: str) -> bool:
+        return _adapter_for(self._backends, source).copy(source, target)

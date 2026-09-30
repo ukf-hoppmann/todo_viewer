@@ -9,7 +9,7 @@ from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.errors import InvalidSourceError
 from todo_viewer.domain.item import Item
 from todo_viewer.domain.source import Source
-from todo_viewer.infrastructure.routing import RoutingBacklogRepository, RoutingDocumentStore
+from todo_viewer.infrastructure.routing import RoutingBacklogRepository, RoutingDocumentStore, RoutingRawBackup
 
 
 class RecordingBacklogs:
@@ -63,3 +63,22 @@ def test_unknown_backend_is_reported_with_a_stable_code():
         routing.load(Source(project="P", path="docs", backend="ftp"))
 
     assert caught.value.code == "unknown_backend"
+
+
+def test_a_raw_backup_goes_to_the_adapter_of_the_sources_backend():
+    class Copies:
+        def __init__(self, result: bool) -> None:
+            self.result, self.targets = result, []
+
+        def copy(self, source: Source, target: str) -> bool:
+            self.targets.append(target)
+            return self.result
+
+    files, database = Copies(True), Copies(False)
+    routing = RoutingRawBackup({"markdown": files, "database": database})
+
+    assert routing.copy(Source(project="P", path="/p"), "/b/1") is True
+    assert routing.copy(Source(project="P", path="", backend="database"), "/b/2") is False
+    assert (files.targets, database.targets) == (["/b/1"], ["/b/2"])
+    with pytest.raises(InvalidSourceError):
+        routing.copy(Source(project="P", path="/p", backend="nope"), "/b/3")

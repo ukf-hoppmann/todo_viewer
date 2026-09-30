@@ -877,10 +877,9 @@ export interface components {
             delete_missing: boolean;
             /**
              * Direction
-             * @description to_md: write the database project into its sync folder; from_md: read the folder into the project
-             * @enum {string}
+             * @description to_md: write the database side into the markdown folder; from_md: read the markdown folder into the database side. Default: from the primary source to the mirror (database project: to_md, markdown project: from_md)
              */
-            direction: "to_md" | "from_md";
+            direction?: ("to_md" | "from_md") | null;
             /**
              * Language
              * @description Language of the headings in markdown files created

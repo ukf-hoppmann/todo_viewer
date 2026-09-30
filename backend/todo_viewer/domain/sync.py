@@ -46,6 +46,11 @@ class SyncPreview:
     token: str
 
 
+def default_direction(source: Source) -> SyncDirection:
+    """From the primary source to the mirror: a database project writes its folder, a markdown project its mirror."""
+    return SyncDirection.TO_MD if source.backend == "database" else SyncDirection.FROM_MD
+
+
 def sync_pair(source: Source, direction: SyncDirection) -> tuple[Source, Source]:
     """The database side and the markdown side of a project, as two sources with the project's id.
 

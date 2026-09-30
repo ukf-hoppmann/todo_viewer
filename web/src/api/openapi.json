@@ -1254,13 +1254,20 @@
             "type": "boolean"
           },
           "direction": {
-            "description": "to_md: write the database project into its sync folder; from_md: read the folder into the project",
-            "enum": [
-              "to_md",
-              "from_md"
+            "anyOf": [
+              {
+                "enum": [
+                  "to_md",
+                  "from_md"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Direction",
-            "type": "string"
+            "description": "to_md: write the database side into the markdown folder; from_md: read the markdown folder into the database side. Default: from the primary source to the mirror (database project: to_md, markdown project: from_md)",
+            "title": "Direction"
           },
           "language": {
             "default": "en",
@@ -1285,9 +1292,6 @@
             "title": "Token"
           }
         },
-        "required": [
-          "direction"
-        ],
         "title": "SyncIn",
         "type": "object"
       },

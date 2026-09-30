@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Body, Request
 
 from todo_viewer.domain.errors import ConfigMissingError
-from todo_viewer.domain.sync import SyncDirection
+from todo_viewer.domain.sync import SyncDirection, default_direction
 from todo_viewer.domain.trash import live
 
 from ..dependencies import Documents, Folders, Items, Lookup, Overview, Retype, Sources, Sync, Trash, UiState
@@ -227,9 +227,9 @@ def sync_source(source_id: str, body: SyncIn, sync: Sync, lookup: Lookup, reques
     Errors: sync_path_missing (400), sync_same_backend (409), sync_source_invalid (400, `details.reason` names the
     problem, nothing was changed).
     """
-    note(request, source=source_id, direction=body.direction, confirm=body.confirm)
     source = lookup.by_id(source_id)
-    direction = SyncDirection(body.direction)
+    direction = SyncDirection(body.direction) if body.direction else default_direction(source)
+    note(request, source=source_id, direction=direction.value, confirm=body.confirm)
     if not body.confirm:
         return SyncOut.of(sync.preview(source, direction))
     result = sync.run(source, direction, body.token, body.delete_missing, body.language)

@@ -3,6 +3,7 @@ from .items import BacklogOverviewService, ItemResult, ItemService, SourceBacklo
 from .misc import FolderBrowseService, UiStateService
 from .retype import RetypeResult, RetypeService
 from .sources import SourceLookup, SourceService
+from .sync import SyncResult, SyncService
 from .trash import TrashService
 
 __all__ = [
@@ -17,6 +18,8 @@ __all__ = [
     "SourceBacklog",
     "SourceLookup",
     "SourceService",
+    "SyncResult",
+    "SyncService",
     "TrashService",
     "UiStateService",
 ]

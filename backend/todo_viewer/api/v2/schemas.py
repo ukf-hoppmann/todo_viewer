@@ -6,10 +6,11 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from todo_viewer.application.ports import FolderListing
-from todo_viewer.application.services import DocumentResult, RetypeResult
+from todo_viewer.application.services import DocumentResult, RetypeResult, SyncResult
 from todo_viewer.domain.documents import DocumentRef, item_documents
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
+from todo_viewer.domain.sync import SyncEntry, SyncPreview
 
 
 class HealthOut(BaseModel):
@@ -241,6 +242,59 @@ class BacklogCreateIn(BaseModel):
     path: str
     project: str | None = None
     language: Literal["en", "de"] = Field("en", description="Language of the headings and prose in the new files")
+
+
+class SyncIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    direction: Literal["to_md", "from_md"] = Field(
+        description="to_md: write the database project into its sync folder; from_md: read the folder into the project")
+    confirm: bool = Field(False, description="false: only preview; true: carry out the sync")
+    token: str | None = Field(None, description="The token of the preview being confirmed (required with confirm)")
+    delete_missing: bool = Field(
+        False, description="Also delete what the target has and the origin lacks; otherwise it stays")
+    language: Literal["en", "de"] = Field("en", description="Language of the headings in markdown files created")
+
+
+class SyncEntryOut(BaseModel):
+    label: str = Field(description="The item's id")
+    title: str
+    name: str | None = Field(description="Documents: the document name; items: null")
+
+    @classmethod
+    def of(cls, entry: SyncEntry) -> SyncEntryOut:
+        return cls(label=entry.label, title=entry.title, name=entry.name)
+
+
+class SyncSectionOut(BaseModel):
+    created: list[SyncEntryOut]
+    changed: list[SyncEntryOut] = Field(description="Exist on both sides and differ; the target is overwritten")
+    unchanged: int
+    missing: list[SyncEntryOut] = Field(description="Only on the target; kept unless delete_missing is set")
+
+
+class SyncOut(BaseModel):
+    executed: bool = Field(description="false for a preview")
+    token: str = Field(description="Identifies the state of both sides; send it back to confirm this preview")
+    items: SyncSectionOut
+    documents: SyncSectionOut
+    skipped: list[SyncEntryOut] = Field(description="Documents the sync cannot carry (a path, not readable, missing)")
+    deleted: list[SyncEntryOut] = Field(description="Missing entries removed from the target")
+    kept: list[SyncEntryOut] = Field(description="Missing entries left on the target")
+
+    @classmethod
+    def of(cls, preview: SyncPreview, result: SyncResult | None = None) -> SyncOut:
+        def out(entries: tuple[SyncEntry, ...]) -> list[SyncEntryOut]:
+            return [SyncEntryOut.of(e) for e in entries]
+
+        return cls(
+            executed=result is not None, token=preview.token,
+            items=SyncSectionOut(created=out(preview.created), changed=out(preview.changed),
+                                 unchanged=preview.unchanged, missing=out(preview.missing)),
+            documents=SyncSectionOut(created=out(preview.created_documents), changed=out(preview.changed_documents),
+                                     unchanged=preview.unchanged_documents, missing=out(preview.missing_documents)),
+            skipped=out(preview.skipped),
+            deleted=out(result.deleted) if result else [], kept=out(result.kept) if result else [])
 
 
 class DocumentOut(DocumentRefOut):

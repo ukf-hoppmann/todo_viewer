@@ -113,3 +113,41 @@ def test_documents_stay_listed_when_the_id_changes(adapter: Adapter):
 
     moved = adapter.repo.get(adapter.source, "STORY-009")
     assert (moved.notes, moved.spec) == (["notes.md"], ["spec.md", "extra.md"])
+
+
+def _by_location(items: list[Item]) -> dict[Location, list[tuple[str, str]]]:
+    return {loc: [(i.id, i.version) for i in items if i.location is loc] for loc in Location}
+
+
+def test_write_backlog_leaves_exactly_the_given_items_in_the_given_order(adapter: Adapter):
+    repo, source = adapter.repo, adapter.source
+    items = repo.load(source).items
+    trashed = dataclasses.replace(repo.get(source, "TASK-003"), deleted="2026-09-28")
+    written = [dataclasses.replace(i, title="Renamed") if i.id == "TASK-001" else i
+               for i in reversed(items) if i.id not in {"TASK-002", "TASK-003"}]
+    written.append(trashed)
+    written.append(Item(id="TASK-050", title="Added", project="P", item_type="Task", parent="STORY-001",
+                        required_for_parent=True, area="Core", goal="A goal.", completion_criteria="Checked."))
+
+    repo.write_backlog(source, written, "en")
+
+    assert _by_location(repo.load(source).items) == _by_location(written)
+    assert repo.get(source, "TASK-003").deleted == "2026-09-28"
+    with pytest.raises(ItemNotFoundError):
+        repo.get(source, "TASK-002")
+
+
+def test_write_backlog_keeps_the_documents_of_items_that_stay(adapter: Adapter):
+    repo, source = adapter.repo, adapter.source
+    before = adapter.docs.read(source, "TASK-002", "notes.md")
+
+    repo.write_backlog(source, repo.load(source).items, "en")
+
+    assert adapter.docs.read(source, "TASK-002", "notes.md") == before
+
+
+def test_write_backlog_can_empty_a_backlog(adapter: Adapter):
+    adapter.repo.write_backlog(adapter.source, [], "en")
+
+    backlog = adapter.repo.load(adapter.source)
+    assert backlog.items == [] and backlog.problem is None

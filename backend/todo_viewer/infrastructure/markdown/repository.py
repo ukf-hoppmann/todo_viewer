@@ -186,6 +186,32 @@ class MarkdownBacklogRepository:
                     self._files.create(layout.file(location), texts[location])
             layout.items_folder().mkdir(exist_ok=True)
 
+    def write_backlog(self, source: Source, items: Sequence[Item], language: str) -> None:
+        """Rewrites the entries of TODO.md and archive.md; the text around the entries stays as it is.
+
+        A missing archive.md is created. Both files are checked for outside changes before either is written,
+        and TODO.md is written last.
+        """
+        layout = self._layouts.for_source(source)
+        texts = self._templates.for_language(language)
+        with self._locks.hold(str(layout.folder)):
+            problem = layout.problem() or self._format_problem(layout)
+            if problem:
+                raise InvalidSourceError(problem.message, code=problem.code)
+            existing = {loc: self._files.read(layout.file(loc)) for loc in Location if layout.file(loc).is_file()}
+            for read in existing.values():
+                self._files.ensure_unchanged(read)
+            layout.items_folder().mkdir(exist_ok=True)
+            for location in (Location.ARCHIVE, Location.ACTIVE):
+                doc = existing.get(location)
+                entries = [self._renderer.render_full(i) for i in items if i.location is location]
+                if doc is None:
+                    self._files.create(layout.file(location),
+                                       "\n".join(self._mover.replace_entries(texts[location].split("\n"), entries)))
+                else:
+                    doc.lines = self._mover.replace_entries(doc.lines, entries)
+                    self._files.write(doc)
+
     def _check_version(self, doc: TextDocument, source: Source, item: Item) -> None:
         stored = next((i for i in self._parse(doc, source, item.location) if i.id == item.id), None)
         if stored is None or stored.version != item.version:

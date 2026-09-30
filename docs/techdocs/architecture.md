@@ -62,6 +62,13 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 - Backlog-Daten: je Projekt entweder in dessen Markdown-Dateien
   (`backend: markdown`, Standard) oder in der zentralen Datenbank
   (`backend: database`, `configs/todo.db`); es gibt keine zweite Kopie.
+- Abgleich Datenbank ⇄ Markdown: nur auf Anforderung (`POST /sources/{id}/sync`),
+  nie automatisch. `SyncService` (`application/services/sync.py`) arbeitet mit
+  denselben Ports auf zwei Quellen desselben Projekts (Datenbank und
+  Markdown-Ordner am `sync_path`); der Vergleich (neu/geändert/fehlend, Token)
+  liegt in `domain/sync.py`, geschrieben wird über `write_backlog` und die
+  Dokument-Ports. Die Markdown-Seite rendert dafür alle Felder
+  (`EntryRenderer.render_full`), den Text um die Einträge lässt sie stehen.
 - Projektliste (Name, Backend, Ordner, `sync_path`, Reihenfolge; `source_id` =
   UUID): zentrale Datenbank. Ort der Datenbank (`storage_url`): `configs/config.json`.
 - UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, markierte

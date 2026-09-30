@@ -73,6 +73,9 @@ class InMemoryBacklogRepository:
             raise BacklogExistsError()
         self._items[source.id] = []
 
+    def write_backlog(self, source: Source, items: Sequence[Item], language: str) -> None:
+        self._items[source.id] = [dataclasses.replace(i, project=source.project) for i in items]
+
     @staticmethod
     def _check_versions(stored: list[Item], items: Sequence[Item]) -> None:
         by_id = {i.id: i for i in stored}
@@ -120,6 +123,9 @@ class InMemoryDocumentStore:
         self._check_id(item_id)
         for key in [k for k in docs if k[0] == item_id]:
             del docs[key]
+
+    def delete_document(self, source: Source, item_id: str, name: str) -> None:
+        self._stored(source).pop(self._key(item_id, name), None)
 
     def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
         docs = self._stored(source)

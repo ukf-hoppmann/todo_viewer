@@ -267,6 +267,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/sources/{source_id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync Source
+         * @description Copies all data of a database project between the database and its sync folder (`sync_path`).
+         *
+         *     Without `confirm` this is a preview and changes nothing: what is created, what differs (`changed`: the target
+         *     is overwritten) and what the target has that the origin lacks (`missing`), plus a `token`. With `confirm` and
+         *     that token the sync is carried out; if either side changed since the preview the answer is 409 sync_stale.
+         *     Missing entries are deleted only with `delete_missing`; otherwise they stay and are listed under `kept`.
+         *     Errors: sync_path_missing (400), sync_same_backend (409), sync_source_invalid (400, `details.reason` names the
+         *     problem, nothing was changed).
+         */
+        post: operations["sync_source_api_v2_sources__source_id__sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/trash": {
         parameters: {
             query?: never;
@@ -779,6 +806,101 @@ export interface components {
              * @description Database projects: folder to sync markdown files with
              */
             sync_path: string | null;
+        };
+        /** SyncEntryOut */
+        SyncEntryOut: {
+            /**
+             * Label
+             * @description The item's id
+             */
+            label: string;
+            /**
+             * Name
+             * @description Documents: the document name; items: null
+             */
+            name: string | null;
+            /** Title */
+            title: string;
+        };
+        /** SyncIn */
+        SyncIn: {
+            /**
+             * Confirm
+             * @description false: only preview; true: carry out the sync
+             * @default false
+             */
+            confirm: boolean;
+            /**
+             * Delete Missing
+             * @description Also delete what the target has and the origin lacks; otherwise it stays
+             * @default false
+             */
+            delete_missing: boolean;
+            /**
+             * Direction
+             * @description to_md: write the database project into its sync folder; from_md: read the folder into the project
+             * @enum {string}
+             */
+            direction: "to_md" | "from_md";
+            /**
+             * Language
+             * @description Language of the headings in markdown files created
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "de";
+            /**
+             * Token
+             * @description The token of the preview being confirmed (required with confirm)
+             */
+            token?: string | null;
+        };
+        /** SyncOut */
+        SyncOut: {
+            /**
+             * Deleted
+             * @description Missing entries removed from the target
+             */
+            deleted: components["schemas"]["SyncEntryOut"][];
+            documents: components["schemas"]["SyncSectionOut"];
+            /**
+             * Executed
+             * @description false for a preview
+             */
+            executed: boolean;
+            items: components["schemas"]["SyncSectionOut"];
+            /**
+             * Kept
+             * @description Missing entries left on the target
+             */
+            kept: components["schemas"]["SyncEntryOut"][];
+            /**
+             * Skipped
+             * @description Documents the sync cannot carry (a path, not readable, missing)
+             */
+            skipped: components["schemas"]["SyncEntryOut"][];
+            /**
+             * Token
+             * @description Identifies the state of both sides; send it back to confirm this preview
+             */
+            token: string;
+        };
+        /** SyncSectionOut */
+        SyncSectionOut: {
+            /**
+             * Changed
+             * @description Exist on both sides and differ; the target is overwritten
+             */
+            changed: components["schemas"]["SyncEntryOut"][];
+            /** Created */
+            created: components["schemas"]["SyncEntryOut"][];
+            /**
+             * Missing
+             * @description Only on the target; kept unless delete_missing is set
+             */
+            missing: components["schemas"]["SyncEntryOut"][];
+            /** Unchanged */
+            unchanged: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -1902,6 +2024,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_source_api_v2_sources__source_id__sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncOut"];
                 };
             };
             /** @description Bad Request */

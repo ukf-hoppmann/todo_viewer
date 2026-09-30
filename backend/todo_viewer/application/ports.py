@@ -44,6 +44,13 @@ class BacklogRepository(Protocol):
     def initialize(self, source: Source, language: str) -> None:
         """Creates an empty backlog (with its folders) in `language`; raises BacklogExistsError if there is one."""
 
+    def write_backlog(self, source: Source, items: Sequence[Item], language: str) -> None:
+        """Makes the backlog hold exactly `items` (each in its own location, in the given order).
+
+        Items already stored stay the same items, with their documents; the others go. Missing files of a
+        markdown backlog are created in `language`. Raises the source's problem if the backlog is unusable.
+        """
+
 
 class SourceRepository(Protocol):
     def all(self) -> list[Source]:
@@ -67,6 +74,9 @@ class DocumentStore(Protocol):
 
     def delete_documents(self, source: Source, item_id: str) -> None:
         """Deletes all documents of the item, if it has any."""
+
+    def delete_document(self, source: Source, item_id: str, name: str) -> None:
+        """Deletes one document, if it exists; raises DocumentForbiddenError for names the store does not accept."""
 
     def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
         """Moves the documents of `old_id` to `new_id` and renames some of them (old name -> new name).

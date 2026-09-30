@@ -7,6 +7,7 @@ from todo_viewer.domain.editing import FieldValue
 from todo_viewer.domain.errors import DuplicateItemError, ItemNotFoundError
 from todo_viewer.domain.item import Item
 
+from .document_paths import path_of
 from .syntax import (
     ENTRY_HEADER_RE,
     FIELD_LABELS,
@@ -125,6 +126,35 @@ class EntryRenderer:
         return lines
 
 
+    def render_full(self, item: Item) -> list[str]:
+        """Writes every field of the item, so that reading the entry back gives an item with the same version.
+
+        Values the parser strips a trailing period from get one; free text is written as it is.
+        """
+        lines = [f"- `{item.id}` **{item.title}**", *_field_lines("Type", _with_period(item.item_type))]
+        if item.parent or item.item_type != "Epic":
+            lines += _field_lines("Parent", _with_period(_file_value("parent", item.parent)))
+        if item.required_for_parent is not None:
+            lines += _field_lines("Required for parent", "Yes." if item.required_for_parent else "No.")
+        for label, value in (("Status", item.status), ("Created", item.created), ("Area", item.area),
+                             ("Priority", item.priority)):
+            if value:
+                lines += _field_lines(label, _with_period(value))
+        lines += _field_lines("Dependencies", _with_period(_file_value("dependencies", tuple(item.dependencies))))
+        for label, text in (("Goal", item.goal), ("Completion criteria", item.completion_criteria),
+                            ("Summary", item.summary), ("Resolution", item.resolution)):
+            if text:
+                lines += _field_lines(label, text)
+        for label, key, names in (("Notes", "notes", item.notes), ("Spec", "spec", item.spec)):
+            if names:
+                paths = tuple(path_of(item.id, name) for name in names)
+                lines += _field_lines(label, _with_period(_file_value(key, paths)))
+        if item.deleted:
+            lines += _field_lines("Deleted", _with_period(item.deleted))
+        for label, text in item.extra_fields.items():
+            lines += _field_lines(label, text)
+        return lines
+
 class EntryMover:
     """Moves a structured entry between the `## Work items` sections of two files."""
 
@@ -156,6 +186,24 @@ class EntryMover:
         while lines and not lines[-1].strip():
             lines.pop()
         lines.extend(["", *block, ""])
+
+    def replace_entries(self, lines: list[str], entries: list[list[str]]) -> list[str]:
+        """The file with its `## Work items` section holding exactly `entries`.
+
+        Text before the heading and headings (with their text) after the section stay. Without the heading it
+        is added at the end.
+        """
+        section = self._section_start(lines)
+        if section is None:
+            text = list(lines)
+            while text and not text[-1].strip():
+                text.pop()
+            head, tail = [*text, "", "## Work items"], []
+        else:
+            end = next((i for i in range(section + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+            head, tail = lines[:section + 1], lines[end:]
+        body = [line for entry in entries for line in ("", *entry)] if entries else ["", NO_ENTRIES_LINE]
+        return [*head, *body, "", *tail]
 
     def insert(self, lines: list[str], block: list[str]) -> None:
         """Adds a new entry at the end of the `## Work items` section (before a following heading)."""

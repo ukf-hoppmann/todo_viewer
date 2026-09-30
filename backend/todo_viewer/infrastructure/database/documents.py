@@ -73,6 +73,13 @@ class DatabaseDocumentStore:
             if uid is not None:
                 conn.execute(sa.delete(documents).where(documents.c.item_uid == uid))
 
+    def delete_document(self, source: Source, item_id: str, name: str) -> None:
+        _check(item_id, name)
+        with self._db.begin() as conn:
+            uid = _uid(conn, source, item_id)
+            if uid is not None:
+                conn.execute(sa.delete(documents).where(documents.c.item_uid == uid, documents.c.name == name))
+
     def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
         """Renames documents of the item; they stay attached to it when its id changes.
 

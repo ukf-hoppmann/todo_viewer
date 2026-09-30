@@ -11,6 +11,7 @@ from .services import (
     RetypeService,
     SourceLookup,
     SourceService,
+    SyncService,
     TrashService,
     UiStateService,
 )
@@ -25,5 +26,6 @@ class Container:
     sources: SourceService
     source_lookup: SourceLookup
     documents: DocumentService
+    sync: SyncService
     folders: FolderBrowseService
     ui_state: UiStateService

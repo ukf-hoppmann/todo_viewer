@@ -32,7 +32,8 @@ def test_a_markdown_project_keeps_a_database_mirror_when_asked(api, workspace):
     on = api.put(url, {"path": str(folder), "mirror": "database"}).body
     kept = api.put(url, {"path": str(folder)}).body
 
-    assert (added["mirror"], off["mirror"], on["mirror"], kept["mirror"]) == ("database", "none", "database", "database")
+    mirrors = (added["mirror"], off["mirror"], on["mirror"], kept["mirror"])
+    assert mirrors == ("database", "none", "database", "database")
 
 
 def test_a_mirror_on_the_primary_side_or_without_a_folder_is_refused(api, workspace):

@@ -206,20 +206,22 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     `sync_same_backend`. Das Umstellen der Primärquelle ist `PUT /sources/{id}`
     mit neuem `backend` nach dem Sync (siehe Projekte). Es gibt keinen
     automatischen Sync.
-  - Sync-Status (`sync` an jedem Projekt in `GET /sources`, `GET /backlog` und
-    den Antworten von `POST`/`PUT /sources`): `{state, last_sync_at}`. `state`
-    sagt, welche Seite sich seit dem letzten Sync über diese API bewegt hat:
-    `none` (kein Spiegel), `in_sync`, `mirror_changed` (z. B. eine KI hat die
+  - Sync-Status (`GET /sources/{source_id}/sync-status`, für alle Projekte
+    `GET /sync-status`): `{source_id, state, last_sync_at}`. `state` sagt, welche
+    Seite sich seit dem letzten Sync über diese API bewegt hat: `none` (kein
+    Spiegel), `in_sync`, `mirror_changed` (z. B. eine KI hat die
     Markdown-Dateien bearbeitet), `primary_changed`, `both_changed`. Dazu
     `unknown` (nie synchronisiert und die Seiten unterscheiden sich; gleiche
     Seiten gelten als `in_sync`) und `unreadable` (eine Seite ist nicht
     lesbar, die Anfrage scheitert deshalb nicht). `last_sync_at` ist die Zeit
     des letzten Syncs mit `confirm` (ISO 8601), `null` ohne. Verglichen wird der
     Inhalt aller Items und Dokumente beider Seiten; was ein Sync absichtlich
-    stehen ließ (`kept`), zählt nicht als Änderung. Das Lesen des Status
-    ändert und synchronisiert nichts. Ändert man Ordner oder Spiegel eines
-    Projekts oder wechselt die Primärquelle, beginnt der Status wieder bei
-    `unknown` bzw. `in_sync`.
+    stehen ließ (`kept`), zählt nicht als Änderung. Der Status wird erst beim
+    Aufruf berechnet (er liest beide Seiten) und steht nicht in den Listen der
+    Projekte (`GET /sources`, `GET /backlog`); das Lesen ändert und
+    synchronisiert nichts. Ändert man Ordner oder Spiegel eines Projekts oder
+    wechselt die Primärquelle, beginnt der Status wieder bei `unknown` bzw.
+    `in_sync`.
   - `POST /backlogs`: `{path, project?, language?}` mit `language` `en`
     (Standard) oder `de`. Legt den Ordner bei Bedarf an und schreibt
     `TODO.md` und `archive.md` mit Format-Kennung, `## Work items` und
@@ -234,9 +236,8 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     (`[{name, kind: "notes"|"spec"}]`), `extra_fields` für alle weiteren
     Freitext-Felder und `archive_supported`.
   - Dokumente: `{name, kind, content, version}`.
-  - Projekte: `{id, project, path, backend, sync_path, primary, markdown_path, mirror, sync}` (`primary` = `backend`;
-    `markdown_path` der Markdown-Ordner, egal auf welcher Seite, `null` ohne; `mirror` `none`/`markdown`/`database`;
-    `sync` siehe unten); in `GET /backlog`
+  - Projekte: `{id, project, path, backend, sync_path, primary, markdown_path, mirror}` (`primary` = `backend`;
+    `markdown_path` der Markdown-Ordner, egal auf welcher Seite, `null` ohne; `mirror` `none`/`markdown`/`database`); in `GET /backlog`
     zusätzlich `item_count` und `problem`. Bei Datenbank-Projekten ist `path`
     leer.
   - `version` ist ein Hash über den gespeicherten Inhalt des Items und ändert

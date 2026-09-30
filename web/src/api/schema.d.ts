@@ -294,6 +294,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/sources/{source_id}/sync-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Source Sync Status
+         * @description Which side of a project with a mirror changed since its last sync (a sync through this API).
+         *
+         *     Computed when asked, not with the lists of projects: it reads both sides of the project. Changes nothing and
+         *     syncs nothing. `unknown` means never synced while the sides differ, `unreadable` that a side cannot be read.
+         */
+        get: operations["source_sync_status_api_v2_sources__source_id__sync_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/sync-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sync Statuses
+         * @description `GET /sources/{id}/sync-status` for every project, in the order of the projects.
+         */
+        get: operations["sync_statuses_api_v2_sync_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/trash": {
         parameters: {
             query?: never;
@@ -798,8 +841,6 @@ export interface components {
             primary: "markdown" | "database";
             /** Project */
             project: string;
-            /** @description Whether the mirror still matches the primary source; reading it changes and syncs nothing */
-            sync: components["schemas"]["SyncStatusOut"];
             /**
              * Sync Path
              * @description Database projects: folder to sync markdown files with
@@ -842,8 +883,6 @@ export interface components {
             problem: components["schemas"]["ProblemOut"] | null;
             /** Project */
             project: string;
-            /** @description Whether the mirror still matches the primary source; reading it changes and syncs nothing */
-            sync: components["schemas"]["SyncStatusOut"];
             /**
              * Sync Path
              * @description Database projects: folder to sync markdown files with
@@ -951,6 +990,8 @@ export interface components {
              * @description When the project was last synced through this API; null if never
              */
             last_sync_at: string | null;
+            /** Source Id */
+            source_id: string;
             /**
              * State
              * @description none: no mirror; in_sync; mirror_changed / primary_changed / both_changed: which side changed since the last sync (a sync through this API); unknown: never synced and the sides differ; unreadable: a side cannot be read
@@ -2196,6 +2237,129 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    source_sync_status_api_v2_sources__source_id__sync_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatusOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_statuses_api_v2_sync_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatusOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };

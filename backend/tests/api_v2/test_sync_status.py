@@ -19,11 +19,15 @@ def _sync(api, sid: str, direction: str) -> None:
     assert done.status_code == 200, done.body
 
 
+def _status(api, sid: str) -> dict:
+    return api.get(f"/api/v2/sources/{sid}/sync-status").body
+
+
 def _state(api, sid: str) -> str:
-    listed = next(s for s in api.get("/api/v2/sources").body if s["id"] == sid)["sync"]["state"]
-    in_backlog = next(s for s in api.get("/api/v2/backlog").body["sources"] if s["id"] == sid)["sync"]["state"]
-    assert listed == in_backlog  # both endpoints tell the same
-    return listed
+    one = _status(api, sid)
+    everyone = next(s for s in api.get("/api/v2/sync-status").body if s["source_id"] == sid)
+    assert one == everyone  # both endpoints tell the same
+    return one["state"]
 
 
 def _edit_folder(workspace) -> None:
@@ -42,19 +46,19 @@ def test_a_project_without_a_mirror_has_no_sync_state(api, workspace):
     bare = api.post("/api/v2/sources", {"backend": "database", "project": "Bare"}).body["id"]
 
     assert [_state(api, plain), _state(api, bare)] == ["none", "none"]
-    assert api.get("/api/v2/sources").body[0]["sync"] == {"state": "none", "last_sync_at": None}
+    assert _status(api, plain) == {"source_id": plain, "state": "none", "last_sync_at": None}
 
 
 def test_a_mirror_that_was_never_synced_is_unknown_and_a_sync_puts_it_in_sync(api, workspace):
     sid = _central(api, workspace)
 
     assert _state(api, sid) == "unknown"
-    assert api.get("/api/v2/sources").body[0]["sync"]["last_sync_at"] is None
+    assert _status(api, sid)["last_sync_at"] is None
 
     _sync(api, sid, "to_md")
 
     assert _state(api, sid) == "in_sync"
-    assert api.get("/api/v2/sources").body[0]["sync"]["last_sync_at"]
+    assert _status(api, sid)["last_sync_at"]
 
 
 def test_the_folder_of_a_database_project_changed_by_someone_else_is_reported(api, workspace):
@@ -101,7 +105,8 @@ def test_moving_the_mirror_forgets_the_last_sync(api, workspace):
     moved = api.put(f"/api/v2/sources/{sid}", {"backend": "database", "project": "Central",
                                                "sync_path": str(workspace.root / "elsewhere")}).body
 
-    assert moved["sync"] == {"state": "unknown", "last_sync_at": None}
+    assert moved["mirror"] == "markdown"
+    assert _status(api, sid) == {"source_id": sid, "state": "unknown", "last_sync_at": None}
 
 
 def test_asking_for_the_state_changes_and_syncs_nothing(api, workspace):
@@ -116,3 +121,23 @@ def test_asking_for_the_state_changes_and_syncs_nothing(api, workspace):
 
     assert files == {p.name: p.read_bytes() for p in Path(workspace.root / "md").rglob("*") if p.is_file()}
     assert versions == {i["id"]: i["version"] for i in api.get("/api/v2/backlog").body["items"]}
+
+
+def test_the_lists_of_projects_do_not_compute_the_state(api, workspace):
+    sid = _central(api, workspace)
+    _sync(api, sid, "to_md")
+    # a folder that cannot be read would make the state expensive or broken; the lists must not care
+    (workspace.root / "md" / "TODO.md").write_text("not a backlog at all\n", encoding="utf-8")
+
+    listed = api.get("/api/v2/sources").body
+    backlog = api.get("/api/v2/backlog").body["sources"]
+
+    assert all("sync" not in s for s in [*listed, *backlog])
+    assert api.put(f"/api/v2/sources/{sid}", {"backend": "database", "project": "Central",
+                                              "sync_path": str(workspace.root / "md")}).status_code == 200
+
+
+def test_the_state_of_an_unknown_project_is_a_404(api, workspace):
+    missing = api.get("/api/v2/sources/no-such-project/sync-status")
+
+    assert (missing.status_code, missing.body["code"]) == (404, "source_gone")

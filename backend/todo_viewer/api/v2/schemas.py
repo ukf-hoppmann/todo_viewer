@@ -118,6 +118,7 @@ class IndexOut(BaseModel):
 
 
 class SyncStatusOut(BaseModel):
+    source_id: str
     state: Literal[
         "none", "in_sync", "mirror_changed", "primary_changed", "both_changed", "unknown", "unreadable"
     ] = Field(
@@ -127,10 +128,8 @@ class SyncStatusOut(BaseModel):
     last_sync_at: str | None = Field(description="When the project was last synced through this API; null if never")
 
     @classmethod
-    def of(cls, status: SyncStatus | None) -> SyncStatusOut:
-        if status is None:
-            return cls(state="none", last_sync_at=None)
-        return cls(state=status.state.value, last_sync_at=status.last_sync_at)
+    def of(cls, source: Source, status: SyncStatus) -> SyncStatusOut:
+        return cls(source_id=source.id, state=status.state.value, last_sync_at=status.last_sync_at)
 
 
 class SourceOut(BaseModel):
@@ -145,18 +144,15 @@ class SourceOut(BaseModel):
                     "database project; null if a database project has none")
     mirror: Literal["none", "markdown", "database"] = Field(
         description="The other side kept as a mirror; it is written by a sync only")
-    sync: SyncStatusOut = Field(description="Whether the mirror still matches the primary source; reading it "
-                                            "changes and syncs nothing")
 
     @classmethod
-    def of(cls, source: Source, status: SyncStatus | None = None) -> SourceOut:
+    def of(cls, source: Source) -> SourceOut:
         return cls(id=source.id, project=source.project, path=source.path,
                    backend=source.backend,  # type: ignore[arg-type]
                    sync_path=source.sync_path,
                    primary=source.backend,  # type: ignore[arg-type]
                    markdown_path=source.markdown_path,
-                   mirror=source.mirror,  # type: ignore[arg-type]
-                   sync=SyncStatusOut.of(status))
+                   mirror=source.mirror)  # type: ignore[arg-type]
 
 
 class SourceStatusOut(SourceOut):

@@ -86,9 +86,20 @@ def test_the_database_location_comes_from_the_config_read_at_start(workspace, se
     assert not (workspace.config_dir / "todo.db").exists()
 
 
-def test_markdown_projects_do_not_create_a_database(api, workspace):
+def test_an_existing_installation_moves_its_projects_and_ui_state_into_the_database(api, workspace):
     folder = workspace.add_backlog("backlog")
-    workspace.write_config([{"project": "backlog", "path": str(folder)}])
+    workspace.config_dir.mkdir(parents=True, exist_ok=True)
+    config = {"storage_url": f"sqlite:///{workspace.config_dir / 'todo.db'}",
+              "sources": [{"project": "backlog", "path": str(folder)}]}
+    (workspace.config_dir / "config.json").write_text(json.dumps(config), encoding="utf-8")
+    (workspace.config_dir / "ui_state.json").write_text(json.dumps({"view": "kanban"}), encoding="utf-8")
 
-    assert api.get("/api/v2/backlog").status_code == 200
-    assert not (workspace.config_dir / "todo.db").exists()
+    backlog = api.get("/api/v2/backlog").body
+
+    assert [(s["project"], s["path"], s["item_count"]) for s in backlog["sources"]] == [("backlog", str(folder), 7)]
+    assert api.get("/api/v2/ui-state").body == {"view": "kanban"}
+    assert json.loads((workspace.config_dir / "config.json").read_text(encoding="utf-8")) == {
+        "storage_url": config["storage_url"]}
+    assert json.loads((workspace.config_dir / "config.json.bak").read_text(encoding="utf-8")) == config
+    assert (workspace.config_dir / "ui_state.json.bak").is_file()
+    assert (folder / "TODO.md").is_file()  # the markdown project stays in its files

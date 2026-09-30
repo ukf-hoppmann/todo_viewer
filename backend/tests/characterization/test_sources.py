@@ -9,7 +9,7 @@ def test_add_source_suggests_repo_name(api, workspace):
 
     assert resp.status_code == 200
     assert (resp.body["project"], resp.body["path"]) == ("MyRepo", str(folder))
-    assert workspace.read_config() == {"sources": [{"project": "MyRepo", "path": str(folder)}]}
+    assert [(s["project"], s["path"]) for s in api.get("/api/v2/sources").body] == [("MyRepo", str(folder))]
 
 
 def test_add_source_with_name_and_duplicate(api, workspace):
@@ -57,7 +57,7 @@ def test_update_source_keeps_unknown_keys(api, workspace):
     gone = api.put("/api/v2/sources/unknown", {"path": str(a)})
 
     assert renamed.body["project"] == "A2"
-    assert workspace.read_config()["sources"][0] == {"project": "A2", "path": str(a), "extra": "kept"}
+    assert [(s["id"], s["project"]) for s in api.get("/api/v2/sources").body] == [(ids[0], "A2"), (ids[1], "B")]
     assert (dup.status_code, dup.body["code"]) == (409, "duplicate")
     assert (gone.status_code, gone.body["code"]) == (404, "source_gone")
 
@@ -73,4 +73,4 @@ def test_remove_source(api, workspace):
 
     assert removed.body["path"] == str(a)
     assert (gone.status_code, gone.body["code"]) == (404, "source_gone")
-    assert workspace.read_config() == {"sources": [{"project": "B", "path": str(b)}]}
+    assert [s["path"] for s in api.get("/api/v2/sources").body] == [str(b)]

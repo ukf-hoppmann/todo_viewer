@@ -1,9 +1,11 @@
 """The central database: connected lazily, migrated on first use."""
 from __future__ import annotations
 
+import contextlib
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 import sqlalchemy as sa
@@ -43,6 +45,10 @@ class Database:
     def _create_engine(self) -> sa.Engine:
         engine = sa.create_engine(self._url)
         if engine.dialect.name == "sqlite":
+            if engine.url.database and engine.url.database != ":memory:":
+                # A missing folder (e.g. a fresh configs/) is created; if that fails, opening reports it.
+                with contextlib.suppress(OSError):
+                    Path(engine.url.database).parent.mkdir(parents=True, exist_ok=True)
             # pysqlite starts transactions late and ignores deferred constraints unless it is told to begin.
             @sa.event.listens_for(engine, "connect")
             def _on_connect(dbapi_conn: Any, _record: Any) -> None:

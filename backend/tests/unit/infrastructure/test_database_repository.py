@@ -85,7 +85,8 @@ def test_an_unknown_project_is_an_empty_backlog(repo: DatabaseBacklogRepository)
 
 
 def test_an_unreachable_database_is_reported_as_a_problem(tmp_path: Path):
-    repo = DatabaseBacklogRepository(Database(f"sqlite:///{tmp_path / 'missing' / 'todo.db'}"))
+    (tmp_path / "a-file").write_text("not a folder", encoding="utf-8")
+    repo = DatabaseBacklogRepository(Database(f"sqlite:///{tmp_path / 'a-file' / 'todo.db'}"))
 
     assert repo.check(SOURCE).code == "db_unavailable"
     assert repo.load(SOURCE).problem.code == "db_unavailable"

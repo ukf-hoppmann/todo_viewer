@@ -54,8 +54,7 @@ def test_config_migrates_file_paths_to_folders(api, workspace):
     resp = api.get("/api/v2/sources")
 
     assert [(s["project"], s["path"]) for s in resp.body] == [("Backlog", str(folder))]
-    assert workspace.read_config() == {"sources": [{"project": "Backlog", "path": str(folder), "color": "red"}],
-                                       "other": 1}
+    assert workspace.read_config() == {"other": 1}  # the sources moved into the database
 
 
 def test_documents(api, workspace):
@@ -106,5 +105,7 @@ def test_ui_state_roundtrip(api, workspace):
     assert bad.status_code == 400
     assert api.get("/api/v2/ui-state").body == {"view": "kanban", "hidden": {"status": ["Rejected"]}}
 
+    # A leftover ui_state.json of an earlier version, even a broken one, does not replace the stored state.
     (workspace.config_dir / "ui_state.json").write_text("{broken", encoding="utf-8")
-    assert api.get("/api/v2/ui-state").body == {}
+    assert api.get("/api/v2/ui-state").body == {"view": "kanban", "hidden": {"status": ["Rejected"]}}
+    assert (workspace.config_dir / "ui_state.json.bak").is_file()

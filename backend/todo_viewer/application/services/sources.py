@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import dataclasses
+import uuid
+from collections.abc import Callable
+
 from todo_viewer.domain.errors import DuplicateSourceError, InvalidSourceError, SourceGoneError
 from todo_viewer.domain.source import Source
 
@@ -22,16 +26,18 @@ class SourceLookup:
 class SourceService:
     """Adds, changes and removes configured backlog folders."""
 
-    def __init__(self, sources: SourceRepository, backlogs: BacklogRepository, names: ProjectNameSuggester):
+    def __init__(self, sources: SourceRepository, backlogs: BacklogRepository, names: ProjectNameSuggester,
+                 new_id: Callable[[], str] = lambda: str(uuid.uuid4())):
         self._sources = sources
         self._backlogs = backlogs
         self._names = names
+        self._new_id = new_id
 
     def all(self) -> list[Source]:
         return self._sources.all()
 
     def add(self, path: str, project: str | None) -> Source:
-        source = self._validated(path, project)
+        source = dataclasses.replace(self._validated(path, project), id=self._new_id())
         with self._sources.edit() as sources:
             if any(s.path == source.path for s in sources):
                 raise DuplicateSourceError()
@@ -45,7 +51,7 @@ class SourceService:
             if any(s.path == path for s in sources):
                 raise DuplicateSourceError()
             self._backlogs.initialize(Source(project="", path=path), language)
-            source = self._validated(path, project)
+            source = dataclasses.replace(self._validated(path, project), id=self._new_id())
             sources.append(source)
         return source
 

@@ -1,7 +1,8 @@
 """Service tests against in-memory fakes of the ports: no files, no web framework."""
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
+import itertools
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from datetime import date
 
@@ -127,9 +128,14 @@ class Names:
         return "suggested"
 
 
+def _ids() -> Callable[[], str]:
+    counter = itertools.count(1)
+    return lambda: f"id-{next(counter)}"
+
+
 def _sources(initial: list[Source] | None = None) -> tuple[SourceService, InMemorySources]:
     repo = InMemorySources(initial)
-    return SourceService(repo, FakeBacklogs(), Names()), repo
+    return SourceService(repo, FakeBacklogs(), Names(), _ids()), repo
 
 
 def test_add_source_trims_and_suggests_name():
@@ -137,7 +143,7 @@ def test_add_source_trims_and_suggests_name():
 
     added = service.add(" /repo/docs/ ", "  ")
 
-    assert added == Source("suggested", "/repo/docs")
+    assert added == Source("suggested", "/repo/docs", id="id-1")
     assert repo.sources == [added]
 
 
@@ -156,8 +162,8 @@ def test_add_source_rejects_problems_and_duplicates():
 
 def test_create_backlog_initializes_folder_and_adds_source():
     backlogs = FakeBacklogs()
-    repo = InMemorySources([Source("A", "/a")])
-    service = SourceService(repo, backlogs, Names())
+    repo = InMemorySources([Source("A", "/a", id="a")])
+    service = SourceService(repo, backlogs, Names(), _ids())
 
     created = service.create_backlog(" /new/docs/todo/ ", None, "de")
     with pytest.raises(DuplicateSourceError):
@@ -165,14 +171,14 @@ def test_create_backlog_initializes_folder_and_adds_source():
     with pytest.raises(InvalidSourceError) as missing:
         service.create_backlog(" ", None, "en")
 
-    assert created == Source("suggested", "/new/docs/todo")
-    assert repo.sources == [Source("A", "/a"), created]
+    assert created == Source("suggested", "/new/docs/todo", id="id-1")
+    assert repo.sources == [Source("A", "/a", id="a"), created]
     assert backlogs.initialized == [("/new/docs/todo", "de")]
     assert missing.value.code == "missing_path"
 
 
 def test_update_keeps_extra_fields_and_remove_by_id():
-    a, b = Source("A", "/a", extra={"color": "red"}), Source("B", "/b")
+    a, b = Source("A", "/a", id="a", extra={"color": "red"}), Source("B", "/b", id="b")
     service, repo = _sources([a, b])
 
     updated = service.update(a.id, "/a2", "A2")

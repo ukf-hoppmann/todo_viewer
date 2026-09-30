@@ -30,26 +30,6 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     als Speicher wählbar, mit Sync in beide Richtungen auf Knopfdruck.
   - Spec: `items/EPIC-003/EPIC-003_spec.md`.
 
-- `STORY-020` **Port-Vertrag als Contract-Suite und Routing je Projekt**
-  - Type: Story.
-  - Parent: `EPIC-003`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `STORY-019`.
-  - Goal: Die Charakterisierungstests laufen als parametrisierte
-    Contract-Suite gegen jeden BacklogRepository-/DocumentStore-Adapter. Ein
-    RoutingRepository wählt je Source.backend (markdown | database) den
-    Adapter; Verdrahtung in bootstrap.py.
-  - Completion criteria: Die Contract-Suite läuft gegen den Markdown-Adapter
-    und einen In-Memory-Fake, alle bisherigen Tests sind grün, das Verhalten
-    ist unverändert, Source hat das Feld backend (Standard markdown).
-  - Summary: Bestehende Tests werden zu einem wiederverwendbaren Maßstab für
-    neue Adapter; Routing je Projekt kommt dazu.
-  - Spec: `items/STORY-020/STORY-020_spec.md`.
-
 - `STORY-021` **SQLite-Adapter für Items, Archiv, Papierkorb und Dokumente**
   - Type: Story.
   - Parent: `EPIC-003`.
@@ -58,7 +38,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `STORY-020`.
+  - Dependencies: `STORY-020`, `STORY-027`.
   - Goal: Ein Datenbank-Adapter (SQLAlchemy Core, SQLite) implementiert
     BacklogRepository und DocumentStore, inklusive Archiv, Papierkorb,
     Notizen und Specs. Die Daten werden normalisiert in Tabellen gespeichert
@@ -72,6 +52,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Neuer DB-Adapter, der dieselbe Contract-Suite besteht wie
     Markdown.
   - Spec: `items/STORY-021/STORY-021_spec.md`.
+  - Notes: `items/STORY-021/STORY-021_notes.md`.
 
 - `STORY-022` **Projekte und UI-State in der zentralen Datenbank**
   - Type: Story.
@@ -176,3 +157,27 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ist.
   - Summary: Optionaler zweiter Datenbank-Typ.
   - Spec: `items/STORY-026/STORY-026_spec.md`.
+
+- `STORY-027` **Dokument-Port itembasiert statt pfadbasiert**
+  - Type: Story.
+  - Parent: `EPIC-003`.
+  - Required for parent: Yes.
+  - Status: In progress.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-020`.
+  - Goal: Domain und Application adressieren Notizen und Specs nur noch über
+    Item-ID und Dokumentname. Wo und wie ein Dokument liegt (Ordner
+    items/<ID>/, Dateinamen, Umbenennen beim Typwechsel), weiß nur der
+    Speicher-Adapter. Damit muss ein Datenbank-Adapter keine Ordnerstruktur
+    nachbauen.
+  - Completion criteria: Der DocumentStore-Port nimmt Item-ID und
+    Dokumentname statt Pfaden; domain/documents.py und RetypePlanner kennen
+    keine Pfade mehr; die HTTP-API und die Markdown-Dateien verhalten sich
+    unverändert (Markdown-Goldens byte-gleich; in JSON-Goldens ändern sich
+    nur die version-Werte von Items mit Dokumenten); die Contract-Suite
+    prüft den neuen Port für Markdown und den Fake.
+  - Summary: Umbau vor dem Datenbank-Adapter: Dokumente werden über Item und
+    Namen angesprochen, die Ablage entscheidet der Adapter.
+  - Notes: `items/STORY-027/STORY-027_notes.md`.

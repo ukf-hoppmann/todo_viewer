@@ -541,3 +541,25 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Resolution: Architekturregeln (Regel 1, Backend-Scope Abschnitt 5,
     import-linter) am 2026-09-30 vom Projekteigner bestätigt; Commit
     f64b4cc.
+
+- `STORY-020` **Port-Vertrag als Contract-Suite und Routing je Projekt**
+  - Type: Story.
+  - Parent: `EPIC-003`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-019`.
+  - Goal: Die Charakterisierungstests laufen als parametrisierte
+    Contract-Suite gegen jeden BacklogRepository-/DocumentStore-Adapter. Ein
+    RoutingRepository wählt je Source.backend (markdown | database) den
+    Adapter; Verdrahtung in bootstrap.py.
+  - Completion criteria: Die Contract-Suite läuft gegen den Markdown-Adapter
+    und einen In-Memory-Fake, alle bisherigen Tests sind grün, das Verhalten
+    ist unverändert, Source hat das Feld backend (Standard markdown).
+  - Summary: Bestehende Tests werden zu einem wiederverwendbaren Maßstab für
+    neue Adapter; Routing je Projekt kommt dazu.
+  - Spec: `items/STORY-020/STORY-020_spec.md`.
+  - Resolution: Vom Projekteigner bestätigt am 2026-09-30; umgesetzt in
+    Merge d44626d, Release v0.2.2.

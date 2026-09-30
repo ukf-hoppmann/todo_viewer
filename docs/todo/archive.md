@@ -639,3 +639,33 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Spec: `items/STORY-022/STORY-022_spec.md`.
   - Notes: `items/STORY-022/STORY-022_notes.md`.
   - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.
+
+- `STORY-023` **Sync zwischen Datenbank und Markdown (to_md / from_md)**
+  - Type: Story.
+  - Parent: `EPIC-003`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-022`.
+  - Goal: Ein Sync-Service überträgt auf Knopfdruck oder API-Aufruf (POST
+    /api/v2/sources/{id}/sync mit direction=to_md|from_md) alle Daten eines
+    Projekts: TODO.md, archive.md und alle Items samt Notizen und Specs.
+    Vorher gibt es eine Vorschau (neu, geändert, fehlend), Überschreiben nur
+    mit Bestätigung; Konflikte werden über den Versionshash je Item erkannt.
+    Löschungen (Einträge, die auf der Zielseite existieren, auf der
+    Quellseite aber fehlen) werden als Warnung angezeigt und nur nach
+    Rückfrage ausgeführt.
+  - Completion criteria: Sync in beide Richtungen funktioniert per API mit
+    Vorschau und Bestätigung. Der Export ist stabil (export -> import ->
+    export ergibt identische Dateien) und der Import gibt dieselben Items
+    zurück (gleiche Item.version); die .md müssen nicht byte-gleich zum
+    Ausgangstext sein. Fehlende Einträge werden in der Vorschau als Warnung
+    gemeldet und nur nach ausdrücklicher Nachfrage gelöscht. Ohne Sync-Pfad
+    wird mit klarem Fehlercode abgelehnt.
+  - Summary: Zweiseitiger Sync auf Knopfdruck, keine automatische
+    Spiegelung.
+  - Spec: `items/STORY-023/STORY-023_spec.md`.
+  - Notes: `items/STORY-023/STORY-023_notes.md`.
+  - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.

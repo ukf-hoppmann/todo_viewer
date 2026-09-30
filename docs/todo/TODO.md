@@ -34,7 +34,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-003`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -57,6 +57,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Zweiseitiger Sync auf Knopfdruck, keine automatische
     Spiegelung.
   - Spec: `items/STORY-023/STORY-023_spec.md`.
+  - Notes: `items/STORY-023/STORY-023_notes.md`.
 
 - `STORY-024` **Speicher-Backend und Sync in der UI bedienen**
   - Type: Story.

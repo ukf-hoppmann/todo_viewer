@@ -25,6 +25,7 @@ from .schemas import (
     ItemRetypeIn,
     NotesEntryIn,
     ProblemOut,
+    RetypeOut,
     SourceIn,
     SourceOut,
     SourceStatusOut,
@@ -133,16 +134,17 @@ def edit_item(source_id: str, item_id: str, body: ItemEditIn, items: Items, look
 
 
 @router.post("/items/{source_id}/{item_id}/retype", tags=["items"])
-def retype_item(source_id: str, item_id: str, body: ItemRetypeIn, retype: Retype, lookup: Lookup) -> ItemOut:
+def retype_item(source_id: str, item_id: str, body: ItemRetypeIn, retype: Retype, lookup: Lookup) -> RetypeOut:
     """Changes the type of the item in `version`. The type is the id's prefix, so the item gets the next free id
     of the new type, and every reference to the old id follows: parent and dependencies of other items, free texts,
-    notes and specs (their content and the items/<ID>/ folder). The answer is the item under its new id.
+    notes and specs (their content and the items/<ID>/ folder). The answer is the item under its new id, the old
+    id, and notices: references outside the backlog (technical docs, daily reports, code, commit messages) are not
+    updated, so look for the old id there (notice external_references_may_remain).
 
     Refused when the new type breaks a lifecycle rule (e.g. an epic with a parent) or the item is in the trash.
     """
     source = lookup.by_id(source_id)
-    result = retype.retype(source, item_id, body.version, body.type)
-    return ItemOut.of(source, result.item, result.archive_supported)
+    return RetypeOut.of(source, retype.retype(source, item_id, body.version, body.type))
 
 
 @router.get("/items/{source_id}/{item_id}/documents/{name}", tags=["documents"])

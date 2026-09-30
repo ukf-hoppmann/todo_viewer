@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from todo_viewer.application.ports import FolderListing
-from todo_viewer.application.services import DocumentResult
+from todo_viewer.application.services import DocumentResult, RetypeResult
 from todo_viewer.domain.documents import DocumentRef, item_documents
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
@@ -198,6 +198,25 @@ class ItemRetypeIn(BaseModel):
 
     version: str = Field(description="The item's version as last read; a changed item answers 409")
     type: str = Field(description="The new type: Epic, Story or Task; differs from the current one")
+
+
+class NoticeOut(BaseModel):
+    """Something to know after a successful change; `code` is stable (translate it), `message` is English."""
+
+    code: str
+    message: str
+    details: dict[str, str] = Field(default_factory=dict)
+
+
+class RetypeOut(BaseModel):
+    item: ItemOut = Field(description="The item under its new id")
+    old_id: str
+    notices: list[NoticeOut] = Field(description="E.g. external_references_may_remain: check docs outside the backlog")
+
+    @classmethod
+    def of(cls, source: Source, result: RetypeResult) -> RetypeOut:
+        return cls(item=ItemOut.of(source, result.item, result.archive_supported), old_id=result.old_id,
+                   notices=[NoticeOut(code=n.code, message=n.message, details=n.details) for n in result.notices])
 
 
 class ItemEditIn(BaseModel):

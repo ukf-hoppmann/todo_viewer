@@ -26,6 +26,15 @@ def rewrite_ids(text: str, old: str, new: str) -> str:
 
 
 @dataclass(frozen=True)
+class Notice:
+    """Something the caller should know after a successful change. `code` is stable, `message` is English."""
+
+    code: str
+    message: str
+    details: dict[str, str]
+
+
+@dataclass(frozen=True)
 class RetypePlan:
     new_id: str
     # Items whose stored entry changes (the item itself and everything that mentions it), in backlog order.
@@ -34,6 +43,7 @@ class RetypePlan:
     file_renames: dict[str, str]
     # Every notes/spec document of the backlog: path before -> path after the retype.
     document_paths: dict[str, str]
+    notices: tuple[Notice, ...]
 
 
 class RetypePlanner:
@@ -76,7 +86,17 @@ class RetypePlanner:
             changes=tuple(changes),
             file_renames={_name(p): _name(moved(p)) for p in (*item.notes, *item.spec) if moved(p) != p},
             document_paths={p: moved(p) for p in paths},
+            notices=(_external_references(item_id, new_id),),
         )
+
+
+def _external_references(old_id: str, new_id: str) -> Notice:
+    return Notice(
+        code="external_references_may_remain",
+        message=(f"References to {old_id} outside the backlog (technical docs, daily reports, code, commit "
+                 f"messages) are not updated. Search for {old_id} and adapt where it is now {new_id}."),
+        details={"old_id": old_id, "new_id": new_id},
+    )
 
 
 def _name(path: str) -> str:

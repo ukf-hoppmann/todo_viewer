@@ -143,3 +143,15 @@ def test_item_in_the_trash_is_refused():
         planner.plan([item("STORY-008", "Story", deleted="2026-09-01")], "STORY-008", "Task")
 
     assert err.value.code == "item_deleted"
+
+
+# ---------- notices ----------
+
+def test_plan_warns_about_references_outside_the_backlog():
+    plan = planner.plan([item("STORY-008", "Story")], "STORY-008", "Task")
+
+    (notice,) = plan.notices
+    assert (notice.code, notice.details) == ("external_references_may_remain",
+                                             {"old_id": "STORY-008", "new_id": "TASK-001"})
+    assert "STORY-008" in notice.message and "TASK-001" in notice.message
+    assert "outside the backlog" in notice.message

@@ -23,7 +23,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `POST /trash/{source_id}/{item_id}/restore` | Holt ein Item samt Nachfahren aus dem Papierkorb (`{version}`). |
 | `DELETE /trash/{source_id}/{item_id}?version=…` | Löscht ein Item im Papierkorb samt Nachfahren und Ordnern `items/<ID>/` endgültig. |
 | `PATCH /items/{source_id}/{item_id}` | Ändert ein oder mehrere Felder eines Items in einem Schritt. |
-| `POST /items/{source_id}/{item_id}/retype` | Ändert den Typ eines Items; es bekommt die nächste freie ID des neuen Typs, alle Verweise im Backlog folgen (`{version, type}`). |
+| `POST /items/{source_id}/{item_id}/retype` | Ändert den Typ eines Items; es bekommt die nächste freie ID des neuen Typs, alle Verweise im Backlog folgen (`{version, type}`); die Antwort nennt mit `notices` mögliche Verweise außerhalb des Backlogs. |
 | `GET /items/{source_id}/{item_id}/documents/{name}` | Notes- oder Spec-Dokument eines Items lesen, mit `version`. |
 | `PUT /items/{source_id}/{item_id}/documents/{name}` | Notizen oder Spec mit dem ganzen neuen Text ersetzen oder neu anlegen. |
 | `POST /items/{source_id}/{item_id}/notes` | Datierten Notes-Eintrag anhängen. |
@@ -84,7 +84,13 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     Papierkorb), Titel, Summary, Goal, Completion criteria und Resolution, in
     denen die alte ID steht, sowie Inhalt und Dateinamen der Notes und
     Specs; der Ordner `items/<alte ID>/` wird zu `items/<neue ID>/`. Die
-    Antwort ist das Item unter seiner neuen ID. Die Parent-Regeln werden
+    Antwort ist `{item, old_id, notices}`: das Item unter seiner neuen ID, die
+    alte ID und eine Liste von Hinweisen `{code, message, details}`. Der
+    Hinweis `external_references_may_remain` (`details.old_id`,
+    `details.new_id`) sagt, dass Verweise außerhalb des Backlogs
+    (Techdocs, Tagesberichte, Code, Commit-Messages) nicht angepasst wurden und
+    geprüft werden sollten; die UI übersetzt den `code`, `message` ist
+    englisch und für Agenten gedacht. Die Parent-Regeln werden
     vorher geprüft (z. B. ein Epic hat keinen Parent: 409 `epic_with_parent`);
     gleicher oder unbekannter Typ ergibt 400 `invalid_value`, ein Item im
     Papierkorb 409 `item_deleted`. Existiert `items/<neue ID>/` schon, lehnt
@@ -196,7 +202,10 @@ Build, antwortet der Server mit 503 und einem Hinweis.
      `GET …/documents/{name}` holen, `PUT …/documents/{name}` mit
      `{content, version}` zurückschreiben.
   7. Typ ändern: `POST /items/{source_id}/{id}/retype` mit `{version, type}`;
-     das Item hat danach eine neue ID, die Antwort nennt sie.
+     das Item hat danach eine neue ID (`item.id`). `notices` nennt, was der
+     Server nicht anpassen kann (`external_references_may_remain`): auf
+     Anfrage des Projekteigners nach der alten ID (`old_id`) in Techdocs,
+     Tagesberichten und Code suchen und sie durch die neue ersetzen.
   8. Löschen: `DELETE /items/{source_id}/{id}?version=…` (Papierkorb; bei
      Kindern erst Warnung, dann mit `cascade=true`); wiederherstellen oder
      endgültig löschen über `/trash`.

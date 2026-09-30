@@ -890,6 +890,32 @@
         "title": "NotesEntryIn",
         "type": "object"
       },
+      "NoticeOut": {
+        "description": "Something to know after a successful change; `code` is stable (translate it), `message` is English.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "NoticeOut",
+        "type": "object"
+      },
       "ProblemOut": {
         "properties": {
           "code": {
@@ -906,6 +932,33 @@
           "message"
         ],
         "title": "ProblemOut",
+        "type": "object"
+      },
+      "RetypeOut": {
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/ItemOut",
+            "description": "The item under its new id"
+          },
+          "notices": {
+            "description": "E.g. external_references_may_remain: check docs outside the backlog",
+            "items": {
+              "$ref": "#/components/schemas/NoticeOut"
+            },
+            "title": "Notices",
+            "type": "array"
+          },
+          "old_id": {
+            "title": "Old Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item",
+          "old_id",
+          "notices"
+        ],
+        "title": "RetypeOut",
         "type": "object"
       },
       "SourceIn": {
@@ -2143,7 +2196,7 @@
     },
     "/api/v2/items/{source_id}/{item_id}/retype": {
       "post": {
-        "description": "Changes the type of the item in `version`. The type is the id's prefix, so the item gets the next free id\nof the new type, and every reference to the old id follows: parent and dependencies of other items, free texts,\nnotes and specs (their content and the items/<ID>/ folder). The answer is the item under its new id.\n\nRefused when the new type breaks a lifecycle rule (e.g. an epic with a parent) or the item is in the trash.",
+        "description": "Changes the type of the item in `version`. The type is the id's prefix, so the item gets the next free id\nof the new type, and every reference to the old id follows: parent and dependencies of other items, free texts,\nnotes and specs (their content and the items/<ID>/ folder). The answer is the item under its new id, the old\nid, and notices: references outside the backlog (technical docs, daily reports, code, commit messages) are not\nupdated, so look for the old id there (notice external_references_may_remain).\n\nRefused when the new type breaks a lifecycle rule (e.g. an epic with a parent) or the item is in the trash.",
         "operationId": "retype_item_api_v2_items__source_id___item_id__retype_post",
         "parameters": [
           {
@@ -2180,7 +2233,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemOut"
+                  "$ref": "#/components/schemas/RetypeOut"
                 }
               }
             },

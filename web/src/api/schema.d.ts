@@ -218,7 +218,9 @@ export interface paths {
          * Retype Item
          * @description Changes the type of the item in `version`. The type is the id's prefix, so the item gets the next free id
          *     of the new type, and every reference to the old id follows: parent and dependencies of other items, free texts,
-         *     notes and specs (their content and the items/<ID>/ folder). The answer is the item under its new id.
+         *     notes and specs (their content and the items/<ID>/ folder). The answer is the item under its new id, the old
+         *     id, and notices: references outside the backlog (technical docs, daily reports, code, commit messages) are not
+         *     updated, so look for the old id there (notice external_references_may_remain).
          *
          *     Refused when the new type breaks a lifecycle rule (e.g. an epic with a parent) or the item is in the trash.
          */
@@ -674,12 +676,38 @@ export interface components {
             /** Topic */
             topic: string;
         };
+        /**
+         * NoticeOut
+         * @description Something to know after a successful change; `code` is stable (translate it), `message` is English.
+         */
+        NoticeOut: {
+            /** Code */
+            code: string;
+            /** Details */
+            details?: {
+                [key: string]: string;
+            };
+            /** Message */
+            message: string;
+        };
         /** ProblemOut */
         ProblemOut: {
             /** Code */
             code: string;
             /** Message */
             message: string;
+        };
+        /** RetypeOut */
+        RetypeOut: {
+            /** @description The item under its new id */
+            item: components["schemas"]["ItemOut"];
+            /**
+             * Notices
+             * @description E.g. external_references_may_remain: check docs outside the backlog
+             */
+            notices: components["schemas"]["NoticeOut"][];
+            /** Old Id */
+            old_id: string;
         };
         /** SourceIn */
         SourceIn: {
@@ -1567,7 +1595,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ItemOut"];
+                    "application/json": components["schemas"]["RetypeOut"];
                 };
             };
             /** @description Bad Request */

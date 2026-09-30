@@ -15,6 +15,7 @@ const bare = sourceStatus({ id: "s3", project: "Bare", sync_path: null, markdown
 const files = sourceStatus({
   id: "s2", project: "Files", backend: "markdown", path: "/repos/a/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/a/docs", mirror: "none",
 });
+const switchedOff = sourceStatus({ id: "s5", project: "Off", sync_path: "/repos/off", markdown_path: "/repos/off", mirror: "none" });
 const mirrored = sourceStatus({
   id: "s4", project: "Mirrored", backend: "markdown", path: "/repos/m/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/m/docs", mirror: "database",
 });
@@ -210,14 +211,29 @@ describe("ProjectsSection: folders and mirrors", () => {
     confirm.mockRestore();
   });
 
-  it("removes the markdown mirror of a database project", async () => {
-    const calls = stub([central], [status(central, "in_sync")], () => jsonResponse({ ...central, sync_path: null, markdown_path: null, mirror: "none" }));
+  it("switches the markdown mirror of a database project off and keeps its folder", async () => {
+    const calls = stub([central], [status(central, "in_sync")], () => jsonResponse({ ...central, mirror: "none" }));
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Central" })).getByRole("button", { name: "Spiegel entfernen" }));
+    await userEvent.click(within(await screen.findByRole("group", { name: "Central" })).getByRole("button", { name: "Spiegel ausschalten" }));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
-    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Central", sync_path: "", mirror: "none" });
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Central", sync_path: "/repos/central", mirror: "none" });
+  });
+
+  it("switches it on again without asking for a folder", async () => {
+    const calls = stub([switchedOff], [status(switchedOff, "none")], () => jsonResponse({ ...switchedOff, mirror: "markdown" }));
+    renderWithProviders(<ProjectsSection />);
+
+    const group = await screen.findByRole("group", { name: "Off" });
+    expect(within(group).getByText("/repos/off")).toBeInTheDocument();  // the folder is still there
+    expect(within(group).getByText("Markdown-Spiegel aus")).toBeInTheDocument();
+    expect(within(group).getByRole("button", { name: "Sync…" })).toBeDisabled();
+    await userEvent.click(within(group).getByRole("button", { name: "Spiegel einschalten" }));
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Off", sync_path: "/repos/off", mirror: "markdown" });
   });
 
   it("shows a translated error of the server and changes nothing on screen", async () => {

@@ -34,7 +34,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-003`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -157,27 +157,3 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ist.
   - Summary: Optionaler zweiter Datenbank-Typ.
   - Spec: `items/STORY-026/STORY-026_spec.md`.
-
-- `STORY-027` **Dokument-Port itembasiert statt pfadbasiert**
-  - Type: Story.
-  - Parent: `EPIC-003`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `STORY-020`.
-  - Goal: Domain und Application adressieren Notizen und Specs nur noch über
-    Item-ID und Dokumentname. Wo und wie ein Dokument liegt (Ordner
-    items/<ID>/, Dateinamen, Umbenennen beim Typwechsel), weiß nur der
-    Speicher-Adapter. Damit muss ein Datenbank-Adapter keine Ordnerstruktur
-    nachbauen.
-  - Completion criteria: Der DocumentStore-Port nimmt Item-ID und
-    Dokumentname statt Pfaden; domain/documents.py und RetypePlanner kennen
-    keine Pfade mehr; die HTTP-API und die Markdown-Dateien verhalten sich
-    unverändert (Markdown-Goldens byte-gleich; in JSON-Goldens ändern sich
-    nur die version-Werte von Items mit Dokumenten); die Contract-Suite
-    prüft den neuen Port für Markdown und den Fake.
-  - Summary: Umbau vor dem Datenbank-Adapter: Dokumente werden über Item und
-    Namen angesprochen, die Ablage entscheidet der Adapter.
-  - Notes: `items/STORY-027/STORY-027_notes.md`.

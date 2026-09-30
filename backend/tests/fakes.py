@@ -124,6 +124,9 @@ class InMemoryDocumentStore:
         for key in [k for k in docs if k[0] == item_id]:
             del docs[key]
 
+    def delete_document(self, source: Source, item_id: str, name: str) -> None:
+        self._stored(source).pop(self._key(item_id, name), None)
+
     def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
         docs = self._stored(source)
         self._check_id(old_id)

@@ -78,5 +78,8 @@ class RoutingDocumentStore:
     def delete_documents(self, source: Source, item_id: str) -> None:
         self._for(source).delete_documents(source, item_id)
 
+    def delete_document(self, source: Source, item_id: str, name: str) -> None:
+        self._for(source).delete_document(source, item_id, name)
+
     def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
         self._for(source).relabel_documents(source, old_id, new_id, renames)

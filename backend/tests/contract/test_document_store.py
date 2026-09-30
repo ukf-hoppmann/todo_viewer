@@ -90,6 +90,20 @@ def test_deleting_removes_the_documents_of_one_item_only(adapter: Adapter):
             docs.delete_documents(source, bad)
 
 
+def test_delete_document_removes_one_document_only(adapter: Adapter):
+    docs, source = adapter.docs, adapter.source
+
+    docs.delete_document(source, "TASK-002", "spec.md")
+    docs.delete_document(source, "TASK-002", "spec.md")  # gone already: nothing to do
+
+    with pytest.raises(DocumentNotFoundError):
+        docs.read(source, "TASK-002", "spec.md")
+    assert docs.read(source, "TASK-002", "notes.md").startswith("# Notes for TASK-002")
+    for bad in ("../b.md", "", "x.exe"):
+        with pytest.raises(DocumentForbiddenError):
+            docs.delete_document(source, "TASK-002", bad)
+
+
 def test_documents_follow_a_new_id(adapter: Adapter):
     docs, source = adapter.docs, adapter.source
 

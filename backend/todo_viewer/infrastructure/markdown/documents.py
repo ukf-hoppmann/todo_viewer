@@ -68,6 +68,12 @@ class MarkdownDocumentStore:
             if target.is_dir():
                 shutil.rmtree(target)
 
+    def delete_document(self, source: Source, item_id: str, name: str) -> None:
+        """Deletes the file of the document, if it exists."""
+        target = document_file(self._folder(source), item_id, name)
+        with self._locks.hold(str(self._folder(source))):
+            target.unlink(missing_ok=True)
+
     def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
         """Moves `items/<old_id>/` to `items/<new_id>/` and renames files in it (old name -> new name)."""
         old, new = item_folder(self._folder(source), old_id), item_folder(self._folder(source), new_id)

@@ -75,6 +75,9 @@ class DocumentStore(Protocol):
     def delete_documents(self, source: Source, item_id: str) -> None:
         """Deletes all documents of the item, if it has any."""
 
+    def delete_document(self, source: Source, item_id: str, name: str) -> None:
+        """Deletes one document, if it exists; raises DocumentForbiddenError for names the store does not accept."""
+
     def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
         """Moves the documents of `old_id` to `new_id` and renames some of them (old name -> new name).
 

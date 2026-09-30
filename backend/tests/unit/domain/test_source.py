@@ -21,3 +21,24 @@ def test_a_source_keeps_its_id_when_name_or_path_change():
     updated = source.updated("Q", "other")
 
     assert updated.id == "3f0c9a4e-0000-4000-8000-000000000001"
+
+
+def test_markdown_path_is_the_folder_on_either_side():
+    markdown = Source(project="P", path="docs")
+    database = Source(project="P", path="", backend="database", sync_path="/md")
+
+    assert (markdown.markdown_path, database.markdown_path) == ("docs", "/md")
+    assert Source(project="P", path="", backend="database").markdown_path is None
+
+
+def test_the_mirror_is_the_other_side_when_it_is_kept():
+    assert Source(project="P", path="docs").mirror == "none"
+    assert Source(project="P", path="docs", mirror_database=True).mirror == "database"
+    assert Source(project="P", path="", backend="database").mirror == "none"
+    assert Source(project="P", path="", backend="database", sync_path="/md").mirror == "markdown"
+
+
+def test_updated_source_keeps_its_database_mirror():
+    source = Source(project="P", path="docs", mirror_database=True)
+
+    assert source.updated("Q", "other").mirror_database is True

@@ -13,9 +13,10 @@ interface SidebarProps {
   onEditSource: (source: SourceStatus) => void;
   onRemoveSource: (source: SourceStatus) => void;
   onSyncSource: (source: SourceStatus) => void;
+  onOpenSettings: () => void;
 }
 
-export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource }: SidebarProps) {
+export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource, onOpenSettings }: SidebarProps) {
   const { t, vocab } = useI18n();
   const { state, dispatch } = useUiState();
 
@@ -23,12 +24,17 @@ export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveS
     <aside className="sidebar">
       <div className="sidebar-head">
         <h1>{t("app.title")}</h1>
-        <div className="lang-switch" role="group" aria-label="Sprache / Language">
-          {LANGS.map((lang) => (
-            <button key={lang} className={state.lang === lang ? "active" : ""} onClick={() => dispatch({ type: "lang", lang })}>
-              {lang.toUpperCase()}
-            </button>
-          ))}
+        <div className="sidebar-tools">
+          <div className="lang-switch" role="group" aria-label="Sprache / Language">
+            {LANGS.map((lang) => (
+              <button key={lang} className={state.lang === lang ? "active" : ""} onClick={() => dispatch({ type: "lang", lang })}>
+                {lang.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <button className="icon-btn" title={t("settings.open")} aria-label={t("settings.open")} onClick={onOpenSettings}>
+            ⚙
+          </button>
         </div>
       </div>
 

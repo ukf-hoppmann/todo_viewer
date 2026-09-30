@@ -20,6 +20,7 @@ from todo_viewer.application.services import (
     RetypeService,
     SourceLookup,
     SourceService,
+    StorageService,
     SyncService,
     SyncStatusService,
     TrashService,
@@ -115,5 +116,6 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
         sync=sync,
         sync_status=SyncStatusService(sync, source_repo),
         folders=FolderBrowseService(LocalFolderBrowser(browse_start_from(settings.browse_start), resolver)),
+        storage=StorageService(database),
         ui_state=UiStateService(DatabaseUiStateStore(database, legacy.ui_state)),
     )

@@ -85,6 +85,20 @@ class DocumentStore(Protocol):
         """
 
 
+@dataclass(frozen=True)
+class StorageDescription:
+    """What the central database is: its type (e.g. "sqlite"), where it is (no secrets), its schema version."""
+
+    kind: str
+    location: str
+    schema_version: int
+
+
+class StorageInfo(Protocol):
+    def describe(self) -> StorageDescription:
+        """Opens the database (migrating it if needed) and reports what it is."""
+
+
 class RawBackup(Protocol):
     """A byte-exact copy of a project's files, for the backends that keep the project in files."""
 
@@ -132,5 +146,7 @@ __all__ = [
     "ProjectNameSuggester",
     "RawBackup",
     "SourceRepository",
+    "StorageDescription",
+    "StorageInfo",
     "UiStateStore",
 ]

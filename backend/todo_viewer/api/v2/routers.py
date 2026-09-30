@@ -16,6 +16,7 @@ from ..dependencies import (
     Overview,
     Retype,
     Sources,
+    Storage,
     Sync,
     SyncStatus,
     Trash,
@@ -42,6 +43,7 @@ from .schemas import (
     SourceIn,
     SourceOut,
     SourceStatusOut,
+    StorageOut,
     SyncIn,
     SyncOut,
     SyncStatusOut,
@@ -75,6 +77,12 @@ def backlog(overview: Overview) -> BacklogOut:
         items=[ItemOut.of(e.source, item, e.backlog.archive_available)
                for e in entries for item in live(e.backlog.items)],
     )
+
+
+@router.get("/storage", tags=["meta"])
+def storage(info: Storage) -> StorageOut:
+    """Type, location (no password) and schema version of the central database; read-only."""
+    return StorageOut.of(info.describe())
 
 
 @router.get("/index", tags=["items"])

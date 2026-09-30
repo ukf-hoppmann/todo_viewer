@@ -10,7 +10,18 @@ from typing import Any
 
 import sqlalchemy as sa
 
+from todo_viewer.application.ports import StorageDescription
+
 from .migrations import migrate
+
+
+def describe_url(url: str) -> tuple[str, str]:
+    """The database type and its location from a SQLAlchemy URL; a password in the URL is left out."""
+    parsed = sa.engine.make_url(url)
+    kind = parsed.get_backend_name()
+    if kind == "sqlite":
+        return kind, parsed.database or ":memory:"
+    return kind, parsed.render_as_string(hide_password=True)
 
 
 class Database:
@@ -21,6 +32,13 @@ class Database:
         self._engine: sa.Engine | None = None
         self._migrated = False
         self._lock = threading.Lock()
+
+    def describe(self) -> StorageDescription:
+        """Type, location, and schema version; opens (and so creates and migrates) the database."""
+        kind, location = describe_url(self._url)
+        with self.begin() as conn:
+            version: int = conn.execute(sa.text("SELECT version FROM schema_version")).scalar_one()
+        return StorageDescription(kind, location, version)
 
     @property
     def engine(self) -> sa.Engine:

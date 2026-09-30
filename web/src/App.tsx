@@ -4,6 +4,7 @@ import { useRemoveSource } from "./api/queries";
 import { CreateItemDialog } from "./components/CreateItemDialog";
 import { DetailPanel } from "./components/DetailPanel";
 import { RetypeNotice } from "./components/RetypeNotice";
+import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { Sidebar } from "./components/Sidebar";
 import { SourceDialog } from "./components/SourceDialog";
 import { SyncDialog } from "./components/SyncDialog";
@@ -35,6 +36,7 @@ export function App() {
   const [sourceDialog, setSourceDialog] = useState<SourceDialogState>(null);
   const [syncDialog, setSyncDialog] = useState<SyncDialogState>(null);
   const [creating, setCreating] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   // Kept here, not in the detail panel: the panel is rebuilt when the selection moves to the new id.
   const [retyped, setRetyped] = useState<Schemas["RetypeOut"] | null>(null);
 
@@ -73,6 +75,7 @@ export function App() {
             onEditSource={(source) => setSourceDialog({ source })}
             onRemoveSource={onRemoveSource}
             onSyncSource={(source) => setSyncDialog({ source, mode: "sync" })}
+            onOpenSettings={() => setSettingsOpen(true)}
           />
           <main className="main">
             <nav className="tabs">
@@ -127,6 +130,7 @@ export function App() {
             }}
           />
         )}
+        {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
         {retyped && <RetypeNotice result={retyped} onClose={() => setRetyped(null)} />}
         {sourceDialog && (
           <SourceDialog

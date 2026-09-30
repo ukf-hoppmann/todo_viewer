@@ -22,6 +22,7 @@ describe("uiState", () => {
       selectedId: "P::TASK-1",
       currentView: "kanban",
       lang: "en",
+      defaultBackend: "markdown",
     });
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "nope", lang: "fr" })).toEqual(INITIAL_UI_STATE);
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "trash" }).currentView).toBe("trash");
@@ -45,5 +46,16 @@ describe("uiState", () => {
     const closed = uiReducer(start, { type: "setCollapsed", uids: ["a", "b"], collapsed: true });
     expect([...closed.collapsed]).toEqual(["x", "a", "b"]);
     expect([...uiReducer(closed, { type: "setCollapsed", uids: ["a", "b"], collapsed: false }).collapsed]).toEqual(["x"]);
+  });
+
+  it("keeps the backend new projects start with, and ignores anything else", () => {
+    expect(INITIAL_UI_STATE.defaultBackend).toBe("markdown");
+    expect(mergeStored(INITIAL_UI_STATE, { defaultBackend: "database" }).defaultBackend).toBe("database");
+    expect(mergeStored(INITIAL_UI_STATE, { defaultBackend: "postgres" }).defaultBackend).toBe("markdown");
+    expect(mergeStored({ ...INITIAL_UI_STATE, defaultBackend: "database" }, { defaultBackend: 3 }).defaultBackend).toBe("database");
+
+    const chosen = uiReducer(INITIAL_UI_STATE, { type: "defaultBackend", backend: "database" });
+    expect(chosen.defaultBackend).toBe("database");
+    expect(snapshot(chosen).defaultBackend).toBe("database");
   });
 });

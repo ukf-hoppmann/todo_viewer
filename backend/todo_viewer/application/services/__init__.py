@@ -1,7 +1,7 @@
 from .backup import BackupService
 from .documents import DocumentResult, DocumentService
 from .items import BacklogOverviewService, ItemResult, ItemService, SourceBacklog
-from .misc import FolderBrowseService, UiStateService
+from .misc import FolderBrowseService, StorageService, UiStateService
 from .retype import RetypeResult, RetypeService
 from .sources import SourceLookup, SourceService
 from .sync import SideFingerprints, SyncResult, SyncService
@@ -22,6 +22,7 @@ __all__ = [
     "SideFingerprints",
     "SourceLookup",
     "SourceService",
+    "StorageService",
     "SyncResult",
     "SyncService",
     "SyncStatus",

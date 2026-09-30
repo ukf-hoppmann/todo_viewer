@@ -10,12 +10,18 @@ tests/architecture/test_layers.py". -->
 
 ### 1. Storage backends behind ports
 
-- Each project MUST be stored by exactly one backend, chosen per project:
-  markdown files or the central database. The application MUST NOT keep its
-  own copy of a project's data outside that backend; every request reads from
-  and writes to it.
+- Each project MUST have exactly one primary source, chosen per project:
+  markdown files or the central database. The primary source holds the truth:
+  every request reads from and writes to it. A project MAY additionally keep a
+  mirror in the other backend. A mirror MUST be written only by a sync, never
+  by an ordinary request. The application MUST NOT keep any other copy of a
+  project's data.
 - All backends MUST implement the same storage ports and pass the same
-  contract suite. Enforced by: `backend/tests/contract/`.
+  contract suite, as primary source and as mirror. Enforced by:
+  `backend/tests/contract/`.
+- The primary source MAY be switched per project. A switch MUST run a sync
+  first so the new primary source is up to date, and MUST create a backup of
+  the previous primary source; if either fails, nothing is switched.
 - Markdown backend: writes MUST be atomic (temporary file + rename), MUST keep
   line endings, and MUST abort with a conflict error instead of overwriting a
   file that changed since it was read. Edits MUST change only the affected
@@ -25,8 +31,12 @@ tests/architecture/test_layers.py". -->
   conflict error instead of overwriting an item that changed since it was
   read. The schema MUST change only through versioned migrations.
 - Data moves between backends only through an explicit sync requested by the
-  user or an API call, never automatically. A sync MUST offer a preview and
-  MUST NOT delete anything on the target without explicit confirmation.
+  user or an API call, never automatically, not even after a write to the
+  primary source. A sync MUST offer a preview and MUST NOT delete anything on
+  the target without explicit confirmation. Its direction defaults to primary
+  source → mirror and MAY be chosen per run.
+- Whether a mirror differs from the primary source since the last sync MUST be
+  detectable without changing any data, so the UI can show it.
 
 ### 2. One HTTP contract
 

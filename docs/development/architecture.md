@@ -8,16 +8,25 @@ tests/architecture/test_layers.py". -->
 
 ## Rules
 
-### 1. Backlog files are the source of truth
+### 1. Storage backends behind ports
 
-- The application MUST NOT keep its own copy of backlog data. Items are read
-  from and written to the configured markdown files on every request.
-- Writes to backlog files MUST be atomic (temporary file + rename), MUST keep
+- Each project MUST be stored by exactly one backend, chosen per project:
+  markdown files or the central database. The application MUST NOT keep its
+  own copy of a project's data outside that backend; every request reads from
+  and writes to it.
+- All backends MUST implement the same storage ports and pass the same
+  contract suite. Enforced by: `backend/tests/contract/`.
+- Markdown backend: writes MUST be atomic (temporary file + rename), MUST keep
   line endings, and MUST abort with a conflict error instead of overwriting a
-  file that changed since it was read.
-- Edits MUST change only the affected field or move the affected entry;
-  byte-exact output is pinned by golden files. Enforced by:
-  `backend/tests/characterization/test_edit.py`.
+  file that changed since it was read. Edits MUST change only the affected
+  field or move the affected entry; byte-exact output is pinned by golden
+  files. Enforced by: `backend/tests/characterization/test_edit.py`.
+- Database backend: writes MUST be transactional and MUST abort with a
+  conflict error instead of overwriting an item that changed since it was
+  read. The schema MUST change only through versioned migrations.
+- Data moves between backends only through an explicit sync requested by the
+  user or an API call, never automatically. A sync MUST offer a preview and
+  MUST NOT delete anything on the target without explicit confirmation.
 
 ### 2. One HTTP contract
 

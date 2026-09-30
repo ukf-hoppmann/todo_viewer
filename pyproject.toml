@@ -35,4 +35,4 @@ layers = [
 name = "Domain uses no third-party libraries"
 type = "forbidden"
 source_modules = ["todo_viewer.domain", "todo_viewer.application"]
-forbidden_modules = ["fastapi", "pydantic", "starlette", "uvicorn"]
+forbidden_modules = ["fastapi", "pydantic", "starlette", "uvicorn", "sqlalchemy"]

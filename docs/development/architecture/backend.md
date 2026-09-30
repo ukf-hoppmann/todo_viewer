@@ -34,3 +34,20 @@ Applies to `backend/**` in addition to `../architecture.md`.
 - Test data MUST be synthetic (`backend/tests/fixtures`), never copies of real
   backlogs.
 - Services SHOULD be tested against in-memory fakes of their ports.
+
+## 5. Storage adapters
+
+- Adapters live in `infrastructure/markdown/` and `infrastructure/database/`
+  and MUST NOT import each other. Enforced by: `pyproject.toml`
+  (`[tool.importlinter]`).
+- `domain` and `application` MUST NOT use SQLAlchemy or any database driver.
+  Enforced by: `pyproject.toml` (`[tool.importlinter]`).
+- The backend MUST be chosen only by a routing adapter wired in
+  `bootstrap.py`; services and domain code MUST NOT branch on
+  `Source.backend`.
+- Sync between backends MUST be a use case in `application` working on two
+  ports, not logic inside an adapter.
+- The database's internal keys (`uid`) MUST NOT appear in `domain`,
+  `application`, or the API; items are addressed by their label (`Item.id`).
+- Migrations MUST be forward-only and covered by a test that upgrades an empty
+  database to the current version.

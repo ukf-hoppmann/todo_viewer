@@ -22,6 +22,20 @@
   automatisch auf den aktuellen Stand migriert (Tabelle `schema_version`, nur
   vorwärts). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
   im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
+- Speicherort eines Projekts wechseln (UI: ✎ → „In die Datenbank übernehmen…“
+  bzw. „Als Markdown-Ordner ablegen…“; API: Sync, dann `PUT /sources/{id}` mit
+  neuem `backend`): vorher die Datenbankdatei sichern (siehe oben). Der Wechsel
+  löscht nichts. Die Markdown-Dateien bleiben nach dem Übernehmen liegen und
+  werden zum Sync-Ordner; die Daten in der Datenbank bleiben nach dem Ablegen als
+  Markdown liegen (sie werden nicht mehr gelesen, ein späteres Zurückstellen
+  zeigt sie in der Vorschau als Unterschied). Beim Austragen eines
+  Markdown-Projekts verschwindet seine Kopie in der Datenbank mit, ein
+  Datenbank-Projekt mit Items lässt sich nicht austragen. Der Export in einen
+  neuen Ordner schreibt die Kopfzeilen von `TODO.md`/`archive.md` in der
+  gewählten Sprache (die UI schickt ihre eigene, die API standardmäßig `en`);
+  Einträge und Dokumente sind inhaltlich gleich, Zeilenumbrüche und die
+  Reihenfolge der Felder sind normalisiert. Ein bestehender Sync-Ordner behält
+  seinen Kopftext.
 - Erster Start nach dem Update von einer Version mit Projekten in
   `config.json`: Projekte und UI-Zustand werden in die Datenbank übernommen,
   alle `source_id`s ändern sich einmal (Agenten schlagen sie über den Pfad
@@ -58,7 +72,7 @@ Werte mit Leerzeichen, `=` oder `"` stehen in Anführungszeichen; verschachtelte
 | Event | Level | Wann | Felder |
 |---|---|---|---|
 | `startup` | INFO | Serverstart | `api`, `python`, `config_dir`, `frontend_dir`, `browse_start`, `log_file`, `log_level` |
-| `request` | ERROR / WARNING / INFO / DEBUG | Jeder Request: 5xx (mit Stacktrace) / 4xx / schreibend / lesend sowie `PUT /ui-state` | `method`, `path`, `query`, `status`, `ms`; bei Fehlern `code`, `message`, `details.*`; beim Anlegen `source`, `type`, `item`; bei Quellen `target`, `source` |
+| `request` | ERROR / WARNING / INFO / DEBUG | Jeder Request: 5xx (mit Stacktrace) / 4xx / schreibend / lesend sowie `PUT /ui-state` | `method`, `path`, `query`, `status`, `ms`; bei Fehlern `code`, `message`, `details.*`; beim Anlegen `source`, `type`, `item`; bei Quellen `target`, `source`; beim Sync `source`, `direction`, `confirm` |
 | `file_written` | INFO (JSON-Konfiguration: DEBUG) | Datei geschrieben | `path`, `created` bei neuen Dateien |
 | `backlog_unparsable` | WARNING | Backlog-Datei lässt sich nicht parsen (Projekt zeigt ⚠) | `source`, `path`, `error`; Stacktrace als `backlog_unparsable_trace` auf DEBUG |
 | `ui_state_unreadable` | WARNING | `ui_state.json` einer früheren Version defekt oder nicht lesbar; übernommen wird ein leerer UI-Zustand | `path`, `error` |
@@ -92,3 +106,8 @@ grep ' req=1a2b3c4d ' logs/todo-viewer.log                     # alles zu einem 
 | Projekt mit ⚠ „nicht im Backlog-Format“ (`unsupported_format`) | `TODO.md` ohne Format-Kennung, z. B. eine einfache Checkliste | Datei ins Backlog-Format überführen (Kennung und IDs) |
 | Speichern schlägt mit `write_failed` fehl | Keine Schreibrechte auf den Backlog-Ordner | Rechte bzw. Volume-Mount (beschreibbar) prüfen |
 | Ein Test meldet veraltete API-Typen | v2-API geändert, `openapi.json`/`schema.d.ts` nicht neu erzeugt | `.venv/bin/python backend/scripts/export_openapi.py && npm --prefix web run gen:api` |
+| Sync bricht mit `sync_stale` ab | Seit der Vorschau hat sich die Datenbank oder der Ordner geändert (oder es fehlt das `token`) | Vorschau neu holen und bestätigen |
+| Sync bricht mit `sync_source_invalid` ab (`details.reason`) | Der Sync-Ordner fehlt (`not_found`), hat keine `TODO.md` (`no_todo`) oder ist kein Backlog (`unsupported_format`, `parse_error`); es wurde nichts geändert | Ordner bzw. Datei reparieren, Vorschau wiederholen |
+| Umstellen des Speicherorts mit `sync_required` abgelehnt | Beide Seiten sind nicht gleich (z. B. Fehlendes auf dem Ziel, das nicht gelöscht wurde) | Sync mit Vorschau ausführen (Fehlendes löschen), dann erneut umstellen |
+| Datenbank-Projekt mit ⚠ `db_unavailable` | Die Datenbank lässt sich nicht öffnen (Datei gesperrt, `storage_url` falsch, Server nicht erreichbar); Log: `database_unavailable` | `storage_url` und Datei bzw. Dienst prüfen |
+| Datenbank-Projekt lässt sich nicht austragen (`project_not_empty`) | Es hat noch Items | Zuerst auf Markdown ablegen (Umstellen) oder die Items löschen |

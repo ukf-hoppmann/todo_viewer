@@ -25,6 +25,11 @@
 Unbekannte Schlüssel bleiben beim Schreiben erhalten. Fehlt die Datei, gilt
 der Standard.
 
+Ändert man `storage_url`, zeigt der Dienst danach auf eine andere (ggf. leere)
+Datenbank; Projekte und Inhalte wandern nicht mit. Der Sync-Ordner eines
+Datenbank-Projekts (`sync_path`) und alle anderen Projekteinstellungen stehen in
+der Datenbank, nicht in dieser Datei.
+
 Projekte stehen nicht mehr in dieser Datei, sondern in der Datenbank; sie
 werden über die UI bzw. `/api/v2/sources` verwaltet (siehe
 [Schnittstellen](interfaces.md)). Enthält `config.json` noch eine Liste

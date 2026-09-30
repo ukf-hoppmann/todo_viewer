@@ -34,7 +34,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-003`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -46,6 +46,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     getaggt, das eigene Backlog wurde probeweise in die DB übernommen.
   - Summary: Dokumentation und Release des Epics.
   - Spec: `items/STORY-025/STORY-025_spec.md`.
+  - Notes: `items/STORY-025/STORY-025_notes.md`.
 
 - `STORY-026` **Postgres als zweiter Datenbank-Typ (optional)**
   - Type: Story.

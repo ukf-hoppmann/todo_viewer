@@ -34,6 +34,8 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `POST /sources/{source_id}/sync` | Überträgt zwischen Primärquelle und Spiegel eines Projekts (Datenbank und Markdown-Ordner), in der gewählten Richtung; erst Vorschau, dann Ausführen (siehe unten). |
 | `DELETE /sources/{source_id}` | Projekt austragen. Markdown-Dateien bleiben; ein Datenbank-Projekt mit Items wird abgelehnt. |
 | `GET /folders?path=…` | Unterordner für den Ordner-Browser, mit Markierung, ob eine `TODO.md` enthalten ist. |
+| `GET /sources/{source_id}/sync-status`, `GET /sync-status` | Welche Seite eines Projekts mit Spiegel sich seit dem letzten Sync geändert hat (siehe unten); rechnet erst beim Aufruf. |
+| `GET /storage` | Typ (`kind`), Ort (`location`, ohne Passwort) und Schema-Version der zentralen Datenbank, nur lesend. Ändern lässt sich der Ort nur in `configs/config.json`. |
 | `GET /ui-state`, `PUT /ui-state` | UI-Zustand lesen bzw. vollständig ersetzen (freies JSON-Objekt). |
 
 - Eingabe:

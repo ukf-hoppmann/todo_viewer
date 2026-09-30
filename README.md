@@ -131,6 +131,13 @@ Versions-Token), Typ ändern (neue ID, Verweise folgen), Notizen und Specs, Lös
 des Backlog-Formats. Ablauf und Endpunkte: [Schnittstellen](docs/techdocs/interfaces.md#nutzung-durch-agenten).
 Der Port ist nur lokal erreichbar.
 
+## Einstellungen
+
+Das Zahnrad oben in der Sidebar öffnet das Einstellungsmenü. Im Abschnitt
+„Allgemein“ stehen Typ, Ort und Schema-Version der zentralen Datenbank (nur zur
+Anzeige; der Ort steht in `configs/config.json`) und der Speicherort, mit dem
+„Projekt hinzufügen“ vorbelegt ist (Markdown-Ordner oder Datenbank).
+
 ## Sprache
 
 Status, Prioritäten, Typen und Feldnamen sind in den Dateien englisch und

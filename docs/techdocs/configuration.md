@@ -62,3 +62,4 @@ UI-Zustand hat) und in `ui_state.json.bak` umbenannt.
 | `selectedId` | String oder `null` | `null` | nein | Ausgewähltes Item |
 | `currentView` | `tree`/`graph`/`kanban`/`trash` | `tree` | nein | Aktive Ansicht |
 | `lang` | `de`/`en` | `de` | nein | Anzeigesprache |
+| `defaultBackend` | `markdown`/`database` | `markdown` | nein | Speicherort, mit dem „Projekt hinzufügen“ vorbelegt ist; im Einstellungsmenü (⚙, Abschnitt „Allgemein“) änderbar, jedes Projekt kann beim Hinzufügen anders gewählt werden |

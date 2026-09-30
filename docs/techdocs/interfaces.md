@@ -31,6 +31,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `POST /sources` | Projekt hinzufügen: Markdown mit `path` (optional `project`; ohne Namen der des Git-Repos), Datenbank mit `backend: "database"` und `project`. |
 | `POST /backlogs` | Neuen, leeren Backlog anlegen und als Quelle eintragen. Antwort 201 mit der Quelle. |
 | `PUT /sources/{source_id}` | Name, Ordner bzw. `sync_path` ändern; das Backend bleibt. |
+| `POST /sources/{source_id}/sync` | Überträgt ein Datenbank-Projekt in seinen `sync_path`-Ordner oder zurück; erst Vorschau, dann Ausführen (siehe unten). |
 | `DELETE /sources/{source_id}` | Projekt austragen. Markdown-Dateien bleiben; ein Datenbank-Projekt mit Items wird abgelehnt. |
 | `GET /folders?path=…` | Unterordner für den Ordner-Browser, mit Markierung, ob eine `TODO.md` enthalten ist. |
 | `GET /ui-state`, `PUT /ui-state` | UI-Zustand lesen bzw. vollständig ersetzen (freies JSON-Objekt). |
@@ -142,6 +143,32 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     `backend` fehlen; ein anderer Wert als der gespeicherte wird mit 409
     `backend_change_not_supported` abgelehnt. `source_id` ist eine UUID, die
     sich bei Namens- oder Pfadänderungen nicht ändert.
+  - Sync (`POST /sources/{source_id}/sync`,
+    `{direction, confirm?, token?, delete_missing?, language?}`; Entscheidungen:
+    [STORY-023](../todo/items/STORY-023/STORY-023_spec.md)): nur für
+    Datenbank-Projekte mit `sync_path`. `direction` ist `to_md` (Datenbank →
+    Ordner) oder `from_md` (Ordner → Datenbank); übertragen werden `TODO.md`,
+    `archive.md`, Papierkorb sowie Notes und Specs (auch Themen-Specs) aller
+    Items. Ohne `confirm` ist der Aufruf eine Vorschau und ändert nichts:
+    `items` und `documents` mit `created`, `changed` (Ziel wird überschrieben),
+    `unchanged` (Anzahl) und `missing` (nur auf dem Ziel vorhanden), dazu
+    `skipped` (Dokumente, die der Sync nicht trägt: als Pfad notiert,
+    nicht lesbar oder fehlend) und ein `token`, das den Stand beider Seiten
+    kennzeichnet. Mit `confirm: true` und diesem `token` wird ausgeführt; hat
+    sich seitdem eine Seite geändert (oder fehlt das `token`), antwortet der
+    Server mit 409 `sync_stale`. `missing` bleibt auf dem Ziel stehen und
+    kommt als `kept` zurück; nur mit `delete_missing: true` wird es gelöscht
+    (`deleted`). `language` (`en`, Standard, oder `de`) gilt für neu angelegte
+    Markdown-Dateien; ein fehlender Zielordner wird bei `to_md` angelegt. Die
+    Markdown-Dateien sind danach normalisiert, nicht byte-gleich zu früheren
+    Fassungen; Export → Import → Export ergibt gleiche Dateien und Items mit
+    gleicher `version`. Ein Backlog, der nicht lesbar ist, bricht vor jeder
+    Änderung ab (400 `sync_source_invalid`, `details.reason` = Grund, etwa
+    `not_found`, `unsupported_format`, `parse_error`). Dokumente eines Items
+    findet der Sync über dessen Felder `Notes`/`Spec`; Dateien im Ordner
+    `items/<ID>/`, die dort nicht stehen, sieht er nicht. Wechsel des Backends
+    ist kein eigener Aufruf: erst `from_md` in ein Datenbank-Projekt, dann
+    umschalten.
   - `POST /backlogs`: `{path, project?, language?}` mit `language` `en`
     (Standard) oder `de`. Legt den Ordner bei Bedarf an und schreibt
     `TODO.md` und `archive.md` mit Format-Kennung, `## Work items` und
@@ -169,10 +196,10 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 
 | HTTP | Codes |
 |---|---|
-| 400 | `bad_request` (Validierung, auch unbekannte Felder), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
+| 400 | `bad_request` (Validierung, auch unbekannte Felder), `sync_path_missing` (Projekt hat keinen `sync_path`), `sync_source_invalid` (Quelle oder Ziel des Syncs nicht lesbar), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `file_not_found`, `item_not_found` |
-| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `backend_change_not_supported` (Backend eines Projekts per `PUT` ändern) |
+| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `backend_change_not_supported` (Backend eines Projekts per `PUT` ändern), `sync_same_backend` (Markdown-Projekt hat nichts zum Abgleichen), `sync_stale` (Sync: eine Seite änderte sich seit der Vorschau) |
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 

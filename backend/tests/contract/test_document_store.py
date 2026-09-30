@@ -15,81 +15,93 @@ from todo_viewer.domain.errors import (
 
 def test_write_creates_documents_and_checks_versions(adapter: Adapter):
     docs, source = adapter.docs, adapter.source
-    path = "items/TASK-009/TASK-009_spec.md"
+    name = "TASK-009_spec.md"
 
-    docs.write(source, path, "v1\n", expected_version=None)
+    docs.write(source, "TASK-009", name, "v1\n", expected_version=None)
     with pytest.raises(VersionConflictError):
-        docs.write(source, path, "again\n", expected_version=None)  # exists already
+        docs.write(source, "TASK-009", name, "again\n", expected_version=None)  # exists already
     with pytest.raises(VersionConflictError):
-        docs.write(source, path, "v2\n", expected_version=content_version("other"))
-    docs.write(source, path, "v2\n", expected_version=content_version("v1\n"))
+        docs.write(source, "TASK-009", name, "v2\n", expected_version=content_version("other"))
+    docs.write(source, "TASK-009", name, "v2\n", expected_version=content_version("v1\n"))
 
-    assert docs.read(source, path) == "v2\n"
+    assert docs.read(source, "TASK-009", name) == "v2\n"
     with pytest.raises(VersionConflictError):
-        docs.write(source, "items/TASK-009/missing.md", "x", expected_version=content_version("x"))
+        docs.write(source, "TASK-009", "missing.md", "x", expected_version=content_version("x"))
+
+
+def test_documents_belong_to_their_item(adapter: Adapter):
+    docs, source = adapter.docs, adapter.source
+
+    docs.write(source, "TASK-009", "TASK-009_spec.md", "mine\n", expected_version=None)
+
+    with pytest.raises(DocumentNotFoundError):
+        docs.read(source, "TASK-008", "TASK-009_spec.md")
 
 
 def test_append_starts_new_documents_with_a_header(adapter: Adapter):
     docs, source = adapter.docs, adapter.source
-    path = "items/TASK-009/TASK-009_notes.md"
+    name = "TASK-009_notes.md"
 
-    first = docs.append(source, path, "## entry 1\n", header="# TASK-009 — t\n")
-    second = docs.append(source, path, "## entry 2\n", header="# ignored\n")
+    first = docs.append(source, "TASK-009", name, "## entry 1\n", header="# TASK-009 — t\n")
+    second = docs.append(source, "TASK-009", name, "## entry 2\n", header="# ignored\n")
 
     assert first == "# TASK-009 — t\n\n## entry 1\n"
     assert second == "# TASK-009 — t\n\n## entry 1\n\n## entry 2\n"
-    assert docs.append(source, "items/TASK-002/notes.md", "## e\n", header="#") == \
+    assert docs.append(source, "TASK-002", "notes.md", "## e\n", header="#") == \
         "# Notes for TASK-002\n\nSome *markdown* notes.\n\n## e\n"
 
 
 def test_reading_a_missing_document_fails(adapter: Adapter):
     with pytest.raises(DocumentNotFoundError):
-        adapter.docs.read(adapter.source, "items/TASK-404/TASK-404_spec.md")
+        adapter.docs.read(adapter.source, "TASK-404", "TASK-404_spec.md")
 
 
-def test_paths_outside_the_item_documents_are_forbidden(adapter: Adapter):
-    for path in ("../x.md", "items/../../x.md", "items/a/b.json"):
+def test_names_and_ids_that_could_leave_the_item_are_forbidden(adapter: Adapter):
+    for item_id, name in (("TASK-002", "../../../x.md"), ("TASK-002", "b.json"), ("..", "x.md"), ("a/b", "x.md"),
+                          ("TASK-002", "")):
         with pytest.raises(DocumentForbiddenError):
-            adapter.docs.write(adapter.source, path, "x", expected_version=None)
+            adapter.docs.write(adapter.source, item_id, name, "x", expected_version=None)
 
 
-def test_deleting_an_item_folder_removes_its_documents_only(adapter: Adapter):
+def test_deleting_removes_the_documents_of_one_item_only(adapter: Adapter):
     docs, source = adapter.docs, adapter.source
-    docs.write(source, "items/TASK-009/TASK-009_spec.md", "keep", expected_version=None)
+    docs.write(source, "TASK-009", "TASK-009_spec.md", "keep", expected_version=None)
 
-    docs.delete_item_folder(source, "TASK-002")
-    docs.delete_item_folder(source, "TASK-404")  # no folder: nothing to do
+    docs.delete_documents(source, "TASK-002")
+    docs.delete_documents(source, "TASK-404")  # no documents: nothing to do
 
     with pytest.raises(DocumentNotFoundError):
-        docs.read(source, "items/TASK-002/notes.md")
-    assert docs.read(source, "items/TASK-009/TASK-009_spec.md") == "keep"
+        docs.read(source, "TASK-002", "notes.md")
+    assert docs.read(source, "TASK-009", "TASK-009_spec.md") == "keep"
     for bad in ("..", "../b", "", "a/b"):
         with pytest.raises(DocumentForbiddenError):
-            docs.delete_item_folder(source, bad)
+            docs.delete_documents(source, bad)
 
 
-def test_renaming_an_item_folder_moves_its_documents(adapter: Adapter):
+def test_relabeling_moves_the_documents_to_the_new_id(adapter: Adapter):
     docs, source = adapter.docs, adapter.source
 
-    docs.rename_item_folder(source, "TASK-002", "STORY-009", {"notes.md": "STORY-009_notes.md"})
-    docs.rename_item_folder(source, "TASK-404", "STORY-010", {"x.md": "y.md"})  # no folder: nothing to do
+    docs.relabel_documents(source, "TASK-002", "STORY-009", {"notes.md": "STORY-009_notes.md"})
+    docs.relabel_documents(source, "TASK-404", "STORY-010", {"x.md": "y.md"})  # no documents: nothing to do
 
     with pytest.raises(DocumentNotFoundError):
-        docs.read(source, "items/TASK-002/notes.md")
-    assert docs.read(source, "items/STORY-009/STORY-009_notes.md").startswith("# Notes for TASK-002")
+        docs.read(source, "TASK-002", "notes.md")
+    assert docs.read(source, "STORY-009", "STORY-009_notes.md").startswith("# Notes for TASK-002")
+    with pytest.raises(DocumentNotFoundError):
+        docs.read(source, "STORY-010", "y.md")
 
 
-def test_renaming_refuses_existing_targets_and_bad_names(adapter: Adapter):
+def test_relabeling_refuses_ids_with_documents_and_bad_names(adapter: Adapter):
     docs, source = adapter.docs, adapter.source
-    docs.write(source, "items/STORY-009/STORY-009_spec.md", "x", expected_version=None)
+    docs.write(source, "STORY-009", "STORY-009_spec.md", "x", expected_version=None)
 
     with pytest.raises(ItemFolderExistsError):
-        docs.rename_item_folder(source, "TASK-002", "STORY-009", {})
+        docs.relabel_documents(source, "TASK-002", "STORY-009", {})
     for old, new, renames in [("..", "X-1", {}), ("TASK-002", "../x", {}), ("TASK-002", "a/b", {}),
                               ("TASK-002", "X-1", {"notes.md": "../out.md"}), ("TASK-002", "X-1", {"../a": "b"})]:
         with pytest.raises(DocumentForbiddenError):
-            docs.rename_item_folder(source, old, new, renames)
+            docs.relabel_documents(source, old, new, renames)
 
-    assert docs.read(source, "items/TASK-002/notes.md").startswith("# Notes for TASK-002")
+    assert docs.read(source, "TASK-002", "notes.md").startswith("# Notes for TASK-002")
     with pytest.raises(DocumentNotFoundError):
-        docs.read(source, "items/X-1/notes.md")
+        docs.read(source, "X-1", "notes.md")

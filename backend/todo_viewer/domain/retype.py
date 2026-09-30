@@ -35,14 +35,24 @@ class Notice:
 
 
 @dataclass(frozen=True)
+class DocumentMove:
+    """Where a notes/spec document is found before the retype and where it is afterwards."""
+
+    item_id: str
+    name: str
+    new_item_id: str
+    new_name: str
+
+
+@dataclass(frozen=True)
 class RetypePlan:
     new_id: str
     # Items whose stored entry changes (the item itself and everything that mentions it), in backlog order.
     changes: tuple[tuple[Item, ChangeSet], ...]
-    # File names inside the item's folder: old name -> new name.
-    file_renames: dict[str, str]
-    # Every notes/spec document of the backlog: path before -> path after the retype.
-    document_paths: dict[str, str]
+    # Documents of the item whose name contains its id: old name -> new name.
+    document_renames: dict[str, str]
+    # Every notes/spec document of the backlog, before and after the retype.
+    documents: tuple[DocumentMove, ...]
     notices: tuple[Notice, ...]
 
 
@@ -54,21 +64,19 @@ class RetypePlanner:
         if item.deleted:
             raise LifecycleViolationError("item_deleted", item_id)
         new_id = ItemFactory.next_id(new_type, items)
-        old_folder, new_folder = f"items/{item_id}/", f"items/{new_id}/"
 
-        def moved(path: str) -> str:
-            if not path.startswith(old_folder):
-                return path
-            return new_folder + rewrite_ids(path[len(old_folder):], item_id, new_id)
+        def renamed(name: str) -> str:
+            # A name with a `/` is a path the backlog wrote down elsewhere; it does not follow the item.
+            return name if "/" in name else rewrite_ids(name, item_id, new_id)
 
         changes: list[tuple[Item, ChangeSet]] = []
         for other in items:
             fields: list[tuple[str, FieldValue]] = []
             if other is item:
                 fields += [(Field.ID, new_id), (Field.TYPE, new_type)]
-                for key, paths in ((Field.NOTES, other.notes), (Field.SPEC, other.spec)):
-                    if any(moved(p) != p for p in paths):
-                        fields.append((key, tuple(moved(p) for p in paths)))
+                for key, names in ((Field.NOTES, other.notes), (Field.SPEC, other.spec)):
+                    if any(renamed(n) != n for n in names):
+                        fields.append((key, tuple(renamed(n) for n in names)))
             if other.parent == item_id:
                 fields.append((Field.PARENT, new_id))
             if item_id in other.dependencies:
@@ -80,12 +88,13 @@ class RetypePlanner:
             if fields:
                 changes.append((other, ChangeSet(set_fields=tuple(fields))))
 
-        paths = [p for i in items for p in (*i.notes, *i.spec)]
+        own = (*item.notes, *item.spec)
         return RetypePlan(
             new_id=new_id,
             changes=tuple(changes),
-            file_renames={_name(p): _name(moved(p)) for p in (*item.notes, *item.spec) if moved(p) != p},
-            document_paths={p: moved(p) for p in paths},
+            document_renames={n: renamed(n) for n in own if renamed(n) != n},
+            documents=tuple(DocumentMove(i.id, n, new_id, renamed(n)) if i is item else DocumentMove(i.id, n, i.id, n)
+                            for i in items for n in (*i.notes, *i.spec)),
             notices=(_external_references(item_id, new_id),),
         )
 
@@ -97,7 +106,3 @@ def _external_references(old_id: str, new_id: str) -> Notice:
                  f"messages) are not updated. Search for {old_id} and adapt where it is now {new_id}."),
         details={"old_id": old_id, "new_id": new_id},
     )
-
-
-def _name(path: str) -> str:
-    return path.rsplit("/", 1)[-1]

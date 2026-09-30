@@ -40,12 +40,12 @@ class TrashService:
         return self._results(self._backlogs.apply_all(source, plan), backlog)
 
     def purge(self, source: Source, item_id: str, version: str) -> list[ItemResult]:
-        """Removes the items and their `items/<ID>/` folders for good."""
+        """Removes the items and their documents for good."""
         backlog = self._backlog(source, item_id, version)
         targets = self._planner.purge(backlog.items, item_id)
         self._backlogs.delete(source, targets)
         for target in targets:
-            self._documents.delete_item_folder(source, target.id)
+            self._documents.delete_documents(source, target.id)
         return self._results(targets, backlog)
 
     def _backlog(self, source: Source, item_id: str, version: str) -> Backlog:

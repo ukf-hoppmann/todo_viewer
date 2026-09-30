@@ -96,3 +96,18 @@ def test_a_usable_backlog_has_no_problem_and_an_archive(adapter: Adapter):
     assert adapter.repo.check(adapter.source) is None
     assert adapter.repo.archive_available(adapter.source)
     assert adapter.repo.load(adapter.source).problem is None
+
+
+def test_items_list_their_documents_by_name(adapter: Adapter):
+    item = adapter.repo.get(adapter.source, "TASK-002")
+
+    assert (item.notes, item.spec) == (["notes.md"], ["spec.md", "extra.md"])
+
+
+def test_documents_stay_listed_when_the_id_changes(adapter: Adapter):
+    item = adapter.repo.get(adapter.source, "TASK-002")
+
+    adapter.repo.apply(adapter.source, item, ChangeSet(set_fields=(("id", "STORY-009"), ("type", "Story"))))
+
+    moved = adapter.repo.get(adapter.source, "STORY-009")
+    assert (moved.notes, moved.spec) == (["notes.md"], ["spec.md", "extra.md"])

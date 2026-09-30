@@ -54,22 +54,24 @@ class SourceRepository(Protocol):
 
 
 class DocumentStore(Protocol):
-    def read(self, source: Source, relative_path: str) -> str:
-        """A notes/spec file inside the source; raises DocumentForbidden/NotFound errors."""
+    """Notes and specs of items, addressed by item id and document name; the adapter decides where they live."""
 
-    def write(self, source: Source, relative_path: str, content: str, expected_version: str | None) -> None:
+    def read(self, source: Source, item_id: str, name: str) -> str:
+        """Raises DocumentForbiddenError for names the store does not accept, DocumentNotFoundError if missing."""
+
+    def write(self, source: Source, item_id: str, name: str, content: str, expected_version: str | None) -> None:
         """Replaces a document still at `expected_version` (None: must not exist); else VersionConflictError."""
 
-    def append(self, source: Source, relative_path: str, text: str, header: str) -> str:
+    def append(self, source: Source, item_id: str, name: str, text: str, header: str) -> str:
         """Appends to a document (a new one starts with `header`) and returns the new content."""
 
-    def delete_item_folder(self, source: Source, item_id: str) -> None:
-        """Deletes the item's document folder with all files in it, if there is one."""
+    def delete_documents(self, source: Source, item_id: str) -> None:
+        """Deletes all documents of the item, if it has any."""
 
-    def rename_item_folder(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
-        """Moves `items/<old_id>/` to `items/<new_id>/` and renames files in it (old name -> new name).
+    def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
+        """Moves the documents of `old_id` to `new_id` and renames some of them (old name -> new name).
 
-        Does nothing if there is no folder; raises ItemFolderExistsError if the target folder exists.
+        Does nothing if there are none; raises ItemFolderExistsError if `new_id` has documents already.
         """
 
 

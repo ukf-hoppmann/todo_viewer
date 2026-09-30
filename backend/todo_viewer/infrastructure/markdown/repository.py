@@ -6,7 +6,7 @@ from collections.abc import Sequence
 import structlog
 
 from todo_viewer.domain.backlog import Backlog
-from todo_viewer.domain.editing import ChangeSet
+from todo_viewer.domain.editing import ChangeSet, Field, FieldValue
 from todo_viewer.domain.errors import (
     BacklogExistsError,
     DuplicateItemError,
@@ -18,6 +18,7 @@ from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
 from .detector import FormatDetector
+from .document_paths import path_of
 from .editors import BacklogEntryEditor, EntryLocator, EntryMover, EntryRenderer
 from .layout import BacklogLayout, LayoutFactory
 from .parsers import BacklogParser
@@ -112,7 +113,7 @@ class MarkdownBacklogRepository:
             for item, changes in plan:
                 doc = docs[item.location]
                 idx = self._locator.locate(doc.lines, item.id)
-                for key, value in changes.set_fields:
+                for key, value in self._file_fields(item, changes):
                     self._entry_editor.set_field(doc.lines, idx, key, value)
                 for key in changes.remove_fields:
                     self._entry_editor.remove_field(doc.lines, idx, key)
@@ -131,6 +132,19 @@ class MarkdownBacklogRepository:
             return [self._reload(source, layout, str(dict(changes.set_fields).get("id", item.id)),
                                  changes.move_to or item.location)
                     for item, changes in plan]
+
+    @staticmethod
+    def _file_fields(item: Item, changes: ChangeSet) -> list[tuple[str, FieldValue]]:
+        """The changes as written into the file: documents are listed by path, which contains the item's id."""
+        fields = dict(changes.set_fields)
+        item_id = str(fields.get(Field.ID, item.id))
+        result = list(changes.set_fields)
+        if item_id != item.id:  # the paths move with the id even where the names stay
+            for key, names in ((Field.NOTES, item.notes), (Field.SPEC, item.spec)):
+                if key not in fields and names:
+                    result.append((key, tuple(names)))
+        return [(key, tuple(path_of(item_id, str(n)) for n in value or ()) if key in (Field.NOTES, Field.SPEC)
+                 else value) for key, value in result]
 
     def delete(self, source: Source, items: Sequence[Item]) -> None:
         """Removes the entries (each still at its version) in one go."""

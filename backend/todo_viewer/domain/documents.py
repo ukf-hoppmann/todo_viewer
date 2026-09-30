@@ -1,7 +1,7 @@
 """Notes and spec documents of an item: names, the notes entry format, and content versions.
 
-Documents are addressed by item id and name (the file name, e.g. `STORY-003_spec.md`);
-the backlog folder layout `items/<ID>/` is part of the backlog format.
+Documents are addressed by item id and name (e.g. `STORY-003_spec.md`). Where they are stored is up to
+the storage adapter. An item lists its documents by name in its Notes/Spec fields.
 """
 from __future__ import annotations
 
@@ -22,33 +22,33 @@ class DocumentKind(StrEnum):
 
 @dataclass(frozen=True)
 class DocumentRef:
-    name: str
+    name: str  # as shown to clients
     kind: DocumentKind
-    path: str  # relative to the backlog folder, as written in the item's Notes/Spec field
+    key: str  # as listed in the item's Notes/Spec field and passed to the document store
 
 
 def item_documents(item: Item) -> list[DocumentRef]:
-    return [DocumentRef(_name(p), DocumentKind.NOTES, p) for p in item.notes] + \
-        [DocumentRef(_name(p), DocumentKind.SPEC, p) for p in item.spec]
+    return [DocumentRef(_name(k), DocumentKind.NOTES, k) for k in item.notes] + \
+        [DocumentRef(_name(k), DocumentKind.SPEC, k) for k in item.spec]
 
 
-def notes_path(item: Item) -> str:
-    """Where notes go: the item's notes file, or `items/<ID>/<ID>_notes.md` for the first entry."""
-    return item.notes[0] if item.notes else f"items/{item.id}/{item.id}_notes.md"
+def notes_key(item: Item) -> str:
+    """Where notes go: the item's notes document, or `<ID>_notes.md` for the first entry."""
+    return item.notes[0] if item.notes else f"{item.id}_notes.md"
 
 
-def spec_path(item: Item, name: str) -> str:
-    """Path of a new spec document; names are `<ID>_spec.md` or `<ID>_spec_<topic>.md`."""
+def check_spec_name(item: Item, name: str) -> str:
+    """Names of new specs are `<ID>_spec.md` or `<ID>_spec_<topic>.md`."""
     if not re.fullmatch(rf"{re.escape(item.id)}_spec(_[A-Za-z0-9-]+)?\.md", name):
         raise InvalidValueError("name", (f"{item.id}_spec.md", f"{item.id}_spec_<topic>.md"))
-    return f"items/{item.id}/{name}"
+    return name
 
 
 def new_document(item: Item, name: str) -> DocumentRef:
-    """Where a new document goes: `<ID>_notes.md` for the first notes, otherwise a spec name."""
+    """A new document: `<ID>_notes.md` for the first notes, otherwise a spec name."""
     if name == f"{item.id}_notes.md" and not item.notes:
-        return DocumentRef(name, DocumentKind.NOTES, notes_path(item))
-    return DocumentRef(name, DocumentKind.SPEC, spec_path(item, name))
+        return DocumentRef(name, DocumentKind.NOTES, name)
+    return DocumentRef(name, DocumentKind.SPEC, check_spec_name(item, name))
 
 
 def new_notes_file(item: Item) -> str:

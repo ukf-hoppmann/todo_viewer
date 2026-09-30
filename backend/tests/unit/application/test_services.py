@@ -94,30 +94,32 @@ class FakeBacklogs:
 
 
 class FakeDocuments:
+    """Documents keyed `<item id>/<name>`."""
+
     def __init__(self, files: dict[str, str] | None = None) -> None:
         self.deleted: list[str] = []
         self.files = files or {}
         self.renamed: list[tuple[str, str, dict[str, str]]] = []
 
-    def read(self, source: Source, relative_path: str) -> str:
-        if relative_path not in self.files:
-            raise DocumentNotFoundError(relative_path)
-        return self.files[relative_path]
+    def read(self, source: Source, item_id: str, name: str) -> str:
+        if f"{item_id}/{name}" not in self.files:
+            raise DocumentNotFoundError(name)
+        return self.files[f"{item_id}/{name}"]
 
-    def write(self, source: Source, relative_path: str, content: str, expected_version: str | None) -> None:
-        self.files[relative_path] = content
+    def write(self, source: Source, item_id: str, name: str, content: str, expected_version: str | None) -> None:
+        self.files[f"{item_id}/{name}"] = content
 
-    def append(self, source: Source, relative_path: str, text: str, header: str) -> str:
+    def append(self, source: Source, item_id: str, name: str, text: str, header: str) -> str:
         return text
 
-    def delete_item_folder(self, source: Source, item_id: str) -> None:
+    def delete_documents(self, source: Source, item_id: str) -> None:
         self.deleted.append(item_id)
 
-    def rename_item_folder(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
+    def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
         self.renamed.append((old_id, new_id, dict(renames)))
-        for path in [p for p in self.files if p.startswith(f"items/{old_id}/")]:
-            name = path.rsplit("/", 1)[-1]
-            self.files[f"items/{new_id}/{renames.get(name, name)}"] = self.files.pop(path)
+        for key in [k for k in self.files if k.startswith(f"{old_id}/")]:
+            name = key.split("/", 1)[1]
+            self.files[f"{new_id}/{renames.get(name, name)}"] = self.files.pop(key)
 
 
 class Names:
@@ -303,16 +305,16 @@ def _retype_service(items: list[Item], files: dict[str, str] | None = None):
 def _retype_items() -> list[Item]:
     return [
         Item(id="STORY-001", title="Story", project="p", item_type="Story", required_for_parent=None,
-             notes=["items/STORY-001/STORY-001_notes.md"], summary="s"),
+             notes=["STORY-001_notes.md"], summary="s"),
         Item(id="TASK-001", title="Child", project="p", parent="STORY-001", required_for_parent=True),
         Item(id="TASK-002", title="Other", project="p", dependencies=["STORY-001"],
-             notes=["items/TASK-002/TASK-002_notes.md"], summary="s"),
+             notes=["TASK-002_notes.md"], summary="s"),
     ]
 
 
 def test_retype_gives_a_new_id_and_follows_references_and_documents():
-    files = {"items/STORY-001/STORY-001_notes.md": "# STORY-001 — Story\n\nSiehe STORY-001.\n",
-             "items/TASK-002/TASK-002_notes.md": "# TASK-002 — Other\n\nWartet auf `STORY-001`.\n"}
+    files = {"STORY-001/STORY-001_notes.md": "# STORY-001 — Story\n\nSiehe STORY-001.\n",
+             "TASK-002/TASK-002_notes.md": "# TASK-002 — Other\n\nWartet auf `STORY-001`.\n"}
     service, backlogs, documents = _retype_service(_retype_items(), files)
     version = backlogs.items[0].version
 
@@ -322,13 +324,13 @@ def test_retype_gives_a_new_id_and_follows_references_and_documents():
     assert result.old_id == "STORY-001"
     assert [(n.code, n.details) for n in result.notices] == [
         ("external_references_may_remain", {"old_id": "STORY-001", "new_id": "TASK-003"})]
-    assert result.item.notes ==["items/TASK-003/TASK-003_notes.md"]
+    assert result.item.notes == ["TASK-003_notes.md"]
     assert [(i.id, i.parent, i.dependencies) for i in backlogs.items] == [
         ("TASK-003", None, []), ("TASK-001", "TASK-003", []), ("TASK-002", None, ["TASK-003"])]
     assert documents.renamed == [("STORY-001", "TASK-003", {"STORY-001_notes.md": "TASK-003_notes.md"})]
     assert documents.files == {
-        "items/TASK-003/TASK-003_notes.md": "# TASK-003 — Story\n\nSiehe TASK-003.\n",
-        "items/TASK-002/TASK-002_notes.md": "# TASK-002 — Other\n\nWartet auf `TASK-003`.\n"}
+        "TASK-003/TASK-003_notes.md": "# TASK-003 — Story\n\nSiehe TASK-003.\n",
+        "TASK-002/TASK-002_notes.md": "# TASK-002 — Other\n\nWartet auf `TASK-003`.\n"}
 
 
 def test_retype_without_documents_on_disk_still_works():
@@ -342,7 +344,7 @@ def test_retype_without_documents_on_disk_still_works():
 
 def test_retype_checks_lifecycle_rules_before_touching_anything():
     items = _retype_items()
-    service, backlogs, documents = _retype_service(items, {"items/TASK-002/TASK-002_notes.md": "x STORY-001"})
+    service, backlogs, documents = _retype_service(items, {"TASK-002/TASK-002_notes.md": "x STORY-001"})
     before = list(backlogs.items)
 
     with pytest.raises(LifecycleViolationError) as err:
@@ -350,7 +352,7 @@ def test_retype_checks_lifecycle_rules_before_touching_anything():
 
     assert err.value.code == "epic_with_parent"
     assert backlogs.items == before
-    assert documents.renamed == [] and documents.files == {"items/TASK-002/TASK-002_notes.md": "x STORY-001"}
+    assert documents.renamed == [] and documents.files == {"TASK-002/TASK-002_notes.md": "x STORY-001"}
 
 
 def test_retype_does_not_count_flaws_the_item_already_had_under_its_old_id():
@@ -373,7 +375,7 @@ def test_retype_rejects_stale_version():
 
 
 def test_retype_restores_the_folder_if_the_backlog_cannot_be_written():
-    files = {"items/STORY-001/STORY-001_notes.md": "# STORY-001\n"}
+    files = {"STORY-001/STORY-001_notes.md": "# STORY-001\n"}
     service, backlogs, documents = _retype_service(_retype_items(), files)
     backlogs.fail_apply_all = True
     version = backlogs.items[0].version
@@ -384,4 +386,4 @@ def test_retype_restores_the_folder_if_the_backlog_cannot_be_written():
     assert documents.renamed == [
         ("STORY-001", "TASK-003", {"STORY-001_notes.md": "TASK-003_notes.md"}),
         ("TASK-003", "STORY-001", {"TASK-003_notes.md": "STORY-001_notes.md"})]
-    assert documents.files == {"items/STORY-001/STORY-001_notes.md": "# STORY-001\n"}
+    assert documents.files == {"STORY-001/STORY-001_notes.md": "# STORY-001\n"}

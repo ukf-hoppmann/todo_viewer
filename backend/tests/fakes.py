@@ -83,60 +83,63 @@ class InMemoryBacklogRepository:
 
 
 class InMemoryDocumentStore:
-    """Documents per source, addressed by their path relative to the backlog (`items/<ID>/<name>`)."""
+    """Documents per source and item, addressed by item id and plain document name."""
 
-    def __init__(self, files: Mapping[str, str] | None = None) -> None:
-        self._files: dict[str, dict[str, str]] = {}
-        self._seed = dict(files or {})
+    def __init__(self, documents: Mapping[tuple[str, str], str] | None = None) -> None:
+        self._docs: dict[str, dict[tuple[str, str], str]] = {}
+        self._seed = dict(documents or {})
 
-    def _stored(self, source: Source) -> dict[str, str]:
-        return self._files.setdefault(source.id, dict(self._seed))
+    def _stored(self, source: Source) -> dict[tuple[str, str], str]:
+        return self._docs.setdefault(source.id, dict(self._seed))
 
-    def read(self, source: Source, relative_path: str) -> str:
-        files = self._stored(source)
-        self._check_path(relative_path)
-        if relative_path not in files:
-            raise DocumentNotFoundError(relative_path)
-        return files[relative_path]
+    def read(self, source: Source, item_id: str, name: str) -> str:
+        docs = self._stored(source)
+        key = self._key(item_id, name)
+        if key not in docs:
+            raise DocumentNotFoundError(name)
+        return docs[key]
 
-    def write(self, source: Source, relative_path: str, content: str, expected_version: str | None) -> None:
-        files = self._stored(source)
-        self._check_path(relative_path)
-        if relative_path not in files:
+    def write(self, source: Source, item_id: str, name: str, content: str, expected_version: str | None) -> None:
+        docs = self._stored(source)
+        key = self._key(item_id, name)
+        if key not in docs:
             if expected_version is not None:
-                raise VersionConflictError(relative_path)
-        elif expected_version is None or content_version(files[relative_path]) != expected_version:
-            raise VersionConflictError(relative_path)
-        files[relative_path] = content
+                raise VersionConflictError(name)
+        elif expected_version is None or content_version(docs[key]) != expected_version:
+            raise VersionConflictError(name)
+        docs[key] = content
 
-    def append(self, source: Source, relative_path: str, text: str, header: str) -> str:
-        files = self._stored(source)
-        self._check_path(relative_path)
-        files[relative_path] = f"{header}\n{text}" if relative_path not in files \
-            else f"{files[relative_path].rstrip()}\n\n{text}"
-        return files[relative_path]
+    def append(self, source: Source, item_id: str, name: str, text: str, header: str) -> str:
+        docs = self._stored(source)
+        key = self._key(item_id, name)
+        docs[key] = f"{header}\n{text}" if key not in docs else f"{docs[key].rstrip()}\n\n{text}"
+        return docs[key]
 
-    def delete_item_folder(self, source: Source, item_id: str) -> None:
-        files = self._stored(source)
+    def delete_documents(self, source: Source, item_id: str) -> None:
+        docs = self._stored(source)
         self._check_id(item_id)
-        for path in [p for p in files if p.startswith(f"items/{item_id}/")]:
-            del files[path]
+        for key in [k for k in docs if k[0] == item_id]:
+            del docs[key]
 
-    def rename_item_folder(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
-        files = self._stored(source)
+    def relabel_documents(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
+        docs = self._stored(source)
         self._check_id(old_id)
         self._check_id(new_id)
         for name in (*renames, *renames.values()):
-            if "/" in name or name in {"", ".", ".."}:
-                raise DocumentForbiddenError()
-        old = [p for p in files if p.startswith(f"items/{old_id}/")]
+            self._check_name(name)
+        old = [k for k in docs if k[0] == old_id]
         if not old:
             return
-        if any(p.startswith(f"items/{new_id}/") for p in files):
+        if any(k[0] == new_id for k in docs):
             raise ItemFolderExistsError(new_id)
-        for path in old:
-            name = path.rsplit("/", 1)[-1]
-            files[f"items/{new_id}/{renames.get(name, name)}"] = files.pop(path)
+        for key in old:
+            docs[(new_id, renames.get(key[1], key[1]))] = docs.pop(key)
+
+    @classmethod
+    def _key(cls, item_id: str, name: str) -> tuple[str, str]:
+        cls._check_id(item_id)
+        cls._check_name(name)
+        return item_id, name
 
     @staticmethod
     def _check_id(item_id: str) -> None:
@@ -144,8 +147,6 @@ class InMemoryDocumentStore:
             raise DocumentForbiddenError()
 
     @staticmethod
-    def _check_path(relative_path: str) -> None:
-        parts = relative_path.split("/")
-        if ".." in parts or relative_path.startswith("/") or \
-                "." + relative_path.rsplit(".", 1)[-1].lower() not in DOCUMENT_SUFFIXES:
+    def _check_name(name: str) -> None:
+        if not name or "/" in name or "." + name.rsplit(".", 1)[-1].lower() not in DOCUMENT_SUFFIXES:
             raise DocumentForbiddenError()

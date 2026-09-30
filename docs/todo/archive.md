@@ -925,3 +925,29 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     erweiterbarer Abschnittsliste öffnet; Allgemein zeigt die Datenbank
     lesend und stellt den Standard-Speicherort für neue Projekte ein.
   - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.6.
+
+- `STORY-034` **Menüabschnitt „Projekte“: Primärquelle, Pfade und Sync je Projekt**
+  - Type: Story.
+  - Parent: `EPIC-004`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `STORY-033`, `STORY-030`, `STORY-031`, `STORY-032`.
+  - Goal: Pro Projekt eine Karte: primäre Quelle umschalten, Pfade beider
+    Seiten (Markdown-Ordner, Spiegel) einstellen, Sync mit Richtung
+    auslösen, Sync-Status sehen. Der Bearbeiten-Dialog der Sidebar behält
+    nur den Namen; Entfernen und Reihenfolge bleiben in der Sidebar. Das
+    Sync-Badge in der Sidebar öffnet das Menü bei diesem Projekt.
+  - Completion criteria: - Jede Karte zeigt Primärquelle, beide Pfade,
+    Status und letzten Sync. - Wechsel der Primärquelle führt über Sync und
+    Backup aus dem Menü. - Sync-Richtung ist wählbar; Standard ist von der
+    primären Seite zur anderen. - Das Badge erscheint bei geändertem Spiegel
+    und öffnet das Menü bei diesem Projekt. - Der Bearbeiten-Dialog enthält
+    nur noch den Namen. - Web-Tests decken Karte, Richtung und Badge ab.
+  - Notes: `items/STORY-034/STORY-034_notes.md`.
+  - Summary: Das Einstellungsmenü hat einen Abschnitt Projekte mit einer
+    Karte je Projekt; ein Badge in der Sidebar zeigt einen geänderten
+    Spiegel und öffnet die Karte.
+  - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.7.

@@ -35,36 +35,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     freigegeben. - Das Menü ist über eine Abschnittsliste erweiterbar; die
     Doku ist aktuell.
 
-- `STORY-034` **Menüabschnitt „Projekte“: Primärquelle, Pfade und Sync je Projekt**
-  - Type: Story.
-  - Parent: `EPIC-004`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: `STORY-033`, `STORY-030`, `STORY-031`, `STORY-032`.
-  - Goal: Pro Projekt eine Karte: primäre Quelle umschalten, Pfade beider
-    Seiten (Markdown-Ordner, Spiegel) einstellen, Sync mit Richtung
-    auslösen, Sync-Status sehen. Der Bearbeiten-Dialog der Sidebar behält
-    nur den Namen; Entfernen und Reihenfolge bleiben in der Sidebar. Das
-    Sync-Badge in der Sidebar öffnet das Menü bei diesem Projekt.
-  - Completion criteria: - Jede Karte zeigt Primärquelle, beide Pfade,
-    Status und letzten Sync. - Wechsel der Primärquelle führt über Sync und
-    Backup aus dem Menü. - Sync-Richtung ist wählbar; Standard ist von der
-    primären Seite zur anderen. - Das Badge erscheint bei geändertem Spiegel
-    und öffnet das Menü bei diesem Projekt. - Der Bearbeiten-Dialog enthält
-    nur noch den Namen. - Web-Tests decken Karte, Richtung und Badge ab.
-  - Notes: `items/STORY-034/STORY-034_notes.md`.
-  - Summary: Das Einstellungsmenü hat einen Abschnitt Projekte mit einer
-    Karte je Projekt; ein Badge in der Sidebar zeigt einen geänderten
-    Spiegel und öffnet die Karte.
-
 - `STORY-035` **Doku und Release für Primärquelle, Spiegel und Einstellungsmenü**
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -74,3 +49,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Schnittstellen, Betrieb) beschreiben Primärquelle, Spiegel,
     Sync-Richtung, Status und Backup. - Ein Tagesbericht und ein Release
     (SemVer) sind erledigt.
+  - Notes: `items/STORY-035/STORY-035_notes.md`.
+  - Summary: README und Techdocs beschreiben Primärquelle, Spiegel,
+    Sync-Richtung, Status und Backup durchgehend; Releases und Tagesberichte
+    sind erledigt.

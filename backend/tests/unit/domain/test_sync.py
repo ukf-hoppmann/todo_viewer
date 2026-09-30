@@ -53,10 +53,20 @@ def test_a_markdown_project_can_be_read_into_the_database_under_its_id():
         "database", "", None, "abc", "P")
 
 
-def test_a_markdown_project_cannot_be_written_anywhere():
+def test_a_markdown_project_without_a_database_mirror_cannot_be_written_anywhere():
     with pytest.raises(SyncSameBackendError) as error:
         sync_pair(Source(project="P", path="docs", backend="markdown", id="abc"), SyncDirection.TO_MD)
     assert error.value.code == "sync_same_backend"
+
+
+def test_a_markdown_project_with_a_database_mirror_syncs_in_both_directions():
+    source = Source(project="P", path="docs", backend="markdown", id="abc", mirror_database=True)
+
+    for direction in SyncDirection:
+        database, markdown = sync_pair(source, direction)
+
+        assert markdown == source
+        assert (database.backend, database.path, database.id, database.project) == ("database", "", "abc", "P")
 
 
 def test_the_switch_needs_a_sync_first():

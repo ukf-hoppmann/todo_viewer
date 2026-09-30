@@ -979,6 +979,23 @@
             "description": "Where the project is stored; on create default markdown. On update another value moves the project there (path and sync_path are then ignored): only when both sides are in sync, else 409 sync_required",
             "title": "Backend"
           },
+          "mirror": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "markdown",
+                  "database"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The other side to keep as a mirror: database for a markdown project, markdown (needs sync_path) for a database one, none to drop it; unset leaves it as it is. Dropping the database mirror of a markdown project deletes the copy in the database. Not read when the backend changes",
+            "title": "Mirror"
+          },
           "path": {
             "default": "",
             "description": "Markdown projects: backlog folder with TODO.md; unused for database ones",
@@ -1027,9 +1044,40 @@
             "title": "Id",
             "type": "string"
           },
+          "markdown_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The markdown folder on either side: the primary source of a markdown project, the mirror of a database project; null if a database project has none",
+            "title": "Markdown Path"
+          },
+          "mirror": {
+            "description": "The other side kept as a mirror; it is written by a sync only",
+            "enum": [
+              "none",
+              "markdown",
+              "database"
+            ],
+            "title": "Mirror",
+            "type": "string"
+          },
           "path": {
             "description": "Markdown projects: backlog folder; database projects: empty",
             "title": "Path",
+            "type": "string"
+          },
+          "primary": {
+            "description": "The side that holds the truth (same as `backend`)",
+            "enum": [
+              "markdown",
+              "database"
+            ],
+            "title": "Primary",
             "type": "string"
           },
           "project": {
@@ -1054,7 +1102,10 @@
           "project",
           "path",
           "backend",
-          "sync_path"
+          "sync_path",
+          "primary",
+          "markdown_path",
+          "mirror"
         ],
         "title": "SourceOut",
         "type": "object"
@@ -1077,9 +1128,40 @@
             "title": "Item Count",
             "type": "integer"
           },
+          "markdown_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The markdown folder on either side: the primary source of a markdown project, the mirror of a database project; null if a database project has none",
+            "title": "Markdown Path"
+          },
+          "mirror": {
+            "description": "The other side kept as a mirror; it is written by a sync only",
+            "enum": [
+              "none",
+              "markdown",
+              "database"
+            ],
+            "title": "Mirror",
+            "type": "string"
+          },
           "path": {
             "description": "Markdown projects: backlog folder; database projects: empty",
             "title": "Path",
+            "type": "string"
+          },
+          "primary": {
+            "description": "The side that holds the truth (same as `backend`)",
+            "enum": [
+              "markdown",
+              "database"
+            ],
+            "title": "Primary",
             "type": "string"
           },
           "problem": {
@@ -1115,6 +1197,9 @@
           "path",
           "backend",
           "sync_path",
+          "primary",
+          "markdown_path",
+          "mirror",
           "item_count",
           "problem"
         ],

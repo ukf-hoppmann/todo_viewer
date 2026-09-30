@@ -68,6 +68,10 @@ MIGRATIONS: dict[int, list[str]] = {
         "ALTER TABLE projects ADD COLUMN extra TEXT",
         "CREATE TABLE ui_state (id INTEGER PRIMARY KEY, data TEXT NOT NULL)",
     ],
+    # Whether the database keeps a mirror of a markdown project; existing projects keep none.
+    3: [
+        "ALTER TABLE projects ADD COLUMN mirror_database BOOLEAN NOT NULL DEFAULT 0",
+    ],
 }
 
 CURRENT_VERSION = max(MIGRATIONS)

@@ -30,8 +30,8 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `GET /sources` | Eingetragene Projekte (Markdown und Datenbank) in ihrer Reihenfolge. |
 | `POST /sources` | Projekt hinzufügen: Markdown mit `path` (optional `project`; ohne Namen der des Git-Repos), Datenbank mit `backend: "database"` und `project`. |
 | `POST /backlogs` | Neuen, leeren Backlog anlegen und als Quelle eintragen. Antwort 201 mit der Quelle. |
-| `PUT /sources/{source_id}` | Name, Ordner bzw. `sync_path` ändern; das Backend bleibt. |
-| `POST /sources/{source_id}/sync` | Überträgt ein Datenbank-Projekt in seinen `sync_path`-Ordner oder zurück; erst Vorschau, dann Ausführen (siehe unten). |
+| `PUT /sources/{source_id}` | Name, Ordner bzw. `sync_path` und den Spiegel (`mirror`) ändern; mit anderem `backend` wechselt die Primärquelle (nach Sync). |
+| `POST /sources/{source_id}/sync` | Überträgt zwischen Primärquelle und Spiegel eines Projekts (Datenbank und Markdown-Ordner), in der gewählten Richtung; erst Vorschau, dann Ausführen (siehe unten). |
 | `DELETE /sources/{source_id}` | Projekt austragen. Markdown-Dateien bleiben; ein Datenbank-Projekt mit Items wird abgelehnt. |
 | `GET /folders?path=…` | Unterordner für den Ordner-Browser, mit Markierung, ob eine `TODO.md` enthalten ist. |
 | `GET /ui-state`, `PUT /ui-state` | UI-Zustand lesen bzw. vollständig ersetzen (freies JSON-Objekt). |
@@ -135,7 +135,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     `### Discussed`/`### Decided`/`### Open`. Der erste Eintrag legt
     `items/<ID>/<ID>_notes.md` an und trägt `Notes` ein; hat das Item noch keine
     Summary, ist `summary` Pflicht.
-  - Projekte (`/sources`): `{path?, project?, backend?, sync_path?}`.
+  - Projekte (`/sources`): `{path?, project?, backend?, sync_path?, mirror?}`.
     `backend` ist `markdown` (Standard beim Anlegen) oder `database`.
     Markdown braucht `path` (Ordner mit `TODO.md`), Datenbank einen Namen
     (`project`, sonst 400 `value_required`); `sync_path` ist der Ordner, mit dem
@@ -154,6 +154,21 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     ändert; die Item-IDs bleiben gleich. Wird ein Markdown-Projekt ausgetragen,
     verschwindet auch die Kopie seiner Items in der Datenbank (ein Datenbank-
     Projekt mit Items wird weiter abgelehnt).
+  - Primärquelle und Spiegel (Regel 1 der Architektur, Stand
+    STORY-029): `backend` ist
+    die Primärquelle, sie hält die Wahrheit. Die andere Seite darf als Spiegel
+    geführt werden und wird nur durch einen Sync geschrieben. `mirror` ist
+    `none`, `database` oder `markdown`: bei einem Markdown-Projekt schaltet
+    `database` die Datenbank-Kopie ein und `none` aus (das Ausschalten löscht
+    die Kopie in der Datenbank, nicht die Markdown-Dateien); bei einem
+    Datenbank-Projekt braucht `markdown` einen `sync_path` (sonst 400
+    `sync_path_missing`), `none` entfernt ihn. Der Spiegel der eigenen Seite
+    (`markdown` bei Markdown, `database` bei Datenbank) ergibt 400
+    `invalid_value`; fehlt `mirror`, bleibt der Spiegel wie er ist. Beim
+    Wechsel der Primärquelle bleibt die bisherige Seite als Spiegel:
+    Markdown → Datenbank behält den Ordner als `sync_path`, Datenbank →
+    Markdown behält die Kopie in der Datenbank. Ein Projekt aus einer früheren
+    Version hat keinen Spiegel, bis man ihn einschaltet.
   - Sync (`POST /sources/{source_id}/sync`,
     `{direction, confirm?, token?, delete_missing?, language?}`; Entscheidungen:
     [STORY-023](../todo/items/STORY-023/STORY-023_spec.md)): nur für
@@ -177,11 +192,16 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     Änderung ab (400 `sync_source_invalid`, `details.reason` = Grund, etwa
     `not_found`, `unsupported_format`, `parse_error`). Dokumente eines Items
     findet der Sync über dessen Felder `Notes`/`Spec`; Dateien im Ordner
-    `items/<ID>/`, die dort nicht stehen, sieht er nicht. Ein Markdown-Projekt
-    akzeptiert nur `from_md` (Ordner → Datenbank unter derselben `source_id`,
-    ohne dass sich das Projekt ändert); `to_md` ergibt 409
-    `sync_same_backend`. Das Umstellen des Backends ist `PUT /sources/{id}`
-    mit neuem `backend` nach dem Sync (siehe Projekte).
+    `items/<ID>/`, die dort nicht stehen, sieht er nicht. Die Richtung wählt
+    man je Aufruf; Standard ist von der Primärquelle zum Spiegel (Datenbank-
+    Projekt: `to_md`, Markdown-Projekt: `from_md`), die Gegenrichtung
+    überschreibt die Primärquelle mit dem Spiegel und zeigt die Vorschau
+    genauso. Ein Markdown-Projekt mit Datenbank-Spiegel akzeptiert beide
+    Richtungen; ohne Spiegel nur `from_md` (Ordner → Datenbank unter
+    derselben `source_id`, das ist der Weg beim Umstellen), `to_md` ergibt 409
+    `sync_same_backend`. Das Umstellen der Primärquelle ist `PUT /sources/{id}`
+    mit neuem `backend` nach dem Sync (siehe Projekte). Es gibt keinen
+    automatischen Sync.
   - `POST /backlogs`: `{path, project?, language?}` mit `language` `en`
     (Standard) oder `de`. Legt den Ordner bei Bedarf an und schreibt
     `TODO.md` und `archive.md` mit Format-Kennung, `## Work items` und
@@ -196,7 +216,8 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     (`[{name, kind: "notes"|"spec"}]`), `extra_fields` für alle weiteren
     Freitext-Felder und `archive_supported`.
   - Dokumente: `{name, kind, content, version}`.
-  - Projekte: `{id, project, path, backend, sync_path}`; in `GET /backlog`
+  - Projekte: `{id, project, path, backend, sync_path, primary, markdown_path, mirror}` (`primary` = `backend`;
+    `markdown_path` der Markdown-Ordner, egal auf welcher Seite, `null` ohne; `mirror` `none`/`markdown`/`database`); in `GET /backlog`
     zusätzlich `item_count` und `problem`. Bei Datenbank-Projekten ist `path`
     leer.
   - `version` ist ein Hash über den gespeicherten Inhalt des Items und ändert

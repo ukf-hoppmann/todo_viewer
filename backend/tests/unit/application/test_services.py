@@ -18,10 +18,12 @@ from todo_viewer.domain.errors import (
     DuplicateSourceError,
     FileChangedError,
     InvalidSourceError,
+    InvalidValueError,
     ItemNotFoundError,
     LifecycleViolationError,
     NotEditableError,
     SourceGoneError,
+    SyncPathMissingError,
     SyncRequiredError,
     VersionConflictError,
 )
@@ -228,9 +230,54 @@ def test_a_database_project_moves_back_to_its_sync_folder_once_it_is_written_out
 
     switched = service.update("a", "", "Renamed", "markdown", None)
 
-    assert switched == Source("Renamed", "/a", backend="markdown", id="a", sync_path=None)
+    assert switched == Source("Renamed", "/a", backend="markdown", id="a", sync_path=None, mirror_database=True)
     assert repo.sources == [switched]
     assert sync.asked == [(db, SyncDirection.TO_MD)]
+
+
+def test_a_markdown_project_can_keep_a_database_mirror_from_the_start():
+    service, repo = _sources()
+
+    added = service.add("/repo/docs", "P", mirror="database")
+
+    assert added.mirror_database is True and repo.sources == [added]
+
+
+def test_the_database_mirror_of_a_markdown_project_is_switched_on_and_off_and_otherwise_kept():
+    service, repo = _sources([Source("A", "/a", id="a")])
+
+    on = service.update("a", "/a", None, mirror="database")
+    kept = service.update("a", "/a", "Renamed")
+    off = service.update("a", "/a", None, mirror="none")
+
+    assert (on.mirror, kept.mirror, off.mirror) == ("database", "database", "none")
+    assert repo.sources == [off]
+
+
+def test_the_markdown_mirror_of_a_database_project_needs_a_folder_and_goes_with_it():
+    db = Source("A", "", backend="database", id="a", sync_path="/a")
+    service, repo = _sources([db])
+
+    with pytest.raises(SyncPathMissingError):
+        service.update("a", "", "A", mirror="markdown", sync_path=None)
+    off = service.update("a", "", "A", mirror="none", sync_path="/a")
+    on = service.update("a", "", "A", mirror="markdown", sync_path="/b")
+
+    assert (off.mirror, off.sync_path, on.mirror, on.sync_path) == ("none", None, "markdown", "/b")
+    assert repo.sources == [on]
+
+
+def test_a_mirror_on_the_primary_side_is_refused():
+    service, repo = _sources([Source("A", "/a", id="a"), Source("B", "", backend="database", id="b")])
+
+    with pytest.raises(InvalidValueError):
+        service.update("a", "/a", None, mirror="markdown")
+    with pytest.raises(InvalidValueError):
+        service.update("b", "", "B", mirror="database")
+    with pytest.raises(InvalidValueError):
+        service.add("/c", "C", mirror="other")
+
+    assert [s.mirror for s in repo.sources] == ["none", "none"]
 
 
 def test_the_backend_is_not_switched_while_the_sides_differ():

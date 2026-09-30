@@ -13,6 +13,7 @@ projects = sa.Table(
     sa.Column("backend", sa.String(20)),
     sa.Column("path", sa.Text),
     sa.Column("sync_path", sa.Text),
+    sa.Column("mirror_database", sa.Boolean, nullable=False, server_default=sa.false()),
     sa.Column("position", sa.Integer),
     sa.Column("extra", sa.Text),  # JSON object of unknown keys
 )

@@ -123,12 +123,21 @@ class SourceOut(BaseModel):
     path: str = Field(description="Markdown projects: backlog folder; database projects: empty")
     backend: Literal["markdown", "database"]
     sync_path: str | None = Field(description="Database projects: folder to sync markdown files with")
+    primary: Literal["markdown", "database"] = Field(description="The side that holds the truth (same as `backend`)")
+    markdown_path: str | None = Field(
+        description="The markdown folder on either side: the primary source of a markdown project, the mirror of a "
+                    "database project; null if a database project has none")
+    mirror: Literal["none", "markdown", "database"] = Field(
+        description="The other side kept as a mirror; it is written by a sync only")
 
     @classmethod
     def of(cls, source: Source) -> SourceOut:
         return cls(id=source.id, project=source.project, path=source.path,
                    backend=source.backend,  # type: ignore[arg-type]
-                   sync_path=source.sync_path)
+                   sync_path=source.sync_path,
+                   primary=source.backend,  # type: ignore[arg-type]
+                   markdown_path=source.markdown_path,
+                   mirror=source.mirror)  # type: ignore[arg-type]
 
 
 class SourceStatusOut(SourceOut):
@@ -238,6 +247,11 @@ class SourceIn(BaseModel):
                           "the project there (path and sync_path are then ignored): only when both sides are in "
                           "sync, else 409 sync_required")
     sync_path: str | None = Field(None, description="Database projects: folder to sync markdown files with")
+    mirror: Literal["none", "markdown", "database"] | None = Field(
+        None, description="The other side to keep as a mirror: database for a markdown project, markdown (needs "
+                          "sync_path) for a database one, none to drop it; unset leaves it as it is. Dropping the "
+                          "database mirror of a markdown project deletes the copy in the database. Not read when "
+                          "the backend changes")
 
 
 class BacklogCreateIn(BaseModel):

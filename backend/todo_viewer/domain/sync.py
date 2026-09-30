@@ -49,11 +49,12 @@ class SyncPreview:
 def sync_pair(source: Source, direction: SyncDirection) -> tuple[Source, Source]:
     """The database side and the markdown side of a project, as two sources with the project's id.
 
-    A database project is synced with its `sync_path` folder in both directions. A markdown project has no
-    database side of its own yet: its folder can be read into the database (`from_md`), which is how it is moved.
+    A database project is synced with its `sync_path` folder in both directions, and so is a markdown project
+    that keeps a database mirror. A markdown project without one can only be read into the database (`from_md`),
+    which is how it is moved.
     """
     if source.backend == "markdown":
-        if direction is SyncDirection.TO_MD:
+        if direction is SyncDirection.TO_MD and not source.mirror_database:
             raise SyncSameBackendError()
         return dataclasses.replace(source, backend="database", path="", sync_path=None), source
     if not source.sync_path:

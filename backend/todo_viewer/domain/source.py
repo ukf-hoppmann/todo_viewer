@@ -15,8 +15,22 @@ class Source:
     id: str = ""
     # Database projects only: folder their markdown files are synced with, if any.
     sync_path: str | None = None
+    # Markdown projects only: whether the database keeps a mirror of the project (written by a sync only).
+    mirror_database: bool = False
     # Unknown config keys are preserved when a source is rewritten.
     extra: dict[str, Any] = field(default_factory=dict, compare=False)
+
+    @property
+    def markdown_path(self) -> str | None:
+        """The folder of the markdown side, whichever side is primary; None if a database project has none."""
+        return (self.path if self.backend == "markdown" else self.sync_path) or None
+
+    @property
+    def mirror(self) -> str:
+        """The backend that mirrors the primary one: "markdown", "database", or "none"."""
+        if self.backend == "markdown":
+            return "database" if self.mirror_database else "none"
+        return "markdown" if self.sync_path else "none"
 
     def updated(self, project: str, path: str) -> Source:
         return replace(self, project=project, path=path)

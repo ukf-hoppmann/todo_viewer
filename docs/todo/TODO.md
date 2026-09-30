@@ -61,7 +61,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -76,6 +76,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Nichts wird ohne Bestätigung auf dem Ziel gelöscht. - Der Wechsel der
     Primärquelle verlangt einen vorherigen Sync, sonst sync_required. - Es
     gibt keinen automatischen Sync.
+  - Notes: `items/STORY-030/STORY-030_notes.md`.
+  - Summary: Der Sync hat eine Standardrichtung von der Primärquelle zum
+    Spiegel; alles andere war schon vorhanden und ist jetzt auch für
+    Markdown mit Datenbank-Spiegel getestet.
 
 - `STORY-031` **Backup vor dem Wechsel der Primärquelle**
   - Type: Story.

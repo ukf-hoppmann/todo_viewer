@@ -28,6 +28,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     aktualisiert.
   - Summary: Neben den Markdown-Dateien wird eine zentrale SQLite-Datenbank
     als Speicher wählbar, mit Sync in beide Richtungen auf Knopfdruck.
+  - Spec: `items/EPIC-003/EPIC-003_spec.md`.
 
 - `STORY-019` **Architekturregeln für wählbares Speicher-Backend öffnen**
   - Type: Story.
@@ -48,6 +49,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Doku) sind konsistent.
   - Summary: Regel 1 und der Backend-Scope werden so geändert, dass Markdown
     und Datenbank gleichrangige Backends sind.
+  - Spec: `items/STORY-019/STORY-019_spec.md`.
 
 - `STORY-020` **Port-Vertrag als Contract-Suite und Routing je Projekt**
   - Type: Story.
@@ -67,6 +69,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ist unverändert, Source hat das Feld backend (Standard markdown).
   - Summary: Bestehende Tests werden zu einem wiederverwendbaren Maßstab für
     neue Adapter; Routing je Projekt kommt dazu.
+  - Spec: `items/STORY-020/STORY-020_spec.md`.
 
 - `STORY-021` **SQLite-Adapter für Items, Archiv, Papierkorb und Dokumente**
   - Type: Story.
@@ -79,15 +82,17 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Dependencies: `STORY-020`.
   - Goal: Ein Datenbank-Adapter (SQLAlchemy Core, SQLite) implementiert
     BacklogRepository und DocumentStore, inklusive Archiv, Papierkorb,
-    Notizen und Specs, mit versioniertem Schema (Migrationen), Spalte
-    position sowie Feldern für Freitext und Zeilenenden, damit der spätere
-    Roundtrip byte-gleich sein kann. apply_all läuft in einer Transaktion,
-    Versionskonflikte über Item.version.
+    Notizen und Specs. Die Daten werden normalisiert in Tabellen gespeichert
+    (Items mit UUID und Label, Beziehungen, Zusatzfelder, Dokumente) mit
+    versioniertem Schema (Migrationen) und einer Spalte position für die
+    Reihenfolge. apply_all läuft in einer Transaktion, Versionskonflikte
+    über Item.version.
   - Completion criteria: Die Contract-Suite ist für SQLite grün; ein Projekt
     mit backend=database funktioniert über die API Ende zu Ende (lesen,
     anlegen, ändern, archivieren, löschen, Dokumente).
   - Summary: Neuer DB-Adapter, der dieselbe Contract-Suite besteht wie
     Markdown.
+  - Spec: `items/STORY-021/STORY-021_spec.md`.
 
 - `STORY-022` **Projekte und UI-State in der zentralen Datenbank**
   - Type: Story.
@@ -109,6 +114,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     werden migriert; ui_state kommt aus der DB.
   - Summary: Ein zentraler Ort für Projekte, Einstellungen und Inhalte;
     Sync-Pfad je Projekt konfigurierbar.
+  - Spec: `items/STORY-022/STORY-022_spec.md`.
 
 - `STORY-023` **Sync zwischen Datenbank und Markdown (to_md / from_md)**
   - Type: Story.
@@ -120,17 +126,23 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Priority: Normal.
   - Dependencies: `STORY-022`.
   - Goal: Ein Sync-Service überträgt auf Knopfdruck oder API-Aufruf (POST
-    /api/v2/projects/{id}/sync mit direction=to_md|from_md) alle Daten eines
+    /api/v2/sources/{id}/sync mit direction=to_md|from_md) alle Daten eines
     Projekts: TODO.md, archive.md und alle Items samt Notizen und Specs.
-    Vorher gibt es eine Vorschau (neu, geändert, gelöscht), Überschreiben
-    nur mit Bestätigung; Konflikte werden über den Versionshash je Item
-    erkannt.
+    Vorher gibt es eine Vorschau (neu, geändert, fehlend), Überschreiben nur
+    mit Bestätigung; Konflikte werden über den Versionshash je Item erkannt.
+    Löschungen (Einträge, die auf der Zielseite existieren, auf der
+    Quellseite aber fehlen) werden als Warnung angezeigt und nur nach
+    Rückfrage ausgeführt.
   - Completion criteria: Sync in beide Richtungen funktioniert per API mit
-    Vorschau und Bestätigung; der Roundtrip md -> db -> md ergibt
-    byte-gleiche Dateien (Test auf den Fixtures); ohne Sync-Pfad wird mit
-    klarem Fehlercode abgelehnt.
+    Vorschau und Bestätigung. Der Export ist stabil (export -> import ->
+    export ergibt identische Dateien) und der Import gibt dieselben Items
+    zurück (gleiche Item.version); die .md müssen nicht byte-gleich zum
+    Ausgangstext sein. Fehlende Einträge werden in der Vorschau als Warnung
+    gemeldet und nur nach ausdrücklicher Nachfrage gelöscht. Ohne Sync-Pfad
+    wird mit klarem Fehlercode abgelehnt.
   - Summary: Zweiseitiger Sync auf Knopfdruck, keine automatische
     Spiegelung.
+  - Spec: `items/STORY-023/STORY-023_spec.md`.
 
 - `STORY-024` **Speicher-Backend und Sync in der UI bedienen**
   - Type: Story.
@@ -149,6 +161,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     über die UI nutzbar; UI-Tests decken Backend-Wahl, Vorschau und
     Bestätigung ab.
   - Summary: Backend-Wahl und Sync-Knöpfe im Projekt-Dialog.
+  - Spec: `items/STORY-024/STORY-024_spec.md`.
 
 - `STORY-025` **Doku und Release für das wählbare Speicher-Backend**
   - Type: Story.
@@ -165,6 +178,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Completion criteria: Doku entspricht dem Ist-Zustand, Release ist
     getaggt, das eigene Backlog wurde probeweise in die DB übernommen.
   - Summary: Dokumentation und Release des Epics.
+  - Spec: `items/STORY-025/STORY-025_spec.md`.
 
 - `STORY-026` **Postgres als zweiter Datenbank-Typ (optional)**
   - Type: Story.
@@ -182,3 +196,4 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     grün; Postgres-Tests werden übersprungen, wenn kein Server erreichbar
     ist.
   - Summary: Optionaler zweiter Datenbank-Typ.
+  - Spec: `items/STORY-026/STORY-026_spec.md`.

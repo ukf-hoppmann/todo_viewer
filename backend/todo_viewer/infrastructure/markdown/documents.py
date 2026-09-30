@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import shutil
+from collections.abc import Mapping
 from pathlib import Path
 
 from todo_viewer.domain.documents import content_version
 from todo_viewer.domain.editing import ID_RE
-from todo_viewer.domain.errors import DocumentForbiddenError, DocumentNotFoundError, VersionConflictError
+from todo_viewer.domain.errors import (
+    DocumentForbiddenError,
+    DocumentNotFoundError,
+    ItemFolderExistsError,
+    VersionConflictError,
+)
 from todo_viewer.domain.source import Source
 
 from .layout import LayoutFactory
@@ -68,6 +74,32 @@ class MarkdownDocumentStore:
         with self._locks.hold(str(self._folder(source))):
             if target.is_dir():
                 shutil.rmtree(target)
+
+    def rename_item_folder(self, source: Source, old_id: str, new_id: str, renames: Mapping[str, str]) -> None:
+        """Moves `items/<old_id>/` to `items/<new_id>/` and renames files in it (old name -> new name)."""
+        items = (self._folder(source) / "items").resolve()
+        old, new = self._item_folder(items, old_id), self._item_folder(items, new_id)
+        for name in (*renames, *renames.values()):
+            if "/" in name or name in {"", ".", ".."}:
+                raise DocumentForbiddenError()
+        with self._locks.hold(str(self._folder(source))):
+            if not old.is_dir():
+                return
+            if new.exists():
+                raise ItemFolderExistsError(new_id)
+            old.rename(new)
+            for before, after in renames.items():
+                if (new / before).is_file():
+                    (new / before).rename(new / after)
+
+    @staticmethod
+    def _item_folder(items: Path, item_id: str) -> Path:
+        if not ID_RE.match(item_id) or item_id in {".", ".."}:
+            raise DocumentForbiddenError()
+        target = (items / item_id).resolve()
+        if target.parent != items:
+            raise DocumentForbiddenError()
+        return target
 
     def _folder(self, source: Source) -> Path:
         return self._layouts.for_source(source).folder

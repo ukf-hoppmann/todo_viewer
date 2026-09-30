@@ -346,6 +346,36 @@ def test_document_store_deletes_the_item_folder(backlog):
             store.delete_item_folder(backlog, bad)
 
 
+def test_document_store_renames_the_item_folder_and_its_files(backlog):
+    store = _documents()
+    items = Path(backlog.path) / "items"
+    (items / "TASK-002").joinpath("unlisted.txt").write_text("keep", encoding="utf-8")
+
+    store.rename_item_folder(backlog, "TASK-002", "STORY-009", {"notes.md": "STORY-009_notes.md"})
+    store.rename_item_folder(backlog, "TASK-404", "STORY-010", {"x.md": "y.md"})  # no folder: nothing to do
+
+    assert not (items / "TASK-002").exists() and not (items / "STORY-010").exists()
+    assert sorted(p.name for p in (items / "STORY-009").iterdir()) == ["STORY-009_notes.md", "unlisted.txt"]
+    assert store.read(backlog, "items/STORY-009/STORY-009_notes.md").startswith("# Notes for TASK-002")
+
+
+def test_document_store_rename_refuses_existing_targets_and_bad_names(backlog):
+    from todo_viewer.domain.errors import DocumentForbiddenError, ItemFolderExistsError
+
+    store = _documents()
+    items = Path(backlog.path) / "items"
+    (items / "STORY-009").mkdir()
+
+    with pytest.raises(ItemFolderExistsError):
+        store.rename_item_folder(backlog, "TASK-002", "STORY-009", {})
+    assert (items / "TASK-002").is_dir()
+    for old, new, renames in [("..", "X-1", {}), ("TASK-002", "../x", {}), ("TASK-002", "a/b", {}),
+                              ("TASK-002", "X-1", {"notes.md": "../out.md"}), ("TASK-002", "X-1", {"../a": "b"})]:
+        with pytest.raises(DocumentForbiddenError):
+            store.rename_item_folder(backlog, old, new, renames)
+    assert (items / "TASK-002").is_dir() and not (items / "X-1").exists()
+
+
 def test_repository_apply_all_marks_and_moves_several_entries(backlog):
     repo = build_markdown_repository(Path("/"))
     task, done = repo.get(backlog, "TASK-003"), repo.get(backlog, "TASK-000")

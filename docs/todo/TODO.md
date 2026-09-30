@@ -88,7 +88,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Task.
   - Parent: `STORY-024`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -110,3 +110,4 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Fehlerfälle ab; Techdocs und OpenAPI sind angepasst.
   - Summary: Backend-Wechsel ohne neue Projekt-Id: erst Sync, dann PUT mit
     neuem backend.
+  - Notes: `items/TASK-003/TASK-003_notes.md`.

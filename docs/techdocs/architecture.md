@@ -69,6 +69,10 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   liegt in `domain/sync.py`, geschrieben wird über `write_backlog` und die
   Dokument-Ports. Die Markdown-Seite rendert dafür alle Felder
   (`EntryRenderer.render_full`), den Text um die Einträge lässt sie stehen.
+  Das Umstellen des Backends (`SourceService.update`) verlangt vorher einen
+  Sync (`SyncService.in_sync`) und tauscht nur die Ordnerseite: `path` ⇄
+  `sync_path`, gleiche `source_id`. Ein Markdown-Projekt kann dazu per
+  `from_md` in die Datenbank gelesen werden.
 - Projektliste (Name, Backend, Ordner, `sync_path`, Reihenfolge; `source_id` =
   UUID): zentrale Datenbank. Ort der Datenbank (`storage_url`): `configs/config.json`.
 - UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, markierte

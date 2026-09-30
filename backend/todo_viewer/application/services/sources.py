@@ -3,17 +3,24 @@ from __future__ import annotations
 import dataclasses
 import uuid
 from collections.abc import Callable
+from typing import Protocol
 
 from todo_viewer.domain.errors import (
-    BackendChangeNotSupportedError,
     DuplicateSourceError,
     InvalidSourceError,
     SourceGoneError,
+    SyncRequiredError,
     ValueRequiredError,
 )
 from todo_viewer.domain.source import Source
+from todo_viewer.domain.sync import SyncDirection
 
 from ..ports import BacklogRepository, ProjectNameSuggester, SourceRepository
+
+
+class SyncCheck(Protocol):
+    def in_sync(self, source: Source, direction: SyncDirection) -> bool:
+        """True if a sync of the project in `direction` would find nothing to do."""
 
 
 class SourceLookup:
@@ -33,10 +40,11 @@ class SourceService:
     """Adds, changes and removes configured backlog folders."""
 
     def __init__(self, sources: SourceRepository, backlogs: BacklogRepository, names: ProjectNameSuggester,
-                 new_id: Callable[[], str] = lambda: str(uuid.uuid4())):
+                 sync: SyncCheck, new_id: Callable[[], str] = lambda: str(uuid.uuid4())):
         self._sources = sources
         self._backlogs = backlogs
         self._names = names
+        self._sync = sync
         self._new_id = new_id
 
     def all(self) -> list[Source]:
@@ -65,18 +73,42 @@ class SourceService:
 
     def update(self, source_id: str, path: str, project: str | None, backend: str | None = None,
                sync_path: str | None = None) -> Source:
-        """Changes name, folder, and sync folder; the backend stays (moving a project is a sync)."""
+        """Changes name, folder, and sync folder; with another `backend` the project is moved there instead.
+
+        A move needs both sides in sync (SyncRequiredError otherwise): sync first, then switch. The project keeps
+        its id, and its folder changes sides: `path` of a markdown project is the `sync_path` of a database one.
+        `path` and `sync_path` are not read when the backend changes; a `project` name is.
+        """
         with self._sources.edit() as sources:
             index = self._index_of(sources, source_id)
             current = sources[index]
             if backend is not None and backend != current.backend:
-                raise BackendChangeNotSupportedError()
+                sources[index] = self._switched(current, [s for i, s in enumerate(sources) if i != index],
+                                                project, backend)
+                return sources[index]
             candidate = self._validated(path, project, current.backend)
             if self._taken([s for i, s in enumerate(sources) if i != index], candidate.path):
                 raise DuplicateSourceError()
             sources[index] = dataclasses.replace(current.updated(candidate.project, candidate.path),
                                                  sync_path=_optional_path(sync_path))
             return sources[index]
+
+    def _switched(self, current: Source, others: list[Source], project: str | None, backend: str) -> Source:
+        """The project on the other backend; nothing is changed unless both sides are in sync."""
+        to_database = backend == "database"
+        if not self._sync.in_sync(current, SyncDirection.FROM_MD if to_database else SyncDirection.TO_MD):
+            raise SyncRequiredError()
+        name = (project or "").strip() or current.project
+        moved = (dataclasses.replace(current, project=name, backend=backend, path="", sync_path=current.path)
+                 if to_database else
+                 dataclasses.replace(current, project=name, backend=backend, path=current.sync_path or "",
+                                     sync_path=None))
+        problem = self._backlogs.check(moved)
+        if problem:
+            raise InvalidSourceError(problem.message, code=problem.code)
+        if self._taken(others, moved.path):
+            raise DuplicateSourceError()
+        return moved
 
     def remove(self, source_id: str) -> Source:
         with self._sources.edit() as sources:

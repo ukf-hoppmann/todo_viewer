@@ -4,7 +4,13 @@ import dataclasses
 
 import pytest
 
-from todo_viewer.domain.errors import SyncPathMissingError, SyncSameBackendError, SyncStaleError
+from todo_viewer.domain.errors import (
+    ConflictError,
+    SyncPathMissingError,
+    SyncRequiredError,
+    SyncSameBackendError,
+    SyncStaleError,
+)
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source
 from todo_viewer.domain.sync import (
@@ -24,22 +30,39 @@ def item(label: str, title: str = "t", **fields: object) -> Item:
 def test_sync_pair_is_the_database_project_and_its_markdown_folder():
     source = Source(project="P", path="", backend="database", id="abc", sync_path="/data/md")
 
-    database, markdown = sync_pair(source)
+    for direction in SyncDirection:
+        database, markdown = sync_pair(source, direction)
 
-    assert database == source
-    assert (markdown.backend, markdown.path, markdown.project, markdown.id) == ("markdown", "/data/md", "P", "abc")
+        assert database == source
+        assert (markdown.backend, markdown.path, markdown.project, markdown.id) == ("markdown", "/data/md", "P", "abc")
 
 
 def test_sync_pair_needs_a_sync_path():
     with pytest.raises(SyncPathMissingError) as error:
-        sync_pair(Source(project="P", path="", backend="database", id="abc"))
+        sync_pair(Source(project="P", path="", backend="database", id="abc"), SyncDirection.TO_MD)
     assert error.value.code == "sync_path_missing"
 
 
-def test_sync_pair_refuses_markdown_projects():
+def test_a_markdown_project_can_be_read_into_the_database_under_its_id():
+    source = Source(project="P", path="docs", backend="markdown", id="abc", sync_path=None)
+
+    database, markdown = sync_pair(source, SyncDirection.FROM_MD)
+
+    assert markdown == source
+    assert (database.backend, database.path, database.sync_path, database.id, database.project) == (
+        "database", "", None, "abc", "P")
+
+
+def test_a_markdown_project_cannot_be_written_anywhere():
     with pytest.raises(SyncSameBackendError) as error:
-        sync_pair(Source(project="P", path="docs", backend="markdown", id="abc", sync_path="/x"))
+        sync_pair(Source(project="P", path="docs", backend="markdown", id="abc"), SyncDirection.TO_MD)
     assert error.value.code == "sync_same_backend"
+
+
+def test_the_switch_needs_a_sync_first():
+    error = SyncRequiredError()
+
+    assert (error.code, isinstance(error, ConflictError)) == ("sync_required", True)
 
 
 def test_new_changed_unchanged_and_missing_items_are_told_apart():

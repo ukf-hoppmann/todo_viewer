@@ -56,6 +56,12 @@ class SyncService:
             _, _, preview = self._compare(source, direction)
             return preview
 
+    def in_sync(self, source: Source, direction: SyncDirection) -> bool:
+        """True if a sync in `direction` would find nothing to create, change or delete."""
+        p = self.preview(source, direction)
+        return not (p.created or p.changed or p.missing or p.created_documents or p.changed_documents
+                    or p.missing_documents)
+
     def run(self, source: Source, direction: SyncDirection, token: str | None, delete_missing: bool,
             language: str) -> SyncResult:
         """Syncs in `direction`. `token` is the one of the preview the caller confirmed (SyncStaleError if either
@@ -93,8 +99,8 @@ class SyncService:
             return self._locks[source.id]
 
     def _compare(self, source: Source, direction: SyncDirection) -> tuple[_Side, _Side, SyncPreview]:
-        database, markdown = sync_pair(source)
         to_md = direction is SyncDirection.TO_MD
+        database, markdown = sync_pair(source, direction)
         origin_source, target_source = (database, markdown) if to_md else (markdown, database)
         origin = self._read(origin_source, empty_ok=False)
         target = self._read(target_source, empty_ok=to_md)

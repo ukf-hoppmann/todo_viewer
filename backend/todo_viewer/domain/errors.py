@@ -137,13 +137,6 @@ class ConfigMissingError(NotFoundError):
         super().__init__("config.json not found")
 
 
-class BackendChangeNotSupportedError(ConflictError):
-    code = "backend_change_not_supported"
-
-    def __init__(self) -> None:
-        super().__init__("A project cannot be moved to another storage backend here; sync it instead.")
-
-
 class ProjectNotEmptyError(ConflictError):
     code = "project_not_empty"
 
@@ -183,7 +176,7 @@ class SyncSameBackendError(ConflictError):
     code = "sync_same_backend"
 
     def __init__(self) -> None:
-        super().__init__("This project is stored in markdown files; there is nothing to sync it with.")
+        super().__init__("This project is stored in markdown files; they can only be read into the database.")
 
 
 class SyncSourceInvalidError(InvalidSourceError):
@@ -191,6 +184,13 @@ class SyncSourceInvalidError(InvalidSourceError):
 
     def __init__(self, reason: str, message: str):
         super().__init__(f"Nothing was changed: {message}", reason=reason)
+
+
+class SyncRequiredError(ConflictError):
+    code = "sync_required"
+
+    def __init__(self) -> None:
+        super().__init__("The two sides differ. Sync them first, then switch the backend.")
 
 
 class SyncStaleError(ConflictError):

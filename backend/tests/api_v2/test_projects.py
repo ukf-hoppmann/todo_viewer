@@ -43,7 +43,7 @@ def test_a_database_project_holds_items(api, workspace):
     assert [s["item_count"] for s in api.get("/api/v2/backlog").body["sources"]] == [1]
 
 
-def test_a_database_project_can_be_renamed_but_not_moved_to_another_backend(api, workspace):
+def test_a_database_project_can_be_renamed_and_only_moved_to_a_folder_that_exists(api, workspace):
     sid = _central(api).body["id"]
 
     renamed = api.put(f"/api/v2/sources/{sid}", {"backend": "database", "project": "Renamed",
@@ -52,7 +52,8 @@ def test_a_database_project_can_be_renamed_but_not_moved_to_another_backend(api,
 
     assert (renamed.status_code, renamed.body["project"], renamed.body["sync_path"]) == (200, "Renamed", "/repos/x")
     assert renamed.body["id"] == sid
-    assert (moved.status_code, moved.body["code"]) == (409, "backend_change_not_supported")
+    assert (moved.status_code, moved.body["code"]) == (400, "not_found")
+    assert api.get("/api/v2/sources").body[0]["backend"] == "database"
 
 
 def test_a_database_project_with_items_cannot_be_removed(api, workspace):

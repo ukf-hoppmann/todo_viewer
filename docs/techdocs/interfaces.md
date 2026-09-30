@@ -140,9 +140,20 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     Markdown braucht `path` (Ordner mit `TODO.md`), Datenbank einen Namen
     (`project`, sonst 400 `value_required`); `sync_path` ist der Ordner, mit dem
     ein Datenbank-Projekt seine Markdown-Dateien abgleicht. Beim Ändern darf
-    `backend` fehlen; ein anderer Wert als der gespeicherte wird mit 409
-    `backend_change_not_supported` abgelehnt. `source_id` ist eine UUID, die
-    sich bei Namens- oder Pfadänderungen nicht ändert.
+    `backend` fehlen. Ein anderer Wert als der gespeicherte stellt das Projekt
+    um (Entscheidung: [TASK-003](../todo/items/TASK-003/TASK-003_notes.md)):
+    nur wenn beide Seiten gleich sind, sonst 409 `sync_required` und nichts
+    ändert sich. Vorher also synchronisieren: Markdown → Datenbank mit
+    `from_md` (der Sync liest bei einem Markdown-Projekt den Ordner in die
+    Datenbank), Datenbank → Markdown mit `to_md`. Beim Umstellen wandert der
+    Ordner von `path` nach `sync_path` bzw. zurück; `path` und `sync_path` im
+    Aufruf werden dabei nicht gelesen, ein neuer `project`-Name schon. Die
+    Markdown-Dateien bleiben liegen. Ein Markdown-Ordner, der schon einem
+    anderen Projekt gehört, lehnt 409 `duplicate` ab. `source_id` ist eine
+    UUID, die sich weder bei Namens- oder Pfadänderungen noch beim Umstellen
+    ändert; die Item-IDs bleiben gleich. Wird ein Markdown-Projekt ausgetragen,
+    verschwindet auch die Kopie seiner Items in der Datenbank (ein Datenbank-
+    Projekt mit Items wird weiter abgelehnt).
   - Sync (`POST /sources/{source_id}/sync`,
     `{direction, confirm?, token?, delete_missing?, language?}`; Entscheidungen:
     [STORY-023](../todo/items/STORY-023/STORY-023_spec.md)): nur für
@@ -166,9 +177,11 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     Änderung ab (400 `sync_source_invalid`, `details.reason` = Grund, etwa
     `not_found`, `unsupported_format`, `parse_error`). Dokumente eines Items
     findet der Sync über dessen Felder `Notes`/`Spec`; Dateien im Ordner
-    `items/<ID>/`, die dort nicht stehen, sieht er nicht. Wechsel des Backends
-    ist kein eigener Aufruf: erst `from_md` in ein Datenbank-Projekt, dann
-    umschalten.
+    `items/<ID>/`, die dort nicht stehen, sieht er nicht. Ein Markdown-Projekt
+    akzeptiert nur `from_md` (Ordner → Datenbank unter derselben `source_id`,
+    ohne dass sich das Projekt ändert); `to_md` ergibt 409
+    `sync_same_backend`. Das Umstellen des Backends ist `PUT /sources/{id}`
+    mit neuem `backend` nach dem Sync (siehe Projekte).
   - `POST /backlogs`: `{path, project?, language?}` mit `language` `en`
     (Standard) oder `de`. Legt den Ordner bei Bedarf an und schreibt
     `TODO.md` und `archive.md` mit Format-Kennung, `## Work items` und
@@ -199,7 +212,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 400 | `bad_request` (Validierung, auch unbekannte Felder), `sync_path_missing` (Projekt hat keinen `sync_path`), `sync_source_invalid` (Quelle oder Ziel des Syncs nicht lesbar), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `file_not_found`, `item_not_found` |
-| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `backend_change_not_supported` (Backend eines Projekts per `PUT` ändern), `sync_same_backend` (Markdown-Projekt hat nichts zum Abgleichen), `sync_stale` (Sync: eine Seite änderte sich seit der Vorschau) |
+| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `sync_required` (Backend per `PUT` umstellen, obwohl die Seiten sich unterscheiden), `sync_same_backend` (Markdown-Projekt mit `to_md`: Markdown-Projekte lassen sich nur in die Datenbank lesen), `sync_stale` (Sync: eine Seite änderte sich seit der Vorschau) |
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 

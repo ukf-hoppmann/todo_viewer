@@ -615,3 +615,27 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Notes: `items/STORY-021/STORY-021_notes.md`.
   - Resolution: Vom Projekteigner bestätigt am 2026-09-30; umgesetzt in
     Merge 95fcb7a, Release v0.3.0.
+
+- `STORY-022` **Projekte und UI-State in der zentralen Datenbank**
+  - Type: Story.
+  - Parent: `EPIC-003`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-021`.
+  - Goal: Die Projektliste (bisher Source) und der UI-State liegen in der
+    zentralen DB. Ein Projekt hat eine stabile Id statt Pfad-Hash, ein
+    backend und optional einen Sync-Pfad zu seinen .md-Dateien. config.json
+    behält nur storage_url (mit Zugangsdaten, lokal in Ordnung) und
+    Markdown-Projekte. Bestehende Installationen werden ohne Datenverlust
+    migriert.
+  - Completion criteria: Projekte lassen sich in der DB anlegen, ändern und
+    löschen; bestehende config.json-Quellen laufen unverändert weiter oder
+    werden migriert; ui_state kommt aus der DB.
+  - Summary: Ein zentraler Ort für Projekte, Einstellungen und Inhalte;
+    Sync-Pfad je Projekt konfigurierbar.
+  - Spec: `items/STORY-022/STORY-022_spec.md`.
+  - Notes: `items/STORY-022/STORY-022_notes.md`.
+  - Resolution: Vom Projektinhaber am 2026-09-30 bestätigt.

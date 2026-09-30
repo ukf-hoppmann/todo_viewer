@@ -30,34 +30,11 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     als Speicher wählbar, mit Sync in beide Richtungen auf Knopfdruck.
   - Spec: `items/EPIC-003/EPIC-003_spec.md`.
 
-- `STORY-022` **Projekte und UI-State in der zentralen Datenbank**
-  - Type: Story.
-  - Parent: `EPIC-003`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-09-30.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `STORY-021`.
-  - Goal: Die Projektliste (bisher Source) und der UI-State liegen in der
-    zentralen DB. Ein Projekt hat eine stabile Id statt Pfad-Hash, ein
-    backend und optional einen Sync-Pfad zu seinen .md-Dateien. config.json
-    behält nur storage_url (mit Zugangsdaten, lokal in Ordnung) und
-    Markdown-Projekte. Bestehende Installationen werden ohne Datenverlust
-    migriert.
-  - Completion criteria: Projekte lassen sich in der DB anlegen, ändern und
-    löschen; bestehende config.json-Quellen laufen unverändert weiter oder
-    werden migriert; ui_state kommt aus der DB.
-  - Summary: Ein zentraler Ort für Projekte, Einstellungen und Inhalte;
-    Sync-Pfad je Projekt konfigurierbar.
-  - Spec: `items/STORY-022/STORY-022_spec.md`.
-  - Notes: `items/STORY-022/STORY-022_notes.md`.
-
 - `STORY-023` **Sync zwischen Datenbank und Markdown (to_md / from_md)**
   - Type: Story.
   - Parent: `EPIC-003`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.

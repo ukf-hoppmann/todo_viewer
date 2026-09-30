@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { type ReactElement, useReducer } from "react";
-import type { ApiItem } from "../api/client";
+import type { ApiItem, SourceStatus } from "../api/client";
 import { createI18n, I18nContext } from "../i18n/i18n";
 import { UiStateContext } from "../state/useUiStateStore";
 import { INITIAL_UI_STATE, type UiState, uiReducer } from "../state/uiState";
@@ -52,4 +52,8 @@ export function apiItem(id: string, overrides: Partial<ApiItem> = {}): ApiItem {
     archive_supported: true,
     ...overrides,
   };
+}
+
+export function sourceStatus(over: Partial<SourceStatus> = {}): SourceStatus {
+  return { id: "s1", project: "Central", path: "", backend: "database", sync_path: "/repos/central", item_count: 3, problem: null, ...over };
 }

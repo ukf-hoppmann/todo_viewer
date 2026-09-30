@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { SourceStatus } from "../api/client";
-import { useFolders, useSaveSource } from "../api/queries";
+import { type Backend, useFolders, useSaveSource } from "../api/queries";
+import type { SyncMode } from "../domain/sync";
 import { describeError, useI18n } from "../i18n/i18n";
 import { Modal } from "./Modal";
 
@@ -9,29 +10,39 @@ interface SourceDialogProps {
   source: SourceStatus | null;
   onSaved: (project: string) => void;
   onClose: () => void;
+  /** Sync or switch of an existing project; the dialog closes first, the caller shows the sync dialog. */
+  onOpenSync: (source: SourceStatus, mode: SyncMode) => void;
 }
 
 function join(folder: string, name: string): string {
   return `${folder.replace(/\/$/, "")}/${name}`;
 }
 
-export function SourceDialog({ source, onSaved, onClose }: SourceDialogProps) {
+export function SourceDialog({ source, onSaved, onClose, onOpenSync }: SourceDialogProps) {
   const i18n = useI18n();
   const { t, errorText } = i18n;
   const save = useSaveSource();
   const [project, setProject] = useState(source?.project ?? "");
+  const [chosenBackend, setChosenBackend] = useState<Backend>("markdown");
+  const backend: Backend = source?.backend ?? chosenBackend;
+  const database = backend === "database";
+  // The folder of a markdown project, or the sync folder of a database project.
+  const folder = database ? (source?.sync_path ?? null) : (source?.path ?? null);
   // Typed text wins; null means the input follows the folder shown in the browser.
   // A broken path of an existing source stays in the input while the browser shows
   // the nearest existing folder.
-  const [typedPath, setTypedPath] = useState<string | null>(source?.path ?? null);
-  const [browsePath, setBrowsePath] = useState<string | null>(source?.path ?? null);
+  const [typedPath, setTypedPath] = useState<string | null>(folder);
+  const [browsePath, setBrowsePath] = useState<string | null>(folder);
+  // A sync folder is optional: it stays empty until one is typed or chosen in the browser.
+  const [pathChosen, setPathChosen] = useState(folder !== null);
   const [error, setError] = useState(source?.problem ? `⚠ ${errorText(source.problem.code, source.problem.message)}` : "");
   const folders = useFolders(browsePath, true);
   const listing = folders.data;
-  const path = typedPath ?? listing?.path ?? "";
+  const path = database && !pathChosen ? "" : (typedPath ?? listing?.path ?? "");
 
   const browseTo = (target: string, keepInput = false) => {
     setBrowsePath(target);
+    setPathChosen(true);
     if (!keepInput) {
       setTypedPath(null);
       setError("");
@@ -40,13 +51,20 @@ export function SourceDialog({ source, onSaved, onClose }: SourceDialogProps) {
 
   const submit = (targetPath = path) => {
     const trimmed = targetPath.trim();
-    if (!trimmed) {
-      setError(t("err.missing_path"));
+    if (database ? !project.trim() : !trimmed) {
+      setError(t(database ? "err.value_required" : "err.missing_path"));
       return;
     }
     setError("");
     save.mutate(
-      { id: source?.id ?? null, path: trimmed, project: project.trim() },
+      {
+        id: source?.id ?? null,
+        project: project.trim(),
+        // A database project has no folder of its own; its sync folder is sent apart ("" clears it).
+        path: database ? "" : trimmed,
+        backend: source ? undefined : backend,
+        syncPath: database ? (source ? trimmed : trimmed || undefined) : undefined,
+      },
       {
         onSuccess: (saved) => onSaved(saved.project),
         onError: (e) => setError(describeError(i18n, e)),
@@ -56,9 +74,27 @@ export function SourceDialog({ source, onSaved, onClose }: SourceDialogProps) {
 
   const onEnter = (e: React.KeyboardEvent) => e.key === "Enter" && submit();
 
+  const openSync = (mode: SyncMode) => {
+    if (!source) return;
+    onClose();
+    onOpenSync(source, mode);
+  };
+
   return (
     <Modal labelledBy="source-title" onDismiss={onClose}>
-      <h3 id="source-title">{t(source ? "source.edit.title" : "source.add.title")}</h3>
+      <h3 id="source-title">{t(!source ? "source.add.title" : database ? "source.edit.titleDb" : "source.edit.title")}</h3>
+      {!source ? (
+        <div className="backend-choice" role="radiogroup" aria-label={t("source.backend")}>
+          {(["markdown", "database"] as const).map((b) => (
+            <label key={b}>
+              <input type="radio" name="backend" checked={backend === b} onChange={() => setChosenBackend(b)} />
+              {t(`source.backend.${b}`)}
+            </label>
+          ))}
+        </div>
+      ) : (
+        <div className="backend-fixed">{t("source.backend.fixed", { b: t(`source.backend.${backend}`) })}</div>
+      )}
       <div>
         <label className="field" htmlFor="source-project">
           {t("source.name")}
@@ -67,7 +103,7 @@ export function SourceDialog({ source, onSaved, onClose }: SourceDialogProps) {
           id="source-project"
           type="text"
           autoFocus={!source}
-          placeholder={t("source.name.ph")}
+          placeholder={t(database ? "source.name.db.ph" : "source.name.ph")}
           value={project}
           onChange={(e) => setProject(e.target.value)}
           onKeyDown={onEnter}
@@ -75,7 +111,7 @@ export function SourceDialog({ source, onSaved, onClose }: SourceDialogProps) {
       </div>
       <div>
         <label className="field" htmlFor="source-path">
-          {t("source.path")}
+          {t(database ? "source.syncPath" : "source.path")}
         </label>
         <input
           id="source-path"
@@ -83,7 +119,10 @@ export function SourceDialog({ source, onSaved, onClose }: SourceDialogProps) {
           autoFocus={!!source}
           placeholder={t("source.path.ph")}
           value={path}
-          onChange={(e) => setTypedPath(e.target.value)}
+          onChange={(e) => {
+            setTypedPath(e.target.value);
+            setPathChosen(true);
+          }}
           onBlur={() => path.trim() && browseTo(path.trim(), true)}
           onKeyDown={onEnter}
         />
@@ -132,9 +171,23 @@ export function SourceDialog({ source, onSaved, onClose }: SourceDialogProps) {
         </div>
       </div>
 
-      {listing && (
+      {listing && (!database || path) && (
         <div className={`todo-status ${listing.has_todo ? "ok" : "missing"}`}>
           {t(listing.has_todo ? "browser.hasTodo" : "browser.noTodo")}
+        </div>
+      )}
+      {source && (
+        <div className="source-actions">
+          {database && source.sync_path && (
+            <button className="btn" aria-label={t("source.sync")} title={t("source.sync")} onClick={() => openSync("sync")}>
+              ⇄ Sync…
+            </button>
+          )}
+          {(!database || source.sync_path) && (
+            <button className="btn" onClick={() => openSync("switch")}>
+              {t(database ? "source.switch.toMd" : "source.switch.toDb")}
+            </button>
+          )}
         </div>
       )}
       <div className="modal-error">{error}</div>

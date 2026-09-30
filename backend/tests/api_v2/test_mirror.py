@@ -103,3 +103,27 @@ def test_the_primary_source_is_not_switched_while_the_mirror_differs(api, worksp
 
     assert (done.status_code, _view(done.body)) == (200, ("database", str(folder), "markdown"))
     assert api.get(url).body["priority"] == "Urgent"
+
+
+def test_a_database_project_keeps_its_folder_when_the_mirror_is_switched_off_and_on(api, workspace):
+    folder = str(workspace.root / "md")
+    sid = _central(api, sync_path=folder).body["id"]
+    url = f"/api/v2/sources/{sid}"
+    put = {"backend": "database", "project": "Central", "sync_path": folder}
+
+    off = api.put(url, {**put, "mirror": "none"}).body
+    status = api.get(f"{url}/sync-status").body
+    on = api.put(url, {**put, "mirror": "markdown"}).body
+
+    assert _view(off) == ("database", folder, "none")
+    assert (status["state"], status["last_sync_at"]) == ("none", None)
+    assert _view(on) == ("database", folder, "markdown")
+
+
+def test_an_emptied_folder_really_removes_it(api, workspace):
+    folder = str(workspace.root / "md")
+    sid = _central(api, sync_path=folder).body["id"]
+
+    gone = api.put(f"/api/v2/sources/{sid}", {"backend": "database", "project": "Central", "sync_path": ""}).body
+
+    assert _view(gone) == ("database", None, "none")

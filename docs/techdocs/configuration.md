@@ -29,7 +29,8 @@ der Standard.
 Datenbank; Projekte und Inhalte wandern nicht mit. Die Primärquelle, der Spiegel
 (Sync-Ordner `sync_path` eines Datenbank-Projekts, Datenbank-Spiegel eines
 Markdown-Projekts), der Stand des letzten Syncs und alle anderen
-Projekteinstellungen stehen in der Datenbank, nicht in dieser Datei. Backups vor einem Wechsel der Primärquelle
+Projekteinstellungen (auch, ob der Markdown-Spiegel eines Datenbank-Projekts ausgeschaltet
+ist, sein Ordner bleibt dabei erhalten) stehen in der Datenbank, nicht in dieser Datei. Backups vor einem Wechsel der Primärquelle
 liegen unter `<CONFIG_DIR>/backups/` (ohne eigenen Schalter, siehe
 [Betrieb](operations.md)).
 

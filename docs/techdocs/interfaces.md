@@ -165,7 +165,11 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     `database` die Datenbank-Kopie ein und `none` aus (das Ausschalten löscht
     die Kopie in der Datenbank, nicht die Markdown-Dateien); bei einem
     Datenbank-Projekt braucht `markdown` einen `sync_path` (sonst 400
-    `sync_path_missing`), `none` entfernt ihn. Der Spiegel der eigenen Seite
+    `sync_path_missing`), `none` schaltet ihn aus und behält den mitgeschickten
+    `sync_path`, sodass `markdown` ohne neuen Ordner wieder einschaltet; der Ordner
+    verschwindet nur, wenn `sync_path` leer geschickt wird (`markdown_path` bleibt
+    bei ausgeschaltetem Spiegel gesetzt, `mirror` ist dann `none`, Status und
+    Sync-Schaltflächen verhalten sich wie ohne Spiegel). Der Spiegel der eigenen Seite
     (`markdown` bei Markdown, `database` bei Datenbank) ergibt 400
     `invalid_value`; fehlt `mirror`, bleibt der Spiegel wie er ist. Beim
     Wechsel der Primärquelle bleibt die bisherige Seite als Spiegel:

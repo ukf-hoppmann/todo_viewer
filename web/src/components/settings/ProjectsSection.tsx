@@ -83,7 +83,9 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
     change({ id: source.id, project: source.project, path: source.path, mirror: on ? "database" : "none" });
   };
 
-  const removeMarkdownMirror = () => change({ id: source.id, project: source.project, path: "", syncPath: "", mirror: "none" });
+  // The folder is sent again, so switching the mirror off and on keeps it; only an emptied folder removes it.
+  const setMarkdownMirror = (on: boolean) =>
+    change({ id: source.id, project: source.project, path: "", syncPath: folder ?? "", mirror: on ? "markdown" : "none" });
 
   const lastSync = state?.last_sync_at ? new Date(state.last_sync_at).toLocaleString(i18n.lang) : t("projects.lastSync.never");
 
@@ -112,10 +114,10 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
         <dd>
           {database ? (
             <>
-              <span>{t(source.mirror === "none" ? "projects.mirror.none" : "projects.mirror.markdown")}</span>
-              {source.mirror !== "none" && (
-                <button className="btn small" disabled={save.isPending} onClick={removeMarkdownMirror}>
-                  {t("projects.mirror.remove")}
+              <span>{t(source.mirror !== "none" ? "projects.mirror.markdown" : folder ? "projects.mirror.off" : "projects.mirror.none")}</span>
+              {folder && (
+                <button className="btn small" disabled={save.isPending} onClick={() => setMarkdownMirror(source.mirror === "none")}>
+                  {t(source.mirror === "none" ? "projects.mirror.on" : "projects.mirror.remove")}
                 </button>
               )}
             </>

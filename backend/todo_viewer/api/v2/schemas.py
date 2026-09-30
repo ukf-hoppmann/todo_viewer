@@ -274,9 +274,10 @@ class SourceIn(BaseModel):
     sync_path: str | None = Field(None, description="Database projects: folder to sync markdown files with")
     mirror: Literal["none", "markdown", "database"] | None = Field(
         None, description="The other side to keep as a mirror: database for a markdown project, markdown (needs "
-                          "sync_path) for a database one, none to drop it; unset leaves it as it is. Dropping the "
-                          "database mirror of a markdown project deletes the copy in the database. Not read when "
-                          "the backend changes")
+                          "sync_path) for a database one, none to switch it off; unset leaves it as it is. Switching "
+                          "the database mirror of a markdown project off deletes the copy in the database; switching "
+                          "the markdown mirror of a database project off keeps its sync_path (send it again), so "
+                          "switching it on needs no new folder. Not read when the backend changes")
 
 
 class BacklogCreateIn(BaseModel):

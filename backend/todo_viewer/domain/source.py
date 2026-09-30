@@ -10,6 +10,8 @@ from typing import Any
 class Source:
     project: str
     path: str
+    # Where the project is stored: "markdown" (files in `path`) or "database".
+    backend: str = "markdown"
     # Unknown config keys are preserved when a source is rewritten.
     extra: dict[str, Any] = field(default_factory=dict, compare=False)
 

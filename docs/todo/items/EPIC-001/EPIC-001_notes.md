@@ -56,3 +56,13 @@
 
 - Der Projektverantwortliche hat entschieden: Das Kriterium gilt für den Item-Vertrag; der Ordnerpfad der Quellen-Konfiguration ist ausgenommen.
 - Kein Item-Endpunkt enthält path, line oder location (geprüft am OpenAPI-Schema); EPIC-001 wartet auf Bestätigung.
+
+## 2026-09-30 — Wiedergeöffnet für Typwechsel
+
+### Discussed
+
+- Der Typ eines Items lässt sich per API nicht ändern (Feld type nicht editierbar); Wunsch des Projektverantwortlichen.
+
+### Decided
+
+- EPIC-001 und STORY-007 werden wiedergeöffnet; der Typwechsel kommt als Task unter STORY-007.

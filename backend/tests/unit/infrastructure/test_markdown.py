@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import os
 import shutil
 from pathlib import Path
@@ -16,7 +15,7 @@ from todo_viewer.domain.errors import (
     ItemNotFoundError,
     VersionConflictError,
 )
-from todo_viewer.domain.item import Item, Location
+from todo_viewer.domain.item import Location
 from todo_viewer.domain.source import Source
 from todo_viewer.infrastructure.markdown import build_markdown_repository
 from todo_viewer.infrastructure.markdown.detector import FormatDetector
@@ -191,15 +190,6 @@ def backlog(tmp_path) -> Source:
     return Source(project="P", path=str(tmp_path / "b"))
 
 
-def test_repository_get_by_id_in_both_files(backlog):
-    repo = build_markdown_repository(Path("/"))
-
-    assert repo.get(backlog, "TASK-001").location is Location.ACTIVE
-    assert repo.get(backlog, "TASK-000").location is Location.ARCHIVE
-    with pytest.raises(ItemNotFoundError):
-        repo.get(backlog, "NOT-AN-ENTRY")  # before `## Work items`
-
-
 def test_repository_get_rejects_duplicate_ids(backlog):
     todo = Path(backlog.path) / "TODO.md"
     todo.write_text(todo.read_text(encoding="utf-8") + "\n- `TASK-000` **Same id as an archived item**\n",
@@ -208,18 +198,6 @@ def test_repository_get_rejects_duplicate_ids(backlog):
 
     with pytest.raises(DuplicateItemError):
         repo.get(backlog, "TASK-000")
-
-
-def test_repository_apply_rejects_item_changed_in_the_meantime(backlog):
-    repo = build_markdown_repository(Path("/"))
-    item = repo.get(backlog, "TASK-001")
-    repo.apply(backlog, item, ChangeSet(set_fields=(("priority", "Urgent"),)))
-    before = (Path(backlog.path) / "TODO.md").read_bytes()
-
-    with pytest.raises(VersionConflictError):
-        repo.apply(backlog, item, ChangeSet(set_fields=(("priority", "Normal"),)))
-
-    assert (Path(backlog.path) / "TODO.md").read_bytes() == before
 
 
 def test_repository_rejects_files_without_backlog_format(tmp_path):
@@ -233,38 +211,12 @@ def test_repository_rejects_files_without_backlog_format(tmp_path):
         repo.get(source, "anything")
 
 
-def test_repository_move_returns_item_at_new_place(backlog):
-    repo = build_markdown_repository(Path("/"))
-    item = repo.get(backlog, "TASK-001")
-
-    moved = repo.apply(backlog, item, ChangeSet(set_fields=(("status", "Completed"), ("resolution", "ok")),
-                                                move_to=Location.ARCHIVE))
-
-    assert (moved.location, moved.status, moved.resolution) == (Location.ARCHIVE, "Completed", "ok.")
-    assert "- `TASK-001` **" not in (Path(backlog.path) / "TODO.md").read_text(encoding="utf-8")
-
-
 def test_repository_relative_source_path(tmp_path):
     shutil.copytree(FIXTURES / "backlog", tmp_path / "docs")
     repo = build_markdown_repository(tmp_path)
 
     assert repo.check(Source(project="P", path="docs")) is None
     assert len(repo.load(Source(project="P", path="docs")).items) == 7
-
-
-def test_repository_creates_entry_and_refuses_taken_ids(backlog):
-    repo = build_markdown_repository(Path("/"))
-    new = Item(id="TASK-004", title="Created", project="P", item_type="Task", parent="STORY-001",
-               required_for_parent=True, created="2026-09-28", area="Core", priority="Normal",
-               goal="A goal.", completion_criteria="Checked.", dependencies=["TASK-001"])
-
-    created = repo.create(backlog, new)
-
-    assert created == new
-    assert repo.get(backlog, "TASK-004") == new
-    with pytest.raises(DuplicateItemError):
-        repo.create(backlog, Item(id="TASK-000", title="Taken in the archive", project="P", area="a", goal="g",
-                                  completion_criteria="c"))
 
 
 # ---------- documents ----------
@@ -277,115 +229,32 @@ def _documents():
     return MarkdownDocumentStore(LayoutFactory(SourcePathResolver(Path("/"))), TextFileStore(), KeyedLocks())
 
 
-def test_document_write_creates_folders_and_checks_versions(backlog):
-    from todo_viewer.domain.documents import content_version
-
-    store = _documents()
-    path = "items/TASK-009/TASK-009_spec.md"
-
-    store.write(backlog, path, "v1\n", expected_version=None)
-    with pytest.raises(VersionConflictError):
-        store.write(backlog, path, "again\n", expected_version=None)  # exists already
-    with pytest.raises(VersionConflictError):
-        store.write(backlog, path, "v2\n", expected_version=content_version("other"))
-    store.write(backlog, path, "v2\n", expected_version=content_version("v1\n"))
-
-    assert store.read(backlog, path) == "v2\n"
-    with pytest.raises(VersionConflictError):
-        store.write(backlog, "items/TASK-009/missing.md", "x", expected_version=content_version("x"))
-
-
-def test_document_append_starts_new_files_with_a_header(backlog):
-    store = _documents()
-    path = "items/TASK-009/TASK-009_notes.md"
-
-    first = store.append(backlog, path, "## entry 1\n", header="# TASK-009 — t\n")
-    second = store.append(backlog, path, "## entry 2\n", header="# ignored\n")
-
-    assert first == "# TASK-009 — t\n\n## entry 1\n"
-    assert second == "# TASK-009 — t\n\n## entry 1\n\n## entry 2\n"
-    assert store.append(backlog, "items/TASK-002/notes.md", "## e\n", header="#") == \
-        "# Notes for TASK-002\n\nSome *markdown* notes.\n\n## e\n"
-
-
-def test_document_paths_stay_inside_the_backlog(backlog):
-    from todo_viewer.domain.errors import DocumentForbiddenError
-
-    for path in ("../x.md", "items/../../x.md", "items/a/b.json"):
-        with pytest.raises(DocumentForbiddenError):
-            _documents().write(backlog, path, "x", expected_version=None)
-
-
-def test_repository_delete_cuts_active_and_archived_entries(backlog):
+def test_rejected_apply_leaves_the_file_untouched(backlog):
     repo = build_markdown_repository(Path("/"))
-    active, archived = repo.get(backlog, "TASK-002"), repo.get(backlog, "STORY-000")
-    stale = repo.get(backlog, "TASK-003")
-    repo.apply(backlog, stale, ChangeSet(set_fields=(("priority", "Urgent"),)))
+    item = repo.get(backlog, "TASK-001")
+    repo.apply(backlog, item, ChangeSet(set_fields=(("priority", "Urgent"),)))
+    before = (Path(backlog.path) / "TODO.md").read_bytes()
 
-    repo.delete(backlog, [active, archived])
     with pytest.raises(VersionConflictError):
-        repo.delete(backlog, [stale])
+        repo.apply(backlog, item, ChangeSet(set_fields=(("priority", "Normal"),)))
 
-    ids = {i.id for i in repo.load(backlog).items}
-    assert "TASK-002" not in ids and "STORY-000" not in ids and "TASK-003" in ids
-
-
-def test_document_store_deletes_the_item_folder(backlog):
-    store = _documents()
-    folder = Path(backlog.path) / "items" / "TASK-002"
-    assert folder.is_dir()
-
-    store.delete_item_folder(backlog, "TASK-002")
-    store.delete_item_folder(backlog, "TASK-404")  # no folder: nothing to do
-
-    assert not folder.exists()
-    assert (Path(backlog.path) / "TODO.md").is_file()
-    from todo_viewer.domain.errors import DocumentForbiddenError
-    for bad in ("..", "../b", "", "a/b"):
-        with pytest.raises(DocumentForbiddenError):
-            store.delete_item_folder(backlog, bad)
+    assert (Path(backlog.path) / "TODO.md").read_bytes() == before
 
 
-def test_document_store_renames_the_item_folder_and_its_files(backlog):
-    store = _documents()
+def test_moved_entry_is_cut_from_the_file_it_came_from(backlog):
+    repo = build_markdown_repository(Path("/"))
+
+    repo.apply(backlog, repo.get(backlog, "TASK-001"),
+               ChangeSet(set_fields=(("status", "Completed"), ("resolution", "ok")), move_to=Location.ARCHIVE))
+
+    assert "- `TASK-001` **" not in (Path(backlog.path) / "TODO.md").read_text(encoding="utf-8")
+
+
+def test_renaming_an_item_folder_moves_files_that_are_not_documents_too(backlog):
     items = Path(backlog.path) / "items"
     (items / "TASK-002").joinpath("unlisted.txt").write_text("keep", encoding="utf-8")
 
-    store.rename_item_folder(backlog, "TASK-002", "STORY-009", {"notes.md": "STORY-009_notes.md"})
-    store.rename_item_folder(backlog, "TASK-404", "STORY-010", {"x.md": "y.md"})  # no folder: nothing to do
+    _documents().rename_item_folder(backlog, "TASK-002", "STORY-009", {"notes.md": "STORY-009_notes.md"})
 
-    assert not (items / "TASK-002").exists() and not (items / "STORY-010").exists()
+    assert not (items / "TASK-002").exists()
     assert sorted(p.name for p in (items / "STORY-009").iterdir()) == ["STORY-009_notes.md", "unlisted.txt"]
-    assert store.read(backlog, "items/STORY-009/STORY-009_notes.md").startswith("# Notes for TASK-002")
-
-
-def test_document_store_rename_refuses_existing_targets_and_bad_names(backlog):
-    from todo_viewer.domain.errors import DocumentForbiddenError, ItemFolderExistsError
-
-    store = _documents()
-    items = Path(backlog.path) / "items"
-    (items / "STORY-009").mkdir()
-
-    with pytest.raises(ItemFolderExistsError):
-        store.rename_item_folder(backlog, "TASK-002", "STORY-009", {})
-    assert (items / "TASK-002").is_dir()
-    for old, new, renames in [("..", "X-1", {}), ("TASK-002", "../x", {}), ("TASK-002", "a/b", {}),
-                              ("TASK-002", "X-1", {"notes.md": "../out.md"}), ("TASK-002", "X-1", {"../a": "b"})]:
-        with pytest.raises(DocumentForbiddenError):
-            store.rename_item_folder(backlog, old, new, renames)
-    assert (items / "TASK-002").is_dir() and not (items / "X-1").exists()
-
-
-def test_repository_apply_all_marks_and_moves_several_entries(backlog):
-    repo = build_markdown_repository(Path("/"))
-    task, done = repo.get(backlog, "TASK-003"), repo.get(backlog, "TASK-000")
-    mark = ChangeSet(set_fields=(("deleted", "2026-09-28"),))
-
-    changed = repo.apply_all(backlog, [(task, dataclasses.replace(mark, move_to=Location.ARCHIVE)), (done, mark)])
-
-    assert [(i.id, i.deleted, i.location) for i in changed] == [
-        ("TASK-003", "2026-09-28", Location.ARCHIVE), ("TASK-000", "2026-09-28", Location.ARCHIVE)]
-    assert "- `TASK-003` **" not in (Path(backlog.path) / "TODO.md").read_text(encoding="utf-8")
-    assert "  - Deleted: 2026-09-28." in (Path(backlog.path) / "archive.md").read_text(encoding="utf-8")
-    with pytest.raises(VersionConflictError):
-        repo.apply_all(backlog, [(task, mark)])  # stale: already changed

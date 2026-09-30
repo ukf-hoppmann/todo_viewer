@@ -19,6 +19,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 |---|---|---|
 | Domain | Item, Source, Backlog, Status-/Archiv-Regeln (`EditPlanner` → `ChangeSet`), Fehler mit stabilen Codes; keine äußeren Abhängigkeiten | `backend/todo_viewer/domain/` |
 | Application | Ports als Protocols (`BacklogRepository`, `SourceRepository`, `DocumentStore`, `FolderBrowser`, `ProjectNameSuggester`, `UiStateStore`), Use-Case-Services, `Container` | `backend/todo_viewer/application/` |
+| Routing-Adapter | Wählen je Projekt (`Source.backend`, Standard `markdown`) den Speicher-Adapter; unbekanntes Backend → Fehlercode `unknown_backend` | `backend/todo_viewer/infrastructure/routing.py` |
 | Markdown-Adapter | Formaterkennung, Parser, Feld-Mapping, Editoren, Verschieben ins/aus dem Archiv, atomares Schreiben | `backend/todo_viewer/infrastructure/markdown/` |
 | Config-Adapter | `config.json` (Quellen, inkl. Migration alter Dateipfade) und `ui_state.json` | `backend/todo_viewer/infrastructure/config/` |
 | Dateisystem-Adapter | Ordner-Browser, Projektname aus dem umgebenden Git-Repo | `backend/todo_viewer/infrastructure/filesystem/` |
@@ -69,6 +70,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 | Onion-Architektur, Schichtregeln per `import-linter` | Fachregeln unabhängig von HTTP und Dateiformat; anderer Speicher = neuer Adapter + eine Zeile in `bootstrap.py` | `pyproject.toml`, [Architekturregeln](../development/architecture/backend.md) |
 | Konstruktor-Injection ohne DI-Framework | Einfach nachvollziehbar, Services mit In-Memory-Fakes testbar | `backend/todo_viewer/bootstrap.py` |
 | Atomares Schreiben mit Konflikterkennung | Parallele Änderungen (z. B. durch Agenten) werden nicht überschrieben | [Architekturregeln](../development/architecture.md) |
+| Contract-Suite für die Speicher-Ports | Jeder Speicher-Adapter (Markdown und ein In-Memory-Fake, später die Datenbank) besteht dieselben Tests | `backend/tests/contract/`, `backend/tests/fakes.py` |
 | Golden-Files für geschriebene Dateien | Dateiinhalte nach Edits bleiben bytegenau stabil | `backend/tests/characterization/` |
 | Logging mit structlog, eine key=value-Zeile pro Ereignis | Fehleranalyse per `grep` ohne ganze Datei zu lesen; Kontext (Request-ID) ohne eigenen Code; Domain und Application loggen nicht, Fehler werden an der API-Grenze protokolliert | [STORY-016-Notizen](../todo/items/STORY-016/STORY-016_notes.md) |
 | TS-Typen aus OpenAPI generiert | Frontend und API können nicht unbemerkt auseinanderlaufen (Test prüft Aktualität) | `backend/tests/api_v2/test_openapi.py` |

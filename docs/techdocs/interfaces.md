@@ -23,6 +23,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `POST /trash/{source_id}/{item_id}/restore` | Holt ein Item samt Nachfahren aus dem Papierkorb (`{version}`). |
 | `DELETE /trash/{source_id}/{item_id}?version=…` | Löscht ein Item im Papierkorb samt Nachfahren und Ordnern `items/<ID>/` endgültig. |
 | `PATCH /items/{source_id}/{item_id}` | Ändert ein oder mehrere Felder eines Items in einem Schritt. |
+| `POST /items/{source_id}/{item_id}/retype` | Ändert den Typ eines Items; es bekommt die nächste freie ID des neuen Typs, alle Verweise im Backlog folgen (`{version, type}`). |
 | `GET /items/{source_id}/{item_id}/documents/{name}` | Notes- oder Spec-Dokument eines Items lesen, mit `version`. |
 | `PUT /items/{source_id}/{item_id}/documents/{name}` | Notizen oder Spec mit dem ganzen neuen Text ersetzen oder neu anlegen. |
 | `POST /items/{source_id}/{item_id}/notes` | Datierten Notes-Eintrag anhängen. |
@@ -74,6 +75,25 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     heute. Mit `parent` ist `required_for_parent` Pflicht. Der Eintrag kommt
     ans Ende des Abschnitts `## Work items` in `TODO.md`. Die Parent-Regeln
     werden wie beim Bearbeiten geprüft.
+  - Typwechsel (`POST /items/…/retype`, `{version, type}`; Entscheidung:
+    [STORY-007](../todo/items/STORY-007/STORY-007_notes.md)): Der Typ ist das
+    Präfix der ID und lässt sich nicht über `PATCH` ändern. Der Server
+    vergibt die nächste freie ID des neuen Typs (über aktive, archivierte und
+    gelöschte Items) und zieht im selben Schritt nach: Kopfzeile und `Type`
+    des Items, `Parent` und `Dependencies` aller Items (auch Archiv und
+    Papierkorb), Titel, Summary, Goal, Completion criteria und Resolution, in
+    denen die alte ID steht, sowie Inhalt und Dateinamen der Notes und
+    Specs; der Ordner `items/<alte ID>/` wird zu `items/<neue ID>/`. Die
+    Antwort ist das Item unter seiner neuen ID. Die Parent-Regeln werden
+    vorher geprüft (z. B. ein Epic hat keinen Parent: 409 `epic_with_parent`);
+    gleicher oder unbekannter Typ ergibt 400 `invalid_value`, ein Item im
+    Papierkorb 409 `item_deleted`. Existiert `items/<neue ID>/` schon, lehnt
+    der Server mit 409 `item_folder_exists` ab. Verweise außerhalb des
+    Backlogs (Tagesberichte, Commits, Techdocs) und weitere Freitext-Felder
+    (`extra_fields`) bleiben unverändert. Schlägt das Schreiben der
+    Backlog-Dateien fehl, wird der Ordner zurückbenannt. Fällt nur das
+    abschließende Umschreiben eines Dokumenttexts aus, bleibt der Backlog
+    konsistent, der Text kann aber noch die alte ID nennen.
   - Löschen geht über den Papierkorb (Entscheidung:
     [STORY-011](../todo/items/STORY-011/STORY-011_notes.md)).
     `DELETE /items/…` markiert das Item mit `Deleted: <Datum>` und verschiebt
@@ -136,7 +156,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 400 | `bad_request` (Validierung, auch unbekannte Felder), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `config_missing`, `file_not_found`, `item_not_found` |
-| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`) |
+| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon) |
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 
@@ -175,7 +195,9 @@ Build, antwortet der Server mit 503 und einem Hinweis.
      `{topic, discussed, decided, open, summary?}`; Notizen und Specs ändern:
      `GET …/documents/{name}` holen, `PUT …/documents/{name}` mit
      `{content, version}` zurückschreiben.
-  7. Löschen: `DELETE /items/{source_id}/{id}?version=…` (Papierkorb; bei
+  7. Typ ändern: `POST /items/{source_id}/{id}/retype` mit `{version, type}`;
+     das Item hat danach eine neue ID, die Antwort nennt sie.
+  8. Löschen: `DELETE /items/{source_id}/{id}?version=…` (Papierkorb; bei
      Kindern erst Warnung, dann mit `cascade=true`); wiederherstellen oder
      endgültig löschen über `/trash`.
 - Ausgabe: wie bei der HTTP-API oben; jede Änderung liefert den neuen Stand

@@ -821,6 +821,27 @@
         "title": "ItemOut",
         "type": "object"
       },
+      "ItemRetypeIn": {
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "description": "The new type: Epic, Story or Task; differs from the current one",
+            "title": "Type",
+            "type": "string"
+          },
+          "version": {
+            "description": "The item's version as last read; a changed item answers 409",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "type"
+        ],
+        "title": "ItemRetypeIn",
+        "type": "object"
+      },
       "NotesEntryIn": {
         "additionalProperties": false,
         "description": "One dated notes entry; the date is set by the server.",
@@ -2117,6 +2138,108 @@
         "summary": "Append Notes",
         "tags": [
           "documents"
+        ]
+      }
+    },
+    "/api/v2/items/{source_id}/{item_id}/retype": {
+      "post": {
+        "description": "Changes the type of the item in `version`. The type is the id's prefix, so the item gets the next free id\nof the new type, and every reference to the old id follows: parent and dependencies of other items, free texts,\nnotes and specs (their content and the items/<ID>/ folder). The answer is the item under its new id.\n\nRefused when the new type breaks a lifecycle rule (e.g. an epic with a parent) or the item is in the trash.",
+        "operationId": "retype_item_api_v2_items__source_id___item_id__retype_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemRetypeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retype Item",
+        "tags": [
+          "items"
         ]
       }
     },

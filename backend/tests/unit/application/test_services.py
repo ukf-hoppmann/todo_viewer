@@ -350,6 +350,16 @@ def test_retype_checks_lifecycle_rules_before_touching_anything():
     assert documents.renamed == [] and documents.files == {"items/TASK-002/TASK-002_notes.md": "x STORY-001"}
 
 
+def test_retype_does_not_count_flaws_the_item_already_had_under_its_old_id():
+    items = _retype_items()
+    items[2].summary = None  # has notes but no summary: a flaw of the files, not of the retype
+    service, backlogs, _ = _retype_service(items)
+
+    result = service.retype(Source("P", "/p"), "TASK-002", backlogs.items[2].version, "Story")
+
+    assert result.item.id == "STORY-002"
+
+
 def test_retype_rejects_stale_version():
     service, backlogs, documents = _retype_service(_retype_items())
 

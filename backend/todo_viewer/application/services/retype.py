@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 
 from todo_viewer.domain.documents import content_version
@@ -42,7 +43,10 @@ class RetypeService:
         plan = self._planner.plan(backlog.items, item_id, new_type)
         after = {i.id: c.applied_to(i) for i, c in plan.changes}
         in_use = live(backlog.items)
-        self._rules.check_change(in_use, [after.get(i.id, i) for i in in_use])
+        # Flaws the files already had move with the new id; only what the new type adds counts as new.
+        renamed = dataclasses.replace(after[item_id], item_type=backlog.find(item_id).item_type)
+        self._rules.check_change([renamed if i.id == item_id else after.get(i.id, i) for i in in_use],
+                                 [after.get(i.id, i) for i in in_use])
         texts = self._rewritten_texts(source, plan, item_id)
 
         self._documents.rename_item_folder(source, item_id, plan.new_id, plan.file_renames)

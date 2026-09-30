@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, Request
 from todo_viewer.domain.errors import ConfigMissingError
 from todo_viewer.domain.trash import live
 
-from ..dependencies import Documents, Folders, Items, Lookup, Overview, Sources, Trash, UiState
+from ..dependencies import Documents, Folders, Items, Lookup, Overview, Retype, Sources, Trash, UiState
 from ..request_log import note
 from .schemas import (
     BacklogCreateIn,
@@ -22,6 +22,7 @@ from .schemas import (
     ItemCreateIn,
     ItemEditIn,
     ItemOut,
+    ItemRetypeIn,
     NotesEntryIn,
     ProblemOut,
     SourceIn,
@@ -128,6 +129,19 @@ def edit_item(source_id: str, item_id: str, body: ItemEditIn, items: Items, look
     """
     source = lookup.by_id(source_id)
     result = items.edit(source, item_id, body.version, body.fields.changes(), body.resolution)
+    return ItemOut.of(source, result.item, result.archive_supported)
+
+
+@router.post("/items/{source_id}/{item_id}/retype", tags=["items"])
+def retype_item(source_id: str, item_id: str, body: ItemRetypeIn, retype: Retype, lookup: Lookup) -> ItemOut:
+    """Changes the type of the item in `version`. The type is the id's prefix, so the item gets the next free id
+    of the new type, and every reference to the old id follows: parent and dependencies of other items, free texts,
+    notes and specs (their content and the items/<ID>/ folder). The answer is the item under its new id.
+
+    Refused when the new type breaks a lifecycle rule (e.g. an epic with a parent) or the item is in the trash.
+    """
+    source = lookup.by_id(source_id)
+    result = retype.retype(source, item_id, body.version, body.type)
     return ItemOut.of(source, result.item, result.archive_supported)
 
 

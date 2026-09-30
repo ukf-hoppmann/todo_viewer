@@ -72,6 +72,12 @@ MIGRATIONS: dict[int, list[str]] = {
     3: [
         "ALTER TABLE projects ADD COLUMN mirror_database BOOLEAN NOT NULL DEFAULT 0",
     ],
+    # The state of both sides right after the last sync, to tell later which side changed.
+    4: [
+        "ALTER TABLE projects ADD COLUMN last_sync_at TEXT",
+        "ALTER TABLE projects ADD COLUMN synced_primary VARCHAR(64)",
+        "ALTER TABLE projects ADD COLUMN synced_mirror VARCHAR(64)",
+    ],
 }
 
 CURRENT_VERSION = max(MIGRATIONS)

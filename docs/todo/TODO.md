@@ -39,7 +39,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Web-UI.
   - Priority: Normal.
@@ -55,6 +55,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Änderung erscheint. - „Allgemein“ zeigt Datenbank-Typ und -Ort nur
     lesend und speichert das Standard-Backend im UI-Zustand. - Das
     Standard-Backend ist beim Hinzufügen eines Projekts vorausgewählt.
+  - Notes: `items/STORY-033/STORY-033_notes.md`.
+  - Summary: Die Sidebar hat ein Zahnrad, das ein Einstellungsmenü mit
+    erweiterbarer Abschnittsliste öffnet; Allgemein zeigt die Datenbank
+    lesend und stellt den Standard-Speicherort für neue Projekte ein.
 
 - `STORY-034` **Menüabschnitt „Projekte“: Primärquelle, Pfade und Sync je Projekt**
   - Type: Story.

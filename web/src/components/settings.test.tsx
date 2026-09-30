@@ -125,7 +125,7 @@ describe("Sidebar: the gear", () => {
         onEditSource={vi.fn()}
         onRemoveSource={vi.fn()}
         onSyncSource={vi.fn()}
-        onOpenSettings={onOpenSettings}
+        onOpenSettings={onOpenSettings} syncStates={new Map()} onOpenProject={vi.fn()}
       />,
     );
 

@@ -2,7 +2,9 @@
 import type { Schemas } from "../api/client";
 
 export type SyncPreview = Schemas["SyncOut"];
-export type SyncDirection = Schemas["SyncIn"]["direction"];
+export type SyncDirection = NonNullable<Schemas["SyncIn"]["direction"]>;
+/** How a project's mirror relates to its primary source since the last sync. */
+export type SyncState = Schemas["SyncStatusOut"]["state"];
 /** "sync" only copies; "switch" copies and then moves the project to the other backend. */
 export type SyncMode = "sync" | "switch";
 
@@ -30,4 +32,14 @@ export function canRun(p: SyncPreview, mode: SyncMode, deleteMissing: boolean): 
 /** Direction of the sync that precedes a switch away from `backend`. */
 export function switchDirection(backend: "markdown" | "database"): SyncDirection {
   return backend === "markdown" ? "from_md" : "to_md";
+}
+
+/** The default direction of a sync: from the primary source to its mirror. */
+export function defaultDirection(primary: "markdown" | "database"): SyncDirection {
+  return primary === "database" ? "to_md" : "from_md";
+}
+
+/** Whether the sidebar marks the project: the mirror changed or cannot be read, so something is left to do. */
+export function needsAttention(state: SyncState): boolean {
+  return state === "mirror_changed" || state === "both_changed" || state === "unreadable";
 }

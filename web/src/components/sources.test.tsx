@@ -30,7 +30,7 @@ describe("SourceDialog: choosing where a project is stored", () => {
   it("adds a database project by name, with a sync folder only if one is chosen", async () => {
     const calls = stubApi(async () => saved());
     const onSaved = vi.fn();
-    renderWithProviders(<SourceDialog source={null} onSaved={onSaved} onClose={vi.fn()} onOpenSync={vi.fn()} />);
+    renderWithProviders(<SourceDialog source={null} onSaved={onSaved} onClose={vi.fn()} />);
 
     await userEvent.click(screen.getByRole("radio", { name: "Datenbank" }));
     expect(screen.queryByPlaceholderText("/pfad/zu/docs/todo")).toHaveValue("");  // the browser's start folder is not taken over
@@ -44,7 +44,7 @@ describe("SourceDialog: choosing where a project is stored", () => {
 
   it("sends the chosen sync folder of a new database project", async () => {
     const calls = stubApi(async () => saved());
-    renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />);
+    renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} />);
 
     await userEvent.click(screen.getByRole("radio", { name: "Datenbank" }));
     await userEvent.type(screen.getByLabelText("Projektname"), "Central");
@@ -57,7 +57,7 @@ describe("SourceDialog: choosing where a project is stored", () => {
 
   it("wants a name for a database project and sends nothing without it", async () => {
     const calls = stubApi(async () => saved());
-    renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />);
+    renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} />);
 
     await userEvent.click(screen.getByRole("radio", { name: "Datenbank" }));
     await userEvent.click(screen.getByRole("button", { name: "OK" }));
@@ -68,7 +68,7 @@ describe("SourceDialog: choosing where a project is stored", () => {
 
   it("preselects the backend chosen in the settings, and the user can still pick the other", async () => {
     stubApi(async () => saved());
-    renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />, {
+    renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} />, {
       defaultBackend: "database",
     });
 
@@ -81,7 +81,7 @@ describe("SourceDialog: choosing where a project is stored", () => {
   it("does not change the backend of a project that exists", () => {
     stubApi(async () => saved());
     renderWithProviders(
-      <SourceDialog source={sourceStatus({ backend: "markdown", path: "/repos/a/docs", sync_path: null })} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />,
+      <SourceDialog source={sourceStatus({ backend: "markdown", path: "/repos/a/docs", sync_path: null })} part="folder" onSaved={vi.fn()} onClose={vi.fn()} />,
       { defaultBackend: "database" },
     );
 
@@ -90,7 +90,7 @@ describe("SourceDialog: choosing where a project is stored", () => {
 
   it("still adds a markdown project by its folder", async () => {
     const calls = stubApi(async () => saved({ backend: "markdown", path: "/repos/a/docs", sync_path: null }));
-    renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />);
+    renderWithProviders(<SourceDialog source={null} onSaved={vi.fn()} onClose={vi.fn()} />);
 
     expect(screen.getByRole("radio", { name: "Markdown-Ordner" })).toBeChecked();
     await waitFor(() => expect(screen.getByPlaceholderText("/pfad/zu/docs/todo")).toHaveValue("/repos"));  // follows the browser
@@ -105,7 +105,7 @@ describe("SourceDialog: choosing where a project is stored", () => {
   it("shows a translated error of the server and stays open", async () => {
     stubApi(async () => jsonResponse({ code: "duplicate", message: "x", details: {} }, 409));
     const onSaved = vi.fn();
-    renderWithProviders(<SourceDialog source={null} onSaved={onSaved} onClose={vi.fn()} onOpenSync={vi.fn()} />);
+    renderWithProviders(<SourceDialog source={null} onSaved={onSaved} onClose={vi.fn()} />);
 
     await userEvent.type(screen.getByPlaceholderText("/pfad/zu/docs/todo"), "/repos/a/docs");
     await userEvent.click(screen.getByRole("button", { name: "OK" }));
@@ -118,48 +118,49 @@ describe("SourceDialog: choosing where a project is stored", () => {
 describe("SourceDialog: an existing project", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("keeps the storage fixed and offers sync and switching for a database project with a sync folder", async () => {
+  it("only renames: no storage, no folder, no sync or switch buttons", () => {
     stubApi(async () => saved());
-    const onOpenSync = vi.fn();
-    const onClose = vi.fn();
-    const source = sourceStatus();
-    renderWithProviders(<SourceDialog source={source} onSaved={vi.fn()} onClose={onClose} onOpenSync={onOpenSync} />);
+    renderWithProviders(<SourceDialog source={sourceStatus()} onSaved={vi.fn()} onClose={vi.fn()} />);
 
+    expect(screen.getByRole("dialog", { name: "Projekt umbenennen" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Projektname")).toHaveValue("Central");
     expect(screen.queryByRole("radio")).not.toBeInTheDocument();
-    expect(screen.getByText("Gespeichert in: Datenbank")).toBeInTheDocument();
-    expect(screen.getByLabelText("Sync-Ordner (optional, enthält TODO.md)")).toHaveValue("/repos/central");
-
-    await userEvent.click(screen.getByRole("button", { name: "Sync mit dem Markdown-Ordner" }));
-    expect(onOpenSync).toHaveBeenLastCalledWith(source, "sync");
-    await userEvent.click(screen.getByRole("button", { name: "Als Markdown-Ordner ablegen…" }));
-    expect(onOpenSync).toHaveBeenLastCalledWith(source, "switch");
-    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(screen.queryByLabelText("Sync-Ordner (optional, enthält TODO.md)")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Sync|ablegen|übernehmen/ })).not.toBeInTheDocument();
   });
 
-  it("offers neither sync nor switching for a database project without a sync folder", () => {
-    stubApi(async () => saved());
-    renderWithProviders(<SourceDialog source={sourceStatus({ sync_path: null })} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />);
+  it("renames a database project and keeps its mirror folder", async () => {
+    const calls = stubApi(async () => saved({ project: "Renamed" }));
+    const onSaved = vi.fn();
+    renderWithProviders(<SourceDialog source={sourceStatus()} onSaved={onSaved} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole("button", { name: "Sync mit dem Markdown-Ordner" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Als Markdown-Ordner ablegen…" })).not.toBeInTheDocument();
+    await userEvent.clear(screen.getByLabelText("Projektname"));
+    await userEvent.type(screen.getByLabelText("Projektname"), "Renamed");
+    await userEvent.click(screen.getByRole("button", { name: "OK" }));
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith("Renamed"));
+    expect([calls[0]!.method, new URL(calls[0]!.url).pathname]).toEqual(["PUT", "/api/v2/sources/s1"]);
+    expect(await calls[0]!.json()).toEqual({ path: "", project: "Renamed", sync_path: "/repos/central" });
   });
 
-  it("offers to move a markdown project into the database", async () => {
-    stubApi(async () => saved());
-    const onOpenSync = vi.fn();
-    const source = sourceStatus({ backend: "markdown", path: "/repos/a/docs", sync_path: null });
-    renderWithProviders(<SourceDialog source={source} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={onOpenSync} />);
+  it("renames a markdown project and keeps its folder", async () => {
+    const calls = stubApi(async () => saved({ backend: "markdown", project: "Docs" }));
+    const source = sourceStatus({ backend: "markdown", path: "/repos/a/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/a/docs", mirror: "none" });
+    renderWithProviders(<SourceDialog source={source} onSaved={vi.fn()} onClose={vi.fn()} />);
 
-    expect(screen.getByText("Gespeichert in: Markdown-Ordner")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "In die Datenbank übernehmen…" }));
+    await userEvent.clear(screen.getByLabelText("Projektname"));
+    await userEvent.type(screen.getByLabelText("Projektname"), "Docs");
+    await userEvent.click(screen.getByRole("button", { name: "OK" }));
 
-    expect(onOpenSync).toHaveBeenCalledWith(source, "switch");
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(await calls[0]!.json()).toEqual({ path: "/repos/a/docs", project: "Docs" });
   });
 
-  it("changes the sync folder of a database project and clears it when emptied", async () => {
+  it("changes only the folder when opened for the folder, and clears the mirror folder of a database project when emptied", async () => {
     const calls = stubApi(async () => saved({ sync_path: null }));
-    renderWithProviders(<SourceDialog source={sourceStatus()} onSaved={vi.fn()} onClose={vi.fn()} onOpenSync={vi.fn()} />);
+    renderWithProviders(<SourceDialog source={sourceStatus()} part="folder" onSaved={vi.fn()} onClose={vi.fn()} />);
 
+    expect(screen.queryByLabelText("Projektname")).not.toBeInTheDocument();
     await userEvent.clear(screen.getByLabelText("Sync-Ordner (optional, enthält TODO.md)"));
     await userEvent.click(screen.getByRole("button", { name: "OK" }));
 
@@ -171,10 +172,10 @@ describe("SourceDialog: an existing project", () => {
 
 describe("Sidebar: projects in the database", () => {
   const options = { projects: ["Central", "Files"], statuses: [], priorities: [] };
-  const files = sourceStatus({ id: "s2", project: "Files", backend: "markdown", path: "/repos/a/docs", sync_path: null });
+  const files = sourceStatus({ id: "s2", project: "Files", backend: "markdown", path: "/repos/a/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/a/docs", mirror: "none" });
   const show = (sources = [sourceStatus(), files], onSyncSource = vi.fn()) =>
     renderWithProviders(
-      <Sidebar options={options} sources={sources} onAddSource={vi.fn()} onEditSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={onSyncSource} onOpenSettings={vi.fn()} />,
+      <Sidebar options={options} sources={sources} onAddSource={vi.fn()} onEditSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={onSyncSource} onOpenSettings={vi.fn()} syncStates={new Map()} onOpenProject={vi.fn()} />,
     );
 
   it("marks database projects and syncs only those that have a sync folder", async () => {
@@ -189,7 +190,7 @@ describe("Sidebar: projects in the database", () => {
   });
 
   it("offers no sync for a database project without a sync folder", () => {
-    show([sourceStatus({ sync_path: null })]);
+    show([sourceStatus({ sync_path: null, markdown_path: null, mirror: "none" })]);
 
     expect(screen.queryByRole("button", { name: "Sync mit dem Markdown-Ordner" })).not.toBeInTheDocument();
   });

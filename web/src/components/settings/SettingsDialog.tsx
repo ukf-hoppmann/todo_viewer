@@ -7,11 +7,13 @@ interface SettingsDialogProps {
   sections?: readonly SettingsSection[];
   /** The section to open; the first one if unset or unknown. */
   initialSection?: string;
+  /** A project of the "projects" section to point out. */
+  focusId?: string;
   onClose: () => void;
 }
 
 /** Navigation of the sections on the left, the chosen section on the right. */
-export function SettingsDialog({ sections = SETTINGS_SECTIONS, initialSection, onClose }: SettingsDialogProps) {
+export function SettingsDialog({ sections = SETTINGS_SECTIONS, initialSection, focusId, onClose }: SettingsDialogProps) {
   const { t } = useI18n();
   const [activeId, setActiveId] = useState(initialSection);
   const active = sections.find((s) => s.id === activeId) ?? sections[0];
@@ -32,7 +34,7 @@ export function SettingsDialog({ sections = SETTINGS_SECTIONS, initialSection, o
             </button>
           ))}
         </nav>
-        <div className="settings-content">{active && <active.Component />}</div>
+        <div className="settings-content">{active && <active.Component focusId={focusId} />}</div>
       </div>
       <div className="modal-actions">
         <button className="btn" onClick={onClose}>

@@ -1,25 +1,27 @@
 import { useState } from "react";
 import type { SourceStatus } from "../api/client";
 import { type Backend, useFolders, useSaveSource } from "../api/queries";
-import type { SyncMode } from "../domain/sync";
 import { describeError, useI18n } from "../i18n/i18n";
 import { useUiState } from "../state/useUiStateStore";
 import { Modal } from "./Modal";
 
+/** What the dialog asks for: a new project needs both; an existing one is renamed or gets another folder. */
+export type SourcePart = "full" | "name" | "folder";
+
 interface SourceDialogProps {
   /** null = add a new project, otherwise the source being changed. */
   source: SourceStatus | null;
+  /** Default: everything for a new project, only the name for an existing one. */
+  part?: SourcePart;
   onSaved: (project: string) => void;
   onClose: () => void;
-  /** Sync or switch of an existing project; the dialog closes first, the caller shows the sync dialog. */
-  onOpenSync: (source: SourceStatus, mode: SyncMode) => void;
 }
 
 function join(folder: string, name: string): string {
   return `${folder.replace(/\/$/, "")}/${name}`;
 }
 
-export function SourceDialog({ source, onSaved, onClose, onOpenSync }: SourceDialogProps) {
+export function SourceDialog({ source, part = source ? "name" : "full", onSaved, onClose }: SourceDialogProps) {
   const i18n = useI18n();
   const { t, errorText } = i18n;
   const save = useSaveSource();
@@ -38,7 +40,7 @@ export function SourceDialog({ source, onSaved, onClose, onOpenSync }: SourceDia
   // A sync folder is optional: it stays empty until one is typed or chosen in the browser.
   const [pathChosen, setPathChosen] = useState(folder !== null);
   const [error, setError] = useState(source?.problem ? `⚠ ${errorText(source.problem.code, source.problem.message)}` : "");
-  const folders = useFolders(browsePath, true);
+  const folders = useFolders(browsePath, part !== "name");
   const listing = folders.data;
   const path = database && !pathChosen ? "" : (typedPath ?? listing?.path ?? "");
 
@@ -76,15 +78,11 @@ export function SourceDialog({ source, onSaved, onClose, onOpenSync }: SourceDia
 
   const onEnter = (e: React.KeyboardEvent) => e.key === "Enter" && submit();
 
-  const openSync = (mode: SyncMode) => {
-    if (!source) return;
-    onClose();
-    onOpenSync(source, mode);
-  };
-
   return (
     <Modal labelledBy="source-title" onDismiss={onClose}>
-      <h3 id="source-title">{t(!source ? "source.add.title" : database ? "source.edit.titleDb" : "source.edit.title")}</h3>
+      <h3 id="source-title">
+        {t(!source ? "source.add.title" : part === "name" ? "source.rename.title" : database ? "source.folder.titleDb" : "source.edit.title")}
+      </h3>
       {!source ? (
         <div className="backend-choice" role="radiogroup" aria-label={t("source.backend")}>
           {(["markdown", "database"] as const).map((b) => (
@@ -94,9 +92,10 @@ export function SourceDialog({ source, onSaved, onClose, onOpenSync }: SourceDia
             </label>
           ))}
         </div>
-      ) : (
+      ) : part === "folder" ? (
         <div className="backend-fixed">{t("source.backend.fixed", { b: t(`source.backend.${backend}`) })}</div>
-      )}
+      ) : null}
+      {part !== "folder" && (
       <div>
         <label className="field" htmlFor="source-project">
           {t("source.name")}
@@ -111,6 +110,8 @@ export function SourceDialog({ source, onSaved, onClose, onOpenSync }: SourceDia
           onKeyDown={onEnter}
         />
       </div>
+      )}
+      {part !== "name" && (<>
       <div>
         <label className="field" htmlFor="source-path">
           {t(database ? "source.syncPath" : "source.path")}
@@ -178,20 +179,7 @@ export function SourceDialog({ source, onSaved, onClose, onOpenSync }: SourceDia
           {t(listing.has_todo ? "browser.hasTodo" : "browser.noTodo")}
         </div>
       )}
-      {source && (
-        <div className="source-actions">
-          {database && source.sync_path && (
-            <button className="btn" aria-label={t("source.sync")} title={t("source.sync")} onClick={() => openSync("sync")}>
-              ⇄ Sync…
-            </button>
-          )}
-          {(!database || source.sync_path) && (
-            <button className="btn" onClick={() => openSync("switch")}>
-              {t(database ? "source.switch.toMd" : "source.switch.toDb")}
-            </button>
-          )}
-        </div>
-      )}
+      </>)}
       <div className="modal-error">{error}</div>
       <div className="modal-actions">
         <button className="btn" onClick={onClose}>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { SourceStatus } from "../api/client";
 import { useSwitchBackend, useSyncSource } from "../api/queries";
-import { canRun, hasMissing, isInSync, type SyncDirection, type SyncMode, type SyncPreview, switchDirection } from "../domain/sync";
+import { canRun, defaultDirection, hasMissing, isInSync, type SyncDirection, type SyncMode, type SyncPreview, switchDirection } from "../domain/sync";
 import { ApiError } from "../api/client";
 import { describeError, type I18n, useI18n } from "../i18n/i18n";
 import { Modal } from "./Modal";
@@ -35,7 +35,8 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
   const move = useSwitchBackend();
   const switching = mode === "switch";
   const folder = source.backend === "database" ? (source.sync_path ?? "") : source.path;
-  const [chosen, setChosen] = useState<SyncDirection>("to_md");
+  const primaryToMirror = defaultDirection(source.backend);
+  const [chosen, setChosen] = useState<SyncDirection>(primaryToMirror);
   const direction = switching ? switchDirection(source.backend) : chosen;
   const [deleteMissing, setDeleteMissing] = useState(false);
 
@@ -63,7 +64,10 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
     <Modal labelledBy="sync-title" onDismiss={onClose} className="sync-dialog">
       <h3 id="sync-title">{title}</h3>
       {switching ? (
-        <p>{t(source.backend === "markdown" ? "sync.switch.toDb.hint" : "sync.switch.toMd.hint", { f: folder })}</p>
+        <>
+          <p>{t(source.backend === "markdown" ? "sync.switch.toDb.hint" : "sync.switch.toMd.hint", { f: folder })}</p>
+          <p className="hint">{t("sync.switch.backupHint")}</p>
+        </>
       ) : (
         <>
           <p>{t("sync.folder", { f: folder })}</p>
@@ -81,6 +85,7 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
                   }}
                 />
                 {t(`sync.dir.${d}`)}
+                {d === primaryToMirror && ` ${t("sync.dir.default")}`}
               </label>
             ))}
           </div>

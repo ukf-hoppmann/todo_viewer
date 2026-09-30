@@ -833,3 +833,47 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Spiegel; alles andere war schon vorhanden und ist jetzt auch für
     Markdown mit Datenbank-Spiegel getestet.
   - Resolution: Vom Projekteigner bestätigt; umgesetzt mit v0.6.2.
+
+- `STORY-028` **Architekturregeln: Primärquelle und Spiegel statt genau einem Backend**
+  - Type: Story.
+  - Parent: `EPIC-004`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Regel 1 der Architektur (genau ein Backend pro Projekt, keine
+    zweite Kopie) wird so geändert, dass ein Projekt eine primäre Quelle hat
+    und die andere Seite optional als Spiegel hält. Der Sync bleibt immer
+    ausdrücklich, nie automatisch.
+  - Completion criteria: - docs/development/architecture.md beschreibt
+    Primärquelle und Spiegel; die Regel zu Sync (Vorschau, nichts löschen
+    ohne Bestätigung) bleibt. - Die Änderung ist vom Projekteigner
+    freigegeben, bevor sie gilt. - Die Contract-Suite nennt, was für einen
+    Spiegel zusätzlich gilt.
+  - Notes: `items/STORY-028/STORY-028_notes.md`.
+  - Summary: Regel 1 der Architektur kennt jetzt Primärquelle und Spiegel
+    pro Projekt.
+  - Resolution: Vom Projekteigner bestätigt.
+
+- `STORY-031` **Backup vor dem Wechsel der Primärquelle**
+  - Type: Story.
+  - Parent: `EPIC-004`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-029`.
+  - Goal: Vor einem Wechsel der Primärquelle legt der Dienst ein Backup der
+    bisherigen primären Seite an, damit sich der Wechsel zurückrollen lässt.
+  - Completion criteria: - Vor jedem Wechsel entsteht ein Backup
+    (Datenbank-Export bzw. Kopie der Markdown-Dateien) an einem
+    dokumentierten Ort. - Schlägt das Backup fehl, findet kein Wechsel
+    statt; die Antwort nennt den Grund. - Ein Test prüft, dass sich aus dem
+    Backup der alte Stand herstellen lässt.
+  - Notes: `items/STORY-031/STORY-031_notes.md`.
+  - Summary: Vor jedem Wechsel der Primärquelle wird die bisherige
+    gesichert; scheitert das, wird nichts umgeschaltet.
+  - Resolution: Vom Projekteigner bestätigt.

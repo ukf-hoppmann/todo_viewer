@@ -13,8 +13,8 @@ from todo_viewer.domain.errors import (
 )
 
 
-def test_write_creates_documents_and_checks_versions(adapter: Adapter):
-    docs, source = adapter.docs, adapter.source
+def test_write_creates_documents_and_checks_versions(docs_adapter: Adapter):
+    docs, source = docs_adapter.docs, docs_adapter.source
     name = "TASK-009_spec.md"
 
     docs.write(source, "TASK-009", name, "v1\n", expected_version=None)
@@ -29,8 +29,8 @@ def test_write_creates_documents_and_checks_versions(adapter: Adapter):
         docs.write(source, "TASK-009", "missing.md", "x", expected_version=content_version("x"))
 
 
-def test_documents_belong_to_their_item(adapter: Adapter):
-    docs, source = adapter.docs, adapter.source
+def test_documents_belong_to_their_item(docs_adapter: Adapter):
+    docs, source = docs_adapter.docs, docs_adapter.source
 
     docs.write(source, "TASK-009", "TASK-009_spec.md", "mine\n", expected_version=None)
 
@@ -38,8 +38,8 @@ def test_documents_belong_to_their_item(adapter: Adapter):
         docs.read(source, "TASK-008", "TASK-009_spec.md")
 
 
-def test_append_starts_new_documents_with_a_header(adapter: Adapter):
-    docs, source = adapter.docs, adapter.source
+def test_append_starts_new_documents_with_a_header(docs_adapter: Adapter):
+    docs, source = docs_adapter.docs, docs_adapter.source
     name = "TASK-009_notes.md"
 
     first = docs.append(source, "TASK-009", name, "## entry 1\n", header="# TASK-009 — t\n")
@@ -51,20 +51,20 @@ def test_append_starts_new_documents_with_a_header(adapter: Adapter):
         "# Notes for TASK-002\n\nSome *markdown* notes.\n\n## e\n"
 
 
-def test_reading_a_missing_document_fails(adapter: Adapter):
+def test_reading_a_missing_document_fails(docs_adapter: Adapter):
     with pytest.raises(DocumentNotFoundError):
-        adapter.docs.read(adapter.source, "TASK-404", "TASK-404_spec.md")
+        docs_adapter.docs.read(docs_adapter.source, "TASK-404", "TASK-404_spec.md")
 
 
-def test_names_and_ids_that_could_leave_the_item_are_forbidden(adapter: Adapter):
+def test_names_and_ids_that_could_leave_the_item_are_forbidden(docs_adapter: Adapter):
     for item_id, name in (("TASK-002", "../../../x.md"), ("TASK-002", "b.json"), ("..", "x.md"), ("a/b", "x.md"),
                           ("TASK-002", "")):
         with pytest.raises(DocumentForbiddenError):
-            adapter.docs.write(adapter.source, item_id, name, "x", expected_version=None)
+            docs_adapter.docs.write(docs_adapter.source, item_id, name, "x", expected_version=None)
 
 
-def test_deleting_removes_the_documents_of_one_item_only(adapter: Adapter):
-    docs, source = adapter.docs, adapter.source
+def test_deleting_removes_the_documents_of_one_item_only(docs_adapter: Adapter):
+    docs, source = docs_adapter.docs, docs_adapter.source
     docs.write(source, "TASK-009", "TASK-009_spec.md", "keep", expected_version=None)
 
     docs.delete_documents(source, "TASK-002")
@@ -78,8 +78,8 @@ def test_deleting_removes_the_documents_of_one_item_only(adapter: Adapter):
             docs.delete_documents(source, bad)
 
 
-def test_relabeling_moves_the_documents_to_the_new_id(adapter: Adapter):
-    docs, source = adapter.docs, adapter.source
+def test_relabeling_moves_the_documents_to_the_new_id(docs_adapter: Adapter):
+    docs, source = docs_adapter.docs, docs_adapter.source
 
     docs.relabel_documents(source, "TASK-002", "STORY-009", {"notes.md": "STORY-009_notes.md"})
     docs.relabel_documents(source, "TASK-404", "STORY-010", {"x.md": "y.md"})  # no documents: nothing to do
@@ -91,8 +91,8 @@ def test_relabeling_moves_the_documents_to_the_new_id(adapter: Adapter):
         docs.read(source, "STORY-010", "y.md")
 
 
-def test_relabeling_refuses_ids_with_documents_and_bad_names(adapter: Adapter):
-    docs, source = adapter.docs, adapter.source
+def test_relabeling_refuses_ids_with_documents_and_bad_names(docs_adapter: Adapter):
+    docs, source = docs_adapter.docs, docs_adapter.source
     docs.write(source, "STORY-009", "STORY-009_spec.md", "x", expected_version=None)
 
     with pytest.raises(ItemFolderExistsError):

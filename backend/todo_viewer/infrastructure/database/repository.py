@@ -5,6 +5,7 @@ addressed by their label (`Item.id`), and the uid never leaves the adapter.
 """
 from __future__ import annotations
 
+import dataclasses
 import uuid
 from collections.abc import Callable, Iterable, Sequence
 
@@ -12,7 +13,13 @@ import sqlalchemy as sa
 import structlog
 
 from todo_viewer.domain.backlog import Backlog
-from todo_viewer.domain.errors import LifecycleViolationError
+from todo_viewer.domain.editing import ChangeSet
+from todo_viewer.domain.errors import (
+    BacklogExistsError,
+    DuplicateItemError,
+    LifecycleViolationError,
+    VersionConflictError,
+)
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
 
@@ -56,6 +63,70 @@ class DatabaseBacklogRepository:
         return True
 
     # ---------- writing ----------
+
+    def apply(self, source: Source, item: Item, changes: ChangeSet) -> Item:
+        return self.apply_all(source, [(item, changes)])[0]
+
+    def apply_all(self, source: Source, plan: Sequence[tuple[Item, ChangeSet]]) -> list[Item]:
+        """All changes in one transaction; each item must still be at its version.
+
+        Ids change first, so references in the same plan may already use the new ids.
+        """
+        with self._db.begin() as conn:
+            uid_of = self._current(conn, source, [item for item, _ in plan])
+            uids = {item.id: uid for uid, item in _Rows(conn, source).all()}
+            after = [(uid_of[item.id], item, changes.applied_to(item)) for item, changes in plan]
+            for _, old, _ in after:
+                del uids[old.id]
+            uids.update({new.id: uid for uid, _, new in after})
+            position = _next_position(conn, source)
+            for uid, old, new in after:
+                values = _values(source, new, uids)
+                if new.location is not old.location:  # moved entries go to the end of their new list
+                    values["position"], position = position, position + 1
+                conn.execute(sa.update(items).where(items.c.uid == uid).values(**values))
+                _write_parts(conn, uid, new, uids)
+            stored = dict(_Rows(conn, source).all())
+            return [stored[uid] for uid, _, _ in after]
+
+    def create(self, source: Source, item: Item) -> Item:
+        """Adds a new active item at the end of the active list."""
+        with self._db.begin() as conn:
+            _ensure_project(conn, source)
+            uids = {i.id: uid for uid, i in _Rows(conn, source).all()}
+            if item.id in uids:
+                raise DuplicateItemError(item.id)
+            uid = uids[item.id] = self._uids()
+            new = dataclasses.replace(item, location=Location.ACTIVE)
+            _insert(conn, source, uid, new, _next_position(conn, source), uids)
+            return dict(_Rows(conn, source).all())[uid]
+
+    def delete(self, source: Source, targets: Sequence[Item]) -> None:
+        """Removes the items for good (their documents go with them); each must still be at its version."""
+        try:
+            with self._db.begin() as conn:
+                stored = self._current(conn, source, targets)
+                conn.execute(sa.delete(items).where(items.c.uid.in_(list(stored.values()))))
+        except sa.exc.IntegrityError:
+            # Another item still refers to one of them; the lifecycle rules normally prevent this.
+            raise LifecycleViolationError("item_referenced", targets[0].id) from None
+
+    def initialize(self, source: Source, language: str) -> None:
+        """Creates the project without items; raises BacklogExistsError if it exists."""
+        with self._db.begin() as conn:
+            if conn.execute(sa.select(projects.c.id).where(projects.c.id == source.id)).first() is not None:
+                raise BacklogExistsError()
+            conn.execute(sa.insert(projects).values(id=source.id))
+
+    @staticmethod
+    def _current(conn: sa.Connection, source: Source, expected: Sequence[Item]) -> dict[str, str]:
+        """Label -> uid of the expected items; raises VersionConflictError if one changed or is gone."""
+        stored = {item.id: (uid, item) for uid, item in _Rows(conn, source).all()}
+        for item in expected:
+            found = stored.get(item.id)
+            if found is None or found[1].version != item.version:
+                raise VersionConflictError(item.id)
+        return {item.id: stored[item.id][0] for item in expected}
 
     def store_all(self, source: Source, backlog: Sequence[Item]) -> None:
         """Replaces all items of the project (and with them their documents) in one transaction."""
@@ -137,20 +208,25 @@ def _resolve(item: Item, labels: Iterable[str], uids: dict[str, str]) -> list[st
     return [uids[label] for label in labels]
 
 
-def _values(source: Source, item: Item, position: int, uids: dict[str, str]) -> dict[str, object]:
+def _next_position(conn: sa.Connection, source: Source) -> int:
+    last = conn.execute(sa.select(sa.func.max(items.c.position)).where(items.c.project_id == source.id)).scalar()
+    return 0 if last is None else int(last) + 1
+
+
+def _values(source: Source, item: Item, uids: dict[str, str]) -> dict[str, object]:
     parent = _resolve(item, [item.parent] if item.parent else [], uids)
     return dict(
         project_id=source.id, label=item.id, item_type=item.item_type, title=item.title, status=item.status,
         parent_uid=parent[0] if parent else None, required_for_parent=item.required_for_parent,
         created=item.created, area=item.area, priority=item.priority, goal=item.goal,
         completion_criteria=item.completion_criteria, summary=item.summary, resolution=item.resolution,
-        location=item.location.value, deleted=item.deleted, position=position,
+        location=item.location.value, deleted=item.deleted,
     )
 
 
 def _insert(conn: sa.Connection, source: Source, uid: str, item: Item, position: int,
             uids: dict[str, str]) -> None:
-    conn.execute(sa.insert(items).values(uid=uid, **_values(source, item, position, uids)))
+    conn.execute(sa.insert(items).values(uid=uid, position=position, **_values(source, item, uids)))
     _write_parts(conn, uid, item, uids)
 
 

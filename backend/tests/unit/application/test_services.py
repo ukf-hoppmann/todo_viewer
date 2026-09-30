@@ -319,7 +319,10 @@ def test_retype_gives_a_new_id_and_follows_references_and_documents():
     result = service.retype(Source("P", "/p"), "STORY-001", version, "Task")
 
     assert (result.item.id, result.item.item_type) == ("TASK-003", "Task")
-    assert result.item.notes == ["items/TASK-003/TASK-003_notes.md"]
+    assert result.old_id == "STORY-001"
+    assert [(n.code, n.details) for n in result.notices] == [
+        ("external_references_may_remain", {"old_id": "STORY-001", "new_id": "TASK-003"})]
+    assert result.item.notes ==["items/TASK-003/TASK-003_notes.md"]
     assert [(i.id, i.parent, i.dependencies) for i in backlogs.items] == [
         ("TASK-003", None, []), ("TASK-001", "TASK-003", []), ("TASK-002", None, ["TASK-003"])]
     assert documents.renamed == [("STORY-001", "TASK-003", {"STORY-001_notes.md": "TASK-003_notes.md"})]

@@ -5,13 +5,21 @@ from dataclasses import dataclass
 
 from todo_viewer.domain.documents import content_version
 from todo_viewer.domain.errors import DocumentNotFoundError, VersionConflictError
+from todo_viewer.domain.item import Item
 from todo_viewer.domain.lifecycle import LifecycleRules
-from todo_viewer.domain.retype import RetypePlan, RetypePlanner, rewrite_ids
+from todo_viewer.domain.retype import Notice, RetypePlan, RetypePlanner, rewrite_ids
 from todo_viewer.domain.source import Source
 from todo_viewer.domain.trash import live
 
 from ..ports import BacklogRepository, DocumentStore
-from .items import ItemResult
+
+
+@dataclass(frozen=True)
+class RetypeResult:
+    item: Item
+    archive_supported: bool
+    old_id: str
+    notices: tuple[Notice, ...]
 
 
 @dataclass(frozen=True)
@@ -31,7 +39,7 @@ class RetypeService:
         self._planner = planner
         self._rules = rules
 
-    def retype(self, source: Source, item_id: str, version: str, new_type: str) -> ItemResult:
+    def retype(self, source: Source, item_id: str, version: str, new_type: str) -> RetypeResult:
         """Nothing is written before the plan passed the lifecycle rules and every document was read.
 
         The document folder moves first and moves back if the backlog files cannot be written. If the
@@ -58,7 +66,8 @@ class RetypeService:
             raise
         for text in texts:
             self._documents.write(source, text.path, text.content, text.version)
-        return ItemResult(next(i for i in stored if i.id == plan.new_id), backlog.archive_available)
+        return RetypeResult(next(i for i in stored if i.id == plan.new_id), backlog.archive_available, item_id,
+                            plan.notices)
 
     def _rewritten_texts(self, source: Source, plan: RetypePlan, item_id: str) -> list[_DocumentText]:
         texts = []

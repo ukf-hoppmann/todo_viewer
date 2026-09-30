@@ -39,7 +39,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-004`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-09-30.
   - Area: Backend-API.
   - Priority: Normal.
@@ -53,6 +53,9 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ohne Bestätigung) bleibt. - Die Änderung ist vom Projekteigner
     freigegeben, bevor sie gilt. - Die Contract-Suite nennt, was für einen
     Spiegel zusätzlich gilt.
+  - Notes: `items/STORY-028/STORY-028_notes.md`.
+  - Summary: Regel 1 der Architektur kennt jetzt Primärquelle und Spiegel
+    pro Projekt.
 
 - `STORY-029` **Primärquelle und Spiegel pro Projekt in Modell und API**
   - Type: Story.

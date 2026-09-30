@@ -277,3 +277,57 @@ def test_a_difference_in_either_direction_or_in_a_document_is_not_in_sync(setup:
 def test_in_sync_of_a_broken_folder_is_an_error_not_a_no(setup: Setup):
     with pytest.raises(SyncSourceInvalidError):
         setup.service.in_sync(setup.project, FROM_MD)
+
+
+# A markdown project that keeps a database mirror: the folder is the primary source.
+
+def _markdown_primary(setup: Setup) -> tuple[Source, Source]:
+    """The folder holds the fixture backlog with one trashed item; returns the project and its database mirror."""
+    trashed = dataclasses.replace(setup.backlogs.get(setup.project, "TASK-003"), deleted="2026-09-28")
+    setup.backlogs.write_backlog(setup.project, [trashed if i.id == "TASK-003" else i
+                                                 for i in setup.backlogs.load(setup.project).items], "en")
+    setup.service.run(setup.project, TO_MD, setup.service.preview(setup.project, TO_MD).token, False, "en")
+    project = Source(project="P", path=str(setup.tmp / "md"), backend="markdown", id="folder", mirror_database=True)
+    mirror = dataclasses.replace(project, backend="database", path="", mirror_database=False)
+    return project, mirror
+
+
+def test_the_mirror_of_a_markdown_project_takes_over_everything_including_archive_trash_and_documents(setup: Setup):
+    project, mirror = _markdown_primary(setup)
+
+    preview = setup.service.preview(project, FROM_MD)
+    setup.service.run(project, FROM_MD, preview.token, False, "en")
+
+    assert setup.versions(mirror) == setup.versions(setup.project)
+    assert setup.backlogs.get(mirror, "TASK-003").deleted == "2026-09-28"
+    assert setup.backlogs.get(mirror, "TASK-000").location is Location.ARCHIVE
+    assert setup.documents.read(mirror, "TASK-002", "notes.md") == setup.documents.read(setup.project, "TASK-002",
+                                                                                          "notes.md")
+    assert setup.service.in_sync(project, FROM_MD) and setup.service.in_sync(project, TO_MD)
+
+
+def test_the_other_direction_overwrites_the_folder_with_the_mirror(setup: Setup):
+    project, mirror = _markdown_primary(setup)
+    setup.service.run(project, FROM_MD, setup.service.preview(project, FROM_MD).token, False, "en")
+    setup.backlogs.write_backlog(mirror, [dataclasses.replace(i, title="Edited in mirror") if i.id == "TASK-001" else i
+                                          for i in setup.backlogs.load(mirror).items], "en")
+
+    preview = setup.service.preview(project, TO_MD)
+    setup.service.run(project, TO_MD, preview.token, False, "en")
+
+    assert [e.label for e in preview.changed] == ["TASK-001"]
+    assert "**Edited in mirror**" in (setup.tmp / "md" / "TODO.md").read_text(encoding="utf-8")
+    assert setup.service.in_sync(project, FROM_MD)
+
+
+def test_what_the_target_of_a_markdown_project_has_extra_is_deleted_only_when_asked_for(setup: Setup):
+    project, mirror = _markdown_primary(setup)
+    setup.service.run(project, FROM_MD, setup.service.preview(project, FROM_MD).token, False, "en")
+    setup.backlogs.create(mirror, Item(id="TASK-070", title="Only in the mirror", project="P"))
+
+    kept = setup.service.run(project, FROM_MD, setup.service.preview(project, FROM_MD).token, False, "en")
+    assert [e.label for e in kept.kept] == ["TASK-070"] and setup.backlogs.get(mirror, "TASK-070")
+
+    dropped = setup.service.run(project, FROM_MD, setup.service.preview(project, FROM_MD).token, True, "en")
+    assert [e.label for e in dropped.deleted] == ["TASK-070"]
+    assert setup.versions(mirror) == setup.versions(setup.project)

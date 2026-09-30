@@ -170,10 +170,13 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     Markdown behält die Kopie in der Datenbank. Ein Projekt aus einer früheren
     Version hat keinen Spiegel, bis man ihn einschaltet.
   - Sync (`POST /sources/{source_id}/sync`,
-    `{direction, confirm?, token?, delete_missing?, language?}`; Entscheidungen:
-    [STORY-023](../todo/items/STORY-023/STORY-023_spec.md)): nur für
-    Datenbank-Projekte mit `sync_path`. `direction` ist `to_md` (Datenbank →
-    Ordner) oder `from_md` (Ordner → Datenbank); übertragen werden `TODO.md`,
+    `{direction?, confirm?, token?, delete_missing?, language?}`; Entscheidungen:
+    [STORY-023](../todo/items/STORY-023/STORY-023_spec.md)): für Projekte mit
+    Spiegel (Datenbank-Projekt mit `sync_path`, Markdown-Projekt mit
+    Datenbank-Spiegel; ein Markdown-Projekt ohne Spiegel liest nur in die
+    Datenbank). `direction` ist `to_md` (Datenbank → Ordner) oder `from_md`
+    (Ordner → Datenbank); fehlt sie, gilt die Richtung von der Primärquelle zum
+    Spiegel (siehe unten). Übertragen werden `TODO.md`,
     `archive.md`, Papierkorb sowie Notes und Specs (auch Themen-Specs) aller
     Items. Ohne `confirm` ist der Aufruf eine Vorschau und ändert nichts:
     `items` und `documents` mit `created`, `changed` (Ziel wird überschrieben),

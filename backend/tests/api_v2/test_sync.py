@@ -153,3 +153,31 @@ def test_errors_have_stable_codes(api, workspace):
         400, "sync_source_invalid", "not_found")
     assert _sync(api, "no-such-project", "to_md").body["code"] == "source_gone"
     assert _sync(api, no_path, "sideways").status_code == 400
+
+
+def test_without_a_direction_the_sync_goes_from_the_primary_source_to_the_mirror(api, workspace):
+    central = _project(api, workspace)
+    _seed(api, central)
+    plain = api.post("/api/v2/sources", {"path": str(workspace.add_backlog("backlog"))}).body["id"]
+    mirrored = api.post("/api/v2/sources", {"path": str(workspace.add_backlog("backlog", "other")),
+                                            "mirror": "database"}).body["id"]
+
+    def preview(sid):
+        return api.post(f"/api/v2/sources/{sid}/sync", {}).body
+
+    to_folder = preview(central)
+    assert [e["label"] for e in to_folder["items"]["created"]] == ["EPIC-001", "STORY-001"]  # database -> folder
+    assert not (workspace.root / "md").exists()
+    for sid in (plain, mirrored):
+        into_database = preview(sid)  # folder -> database
+        assert into_database["executed"] is False and len(into_database["items"]["created"]) > 0
+
+
+def test_a_direction_still_overrides_the_default(api, workspace):
+    mirrored = api.post("/api/v2/sources", {"path": str(workspace.add_backlog("backlog")), "mirror": "database"}
+                        ).body["id"]
+    _sync(api, mirrored, "from_md", confirm=True, token=_sync(api, mirrored, "from_md").body["token"])
+
+    back = api.post(f"/api/v2/sources/{mirrored}/sync", {"direction": "to_md"}).body
+
+    assert (back["items"]["created"], back["items"]["changed"]) == ([], [])

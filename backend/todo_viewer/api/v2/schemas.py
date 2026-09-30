@@ -263,8 +263,10 @@ class BacklogCreateIn(BaseModel):
 class SyncIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    direction: Literal["to_md", "from_md"] = Field(
-        description="to_md: write the database project into its sync folder; from_md: read the folder into the project")
+    direction: Literal["to_md", "from_md"] | None = Field(
+        None, description="to_md: write the database side into the markdown folder; from_md: read the markdown "
+                          "folder into the database side. Default: from the primary source to the mirror "
+                          "(database project: to_md, markdown project: from_md)")
     confirm: bool = Field(False, description="false: only preview; true: carry out the sync")
     token: str | None = Field(None, description="The token of the preview being confirmed (required with confirm)")
     delete_missing: bool = Field(

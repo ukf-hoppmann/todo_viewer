@@ -84,3 +84,22 @@ def test_a_markdown_primary_project_and_its_database_mirror_sync_both_ways_and_t
                                              "mirror": "none"}).body
     assert _view(off) == ("database", None, "none")
     assert api.get(url).body["priority"] == "Urgent"
+
+
+def test_the_primary_source_is_not_switched_while_the_mirror_differs(api, workspace):
+    folder = workspace.add_backlog("backlog")
+    sid = api.post("/api/v2/sources", {"path": str(folder), "mirror": "database"}).body["id"]
+    _sync(api, sid, "from_md")
+    url = f"/api/v2/items/{sid}/TASK-001"
+    api.patch(url, {"version": api.get(url).body["version"], "fields": {"priority": "Urgent"}})  # the folder moves on
+
+    early = api.put(f"/api/v2/sources/{sid}", {"backend": "database"})
+
+    assert (early.status_code, early.body["code"]) == (409, "sync_required")
+    assert _view(api.get("/api/v2/sources").body[0]) == ("markdown", str(folder), "database")
+
+    _sync(api, sid, "from_md")
+    done = api.put(f"/api/v2/sources/{sid}", {"backend": "database"})
+
+    assert (done.status_code, _view(done.body)) == (200, ("database", str(folder), "markdown"))
+    assert api.get(url).body["priority"] == "Urgent"

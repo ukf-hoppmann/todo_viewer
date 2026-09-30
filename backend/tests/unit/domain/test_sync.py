@@ -17,6 +17,7 @@ from todo_viewer.domain.sync import (
     SyncDirection,
     SyncEntry,
     check_token,
+    default_direction,
     merged_items,
     plan_sync,
     sync_pair,
@@ -158,3 +159,12 @@ def test_check_token_refuses_a_state_that_changed_since_the_preview():
 
 def test_directions_are_the_api_values():
     assert {d.value for d in SyncDirection} == {"to_md", "from_md"}
+
+
+def test_the_default_direction_goes_from_the_primary_source_to_the_mirror():
+    database = Source(project="P", path="", backend="database", id="abc", sync_path="/md")
+    markdown = Source(project="P", path="docs", backend="markdown", id="abc", mirror_database=True)
+
+    assert default_direction(database) is SyncDirection.TO_MD
+    assert default_direction(markdown) is SyncDirection.FROM_MD
+    assert default_direction(dataclasses.replace(markdown, mirror_database=False)) is SyncDirection.FROM_MD

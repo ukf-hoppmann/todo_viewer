@@ -55,7 +55,10 @@ def write_sources(conn: sa.Connection, before: list[Source], after: list[Source]
     kept = {s.id for s in after}
     for source in before:
         if source.id not in kept:
-            if conn.execute(sa.select(items.c.uid).where(items.c.project_id == source.id).limit(1)).first():
+            stored = sa.select(items.c.uid).where(items.c.project_id == source.id)
+            if source.backend == "markdown":  # its files are the truth; items here are a copy left by a sync
+                conn.execute(sa.delete(items).where(items.c.project_id == source.id))
+            elif conn.execute(stored.limit(1)).first():
                 raise ProjectNotEmptyError(source.project)
             conn.execute(sa.delete(projects).where(projects.c.id == source.id))
     existing: set[str] = set(conn.execute(sa.select(projects.c.id)).scalars())

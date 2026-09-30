@@ -104,6 +104,42 @@ def test_a_stale_token_is_refused_and_nothing_is_written(api, workspace):
     assert not (workspace.root / "md").exists()
 
 
+def test_a_project_moves_to_the_database_and_back_keeping_its_id_and_items(api, workspace):
+    folder = workspace.add_backlog("backlog")
+    sid = api.post("/api/v2/sources", {"path": str(folder)}).body["id"]
+    url = f"/api/v2/items/{sid}/TASK-001"
+    before = api.get(url).body
+
+    early = api.put(f"/api/v2/sources/{sid}", {"backend": "database"})
+    assert (early.status_code, early.body["code"]) == (409, "sync_required")
+    assert api.get("/api/v2/sources").body[0]["backend"] == "markdown"
+
+    preview = _sync(api, sid, "from_md")
+    assert (preview.status_code, preview.body["executed"]) == (200, False), preview.body
+    _sync(api, sid, "from_md", confirm=True, token=preview.body["token"])
+    to_database = api.put(f"/api/v2/sources/{sid}", {"backend": "database"})
+
+    assert to_database.status_code == 200, to_database.body
+    assert (to_database.body["id"], to_database.body["backend"], to_database.body["path"],
+            to_database.body["sync_path"]) == (sid, "database", "", str(folder))
+    assert api.get(url).body["version"] == before["version"]  # the same item, now read from the database
+    edited = api.patch(url, {"version": before["version"], "fields": {"priority": "Urgent"}})
+    assert edited.status_code == 200, edited.body
+
+    late = api.put(f"/api/v2/sources/{sid}", {"backend": "markdown"})
+    assert (late.status_code, late.body["code"]) == (409, "sync_required")
+    export = _sync(api, sid, "to_md")
+    _sync(api, sid, "to_md", confirm=True, token=export.body["token"])
+    to_markdown = api.put(f"/api/v2/sources/{sid}", {"backend": "markdown", "project": "Back again"})
+
+    assert to_markdown.status_code == 200, to_markdown.body
+    assert (to_markdown.body["id"], to_markdown.body["project"], to_markdown.body["path"],
+            to_markdown.body["sync_path"]) == (sid, "Back again", str(folder), None)
+    assert "Priority: Urgent." in (folder / "TODO.md").read_text(encoding="utf-8")
+    assert api.get(url).body["priority"] == "Urgent"
+    assert api.delete(f"/api/v2/sources/{sid}").status_code == 200  # the database copy does not block removal
+
+
 def test_errors_have_stable_codes(api, workspace):
     no_path = _project(api, workspace, sync=None)
     md = api.post("/api/v2/sources", {"path": str(workspace.add_backlog("backlog"))}).body["id"]

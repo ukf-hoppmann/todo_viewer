@@ -91,16 +91,17 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
                                       "database": DatabaseDocumentStore(database)})
     source_repo = DatabaseSourceRepository(database, legacy.sources)
     lookup = SourceLookup(source_repo)
+    sync = SyncService(backlogs, documents)
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
         items=ItemService(backlogs, planner, rules, ItemFactory(planner), today),
         trash=TrashService(backlogs, documents, TrashPlanner(rules), today),
         retype=RetypeService(backlogs, documents, RetypePlanner(), rules),
-        sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver)),
+        sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver), sync),
         source_lookup=lookup,
         documents=DocumentService(backlogs, documents, planner, rules, today),
-        sync=SyncService(backlogs, documents),
+        sync=sync,
         folders=FolderBrowseService(LocalFolderBrowser(browse_start_from(settings.browse_start), resolver)),
         ui_state=UiStateService(DatabaseUiStateStore(database, legacy.ui_state)),
     )

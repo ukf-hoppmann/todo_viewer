@@ -234,7 +234,9 @@ class SourceIn(BaseModel):
     path: str = Field("", description="Markdown projects: backlog folder with TODO.md; unused for database ones")
     project: str | None = Field(None, description="Name; suggested from the folder if empty (markdown only)")
     backend: Literal["markdown", "database"] | None = Field(
-        None, description="Where the project is stored; on create default markdown, on update it must not change")
+        None, description="Where the project is stored; on create default markdown. On update another value moves "
+                          "the project there (path and sync_path are then ignored): only when both sides are in "
+                          "sync, else 409 sync_required")
     sync_path: str | None = Field(None, description="Database projects: folder to sync markdown files with")
 
 

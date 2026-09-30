@@ -740,7 +740,7 @@ export interface components {
         SourceIn: {
             /**
              * Backend
-             * @description Where the project is stored; on create default markdown, on update it must not change
+             * @description Where the project is stored; on create default markdown. On update another value moves the project there (path and sync_path are then ignored): only when both sides are in sync, else 409 sync_required
              */
             backend?: ("markdown" | "database") | null;
             /**

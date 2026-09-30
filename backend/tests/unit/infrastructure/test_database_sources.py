@@ -72,6 +72,20 @@ def test_a_database_project_with_items_cannot_be_removed(db: Database):
     assert repo.all() == [FILES, CENTRAL]
 
 
+def test_removing_a_markdown_project_drops_the_copy_a_sync_left_in_the_database(db: Database):
+    repo = DatabaseSourceRepository(db)
+    with repo.edit() as sources:
+        sources += [FILES, CENTRAL]
+    DatabaseBacklogRepository(db).store_all(FILES, [Item(id="TASK-001", title="copy", project="Files")])
+
+    with repo.edit() as sources:
+        sources.remove(FILES)  # the files are the truth of a markdown project; the copy is not worth a refusal
+
+    assert repo.all() == [CENTRAL]
+    with db.begin() as conn:
+        assert conn.execute(sa.text("SELECT count(*) FROM items")).scalar() == 0
+
+
 def test_projects_created_only_for_items_are_not_listed(db: Database):
     DatabaseBacklogRepository(db).store_all(CENTRAL, [])
 

@@ -22,12 +22,14 @@ from todo_viewer.domain.errors import (
     LifecycleViolationError,
     NotEditableError,
     SourceGoneError,
+    SyncRequiredError,
     VersionConflictError,
 )
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.retype import RetypePlanner
 from todo_viewer.domain.source import Source, SourceProblem
+from todo_viewer.domain.sync import SyncDirection
 from todo_viewer.domain.trash import TrashPlanner
 
 
@@ -59,7 +61,7 @@ class FakeBacklogs:
         self.initialized.append((source.path, language))
 
     def check(self, source: Source) -> SourceProblem | None:
-        if not source.path:
+        if not source.path and source.backend == "markdown":
             return SourceProblem("missing_path", "Path is missing.")
         return SourceProblem("no_todo", "No TODO.md in this folder.") if "plain" in source.path else None
 
@@ -130,14 +132,27 @@ class Names:
         return "suggested"
 
 
+class FakeSync:
+    """Says whether a project is in sync; remembers what it was asked."""
+
+    def __init__(self, in_sync: bool = True):
+        self.in_sync_result = in_sync
+        self.asked: list[tuple[Source, SyncDirection]] = []
+
+    def in_sync(self, source: Source, direction: SyncDirection) -> bool:
+        self.asked.append((source, direction))
+        return self.in_sync_result
+
+
 def _ids() -> Callable[[], str]:
     counter = itertools.count(1)
     return lambda: f"id-{next(counter)}"
 
 
-def _sources(initial: list[Source] | None = None) -> tuple[SourceService, InMemorySources]:
+def _sources(initial: list[Source] | None = None, sync: FakeSync | None = None
+             ) -> tuple[SourceService, InMemorySources]:
     repo = InMemorySources(initial)
-    return SourceService(repo, FakeBacklogs(), Names(), _ids()), repo
+    return SourceService(repo, FakeBacklogs(), Names(), sync or FakeSync(), _ids()), repo
 
 
 def test_add_source_trims_and_suggests_name():
@@ -165,7 +180,7 @@ def test_add_source_rejects_problems_and_duplicates():
 def test_create_backlog_initializes_folder_and_adds_source():
     backlogs = FakeBacklogs()
     repo = InMemorySources([Source("A", "/a", id="a")])
-    service = SourceService(repo, backlogs, Names(), _ids())
+    service = SourceService(repo, backlogs, Names(), FakeSync(), _ids())
 
     created = service.create_backlog(" /new/docs/todo/ ", None, "de")
     with pytest.raises(DuplicateSourceError):
@@ -191,6 +206,60 @@ def test_update_keeps_extra_fields_and_remove_by_id():
     assert updated.extra == {"color": "red"}
     assert removed == b
     assert repo.sources == [Source("A2", "/a2", id=a.id)]
+
+
+def test_a_markdown_project_moves_into_the_database_once_its_folder_is_read_in():
+    md = Source("A", "/a", id="a", extra={"color": "red"})
+    sync = FakeSync()
+    service, repo = _sources([Source("Z", "/z", id="z"), md], sync)
+
+    switched = service.update("a", "ignored", None, "database", "ignored too")
+
+    assert switched == Source("A", "", backend="database", id="a", sync_path="/a")
+    assert switched.extra == {"color": "red"}
+    assert repo.sources[1] == switched and repo.sources[0].id == "z"
+    assert sync.asked == [(md, SyncDirection.FROM_MD)]
+
+
+def test_a_database_project_moves_back_to_its_sync_folder_once_it_is_written_out():
+    db = Source("A", "", backend="database", id="a", sync_path="/a")
+    sync = FakeSync()
+    service, repo = _sources([db], sync)
+
+    switched = service.update("a", "", "Renamed", "markdown", None)
+
+    assert switched == Source("Renamed", "/a", backend="markdown", id="a", sync_path=None)
+    assert repo.sources == [switched]
+    assert sync.asked == [(db, SyncDirection.TO_MD)]
+
+
+def test_the_backend_is_not_switched_while_the_sides_differ():
+    md = Source("A", "/a", id="a")
+    service, repo = _sources([md], FakeSync(in_sync=False))
+
+    with pytest.raises(SyncRequiredError):
+        service.update("a", "/a", None, "database", None)
+
+    assert repo.sources == [md]
+
+
+def test_a_switch_to_markdown_cannot_take_a_folder_another_project_uses():
+    other, db = Source("B", "/a", id="b"), Source("A", "", backend="database", id="a", sync_path="/a")
+    service, repo = _sources([other, db])
+
+    with pytest.raises(DuplicateSourceError):
+        service.update("a", "", None, "markdown", None)
+
+    assert repo.sources == [other, db]
+
+
+def test_the_same_backend_is_no_switch():
+    md = Source("A", "/a", id="a")
+    sync = FakeSync(in_sync=False)
+    service, _ = _sources([md], sync)
+
+    assert service.update("a", "/a2", "A2", "markdown", None).path == "/a2"
+    assert sync.asked == []
 
 
 def test_lookup_by_id():

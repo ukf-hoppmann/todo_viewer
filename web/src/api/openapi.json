@@ -1084,10 +1084,6 @@
             "title": "Project",
             "type": "string"
           },
-          "sync": {
-            "$ref": "#/components/schemas/SyncStatusOut",
-            "description": "Whether the mirror still matches the primary source; reading it changes and syncs nothing"
-          },
           "sync_path": {
             "anyOf": [
               {
@@ -1109,8 +1105,7 @@
           "sync_path",
           "primary",
           "markdown_path",
-          "mirror",
-          "sync"
+          "mirror"
         ],
         "title": "SourceOut",
         "type": "object"
@@ -1183,10 +1178,6 @@
             "title": "Project",
             "type": "string"
           },
-          "sync": {
-            "$ref": "#/components/schemas/SyncStatusOut",
-            "description": "Whether the mirror still matches the primary source; reading it changes and syncs nothing"
-          },
           "sync_path": {
             "anyOf": [
               {
@@ -1209,7 +1200,6 @@
           "primary",
           "markdown_path",
           "mirror",
-          "sync",
           "item_count",
           "problem"
         ],
@@ -1413,6 +1403,10 @@
             "description": "When the project was last synced through this API; null if never",
             "title": "Last Sync At"
           },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
           "state": {
             "description": "none: no mirror; in_sync; mirror_changed / primary_changed / both_changed: which side changed since the last sync (a sync through this API); unknown: never synced and the sides differ; unreadable: a side cannot be read",
             "enum": [
@@ -1429,6 +1423,7 @@
           }
         },
         "required": [
+          "source_id",
           "state",
           "last_sync_at"
         ],
@@ -3088,6 +3083,155 @@
           }
         },
         "summary": "Sync Source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v2/sources/{source_id}/sync-status": {
+      "get": {
+        "description": "Which side of a project with a mirror changed since its last sync (a sync through this API).\n\nComputed when asked, not with the lists of projects: it reads both sides of the project. Changes nothing and\nsyncs nothing. `unknown` means never synced while the sides differ, `unreadable` that a side cannot be read.",
+        "operationId": "source_sync_status_api_v2_sources__source_id__sync_status_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Source Sync Status",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v2/sync-status": {
+      "get": {
+        "description": "`GET /sources/{id}/sync-status` for every project, in the order of the projects.",
+        "operationId": "sync_statuses_api_v2_sync_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SyncStatusOut"
+                  },
+                  "title": "Response Sync Statuses Api V2 Sync Status Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Sync Statuses",
         "tags": [
           "sources"
         ]

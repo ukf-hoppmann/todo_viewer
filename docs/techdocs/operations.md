@@ -40,9 +40,9 @@
   seinen Kopftext.
 - Sync-Status: Nach jedem Sync über die API speichert die Datenbank einen
   Fingerabdruck beider Seiten und die Zeit (Spalten `last_sync_at`,
-  `synced_primary`, `synced_mirror`); der Status (`GET /sources`, `GET /backlog`)
-  liest dafür bei jedem Aufruf beide Seiten eines Projekts mit Spiegel. Bei
-  sehr großen Backlogs kostet das Zeit, die UI fragt alle 5 s. `unknown`
+  `synced_primary`, `synced_mirror`); der Status (`GET /sources/{id}/sync-status`)
+  liest erst beim Aufruf beide Seiten eines Projekts mit Spiegel (gemessen
+  13 ms bei 42 Items) und läuft nicht im Takt der UI-Abfrage. `unknown`
   verschwindet mit dem ersten Sync (oder sobald beide Seiten gleich sind);
   `unreadable` heißt: der Markdown-Ordner fehlt teilweise oder ist kein
   Backlog, ein Sync liest ihn dann nicht.

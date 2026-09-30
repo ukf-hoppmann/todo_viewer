@@ -70,7 +70,8 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   vergleicht die Fingerabdrücke (`domain/sync.py`: `fingerprint`, `classify`)
   beider Seiten jetzt mit denen direkt nach dem letzten Sync (`Source.baseline`,
   Spalten in `projects`). Aufgezeichnet wird nur, wenn der Sync über diesen
-  Dienst läuft (nicht beim Backup); Lesen schreibt nie.
+  Dienst läuft (nicht beim Backup); Lesen schreibt nie. Berechnet wird der
+  Status nur auf Anforderung (`/sync-status`), nicht mit den Projektlisten.
 - Abgleich Datenbank ⇄ Markdown: nur auf Anforderung (`POST /sources/{id}/sync`),
   nie automatisch. `SyncService` (`application/services/sync.py`) arbeitet mit
   denselben Ports auf zwei Quellen desselben Projekts (Datenbank und

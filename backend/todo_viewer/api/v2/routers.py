@@ -44,6 +44,7 @@ from .schemas import (
     SourceStatusOut,
     SyncIn,
     SyncOut,
+    SyncStatusOut,
     VersionIn,
 )
 
@@ -61,14 +62,14 @@ def health() -> HealthOut:
 
 
 @router.get("/backlog", tags=["items"])
-def backlog(overview: Overview, sync_status: SyncStatus) -> BacklogOut:
+def backlog(overview: Overview) -> BacklogOut:
     """All configured sources with their items. Without a config the backlog is empty."""
     try:
         entries = overview.overview()
     except ConfigMissingError:
         entries = []
     return BacklogOut(
-        sources=[SourceStatusOut(**SourceOut.of(e.source, sync_status.status(e.source)).model_dump(),
+        sources=[SourceStatusOut(**SourceOut.of(e.source).model_dump(),
                                  item_count=len(live(e.backlog.items)),
                                  problem=ProblemOut.of(e.backlog.problem)) for e in entries],
         items=[ItemOut.of(e.source, item, e.backlog.archive_available)
@@ -191,18 +192,17 @@ def append_notes(source_id: str, item_id: str, body: NotesEntryIn, documents: Do
 
 
 @router.get("/sources", tags=["sources"])
-def list_sources(sources: Sources, sync_status: SyncStatus) -> list[SourceOut]:
+def list_sources(sources: Sources) -> list[SourceOut]:
     try:
-        return [SourceOut.of(s, sync_status.status(s)) for s in sources.all()]
+        return [SourceOut.of(s) for s in sources.all()]
     except ConfigMissingError:
         return []
 
 
 @router.post("/sources", tags=["sources"])
-def add_source(body: SourceIn, sources: Sources, sync_status: SyncStatus, request: Request) -> SourceOut:
+def add_source(body: SourceIn, sources: Sources, request: Request) -> SourceOut:
     note(request, target=body.path)
-    added = sources.add(body.path, body.project, body.backend or "markdown", body.sync_path, body.mirror)
-    out = SourceOut.of(added, sync_status.status(added))
+    out = SourceOut.of(sources.add(body.path, body.project, body.backend or "markdown", body.sync_path, body.mirror))
     note(request, source=out.id)
     return out
 
@@ -219,11 +219,9 @@ def create_backlog(body: BacklogCreateIn, sources: Sources, request: Request) ->
 
 
 @router.put("/sources/{source_id}", tags=["sources"])
-def update_source(source_id: str, body: SourceIn, sources: Sources, sync_status: SyncStatus,
-                  request: Request) -> SourceOut:
+def update_source(source_id: str, body: SourceIn, sources: Sources, request: Request) -> SourceOut:
     note(request, target=body.path)
-    updated = sources.update(source_id, body.path, body.project, body.backend, body.sync_path, body.mirror)
-    return SourceOut.of(updated, sync_status.status(updated))
+    return SourceOut.of(sources.update(source_id, body.path, body.project, body.backend, body.sync_path, body.mirror))
 
 
 @router.delete("/sources/{source_id}", tags=["sources"])
@@ -250,6 +248,26 @@ def sync_source(source_id: str, body: SyncIn, sync: Sync, sync_status: SyncStatu
         return SyncOut.of(sync.preview(source, direction))
     result = sync_status.run(source, direction, body.token, body.delete_missing, body.language)
     return SyncOut.of(result.preview, result)
+
+
+@router.get("/sources/{source_id}/sync-status", tags=["sources"])
+def source_sync_status(source_id: str, lookup: Lookup, sync_status: SyncStatus) -> SyncStatusOut:
+    """Which side of a project with a mirror changed since its last sync (a sync through this API).
+
+    Computed when asked, not with the lists of projects: it reads both sides of the project. Changes nothing and
+    syncs nothing. `unknown` means never synced while the sides differ, `unreadable` that a side cannot be read.
+    """
+    source = lookup.by_id(source_id)
+    return SyncStatusOut.of(source, sync_status.status(source))
+
+
+@router.get("/sync-status", tags=["sources"])
+def sync_statuses(sources: Sources, sync_status: SyncStatus) -> list[SyncStatusOut]:
+    """`GET /sources/{id}/sync-status` for every project, in the order of the projects."""
+    try:
+        return [SyncStatusOut.of(s, sync_status.status(s)) for s in sources.all()]
+    except ConfigMissingError:
+        return []
 
 
 @router.get("/folders", tags=["sources"])

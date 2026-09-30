@@ -4,6 +4,9 @@ import type { Lang } from "../i18n/messages";
 
 export const VIEWS = ["tree", "graph", "kanban", "trash"] as const;
 export type View = (typeof VIEWS)[number];
+export const BACKENDS = ["markdown", "database"] as const;
+/** Where a project is stored: the same two values the API uses. */
+export type DefaultBackend = (typeof BACKENDS)[number];
 export type HiddenKind = "hiddenProjects" | "hiddenStatuses" | "hiddenPriorities";
 
 export interface UiState {
@@ -18,6 +21,8 @@ export interface UiState {
   selectedId: string | null;
   currentView: View;
   lang: Lang;
+  /** The storage a new project is preselected with. */
+  defaultBackend: DefaultBackend;
 }
 
 export const INITIAL_UI_STATE: UiState = {
@@ -30,6 +35,7 @@ export const INITIAL_UI_STATE: UiState = {
   selectedId: null,
   currentView: "tree",
   lang: "de",
+  defaultBackend: "markdown",
 };
 
 const SET_KEYS = ["hiddenProjects", "hiddenStatuses", "hiddenPriorities", "collapsed", "markedProjects"] as const;
@@ -48,6 +54,7 @@ export function mergeStored(base: UiState, raw: unknown): UiState {
   if (typeof r.selectedId === "string" || r.selectedId === null) next.selectedId = r.selectedId;
   if (VIEWS.includes(r.currentView as View)) next.currentView = r.currentView as View;
   if (r.lang === "de" || r.lang === "en") next.lang = r.lang;
+  if (BACKENDS.includes(r.defaultBackend as DefaultBackend)) next.defaultBackend = r.defaultBackend as DefaultBackend;
   return next;
 }
 
@@ -62,6 +69,7 @@ export function snapshot(state: UiState): Record<string, unknown> {
     selectedId: state.selectedId,
     currentView: state.currentView,
     lang: state.lang,
+    defaultBackend: state.defaultBackend,
   };
 }
 
@@ -75,7 +83,8 @@ export type UiAction =
   | { type: "search"; text: string }
   | { type: "select"; uid: string | null }
   | { type: "view"; view: View }
-  | { type: "lang"; lang: Lang };
+  | { type: "lang"; lang: Lang }
+  | { type: "defaultBackend"; backend: DefaultBackend };
 
 function toggled(set: ReadonlySet<string>, value: string): Set<string> {
   const next = new Set(set);
@@ -115,5 +124,7 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, currentView: action.view };
     case "lang":
       return { ...state, lang: action.lang };
+    case "defaultBackend":
+      return { ...state, defaultBackend: action.backend };
   }
 }

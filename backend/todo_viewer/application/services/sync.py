@@ -14,8 +14,10 @@ from todo_viewer.domain.sync import (
     SyncEntry,
     SyncPreview,
     check_token,
+    fingerprint,
     merged_items,
     plan_sync,
+    primary_and_mirror,
     sync_pair,
 )
 
@@ -26,10 +28,20 @@ _EMPTY_TARGET = frozenset({"not_found", "no_todo"})
 
 
 @dataclass(frozen=True)
+class SideFingerprints:
+    """The content of the primary source and of its mirror, each as a fingerprint."""
+
+    primary: str
+    mirror: str
+
+
+@dataclass(frozen=True)
 class SyncResult:
     preview: SyncPreview  # what was found before anything was written
     deleted: tuple[SyncEntry, ...]  # missing entries that were removed from the target
     kept: tuple[SyncEntry, ...]  # missing entries that were left alone
+    # Both sides right after the sync, read while it still held the project; None if the project has no mirror.
+    fingerprints: SideFingerprints | None = None
 
 
 @dataclass(frozen=True)
@@ -62,6 +74,15 @@ class SyncService:
         return not (p.created or p.changed or p.missing or p.created_documents or p.changed_documents
                     or p.missing_documents)
 
+    def fingerprints(self, source: Source) -> SideFingerprints | None:
+        """The content of both sides as they are now, or None if the project has no mirror; changes nothing.
+
+        Raises SyncSourceInvalidError if the primary source or an existing mirror cannot be read. A mirror that does
+        not exist yet counts as empty.
+        """
+        with self._lock(source):
+            return self._fingerprints(source)
+
     def run(self, source: Source, direction: SyncDirection, token: str | None, delete_missing: bool,
             language: str) -> SyncResult:
         """Syncs in `direction`. `token` is the one of the preview the caller confirmed (SyncStaleError if either
@@ -88,7 +109,16 @@ class SyncService:
                     assert entry.name is not None
                     self._documents.delete_document(target.source, entry.label, entry.name)
             return SyncResult(preview, deleted=self._missing(preview) if delete_missing else (),
-                              kept=() if delete_missing else self._missing(preview))
+                              kept=() if delete_missing else self._missing(preview),
+                              fingerprints=self._fingerprints(source))
+
+    def _fingerprints(self, source: Source) -> SideFingerprints | None:
+        sides = primary_and_mirror(source)
+        if sides is None:
+            return None
+        primary, mirror = self._read(sides[0], empty_ok=False), self._read(sides[1], empty_ok=True)
+        return SideFingerprints(fingerprint(primary.items, primary.documents),
+                                fingerprint(mirror.items, mirror.documents))
 
     @staticmethod
     def _missing(preview: SyncPreview) -> tuple[SyncEntry, ...]:
@@ -144,4 +174,4 @@ class SyncService:
                                   expected_version=None if current is None else content_version(current))
 
 
-__all__ = ["SyncResult", "SyncService"]
+__all__ = ["SideFingerprints", "SyncResult", "SyncService"]

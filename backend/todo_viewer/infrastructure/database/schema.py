@@ -14,6 +14,9 @@ projects = sa.Table(
     sa.Column("path", sa.Text),
     sa.Column("sync_path", sa.Text),
     sa.Column("mirror_database", sa.Boolean, nullable=False, server_default=sa.false()),
+    sa.Column("last_sync_at", sa.Text),
+    sa.Column("synced_primary", sa.String(64)),
+    sa.Column("synced_mirror", sa.String(64)),
     sa.Column("position", sa.Integer),
     sa.Column("extra", sa.Text),  # JSON object of unknown keys
 )

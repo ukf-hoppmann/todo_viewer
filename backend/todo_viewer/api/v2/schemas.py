@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from todo_viewer.application.ports import FolderListing
-from todo_viewer.application.services import DocumentResult, RetypeResult, SyncResult
+from todo_viewer.application.services import DocumentResult, RetypeResult, SyncResult, SyncStatus
 from todo_viewer.domain.documents import DocumentRef, item_documents
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
@@ -117,6 +117,22 @@ class IndexOut(BaseModel):
     items: list[IndexItemOut]
 
 
+class SyncStatusOut(BaseModel):
+    state: Literal[
+        "none", "in_sync", "mirror_changed", "primary_changed", "both_changed", "unknown", "unreadable"
+    ] = Field(
+        description="none: no mirror; in_sync; mirror_changed / primary_changed / both_changed: which side changed "
+                    "since the last sync (a sync through this API); unknown: never synced and the sides differ; "
+                    "unreadable: a side cannot be read")
+    last_sync_at: str | None = Field(description="When the project was last synced through this API; null if never")
+
+    @classmethod
+    def of(cls, status: SyncStatus | None) -> SyncStatusOut:
+        if status is None:
+            return cls(state="none", last_sync_at=None)
+        return cls(state=status.state.value, last_sync_at=status.last_sync_at)
+
+
 class SourceOut(BaseModel):
     id: str
     project: str
@@ -129,15 +145,18 @@ class SourceOut(BaseModel):
                     "database project; null if a database project has none")
     mirror: Literal["none", "markdown", "database"] = Field(
         description="The other side kept as a mirror; it is written by a sync only")
+    sync: SyncStatusOut = Field(description="Whether the mirror still matches the primary source; reading it "
+                                            "changes and syncs nothing")
 
     @classmethod
-    def of(cls, source: Source) -> SourceOut:
+    def of(cls, source: Source, status: SyncStatus | None = None) -> SourceOut:
         return cls(id=source.id, project=source.project, path=source.path,
                    backend=source.backend,  # type: ignore[arg-type]
                    sync_path=source.sync_path,
                    primary=source.backend,  # type: ignore[arg-type]
                    markdown_path=source.markdown_path,
-                   mirror=source.mirror)  # type: ignore[arg-type]
+                   mirror=source.mirror,  # type: ignore[arg-type]
+                   sync=SyncStatusOut.of(status))
 
 
 class SourceStatusOut(SourceOut):

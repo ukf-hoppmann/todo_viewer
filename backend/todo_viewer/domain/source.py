@@ -6,6 +6,15 @@ from typing import Any
 
 
 @dataclass(frozen=True)
+class SyncBaseline:
+    """What the two sides of a project looked like right after its last sync (fingerprints) and when that was."""
+
+    at: str
+    primary: str
+    mirror: str
+
+
+@dataclass(frozen=True)
 class Source:
     project: str
     path: str
@@ -19,6 +28,8 @@ class Source:
     mirror_database: bool = False
     # Unknown config keys are preserved when a source is rewritten.
     extra: dict[str, Any] = field(default_factory=dict, compare=False)
+    # The state after the last sync, if the project was synced since it got its mirror; not part of its identity.
+    baseline: SyncBaseline | None = field(default=None, compare=False)
 
     @property
     def markdown_path(self) -> str | None:

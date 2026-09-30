@@ -233,6 +233,10 @@
       "primary": "markdown",
       "problem": null,
       "project": "backlog",
+      "sync": {
+        "last_sync_at": null,
+        "state": "none"
+      },
       "sync_path": null
     },
     {
@@ -245,6 +249,10 @@
       "primary": "markdown",
       "problem": null,
       "project": "no_archive",
+      "sync": {
+        "last_sync_at": null,
+        "state": "none"
+      },
       "sync_path": null
     }
   ]

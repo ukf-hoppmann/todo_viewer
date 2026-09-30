@@ -798,6 +798,8 @@ export interface components {
             primary: "markdown" | "database";
             /** Project */
             project: string;
+            /** @description Whether the mirror still matches the primary source; reading it changes and syncs nothing */
+            sync: components["schemas"]["SyncStatusOut"];
             /**
              * Sync Path
              * @description Database projects: folder to sync markdown files with
@@ -840,6 +842,8 @@ export interface components {
             problem: components["schemas"]["ProblemOut"] | null;
             /** Project */
             project: string;
+            /** @description Whether the mirror still matches the primary source; reading it changes and syncs nothing */
+            sync: components["schemas"]["SyncStatusOut"];
             /**
              * Sync Path
              * @description Database projects: folder to sync markdown files with
@@ -939,6 +943,20 @@ export interface components {
             missing: components["schemas"]["SyncEntryOut"][];
             /** Unchanged */
             unchanged: number;
+        };
+        /** SyncStatusOut */
+        SyncStatusOut: {
+            /**
+             * Last Sync At
+             * @description When the project was last synced through this API; null if never
+             */
+            last_sync_at: string | null;
+            /**
+             * State
+             * @description none: no mirror; in_sync; mirror_changed / primary_changed / both_changed: which side changed since the last sync (a sync through this API); unknown: never synced and the sides differ; unreadable: a side cannot be read
+             * @enum {string}
+             */
+            state: "none" | "in_sync" | "mirror_changed" | "primary_changed" | "both_changed" | "unknown" | "unreadable";
         };
         /** ValidationError */
         ValidationError: {

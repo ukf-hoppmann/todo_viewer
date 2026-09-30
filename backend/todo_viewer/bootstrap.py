@@ -21,6 +21,7 @@ from todo_viewer.application.services import (
     SourceLookup,
     SourceService,
     SyncService,
+    SyncStatusService,
     TrashService,
     UiStateService,
 )
@@ -112,6 +113,7 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
         source_lookup=lookup,
         documents=DocumentService(backlogs, documents, planner, rules, today),
         sync=sync,
+        sync_status=SyncStatusService(sync, source_repo),
         folders=FolderBrowseService(LocalFolderBrowser(browse_start_from(settings.browse_start), resolver)),
         ui_state=UiStateService(DatabaseUiStateStore(database, legacy.ui_state)),
     )

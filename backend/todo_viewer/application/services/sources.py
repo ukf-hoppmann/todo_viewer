@@ -109,8 +109,11 @@ class SourceService:
                 raise DuplicateSourceError()
             changed = dataclasses.replace(current.updated(candidate.project, candidate.path),
                                           sync_path=_optional_path(sync_path))
-            sources[index] = self._mirrored(changed, mirror)
-            return sources[index]
+            changed = self._mirrored(changed, mirror)
+            if (changed.markdown_path, changed.mirror) != (current.markdown_path, current.mirror):
+                changed = dataclasses.replace(changed, baseline=None)  # a side is another one: no last sync to compare
+            sources[index] = changed
+            return changed
 
     def _switched(self, current: Source, others: list[Source], project: str | None, backend: str) -> Source:
         """The project on the other backend; nothing is changed unless both sides are in sync and the current
@@ -120,10 +123,10 @@ class SourceService:
             raise SyncRequiredError()
         name = (project or "").strip() or current.project
         moved = (dataclasses.replace(current, project=name, backend=backend, path="", sync_path=current.path,
-                                     mirror_database=False)
+                                     mirror_database=False, baseline=None)
                  if to_database else
                  dataclasses.replace(current, project=name, backend=backend, path=current.sync_path or "",
-                                     sync_path=None, mirror_database=True))
+                                     sync_path=None, mirror_database=True, baseline=None))
         problem = self._backlogs.check(moved)
         if problem:
             raise InvalidSourceError(problem.message, code=problem.code)

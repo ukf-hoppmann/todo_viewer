@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 from todo_viewer.domain.errors import ProjectNotEmptyError
 from todo_viewer.domain.item import Item
-from todo_viewer.domain.source import Source
+from todo_viewer.domain.source import Source, SyncBaseline
 from todo_viewer.infrastructure.database import Database, DatabaseBacklogRepository
 from todo_viewer.infrastructure.database.migrations import MIGRATIONS, migrate
 from todo_viewer.infrastructure.database.sources import DatabaseSourceRepository
@@ -166,6 +166,39 @@ def test_projects_of_an_older_database_get_no_mirror_and_keep_their_items(tmp_pa
     old = repo.all()[0]
     assert (old.project, old.mirror_database) == ("Old", False)
     assert [i.title for i in DatabaseBacklogRepository(Database(str(engine.url))).load(old).items] == ["Kept"]
+
+
+BASELINE = SyncBaseline(at="2026-09-30T10:00:00+02:00", primary="aaaa", mirror="bbbb")
+
+
+def test_the_state_after_the_last_sync_is_stored_and_survives_other_changes(db: Database):
+    repo = DatabaseSourceRepository(db)
+    with repo.edit() as sources:
+        sources += [dataclasses.replace(CENTRAL, baseline=BASELINE), FILES]
+
+    with repo.edit() as sources:
+        sources[1] = sources[1].updated("Renamed", FILES.path)
+
+    stored = repo.all()
+    assert stored[0].baseline == BASELINE and stored[1].baseline is None
+    with repo.edit() as sources:
+        sources[0] = dataclasses.replace(sources[0], baseline=None)
+    assert repo.all()[0].baseline is None
+
+
+def test_projects_of_a_v3_database_have_no_last_sync(tmp_path: Path):
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'todo.db'}")
+    with engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE schema_version (version INTEGER NOT NULL)"))
+        conn.execute(sa.text("INSERT INTO schema_version (version) VALUES (0)"))
+        migrate_to(conn, 3)
+        conn.execute(sa.text("INSERT INTO projects (id, name, backend, path, sync_path, position) "
+                             "VALUES ('p1', 'Old', 'database', '', '/md', 0)"))
+    with engine.begin() as conn:
+        migrate(conn)
+
+    [old] = DatabaseSourceRepository(Database(str(engine.url))).all()
+    assert (old.project, old.sync_path, old.baseline) == ("Old", "/md", None)
 
 
 def migrate_to(conn: sa.Connection, version: int) -> None:

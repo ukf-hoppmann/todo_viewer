@@ -10,7 +10,7 @@ from enum import StrEnum
 from .documents import content_version
 from .errors import SyncPathMissingError, SyncSameBackendError, SyncStaleError
 from .item import Item
-from .source import Source
+from .source import Source, SyncBaseline
 
 # (item id, document name) -> content
 Documents = Mapping[tuple[str, str], str]
@@ -19,6 +19,18 @@ Documents = Mapping[tuple[str, str], str]
 class SyncDirection(StrEnum):
     TO_MD = "to_md"
     FROM_MD = "from_md"
+
+
+class SyncState(StrEnum):
+    """How a project's mirror relates to its primary source since the last sync."""
+
+    NONE = "none"  # no mirror
+    IN_SYNC = "in_sync"
+    MIRROR_CHANGED = "mirror_changed"
+    PRIMARY_CHANGED = "primary_changed"
+    BOTH_CHANGED = "both_changed"
+    UNKNOWN = "unknown"  # never synced, and the sides differ
+    UNREADABLE = "unreadable"  # a side cannot be read
 
 
 @dataclass(frozen=True)
@@ -49,6 +61,42 @@ class SyncPreview:
 def default_direction(source: Source) -> SyncDirection:
     """From the primary source to the mirror: a database project writes its folder, a markdown project its mirror."""
     return SyncDirection.TO_MD if source.backend == "database" else SyncDirection.FROM_MD
+
+
+def primary_and_mirror(source: Source) -> tuple[Source, Source] | None:
+    """The primary source and its mirror as two sources with the project's id; None if it has no mirror."""
+    if source.mirror == "none":
+        return None
+    database, markdown = sync_pair(source, default_direction(source))
+    return (database, markdown) if source.backend == "database" else (markdown, database)
+
+
+def fingerprint(items: Sequence[Item], documents: Documents) -> str:
+    """Identifies the content of one side: its items (by version) and documents (by content), in any order."""
+    digest = hashlib.sha256()
+    for item in sorted(items, key=lambda i: i.id):
+        digest.update(f"\0i{item.id}\0{item.version}".encode())
+    for (label, name), content in sorted(documents.items()):
+        digest.update(f"\0d{label}\0{name}\0{content_version(content)}".encode())
+    return digest.hexdigest()[:16]
+
+
+def classify(primary: str, mirror: str, baseline: SyncBaseline | None) -> SyncState:
+    """Which side moved since the last sync, from the fingerprints of both sides now and right after it.
+
+    Without a last sync only the sides themselves can be compared. Sides that are equal are in sync, however they
+    got there; what a sync left different on purpose (kept entries) is part of the baseline, not a change.
+    """
+    if primary == mirror:
+        return SyncState.IN_SYNC
+    if baseline is None:
+        return SyncState.UNKNOWN
+    primary_moved, mirror_moved = primary != baseline.primary, mirror != baseline.mirror
+    if primary_moved and mirror_moved:
+        return SyncState.BOTH_CHANGED
+    if primary_moved:
+        return SyncState.PRIMARY_CHANGED
+    return SyncState.MIRROR_CHANGED if mirror_moved else SyncState.IN_SYNC
 
 
 def sync_pair(source: Source, direction: SyncDirection) -> tuple[Source, Source]:

@@ -48,6 +48,7 @@ class DatabaseSourceRepository:
 def read_sources(conn: sa.Connection) -> list[Source]:
     rows = conn.execute(sa.select(projects).where(projects.c.name.is_not(None)).order_by(projects.c.position))
     return [Source(project=row.name, path=row.path or "", backend=row.backend, id=row.id, sync_path=row.sync_path,
+                   mirror_database=bool(row.mirror_database),
                    extra=json.loads(row.extra) if row.extra else {}) for row in rows]
 
 
@@ -64,7 +65,8 @@ def write_sources(conn: sa.Connection, before: list[Source], after: list[Source]
     existing: set[str] = set(conn.execute(sa.select(projects.c.id)).scalars())
     for position, source in enumerate(after):
         values = dict(name=source.project, backend=source.backend, path=source.path, sync_path=source.sync_path,
-                      position=position, extra=json.dumps(source.extra, ensure_ascii=False) if source.extra else None)
+                      mirror_database=source.mirror_database, position=position,
+                      extra=json.dumps(source.extra, ensure_ascii=False) if source.extra else None)
         if source.id in existing:
             conn.execute(sa.update(projects).where(projects.c.id == source.id).values(**values))
         else:

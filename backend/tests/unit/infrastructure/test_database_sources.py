@@ -1,6 +1,7 @@
 """Projects and the UI state in the central database."""
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 
 import pytest
@@ -117,3 +118,40 @@ def test_a_version_1_database_is_upgraded_and_keeps_its_items(tmp_path: Path):
 
     old = Source(project="Old", path="", backend="database", id="old")
     assert [i.title for i in DatabaseBacklogRepository(Database(str(engine.url))).load(old).items] == ["Kept"]
+
+
+def test_the_database_mirror_of_a_markdown_project_is_stored(db: Database):
+    repo = DatabaseSourceRepository(db)
+    mirrored = dataclasses.replace(FILES, mirror_database=True)
+
+    with repo.edit() as sources:
+        sources += [mirrored, CENTRAL]
+
+    assert [s.mirror_database for s in repo.all()] == [True, False]
+
+
+def test_projects_of_an_older_database_get_no_mirror_and_keep_their_items(tmp_path: Path):
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'todo.db'}")
+    with engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE schema_version (version INTEGER NOT NULL)"))
+        conn.execute(sa.text("INSERT INTO schema_version (version) VALUES (0)"))
+        migrate_to(conn, 2)
+        conn.execute(sa.text("INSERT INTO projects (id, name, backend, path, position) "
+                             "VALUES ('p1', 'Old', 'markdown', '/repos/a/docs', 0)"))
+        conn.execute(sa.text("INSERT INTO items (uid, project_id, label, item_type, title, status, location, position)"
+                             " VALUES ('u', 'p1', 'TASK-001', 'Task', 'Kept', 'Open', 'active', 0)"))
+    with engine.begin() as conn:
+        migrate(conn)
+
+    repo = DatabaseSourceRepository(Database(str(engine.url)))
+    old = repo.all()[0]
+    assert (old.project, old.mirror_database) == ("Old", False)
+    assert [i.title for i in DatabaseBacklogRepository(Database(str(engine.url))).load(old).items] == ["Kept"]
+
+
+def migrate_to(conn: sa.Connection, version: int) -> None:
+    """Applies the migrations up to `version`, like a database last used by an older release."""
+    for number in range(1, version + 1):
+        for statement in MIGRATIONS[number]:
+            conn.execute(sa.text(statement))
+        conn.execute(sa.text("UPDATE schema_version SET version = :v"), {"v": number})

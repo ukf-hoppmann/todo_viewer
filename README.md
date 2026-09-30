@@ -182,7 +182,7 @@ per `import-linter`.
 backend/todo_viewer/
   domain/          Item, Source, Backlog, Status-/Archiv-Regeln (EditPlanner → ChangeSet), Fehler mit Codes
   application/     Ports (Protocols) + kleine Use-Case-Services, Container
-  infrastructure/  Adapter: markdown/ (Parser, Editoren, atomares Schreiben), config/ (JSON), filesystem/
+  infrastructure/  Adapter: markdown/ (Parser, Editoren, atomares Schreiben), database/ (SQLite), config/ (JSON), filesystem/
   api/             FastAPI: v2-Router, Pydantic-Schemas, Fehler → HTTP ({code, message, details})
   bootstrap.py     Composition Root: setzt alles per Konstruktor-Injection zusammen
 web/               React + Vite + TypeScript, TanStack Query
@@ -192,8 +192,11 @@ web/               React + Vite + TypeScript, TanStack Query
   src/components/, src/views/
 ```
 
-Ein anderer Speicher (z. B. SQLite) wäre ein neuer Adapter für den Port
-`BacklogRepository` und eine Zeile in `bootstrap.py`.
+Ein Projekt liegt entweder in Markdown-Dateien oder in der zentralen
+Datenbank (`infrastructure/database/`, SQLite); beide Adapter bestehen dieselbe
+Contract-Suite (`backend/tests/contract/`). Datenbank-Projekte werden vorerst
+in `configs/config.json` eingetragen (`"backend": "database"`, siehe
+[Konfiguration](docs/techdocs/configuration.md)).
 
 ## Entwicklung
 

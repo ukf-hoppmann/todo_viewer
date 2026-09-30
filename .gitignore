@@ -6,3 +6,4 @@ configs/ui_state.json
 
 # Logdateien des Servers (docker-compose: ./logs)
 logs/
+configs/todo.db*

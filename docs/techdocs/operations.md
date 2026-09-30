@@ -16,12 +16,17 @@
     (Bearbeitungen landen in den Backlog-Dateien der Nachbar-Repos).
 - Aufruf im Browser: `http://todo.localhost:5411`.
 - Nach Code-Änderungen: `./todo.sh update` (Neubau ohne Cache).
-- Zentrale Datenbank (nur bei Projekten mit `backend: database`): SQLite-Datei
-  `configs/todo.db` (bzw. `storage_url`), daneben im Betrieb `todo.db-wal` und
-  `todo.db-shm`. Das Schema wird beim ersten Zugriff automatisch auf den
-  aktuellen Stand migriert (Tabelle `schema_version`, nur vorwärts). Sicherung:
-  bei gestopptem Container alle drei Dateien kopieren, im laufenden Betrieb
-  `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
+- Zentrale Datenbank: SQLite-Datei `configs/todo.db` (bzw. `storage_url`) mit
+  Projektliste, UI-Zustand und den Inhalten der Datenbank-Projekte, daneben im
+  Betrieb `todo.db-wal` und `todo.db-shm`. Das Schema wird beim ersten Zugriff
+  automatisch auf den aktuellen Stand migriert (Tabelle `schema_version`, nur
+  vorwärts). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
+  im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
+- Erster Start nach dem Update von einer Version mit Projekten in
+  `config.json`: Projekte und UI-Zustand werden in die Datenbank übernommen,
+  alle `source_id`s ändern sich einmal (Agenten schlagen sie über den Pfad
+  nach). Zurück zum alten Stand: älteres Image starten und `config.json.bak`
+  sowie `ui_state.json.bak` zurückbenennen.
 - Nach einem Update mit neuen Python-Abhängigkeiten (z. B. SQLAlchemy) lokal
   `.venv/bin/pip install -r backend/requirements-dev.txt`; das Image installiert
   sie beim Neubau selbst.
@@ -56,7 +61,10 @@ Werte mit Leerzeichen, `=` oder `"` stehen in Anführungszeichen; verschachtelte
 | `request` | ERROR / WARNING / INFO / DEBUG | Jeder Request: 5xx (mit Stacktrace) / 4xx / schreibend / lesend sowie `PUT /ui-state` | `method`, `path`, `query`, `status`, `ms`; bei Fehlern `code`, `message`, `details.*`; beim Anlegen `source`, `type`, `item`; bei Quellen `target`, `source` |
 | `file_written` | INFO (JSON-Konfiguration: DEBUG) | Datei geschrieben | `path`, `created` bei neuen Dateien |
 | `backlog_unparsable` | WARNING | Backlog-Datei lässt sich nicht parsen (Projekt zeigt ⚠) | `source`, `path`, `error`; Stacktrace als `backlog_unparsable_trace` auf DEBUG |
-| `ui_state_unreadable` | WARNING | `ui_state.json` defekt oder nicht lesbar; die UI startet leer | `path`, `error` |
+| `ui_state_unreadable` | WARNING | `ui_state.json` einer früheren Version defekt oder nicht lesbar; übernommen wird ein leerer UI-Zustand | `path`, `error` |
+| `sources_taken_over` | INFO | Projekte aus `config.json` in die Datenbank übernommen | `count`, `skipped` |
+| `ui_state_taken_over` | INFO | `ui_state.json` in die Datenbank übernommen | – |
+| `database_unavailable` | WARNING | Datenbank lässt sich nicht öffnen (Projekt zeigt ⚠ `db_unavailable`) | `source`, `error` |
 | `folder_unreadable` | WARNING | Ordner-Browser kann einen Ordner nicht auflisten | `path`, `error` |
 
 Alle Zeilen eines Requests tragen dieselbe `req`. Meldungen von uvicorn
@@ -79,7 +87,7 @@ grep ' req=1a2b3c4d ' logs/todo-viewer.log                     # alles zu einem 
 | Symptom | Ursache | Behebung |
 |---|---|---|
 | Seite zeigt „Frontend not built“ (HTTP 503) | `web/dist/index.html` fehlt (lokaler Start ohne Build) | `npm --prefix web run build` |
-| Projekt in der Liste ausgegraut mit ⚠ | Backlog-Ordner fehlt, ist kein Ordner, enthält keine `TODO.md` oder ist im Container nicht eingebunden | Pfad in der UI (✎) oder in `config.json` korrigieren; Ordner muss unter dem gemounteten Pfad liegen |
+| Projekt in der Liste ausgegraut mit ⚠ | Backlog-Ordner fehlt, ist kein Ordner, enthält keine `TODO.md` oder ist im Container nicht eingebunden | Pfad in der UI (✎) korrigieren; Ordner muss unter dem gemounteten Pfad liegen |
 | Speichern bricht mit Hinweis auf externe Änderung ab (`version_conflict`/`file_changed`) | Der Eintrag wurde seit dem Lesen geändert bzw. die Datei während des Schreibens, z. B. durch einen Agenten | Nach dem nächsten Polling erneut bearbeiten |
 | Projekt mit ⚠ „nicht im Backlog-Format“ (`unsupported_format`) | `TODO.md` ohne Format-Kennung, z. B. eine einfache Checkliste | Datei ins Backlog-Format überführen (Kennung und IDs) |
 | Speichern schlägt mit `write_failed` fehl | Keine Schreibrechte auf den Backlog-Ordner | Rechte bzw. Volume-Mount (beschreibbar) prüfen |

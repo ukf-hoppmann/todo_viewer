@@ -42,28 +42,21 @@ Eintrag entfernt. Ordner, die nicht (mehr) lesbar sind, bleiben ausgegraut mit
 ⚠ und Fehlermeldung in der Liste stehen. Ohne Projektname wird der Name des
 umgebenden Git-Repos verwendet.
 
-Alternativ direkt in `configs/config.json`:
+Die Projektliste liegt in der zentralen Datenbank `configs/todo.db`; über die
+API (`/api/v2/sources`) lassen sich auch Datenbank-Projekte anlegen, deren
+Items ganz in dieser Datenbank liegen. Projekte, die frühere Versionen in
+`configs/config.json` eingetragen hatten, werden beim ersten Start übernommen
+(Sicherung `config.json.bak`, siehe [Konfiguration](docs/techdocs/configuration.md)).
 
-```json
-{
-  "sources": [
-    { "project": "MeinProjekt", "path": "/absoluter/pfad/zu/docs/todo" }
-  ]
-}
-```
-
-Ältere Einträge, die noch auf eine Datei zeigen, werden beim Laden
-automatisch auf deren Ordner umgestellt.
-
-Änderungen an `config.json` oder den Backlog-Dateien werden automatisch
+Änderungen an den Backlog-Dateien werden automatisch
 übernommen — das Frontend pollt `/api/v2/backlog` alle 5 Sekunden neu
 (pausiert, solange ein Dialog offen ist oder ein Feld bearbeitet wird).
 
 Der `configs/`-Ordner ist per Volume in den Container gemountet und liegt
-physisch auf dem Host — er übersteht `./todo.sh down` und Rebuilds. Neben
-`config.json` liegt dort auch `ui_state.json`, in dem der UI-Zustand
-(ausgeblendete Filterwerte, eingeklappte Knoten, markierte Projekte,
-Ansicht, Auswahl, Sprache) gespeichert wird.
+physisch auf dem Host — er übersteht `./todo.sh down` und Rebuilds. Dort
+liegen `config.json` und die Datenbank `todo.db` mit Projektliste und
+UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, markierte
+Projekte, Ansicht, Auswahl, Sprache).
 
 ## Bearbeiten
 
@@ -188,15 +181,14 @@ backend/todo_viewer/
 web/               React + Vite + TypeScript, TanStack Query
   src/api/         aus OpenAPI generierte Typen (schema.d.ts), Client, Query-Hooks
   src/domain/      Filter, Baum, Fortschritt, Edit-Regeln als reine Funktionen
-  src/state/       UI-Zustand (Server = configs/ui_state.json), Polling-Pause
+  src/state/       UI-Zustand (Server = Datenbank über /api/v2/ui-state), Polling-Pause
   src/components/, src/views/
 ```
 
 Ein Projekt liegt entweder in Markdown-Dateien oder in der zentralen
 Datenbank (`infrastructure/database/`, SQLite); beide Adapter bestehen dieselbe
-Contract-Suite (`backend/tests/contract/`). Datenbank-Projekte werden vorerst
-in `configs/config.json` eingetragen (`"backend": "database"`, siehe
-[Konfiguration](docs/techdocs/configuration.md)).
+Contract-Suite (`backend/tests/contract/`). Datenbank-Projekte entstehen über
+`POST /api/v2/sources` mit `{"backend": "database", "project": "…"}`.
 
 ## Entwicklung
 

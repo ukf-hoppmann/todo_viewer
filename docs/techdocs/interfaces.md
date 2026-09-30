@@ -27,11 +27,11 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | `GET /items/{source_id}/{item_id}/documents/{name}` | Notes- oder Spec-Dokument eines Items lesen, mit `version`. |
 | `PUT /items/{source_id}/{item_id}/documents/{name}` | Notizen oder Spec mit dem ganzen neuen Text ersetzen oder neu anlegen. |
 | `POST /items/{source_id}/{item_id}/notes` | Datierten Notes-Eintrag anhängen. |
-| `GET /sources` | Konfigurierte Quellen. |
-| `POST /sources` | Quelle hinzufügen (`path`, optional `project`; ohne Namen der des Git-Repos). |
+| `GET /sources` | Eingetragene Projekte (Markdown und Datenbank) in ihrer Reihenfolge. |
+| `POST /sources` | Projekt hinzufügen: Markdown mit `path` (optional `project`; ohne Namen der des Git-Repos), Datenbank mit `backend: "database"` und `project`. |
 | `POST /backlogs` | Neuen, leeren Backlog anlegen und als Quelle eintragen. Antwort 201 mit der Quelle. |
-| `PUT /sources/{source_id}` | Quelle ändern. |
-| `DELETE /sources/{source_id}` | Quelle entfernen. |
+| `PUT /sources/{source_id}` | Name, Ordner bzw. `sync_path` ändern; das Backend bleibt. |
+| `DELETE /sources/{source_id}` | Projekt austragen. Markdown-Dateien bleiben; ein Datenbank-Projekt mit Items wird abgelehnt. |
 | `GET /folders?path=…` | Unterordner für den Ordner-Browser, mit Markierung, ob eine `TODO.md` enthalten ist. |
 | `GET /ui-state`, `PUT /ui-state` | UI-Zustand lesen bzw. vollständig ersetzen (freies JSON-Objekt). |
 
@@ -134,7 +134,14 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     `### Discussed`/`### Decided`/`### Open`. Der erste Eintrag legt
     `items/<ID>/<ID>_notes.md` an und trägt `Notes` ein; hat das Item noch keine
     Summary, ist `summary` Pflicht.
-  - Quellen: `{path, project?}`; `source_id` ist eine stabile, pfadbasierte ID.
+  - Projekte (`/sources`): `{path?, project?, backend?, sync_path?}`.
+    `backend` ist `markdown` (Standard beim Anlegen) oder `database`.
+    Markdown braucht `path` (Ordner mit `TODO.md`), Datenbank einen Namen
+    (`project`, sonst 400 `value_required`); `sync_path` ist der Ordner, mit dem
+    ein Datenbank-Projekt seine Markdown-Dateien abgleicht. Beim Ändern darf
+    `backend` fehlen; ein anderer Wert als der gespeicherte wird mit 409
+    `backend_change_not_supported` abgelehnt. `source_id` ist eine UUID, die
+    sich bei Namens- oder Pfadänderungen nicht ändert.
   - `POST /backlogs`: `{path, project?, language?}` mit `language` `en`
     (Standard) oder `de`. Legt den Ordner bei Bedarf an und schreibt
     `TODO.md` und `archive.md` mit Format-Kennung, `## Work items` und
@@ -149,6 +156,9 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     (`[{name, kind: "notes"|"spec"}]`), `extra_fields` für alle weiteren
     Freitext-Felder und `archive_supported`.
   - Dokumente: `{name, kind, content, version}`.
+  - Projekte: `{id, project, path, backend, sync_path}`; in `GET /backlog`
+    zusätzlich `item_count` und `problem`. Bei Datenbank-Projekten ist `path`
+    leer.
   - `version` ist ein Hash über den gespeicherten Inhalt des Items und ändert
     sich mit jeder Änderung daran; Änderungen an anderen Items lassen sie
     unverändert.
@@ -161,8 +171,8 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 |---|---|
 | 400 | `bad_request` (Validierung, auch unbekannte Felder), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
-| 404 | `source_gone`, `config_missing`, `file_not_found`, `item_not_found` |
-| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon) |
+| 404 | `source_gone`, `file_not_found`, `item_not_found` |
+| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `backend_change_not_supported` (Backend eines Projekts per `PUT` ändern) |
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 
@@ -179,7 +189,8 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   `GET /health`; wie ein Agent reagiert, wenn nicht, regelt das Harness
   (Entscheidung: [STORY-010](../todo/items/STORY-010/STORY-010_notes.md)).
 - Eingabe: Die `source_id` eines Projekts steht in `GET /sources` beim Eintrag,
-  dessen `path` der Backlog-Ordner ist (z. B. `<repo>/docs/todo`). Fehlt er,
+  dessen `path` der Backlog-Ordner ist (z. B. `<repo>/docs/todo`); sie ist eine
+  UUID und nicht aus dem Pfad ableitbar, also jedes Mal dort nachschlagen. Fehlt er,
   legt `POST /sources` mit `{path}` ihn an; gibt es noch keinen Backlog,
   erzeugt `POST /backlogs` mit `{path, language?}` die Dateien und trägt die
   Quelle ein. So entsteht die `TODO.md` immer im lesbaren Format. Ein

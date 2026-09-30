@@ -128,7 +128,8 @@ class MarkdownBacklogRepository:
             moved_to_archive = any(c.move_to is Location.ARCHIVE for _, c in plan)
             for loc in order if moved_to_archive else reversed(order):
                 self._files.write(docs[loc])
-            return [self._reload(source, layout, item.id, changes.move_to or item.location)
+            return [self._reload(source, layout, str(dict(changes.set_fields).get("id", item.id)),
+                                 changes.move_to or item.location)
                     for item, changes in plan]
 
     def delete(self, source: Source, items: Sequence[Item]) -> None:

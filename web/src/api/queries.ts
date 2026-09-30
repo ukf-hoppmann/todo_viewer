@@ -104,6 +104,20 @@ export function usePurgeItem() {
   );
 }
 
+/** Changes an item's type. It gets a new id and its documents move, so backlog, trash and documents reload. */
+export function useRetypeItem() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sourceId, id, version, type }: ItemAddress & { type: string }) =>
+      unwrap(api.POST("/api/v2/items/{source_id}/{item_id}/retype", { params: { path: { source_id: sourceId, item_id: id } }, body: { version, type } })),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.backlog });
+      void client.invalidateQueries({ queryKey: ["trash"] });
+      void client.invalidateQueries({ queryKey: ["document"] });
+    },
+  });
+}
+
 function useDocumentMutation<T extends { sourceId: string; itemId: string }>(call: (args: T) => Promise<Schemas["DocumentOut"]>) {
   const client = useQueryClient();
   return useMutation({

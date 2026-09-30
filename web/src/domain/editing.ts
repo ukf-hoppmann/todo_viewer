@@ -110,6 +110,11 @@ export function childTypes(parent: Item | null): string[] {
   return TYPES.filter((t) => (PARENT_TYPES[t] ?? []).includes(parent.type));
 }
 
+/** Types an item may be changed to: the others; an epic only without a parent (the API refuses it otherwise). */
+export function retypeTargets(item: Item): string[] {
+  return TYPES.filter((t) => t !== item.type && (t !== "Epic" || !item.parent));
+}
+
 export interface NewItemDraft {
   source_id: string;
   type: string;

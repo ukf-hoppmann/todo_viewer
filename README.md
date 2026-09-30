@@ -37,22 +37,27 @@ Eine Quelle ist ein **Backlog-Ordner**, der eine `TODO.md` enthält
 Projekte lassen sich direkt in der UI verwalten: **＋ Hinzufügen** neben
 „Projekte“ öffnet einen Ordner-Browser (Startordner über `BROWSE_START`, im
 Container `/Users/hoppmann/Documents/GitHub`); Ordner mit `TODO.md` sind
-markiert. Über ✎/✕ hinter einem Projekt wird der Ordner geändert bzw. der
-Eintrag entfernt. Ordner, die nicht (mehr) lesbar sind, bleiben ausgegraut mit
+markiert. Über ✎/✕ hinter einem Projekt wird der Name geändert bzw. der
+Eintrag entfernt (Ordner, Spiegel und Sync stehen im Einstellungsmenü, siehe
+unten). Ordner, die nicht (mehr) lesbar sind, bleiben ausgegraut mit
 ⚠ und Fehlermeldung in der Liste stehen. Ohne Projektname wird der Name des
 umgebenden Git-Repos verwendet.
 
-Die Projektliste liegt in der zentralen Datenbank `configs/todo.db`. Beim
-Hinzufügen wählst du den Speicherort: ein **Markdown-Ordner** oder die
-**Datenbank** (Name Pflicht, ein Sync-Ordner ist optional). Datenbank-Projekte
-tragen in der Liste das Kürzel „DB“. Ist ein Sync-Ordner eingetragen, öffnet ⇄
-den Abgleich mit dem Ordner: erst eine **Vorschau** (neu, geändert,
-unverändert; was nur auf dem Ziel liegt, steht als Warnung dabei und bleibt
-stehen, es sei denn, du löschst es), dann **Ausführen**. Im Bearbeiten-Dialog
-stellt „In die Datenbank übernehmen…“ bzw. „Als Markdown-Ordner ablegen…“ das
-Projekt um: Der Dialog synchronisiert, danach liegt das Projekt am anderen Ort;
-die Item-IDs bleiben gleich, die Markdown-Dateien bleiben liegen. Dieselben
-Schritte gibt es über die API (`/api/v2/sources`, `/sources/{id}/sync`).
+Die Projektliste liegt in der zentralen Datenbank `configs/todo.db`. Jedes
+Projekt hat eine **Primärquelle**, die die Wahrheit hält: ein **Markdown-Ordner**
+oder die **Datenbank**. Die andere Seite darf als **Spiegel** geführt werden
+(Datenbank-Spiegel eines Markdown-Ordners oder ein Markdown-Ordner zu einem
+Datenbank-Projekt); der Spiegel wird nur durch einen Sync geschrieben, nie
+automatisch. Beim Hinzufügen wählst du die Primärquelle (Vorauswahl im
+Einstellungsmenü); Datenbank-Projekte tragen in der Liste das Kürzel „DB“. Der
+Sync zeigt erst eine **Vorschau** (neu, geändert, unverändert; was nur auf dem
+Ziel liegt, steht als Warnung dabei und bleibt stehen, es sei denn, du löschst
+es), dann **Ausführen**; die Richtung ist wählbar, Standard ist von der
+Primärquelle zum Spiegel. Beim **Wechsel der Primärquelle** (Einstellungsmenü →
+Projekte) wird vorher synchronisiert und ein Backup der bisherigen
+Primärquelle angelegt; danach bleibt die bisherige Seite als Spiegel, die
+Item-IDs bleiben gleich. Dieselben Schritte gibt es über die API
+(`/api/v2/sources`, `/sources/{id}/sync`, `/sources/{id}/sync-status`).
 Projekte, die frühere Versionen in
 `configs/config.json` eingetragen hatten, werden beim ersten Start übernommen
 (Sicherung `config.json.bak`, siehe [Konfiguration](docs/techdocs/configuration.md)).
@@ -214,10 +219,11 @@ web/               React + Vite + TypeScript, TanStack Query
   src/components/, src/views/
 ```
 
-Ein Projekt liegt entweder in Markdown-Dateien oder in der zentralen
-Datenbank (`infrastructure/database/`, SQLite); beide Adapter bestehen dieselbe
-Contract-Suite (`backend/tests/contract/`). Datenbank-Projekte entstehen über
-`POST /api/v2/sources` mit `{"backend": "database", "project": "…"}`.
+Die Primärquelle eines Projekts liegt entweder in Markdown-Dateien oder in der
+zentralen Datenbank (`infrastructure/database/`, SQLite); die andere Seite kann
+als Spiegel mitgeführt werden. Beide Adapter bestehen dieselbe Contract-Suite
+(`backend/tests/contract/`), als Primärquelle und als Spiegel. Datenbank-Projekte
+entstehen über `POST /api/v2/sources` mit `{"backend": "database", "project": "…"}`.
 
 ## Entwicklung
 

@@ -26,9 +26,10 @@ Unbekannte Schlüssel bleiben beim Schreiben erhalten. Fehlt die Datei, gilt
 der Standard.
 
 Ändert man `storage_url`, zeigt der Dienst danach auf eine andere (ggf. leere)
-Datenbank; Projekte und Inhalte wandern nicht mit. Der Sync-Ordner eines
-Datenbank-Projekts (`sync_path`) und alle anderen Projekteinstellungen stehen in
-der Datenbank, nicht in dieser Datei. Backups vor einem Wechsel der Primärquelle
+Datenbank; Projekte und Inhalte wandern nicht mit. Die Primärquelle, der Spiegel
+(Sync-Ordner `sync_path` eines Datenbank-Projekts, Datenbank-Spiegel eines
+Markdown-Projekts), der Stand des letzten Syncs und alle anderen
+Projekteinstellungen stehen in der Datenbank, nicht in dieser Datei. Backups vor einem Wechsel der Primärquelle
 liegen unter `<CONFIG_DIR>/backups/` (ohne eigenen Schalter, siehe
 [Betrieb](operations.md)).
 

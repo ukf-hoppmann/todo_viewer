@@ -23,21 +23,22 @@
   vorwärts; Version 3 ergänzt die Spalte `mirror_database`, bestehende Projekte
   bekommen keinen Datenbank-Spiegel). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
   im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
-- Speicherort eines Projekts wechseln (UI: ✎ → „In die Datenbank übernehmen…“
-  bzw. „Als Markdown-Ordner ablegen…“; API: Sync, dann `PUT /sources/{id}` mit
-  neuem `backend`): Der Dienst sichert die bisherige Primärquelle selbst (siehe
-  nächster Punkt); die Datenbankdatei zusätzlich zu sichern (siehe oben) schadet
-  nicht. Der Wechsel löscht nichts. Die Markdown-Dateien bleiben nach dem Übernehmen liegen und
-  werden zum Sync-Ordner; die Daten in der Datenbank bleiben nach dem Ablegen als
-  Markdown liegen (sie werden nicht mehr gelesen, ein späteres Zurückstellen
-  zeigt sie in der Vorschau als Unterschied). Beim Austragen eines
-  Markdown-Projekts verschwindet seine Kopie in der Datenbank mit, ein
-  Datenbank-Projekt mit Items lässt sich nicht austragen. Der Export in einen
-  neuen Ordner schreibt die Kopfzeilen von `TODO.md`/`archive.md` in der
-  gewählten Sprache (die UI schickt ihre eigene, die API standardmäßig `en`);
-  Einträge und Dokumente sind inhaltlich gleich, Zeilenumbrüche und die
-  Reihenfolge der Felder sind normalisiert. Ein bestehender Sync-Ordner behält
-  seinen Kopftext.
+- Primärquelle eines Projekts wechseln (UI: ⚙ → Projekte → „Primärquelle
+  wechseln…“; API: Sync, dann `PUT /sources/{id}` mit neuem `backend`): Der
+  Dienst sichert die bisherige Primärquelle selbst (nächster Punkt); die
+  Datenbankdatei zusätzlich zu sichern (siehe oben) schadet nicht. Der Wechsel
+  löscht nichts. Die bisherige Seite bleibt als Spiegel: nach „Markdown →
+  Datenbank“ bleibt der Ordner als Spiegel liegen (`sync_path`), nach
+  „Datenbank → Markdown“ bleibt die Kopie in der Datenbank (Datenbank-Spiegel
+  eingeschaltet). Den Spiegel abschalten: bei einem Datenbank-Spiegel löscht das
+  die Kopie in der Datenbank, bei einem Markdown-Spiegel nur den Eintrag des
+  Ordners (⚙ → Projekte). Beim Austragen eines Markdown-Projekts verschwindet
+  seine Kopie in der Datenbank mit, ein Datenbank-Projekt mit Items lässt sich
+  nicht austragen. Der Export in einen neuen Ordner schreibt die Kopfzeilen von
+  `TODO.md`/`archive.md` in der gewählten Sprache (die UI schickt ihre eigene, die
+  API standardmäßig `en`); Einträge und Dokumente sind inhaltlich gleich,
+  Zeilenumbrüche und die Reihenfolge der Felder sind normalisiert. Ein
+  bestehender Spiegel-Ordner behält seinen Kopftext.
 - Sync-Status: Nach jedem Sync über die API speichert die Datenbank einen
   Fingerabdruck beider Seiten und die Zeit (Spalten `last_sync_at`,
   `synced_primary`, `synced_mirror`); der Status (`GET /sources/{id}/sync-status`)
@@ -125,7 +126,7 @@ grep ' req=1a2b3c4d ' logs/todo-viewer.log                     # alles zu einem 
 | Symptom | Ursache | Behebung |
 |---|---|---|
 | Seite zeigt „Frontend not built“ (HTTP 503) | `web/dist/index.html` fehlt (lokaler Start ohne Build) | `npm --prefix web run build` |
-| Projekt in der Liste ausgegraut mit ⚠ | Backlog-Ordner fehlt, ist kein Ordner, enthält keine `TODO.md` oder ist im Container nicht eingebunden | Pfad in der UI (✎) korrigieren; Ordner muss unter dem gemounteten Pfad liegen |
+| Projekt in der Liste ausgegraut mit ⚠ | Backlog-Ordner fehlt, ist kein Ordner, enthält keine `TODO.md` oder ist im Container nicht eingebunden | Pfad in der UI korrigieren (⚙ → Projekte → „Ordner ändern…“); Ordner muss unter dem gemounteten Pfad liegen |
 | Speichern bricht mit Hinweis auf externe Änderung ab (`version_conflict`/`file_changed`) | Der Eintrag wurde seit dem Lesen geändert bzw. die Datei während des Schreibens, z. B. durch einen Agenten | Nach dem nächsten Polling erneut bearbeiten |
 | Projekt mit ⚠ „nicht im Backlog-Format“ (`unsupported_format`) | `TODO.md` ohne Format-Kennung, z. B. eine einfache Checkliste | Datei ins Backlog-Format überführen (Kennung und IDs) |
 | Speichern schlägt mit `write_failed` fehl | Keine Schreibrechte auf den Backlog-Ordner | Rechte bzw. Volume-Mount (beschreibbar) prüfen |

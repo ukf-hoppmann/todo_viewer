@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import os
 import platform
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 import structlog
@@ -64,7 +66,7 @@ def start_logging(settings: Settings) -> None:
         log_file=str(settings.log_file) if settings.log_file else None, log_level=settings.log_level.upper())
 
 
-def build_container(settings: Settings) -> Container:
+def build_container(settings: Settings, today: Callable[[], date] = date.today) -> Container:
     resolver = SourcePathResolver(settings.base_dir)
     locks = KeyedLocks()  # shared: backlog files and documents of a folder are written under one lock
     backlogs = build_markdown_repository(settings.base_dir, locks)
@@ -75,12 +77,12 @@ def build_container(settings: Settings) -> Container:
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
-        items=ItemService(backlogs, planner, rules, ItemFactory(planner)),
-        trash=TrashService(backlogs, documents, TrashPlanner(rules)),
+        items=ItemService(backlogs, planner, rules, ItemFactory(planner), today),
+        trash=TrashService(backlogs, documents, TrashPlanner(rules), today),
         retype=RetypeService(backlogs, documents, RetypePlanner(), rules),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver)),
         source_lookup=lookup,
-        documents=DocumentService(backlogs, documents, planner, rules),
+        documents=DocumentService(backlogs, documents, planner, rules, today),
         folders=FolderBrowseService(LocalFolderBrowser(browse_start_from(settings.browse_start), resolver)),
         ui_state=UiStateService(JsonUiStateStore(JsonFile(settings.config_dir / "ui_state.json"))),
     )

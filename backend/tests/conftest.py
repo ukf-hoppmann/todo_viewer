@@ -5,6 +5,7 @@ import os
 import shutil
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,8 @@ from todo_viewer.bootstrap import PROJECT_ROOT, Settings, build_container
 FIXTURES = Path(__file__).parent / "fixtures"
 GOLDEN = Path(__file__).parent / "golden"
 UPDATE_GOLDEN = os.environ.get("UPDATE_GOLDEN") == "1"
+# The day the goldens were recorded; the API under test runs on this fixed day, not on the real one.
+TODAY = date(2026, 9, 28)
 
 
 @dataclass
@@ -91,7 +94,7 @@ def settings(workspace: Workspace) -> Settings:
 
 @pytest.fixture
 def api(workspace: Workspace, settings: Settings) -> Iterator[ApiClient]:
-    app = create_app(build_container(settings), settings.frontend_dir)
+    app = create_app(build_container(settings, lambda: TODAY), settings.frontend_dir)
     with TestClient(app) as client:
         yield ApiClient(client, workspace.root)
 

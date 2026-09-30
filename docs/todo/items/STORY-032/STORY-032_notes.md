@@ -18,3 +18,15 @@
 
 - Bei sehr großen Backlogs wächst die Zeit linear; dann braucht es einen Cache.
 - Das Badge zeigt erst STORY-034.
+
+## 2026-09-30 — Umbau: Status nur auf Anforderung
+
+### Discussed
+
+- Der Status hing an GET /backlog und GET /sources und wurde damit alle 5 s der UI-Abfrage berechnet, obwohl er sich nur bei einer Änderung oder einem Sync ändert; 13 ms je Projekt mit Spiegel.
+
+### Decided
+
+- sync verschwindet aus den Projektantworten; neu GET /sources/{id}/sync-status und GET /sync-status, die auf Anforderung rechnen (UI: beim Öffnen des Menüs, per Schaltfläche, bei Fensterfokus, nach einem Sync).
+- Berechnung, Speicherung und Zustände bleiben.
+- Der Projekteigner legt fest: Version v0.6.5 (Patch; die Funktion ist in Entwicklung und noch nicht im Einsatz).

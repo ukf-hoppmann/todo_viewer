@@ -90,6 +90,12 @@ anzeigen“ zeigt die fremde Fassung, erst „Trotzdem speichern“ überschreib
 „🗑 Löschen“ im Detail-Panel verschiebt einen Eintrag in den Papierkorb. Hat
 er Kinder, nennt der Dialog sie zuerst und löscht sie erst nach einer zweiten
 Bestätigung mit.
+„🔁 Typ ändern“ wandelt einen Eintrag in einen anderen Typ um. Weil der Typ das
+Präfix der ID ist, bekommt er die nächste freie ID des neuen Typs; Parent,
+Abhängigkeiten, Notizen und Specs im Backlog ziehen mit, und der Eintrag ist
+danach unter der neuen ID ausgewählt. Ein Hinweis nennt alte und neue ID und
+dass Verweise außerhalb des Backlogs (Techdocs, Berichte, Code) die alte ID noch
+enthalten können; er bleibt stehen, bis man ihn schließt.
 Neue Einträge legt „＋ Neu“ in der Leiste über den Ansichten an (ohne
 Parent, Projekt wählbar); „＋ Kind anlegen“ im Detail-Panel eines Epics oder
 einer Story legt ein Kind mit passendem Typ an und übernimmt den Bereich. Die

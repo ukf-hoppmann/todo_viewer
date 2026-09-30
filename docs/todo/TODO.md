@@ -83,3 +83,30 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ist.
   - Summary: Optionaler zweiter Datenbank-Typ.
   - Spec: `items/STORY-026/STORY-026_spec.md`.
+
+- `TASK-003` **Backend-Wechsel per PUT nach Sync**
+  - Type: Task.
+  - Parent: `STORY-024`.
+  - Required for parent: Yes.
+  - Status: In progress.
+  - Created: 2026-09-30.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Ein Projekt lässt sich an Ort und Stelle auf das andere
+    Speicher-Backend umstellen, mit gleicher source_id und gleichen
+    Item-IDs. Markdown → Datenbank: Sync from_md (Vorschau, Bestätigung)
+    liest den Ordner in die Datenbank, danach schaltet PUT /sources/{id} mit
+    backend=database um; der Ordner wandert von path nach sync_path.
+    Datenbank → Markdown: Sync to_md, danach PUT mit backend=markdown;
+    sync_path wandert nach path. Der Sync akzeptiert dafür auch ein
+    Markdown-Projekt (nur from_md).
+  - Completion criteria: Der Wechsel funktioniert in beide Richtungen über
+    die API: PUT mit neuem backend wird nur akzeptiert, wenn die Daten zuvor
+    synchronisiert wurden (sonst klarer Fehlercode, nichts ändert sich);
+    source_id und Item-IDs bleiben gleich; path und sync_path wandern wie im
+    EPIC-003-Spec beschrieben; der Markdown-path bleibt eindeutig.
+    Contract-, Service- und API-Tests decken beide Richtungen und die
+    Fehlerfälle ab; Techdocs und OpenAPI sind angepasst.
+  - Summary: Backend-Wechsel ohne neue Projekt-Id: erst Sync, dann PUT mit
+    neuem backend.

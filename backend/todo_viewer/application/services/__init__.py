@@ -2,6 +2,7 @@ from .backup import BackupService
 from .documents import DocumentResult, DocumentService
 from .items import BacklogOverviewService, ItemResult, ItemService, SourceBacklog
 from .misc import FolderBrowseService, StorageService, UiStateService
+from .note_documents import NoteDocument, NoteDocumentService
 from .notes import LinkedNote, NoteService, NoteView, TrashContents
 from .retype import RetypeResult, RetypeService
 from .sources import SourceLookup, SourceService
@@ -19,6 +20,8 @@ __all__ = [
     "ItemResult",
     "ItemService",
     "LinkedNote",
+    "NoteDocument",
+    "NoteDocumentService",
     "NoteService",
     "NoteView",
     "RetypeResult",

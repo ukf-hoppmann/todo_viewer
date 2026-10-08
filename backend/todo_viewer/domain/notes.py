@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
+from .documents import DocumentKind
 from .errors import DocumentForbiddenError, TopicLoopError, TopicNotFoundError, TopicTooDeepError
 from .item import Status
 
@@ -294,3 +295,8 @@ def check_note_document_name(label: str, name: str) -> None:
     """Notes: `<LABEL>_notes.md`; specs: `<LABEL>_spec.md` or `<LABEL>_spec_<topic>.md`."""
     if not re.fullmatch(rf"{re.escape(label)}_(notes|spec(_[A-Za-z0-9-]+)?)\.md", name):
         raise DocumentForbiddenError()
+
+
+def note_document_kind(name: str) -> DocumentKind:
+    """Notes end in `_notes.md`, every other document of a note is a spec."""
+    return DocumentKind.NOTES if name.endswith("_notes.md") else DocumentKind.SPEC

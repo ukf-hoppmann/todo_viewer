@@ -8,11 +8,14 @@ from fastapi import APIRouter
 from todo_viewer.application.services import NoteService
 from todo_viewer.domain.notes import LinkRole, LinkTarget, NoteStatus, TargetKind, TriggerMode
 
-from ..dependencies import Notes, Topics
+from ..dependencies import NoteDocuments, Notes, Topics
 from .notes_schemas import (
     LinkedNoteOut,
     LinkIn,
     LinkOut,
+    NoteDocumentIn,
+    NoteDocumentOut,
+    NoteDocumentRefOut,
     NoteEditIn,
     NoteFinishIn,
     NoteIn,
@@ -26,7 +29,7 @@ from .notes_schemas import (
     TrashOut,
     TriggerIn,
 )
-from .schemas import ErrorOut, VersionIn
+from .schemas import ErrorOut, NotesEntryIn, VersionIn
 
 ERRORS: dict[int | str, dict[str, Any]] = {
     status: {"model": ErrorOut} for status in (400, 403, 404, 409)
@@ -161,6 +164,34 @@ def notes_linking_to_item(project: str, label: str, notes: Notes) -> list[Linked
 
 def _linked(notes: NoteService, kind: TargetKind, project: str, label: str) -> list[LinkedNoteOut]:
     return [LinkedNoteOut.of(n) for n in notes.notes_linking_to(LinkTarget(kind, project, label))]
+
+
+@router.get("/notes/{label}/documents", tags=["note-documents"])
+def list_documents(project: str, label: str, documents: NoteDocuments) -> list[NoteDocumentRefOut]:
+    """The names of the notes and specs of the note; read one via `/documents/{name}`."""
+    return [NoteDocumentRefOut(name=name, kind=kind.value)
+            for name, kind in documents.names(project, label)]
+
+
+@router.get("/notes/{label}/documents/{name}", tags=["note-documents"])
+def read_document(project: str, label: str, name: str, documents: NoteDocuments) -> NoteDocumentOut:
+    """A notes or spec document of the note, with its version. Names of other notes: 403 forbidden."""
+    return NoteDocumentOut.of(documents.read(project, label, name))
+
+
+@router.put("/notes/{label}/documents/{name}", tags=["note-documents"])
+def write_document(project: str, label: str, name: str, body: NoteDocumentIn,
+                   documents: NoteDocuments) -> NoteDocumentOut:
+    """Replaces a document in `version` with the whole new text, or creates it with version null. 409
+    version_conflict if it changed in the meantime. New dated notes entries: POST …/notes."""
+    return NoteDocumentOut.of(documents.write(project, label, name, body.content, body.version))
+
+
+@router.post("/notes/{label}/notes", tags=["note-documents"])
+def append_notes(project: str, label: str, body: NotesEntryIn, documents: NoteDocuments) -> NoteDocumentOut:
+    """Appends a dated Discussed/Decided/Open entry to `<LABEL>_notes.md` (created on first use)."""
+    return NoteDocumentOut.of(documents.append_notes(project, label, body.topic, body.discussed, body.decided,
+                                                    body.open))
 
 
 @router.get("/trash", tags=["trash"])

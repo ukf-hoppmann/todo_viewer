@@ -11,6 +11,7 @@ from todo_viewer.application.services import (
     DocumentService,
     FolderBrowseService,
     ItemService,
+    NoteDocumentService,
     NoteService,
     RetypeService,
     SourceLookup,
@@ -46,6 +47,10 @@ def _trash(c: ContainerDep) -> TrashService:
 
 def _notes(c: ContainerDep) -> NoteService:
     return c.notes
+
+
+def _note_documents(c: ContainerDep) -> NoteDocumentService:
+    return c.note_documents
 
 
 def _topics(c: ContainerDep) -> TopicService:
@@ -92,6 +97,7 @@ Overview = Annotated[BacklogOverviewService, Depends(_overview)]
 Items = Annotated[ItemService, Depends(_items)]
 Trash = Annotated[TrashService, Depends(_trash)]
 Notes = Annotated[NoteService, Depends(_notes)]
+NoteDocuments = Annotated[NoteDocumentService, Depends(_note_documents)]
 Topics = Annotated[TopicService, Depends(_topics)]
 Retype = Annotated[RetypeService, Depends(_retype)]
 Sources = Annotated[SourceService, Depends(_sources)]

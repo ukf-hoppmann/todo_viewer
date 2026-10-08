@@ -9,7 +9,7 @@ from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-from todo_viewer.application.services import LinkedNote, NoteView, TrashContents
+from todo_viewer.application.services import LinkedNote, NoteDocument, NoteView, TrashContents
 from todo_viewer.domain.notes import Link, LinkTarget, NewTrigger, TargetKind, Topic, Trigger, TriggerKind
 
 
@@ -99,6 +99,30 @@ class NoteMoveIn(BaseModel):
     version: str
     project: str = Field(description="The project the note moves to")
     topic: str | None = Field(default=None, description="Label of a topic of the new project")
+
+
+class NoteDocumentOut(BaseModel):
+    name: str = Field(description="`<LABEL>_notes.md`, `<LABEL>_spec.md`, or `<LABEL>_spec_<topic>.md`")
+    kind: Literal["notes", "spec"]
+    content: str
+    version: str = Field(description="Changes with the content; required to replace the document")
+
+    @classmethod
+    def of(cls, document: NoteDocument) -> NoteDocumentOut:
+        return cls(name=document.name, kind=document.kind.value,
+                   content=document.content, version=document.version)
+
+
+class NoteDocumentIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    content: str = Field(description="The whole new text of the document")
+    version: str | None = Field(description="Version last read; null to create a new document")
+
+
+class NoteDocumentRefOut(BaseModel):
+    name: str
+    kind: Literal["notes", "spec"]
 
 
 class TriggerIn(BaseModel):

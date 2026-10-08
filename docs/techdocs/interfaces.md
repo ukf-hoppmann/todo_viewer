@@ -305,7 +305,9 @@ Build, antwortet der Server mit 503 und einem Hinweis.
 | `GET /notes/due` | Alle fälligen Notes mit Grund, Topic-Pfad, eingetroffenen Auslösern und möglichen Aktionen. |
 | `GET /notes/settings`, `PUT /notes/settings` | Die Optionen `max_topic_depth` und `review_days` lesen bzw. ändern. |
 | `GET /api/v2/notices?project=&label=&side=note\|item&open=` | Die Hinweise einer Note (`side=note`, `label` ist das Note-Label) oder eines Items (`side=item`, `label` ist die Item-ID), älteste zuerst; mit `open=true` nur die unentschiedenen. |
-| `POST /api/v2/notices/{id}/decision` | Einen offenen Hinweis entscheiden: `{decision, version?}`; Antwort `{notice, note}` (`note` ist bei Item-Hinweisen `null`). |
+| `POST /api/v2/notices/{id}/decision` | Einen offenen Hinweis entscheiden: `{decision, version?, promotion?}`; Antwort `{notice, note, item?}` (`note` ist bei Item-Hinweisen `null`, `item` nur bei `promote`). |
+| `POST /notes/{project}/{label}/promote` | Eine Note zu Task, Story oder Epic befördern (siehe „Beförderung und Rückstufung“). |
+| `POST /api/v2/items/{source_id}/{item_id}/demote` | Ein offenes Item zur Note zurückstufen (siehe „Beförderung und Rückstufung“). |
 
 - Eingabe:
   - Zeitpunkte sind ISO-8601 **mit Zeitzone** (sonst 400 `bad_request`); die
@@ -379,8 +381,9 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   nennt dafür die Aktionen `keep`, `detach`, `drop`, `promote`.
 - Entscheidungen an Notes: `keep` (Link bleibt, Prüf-Datum neu), `detach`
   (der `reference`-Link zum Item wird entfernt), `drop` (Note verwerfen; meldet
-  an die Items), `promote` (noch nicht angeschlossen: 409
-  `decision_not_available`).
+  an die Items), `promote` (mit `promotion`, den Item-Feldern von `promote`
+  unten: die Note wird befördert und danach der Hinweis entschieden; ohne
+  `promotion` oder für eine nicht beförderte Note 409 `decision_not_available`).
 - Hinweise an Items (`side=item`, Ursache `note_dropped` oder `note_promoted`)
   entstehen, wenn eine Note mit `reference`-Link auf das Item verworfen oder
   befördert wird; „erledigt“ meldet nichts. Einzige Entscheidung:
@@ -390,6 +393,39 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   `version` geändert), 400 `invalid_value` (Entscheidung der falschen Seite).
   Scheitert das Anlegen eines Hinweises, wird es protokolliert und die Änderung
   am Item oder an der Note bleibt gültig.
+
+### Beförderung und Rückstufung
+
+- `POST /api/v2/notes/{project}/{label}/promote`, Body `{version, item_type
+  (Task|Story|Epic), title?, summary?, area, goal, completion_criteria,
+  parent?, required_for_parent?, priority?, dependencies?}`, Antwort `{note,
+  item}`. Das Item entsteht im Projekt der Note über den normalen Anlageweg, alle
+  Backlog-Prüfungen gelten (z. B. 409 `parent_closed`, fehlende Pflichtfelder
+  400). `title` und `summary` sind mit der Kurzfassung der Note vorbelegt. Der
+  Langtext der Note wird der erste datierte Notizen-Eintrag „Aus Note … befördert“
+  (eine Zeile je Aufzählungspunkt), die Notizen der Note hängen daran, Specs
+  heißen danach `<ITEM>_spec[_thema].md`. Die Note ist `promoted`, archiviert und
+  trägt einen Link mit Rolle `origin` auf das Item.
+- Ein abgebrochener Aufruf lässt sich mit derselben `version` wiederholen: der
+  `origin`-Link zeigt, dass das Item existiert, es laufen nur die fehlenden
+  Schritte. Ist das Item inzwischen weg, antwortet die API 409
+  `promote_origin_missing`. Scheitert genau das Setzen des Links direkt nach dem
+  Anlegen, legt die Wiederholung ein zweites Item an.
+- `POST /api/v2/items/{source_id}/{item_id}/demote`, Body `{version, topic?}`
+  (Topic-Label im Projekt der Quelle), Antwort `{item, note}`. Zulässig nur bei
+  Status Open, ohne Kinder (auch geschlossene zählen) und ohne dass ein anderes
+  Item außerhalb des Papierkorbs das Item als Parent oder Dependency nennt.
+  Die neue Note hat den Titel als Kurzfassung, die Zusammenfassung als Langtext,
+  die Notizen und Specs des Items als Dokumente (`<NOTE>_notes.md`,
+  `<NOTE>_spec[_thema].md`) und einen Link `origin` auf das Item. Das Item wird als
+  Rejected mit der Resolution „zur Notiz zurückgestuft“ archiviert und löst keinen
+  Hinweis für die neue Note aus. Wiederholung mit derselben Item-`version`
+  verwendet die bereits angelegte Note weiter.
+- Fehler (409): `demote_not_open`, `demote_has_children` und
+  `demote_referenced` (jeweils mit `details.items`), `demote_document_name`
+  (ein Dokument des Items lässt sich unter einem Note-Label nicht benennen;
+  nichts wird geändert), `promote_origin_missing`; außerdem `version_conflict`,
+  `note_closed`, `note_deleted`.
 
 ## Nutzung durch Agenten
 

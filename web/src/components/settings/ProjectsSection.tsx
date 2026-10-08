@@ -99,14 +99,14 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
         <dt>{t("projects.primary")}</dt>
         <dd>
           <span className="project-primary">{t(`source.backend.${source.primary}`)}</span>
-          <button className="btn small" disabled={database && !folder} onClick={() => onOpen("switch")}>
+          <button className="btn link" disabled={database && !folder} onClick={() => onOpen("switch")}>
             {t("projects.switch")}
           </button>
         </dd>
         <dt>{t("projects.folder")}</dt>
         <dd>
-          <span className="mono">{folder ?? t("projects.folder.none")}</span>
-          <button className="btn small" onClick={() => onOpen("folder")}>
+          <span className="mono project-folder" title={folder ?? undefined}>{folder ?? t("projects.folder.none")}</span>
+          <button className="btn link" onClick={() => onOpen("folder")}>
             {t(folder ? "projects.folder.change" : "projects.folder.set")}
           </button>
         </dd>
@@ -116,7 +116,7 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
             <>
               <span>{t(source.mirror !== "none" ? "projects.mirror.markdown" : folder ? "projects.mirror.off" : "projects.mirror.none")}</span>
               {folder && (
-                <button className="btn small" disabled={save.isPending} onClick={() => setMarkdownMirror(source.mirror === "none")}>
+                <button className="btn link" disabled={save.isPending} onClick={() => setMarkdownMirror(source.mirror === "none")}>
                   {t(source.mirror === "none" ? "projects.mirror.on" : "projects.mirror.remove")}
                 </button>
               )}
@@ -128,18 +128,19 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
             </label>
           )}
         </dd>
-        <dt>{t("projects.lastSync.title")}</dt>
-        <dd>{t("projects.lastSync", { at: lastSync })}</dd>
       </dl>
       {error && <div className="field-error" role="alert">{error}</div>}
-      <div className="project-actions">
-        <button className="btn small" disabled={source.mirror === "none"} onClick={() => onOpen("sync")}>
-          {t("projects.sync")}
-        </button>
-        <button className="btn small" disabled={checking} onClick={onCheck}>
-          {t("projects.state.check")}
-        </button>
-      </div>
+      <footer className="project-footer">
+        <span className="project-lastsync">{t("projects.lastSync", { at: lastSync })}</span>
+        <div className="project-actions">
+          <button className="btn small" disabled={source.mirror === "none"} onClick={() => onOpen("sync")}>
+            {t("projects.sync")}
+          </button>
+          <button className="btn small" disabled={checking} onClick={onCheck}>
+            {t("projects.state.check")}
+          </button>
+        </div>
+      </footer>
     </section>
   );
 }

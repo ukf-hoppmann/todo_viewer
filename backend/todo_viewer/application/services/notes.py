@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -101,11 +102,11 @@ class NoteService:
     """
 
     def __init__(self, notes: NoteRepository, sources: SourceRepository, backlogs: BacklogRepository,
-                 settings: NotesSettings | None = None, clock: Clock = _now):
+                 settings: Callable[[], NotesSettings] | None = None, clock: Clock = _now):
         self._notes = notes
         self._sources = sources
         self._backlogs = backlogs
-        self._settings = settings or NotesSettings()
+        self._settings = settings or NotesSettings
         self._clock = clock
 
     # --- reading ---
@@ -169,7 +170,7 @@ class NoteService:
         """The owner looked at the note and keeps it as it is: only the review date moves."""
         note = self._notes.get_note(project, label)
         return self._view(self._notes.update_note(project, label, version,
-                                                  keep_changes(note, self._clock(), self._settings.review_days)))
+                                                  keep_changes(note, self._clock(), self._settings().review_days)))
 
     # --- links ---
 
@@ -240,7 +241,7 @@ class NoteService:
         """
         note = self._notes.get_note(project, label)
         now = self._clock()
-        changes = snooze_changes(note, now, self._settings.review_days, review_at)
+        changes = snooze_changes(note, now, self._settings().review_days, review_at)
         checked = None if trigger is None else self._checked_trigger(note, trigger)
         self._notes.update_note(project, label, version, changes)
         topic_due = self._topic_due(note)
@@ -282,7 +283,7 @@ class NoteService:
         """From the archive or the trash back to waiting, with a new review date."""
         note = self._notes.get_note(project, label)
         changes = restore_note_changes(note, self._notes.list_topics(project, include_deleted=True), self._clock(),
-                                       self._settings.review_days)
+                                       self._settings().review_days)
         if note.deleted is not None:
             note = self._notes.restore_note(project, label)
         return self._view(self._notes.update_note(project, label, note.version, changes))
@@ -318,7 +319,7 @@ class NoteService:
     # --- helpers ---
 
     def _new_review_date(self) -> datetime:
-        return default_review_at(self._clock(), self._settings.review_days)
+        return default_review_at(self._clock(), self._settings().review_days)
 
     def _topic_due(self, note: Note) -> datetime | None:
         return None if note.topic is None else self._notes.get_topic(note.project, note.topic).due_at

@@ -18,6 +18,7 @@ from todo_viewer.domain.notes import (
     NewTrigger,
     Note,
     NoteChanges,
+    NotesSettings,
     Topic,
     Trigger,
 )
@@ -202,6 +203,15 @@ class ItemStatusListener(Protocol):
     def item_status_changed(self, project: str, item_id: str, status: str) -> None: ...
 
 
+class NotesSettingsStore(Protocol):
+    """Where the global notes options (`notes.max_topic_depth`, `notes.review_days`) are kept."""
+
+    def load(self) -> NotesSettings:
+        """Missing or unusable values fall back to the defaults."""
+
+    def save(self, settings: NotesSettings) -> None: ...
+
+
 @dataclass(frozen=True)
 class StorageDescription:
     """What the central database is: its type (e.g. "sqlite"), where it is (no secrets), its schema version."""
@@ -264,6 +274,7 @@ __all__ = [
     "ItemStatusListener",
     "NoteDocumentStore",
     "NoteRepository",
+    "NotesSettingsStore",
     "ProjectNameSuggester",
     "RawBackup",
     "SourceRepository",

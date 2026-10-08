@@ -7,10 +7,27 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictInt, model_validator
 
-from todo_viewer.application.services import LinkedNote, NoteDocument, NoteView, TrashContents
-from todo_viewer.domain.notes import Link, LinkTarget, NewTrigger, TargetKind, Topic, Trigger, TriggerKind
+from todo_viewer.application.services import (
+    DueNote,
+    IndexedTopic,
+    LinkedNote,
+    NoteDocument,
+    NotesIndex,
+    NoteView,
+    TrashContents,
+)
+from todo_viewer.domain.notes import (
+    Link,
+    LinkTarget,
+    NewTrigger,
+    TargetKind,
+    Topic,
+    Trigger,
+    TriggerKind,
+)
+from todo_viewer.domain.notes import NotesSettings as NotesSettingsValue
 
 
 class TopicOut(BaseModel):
@@ -254,3 +271,93 @@ class TrashOut(BaseModel):
     @classmethod
     def of(cls, trash: TrashContents) -> TrashOut:
         return cls(topics=[TopicOut.of(t) for t in trash.topics], notes=[NoteOut.of(n) for n in trash.notes])
+
+
+class NotesSettingsOut(BaseModel):
+    max_topic_depth: int = Field(description="How many levels topics may nest (`notes.max_topic_depth`)")
+    review_days: int = Field(description="Days until a note must be looked at again (`notes.review_days`)")
+
+    @classmethod
+    def of(cls, settings: NotesSettingsValue) -> NotesSettingsOut:
+        return cls(max_topic_depth=settings.max_topic_depth, review_days=settings.review_days)
+
+
+class NotesSettingsIn(BaseModel):
+    """Only the options sent change. Whole numbers: depth 1 to 10, review days 1 to 3650."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    max_topic_depth: StrictInt | None = None
+    review_days: StrictInt | None = None
+
+    @model_validator(mode="after")
+    def _given(self) -> NotesSettingsIn:
+        if not self.model_fields_set:
+            raise ValueError("at least one option is required")
+        if any(getattr(self, name) is None for name in self.model_fields_set):
+            raise ValueError("an option cannot be cleared")
+        return self
+
+
+class IndexNoteOut(BaseModel):
+    """A note without its long text; read the note for that."""
+
+    project: str
+    label: str
+    summary: str
+    status: str = Field(description="waiting, due, snoozed, done, dropped, or promoted")
+    reason: str | None = Field(description="Why the note is due: trigger, review_expired, or topic_due")
+    review_at: datetime | None = Field(description="When the note must be looked at again at the latest")
+    topic: str | None
+    archived: bool
+
+    @classmethod
+    def of(cls, view: NoteView) -> IndexNoteOut:
+        note = view.note
+        return cls(project=note.project, label=note.label, summary=note.summary, status=view.evaluation.status.value,
+                   reason=None if view.evaluation.reason is None else view.evaluation.reason.value,
+                   review_at=note.review_at, topic=note.topic, archived=note.archived)
+
+
+class IndexTopicOut(BaseModel):
+    project: str
+    label: str
+    name: str
+    parent: str | None
+    path: list[str] = Field(description="The names from the root topic down to this one")
+    due_at: datetime | None
+    due: bool = Field(description="The due date has passed")
+    note_count: int = Field(description="Open notes directly in this topic")
+
+    @classmethod
+    def of(cls, indexed: IndexedTopic) -> IndexTopicOut:
+        topic = indexed.topic
+        return cls(project=topic.project, label=topic.label, name=topic.name, parent=topic.parent,
+                   path=list(indexed.path), due_at=topic.due_at, due=indexed.due, note_count=indexed.note_count)
+
+
+class NotesIndexOut(BaseModel):
+    topics: list[IndexTopicOut]
+    notes: list[IndexNoteOut]
+
+    @classmethod
+    def of(cls, index: NotesIndex) -> NotesIndexOut:
+        return cls(topics=[IndexTopicOut.of(t) for t in index.topics], notes=[IndexNoteOut.of(n) for n in index.notes])
+
+
+class DueCountOut(BaseModel):
+    count: int = Field(description="Due notes in all projects")
+    by_project: dict[str, int]
+
+
+class DueNoteOut(IndexNoteOut):
+    topic_path: list[str] = Field(description="The names of the topic and its parents; empty without a topic")
+    triggers: list[TriggerOut] = Field(description="The triggers that have arrived")
+    actions: list[Literal["keep", "snooze", "done", "dropped"]] = Field(
+        description="What can be done with the note: keep, snooze, or close it as done or dropped")
+
+    @classmethod
+    def of_due(cls, due: DueNote) -> DueNoteOut:
+        base = IndexNoteOut.of(due.view)
+        return cls(**base.model_dump(), topic_path=list(due.topic_path),
+                   triggers=[TriggerOut.of(t) for t in due.fired], actions=list(due.actions))  # type: ignore[arg-type]

@@ -9,7 +9,9 @@ from .services import (
     FolderBrowseService,
     ItemService,
     NoteDocumentService,
+    NoteIndexService,
     NoteService,
+    NotesSettingsService,
     RetypeService,
     SourceLookup,
     SourceService,
@@ -30,6 +32,8 @@ class Container:
     notes: NoteService
     topics: TopicService
     note_documents: NoteDocumentService
+    notes_settings: NotesSettingsService
+    note_index: NoteIndexService
     retype: RetypeService
     sources: SourceService
     source_lookup: SourceLookup

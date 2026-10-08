@@ -8,8 +8,10 @@ from fastapi import APIRouter
 from todo_viewer.application.services import NoteService
 from todo_viewer.domain.notes import LinkRole, LinkTarget, NoteStatus, TargetKind, TriggerMode
 
-from ..dependencies import NoteDocuments, Notes, Topics
+from ..dependencies import NoteDocuments, NoteIndex, Notes, NotesSettings, Topics
 from .notes_schemas import (
+    DueCountOut,
+    DueNoteOut,
     LinkedNoteOut,
     LinkIn,
     LinkOut,
@@ -21,7 +23,10 @@ from .notes_schemas import (
     NoteIn,
     NoteMoveIn,
     NoteOut,
+    NotesIndexOut,
     NoteSnoozeIn,
+    NotesSettingsIn,
+    NotesSettingsOut,
     TopicEditIn,
     TopicIn,
     TopicMoveIn,
@@ -36,6 +41,51 @@ ERRORS: dict[int | str, dict[str, Any]] = {
 }
 
 router = APIRouter(prefix="/api/v2/projects/{project}", responses=ERRORS)
+global_router = APIRouter(prefix="/api/v2/notes", responses=ERRORS)
+
+
+@global_router.get("/index", tags=["notes-index"])
+def notes_index(index: NoteIndex, project: str | None = None, topic: str | None = None,
+                status: NoteStatus | None = None, due: bool = False, linked_item: str | None = None,
+                linked_project: str | None = None, archived: bool = False) -> NotesIndexOut:
+    """Topics and notes with only label, status, due reason, review date, and summary: no long texts.
+
+    Without filters: the open notes of all projects. `project` keeps one project; `topic` (needs `project`) keeps
+    the notes in that topic and its sub-topics and the topics of that subtree; `status` is the effective status
+    (waiting, due, snoozed, done, dropped, promoted); `due=true` keeps the due notes; `linked_item` (in
+    `linked_project`, default `project`) keeps the notes that point at the item by a link or an event trigger.
+    `archived=true` reads the archive instead; a closed `status` does so by itself.
+    """
+    return NotesIndexOut.of(index.index(project, topic, status, due, linked_item, linked_project, archived))
+
+
+@global_router.get("/due/count", tags=["notes-index"])
+def due_count(index: NoteIndex) -> DueCountOut:
+    """How many notes are due in all projects: a cheap call for the red exclamation mark."""
+    by_project = index.due_count()
+    return DueCountOut(count=sum(by_project.values()), by_project=by_project)
+
+
+@global_router.get("/due", tags=["notes-index"])
+def due_notes(index: NoteIndex) -> list[DueNoteOut]:
+    """The due notes of all projects with the reason, the topic path, the triggers that arrived, and the actions
+    that are possible, ordered by project and label."""
+    return [DueNoteOut.of_due(d) for d in index.due()]
+
+
+@global_router.get("/settings", tags=["notes-settings"])
+def get_settings(settings: NotesSettings) -> NotesSettingsOut:
+    """The global notes options."""
+    return NotesSettingsOut.of(settings.current())
+
+
+@global_router.put("/settings", tags=["notes-settings"])
+def put_settings(body: NotesSettingsIn, settings: NotesSettings) -> NotesSettingsOut:
+    """Changes the options sent and saves them in config.json; they apply from the next request on, no restart.
+
+    Topics that are nested deeper than a lowered `max_topic_depth` stay; only new topics and moves are checked.
+    """
+    return NotesSettingsOut.of(settings.update(body.max_topic_depth, body.review_days))
 
 
 @router.post("/notes", tags=["notes"], status_code=201)

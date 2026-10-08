@@ -20,3 +20,20 @@ def notes_settings(file: JsonFile) -> NotesSettings:
 
 def _positive(value: object, default: int) -> int:
     return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else default
+
+
+class JsonNotesSettingsStore:
+    """The `notes` section of config.json; the rest of the file stays as it is."""
+
+    def __init__(self, file: JsonFile):
+        self._file = file
+
+    def load(self) -> NotesSettings:
+        return notes_settings(self._file)
+
+    def save(self, settings: NotesSettings) -> None:
+        data: Any = self._file.read() if self._file.exists() else {}
+        data = data if isinstance(data, dict) else {}
+        section = data.get("notes") if isinstance(data.get("notes"), dict) else {}
+        data["notes"] = {**section, "max_topic_depth": settings.max_topic_depth, "review_days": settings.review_days}
+        self._file.write(data)

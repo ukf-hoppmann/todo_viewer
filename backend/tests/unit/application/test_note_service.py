@@ -67,7 +67,8 @@ class World:
         self.repo = DatabaseNoteRepository(Database(f"sqlite:///{tmp_path / 'todo.db'}"), self.clock)
         # The fake serves the same items for every source, so both projects know STORY-001 and STORY-002.
         self.backlogs = InMemoryBacklogRepository([item("STORY-001"), item("STORY-002", Status.COMPLETED)])
-        self.service = NoteService(self.repo, Sources(), self.backlogs, settings, self.clock)  # type: ignore[arg-type]
+        self.service = NoteService(self.repo, Sources(), self.backlogs, (lambda: settings) if settings else None,
+                                   self.clock)  # type: ignore[arg-type]
 
 
 @pytest.fixture

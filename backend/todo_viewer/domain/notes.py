@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
 from .documents import DocumentKind
-from .errors import DocumentForbiddenError, TopicLoopError, TopicNotFoundError, TopicTooDeepError
+from .errors import DocumentForbiddenError, InvalidValueError, TopicLoopError, TopicNotFoundError, TopicTooDeepError
 from .item import Status
 
 DEFAULT_MAX_TOPIC_DEPTH = 3
@@ -26,6 +26,22 @@ class NotesSettings:
 
     max_topic_depth: int = DEFAULT_MAX_TOPIC_DEPTH
     review_days: int = DEFAULT_REVIEW_DAYS
+
+
+MAX_TOPIC_DEPTH_LIMIT = 10
+REVIEW_DAYS_LIMIT = 3650
+
+
+def changed_settings(current: NotesSettings, max_topic_depth: int | None = None,
+                     review_days: int | None = None) -> NotesSettings:
+    """The options with the given values replaced; each must be a whole number from 1 to its limit."""
+    depth = current.max_topic_depth if max_topic_depth is None else max_topic_depth
+    days = current.review_days if review_days is None else review_days
+    if not 1 <= depth <= MAX_TOPIC_DEPTH_LIMIT:
+        raise InvalidValueError("max_topic_depth", (f"1 to {MAX_TOPIC_DEPTH_LIMIT}",))
+    if not 1 <= days <= REVIEW_DAYS_LIMIT:
+        raise InvalidValueError("review_days", (f"1 to {REVIEW_DAYS_LIMIT}",))
+    return NotesSettings(max_topic_depth=depth, review_days=days)
 
 
 class NoteStatus(StrEnum):
@@ -268,6 +284,30 @@ def subtree_height(parents: Mapping[str, str | None], label: str) -> int:
         return 1 + max((height(c, seen | {node}) for c in children.get(node, ())), default=0)
 
     return height(label, frozenset())
+
+
+def topic_path(topics: Sequence[Topic], label: str) -> tuple[str, ...]:
+    """The names from the root topic down to `label`; empty if the topic is unknown."""
+    by_label = {t.label: t for t in topics}
+    names: list[str] = []
+    current = by_label.get(label)
+    while current is not None and len(names) <= len(by_label):
+        names.append(current.name)
+        current = None if current.parent is None else by_label.get(current.parent)
+    return tuple(reversed(names))
+
+
+def subtree_labels(topics: Sequence[Topic], label: str) -> frozenset[str]:
+    """`label` and the labels of all topics below it."""
+    found = {label}
+    grew = True
+    while grew:
+        grew = False
+        for t in topics:
+            if t.label not in found and t.parent in found:
+                found.add(t.label)
+                grew = True
+    return frozenset(found)
 
 
 def check_new_topic(parents: Mapping[str, str | None], parent: str | None, max_depth: int, label: str) -> None:

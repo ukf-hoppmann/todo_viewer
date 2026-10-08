@@ -304,6 +304,8 @@ Build, antwortet der Server mit 503 und einem Hinweis.
 | `GET /notes/due/count` | Nur der Zähler `{count, by_project}` für das Ausrufezeichen. |
 | `GET /notes/due` | Alle fälligen Notes mit Grund, Topic-Pfad, eingetroffenen Auslösern und möglichen Aktionen. |
 | `GET /notes/settings`, `PUT /notes/settings` | Die Optionen `max_topic_depth` und `review_days` lesen bzw. ändern. |
+| `GET /api/v2/notices?project=&label=&side=note\|item&open=` | Die Hinweise einer Note (`side=note`, `label` ist das Note-Label) oder eines Items (`side=item`, `label` ist die Item-ID), älteste zuerst; mit `open=true` nur die unentschiedenen. |
+| `POST /api/v2/notices/{id}/decision` | Einen offenen Hinweis entscheiden: `{decision, version?}`; Antwort `{notice, note}` (`note` ist bei Item-Hinweisen `null`). |
 
 - Eingabe:
   - Zeitpunkte sind ISO-8601 **mit Zeitzone** (sonst 400 `bad_request`); die
@@ -345,8 +347,9 @@ Build, antwortet der Server mit 503 und einem Hinweis.
     reason, topic, review_at, trigger_mode, triggers, archived, deleted,
     created, updated}`. `status` ist der abgeleitete Status (`due`, wenn ein
     Auslöser eingetroffen oder das Prüf-Datum verstrichen ist), `stored_status`
-    der gespeicherte; `reason` ist `trigger`, `review_expired` oder
-    `topic_due`.
+    der gespeicherte; `reason` ist `trigger`, `notice`, `topic_due` oder
+    `review_expired` (in dieser Reihenfolge der erste zutreffende). `open_notices`
+    listet die unentschiedenen Hinweise der Note.
   - Index: `{topics, notes}`; Notes nur mit `project`, `label`, `summary`,
     `status`, `reason`, `review_at`, `topic`, `archived`; Topics mit `path`
     (Namen von der Wurzel), `due_at`, `due` und `note_count`. Fällig-Liste: wie
@@ -360,6 +363,33 @@ Build, antwortet der Server mit 503 und einem Hinweis.
 | 400 | `topic_too_deep` (Tiefe über `max_topic_depth`, auch beim Verschieben des ganzen Teilbaums), `topic_loop` (Topic unter sich selbst), `value_required`, `invalid_value` |
 | 404 | `note_not_found`, `topic_not_found`, `trigger_not_found`, `link_not_found`, `link_target_not_found`, `source_gone` (unbekanntes Projekt) |
 | 409 | `version_conflict`, `note_closed`, `note_deleted`, `note_not_restorable`, `note_same_project`, `topic_has_content` (`details.items`), `topic_deleted`, `topic_not_deleted`, `link_exists`, `link_belongs_to_trigger` |
+
+### Hinweise zwischen Notes und Items
+
+- Ein Hinweis sagt, dass sich die andere Seite eines Links geändert hat, und
+  bleibt offen, bis jemand entscheidet. Felder: `{id, side, project, label,
+  cause, counterpart, created_at, decided_at, decision, options}`; `project`
+  und `label` nennen den Informierten, `counterpart` die Gegenseite.
+- Hinweise an Notes (`side=note`) entstehen nur für Links mit Rolle `reference`,
+  wenn das Item abgeschlossen (`item_completed`) oder verworfen
+  (`item_rejected`) wird, in den Papierkorb kommt (`item_deleted`) oder seinen
+  Typ wechselt (`item_retyped`, die Gegenseite trägt die neue ID). Bei
+  `trigger`-Links entscheidet der Auslöser, `origin`-Links melden nie. Ein
+  offener Hinweis macht die Note fällig (Grund `notice`); die Fällig-Liste
+  nennt dafür die Aktionen `keep`, `detach`, `drop`, `promote`.
+- Entscheidungen an Notes: `keep` (Link bleibt, Prüf-Datum neu), `detach`
+  (der `reference`-Link zum Item wird entfernt), `drop` (Note verwerfen; meldet
+  an die Items), `promote` (noch nicht angeschlossen: 409
+  `decision_not_available`).
+- Hinweise an Items (`side=item`, Ursache `note_dropped` oder `note_promoted`)
+  entstehen, wenn eine Note mit `reference`-Link auf das Item verworfen oder
+  befördert wird; „erledigt“ meldet nichts. Einzige Entscheidung:
+  `acknowledge`. Sie machen eine Note nie fällig.
+- Fehler: 404 `notice_not_found`, 409 `notice_already_decided`, 409
+  `decision_not_available`, 409 `version_conflict` (die Note hat sich seit
+  `version` geändert), 400 `invalid_value` (Entscheidung der falschen Seite).
+  Scheitert das Anlegen eines Hinweises, wird es protokolliert und die Änderung
+  am Item oder an der Note bleibt gültig.
 
 ## Nutzung durch Agenten
 

@@ -23,7 +23,7 @@
   vorwärts; Version 3 ergänzt die Spalte `mirror_database`, bestehende Projekte
   bekommen keinen Datenbank-Spiegel; Version 5 die Spalte `mirror_disabled`, bestehende
   Datenbank-Projekte mit Ordner behalten ihren Spiegel eingeschaltet; Version 6 legt die Tabellen für
-  Topics, Notes, Links, Auslöser, Note-Dokumente und die Label-Zähler an). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
+  Topics, Notes, Links, Auslöser, Note-Dokumente und die Label-Zähler an; Version 7 die Tabelle `note_notices` für die Hinweise zwischen Notes und Items). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
   im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
 - Primärquelle eines Projekts wechseln (UI: ⚙ → Projekte → „Primärquelle
   wechseln…“; API: Sync, dann `PUT /sources/{id}` mit neuem `backend`): Der

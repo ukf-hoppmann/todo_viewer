@@ -24,20 +24,29 @@ from todo_viewer.domain.errors import (
 )
 from todo_viewer.domain.item import Item, Status
 from todo_viewer.domain.note_lifecycle import check_editable
-from todo_viewer.domain.notes import FINISHED_STATUSES, LinkRole, LinkTarget, NoteStatus, TargetKind
+from todo_viewer.domain.notes import (
+    FINISHED_STATUSES,
+    LinkRole,
+    LinkTarget,
+    NoteStatus,
+    NoticeDecision,
+    TargetKind,
+    check_decision,
+)
 from todo_viewer.domain.source import Source
 
 from ..ports import BacklogRepository, SourceRepository
 from .documents import DocumentService
 from .items import ItemResult, ItemService
 from .note_documents import NoteDocumentService
-from .notes import NoteService, NoteView
+from .notes import DecisionResult, NoteService, NoteView
 
 
 @dataclass(frozen=True)
 class Promoted:
     note: NoteView
     item: ItemResult
+    source: Source  # where the item lives
 
 
 @dataclass(frozen=True)
@@ -87,7 +96,16 @@ class ConversionService:
             raise ConversionRefusedError("promote_origin_missing", label, (item_id,))
         self._take_over_into_item(source, item_id, project, label, note.body)
         view = self._notes.finish(project, label, note.version, NoteStatus.PROMOTED)
-        return Promoted(view, self._items.get(source, item_id))
+        return Promoted(view, self._items.get(source, item_id), source)
+
+    def promote_noticed(self, notice_id: int, version: str | None, item_type: str,
+                        given: Mapping[str, object]) -> tuple[Promoted, DecisionResult]:
+        """The decision `promote` of a notice: promotes the note it belongs to, then decides the notice."""
+        notice = self._notes.notice(notice_id)
+        check_decision(notice, NoticeDecision.PROMOTE)
+        note = self._notes.show(notice.project, notice.label).note
+        promoted = self.promote(notice.project, notice.label, version or note.version, item_type, given)
+        return promoted, self._notes.decide(notice_id, NoticeDecision.PROMOTE)
 
     def _origin_of(self, project: str, label: str) -> str | None:
         link = next((link for link in self._notes.links_of(project, label)

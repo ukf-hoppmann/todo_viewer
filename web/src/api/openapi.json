@@ -59,6 +59,51 @@
         "title": "BacklogOut",
         "type": "object"
       },
+      "DemoteIn": {
+        "additionalProperties": false,
+        "properties": {
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Label of a topic of the item's project for the new note",
+            "title": "Topic"
+          },
+          "version": {
+            "description": "The item's version as last read; a changed item answers 409",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "DemoteIn",
+        "type": "object"
+      },
+      "DemoteOut": {
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/ItemOut",
+            "description": "The item, now Rejected with the resolution 'zur Notiz zur\u00fcckgestuft'"
+          },
+          "note": {
+            "$ref": "#/components/schemas/NoteOut",
+            "description": "The new note; it links to the item with role `origin`"
+          }
+        },
+        "required": [
+          "item",
+          "note"
+        ],
+        "title": "DemoteOut",
+        "type": "object"
+      },
       "DocumentIn": {
         "additionalProperties": false,
         "properties": {
@@ -1894,6 +1939,17 @@
           "decision": {
             "$ref": "#/components/schemas/NoticeDecision"
           },
+          "promotion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PromoteFieldsIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "With decision `promote`: the fields of the item the note becomes; the note is promoted first, then the notice is decided"
+          },
           "version": {
             "anyOf": [
               {
@@ -1915,6 +1971,17 @@
       },
       "NoticeDecisionOut": {
         "properties": {
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ItemOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The item the note became, for decision `promote`"
+          },
           "note": {
             "anyOf": [
               {
@@ -1962,6 +2029,245 @@
           "message"
         ],
         "title": "ProblemOut",
+        "type": "object"
+      },
+      "PromoteFieldsIn": {
+        "additionalProperties": false,
+        "description": "What the new item needs beyond the note: type, area, goal, completion criteria, and the optional rest.",
+        "properties": {
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "completion_criteria": {
+            "title": "Completion Criteria",
+            "type": "string"
+          },
+          "dependencies": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dependencies"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "item_type": {
+            "enum": [
+              "Epic",
+              "Story",
+              "Task"
+            ],
+            "title": "Item Type",
+            "type": "string"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default: Normal",
+            "title": "Priority"
+          },
+          "required_for_parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Yes or No; required with a parent",
+            "title": "Required For Parent"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default: the note's summary",
+            "title": "Summary"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default: the note's summary",
+            "title": "Title"
+          }
+        },
+        "required": [
+          "item_type",
+          "area",
+          "goal",
+          "completion_criteria"
+        ],
+        "title": "PromoteFieldsIn",
+        "type": "object"
+      },
+      "PromoteIn": {
+        "additionalProperties": false,
+        "properties": {
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "completion_criteria": {
+            "title": "Completion Criteria",
+            "type": "string"
+          },
+          "dependencies": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dependencies"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "item_type": {
+            "enum": [
+              "Epic",
+              "Story",
+              "Task"
+            ],
+            "title": "Item Type",
+            "type": "string"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default: Normal",
+            "title": "Priority"
+          },
+          "required_for_parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Yes or No; required with a parent",
+            "title": "Required For Parent"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default: the note's summary",
+            "title": "Summary"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default: the note's summary",
+            "title": "Title"
+          },
+          "version": {
+            "description": "The note's version as last read; a changed note answers 409",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_type",
+          "area",
+          "goal",
+          "completion_criteria",
+          "version"
+        ],
+        "title": "PromoteIn",
+        "type": "object"
+      },
+      "PromoteOut": {
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/ItemOut",
+            "description": "The item the note became; the note links to it with role `origin`"
+          },
+          "note": {
+            "$ref": "#/components/schemas/NoteOut",
+            "description": "The note, now promoted and archived"
+          }
+        },
+        "required": [
+          "note",
+          "item"
+        ],
+        "title": "PromoteOut",
         "type": "object"
       },
       "RetypeOut": {
@@ -3778,6 +4084,108 @@
         ]
       }
     },
+    "/api/v2/items/{source_id}/{item_id}/demote": {
+      "post": {
+        "description": "Turns the Open item in `version` back into a note of its project (optionally in a `topic`). The note takes\nthe item's title as its summary and the item's summary as its long text, gets the item's notes and specs, and\nkeeps a link with role `origin` to the item; the item is closed as Rejected with the resolution\n'zur Notiz zur\u00fcckgestuft' and moves to the archive.\n\nRefused with 409: demote_not_open, demote_has_children (closed children count), demote_referenced (parent or\ndependency of another item), demote_document_name (a document a note cannot hold). A call that stopped halfway\ncan be repeated with the same version: the note that was created is used again.",
+        "operationId": "demote_item_api_v2_items__source_id___item_id__demote_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Demote Item",
+        "tags": [
+          "items"
+        ]
+      }
+    },
     "/api/v2/items/{source_id}/{item_id}/documents/{name}": {
       "get": {
         "description": "A notes or spec document of the item, with its version.",
@@ -4636,6 +5044,108 @@
         ]
       }
     },
+    "/api/v2/notes/{project}/{label}/promote": {
+      "post": {
+        "description": "Turns the note in `version` into a Task, Story, or Epic of the same project. The item is created like any\nother (every backlog check applies, e.g. parent_closed); title and summary default to the note's summary. The\nnote's long text becomes the first entry of the item's notes, its notes and specs move to the item, the note is\npromoted and archived, and it keeps a link with role `origin` to the item.\n\nA call that stopped halfway can be repeated with the same version: the `origin` link shows that the item exists,\nso only the missing steps run and no second item is created. promote_origin_missing (409) if that item is gone.",
+        "operationId": "promote_note_api_v2_notes__project___label__promote_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project",
+            "required": true,
+            "schema": {
+              "title": "Project",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "label",
+            "required": true,
+            "schema": {
+              "title": "Label",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromoteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Promote Note",
+        "tags": [
+          "notes"
+        ]
+      }
+    },
     "/api/v2/notices": {
       "get": {
         "description": "The notices of one note (`side=note`, `label` is the note label) or one item (`side=item`, `label` is the\nitem ID) in `project`, oldest first. With `open=true` only those nobody has decided yet.",
@@ -4753,7 +5263,7 @@
     },
     "/api/v2/notices/{notice_id}/decision": {
       "post": {
-        "description": "Decides an open notice. For a note: keep (the link stays, the review date moves), detach (the link to the\nitem goes), drop (the note is dropped); promote is not available yet. For an item: acknowledge. Answers with the\nnotice and, for a note, the note as it is now. Errors: notice_already_decided (409), decision_not_available\n(409), version_conflict (409), notice_not_found (404).",
+        "description": "Decides an open notice. For a note: keep (the link stays, the review date moves), detach (the link to the\nitem goes), drop (the note is dropped), promote (send `promotion` with the item's fields: the note is promoted\nas `POST /api/v2/notes/{project}/{label}/promote` does, then the notice is decided; without `promotion` it is\nrefused). For an item: acknowledge. Answers with the notice and, for a note, the note as it is now, and for\npromote the new item. Errors: notice_already_decided (409), decision_not_available (409), version_conflict\n(409), notice_not_found (404), and those of promote.",
         "operationId": "decide_notice_api_v2_notices__notice_id__decision_post",
         "parameters": [
           {

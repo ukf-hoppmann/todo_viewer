@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from .services import (
     BacklogOverviewService,
+    ConversionService,
     DocumentService,
     FolderBrowseService,
     ItemService,
@@ -35,6 +36,7 @@ class Container:
     notes_settings: NotesSettingsService
     note_index: NoteIndexService
     retype: RetypeService
+    conversion: ConversionService
     sources: SourceService
     source_lookup: SourceLookup
     documents: DocumentService

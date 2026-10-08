@@ -14,6 +14,7 @@ from todo_viewer.application.container import Container
 from todo_viewer.application.services import (
     BacklogOverviewService,
     BackupService,
+    ConversionService,
     DocumentService,
     FolderBrowseService,
     ItemService,
@@ -114,20 +115,24 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     note_repo = DatabaseNoteRepository(database)
     note_settings = NotesSettingsService(JsonNotesSettingsStore(config))
     notes = NoteService(note_repo, source_repo, backlogs, note_settings.current)
+    items = ItemService(backlogs, planner, rules, ItemFactory(planner), today, notes)
+    item_documents = DocumentService(backlogs, documents, planner, rules, today)
+    note_documents = NoteDocumentService(note_repo, DatabaseNoteDocumentStore(database), today)
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
-        items=ItemService(backlogs, planner, rules, ItemFactory(planner), today, notes),
+        items=items,
         trash=TrashService(backlogs, documents, TrashPlanner(rules), today, notes),
         notes=notes,
         topics=TopicService(note_repo, source_repo, note_settings.current),
         notes_settings=note_settings,
         note_index=NoteIndexService(notes, note_repo, source_repo),
-        note_documents=NoteDocumentService(note_repo, DatabaseNoteDocumentStore(database), today),
+        note_documents=note_documents,
         retype=RetypeService(backlogs, documents, RetypePlanner(), rules, note_repo, notes),
+        conversion=ConversionService(items, item_documents, notes, note_documents, backlogs, source_repo, today),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver), sync, backup),
         source_lookup=lookup,
-        documents=DocumentService(backlogs, documents, planner, rules, today),
+        documents=item_documents,
         sync=sync,
         sync_status=SyncStatusService(sync, source_repo),
         folders=FolderBrowseService(LocalFolderBrowser(browse_start_from(settings.browse_start), resolver)),

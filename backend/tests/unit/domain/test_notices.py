@@ -6,7 +6,6 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from todo_viewer.domain.errors import (
-    DecisionNotAvailableError,
     InvalidValueError,
     NoticeAlreadyDecidedError,
 )
@@ -63,10 +62,8 @@ def test_a_note_side_notice_offers_keep_detach_and_drop(decision: NoticeDecision
     check_decision(notice(), decision)
 
 
-def test_promote_is_a_known_option_that_is_not_available_yet():
-    with pytest.raises(DecisionNotAvailableError) as unavailable:
-        check_decision(notice(), NoticeDecision.PROMOTE)
-    assert unavailable.value.code == "decision_not_available"
+def test_promote_is_an_option_of_a_note_side_notice():
+    check_decision(notice(), NoticeDecision.PROMOTE)
 
 
 def test_an_item_side_notice_offers_only_acknowledge():

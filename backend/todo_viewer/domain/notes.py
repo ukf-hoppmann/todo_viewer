@@ -14,7 +14,6 @@ from enum import StrEnum
 
 from .documents import DocumentKind
 from .errors import (
-    DecisionNotAvailableError,
     DocumentForbiddenError,
     InvalidValueError,
     NoticeAlreadyDecidedError,
@@ -242,8 +241,6 @@ class NoticeDecision(StrEnum):
 
 NOTE_SIDE_DECISIONS = (NoticeDecision.KEEP, NoticeDecision.DETACH, NoticeDecision.DROP, NoticeDecision.PROMOTE)
 ITEM_SIDE_DECISIONS = (NoticeDecision.ACKNOWLEDGE,)
-# Offered, but not connected yet (STORY-042 connects it).
-UNAVAILABLE_DECISIONS = (NoticeDecision.PROMOTE,)
 
 
 @dataclass(frozen=True)
@@ -291,8 +288,6 @@ def check_decision(notice: Notice, decision: NoticeDecision) -> None:
     allowed = decision_options(notice.side)
     if decision not in allowed:
         raise InvalidValueError("decision", tuple(d.value for d in allowed))
-    if decision in UNAVAILABLE_DECISIONS:
-        raise DecisionNotAvailableError(decision.value)
 
 
 # --- triggers and the review date ---

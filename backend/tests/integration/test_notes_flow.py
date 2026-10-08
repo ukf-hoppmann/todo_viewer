@@ -131,3 +131,29 @@ def test_a_note_of_another_project_is_told_when_its_item_completes_is_retyped_an
         container.notes.decide(notice.id, NoticeDecision.KEEP)
     assert container.notes.due("other") == []
     assert len(container.notes.links_of("other", note.label)) == 2
+
+
+def test_a_promoted_note_tells_the_item_it_referenced_but_not_the_item_it_became(container: Container,
+                                                                                  source: Source):
+    referenced = new_story(container, source)
+    note = container.notes.create(PROJECT, "an idea", "Long text.").note
+    container.notes.add_link(PROJECT, note.label, LinkTarget(TargetKind.ITEM, PROJECT, referenced))
+
+    done = container.conversion.promote(PROJECT, note.label, note.version, "Task",
+                                        {"area": "a", "goal": "g", "completion_criteria": "c"})
+
+    created = done.item.item.id
+    assert (done.note.note.status, done.note.note.archived) == (NoteStatus.PROMOTED, True)
+    assert [n.cause.value for n in container.notes.notices(PROJECT, referenced, NoticeSide.ITEM)] == ["note_promoted"]
+    assert container.notes.notices(PROJECT, created, NoticeSide.ITEM) == []
+
+
+def test_closing_a_demoted_item_does_not_tell_the_note_it_became(container: Container, source: Source):
+    task = container.items.create(source, "Task", {"title": "T", "area": "a", "goal": "g",
+                                                   "completion_criteria": "c"}).item
+
+    done = container.conversion.demote(source, task.id, task.version)
+
+    label = done.note.note.label
+    assert container.notes.notices(PROJECT, label, NoticeSide.NOTE, open_only=False) == []
+    assert container.items.get(source, task.id).item.status == Status.REJECTED

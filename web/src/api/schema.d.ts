@@ -158,6 +158,33 @@ export interface paths {
         patch: operations["edit_item_api_v2_items__source_id___item_id__patch"];
         trace?: never;
     };
+    "/api/v2/items/{source_id}/{item_id}/demote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Demote Item
+         * @description Turns the Open item in `version` back into a note of its project (optionally in a `topic`). The note takes
+         *     the item's title as its summary and the item's summary as its long text, gets the item's notes and specs, and
+         *     keeps a link with role `origin` to the item; the item is closed as Rejected with the resolution
+         *     'zur Notiz zurückgestuft' and moves to the archive.
+         *
+         *     Refused with 409: demote_not_open, demote_has_children (closed children count), demote_referenced (parent or
+         *     dependency of another item), demote_document_name (a document a note cannot hold). A call that stopped halfway
+         *     can be repeated with the same version: the note that was created is used again.
+         */
+        post: operations["demote_item_api_v2_items__source_id___item_id__demote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/items/{source_id}/{item_id}/documents/{name}": {
         parameters: {
             query?: never;
@@ -324,6 +351,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/notes/{project}/{label}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Promote Note
+         * @description Turns the note in `version` into a Task, Story, or Epic of the same project. The item is created like any
+         *     other (every backlog check applies, e.g. parent_closed); title and summary default to the note's summary. The
+         *     note's long text becomes the first entry of the item's notes, its notes and specs move to the item, the note is
+         *     promoted and archived, and it keeps a link with role `origin` to the item.
+         *
+         *     A call that stopped halfway can be repeated with the same version: the `origin` link shows that the item exists,
+         *     so only the missing steps run and no second item is created. promote_origin_missing (409) if that item is gone.
+         */
+        post: operations["promote_note_api_v2_notes__project___label__promote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/notices": {
         parameters: {
             query?: never;
@@ -357,9 +410,11 @@ export interface paths {
         /**
          * Decide Notice
          * @description Decides an open notice. For a note: keep (the link stays, the review date moves), detach (the link to the
-         *     item goes), drop (the note is dropped); promote is not available yet. For an item: acknowledge. Answers with the
-         *     notice and, for a note, the note as it is now. Errors: notice_already_decided (409), decision_not_available
-         *     (409), version_conflict (409), notice_not_found (404).
+         *     item goes), drop (the note is dropped), promote (send `promotion` with the item's fields: the note is promoted
+         *     as `POST /api/v2/notes/{project}/{label}/promote` does, then the notice is decided; without `promotion` it is
+         *     refused). For an item: acknowledge. Answers with the notice and, for a note, the note as it is now, and for
+         *     promote the new item. Errors: notice_already_decided (409), decision_not_available (409), version_conflict
+         *     (409), notice_not_found (404), and those of promote.
          */
         post: operations["decide_notice_api_v2_notices__notice_id__decision_post"];
         delete?: never;
@@ -1080,6 +1135,26 @@ export interface components {
             items: components["schemas"]["ItemOut"][];
             /** Sources */
             sources: components["schemas"]["SourceStatusOut"][];
+        };
+        /** DemoteIn */
+        DemoteIn: {
+            /**
+             * Topic
+             * @description Label of a topic of the item's project for the new note
+             */
+            topic?: string | null;
+            /**
+             * Version
+             * @description The item's version as last read; a changed item answers 409
+             */
+            version: string;
+        };
+        /** DemoteOut */
+        DemoteOut: {
+            /** @description The item, now Rejected with the resolution 'zur Notiz zurückgestuft' */
+            item: components["schemas"]["ItemOut"];
+            /** @description The new note; it links to the item with role `origin` */
+            note: components["schemas"]["NoteOut"];
         };
         /** DocumentIn */
         DocumentIn: {
@@ -1807,6 +1882,8 @@ export interface components {
         /** NoticeDecisionIn */
         NoticeDecisionIn: {
             decision: components["schemas"]["NoticeDecision"];
+            /** @description With decision `promote`: the fields of the item the note becomes; the note is promoted first, then the notice is decided */
+            promotion?: components["schemas"]["PromoteFieldsIn"] | null;
             /**
              * Version
              * @description Version of the note the decision is based on; default: the stored one
@@ -1815,6 +1892,8 @@ export interface components {
         };
         /** NoticeDecisionOut */
         NoticeDecisionOut: {
+            /** @description The item the note became, for decision `promote` */
+            item?: components["schemas"]["ItemOut"] | null;
             /** @description The note after the decision; null for a notice to an item */
             note: components["schemas"]["NoteOut"] | null;
             notice: components["schemas"]["todo_viewer__api__v2__notes_schemas__NoticeOut"];
@@ -1831,6 +1910,97 @@ export interface components {
             code: string;
             /** Message */
             message: string;
+        };
+        /**
+         * PromoteFieldsIn
+         * @description What the new item needs beyond the note: type, area, goal, completion criteria, and the optional rest.
+         */
+        PromoteFieldsIn: {
+            /** Area */
+            area: string;
+            /** Completion Criteria */
+            completion_criteria: string;
+            /** Dependencies */
+            dependencies?: string[] | null;
+            /** Goal */
+            goal: string;
+            /**
+             * Item Type
+             * @enum {string}
+             */
+            item_type: "Epic" | "Story" | "Task";
+            /** Parent */
+            parent?: string | null;
+            /**
+             * Priority
+             * @description Default: Normal
+             */
+            priority?: string | null;
+            /**
+             * Required For Parent
+             * @description Yes or No; required with a parent
+             */
+            required_for_parent?: string | null;
+            /**
+             * Summary
+             * @description Default: the note's summary
+             */
+            summary?: string | null;
+            /**
+             * Title
+             * @description Default: the note's summary
+             */
+            title?: string | null;
+        };
+        /** PromoteIn */
+        PromoteIn: {
+            /** Area */
+            area: string;
+            /** Completion Criteria */
+            completion_criteria: string;
+            /** Dependencies */
+            dependencies?: string[] | null;
+            /** Goal */
+            goal: string;
+            /**
+             * Item Type
+             * @enum {string}
+             */
+            item_type: "Epic" | "Story" | "Task";
+            /** Parent */
+            parent?: string | null;
+            /**
+             * Priority
+             * @description Default: Normal
+             */
+            priority?: string | null;
+            /**
+             * Required For Parent
+             * @description Yes or No; required with a parent
+             */
+            required_for_parent?: string | null;
+            /**
+             * Summary
+             * @description Default: the note's summary
+             */
+            summary?: string | null;
+            /**
+             * Title
+             * @description Default: the note's summary
+             */
+            title?: string | null;
+            /**
+             * Version
+             * @description The note's version as last read; a changed note answers 409
+             */
+            version: string;
+        };
+        /** PromoteOut */
+        PromoteOut: {
+            /** @description The item the note became; the note links to it with role `origin` */
+            item: components["schemas"]["ItemOut"];
+            /** @description The note, now promoted and archived */
+            note: components["schemas"]["NoteOut"];
         };
         /** RetypeOut */
         RetypeOut: {
@@ -2879,6 +3049,78 @@ export interface operations {
             };
         };
     };
+    demote_item_api_v2_items__source_id___item_id__demote_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DemoteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     read_document_api_v2_items__source_id___item_id__documents__name__get: {
         parameters: {
             query?: never;
@@ -3426,6 +3668,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotesSettingsOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promote_note_api_v2_notes__project___label__promote_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoteOut"];
                 };
             };
             /** @description Bad Request */

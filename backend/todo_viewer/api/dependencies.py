@@ -8,6 +8,7 @@ from fastapi import Depends, Request
 from todo_viewer.application.container import Container
 from todo_viewer.application.services import (
     BacklogOverviewService,
+    ConversionService,
     DocumentService,
     FolderBrowseService,
     ItemService,
@@ -71,6 +72,10 @@ def _retype(c: ContainerDep) -> RetypeService:
     return c.retype
 
 
+def _conversion(c: ContainerDep) -> ConversionService:
+    return c.conversion
+
+
 def _sources(c: ContainerDep) -> SourceService:
     return c.sources
 
@@ -112,6 +117,7 @@ NotesSettings = Annotated[NotesSettingsService, Depends(_notes_settings)]
 NoteIndex = Annotated[NoteIndexService, Depends(_note_index)]
 Topics = Annotated[TopicService, Depends(_topics)]
 Retype = Annotated[RetypeService, Depends(_retype)]
+Conversion = Annotated[ConversionService, Depends(_conversion)]
 Sources = Annotated[SourceService, Depends(_sources)]
 Lookup = Annotated[SourceLookup, Depends(_source_lookup)]
 Documents = Annotated[DocumentService, Depends(_documents)]

@@ -9,6 +9,7 @@ from todo_viewer.domain.sync import SyncDirection, default_direction
 from todo_viewer.domain.trash import live
 
 from ..dependencies import (
+    Conversion,
     Documents,
     Folders,
     Items,
@@ -23,6 +24,7 @@ from ..dependencies import (
     UiState,
 )
 from ..request_log import note
+from .notes_schemas import DemoteIn, DemoteOut, NoteOut
 from .schemas import (
     BacklogCreateIn,
     BacklogOut,
@@ -170,6 +172,22 @@ def retype_item(source_id: str, item_id: str, body: ItemRetypeIn, retype: Retype
     """
     source = lookup.by_id(source_id)
     return RetypeOut.of(source, retype.retype(source, item_id, body.version, body.type))
+
+
+@router.post("/items/{source_id}/{item_id}/demote", tags=["items"])
+def demote_item(source_id: str, item_id: str, body: DemoteIn, conversion: Conversion, lookup: Lookup) -> DemoteOut:
+    """Turns the Open item in `version` back into a note of its project (optionally in a `topic`). The note takes
+    the item's title as its summary and the item's summary as its long text, gets the item's notes and specs, and
+    keeps a link with role `origin` to the item; the item is closed as Rejected with the resolution
+    'zur Notiz zurückgestuft' and moves to the archive.
+
+    Refused with 409: demote_not_open, demote_has_children (closed children count), demote_referenced (parent or
+    dependency of another item), demote_document_name (a document a note cannot hold). A call that stopped halfway
+    can be repeated with the same version: the note that was created is used again."""
+    source = lookup.by_id(source_id)
+    done = conversion.demote(source, item_id, body.version, body.topic)
+    return DemoteOut(item=ItemOut.of(source, done.item.item, done.item.archive_supported),
+                     note=NoteOut.of(done.note))
 
 
 @router.get("/items/{source_id}/{item_id}/documents/{name}", tags=["documents"])

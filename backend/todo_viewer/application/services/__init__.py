@@ -1,4 +1,5 @@
 from .backup import BackupService
+from .conversion import ConversionService, Demoted, Promoted
 from .documents import DocumentResult, DocumentService
 from .items import BacklogOverviewService, ItemResult, ItemService, SourceBacklog
 from .misc import FolderBrowseService, StorageService, UiStateService
@@ -17,6 +18,8 @@ __all__ = [
     "DecisionResult",
     "BackupService",
     "BacklogOverviewService",
+    "ConversionService",
+    "Demoted",
     "DocumentResult",
     "DocumentService",
     "DueNote",
@@ -32,6 +35,7 @@ __all__ = [
     "NotesIndex",
     "NotesSettingsService",
     "NoteView",
+    "Promoted",
     "RetypeResult",
     "RetypeService",
     "SourceBacklog",

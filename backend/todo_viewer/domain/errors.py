@@ -327,3 +327,21 @@ class DecisionNotAvailableError(ConflictError):
 
     def __init__(self, decision: str):
         super().__init__(f"The decision '{decision}' is not available yet.", decision=decision)
+
+
+class ConversionRefusedError(ConflictError):
+    """A note cannot become an item or an item cannot become a note; `code` names the reason."""
+
+    MESSAGES = {
+        "demote_not_open": "{id} is not Open and cannot go back to a note.",
+        "demote_has_children": "{id} has children and cannot go back to a note: {items}.",
+        "demote_referenced": "{id} is the parent or a dependency of other items and cannot go back to a note: "
+                             "{items}.",
+        "demote_document_name": "{id} has documents that a note cannot hold under a label of its own: {items}.",
+        "promote_origin_missing": "{id} was turned into an item that does not exist anymore: {items}.",
+    }
+
+    def __init__(self, code: str, label: str, related: tuple[str, ...] = ()):
+        items = ", ".join(related)
+        message = self.MESSAGES.get(code, "Rule {code} violated by {id}.").format(id=label, items=items, code=code)
+        super().__init__(message, code=code, id=label, items=items)

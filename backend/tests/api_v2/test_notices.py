@@ -183,3 +183,51 @@ def test_an_item_notice_is_acknowledged_and_never_makes_a_note_due(notes_api):
 
 def test_listing_the_notices_of_an_unknown_note_is_not_found(notes_api):
     assert notes_api.get(NOTICES, project="demo", label="NOTE-009", side="note").status_code == 404
+
+
+# ---------- both directions through the real item and note routes ----------
+
+def _complete(api: ApiClient, item: str) -> None:
+    source = next(s for s in api.get("/api/v2/sources").body if s["project"] == "demo")
+    current = api.get(f"/api/v2/items/{source['id']}/{item}").body
+    resp = api.patch(f"/api/v2/items/{source['id']}/{item}",
+                     {"version": current["version"], "fields": {"status": "Completed"}, "resolution": "done"})
+    assert resp.status_code == 200, resp.body
+
+
+def test_completing_the_item_tells_the_note_and_dropping_the_note_tells_the_item(notes_api):
+    story = _story(notes_api)
+    first, second = _note(notes_api), _note(notes_api, "second")
+    _link(notes_api, first, story)
+    _link(notes_api, second, story)
+
+    _complete(notes_api, story)
+
+    assert [n["cause"] for n in _open(notes_api, first)] == ["item_completed"]
+    assert [n["cause"] for n in _open(notes_api, second)] == ["item_completed"]
+    drop = notes_api.post(f"{NOTICES}/{_open(notes_api, first)[0]['id']}/decision", {"decision": "drop"})
+    assert drop.status_code == 200, drop.body
+
+    on_item = notes_api.get(NOTICES, project="demo", label=story, side="item", open="true").body
+    assert [(n["cause"], n["counterpart"]["label"]) for n in on_item] == [("note_dropped", first)]
+    linked = {n["label"]: n["status"] for n in notes_api.get(f"{BASE}/items/{story}/notes").body}
+    assert linked == {first: "dropped", second: "due"}  # the UI sees both notes and their state at the item
+    assert notes_api.get("/api/v2/notes/due/count").body["count"] == 1  # the item notice does not count
+    acknowledge = notes_api.post(f"{NOTICES}/{on_item[0]['id']}/decision", {"decision": "acknowledge"})
+    assert acknowledge.status_code == 200
+    again = notes_api.post(f"{NOTICES}/{on_item[0]['id']}/decision", {"decision": "acknowledge"})
+    assert (again.status_code, again.body["code"]) == (409, "notice_already_decided")
+
+
+def test_finishing_a_note_as_dropped_or_done_through_the_note_route(notes_api):
+    story = _story(notes_api)
+    dropped, done = _note(notes_api), _note(notes_api, "done")
+    _link(notes_api, dropped, story)
+    _link(notes_api, done, story)
+
+    for label, status in ((dropped, "dropped"), (done, "done")):
+        version = notes_api.get(f"{BASE}/notes/{label}").body["version"]
+        assert notes_api.post(f"{BASE}/notes/{label}/finish", {"version": version, "status": status}).status_code == 200
+
+    on_item = notes_api.get(NOTICES, project="demo", label=story, side="item").body
+    assert [(n["cause"], n["counterpart"]["label"]) for n in on_item] == [("note_dropped", dropped)]

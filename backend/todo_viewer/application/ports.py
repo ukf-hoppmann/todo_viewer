@@ -216,9 +216,16 @@ Clock = Callable[[], datetime]
 
 
 class ItemStatusListener(Protocol):
-    """Told by the use case that changes an item's status, so event triggers on the item can arrive."""
+    """Told by the use cases that change an item, after the change was written: so event triggers on the item can
+    arrive and notes that link the item can be told. A listener must not fail the change it is told about."""
 
     def item_status_changed(self, project: str, item_id: str, status: str) -> None: ...
+
+    def item_deleted(self, project: str, item_id: str) -> None:
+        """The item went to the trash (restoring it is not announced)."""
+
+    def item_retyped(self, project: str, old_id: str, new_id: str) -> None:
+        """The item has a new id; the links to it were moved to `new_id` already."""
 
 
 class NotesSettingsStore(Protocol):

@@ -9,7 +9,7 @@ from todo_viewer.domain.item import Item
 from todo_viewer.domain.source import Source
 from todo_viewer.domain.trash import TrashPlanner
 
-from ..ports import BacklogRepository, DocumentStore
+from ..ports import BacklogRepository, DocumentStore, ItemStatusListener
 from .items import ItemResult
 
 
@@ -17,7 +17,8 @@ class TrashService:
     """Deleting moves items to the trash; from there they are restored or purged, with their descendants."""
 
     def __init__(self, backlogs: BacklogRepository, documents: DocumentStore, planner: TrashPlanner,
-                 today: Callable[[], date] = date.today):
+                 today: Callable[[], date] = date.today, listener: ItemStatusListener | None = None):
+        self._listener = listener
         self._backlogs = backlogs
         self._documents = documents
         self._planner = planner
@@ -32,7 +33,11 @@ class TrashService:
         backlog = self._backlog(source, item_id, version)
         plan = self._planner.delete(backlog.items, item_id, cascade, self._today().isoformat(),
                                     backlog.archive_available)
-        return self._results(self._backlogs.apply_all(source, plan), backlog)
+        deleted = self._backlogs.apply_all(source, plan)
+        if self._listener is not None:
+            for item in deleted:
+                self._listener.item_deleted(source.project, item.id)
+        return self._results(deleted, backlog)
 
     def restore(self, source: Source, item_id: str, version: str) -> list[ItemResult]:
         backlog = self._backlog(source, item_id, version)

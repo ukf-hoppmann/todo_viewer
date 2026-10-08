@@ -517,6 +517,9 @@ export interface paths {
         /**
          * Finish Note
          * @description Closes the note as `done` or `dropped`; it moves to the archive and cannot be changed until restored.
+         *
+         *     Dropping a note puts a notice on every item it references (`GET /api/v2/notices?side=item`); `done` tells
+         *     nobody.
          */
         post: operations["finish_note_api_v2_projects__project__notes__label__finish_post"];
         delete?: never;

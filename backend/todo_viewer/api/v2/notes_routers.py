@@ -168,7 +168,10 @@ def remove_trigger(project: str, label: str, trigger_id: int, notes: Notes) -> N
 
 @router.post("/notes/{label}/finish", tags=["notes"])
 def finish_note(project: str, label: str, body: NoteFinishIn, notes: Notes) -> NoteOut:
-    """Closes the note as `done` or `dropped`; it moves to the archive and cannot be changed until restored."""
+    """Closes the note as `done` or `dropped`; it moves to the archive and cannot be changed until restored.
+
+    Dropping a note puts a notice on every item it references (`GET /api/v2/notices?side=item`); `done` tells
+    nobody."""
     return NoteOut.of(notes.finish(project, label, body.version, NoteStatus(body.status)))
 
 

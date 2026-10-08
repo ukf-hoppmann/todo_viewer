@@ -10,7 +10,17 @@ from todo_viewer.application.container import Container
 from todo_viewer.bootstrap import Settings, build_container
 from todo_viewer.domain.errors import NoteLifecycleError
 from todo_viewer.domain.item import Status
-from todo_viewer.domain.notes import LinkTarget, NewTrigger, NoteReason, NoteStatus, TargetKind, TriggerKind
+from todo_viewer.domain.notes import (
+    LinkRole,
+    LinkTarget,
+    NewTrigger,
+    NoteReason,
+    NoteStatus,
+    NoticeDecision,
+    NoticeSide,
+    TargetKind,
+    TriggerKind,
+)
 from todo_viewer.domain.source import Source
 
 PROJECT = "demo"
@@ -88,3 +98,36 @@ def test_archive_and_trash_with_restore_and_purge(container: Container, source: 
     container.notes.delete_note(PROJECT, gone.label)
     container.notes.purge_note(PROJECT, gone.label)
     assert container.notes.trash(PROJECT).notes == []
+
+
+def test_a_note_of_another_project_is_told_when_its_item_completes_is_retyped_and_is_deleted(container: Container,
+                                                                                            source: Source):
+    container.sources.add("other-path", "other", backend="database")
+    story = new_story(container, source)
+    task = new_story(container, source)
+    note = container.notes.create("other", "keep an eye on the story").note
+    container.notes.add_link("other", note.label, LinkTarget(TargetKind.ITEM, PROJECT, story), LinkRole.REFERENCE)
+    container.notes.add_link("other", note.label, LinkTarget(TargetKind.ITEM, PROJECT, task), LinkRole.REFERENCE)
+
+    def causes() -> list[str]:
+        return [n.cause.value for n in container.notes.notices("other", note.label, NoticeSide.NOTE, False)]
+
+    version = container.items.get(source, story).item.version
+    container.items.edit(source, story, version, {"status": Status.COMPLETED}, "done")
+    assert causes() == ["item_completed"]
+    assert [(v.note.label, v.evaluation.reason) for v in container.notes.due("other")] == [
+        (note.label, NoteReason.NOTICE)]
+
+    retyped = container.retype.retype(source, story, container.items.get(source, story).item.version, "Task")
+    assert causes() == ["item_completed", "item_retyped"]
+    assert container.notes.links_of("other", note.label)[0].target.label == retyped.item.id
+
+    container.trash.delete(source, task, container.items.get(source, task).item.version, cascade=False)
+    assert causes() == ["item_completed", "item_retyped", "item_deleted"]
+
+    # Nothing was decided, so nothing disappeared: the note stays due until somebody decides.
+    assert len(container.notes.due("other")) == 1
+    for notice in container.notes.notices("other", note.label, NoticeSide.NOTE, True):
+        container.notes.decide(notice.id, NoticeDecision.KEEP)
+    assert container.notes.due("other") == []
+    assert len(container.notes.links_of("other", note.label)) == 2

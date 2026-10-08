@@ -5,6 +5,7 @@ Only storage: which trigger has arrived and what a status means is decided in `d
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
@@ -79,10 +80,13 @@ class DatabaseNoteRepository:
         with self._db.begin() as conn:
             return _topic(conn, project, label)
 
-    def list_topics(self, project: str) -> list[Topic]:
+    def list_topics(self, project: str, include_deleted: bool = False) -> list[Topic]:
         with self._db.begin() as conn:
-            labels: list[str] = list(conn.execute(sa.select(topics.c.label).where(topics.c.project_id == project)
-                                  .order_by(topics.c.created, topics.c.label)).scalars())
+            query = sa.select(topics.c.label).where(topics.c.project_id == project).order_by(topics.c.created,
+                                                                                          topics.c.label)
+            if not include_deleted:
+                query = query.where(topics.c.deleted.is_(None))
+            labels: list[str] = list(conn.execute(query).scalars())
             return [_topic(conn, project, label) for label in labels]
 
     def update_topic(self, project: str, label: str, name: str, due_at: datetime | None) -> Topic:
@@ -117,12 +121,14 @@ class DatabaseNoteRepository:
         with self._db.begin() as conn:
             return _note(conn, project, label)
 
-    def list_notes(self, project: str, include_deleted: bool = False) -> list[Note]:
+    def list_notes(self, project: str, include_deleted: bool = False, archived: bool | None = None) -> list[Note]:
         with self._db.begin() as conn:
             query = sa.select(notes.c.label).where(notes.c.project_id == project).order_by(notes.c.created,
                                                                                          notes.c.label)
             if not include_deleted:
                 query = query.where(notes.c.deleted.is_(None))
+            if archived is not None:
+                query = query.where(notes.c.archived.is_(archived))
             found: list[str] = list(conn.execute(query).scalars())
             return [_note(conn, project, label) for label in found]
 
@@ -267,6 +273,52 @@ class DatabaseNoteRepository:
             if link_id is not None:
                 conn.execute(sa.delete(note_links).where(note_links.c.id == link_id))
 
+    def reset_triggers(self, project: str, label: str) -> list[Trigger]:
+        with self._db.begin() as conn:
+            uid = _note_uid(conn, project, label)
+            conn.execute(sa.update(note_triggers).where(note_triggers.c.note_uid == uid)
+                         .values(fired_at=None, already_met=False))
+            ids: list[int] = list(conn.execute(sa.select(note_triggers.c.id).where(note_triggers.c.note_uid == uid)
+                                               .order_by(note_triggers.c.id)).scalars())
+            return [_trigger(conn, label, i) for i in ids]
+
+    # --- trash and purge ---
+
+    def trash_topics(self, project: str, topics_: Sequence[str], notes_: Sequence[str], at: datetime) -> None:
+        with self._db.begin() as conn:
+            for label in topics_:
+                conn.execute(sa.update(topics).where(topics.c.uid == _topic_uid(conn, project, label))
+                             .values(deleted=_text(at)))
+            for label in notes_:
+                conn.execute(sa.update(notes).where(notes.c.uid == _note_uid(conn, project, label))
+                             .values(deleted=_text(at)))
+
+    def restore_topics(self, project: str, topics_: Sequence[str], notes_: Sequence[str]) -> None:
+        with self._db.begin() as conn:
+            for label in topics_:
+                conn.execute(sa.update(topics).where(topics.c.uid == _topic_uid(conn, project, label))
+                             .values(deleted=None))
+            for label in notes_:
+                conn.execute(sa.update(notes).where(notes.c.uid == _note_uid(conn, project, label))
+                             .values(deleted=None))
+
+    def purge_note(self, project: str, label: str) -> None:
+        with self._db.begin() as conn:
+            _purge_note(conn, project, label)
+
+    def purge_topics(self, project: str, topics_: Sequence[str], notes_: Sequence[str]) -> None:
+        with self._db.begin() as conn:
+            for label in notes_:
+                _purge_note(conn, project, label)
+            for label in topics_:
+                uid = _topic_uid(conn, project, label)
+                conn.execute(sa.update(notes).where(notes.c.topic_uid == uid).values(topic_uid=None))
+                conn.execute(sa.update(topics).where(topics.c.parent_uid == uid).values(parent_uid=None))
+                conn.execute(sa.delete(note_links).where(
+                    note_links.c.target_kind == TargetKind.TOPIC.value, note_links.c.target_project == project,
+                    note_links.c.target_label == label))
+                conn.execute(sa.delete(topics).where(topics.c.uid == uid))
+
 
 class DatabaseNoteDocumentStore:
     def __init__(self, db: Database):
@@ -324,6 +376,17 @@ class DatabaseNoteDocumentStore:
 
 
 # --- helpers ---
+
+def _purge_note(conn: sa.Connection, project: str, label: str) -> None:
+    uid = _note_uid(conn, project, label)
+    conn.execute(sa.delete(note_triggers).where(note_triggers.c.note_uid == uid))
+    conn.execute(sa.delete(note_links).where(note_links.c.note_uid == uid))
+    conn.execute(sa.delete(note_links).where(
+        note_links.c.target_kind == TargetKind.NOTE.value, note_links.c.target_project == project,
+        note_links.c.target_label == label))
+    conn.execute(sa.delete(note_documents).where(note_documents.c.note_uid == uid))
+    conn.execute(sa.delete(notes).where(notes.c.uid == uid))
+
 
 def _ensure_project(conn: sa.Connection, project: str) -> None:
     if conn.execute(sa.select(projects.c.id).where(projects.c.id == project)).first() is None:

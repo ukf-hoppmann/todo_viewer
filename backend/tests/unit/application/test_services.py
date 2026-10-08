@@ -476,6 +476,52 @@ def test_item_edit_checks_lifecycle_rules_before_writing():
     assert backlogs.applied == []
 
 
+class RecordingListener:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str, str]] = []
+
+    def item_status_changed(self, project: str, item_id: str, status: str) -> None:
+        self.calls.append((project, item_id, status))
+
+
+def _items_with_listener(items: list[Item]) -> tuple[ItemService, FakeBacklogs, RecordingListener]:
+    backlogs, listener = FakeBacklogs(items), RecordingListener()
+    service = ItemService(backlogs, EditPlanner(), LifecycleRules(), ItemFactory(), lambda: date(2026, 9, 28),
+                          listener)
+    return service, backlogs, listener
+
+
+def test_a_status_change_is_announced_after_it_was_written():
+    item = Item(id="T-1", title="t", project="p")
+    service, backlogs, listener = _items_with_listener([item])
+
+    service.edit(Source("p", "/p"), "T-1", item.version, {"status": "In progress"}, None)
+
+    assert listener.calls == [("p", "T-1", "In progress")]
+    assert len(backlogs.applied) == 1
+
+
+def test_an_edit_that_leaves_the_status_alone_is_not_announced():
+    item = Item(id="T-1", title="t", project="p")
+    service, _, listener = _items_with_listener([item])
+
+    service.edit(Source("p", "/p"), "T-1", item.version, {"title": "other"}, None)
+    service.edit(Source("p", "/p"), "T-1", service.get(Source("p", "/p"), "T-1").item.version,
+                 {"status": "Open"}, None)
+
+    assert listener.calls == []
+
+
+def test_nothing_is_announced_when_the_edit_is_refused():
+    item = Item(id="T-1", title="t", project="p")
+    service, _, listener = _items_with_listener([item])
+
+    with pytest.raises(VersionConflictError):
+        service.edit(Source("p", "/p"), "T-1", "outdated", {"status": "In progress"}, None)
+
+    assert listener.calls == []
+
+
 def test_item_create_assigns_id_and_checks_rules():
     story = Item(id="STORY-001", title="s", project="p", item_type="Story", status="Completed")
     service, backlogs = _items([story])

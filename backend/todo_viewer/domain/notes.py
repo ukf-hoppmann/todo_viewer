@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
 from .errors import DocumentForbiddenError, TopicLoopError, TopicNotFoundError, TopicTooDeepError
@@ -61,8 +61,19 @@ class TriggerKind(StrEnum):
     TOPIC_DUE = "topic_due"
 
 
+class NoteReason(StrEnum):
+    """Why a note is due."""
+
+    TRIGGER = "trigger"
+    REVIEW_EXPIRED = "review_expired"
+    TOPIC_DUE = "topic_due"
+
+
 # The statuses an item can reach that make an event trigger arrive.
 EVENT_STATUSES = (Status.IN_PROGRESS, Status.AWAITING_CONFIRMATION, Status.COMPLETED, Status.REJECTED)
+
+# Closed notes: they live in the archive and are never due.
+FINISHED_STATUSES = frozenset({NoteStatus.DONE, NoteStatus.DROPPED, NoteStatus.PROMOTED})
 
 _LABEL_PREFIX = {"note": "NOTE", "topic": "TOPIC"}
 
@@ -174,6 +185,57 @@ class Trigger:
     fired_at: datetime | None = None
     already_met: bool = False
     link_id: int | None = None  # event: the link with role `trigger` that belongs to it
+
+
+# --- triggers and the review date ---
+
+@dataclass(frozen=True)
+class NoteEvaluation:
+    """What the stored data says about a note at one moment. `fired` holds the ids of the triggers that arrived."""
+
+    status: NoteStatus  # the effective status: `due` is derived here, never stored
+    reason: NoteReason | None
+    fired: tuple[int, ...]
+    all_fired: bool
+
+
+def trigger_arrived(trigger: Trigger, now: datetime, topic_due: datetime | None) -> bool:
+    """Whether the trigger has arrived. Depends only on stored data and `now`; a fired trigger stays arrived."""
+    if trigger.fired_at is not None:
+        return True
+    if trigger.kind is TriggerKind.TIME:
+        return trigger.at is not None and utc(trigger.at) <= utc(now)
+    if trigger.kind is TriggerKind.TOPIC_DUE:
+        return topic_due is not None and utc(topic_due) <= utc(now)
+    return False  # an event arrives only when the use case that changes the item marks it as fired
+
+
+def event_hit(trigger: Trigger, status: str) -> bool:
+    """Whether an item that now has `status` makes this event trigger arrive."""
+    return (trigger.kind is TriggerKind.EVENT and trigger.fired_at is None and status in EVENT_STATUSES
+            and trigger.target_status == status)
+
+
+def default_review_at(now: datetime, review_days: int) -> datetime:
+    return now + timedelta(days=review_days)
+
+
+def evaluate(note: Note, triggers: Sequence[Trigger], topic_due: datetime | None, now: datetime) -> NoteEvaluation:
+    """The effective status of a note. Waiting and snoozed notes become due by a trigger (all of them in mode
+    `all`) or by an expired review date; finished notes are never due, and a due note stays due."""
+    if note.status in FINISHED_STATUSES or note.deleted is not None:
+        return NoteEvaluation(note.status, None, (), False)
+    arrived = [t for t in triggers if trigger_arrived(t, now, topic_due)]
+    all_fired = bool(triggers) and len(arrived) == len(triggers)
+    triggered = all_fired if note.trigger_mode is TriggerMode.ALL else bool(arrived)
+    fired = tuple(t.id for t in arrived)
+    if triggered:
+        only_topic = all(t.kind is TriggerKind.TOPIC_DUE for t in arrived)
+        return NoteEvaluation(NoteStatus.DUE, NoteReason.TOPIC_DUE if only_topic else NoteReason.TRIGGER,
+                              fired, all_fired)
+    if note.review_at is not None and utc(note.review_at) <= utc(now):
+        return NoteEvaluation(NoteStatus.DUE, NoteReason.REVIEW_EXPIRED, fired, all_fired)
+    return NoteEvaluation(note.status, None, fired, all_fired)
 
 
 # --- topic tree ---

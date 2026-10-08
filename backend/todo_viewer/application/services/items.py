@@ -13,7 +13,7 @@ from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.source import Source
 from todo_viewer.domain.trash import live
 
-from ..ports import BacklogRepository, SourceRepository
+from ..ports import BacklogRepository, ItemStatusListener, SourceRepository
 
 
 @dataclass(frozen=True)
@@ -46,7 +46,9 @@ class ItemService:
     """Reads and edits single items addressed by id, following the domain's archive and lifecycle rules."""
 
     def __init__(self, backlogs: BacklogRepository, planner: EditPlanner, rules: LifecycleRules,
-                 factory: ItemFactory, today: Callable[[], date] = date.today):
+                 factory: ItemFactory, today: Callable[[], date] = date.today,
+                 listener: ItemStatusListener | None = None):
+        self._listener = listener
         self._backlogs = backlogs
         self._planner = planner
         self._rules = rules
@@ -81,4 +83,7 @@ class ItemService:
         after = change_set.applied_to(item)
         in_use = live(backlog.items)
         self._rules.check_change(in_use, [after if i is item else i for i in in_use])
-        return ItemResult(self._backlogs.apply(source, item, change_set), backlog.archive_available)
+        stored = self._backlogs.apply(source, item, change_set)
+        if self._listener is not None and after.status != item.status:
+            self._listener.item_status_changed(source.project, after.id, after.status)
+        return ItemResult(stored, backlog.archive_available)

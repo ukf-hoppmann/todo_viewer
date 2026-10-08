@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 import structlog
 
 from todo_viewer.domain.errors import (
+    DecisionNotAvailableError,
     InvalidValueError,
     ItemNotFoundError,
     LinkExistsError,
@@ -309,6 +310,9 @@ class NoteService:
         """Tells a note or an item that the other end changed. An open notice of the same kind stays the only one."""
         return self._notes.add_notice(new)
 
+    def notice(self, notice_id: int) -> Notice:
+        return self._notes.get_notice(notice_id)
+
     def notices(self, project: str, label: str, side: NoticeSide, open_only: bool = True) -> list[Notice]:
         """The notices of a note (side `note`) or of an item (side `item`), oldest first."""
         if side is NoticeSide.NOTE:
@@ -319,7 +323,8 @@ class NoteService:
         """Decides an open notice. The effect is applied first; a failure leaves the notice open.
 
         Notice to a note: `keep` moves the review date, `detach` removes the reference link to the item, `drop`
-        drops the note, `promote` is not connected yet. Notice to an item: `acknowledge`. `version` is the note's
+        drops the note, `promote` only records a promotion that `ConversionService` ran (it is refused for a note that
+        is not promoted). Notice to an item: `acknowledge`. `version` is the note's
         version the decision is based on (default: the stored one).
         """
         notice = self._notes.get_notice(notice_id)
@@ -327,6 +332,8 @@ class NoteService:
         if notice.side is NoticeSide.ITEM:
             return DecisionResult(self._notes.decide_notice(notice_id, decision, self._clock()), None)
         note = self._notes.get_note(notice.project, notice.label)
+        if decision is NoticeDecision.PROMOTE and note.status is not NoteStatus.PROMOTED:
+            raise DecisionNotAvailableError(decision.value)  # the promotion workflow decides it, after the note ran it
         expected = version or note.version
         if note.version != expected:
             raise VersionConflictError(note.label)

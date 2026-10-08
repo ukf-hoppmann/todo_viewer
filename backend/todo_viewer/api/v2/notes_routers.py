@@ -6,9 +6,17 @@ from typing import Any
 from fastapi import APIRouter, Query
 
 from todo_viewer.application.services import NoteService
-from todo_viewer.domain.notes import LinkRole, LinkTarget, NoteStatus, NoticeSide, TargetKind, TriggerMode
+from todo_viewer.domain.notes import (
+    LinkRole,
+    LinkTarget,
+    NoteStatus,
+    NoticeDecision,
+    NoticeSide,
+    TargetKind,
+    TriggerMode,
+)
 
-from ..dependencies import NoteDocuments, NoteIndex, Notes, NotesSettings, Topics
+from ..dependencies import Conversion, NoteDocuments, NoteIndex, Notes, NotesSettings, Topics
 from .notes_schemas import (
     DueCountOut,
     DueNoteOut,
@@ -30,6 +38,8 @@ from .notes_schemas import (
     NoticeDecisionIn,
     NoticeDecisionOut,
     NoticeOut,
+    PromoteIn,
+    PromoteOut,
     TopicEditIn,
     TopicIn,
     TopicMoveIn,
@@ -37,7 +47,7 @@ from .notes_schemas import (
     TrashOut,
     TriggerIn,
 )
-from .schemas import ErrorOut, NotesEntryIn, VersionIn
+from .schemas import ErrorOut, ItemOut, NotesEntryIn, VersionIn
 
 ERRORS: dict[int | str, dict[str, Any]] = {
     status: {"model": ErrorOut} for status in (400, 403, 404, 409)
@@ -57,12 +67,33 @@ def list_notices(notes: Notes, project: str, label: str, side: NoticeSide = Noti
 
 
 @notices_router.post("/{notice_id}/decision", tags=["notices"])
-def decide_notice(notice_id: int, body: NoticeDecisionIn, notes: Notes) -> NoticeDecisionOut:
+def decide_notice(notice_id: int, body: NoticeDecisionIn, notes: Notes, conversion: Conversion) -> NoticeDecisionOut:
     """Decides an open notice. For a note: keep (the link stays, the review date moves), detach (the link to the
-    item goes), drop (the note is dropped); promote is not available yet. For an item: acknowledge. Answers with the
-    notice and, for a note, the note as it is now. Errors: notice_already_decided (409), decision_not_available
-    (409), version_conflict (409), notice_not_found (404)."""
+    item goes), drop (the note is dropped), promote (send `promotion` with the item's fields: the note is promoted
+    as `POST /api/v2/notes/{project}/{label}/promote` does, then the notice is decided; without `promotion` it is
+    refused). For an item: acknowledge. Answers with the notice and, for a note, the note as it is now, and for
+    promote the new item. Errors: notice_already_decided (409), decision_not_available (409), version_conflict
+    (409), notice_not_found (404), and those of promote."""
+    if body.decision is NoticeDecision.PROMOTE and body.promotion is not None:
+        promoted, result = conversion.promote_noticed(notice_id, body.version, body.promotion.item_type,
+                                                      body.promotion.given())
+        return NoticeDecisionOut.of(result, ItemOut.of(promoted.source, promoted.item.item,
+                                                       promoted.item.archive_supported))
     return NoticeDecisionOut.of(notes.decide(notice_id, body.decision, body.version))
+
+
+@global_router.post("/{project}/{label}/promote", tags=["notes"])
+def promote_note(project: str, label: str, body: PromoteIn, conversion: Conversion) -> PromoteOut:
+    """Turns the note in `version` into a Task, Story, or Epic of the same project. The item is created like any
+    other (every backlog check applies, e.g. parent_closed); title and summary default to the note's summary. The
+    note's long text becomes the first entry of the item's notes, its notes and specs move to the item, the note is
+    promoted and archived, and it keeps a link with role `origin` to the item.
+
+    A call that stopped halfway can be repeated with the same version: the `origin` link shows that the item exists,
+    so only the missing steps run and no second item is created. promote_origin_missing (409) if that item is gone."""
+    done = conversion.promote(project, label, body.version, body.item_type, body.given())
+    return PromoteOut(note=NoteOut.of(done.note),
+                      item=ItemOut.of(done.source, done.item.item, done.item.archive_supported))
 
 
 @global_router.get("/index", tags=["notes-index"])

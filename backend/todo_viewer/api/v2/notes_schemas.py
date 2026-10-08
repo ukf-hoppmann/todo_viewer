@@ -33,6 +33,8 @@ from todo_viewer.domain.notes import (
 )
 from todo_viewer.domain.notes import NotesSettings as NotesSettingsValue
 
+from .schemas import ItemOut
+
 
 class TopicOut(BaseModel):
     project: str
@@ -273,12 +275,41 @@ class NoticeOut(BaseModel):
                    options=[d.value for d in decision_options(notice.side)])
 
 
+class PromoteFieldsIn(BaseModel):
+    """What the new item needs beyond the note: type, area, goal, completion criteria, and the optional rest."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    item_type: Literal["Epic", "Story", "Task"]
+    title: str | None = Field(default=None, description="Default: the note's summary")
+    summary: str | None = Field(default=None, description="Default: the note's summary")
+    area: str
+    goal: str
+    completion_criteria: str
+    parent: str | None = None
+    required_for_parent: str | None = Field(default=None, description="Yes or No; required with a parent")
+    priority: str | None = Field(default=None, description="Default: Normal")
+    dependencies: list[str] | None = None
+
+    def given(self) -> dict[str, object]:
+        """The item fields sent, without the type and the note's version."""
+        return {name: getattr(self, name) for name in PromoteFieldsIn.model_fields
+                if name != "item_type" and name in self.model_fields_set}
+
+
+class PromoteIn(PromoteFieldsIn):
+    version: str = Field(description="The note's version as last read; a changed note answers 409")
+
+
 class NoticeDecisionIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     decision: NoticeDecision
     version: str | None = Field(default=None, description="Version of the note the decision is based on; "
                                                           "default: the stored one")
+    promotion: PromoteFieldsIn | None = Field(
+        default=None, description="With decision `promote`: the fields of the item the note becomes; the note is "
+                                  "promoted first, then the notice is decided")
 
 
 class NoteOut(BaseModel):
@@ -315,11 +346,29 @@ class NoteOut(BaseModel):
 class NoticeDecisionOut(BaseModel):
     notice: NoticeOut
     note: NoteOut | None = Field(description="The note after the decision; null for a notice to an item")
+    item: ItemOut | None = Field(default=None, description="The item the note became, for decision `promote`")
 
     @classmethod
-    def of(cls, result: DecisionResult) -> NoticeDecisionOut:
+    def of(cls, result: DecisionResult, item: ItemOut | None = None) -> NoticeDecisionOut:
         return cls(notice=NoticeOut.of(result.notice),
-                   note=None if result.note is None else NoteOut.of(result.note))
+                   note=None if result.note is None else NoteOut.of(result.note), item=item)
+
+
+class PromoteOut(BaseModel):
+    note: NoteOut = Field(description="The note, now promoted and archived")
+    item: ItemOut = Field(description="The item the note became; the note links to it with role `origin`")
+
+
+class DemoteIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: str = Field(description="The item's version as last read; a changed item answers 409")
+    topic: str | None = Field(default=None, description="Label of a topic of the item's project for the new note")
+
+
+class DemoteOut(BaseModel):
+    item: ItemOut = Field(description="The item, now Rejected with the resolution 'zur Notiz zurückgestuft'")
+    note: NoteOut = Field(description="The new note; it links to the item with role `origin`")
 
 
 class TrashOut(BaseModel):

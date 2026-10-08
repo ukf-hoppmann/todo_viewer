@@ -95,13 +95,22 @@ def test_drop_drops_the_note_and_closes_the_notice(world: World):
     assert not result.notice.is_open and result.notice.decision is NoticeDecision.DROP
 
 
-def test_promote_is_refused_until_it_is_connected_and_the_notice_stays_open(world: World):
+def test_promote_is_refused_for_a_note_that_was_not_promoted_and_the_notice_stays_open(world: World):
     label, notice = noticed_note(world)
 
     with pytest.raises(DecisionNotAvailableError):
         world.service.decide(notice.id, NoticeDecision.PROMOTE)
 
     assert world.service.show(P, label).evaluation.reason is NoteReason.NOTICE
+
+
+def test_promote_only_records_the_decision_once_the_note_was_promoted(world: World):
+    label, notice = noticed_note(world)
+    world.service.finish(P, label, world.service.show(P, label).note.version, NoteStatus.PROMOTED)
+
+    result = world.service.decide(notice.id, NoticeDecision.PROMOTE)
+
+    assert (result.notice.is_open, result.notice.decision) == (False, NoticeDecision.PROMOTE)
 
 
 def test_a_decided_notice_cannot_be_decided_again(world: World):

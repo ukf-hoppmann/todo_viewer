@@ -184,6 +184,27 @@ def target_display(project: str, label: str) -> str:
 
 
 @dataclass(frozen=True)
+class Reachability:
+    """Whether the project of a linked item can be reached right now; computed, never stored."""
+
+    reachable: bool
+    reason: str | None = None  # why not: short, no paths and no details of the failure
+
+
+PROJECT_NOT_REGISTERED = "project_not_registered"
+SOURCE_UNREADABLE = "source_unreadable"
+
+
+def reachability_of(project_registered: bool, read_ok: bool) -> Reachability:
+    """A project is reachable if it is registered and its backlog could be read."""
+    if not project_registered:
+        return Reachability(False, PROJECT_NOT_REGISTERED)
+    if not read_ok:
+        return Reachability(False, SOURCE_UNREADABLE)
+    return Reachability(True)
+
+
+@dataclass(frozen=True)
 class Link:
     """From a note to an item, a topic, or another note. Item links hold project plus item label."""
 

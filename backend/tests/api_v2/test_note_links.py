@@ -161,3 +161,24 @@ def test_an_event_trigger_in_another_project_is_shown_as_project_and_label(notes
     assert created.status_code == 201, created.body
     shown = notes_api.get(f"{BASE}/notes/NOTE-001").body
     assert [t["target_display"] for t in shown["triggers"]] == [f"other · {other_story['id']}"]
+
+
+def test_a_link_to_an_unreadable_project_is_reported_unreachable_with_one_notice_and_no_error(notes_api, workspace):
+    folder = workspace.add_backlog("backlog")
+    project = notes_api.post("/api/v2/sources", {"path": str(folder)}).body["project"]
+    _note(notes_api)
+    _link(notes_api, "NOTE-001", "item", "STORY-001", target_project=project)
+    notes_api.post(f"{BASE}/notes/NOTE-001/triggers", {"kind": "event", "target": "STORY-001",
+                                                       "target_project": project, "target_status": "Completed"})
+    assert [link["reachable"] for link in notes_api.get(f"{BASE}/notes/NOTE-001/links").body] == [True, True]
+
+    (folder / "TODO.md").unlink()
+
+    links = notes_api.get(f"{BASE}/notes/NOTE-001/links")
+    assert links.status_code == 200
+    assert [(link["reachable"], link["unreachable_reason"]) for link in links.body] == [
+        (False, "source_unreadable")] * 2
+    note = notes_api.get(f"{BASE}/notes/NOTE-001").body
+    assert [(t["reachable"], t["unreachable_reason"]) for t in note["triggers"]] == [(False, "source_unreadable")]
+    assert [n["cause"] for n in note["open_notices"]] == ["project_unreachable"]  # one, however often it is read
+    assert note["status"] == "due" and note["reason"] == "notice"

@@ -612,14 +612,16 @@ export interface paths {
         };
         /**
          * List Links
-         * @description The links that start at the note, among them the links of its event triggers (role `trigger`).
+         * @description The links that start at the note, among them the links of its event triggers (role `trigger`). Each item link
+         *     says whether its project can be reached; an unreachable one adds a notice to the note the first time.
          */
         get: operations["list_links_api_v2_projects__project__notes__label__links_get"];
         put?: never;
         /**
          * Add Link
          * @description Links an open note to an item, a topic, or another note. The target must exist (404 link_target_not_found);
-         *     an item may be in another project (`target_project`). The same link twice is 409 link_exists.
+         *     an item may be in another project (`target_project`), which must be registered (404 link_project_unknown).
+         *     The same link twice is 409 link_exists.
          */
         post: operations["add_link_api_v2_projects__project__notes__label__links_post"];
         delete?: never;
@@ -1599,6 +1601,11 @@ export interface components {
              */
             project: string;
             /**
+             * Reachable
+             * @description False if the project of the target item is not registered or its backlog cannot be read. Computed on every read, never stored
+             */
+            reachable: boolean;
+            /**
              * Role
              * @description reference, origin, or trigger (the link of an event trigger)
              */
@@ -1615,6 +1622,11 @@ export interface components {
             target_display: string;
             /** Target Project */
             target_project: string;
+            /**
+             * Unreachable Reason
+             * @description project_not_registered or source_unreadable; null if reachable
+             */
+            unreachable_reason: string | null;
         };
         /**
          * LinkedNoteOut
@@ -2358,6 +2370,11 @@ export interface components {
             /** Kind */
             kind: string;
             /**
+             * Reachable
+             * @description Event: false if the project of the watched item cannot be reached; null for other triggers and where links were not checked
+             */
+            reachable: boolean | null;
+            /**
              * Target
              * @description Event: label of the item that is watched
              */
@@ -2371,6 +2388,11 @@ export interface components {
             target_project: string | null;
             /** Target Status */
             target_status: string | null;
+            /**
+             * Unreachable Reason
+             * @description project_not_registered or source_unreadable
+             */
+            unreachable_reason: string | null;
         };
         /** ValidationError */
         ValidationError: {

@@ -221,3 +221,30 @@ def test_a_markdown_project_can_be_the_target_of_a_trigger(container: Container,
                          {"status": Status.IN_PROGRESS}, None)
 
     assert [v.evaluation.reason for v in container.notes.due(PROJECT)] == [NoteReason.TRIGGER]
+
+
+def test_a_project_that_goes_away_and_returns_leaves_one_open_notice_and_a_link_that_works_again(container: Container,
+                                                                                               source: Source,
+                                                                                               tmp_path: Path):
+    folder = tmp_path / "md"
+    folder.mkdir()
+    backlog = folder / "TODO.md"
+    shutil.copy(Path(__file__).parents[1] / "fixtures" / "backlog" / "TODO.md", backlog)
+    container.sources.add(str(folder), "md", backend="markdown")
+    note = container.notes.create(PROJECT, "wait for the markdown project").note
+    container.notes.add_link(PROJECT, note.label, LinkTarget(TargetKind.ITEM, "md", "STORY-001"))
+    saved = backlog.read_text(encoding="utf-8")
+
+    backlog.unlink()
+    gone = container.notes.link_infos(PROJECT, note.label)
+    container.notes.link_infos(PROJECT, note.label)
+
+    assert [i.reachability.reachable for i in gone] == [False]
+    assert [v.note.label for v in container.notes.due(PROJECT)] == [note.label]
+
+    backlog.write_text(saved, encoding="utf-8")
+    back = container.notes.link_infos(PROJECT, note.label)
+
+    assert [i.reachability.reachable for i in back] == [True]
+    open_notices = container.notes.notices(PROJECT, note.label, NoticeSide.NOTE, True)
+    assert [n.cause.value for n in open_notices] == ["project_unreachable"]

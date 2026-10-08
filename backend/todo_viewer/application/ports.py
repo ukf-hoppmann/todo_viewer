@@ -109,7 +109,7 @@ class NoteRepository(Protocol):
 
     def get_topic(self, project: str, label: str) -> Topic: ...
 
-    def list_topics(self, project: str) -> list[Topic]: ...
+    def list_topics(self, project: str, include_deleted: bool = False) -> list[Topic]: ...
 
     def update_topic(self, project: str, label: str, name: str, due_at: datetime | None) -> Topic: ...
 
@@ -122,7 +122,8 @@ class NoteRepository(Protocol):
     def get_note(self, project: str, label: str) -> Note:
         """Active or in the trash; raises NoteNotFoundError."""
 
-    def list_notes(self, project: str, include_deleted: bool = False) -> list[Note]: ...
+    def list_notes(self, project: str, include_deleted: bool = False, archived: bool | None = None) -> list[Note]:
+        """`archived` True or False keeps only archived or only open notes; None keeps both."""
 
     def update_note(self, project: str, label: str, expected_version: str, changes: NoteChanges) -> Note:
         """Raises VersionConflictError if the stored note no longer has `expected_version`."""
@@ -158,6 +159,21 @@ class NoteRepository(Protocol):
 
     def remove_trigger(self, project: str, label: str, trigger_id: int) -> None:
         """Removes the trigger and the link that belongs to it."""
+
+    def reset_triggers(self, project: str, label: str) -> list[Trigger]:
+        """Makes every trigger of the note unfired again (`fired_at` and `already_met` cleared)."""
+
+    def trash_topics(self, project: str, topics: Sequence[str], notes: Sequence[str], at: datetime) -> None:
+        """Puts the topics and notes in the trash in one transaction (all or nothing)."""
+
+    def restore_topics(self, project: str, topics: Sequence[str], notes: Sequence[str]) -> None:
+        """Takes the topics and notes out of the trash in one transaction."""
+
+    def purge_note(self, project: str, label: str) -> None:
+        """Removes the note for good, with its links, triggers, and documents. The label is not reused."""
+
+    def purge_topics(self, project: str, topics: Sequence[str], notes: Sequence[str]) -> None:
+        """Removes topics and notes for good (like `purge_note`); links from other notes to them go too."""
 
 
 class NoteDocumentStore(Protocol):

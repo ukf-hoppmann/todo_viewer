@@ -332,3 +332,105 @@ def test_moments_are_returned_in_utc(notes: NoteRepository):
     note = notes.create_note(P, NewNote("a", review_at=NOON))
 
     assert note.review_at == NOON and note.review_at is not None and note.review_at.tzinfo == UTC
+
+
+# ---------- archive filter and reset of triggers (STORY-040/043) ----------
+
+def test_notes_can_be_filtered_by_the_archive(notes: NoteRepository):
+    open_note = notes.create_note(P, NewNote("open"))
+    closed = notes.create_note(P, NewNote("closed"))
+    notes.update_note(P, closed.label, closed.version, NoteChanges(status=NoteStatus.DONE, archived=True))
+
+    assert [n.label for n in notes.list_notes(P)] == [open_note.label, closed.label]
+    assert [n.label for n in notes.list_notes(P, archived=False)] == [open_note.label]
+    assert [n.label for n in notes.list_notes(P, archived=True)] == [closed.label]
+
+
+def test_resetting_triggers_clears_what_has_fired(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    timed = notes.add_trigger(P, note.label, NewTrigger(TriggerKind.TIME, at=NOON, fired_at=NOON))
+    event = notes.add_trigger(P, note.label, NewTrigger(TriggerKind.EVENT, target=item("STORY-001"),
+                                                        target_status="Completed", fired_at=NOON, already_met=True))
+    other = notes.create_note(P, NewNote("b"))
+    keep = notes.add_trigger(P, other.label, NewTrigger(TriggerKind.TIME, at=NOON, fired_at=NOON))
+
+    reset = notes.reset_triggers(P, note.label)
+
+    assert [(t.id, t.fired_at, t.already_met) for t in reset] == [(timed.id, None, False), (event.id, None, False)]
+    assert reset[0].at == NOON and reset[1].target == item("STORY-001") and reset[1].link_id == event.link_id
+    assert notes.triggers_of(P, other.label) == [keep]
+
+
+# ---------- topics in the trash ----------
+
+def tree(notes: NoteRepository):
+    a = notes.create_topic(P, "a", None, None, 3)
+    b = notes.create_topic(P, "b", a.label, None, 3)
+    n_a = notes.create_note(P, NewNote("in a", topic=a.label))
+    n_b = notes.create_note(P, NewNote("in b", topic=b.label))
+    return a, b, n_a, n_b
+
+
+def test_topics_and_notes_go_to_the_trash_together(notes: NoteRepository):
+    a, b, n_a, n_b = tree(notes)
+
+    notes.trash_topics(P, [a.label, b.label], [n_b.label], NOON)
+
+    assert [t.label for t in notes.list_topics(P)] == []
+    assert [t.label for t in notes.list_topics(P, include_deleted=True)] == [a.label, b.label]
+    assert notes.get_topic(P, a.label).deleted == NOON
+    assert [n.label for n in notes.list_notes(P)] == [n_a.label]
+    assert notes.get_note(P, n_b.label).deleted == NOON
+
+
+def test_trashing_topics_is_all_or_nothing(notes: NoteRepository):
+    a, b, n_a, n_b = tree(notes)
+
+    with pytest.raises(NoteNotFoundError):
+        notes.trash_topics(P, [a.label], ["NOTE-099"], NOON)
+
+    assert notes.get_topic(P, a.label).deleted is None
+
+
+def test_restoring_topics_brings_the_notes_back(notes: NoteRepository):
+    a, b, n_a, n_b = tree(notes)
+    notes.trash_topics(P, [a.label, b.label], [n_b.label], NOON)
+
+    notes.restore_topics(P, [a.label, b.label], [n_b.label])
+
+    assert [t.label for t in notes.list_topics(P)] == [a.label, b.label]
+    assert notes.get_note(P, n_b.label).deleted is None
+
+
+def test_purging_removes_notes_links_triggers_and_documents_but_not_the_label(notes: NoteRepository,
+                                                                               documents: NoteDocumentStore):
+    a, b, n_a, n_b = tree(notes)
+    notes.add_link(P, n_a.label, LinkTarget(TargetKind.NOTE, P, n_b.label), LinkRole.REFERENCE)
+    notes.add_trigger(P, n_b.label, NewTrigger(TriggerKind.EVENT, target=item("STORY-001"), target_status="Completed"))
+    documents.write(P, n_b.label, f"{n_b.label}_notes.md", "text", None)
+    notes.trash_topics(P, [a.label, b.label], [n_b.label], NOON)
+
+    notes.purge_topics(P, [a.label, b.label], [n_b.label])
+
+    with pytest.raises(TopicNotFoundError):
+        notes.get_topic(P, b.label)
+    with pytest.raises(NoteNotFoundError):
+        notes.get_note(P, n_b.label)
+    assert notes.links_of(P, n_a.label) == []  # the link to the purged note went with it
+    assert notes.links_to(item("STORY-001")) == []
+    with pytest.raises(NoteNotFoundError):
+        documents.names(P, n_b.label)
+    assert notes.create_note(P, NewNote("new")).label == "NOTE-003"
+    assert notes.create_topic(P, "new", None, None, 3).label == "TOPIC-003"
+
+
+def test_a_single_note_can_be_purged(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    keep = notes.create_note(P, NewNote("b"))
+    notes.delete_note(P, note.label, NOON)
+
+    notes.purge_note(P, note.label)
+
+    with pytest.raises(NoteNotFoundError):
+        notes.get_note(P, note.label)
+    assert notes.get_note(P, keep.label) == keep

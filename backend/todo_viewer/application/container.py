@@ -15,6 +15,7 @@ from .services import (
     StorageService,
     SyncService,
     SyncStatusService,
+    TopicService,
     TrashService,
     UiStateService,
 )
@@ -26,6 +27,7 @@ class Container:
     items: ItemService
     trash: TrashService
     notes: NoteService
+    topics: TopicService
     retype: RetypeService
     sources: SourceService
     source_lookup: SourceLookup

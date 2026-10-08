@@ -7,6 +7,7 @@ from .retype import RetypeResult, RetypeService
 from .sources import SourceLookup, SourceService
 from .sync import SideFingerprints, SyncResult, SyncService
 from .syncstatus import SyncStatus, SyncStatusService
+from .topics import TopicService
 from .trash import TrashService
 
 __all__ = [
@@ -30,6 +31,7 @@ __all__ = [
     "SyncService",
     "SyncStatus",
     "SyncStatusService",
+    "TopicService",
     "TrashContents",
     "TrashService",
     "UiStateService",

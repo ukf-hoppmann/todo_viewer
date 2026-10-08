@@ -24,6 +24,7 @@ from todo_viewer.application.services import (
     StorageService,
     SyncService,
     SyncStatusService,
+    TopicService,
     TrashService,
     UiStateService,
 )
@@ -107,13 +108,15 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
                                    "database": DatabaseRawBackup()})
     backup = BackupService(raw_backup, sync, settings.config_dir / "backups")
     note_repo = DatabaseNoteRepository(database)
-    notes = NoteService(note_repo, source_repo, backlogs, notes_settings(config))
+    note_settings = notes_settings(config)
+    notes = NoteService(note_repo, source_repo, backlogs, note_settings)
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
         items=ItemService(backlogs, planner, rules, ItemFactory(planner), today, notes),
         trash=TrashService(backlogs, documents, TrashPlanner(rules), today),
         notes=notes,
+        topics=TopicService(note_repo, source_repo, note_settings),
         retype=RetypeService(backlogs, documents, RetypePlanner(), rules, note_repo),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver), sync, backup),
         source_lookup=lookup,

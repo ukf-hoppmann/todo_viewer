@@ -7,6 +7,7 @@ import type { Schemas, SourceStatus } from "../api/client";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { DeleteDialog } from "./DeleteDialog";
 import { DemoteItemDialog } from "./DemoteItemDialog";
+import { ItemNotes } from "./ItemNotes";
 import { ItemOrigin } from "./OriginLink";
 import { RetypeDialog } from "./RetypeDialog";
 import { useI18n } from "../i18n/i18n";
@@ -97,6 +98,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
         </div>
       )}
       {!editing && <ItemOrigin item={item} />}
+      {!editing && <ItemNotes item={item} />}
       {!editing && item.summary && <div className="detail-summary">{item.summary}</div>}
 
       {!editing && (

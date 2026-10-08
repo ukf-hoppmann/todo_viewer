@@ -411,6 +411,18 @@ const de = {
   "notice.note_dropped": "Note {other} wurde verworfen.",
   "notice.note_promoted": "Note {other} wurde befördert.",
   "notice.unknown": "Änderung an {other}.",
+  "itemNotes.title": "Notes",
+  "itemNotes.open": "Note öffnen",
+  "itemNotes.acknowledge": "Zur Kenntnis nehmen",
+  "itemNotes.noticeFrom": "Hinweis",
+  "settings.notes.title": "Notes",
+  "settings.notes.reviewDays": "Prüf-Intervall in Tagen",
+  "settings.notes.reviewDays.hint": "Nach so vielen Tagen wird eine neue oder zurückgestellte Note zur Prüfung fällig (Standard 30, 1 bis 3650).",
+  "settings.notes.maxDepth": "Maximale Topic-Tiefe",
+  "settings.notes.maxDepth.hint": "Wie tief Topics verschachtelt werden dürfen (Standard 3, 1 bis 10). Vorhandene Topics ändern sich nicht.",
+  "settings.notes.save": "Speichern",
+  "settings.notes.saved": "Gespeichert.",
+  "settings.notes.failed": "Die Notes-Einstellungen konnten nicht geladen werden: {e}",
 };
 
 export type MessageKey = keyof typeof de;
@@ -826,6 +838,18 @@ const en: Record<MessageKey, string> = {
   "notice.note_dropped": "Note {other} was dropped.",
   "notice.note_promoted": "Note {other} was promoted.",
   "notice.unknown": "Change at {other}.",
+  "itemNotes.title": "Notes",
+  "itemNotes.open": "Open note",
+  "itemNotes.acknowledge": "Acknowledge",
+  "itemNotes.noticeFrom": "Notice",
+  "settings.notes.title": "Notes",
+  "settings.notes.reviewDays": "Review interval in days",
+  "settings.notes.reviewDays.hint": "After this many days a new or snoozed note is due for review (default 30, 1 to 3650).",
+  "settings.notes.maxDepth": "Maximum topic depth",
+  "settings.notes.maxDepth.hint": "How deep topics may be nested (default 3, 1 to 10). Existing topics stay as they are.",
+  "settings.notes.save": "Save",
+  "settings.notes.saved": "Saved.",
+  "settings.notes.failed": "The notes settings could not be loaded: {e}",
 };
 
 export const MESSAGES = { de, en };

@@ -586,3 +586,32 @@ export function useDueNoteAction() {
       : unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/finish", { params: { path }, body: { version, status: action } }));
   });
 }
+
+// ----- notes at an item, notes settings -----
+
+/** The open notices of an item (a note that points at it was dropped or promoted), oldest first. */
+export function useItemNotices(project: string, label: string) {
+  return useQuery({
+    queryKey: ["notes", "item-notices", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notices", { params: { query: { project, label, side: "item", open: true } } })),
+  });
+}
+
+/** Takes note of an item's notice: it is decided and gone from the item. */
+export function useAcknowledgeNotice() {
+  return useNotesMutation(({ id }: { id: number }) =>
+    unwrap(api.POST("/api/v2/notices/{notice_id}/decision", { params: { path: { notice_id: id } }, body: { decision: "acknowledge" } })),
+  );
+}
+
+/** The two options of notes: review interval in days and the deepest allowed level of topics. */
+export function useNotesSettings() {
+  return useQuery({
+    queryKey: ["notes", "settings"] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notes/settings")),
+  });
+}
+
+export function useSaveNotesSettings() {
+  return useNotesMutation((body: Schemas["NotesSettingsIn"]) => unwrap(api.PUT("/api/v2/notes/settings", { body })));
+}

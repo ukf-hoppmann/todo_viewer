@@ -102,6 +102,7 @@ describe("demoting from the detail panel", () => {
     stubRoutes([
       { method: "GET", path: "/api/v2/trash", respond: () => [] },
       { method: "GET", path: "/api/v2/projects/P/items/TASK-4/notes", respond: () => [] },
+      { method: "GET", path: "/api/v2/notices", respond: () => [] },
     ]);
     renderWithProviders(<DetailPanel item={items[0]!} items={items} byUid={new Map(items.map((i) => [i.uid, i]))} sourcePath="/p" sources={SOURCES} onSelect={vi.fn()} onRetyped={vi.fn()} onClose={vi.fn()} />);
   };

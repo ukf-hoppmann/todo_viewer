@@ -1,7 +1,7 @@
 """Ports: what the application needs from the outside world. Adapters implement them."""
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -192,6 +192,16 @@ class NoteDocumentStore(Protocol):
     def delete_document(self, project: str, label: str, name: str) -> None: ...
 
 
+Clock = Callable[[], datetime]
+"""The current moment as a timezone-aware datetime; tests replace it."""
+
+
+class ItemStatusListener(Protocol):
+    """Told by the use case that changes an item's status, so event triggers on the item can arrive."""
+
+    def item_status_changed(self, project: str, item_id: str, status: str) -> None: ...
+
+
 @dataclass(frozen=True)
 class StorageDescription:
     """What the central database is: its type (e.g. "sqlite"), where it is (no secrets), its schema version."""
@@ -246,10 +256,12 @@ class UiStateStore(Protocol):
 
 __all__ = [
     "BacklogRepository",
+    "Clock",
     "DocumentStore",
     "FolderBrowser",
     "FolderEntry",
     "FolderListing",
+    "ItemStatusListener",
     "NoteDocumentStore",
     "NoteRepository",
     "ProjectNameSuggester",

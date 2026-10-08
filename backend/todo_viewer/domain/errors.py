@@ -253,3 +253,23 @@ class TopicLoopError(DomainError):
 
     def __init__(self, label: str):
         super().__init__(f"Topic '{label}' cannot become a child of itself or of one of its children.", id=label)
+
+
+class NoteLifecycleError(ConflictError):
+    """A change would break the lifecycle of a note or the trash rules of topics; `code` names the rule."""
+
+    MESSAGES = {
+        "note_target_invalid": "{id} can only be closed as done, dropped, or promoted.",
+        "note_closed": "{id} is closed (archived); restore it first.",
+        "note_deleted": "{id} is in the trash; restore it first.",
+        "note_not_deleted": "{id} is not in the trash.",
+        "note_not_restorable": "{id} is neither archived nor in the trash.",
+        "topic_has_content": "{id} still holds {items}. Confirm with cascade.",
+        "topic_deleted": "{id} is in the trash or lies below a topic in the trash: restore {items} first.",
+        "topic_not_deleted": "{id} is not in the trash.",
+    }
+
+    def __init__(self, code: str, label: str, related: tuple[str, ...] = ()):
+        items = ", ".join(related)
+        message = self.MESSAGES.get(code, "Rule {code} violated by {id}.").format(id=label, items=items, code=code)
+        super().__init__(message, code=code, id=label, items=items)

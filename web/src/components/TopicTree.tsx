@@ -64,6 +64,9 @@ export function TopicTree({ topics, allTopics, projects, defaultProject, selecte
             <button className="btn small" onClick={() => setDialog({ kind: "rename", topic: chosen })}>
               {t("topic.rename")}
             </button>
+            <button className="btn small" onClick={() => setDialog({ kind: "due", topic: chosen })}>
+              {t("topic.due")}
+            </button>
             <button className="btn small" onClick={() => setDialog({ kind: "move", topic: chosen })}>
               {t("topic.move")}
             </button>

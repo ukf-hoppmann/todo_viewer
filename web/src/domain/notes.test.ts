@@ -1,4 +1,4 @@
-import { buildTopicTree, formatDate, notesOfTopic, sortNotes, topicPath, type IndexNote, type IndexTopic } from "./notes";
+import { alreadyMet, buildTopicTree, describeTrigger, formatDate, snoozePresets, toIsoWithZone, notesOfTopic, sortNotes, topicPath, type IndexNote, type IndexTopic } from "./notes";
 
 function topic(label: string, over: Partial<IndexTopic> = {}): IndexTopic {
   return { project: "P", label, name: `Name ${label}`, parent: null, path: [], due_at: null, due: false, note_count: 0, ...over };
@@ -102,5 +102,76 @@ describe("formatDate", () => {
   it("is empty without a moment and shows the year otherwise", () => {
     expect(formatDate(null, "de")).toBe("");
     expect(formatDate("2027-06-15T12:00:00Z", "en")).toContain("2027");
+  });
+});
+
+describe("snoozePresets", () => {
+  const at = (date: Date) => [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()];
+
+  it("offers tomorrow, in a week and in 30 days, each at 08:00 local time", () => {
+    const presets = snoozePresets(new Date(2027, 5, 10, 15, 30));
+
+    expect(presets.map((p) => p.key)).toEqual(["tomorrow", "week", "month"]);
+    expect(presets.map((p) => at(p.at))).toEqual([
+      [2027, 6, 11, 8, 0],
+      [2027, 6, 17, 8, 0],
+      [2027, 7, 10, 8, 0],
+    ]);
+  });
+
+  it("rolls over the end of a month and a year", () => {
+    expect(snoozePresets(new Date(2027, 11, 31, 23, 0)).map((p) => at(p.at))).toEqual([
+      [2028, 1, 1, 8, 0],
+      [2028, 1, 7, 8, 0],
+      [2028, 1, 30, 8, 0],
+    ]);
+    expect(snoozePresets(new Date(2028, 1, 28, 9, 0))[0]?.at.getDate()).toBe(29); // leap year
+  });
+
+  it("keeps 08:00 local time over a change of daylight saving time", () => {
+    // Whatever zone the tests run in: the clock time stays 08:00 on every day.
+    for (const start of [new Date(2027, 2, 26, 12, 0), new Date(2027, 9, 29, 12, 0)]) {
+      for (const preset of snoozePresets(start)) expect(preset.at.getHours()).toBe(8);
+    }
+  });
+});
+
+describe("toIsoWithZone", () => {
+  it("reads a local date and time and returns the moment as UTC", () => {
+    expect(toIsoWithZone("2027-06-10T08:00")).toBe(new Date(2027, 5, 10, 8, 0).toISOString());
+  });
+
+  it("is null for an empty or broken value", () => {
+    expect(toIsoWithZone("")).toBeNull();
+    expect(toIsoWithZone("not a date")).toBeNull();
+  });
+});
+
+describe("alreadyMet", () => {
+  it("is true when the item has the target status already", () => {
+    expect(alreadyMet({ status: "Completed" }, "Completed")).toBe(true);
+    expect(alreadyMet({ status: "Open" }, "Completed")).toBe(false);
+    expect(alreadyMet(undefined, "Completed")).toBe(false);
+  });
+});
+
+describe("describeTrigger", () => {
+  const base = { id: 1, kind: "time", at: null, fired_at: null, already_met: false, target: null, target_project: null, target_display: null, target_status: null, reachable: null, unreachable_reason: null };
+
+  it("names a time trigger with its moment and whether it fired", () => {
+    const open = describeTrigger({ ...base, at: "2027-06-15T12:00:00Z" }, "en");
+    expect(open.key).toBe("trigger.time");
+    expect(open.params.at).toContain("2027");
+    expect(open.fired).toBe(false);
+    expect(describeTrigger({ ...base, at: "2027-06-15T12:00:00Z", fired_at: "2027-06-15T12:00:00Z" }, "en").fired).toBe(true);
+  });
+
+  it("names an event trigger with its target and status, and marks an already met one", () => {
+    const text = describeTrigger({ ...base, kind: "event", target: "STORY-001", target_display: "P · STORY-001", target_status: "Completed", already_met: true }, "de");
+    expect(text).toEqual({ key: "trigger.event", params: { target: "P · STORY-001", status: "Completed" }, fired: false, alreadyMet: true });
+  });
+
+  it("names a topic due trigger", () => {
+    expect(describeTrigger({ ...base, kind: "topic_due" }, "de").key).toBe("trigger.topicDue");
   });
 });

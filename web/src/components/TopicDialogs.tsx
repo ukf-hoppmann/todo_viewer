@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { ApiError } from "../api/client";
 import { useCreateTopic, useDeleteTopic, useMoveTopic, useUpdateTopic } from "../api/queries";
-import { type IndexTopic, topicSubtree } from "../domain/notes";
+import { type IndexTopic, toIsoWithZone, toLocalInput, topicSubtree } from "../domain/notes";
 import { describeError, useI18n } from "../i18n/i18n";
 import { Modal } from "./Modal";
 
 export type TopicDialogMode =
   | { kind: "create"; project: string; parent: IndexTopic | null }
   | { kind: "rename"; topic: IndexTopic }
-  | { kind: "move"; topic: IndexTopic };
+  | { kind: "move"; topic: IndexTopic }
+  | { kind: "due"; topic: IndexTopic };
 
 interface TopicDialogProps {
   mode: TopicDialogMode;
@@ -28,18 +29,20 @@ export function TopicDialog({ mode, topics, projects, onClose }: TopicDialogProp
   const move = useMoveTopic();
   const [project, setProject] = useState(mode.kind === "create" ? mode.project : mode.topic.project);
   const [name, setName] = useState(mode.kind === "rename" ? mode.topic.name : "");
+  const [due, setDue] = useState(mode.kind === "due" ? toLocalInput(mode.topic.due_at) : "");
   const [parent, setParent] = useState<string>(
     mode.kind === "create" ? (mode.parent?.label ?? "") : mode.kind === "move" ? (mode.topic.parent ?? "") : "",
   );
 
   const excluded = mode.kind === "move" ? topicSubtree(topics, project, mode.topic.label) : new Set<string>();
   const candidates = topics.filter((x) => x.project === project && !excluded.has(x.label));
-  const mutation = mode.kind === "create" ? create : mode.kind === "rename" ? update : move;
+  const mutation = mode.kind === "create" ? create : mode.kind === "rename" || mode.kind === "due" ? update : move;
 
   const submit = () => {
     const done = { onSuccess: onClose };
     if (mode.kind === "create") create.mutate({ project, name: name.trim(), parent: parent || null }, done);
     else if (mode.kind === "rename") update.mutate({ project, label: mode.topic.label, name: name.trim() }, done);
+    else if (mode.kind === "due") update.mutate({ project, label: mode.topic.label, due_at: toIsoWithZone(due) }, done);
     else move.mutate({ project, label: mode.topic.label, parent: parent || null }, done);
   };
 
@@ -50,9 +53,11 @@ export function TopicDialog({ mode, topics, projects, onClose }: TopicDialogProp
         : t("topic.dialog.createTitle")
       : mode.kind === "rename"
         ? t("topic.dialog.renameTitle")
-        : t("topic.dialog.moveTitle", { name: mode.topic.name });
-  const needsName = mode.kind !== "move";
-  const needsParent = mode.kind !== "rename";
+        : mode.kind === "due"
+          ? t("topic.dialog.dueTitle", { name: mode.topic.name })
+          : t("topic.dialog.moveTitle", { name: mode.topic.name });
+  const needsName = mode.kind === "create" || mode.kind === "rename";
+  const needsParent = mode.kind === "create" || mode.kind === "move";
 
   return (
     <Modal labelledBy="topic-title" onDismiss={onClose}>
@@ -86,6 +91,12 @@ export function TopicDialog({ mode, topics, projects, onClose }: TopicDialogProp
           <label className="field">
             {t("topic.dialog.name")}
             <input autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+        )}
+        {mode.kind === "due" && (
+          <label className="field">
+            {t("topic.dialog.due")}
+            <input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
           </label>
         )}
         {needsParent && (

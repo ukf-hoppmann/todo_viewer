@@ -6,6 +6,7 @@ import { type Item, uidOf } from "../domain/model";
 import { describeError, useI18n } from "../i18n/i18n";
 import type { MessageKey } from "../i18n/messages";
 import type { NoteRef } from "../state/uiState";
+import { ItemPicker } from "./ItemPicker";
 
 interface NoteLinksProps {
   project: string;
@@ -20,7 +21,6 @@ interface NoteLinksProps {
 }
 
 type Kind = Schemas["LinkIn"]["kind"];
-const MAX_ITEM_CHOICES = 50;
 
 /** The links of a note: shown with project and label, set to an item (also of another project), a topic or a note. */
 export function NoteLinks({ project, label, readOnly, projects, topics, notes, items, onOpenNote }: NoteLinksProps) {
@@ -35,16 +35,11 @@ export function NoteLinks({ project, label, readOnly, projects, topics, notes, i
   const [search, setSearch] = useState("");
   const [target, setTarget] = useState("");
 
-  const itemChoices = items
-    .filter((i) => i.project === targetProject && `${i.id} ${i.title}`.toLowerCase().includes(search.trim().toLowerCase()))
-    .slice(0, MAX_ITEM_CHOICES);
   const otherNotes = notes.filter((n) => !(n.project === project && n.label === label));
   const choices: { value: string; text: string }[] =
-    kind === "item"
-      ? itemChoices.map((i) => ({ value: i.id, text: `${i.id} — ${i.title}` }))
-      : kind === "topic"
-        ? topics.filter((x) => x.project === project).map((x) => ({ value: x.label, text: x.path.join(" › ") }))
-        : otherNotes.map((n) => ({ value: `${n.project}/${n.label}`, text: `${n.project} · ${n.label} — ${n.summary}` }));
+    kind === "topic"
+      ? topics.filter((x) => x.project === project).map((x) => ({ value: x.label, text: x.path.join(" › ") }))
+      : otherNotes.map((n) => ({ value: `${n.project}/${n.label}`, text: `${n.project} · ${n.label} — ${n.summary}` }));
 
   const submit = () => {
     const [noteProject, noteLabel] = target.split("/");
@@ -126,35 +121,30 @@ export function NoteLinks({ project, label, readOnly, projects, topics, notes, i
               ))}
             </select>
           </label>
-          {kind === "item" && (
-            <>
-              <label className="field">
-                {t("note.links.project")}
-                <select value={targetProject} onChange={(e) => setTargetProject(e.target.value)}>
-                  {projects.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                {t("note.links.search")}
-                <input value={search} onChange={(e) => setSearch(e.target.value)} />
-              </label>
-            </>
+          {kind === "item" ? (
+            <ItemPicker
+              projects={projects}
+              items={items}
+              project={targetProject}
+              onProject={setTargetProject}
+              value={target}
+              onChange={setTarget}
+              search={search}
+              onSearch={setSearch}
+            />
+          ) : (
+            <label className="field">
+              {t("note.links.target")}
+              <select value={target} onChange={(e) => setTarget(e.target.value)}>
+                <option value="" />
+                {choices.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.text}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
-          <label className="field">
-            {t("note.links.target")}
-            <select value={target} onChange={(e) => setTarget(e.target.value)}>
-              <option value="" />
-              {choices.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.text}
-                </option>
-              ))}
-            </select>
-          </label>
           {add.error && (
             <div className="field-error" role="alert">
               {t("err.save", { e: describeError(i18n, add.error) })}

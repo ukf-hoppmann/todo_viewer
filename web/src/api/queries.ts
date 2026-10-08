@@ -460,3 +460,24 @@ export function useAppendNoteEntry() {
     unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/notes", { params: { path: { project, label } }, body })),
   );
 }
+
+// ----- triggers and snoozing -----
+
+export function useAddTrigger() {
+  return useNotesMutation(({ project, label, ...body }: NoteAddress & Schemas["TriggerIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/triggers", { params: { path: { project, label } }, body })),
+  );
+}
+
+export function useRemoveTrigger() {
+  return useNotesMutation(({ project, label, triggerId }: NoteAddress & { triggerId: number }) =>
+    unwrap(api.DELETE("/api/v2/projects/{project}/notes/{label}/triggers/{trigger_id}", { params: { path: { project, label, trigger_id: triggerId } } })),
+  );
+}
+
+/** Back to waiting: fired triggers are reset; a new `trigger` replaces all old ones. */
+export function useSnoozeNote() {
+  return useNotesMutation(({ project, label, ...body }: NoteAddress & Schemas["NoteSnoozeIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/snooze", { params: { path: { project, label } }, body })),
+  );
+}

@@ -91,3 +91,63 @@ export function sortNotes(notes: readonly IndexNote[]): IndexNote[] {
 export function formatDate(iso: string | null, lang: string): string {
   return iso === null ? "" : new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB");
 }
+
+export interface SnoozePreset {
+  key: "tomorrow" | "week" | "month";
+  at: Date;
+}
+
+/** The quick choices for snoozing: tomorrow, in a week, in 30 days, each at 08:00 local time. */
+export function snoozePresets(now: Date): SnoozePreset[] {
+  const at = (days: number) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + days, 8, 0, 0, 0);
+  return [
+    { key: "tomorrow", at: at(1) },
+    { key: "week", at: at(7) },
+    { key: "month", at: at(30) },
+  ];
+}
+
+/** A date and time as typed in a `datetime-local` field (local time) as the UTC moment the API takes; null if invalid. */
+export function toIsoWithZone(local: string): string | null {
+  if (local.trim() === "") return null;
+  const moment = new Date(local);
+  return Number.isNaN(moment.getTime()) ? null : moment.toISOString();
+}
+
+/** The value for a `datetime-local` field showing a moment in local time. */
+export function toLocalInput(iso: string | null): string {
+  if (iso === null) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** True if the item has the status already, so an event trigger on it would fire at once. The server decides. */
+export function alreadyMet(item: { status: string } | undefined, targetStatus: string): boolean {
+  return item !== undefined && item.status === targetStatus;
+}
+
+export type TriggerInfo = Schemas["TriggerOut"];
+
+export interface TriggerText {
+  key: "trigger.time" | "trigger.event" | "trigger.topicDue";
+  params: Record<string, string>;
+  fired: boolean;
+  alreadyMet: boolean;
+}
+
+/** What to show for a trigger: a message key with its parameters, and whether it has fired. */
+export function describeTrigger(trigger: TriggerInfo, lang: string): TriggerText {
+  const fired = trigger.fired_at !== null;
+  if (trigger.kind === "event") {
+    return {
+      key: "trigger.event",
+      params: { target: trigger.target_display ?? trigger.target ?? "", status: trigger.target_status ?? "" },
+      fired,
+      alreadyMet: trigger.already_met,
+    };
+  }
+  if (trigger.kind === "topic_due") return { key: "trigger.topicDue", params: {}, fired, alreadyMet: false };
+  const at = trigger.at === null ? "" : new Date(trigger.at).toLocaleString(lang === "de" ? "de-DE" : "en-GB");
+  return { key: "trigger.time", params: { at }, fired, alreadyMet: false };
+}

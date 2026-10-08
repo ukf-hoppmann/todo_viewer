@@ -10,6 +10,8 @@ import { Markdown } from "./DocumentDialog";
 import { Modal } from "./Modal";
 import { NoteDocuments } from "./NoteDocuments";
 import { NoteLinks } from "./NoteLinks";
+import { SnoozeDialog } from "./SnoozeDialog";
+import { TriggerEditor } from "./TriggerEditor";
 
 interface NoteDetailProps {
   note: NoteRef;
@@ -31,6 +33,7 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
   const keep = useKeepNote();
   const [draft, setDraft] = useState<{ summary: string; body: string; topic: string; version: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [snoozing, setSnoozing] = useState(false);
   const data = query.data;
 
   if (query.error && !data) {
@@ -159,6 +162,9 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
               <button className="btn small" disabled={finish.isPending} onClick={() => finish.mutate({ project: data.project, label: data.label, version: data.version, status: "dropped" })}>
                 {t("note.action.dropped")}
               </button>
+              <button className="btn small" onClick={() => setSnoozing(true)}>
+                {t("snooze.button")}
+              </button>
               <button className="btn small" disabled={keep.isPending} onClick={() => keep.mutate({ project: data.project, label: data.label, version: data.version })}>
                 {t("note.action.keep")}
               </button>
@@ -175,6 +181,15 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
         </>
       )}
 
+      <TriggerEditor
+        project={data.project}
+        label={data.label}
+        triggers={data.triggers}
+        topic={topicsOfProject.find((x) => x.label === data.topic)}
+        projects={projects}
+        items={items}
+        readOnly={readOnly}
+      />
       <NoteLinks
         project={data.project}
         label={data.label}
@@ -187,6 +202,16 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
       />
       <NoteDocuments project={data.project} label={data.label} summary={data.summary} readOnly={readOnly} />
 
+      {snoozing && (
+        <SnoozeDialog
+          project={data.project}
+          label={data.label}
+          version={data.version}
+          projects={projects}
+          items={items}
+          onClose={() => setSnoozing(false)}
+        />
+      )}
       {deleting && <NoteDeleteDialog project={data.project} label={data.label} onClose={() => setDeleting(false)} onDeleted={onClose} />}
     </aside>
   );

@@ -4,6 +4,7 @@ Points in time are ISO timestamps with a time zone; they are returned in UTC.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Literal
 
@@ -14,22 +15,24 @@ from todo_viewer.application.services import (
     DueNote,
     IndexedTopic,
     LinkedNote,
+    LinkInfo,
     NoteDocument,
     NotesIndex,
     NoteView,
     TrashContents,
 )
 from todo_viewer.domain.notes import (
-    Link,
     LinkTarget,
     NewTrigger,
     Notice,
     NoticeDecision,
+    Reachability,
     TargetKind,
     Topic,
     Trigger,
     TriggerKind,
     decision_options,
+    target_display,
 )
 from todo_viewer.domain.notes import NotesSettings as NotesSettingsValue
 
@@ -197,12 +200,19 @@ class LinkOut(BaseModel):
     kind: str
     target_project: str
     target: str = Field(description="Label of the item, topic, or note it points at")
+    target_display: str = Field(description="The target as 'project · label'")
     role: str = Field(description="reference, origin, or trigger (the link of an event trigger)")
+    reachable: bool = Field(description="False if the project of the target item is not registered or its backlog "
+                                        "cannot be read. Computed on every read, never stored")
+    unreachable_reason: str | None = Field(description="project_not_registered or source_unreadable; null if reachable")
 
     @classmethod
-    def of(cls, link: Link) -> LinkOut:
+    def of(cls, info: LinkInfo) -> LinkOut:
+        link = info.link
         return cls(id=link.id, note=link.note, project=link.project, kind=link.target.kind.value,
-                   target_project=link.target.project, target=link.target.label, role=link.role.value)
+                   target_project=link.target.project, target=link.target.label,
+                   target_display=target_display(link.target.project, link.target.label), role=link.role.value,
+                   reachable=info.reachability.reachable, unreachable_reason=info.reachability.reason)
 
 
 class LinkedNoteOut(BaseModel):
@@ -228,16 +238,24 @@ class TriggerOut(BaseModel):
     at: datetime | None
     target_project: str | None
     target: str | None = Field(description="Event: label of the item that is watched")
+    target_display: str | None = Field(description="Event: the item as 'project · label'")
+    reachable: bool | None = Field(description="Event: false if the project of the watched item cannot be reached; "
+                                               "null for other triggers and where links were not checked")
+    unreachable_reason: str | None = Field(description="project_not_registered or source_unreadable")
     target_status: str | None
     fired_at: datetime | None
     already_met: bool
 
     @classmethod
-    def of(cls, trigger: Trigger) -> TriggerOut:
+    def of(cls, trigger: Trigger, reachability: Mapping[LinkTarget, Reachability] | None = None) -> TriggerOut:
         target = trigger.target
+        reach = None if target is None or reachability is None else reachability.get(target)
         return cls(id=trigger.id, kind=trigger.kind.value, at=trigger.at,
                    target_project=None if target is None else target.project,
-                   target=None if target is None else target.label, target_status=trigger.target_status,
+                   target=None if target is None else target.label,
+                   target_display=None if target is None else target_display(target.project, target.label),
+                   reachable=None if reach is None else reach.reachable,
+                   unreachable_reason=None if reach is None else reach.reason, target_status=trigger.target_status,
                    fired_at=trigger.fired_at, already_met=trigger.already_met)
 
 
@@ -338,7 +356,7 @@ class NoteOut(BaseModel):
                    body=note.body, status=view.evaluation.status.value, stored_status=note.status.value,
                    reason=None if view.evaluation.reason is None else view.evaluation.reason.value,
                    topic=note.topic, review_at=note.review_at, trigger_mode=note.trigger_mode.value,
-                   triggers=[TriggerOut.of(t) for t in view.triggers],
+                   triggers=[TriggerOut.of(t, view.reachability) for t in view.triggers],
                    open_notices=[NoticeOut.of(n) for n in view.open_notices], archived=note.archived,
                    deleted=note.deleted, created=note.created, updated=note.updated)
 
@@ -468,4 +486,4 @@ class DueNoteOut(IndexNoteOut):
     def of_due(cls, due: DueNote) -> DueNoteOut:
         base = IndexNoteOut.of(due.view)
         return cls(**base.model_dump(), topic_path=list(due.topic_path),
-                   triggers=[TriggerOut.of(t) for t in due.fired], actions=list(due.actions))  # type: ignore[arg-type]
+                   triggers=[TriggerOut.of(t, due.view.reachability) for t in due.fired], actions=list(due.actions))  # type: ignore[arg-type]

@@ -106,7 +106,7 @@ class NoteIndexService:
 
     def due_count(self) -> dict[str, int]:
         """The number of due notes per project, for the red exclamation mark."""
-        return {name: len(self._notes.due(name)) for name in self._projects(None)}
+        return {name: len(self._notes.due(name, check_links=False)) for name in self._projects(None)}
 
     # --- helpers ---
 

@@ -20,8 +20,10 @@ from todo_viewer.domain.notes import (
     check_note_document_name,
     check_topic_move,
     format_label,
+    reachability_of,
     subtree_height,
     subtree_labels,
+    target_display,
     topic_depth,
     topic_path,
     utc,
@@ -136,3 +138,19 @@ def test_changed_settings_refuse_values_out_of_range(depth, days, field):
         changed_settings(NotesSettings(), depth, days)
 
     assert caught.value.details["field"] == field
+
+
+def test_a_link_target_is_shown_as_project_and_label():
+    assert target_display("demo", "STORY-001") == "demo · STORY-001"
+
+
+@pytest.mark.parametrize(("registered", "read_ok", "reachable", "reason"), [
+    (True, True, True, None),
+    (False, True, False, "project_not_registered"),
+    (False, False, False, "project_not_registered"),
+    (True, False, False, "source_unreadable"),
+])
+def test_a_target_is_reachable_when_its_project_is_registered_and_readable(registered, read_ok, reachable, reason):
+    result = reachability_of(registered, read_ok)
+
+    assert (result.reachable, result.reason) == (reachable, reason)

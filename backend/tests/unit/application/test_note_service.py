@@ -14,6 +14,8 @@ from tests.fakes import InMemoryBacklogRepository
 from todo_viewer.application.services.notes import NoteService
 from todo_viewer.domain.errors import (
     InvalidValueError,
+    LinkProjectUnknownError,
+    LinkTargetNotFoundError,
     NoteLifecycleError,
     SourceGoneError,
     TopicNotFoundError,
@@ -238,8 +240,17 @@ def test_an_event_trigger_needs_a_target(world: World):
 def test_an_unknown_project_for_the_target_is_refused(world: World):
     note = world.service.create(P, "idea").note
 
-    with pytest.raises(SourceGoneError):
+    with pytest.raises(LinkProjectUnknownError):
         world.service.add_trigger(P, note.label, event(project="nowhere"))
+
+
+def test_a_link_to_an_unknown_project_is_refused_but_a_missing_item_in_a_known_one_is_not_that_error(world: World):
+    note = world.service.create(P, "idea").note
+
+    with pytest.raises(LinkProjectUnknownError):
+        world.service.add_link(P, note.label, story(project="nowhere"))
+    with pytest.raises(LinkTargetNotFoundError):
+        world.service.add_link(P, note.label, story("STORY-099", project=Q))
 
 
 def test_a_status_change_fires_the_matching_triggers_only(world: World):

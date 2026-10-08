@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 import structlog
 
 from todo_viewer.domain.errors import (
     DecisionNotAvailableError,
+    DuplicateItemError,
     InvalidValueError,
     ItemNotFoundError,
     LinkExistsError,
     LinkNotFoundError,
+    LinkProjectUnknownError,
     LinkTargetNotFoundError,
     NoteLifecycleError,
     NoteNotFoundError,
@@ -53,6 +55,7 @@ from todo_viewer.domain.notes import (
     NoticeCause,
     NoticeDecision,
     NoticeSide,
+    Reachability,
     TargetKind,
     Topic,
     Trigger,
@@ -63,6 +66,7 @@ from todo_viewer.domain.notes import (
     evaluate,
     event_hit,
     item_status_notice_cause,
+    reachability_of,
     trigger_arrived,
 )
 from todo_viewer.domain.source import Source
@@ -95,6 +99,16 @@ class NoteView:
     triggers: tuple[Trigger, ...]
     evaluation: NoteEvaluation
     open_notices: tuple[Notice, ...] = ()
+    # Item targets of the note's links that were checked when the note was read (`show`, `due`); empty otherwise.
+    reachability: Mapping[LinkTarget, Reachability] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class LinkInfo:
+    """A link with what is known about its target's project right now."""
+
+    link: Link
+    reachability: Reachability
 
 
 @dataclass(frozen=True)
@@ -137,14 +151,20 @@ class NoteService:
     # --- reading ---
 
     def show(self, project: str, label: str) -> NoteView:
-        return self._view(self._notes.get_note(project, label))
+        return self._checked(self._notes.get_note(project, label), {})
 
     def overview(self, project: str, archived: bool = False) -> list[NoteView]:
         """The notes in use, or (with `archived`) the archive. Notes in the trash are in `trash`."""
         return [self._view(n) for n in self._notes.list_notes(project, archived=archived)]
 
-    def due(self, project: str) -> list[NoteView]:
-        return [v for v in self.overview(project) if v.evaluation.status is NoteStatus.DUE]
+    def due(self, project: str, check_links: bool = True) -> list[NoteView]:
+        """The notes that are due. Links to unreachable projects are checked first, because they make a note due;
+        `check_links=False` only looks at what is stored (the counter must stay cheap)."""
+        if not check_links:
+            return [v for v in self.overview(project) if v.evaluation.status is NoteStatus.DUE]
+        seen: dict[tuple[str, str], Reachability] = {}
+        checked = [self._checked(v.note, seen) for v in self.overview(project)]
+        return [v for v in checked if v.evaluation.status is NoteStatus.DUE]
 
     def trash(self, project: str) -> TrashContents:
         return TrashContents(
@@ -202,6 +222,15 @@ class NoteService:
     def links_of(self, project: str, label: str) -> list[Link]:
         self._notes.get_note(project, label)
         return self._notes.links_of(project, label)
+
+    def link_infos(self, project: str, label: str) -> list[LinkInfo]:
+        """The links of a note with the reachability of item targets; an unreachable project is noticed once."""
+        note = self._notes.get_note(project, label)
+        links = self._notes.links_of(project, label)
+        seen: dict[tuple[str, str], Reachability] = {}
+        infos = [LinkInfo(link, self._reach(link.target, seen)) for link in links]
+        self._notice_unreachable(note, {i.link.target: i.reachability for i in infos})
+        return infos
 
     def add_link(self, project: str, label: str, target: LinkTarget, role: LinkRole = LinkRole.REFERENCE) -> Link:
         """Links an open note to an item, a topic, or another note. The target must exist; a link exists once."""
@@ -445,6 +474,65 @@ class NoteService:
     def _topic_due(self, note: Note) -> datetime | None:
         return None if note.topic is None else self._notes.get_topic(note.project, note.topic).due_at
 
+    def _reach(self, target: LinkTarget, seen: dict[tuple[str, str], Reachability]) -> Reachability:
+        """Reads the item to find out whether its project can be reached. A failure is never raised: an item that is
+        missing in a readable project is reachable (that is `link_target_not_found`, not this)."""
+        if target.kind is not TargetKind.ITEM:
+            return Reachability(True)
+        key = (target.project, target.label)
+        if key not in seen:
+            try:
+                source = self._source(target.project)
+            except SourceGoneError:
+                seen[key] = reachability_of(False, False)
+                return seen[key]
+            try:
+                self._backlogs.get(source, target.label)
+                read_ok = True
+            except (ItemNotFoundError, DuplicateItemError):
+                read_ok = True
+            except Exception as failure:
+                log.warning("link_target_unreadable", project=target.project, item=target.label,
+                            error=type(failure).__name__)
+                read_ok = False
+            seen[key] = reachability_of(True, read_ok)
+        return seen[key]
+
+    def _notice_unreachable(self, note: Note, reachability: Mapping[LinkTarget, Reachability]) -> bool:
+        """One notice per unreachable target, the first time it is found; True if one was added. Notes that are in
+        the trash or finished are left alone, and so is a target the note was already told about (even if that
+        notice is decided). A failure here is logged and never reaches the reader."""
+        if note.deleted is not None or note.status in FINISHED_STATUSES:
+            return False
+        added = False
+        for target, reach in reachability.items():
+            if reach.reachable:
+                continue
+            try:
+                told = self._notes.notices_of(note.project, note.label, NoticeSide.NOTE, open_only=False)
+                if any(n.cause is NoticeCause.PROJECT_UNREACHABLE and n.counterpart == target for n in told):
+                    continue
+                self._notes.add_notice(NewNotice(NoticeSide.NOTE, note.project, note.label,
+                                                 NoticeCause.PROJECT_UNREACHABLE, target))
+                added = True
+            except Exception:
+                log.exception("notice_failed", project=note.project, note=note.label, item=target.label,
+                              cause=NoticeCause.PROJECT_UNREACHABLE.value)
+        return added
+
+    def _checked(self, note: Note, seen: dict[tuple[str, str], Reachability]) -> NoteView:
+        """The note as `_view` shows it, after its item links were checked for unreachable projects."""
+        try:
+            targets = {link.target for link in self._notes.links_of(note.project, note.label)
+                       if link.target.kind is TargetKind.ITEM}
+            reachability = {target: self._reach(target, seen) for target in sorted(
+                targets, key=lambda t: (t.project, t.label))}
+            self._notice_unreachable(note, reachability)
+        except Exception:
+            log.exception("reachability_failed", project=note.project, note=note.label)
+            reachability = {}
+        return dataclasses.replace(self._view(note), reachability=reachability)
+
     def _view(self, note: Note) -> NoteView:
         triggers = self._notes.triggers_of(note.project, note.label)
         open_notices = self._notes.notices_of(note.project, note.label, NoticeSide.NOTE, open_only=True)
@@ -457,19 +545,24 @@ class NoteService:
             raise SourceGoneError()
         return found
 
+    def _link_source(self, project: str) -> Source:
+        try:
+            return self._source(project)
+        except SourceGoneError as gone:
+            raise LinkProjectUnknownError(project) from gone
+
     def _check_target(self, target: LinkTarget) -> None:
+        source = self._link_source(target.project)
         try:
             if target.kind is TargetKind.ITEM:
-                self._backlogs.get(self._source(target.project), target.label)
+                self._backlogs.get(source, target.label)
             elif target.kind is TargetKind.TOPIC:
-                self._source(target.project)
                 if self._notes.get_topic(target.project, target.label).deleted is not None:
                     raise TopicNotFoundError(target.label)
             else:
-                self._source(target.project)
                 if self._notes.get_note(target.project, target.label).deleted is not None:
                     raise NoteNotFoundError(target.label)
-        except (ItemNotFoundError, TopicNotFoundError, NoteNotFoundError, SourceGoneError) as gone:
+        except (ItemNotFoundError, TopicNotFoundError, NoteNotFoundError) as gone:
             raise LinkTargetNotFoundError(target.kind.value, target.project, target.label) from gone
 
     def _checked_trigger(self, note: Note, new: NewTrigger) -> NewTrigger:
@@ -486,7 +579,7 @@ class NoteService:
             raise InvalidValueError("target_status", tuple(EVENT_STATUSES))
         if new.target.kind is not TargetKind.ITEM:
             raise InvalidValueError("target", (TargetKind.ITEM.value,))
-        item = self._backlogs.get(self._source(new.target.project), new.target.label)
+        item = self._backlogs.get(self._link_source(new.target.project), new.target.label)
         if item.status == new.target_status:
             return dataclasses.replace(new, fired_at=self._clock(), already_met=True)
         return new

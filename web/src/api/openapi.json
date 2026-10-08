@@ -1228,6 +1228,11 @@
             "title": "Project",
             "type": "string"
           },
+          "reachable": {
+            "description": "False if the project of the target item is not registered or its backlog cannot be read. Computed on every read, never stored",
+            "title": "Reachable",
+            "type": "boolean"
+          },
           "role": {
             "description": "reference, origin, or trigger (the link of an event trigger)",
             "title": "Role",
@@ -1238,9 +1243,26 @@
             "title": "Target",
             "type": "string"
           },
+          "target_display": {
+            "description": "The target as 'project \u00b7 label'",
+            "title": "Target Display",
+            "type": "string"
+          },
           "target_project": {
             "title": "Target Project",
             "type": "string"
+          },
+          "unreachable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "project_not_registered or source_unreadable; null if reachable",
+            "title": "Unreachable Reason"
           }
         },
         "required": [
@@ -1250,7 +1272,10 @@
           "kind",
           "target_project",
           "target",
-          "role"
+          "target_display",
+          "role",
+          "reachable",
+          "unreachable_reason"
         ],
         "title": "LinkOut",
         "type": "object"
@@ -3086,6 +3111,18 @@
             "title": "Kind",
             "type": "string"
           },
+          "reachable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Event: false if the project of the watched item cannot be reached; null for other triggers and where links were not checked",
+            "title": "Reachable"
+          },
           "target": {
             "anyOf": [
               {
@@ -3097,6 +3134,18 @@
             ],
             "description": "Event: label of the item that is watched",
             "title": "Target"
+          },
+          "target_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Event: the item as 'project \u00b7 label'",
+            "title": "Target Display"
           },
           "target_project": {
             "anyOf": [
@@ -3119,6 +3168,18 @@
               }
             ],
             "title": "Target Status"
+          },
+          "unreachable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "project_not_registered or source_unreadable",
+            "title": "Unreachable Reason"
           }
         },
         "required": [
@@ -3127,6 +3188,9 @@
           "at",
           "target_project",
           "target",
+          "target_display",
+          "reachable",
+          "unreachable_reason",
           "target_status",
           "fired_at",
           "already_met"
@@ -6433,7 +6497,7 @@
     },
     "/api/v2/projects/{project}/notes/{label}/links": {
       "get": {
-        "description": "The links that start at the note, among them the links of its event triggers (role `trigger`).",
+        "description": "The links that start at the note, among them the links of its event triggers (role `trigger`). Each item link\nsays whether its project can be reached; an unreachable one adds a notice to the note the first time.",
         "operationId": "list_links_api_v2_projects__project__notes__label__links_get",
         "parameters": [
           {
@@ -6527,7 +6591,7 @@
         ]
       },
       "post": {
-        "description": "Links an open note to an item, a topic, or another note. The target must exist (404 link_target_not_found);\nan item may be in another project (`target_project`). The same link twice is 409 link_exists.",
+        "description": "Links an open note to an item, a topic, or another note. The target must exist (404 link_target_not_found);\nan item may be in another project (`target_project`), which must be registered (404 link_project_unknown).\nThe same link twice is 409 link_exists.",
         "operationId": "add_link_api_v2_projects__project__notes__label__links_post",
         "parameters": [
           {

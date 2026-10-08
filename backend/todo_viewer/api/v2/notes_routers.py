@@ -5,13 +5,14 @@ from typing import Any
 
 from fastapi import APIRouter, Query
 
-from todo_viewer.application.services import NoteService
+from todo_viewer.application.services import LinkInfo, NoteService
 from todo_viewer.domain.notes import (
     LinkRole,
     LinkTarget,
     NoteStatus,
     NoticeDecision,
     NoticeSide,
+    Reachability,
     TargetKind,
     TriggerMode,
 )
@@ -229,22 +230,25 @@ def restore_note(project: str, label: str, notes: Notes) -> NoteOut:
 
 @router.get("/notes/{label}/links", tags=["links"])
 def list_links(project: str, label: str, notes: Notes) -> list[LinkOut]:
-    """The links that start at the note, among them the links of its event triggers (role `trigger`)."""
-    return [LinkOut.of(link) for link in notes.links_of(project, label)]
+    """The links that start at the note, among them the links of its event triggers (role `trigger`). Each item link
+    says whether its project can be reached; an unreachable one adds a notice to the note the first time."""
+    return [LinkOut.of(info) for info in notes.link_infos(project, label)]
 
 
 @router.post("/notes/{label}/links", tags=["links"], status_code=201)
 def add_link(project: str, label: str, body: LinkIn, notes: Notes) -> LinkOut:
     """Links an open note to an item, a topic, or another note. The target must exist (404 link_target_not_found);
-    an item may be in another project (`target_project`). The same link twice is 409 link_exists."""
+    an item may be in another project (`target_project`), which must be registered (404 link_project_unknown).
+    The same link twice is 409 link_exists."""
     target = LinkTarget(TargetKind(body.kind), body.target_project or project, body.target)
-    return LinkOut.of(notes.add_link(project, label, target, LinkRole(body.role)))
+    return LinkOut.of(LinkInfo(notes.add_link(project, label, target, LinkRole(body.role)), Reachability(True)))
 
 
 @router.delete("/notes/{label}/links/{link_id}", tags=["links"])
 def remove_link(project: str, label: str, link_id: int, notes: Notes) -> list[LinkOut]:
     """Removes a link and returns the ones left. The link of an event trigger goes with its trigger."""
-    return [LinkOut.of(link) for link in notes.remove_link(project, label, link_id)]
+    notes.remove_link(project, label, link_id)
+    return [LinkOut.of(info) for info in notes.link_infos(project, label)]
 
 
 @router.get("/notes/{label}/backlinks", tags=["links"])

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { usePromoteNote } from "../api/queries";
-import { parentCandidates, type PromoteDraft, promoteDraft, promoteRequest } from "../domain/conversion";
+import { useDecideNotice, usePromoteNote } from "../api/queries";
+import { parentCandidates, type PromoteDraft, promoteDraft, promoteFields, promoteRequest } from "../domain/conversion";
 import { PRIORITY_KEYS, type Item, uidOf, YES_NO } from "../domain/model";
 import { describeError, useI18n } from "../i18n/i18n";
 import { useUiState } from "../state/useUiStateStore";
@@ -9,6 +9,8 @@ import { Modal } from "./Modal";
 interface PromoteNoteDialogProps {
   note: { project: string; label: string; version: string; summary: string; body: string | null };
   items: readonly Item[];
+  /** A change notice that this promotion decides (the due list): the decision route is used instead of the plain one. */
+  notice?: { id: number };
   onClose: () => void;
 }
 
@@ -16,16 +18,18 @@ const TYPES = ["Epic", "Story", "Task"] as const;
 
 /** Turns a note into an Epic, Story or Task of its project. Title, summary and goal start from the note.
  *  After success the dialog says which item it became and offers to open it. */
-export function PromoteNoteDialog({ note, items, onClose }: PromoteNoteDialogProps) {
+export function PromoteNoteDialog({ note, items, notice, onClose }: PromoteNoteDialogProps) {
   const i18n = useI18n();
   const { t, vocab } = i18n;
   const L = (field: string) => vocab("field", field);
   const { dispatch } = useUiState();
   const promote = usePromoteNote();
+  const decide = useDecideNotice();
+  const mutation = notice ? decide : promote;
   const [draft, setDraft] = useState<PromoteDraft>(() => promoteDraft(note));
   const set = <K extends keyof PromoteDraft>(key: K, value: PromoteDraft[K]) => setDraft((d) => ({ ...d, [key]: value }));
   const parents = parentCandidates(items, note.project, draft.item_type);
-  const created = promote.data?.item;
+  const created = notice ? decide.data?.item : promote.data?.item;
 
   if (created) {
     return (
@@ -56,7 +60,8 @@ export function PromoteNoteDialog({ note, items, onClose }: PromoteNoteDialogPro
         className="edit-form"
         onSubmit={(e) => {
           e.preventDefault();
-          promote.mutate({ project: note.project, label: note.label, ...promoteRequest(draft, note.version) });
+          if (notice) decide.mutate({ id: notice.id, decision: "promote", version: note.version, promotion: promoteFields(draft) });
+          else promote.mutate({ project: note.project, label: note.label, ...promoteRequest(draft, note.version) });
         }}
       >
         <h3 id="promote-title">{t("promote.title", { label: note.label })}</h3>
@@ -132,17 +137,17 @@ export function PromoteNoteDialog({ note, items, onClose }: PromoteNoteDialogPro
           <textarea value={draft.summary} onChange={(e) => set("summary", e.target.value)} />
         </label>
         <div className="hint">{t("promote.hint")}</div>
-        {promote.error && (
+        {mutation.error && (
           <div className="field-error" role="alert">
-            {t("err.save", { e: describeError(i18n, promote.error) })}
+            {t("err.save", { e: describeError(i18n, mutation.error) })}
           </div>
         )}
         <div className="modal-actions">
           <button type="button" className="btn" onClick={onClose}>
             {t("cancel")}
           </button>
-          <button type="submit" className="btn primary" disabled={promote.isPending}>
-            {promote.isPending ? t("saving") : t("promote.submit")}
+          <button type="submit" className="btn primary" disabled={mutation.isPending}>
+            {mutation.isPending ? t("saving") : t("promote.submit")}
           </button>
         </div>
       </form>

@@ -535,3 +535,54 @@ export function useNotesLinkedToItem(project: string, label: string) {
     queryFn: () => unwrap(api.GET("/api/v2/projects/{project}/items/{label}/notes", { params: { path: { project, label } } })),
   });
 }
+
+// ----- the list of due notes and its actions -----
+
+/** All due notes with reason and possible actions. Only while the list is open (`enabled`); it does not poll. */
+export function useDueList(enabled: boolean) {
+  return useQuery({
+    queryKey: ["notes", "due-list"] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notes/due")),
+    enabled,
+  });
+}
+
+/** The open notices of one note, oldest first. */
+export function useNoteNotices(project: string, label: string, enabled = true) {
+  return useQuery({
+    queryKey: ["notes", "notices", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notices", { params: { query: { project, label, side: "note", open: true } } })),
+    enabled,
+  });
+}
+
+/** Decides an open notice: keep, detach, drop, or promote (with the item's fields, or after a promotion). */
+export function useDecideNotice() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: number } & Schemas["NoticeDecisionIn"]) =>
+      unwrap(api.POST("/api/v2/notices/{notice_id}/decision", { params: { path: { notice_id: id } }, body })),
+    onSettled: () => {
+      refreshNotes(client);
+      void client.invalidateQueries({ queryKey: keys.backlog });
+    },
+  });
+}
+
+export function fetchNote(project: string, label: string) {
+  return unwrap(api.GET("/api/v2/projects/{project}/notes/{label}", { params: { path: { project, label } } }));
+}
+
+/**
+ * Closes or keeps a note from the due list. The list only knows a snapshot, so the note is read right before the
+ * action and the action is made on its current version.
+ */
+export function useDueNoteAction() {
+  return useNotesMutation(async ({ project, label, action }: NoteAddress & { action: "done" | "dropped" | "keep" }) => {
+    const { version } = await fetchNote(project, label);
+    const path = { project, label };
+    return action === "keep"
+      ? unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/keep", { params: { path }, body: { version } }))
+      : unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/finish", { params: { path }, body: { version, status: action } }));
+  });
+}

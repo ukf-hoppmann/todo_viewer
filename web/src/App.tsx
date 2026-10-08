@@ -3,6 +3,7 @@ import type { Schemas, SourceStatus } from "./api/client";
 import { useDueCount, useRemoveSource, useSyncStatuses } from "./api/queries";
 import { CreateItemDialog } from "./components/CreateItemDialog";
 import { DetailPanel } from "./components/DetailPanel";
+import { DueModal } from "./components/DueModal";
 import { RetypeNotice } from "./components/RetypeNotice";
 import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { Sidebar } from "./components/Sidebar";
@@ -39,6 +40,7 @@ export function App() {
   const [sourceDialog, setSourceDialog] = useState<SourceDialogState>(null);
   const [syncDialog, setSyncDialog] = useState<SyncDialogState>(null);
   const [creating, setCreating] = useState(false);
+  const [dueOpen, setDueOpen] = useState(false);
   // null = closed; focusId is the project the menu was opened for (from its badge), if any.
   const [settings, setSettings] = useState<{ focusId?: string } | null>(null);
   const dueCount = useDueCount(usePollingPaused()).data?.count ?? 0;
@@ -94,7 +96,7 @@ export function App() {
             syncStates={syncStates}
             onOpenProject={(source) => setSettings({ focusId: source.id })}
             dueCount={dueCount}
-            onOpenDue={() => dispatch({ type: "view", view: "notes" })}
+            onOpenDue={() => setDueOpen(true)}
           />
           <main className="main">
             <nav className="tabs">
@@ -154,6 +156,13 @@ export function App() {
             initialSection={settings.focusId ? "projects" : undefined}
             focusId={settings.focusId}
             onClose={() => setSettings(null)}
+          />
+        )}
+        {dueOpen && (
+          <DueModal
+            items={model.items}
+            projects={[...new Set(model.sources.filter((s) => !s.problem).map((s) => s.project))]}
+            onClose={() => setDueOpen(false)}
           />
         )}
         {retyped && <RetypeNotice result={retyped} onClose={() => setRetyped(null)} />}

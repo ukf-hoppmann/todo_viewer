@@ -33,12 +33,12 @@ export function promoteDraft(note: { summary: string; body: string | null }): Pr
 }
 
 export type PromoteRequest = Schemas["PromoteIn"];
+export type PromoteFields = Schemas["PromoteFieldsIn"];
 
-/** The request: trimmed text; title and summary only when set (the server takes them from the note otherwise);
+/** The item's fields: trimmed text; title and summary only when set (the server takes them from the note otherwise);
  *  a parent comes with its "required for parent". */
-export function promoteRequest(draft: PromoteDraft, version: string): PromoteRequest {
-  const request: PromoteRequest = {
-    version,
+export function promoteFields(draft: PromoteDraft): PromoteFields {
+  const request: PromoteFields = {
     item_type: draft.item_type,
     area: draft.area.trim(),
     goal: draft.goal.trim(),
@@ -52,6 +52,11 @@ export function promoteRequest(draft: PromoteDraft, version: string): PromoteReq
     if (draft.required_for_parent) request.required_for_parent = draft.required_for_parent;
   }
   return request;
+}
+
+/** The request to promote the note in `version`. */
+export function promoteRequest(draft: PromoteDraft, version: string): PromoteRequest {
+  return { version, ...promoteFields(draft) };
 }
 
 const CLOSED = new Set(["Completed", "Rejected"]);

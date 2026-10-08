@@ -5,9 +5,11 @@ from .backup import DatabaseRawBackup
 from .config_import import LegacyConfigImport
 from .documents import DatabaseDocumentStore
 from .engine import Database
+from .notes import DatabaseNoteDocumentStore, DatabaseNoteRepository
 from .repository import DatabaseBacklogRepository
 from .sources import DatabaseSourceRepository
 from .ui_state import DatabaseUiStateStore
 
-__all__ = ["Database", "DatabaseBacklogRepository", "DatabaseDocumentStore", "DatabaseRawBackup",
+__all__ = ["Database", "DatabaseBacklogRepository", "DatabaseDocumentStore", "DatabaseNoteDocumentStore",
+           "DatabaseNoteRepository", "DatabaseRawBackup",
            "DatabaseSourceRepository", "DatabaseUiStateStore", "LegacyConfigImport"]

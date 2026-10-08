@@ -222,3 +222,34 @@ class DocumentNotFoundError(NotFoundError):
 
     def __init__(self, path: str, message: str = "File not found."):
         super().__init__(message, path=path)
+
+
+# --- notes ---
+
+class NoteNotFoundError(NotFoundError):
+    code = "note_not_found"
+
+    def __init__(self, label: str):
+        super().__init__(f"Note '{label}' not found.", id=label)
+
+
+class TopicNotFoundError(NotFoundError):
+    code = "topic_not_found"
+
+    def __init__(self, label: str):
+        super().__init__(f"Topic '{label}' not found.", id=label)
+
+
+class TopicTooDeepError(DomainError):
+    code = "topic_too_deep"
+
+    def __init__(self, label: str, max_depth: int):
+        super().__init__(f"Topic '{label}' would be nested deeper than {max_depth} levels.", id=label,
+                         max_depth=str(max_depth))
+
+
+class TopicLoopError(DomainError):
+    code = "topic_loop"
+
+    def __init__(self, label: str):
+        super().__init__(f"Topic '{label}' cannot become a child of itself or of one of its children.", id=label)

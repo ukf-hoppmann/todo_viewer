@@ -526,9 +526,20 @@ def test_item_edit_rejects_field_before_touching_storage():
 
 # ---------- retype ----------
 
+class FakeNotes:
+    """Records which item labels the links were pointed at; the rest of the port is not needed here."""
+
+    def __init__(self) -> None:
+        self.relinked: list[tuple[str, str, str]] = []
+
+    def relink_item(self, project: str, old_label: str, new_label: str) -> None:
+        self.relinked.append((project, old_label, new_label))
+
+
 def _retype_service(items: list[Item], files: dict[str, str] | None = None):
-    backlogs, documents = FakeBacklogs(items), FakeDocuments(files)
-    return RetypeService(backlogs, documents, RetypePlanner(), LifecycleRules()), backlogs, documents
+    backlogs, documents, notes = FakeBacklogs(items), FakeDocuments(files), FakeNotes()
+    service = RetypeService(backlogs, documents, RetypePlanner(), LifecycleRules(), notes)  # type: ignore[arg-type]
+    return service, backlogs, documents
 
 
 def _retype_items() -> list[Item]:
@@ -560,6 +571,15 @@ def test_retype_gives_a_new_id_and_follows_references_and_documents():
     assert documents.files == {
         "TASK-003/TASK-003_notes.md": "# TASK-003 — Story\n\nSiehe TASK-003.\n",
         "TASK-002/TASK-002_notes.md": "# TASK-002 — Other\n\nWartet auf `TASK-003`.\n"}
+
+
+def test_retype_points_the_links_of_notes_at_the_new_id():
+    service, backlogs, _ = _retype_service(_retype_items())
+    notes = service._notes
+
+    service.retype(Source("P", "/p", id="proj"), "STORY-001", backlogs.items[0].version, "Task")
+
+    assert notes.relinked == [("proj", "STORY-001", "TASK-003")]
 
 
 def test_retype_without_documents_on_disk_still_works():

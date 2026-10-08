@@ -11,7 +11,7 @@ from todo_viewer.domain.retype import Notice, RetypePlan, RetypePlanner, rewrite
 from todo_viewer.domain.source import Source
 from todo_viewer.domain.trash import live
 
-from ..ports import BacklogRepository, DocumentStore
+from ..ports import BacklogRepository, DocumentStore, NoteRepository
 
 
 @dataclass(frozen=True)
@@ -34,8 +34,9 @@ class RetypeService:
     """Changes an item's type: new id, and every reference to the old id in the backlog follows."""
 
     def __init__(self, backlogs: BacklogRepository, documents: DocumentStore, planner: RetypePlanner,
-                 rules: LifecycleRules):
+                 rules: LifecycleRules, notes: NoteRepository):
         self._backlogs = backlogs
+        self._notes = notes
         self._documents = documents
         self._planner = planner
         self._rules = rules
@@ -60,8 +61,10 @@ class RetypeService:
 
         self._documents.relabel_documents(source, item_id, plan.new_id, plan.document_renames)
         try:
+            self._notes.relink_item(source.id, item_id, plan.new_id)
             stored = self._backlogs.apply_all(source, list(plan.changes))
         except Exception:
+            self._notes.relink_item(source.id, plan.new_id, item_id)
             self._documents.relabel_documents(source, plan.new_id, item_id,
                                               {new: old for old, new in plan.document_renames.items()})
             raise

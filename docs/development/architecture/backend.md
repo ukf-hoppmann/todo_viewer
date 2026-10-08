@@ -49,6 +49,28 @@ Applies to `backend/**` in addition to `../architecture.md`.
 - Sync between backends MUST be a use case in `application` working on two
   ports, not logic inside an adapter.
 - The database's internal keys (`uid`) MUST NOT appear in `domain`,
-  `application`, or the API; items are addressed by their label (`Item.id`).
+  `application`, or the API; items are addressed by their label (`Item.id`),
+  notes and topics by project plus label.
 - Migrations MUST be forward-only and covered by a test that upgrades an empty
   database to the current version.
+
+## 6. Notes and topics
+
+- Notes, topics, links, and triggers MUST be reached through their own ports
+  `NoteRepository` and `NoteDocumentStore` in `application/ports.py`, separate
+  from `BacklogRepository`. There is one implementation in
+  `infrastructure/database/`; it needs no routing adapter. It MUST pass the
+  contract suite `backend/tests/contract/test_note_repository.py`.
+- A link to a backlog item MUST store the project and the item's label, not a
+  `uid`: markdown projects have no `uid`. The retype use case MUST update the
+  links to the item in the same operation.
+  Why: this keeps section 5 intact and works for both backends.
+- The notes adapter MUST contain no trigger logic; the markdown adapter MUST NOT
+  import notes modules. Enforced by: `pyproject.toml` (`[tool.importlinter]`).
+- Access to another project's items (for links and event triggers) MUST go
+  through the existing source lookup and `BacklogRepository`, never through
+  an adapter import.
+- Moving a note to another project MUST create it there with a new label and
+  delete the old one (to the trash); the label of a note never changes.
+- The topic depth limit (`notes.max_topic_depth`, default 3) is a business rule
+  and MUST live in `domain`.

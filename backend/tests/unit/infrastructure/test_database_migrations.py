@@ -7,7 +7,7 @@ import pytest
 import sqlalchemy as sa
 
 from todo_viewer.infrastructure.database.engine import Database
-from todo_viewer.infrastructure.database.migrations import CURRENT_VERSION
+from todo_viewer.infrastructure.database.migrations import CURRENT_VERSION, MIGRATIONS
 from todo_viewer.infrastructure.database.schema import metadata
 
 
@@ -58,3 +58,22 @@ def test_foreign_keys_are_enforced(tmp_path: Path):
         conn.execute(sa.text(
             "INSERT INTO items (uid, project_id, label, item_type, title, status, location, position) "
             "VALUES ('u', 'no-such-project', 'T-1', 'Task', 't', 'Open', 'active', 0)"))
+
+
+def test_a_database_from_before_the_notes_gets_the_notes_tables(tmp_path: Path):
+    db = _db(tmp_path)
+    with db.engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE schema_version (version INTEGER NOT NULL)"))
+        conn.execute(sa.text("INSERT INTO schema_version (version) VALUES (5)"))
+        for number in range(1, 6):
+            for statement in MIGRATIONS[number]:
+                conn.execute(sa.text(statement))
+        conn.execute(sa.text("INSERT INTO projects (id) VALUES ('old')"))
+
+    with db.begin() as conn:
+        version = conn.execute(sa.text("SELECT version FROM schema_version")).scalar_one()
+        kept = list(conn.execute(sa.text("SELECT id FROM projects")).scalars())
+
+    assert version == CURRENT_VERSION and kept == ["old"]
+    assert {"topics", "notes", "note_links", "note_triggers", "note_documents", "note_counters"} <= set(
+        sa.inspect(db.engine).get_table_names())

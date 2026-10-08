@@ -6,6 +6,9 @@ import { childEntries, type Item, toItems, type Uid } from "../domain/model";
 import type { Schemas, SourceStatus } from "../api/client";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { DeleteDialog } from "./DeleteDialog";
+import { DemoteItemDialog } from "./DemoteItemDialog";
+import { ItemNotes } from "./ItemNotes";
+import { ItemOrigin } from "./OriginLink";
 import { RetypeDialog } from "./RetypeDialog";
 import { useI18n } from "../i18n/i18n";
 import { documentLinks } from "./documentLinks";
@@ -49,6 +52,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
   const [creatingChild, setCreatingChild] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [retyping, setRetyping] = useState(false);
+  const [demoting, setDemoting] = useState(false);
   const quick = useQuickEdit(item);
   const L = (field: string) => vocab("field", field);
   const parent = item.parentUid ? byUid.get(item.parentUid) : undefined;
@@ -83,11 +87,18 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
           <button className="btn small" onClick={() => setRetyping(true)}>
             {t("retype.button")}
           </button>
+          {item.status === "Open" && (
+            <button className="btn small" onClick={() => setDemoting(true)}>
+              {t("demote.button")}
+            </button>
+          )}
           <button className="btn small danger" onClick={() => setDeleting(true)}>
             {t("delete.button")}
           </button>
         </div>
       )}
+      {!editing && <ItemOrigin item={item} />}
+      {!editing && <ItemNotes item={item} />}
       {!editing && item.summary && <div className="detail-summary">{item.summary}</div>}
 
       {!editing && (
@@ -184,6 +195,7 @@ export function DetailPanel({ item, items, byUid, sourcePath, sources, onSelect,
           }}
         />
       )}
+      {demoting && <DemoteItemDialog item={item} onDemoted={onClose} onClose={() => setDemoting(false)} />}
       {retyping && (
         <RetypeDialog
           item={item}

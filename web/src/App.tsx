@@ -1,8 +1,9 @@
-import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { Schemas, SourceStatus } from "./api/client";
-import { useRemoveSource, useSyncStatuses } from "./api/queries";
+import { useDueCount, useRemoveSource, useSyncStatuses } from "./api/queries";
 import { CreateItemDialog } from "./components/CreateItemDialog";
 import { DetailPanel } from "./components/DetailPanel";
+import { DueModal } from "./components/DueModal";
 import { RetypeNotice } from "./components/RetypeNotice";
 import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { Sidebar } from "./components/Sidebar";
@@ -10,19 +11,22 @@ import { SourceDialog } from "./components/SourceDialog";
 import { SyncDialog } from "./components/SyncDialog";
 import type { SyncMode, SyncState } from "./domain/sync";
 import { type Uid, uidOf } from "./domain/model";
+import { tabTitle } from "./domain/notes";
 import { createI18n, describeError, I18nContext } from "./i18n/i18n";
 import type { MessageKey } from "./i18n/messages";
+import { usePollingPaused } from "./state/pollingPause";
 import { useBacklogModel } from "./state/useBacklogModel";
 import { UiStateContext, useUiStateStore } from "./state/useUiStateStore";
 import { type View, VIEWS } from "./state/uiState";
 import { KanbanView } from "./views/KanbanView";
+import { NotesView } from "./views/NotesView";
 import { TrashView } from "./views/TrashView";
 import { TreeView } from "./views/TreeView";
 
 // React Flow + dagre are only loaded when the dependency view is opened.
 const GraphView = lazy(() => import("./views/GraphView").then((m) => ({ default: m.GraphView })));
 
-const TAB_LABELS: Record<View, MessageKey> = { tree: "tab.tree", graph: "tab.graph", kanban: "tab.kanban", trash: "tab.trash" };
+const TAB_LABELS: Record<View, MessageKey> = { tree: "tab.tree", graph: "tab.graph", kanban: "tab.kanban", notes: "tab.notes", trash: "tab.trash" };
 
 type SourceDialogState = { source: SourceStatus | null } | null;
 type SyncDialogState = { source: SourceStatus; mode: SyncMode } | null;
@@ -36,8 +40,17 @@ export function App() {
   const [sourceDialog, setSourceDialog] = useState<SourceDialogState>(null);
   const [syncDialog, setSyncDialog] = useState<SyncDialogState>(null);
   const [creating, setCreating] = useState(false);
+  const [dueOpen, setDueOpen] = useState(false);
   // null = closed; focusId is the project the menu was opened for (from its badge), if any.
   const [settings, setSettings] = useState<{ focusId?: string } | null>(null);
+  const dueCount = useDueCount(usePollingPaused()).data?.count ?? 0;
+  const baseTitle = i18n.t("app.title");
+  useEffect(() => {
+    document.title = tabTitle(baseTitle, dueCount);
+    return () => {
+      document.title = baseTitle;
+    };
+  }, [baseTitle, dueCount]);
   const syncStatuses = useSyncStatuses();
   const syncStates = useMemo(() => new Map<string, SyncState>(syncStatuses.data?.map((s) => [s.source_id, s.state])), [syncStatuses.data]);
   // Kept here, not in the detail panel: the panel is rebuilt when the selection moves to the new id.
@@ -59,6 +72,7 @@ export function App() {
   const views: Record<View, () => React.ReactNode> = {
     tree: () => <TreeView visible={model.visible} items={model.items} onSelect={select} />,
     kanban: () => <KanbanView visible={model.visible} items={model.items} onSelect={select} />,
+    notes: () => <NotesView items={model.items} />,
     trash: () => <TrashView sources={model.sources} />,
     graph: () => (
       <Suspense fallback={<div className="view" />}>
@@ -81,6 +95,8 @@ export function App() {
             onOpenSettings={() => setSettings({})}
             syncStates={syncStates}
             onOpenProject={(source) => setSettings({ focusId: source.id })}
+            dueCount={dueCount}
+            onOpenDue={() => setDueOpen(true)}
           />
           <main className="main">
             <nav className="tabs">
@@ -104,7 +120,7 @@ export function App() {
               ) : (
                 views[state.currentView]()
               )}
-              {selected && state.currentView !== "trash" && (
+              {selected && state.currentView !== "trash" && state.currentView !== "notes" && (
                 <DetailPanel
                   key={selected.uid}
                   item={selected}
@@ -140,6 +156,13 @@ export function App() {
             initialSection={settings.focusId ? "projects" : undefined}
             focusId={settings.focusId}
             onClose={() => setSettings(null)}
+          />
+        )}
+        {dueOpen && (
+          <DueModal
+            items={model.items}
+            projects={[...new Set(model.sources.filter((s) => !s.problem).map((s) => s.project))]}
+            onClose={() => setDueOpen(false)}
           />
         )}
         {retyped && <RetypeNotice result={retyped} onClose={() => setRetyped(null)} />}

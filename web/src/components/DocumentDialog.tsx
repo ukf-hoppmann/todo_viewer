@@ -3,24 +3,82 @@ import { marked } from "marked";
 import { useMemo, useState } from "react";
 import { ApiError } from "../api/client";
 import { fetchDocument, useAppendNotes, useDocument, useWriteDocument } from "../api/queries";
-import { type NotesForm, notesRequest, specName } from "../domain/editing";
+import { type NotesForm, type NotesRequest, notesRequest, specName } from "../domain/editing";
 import type { Item } from "../domain/model";
 import { describeError, useI18n } from "../i18n/i18n";
-import { documentLinks } from "./documentLinks";
+import { documentLinks, type DocumentRef } from "./documentLinks";
 import { Modal } from "./Modal";
 
 export type DocumentMode = "view" | "note" | "newSpec";
 
-interface DocumentDialogProps {
-  item: Item;
+/** The text of a document and the version it was read in. */
+export interface DocumentText {
+  content: string;
+  version: string;
+}
+
+/** Where the documents of one thing (a backlog item, a note) are read and written. The `use…` members are hooks. */
+export interface DocumentBackend {
+  /** Shown in the title, e.g. the item ID or the note label. */
+  id: string;
+  title: string;
+  documents: readonly DocumentRef[];
+  /** False if a new notes entry may also set the summary (items without one). */
+  hasSummary: boolean;
+  useRead: (name: string | null) => { data?: DocumentText; isLoading: boolean; error: Error | null };
+  useWrite: () => {
+    mutate: (args: { name: string; content: string; version: string | null }, options: { onSuccess: (doc: { name: string }) => void }) => void;
+    isPending: boolean;
+    error: Error | null;
+    reset: () => void;
+  };
+  useAppend: () => {
+    mutate: (body: NotesRequest, options: { onSuccess: (doc: { name: string }) => void }) => void;
+    isPending: boolean;
+    error: Error | null;
+  };
+  /** The current text, e.g. after a version conflict. */
+  fetch: (name: string) => Promise<DocumentText>;
+}
+
+/** The documents of a backlog item. */
+function itemBackend(item: Item): DocumentBackend {
+  return {
+    id: item.id,
+    title: item.title,
+    documents: item.documents,
+    hasSummary: Boolean(item.summary),
+    useRead: (name) => useDocument(item.source_id, item.id, name),
+    useWrite: () => {
+      const write = useWriteDocument();
+      return {
+        mutate: (args, options) => write.mutate({ sourceId: item.source_id, itemId: item.id, ...args }, options),
+        isPending: write.isPending,
+        error: write.error,
+        reset: write.reset,
+      };
+    },
+    useAppend: () => {
+      const append = useAppendNotes();
+      return {
+        mutate: (body, options) => append.mutate({ sourceId: item.source_id, itemId: item.id, body }, options),
+        isPending: append.isPending,
+        error: append.error,
+      };
+    },
+    fetch: (name) => fetchDocument(item.source_id, item.id, name),
+  };
+}
+
+type DocumentDialogProps = {
   /** Document shown first; null when the dialog opens to write a note or a new spec. */
   initialName: string | null;
   initialMode?: DocumentMode;
   onClose: () => void;
-}
+} & ({ item: Item; backend?: undefined } | { backend: DocumentBackend; item?: undefined });
 
 /** Notes sections are stored with English headings; other levels and documents stay untouched. */
-function Markdown({ text, translate }: { text: string; translate?: (heading: string) => string }) {
+export function Markdown({ text, translate }: { text: string; translate?: (heading: string) => string }) {
   const html = useMemo(() => {
     const tokens = marked.lexer(text);
     if (translate) {
@@ -40,13 +98,14 @@ function Markdown({ text, translate }: { text: string; translate?: (heading: str
 }
 
 /** Reads notes/specs; appends notes entries and edits or creates specs. */
-export function DocumentDialog({ item, initialName, initialMode = "view", onClose }: DocumentDialogProps) {
+export function DocumentDialog({ item, backend: given, initialName, initialMode = "view", onClose }: DocumentDialogProps) {
   const i18n = useI18n();
   const { t } = i18n;
+  const backend = given ?? itemBackend(item as Item);
   const [name, setName] = useState(initialName);
   const [mode, setMode] = useState<DocumentMode | "edit">(initialMode);
-  const doc = useDocument(item.source_id, item.id, mode === "view" || mode === "edit" ? name : null);
-  const links = documentLinks(item, t("doc.notes"), t("doc.spec"));
+  const doc = backend.useRead(mode === "view" || mode === "edit" ? name : null);
+  const links = documentLinks(backend, t("doc.notes"), t("doc.spec"));
   const current = links.find((l) => l.name === name);
   const show = (next: string) => {
     setName(next);
@@ -56,7 +115,7 @@ export function DocumentDialog({ item, initialName, initialMode = "view", onClos
   return (
     <Modal labelledBy="doc-title" onDismiss={onClose} className="doc">
       <div className="doc-head">
-        <h3 id="doc-title">{`${item.id} — ${item.title}`}</h3>
+        <h3 id="doc-title">{`${backend.id} — ${backend.title}`}</h3>
         <button className="btn small" onClick={onClose}>
           {t("close")}
         </button>
@@ -97,23 +156,23 @@ export function DocumentDialog({ item, initialName, initialMode = "view", onClos
           </>
         )}
         {mode === "view" && !name && <p className="empty-hint">{t("doc.none")}</p>}
-        {mode === "note" && <NoteForm item={item} onDone={show} onCancel={() => setMode("view")} />}
-        {mode === "newSpec" && <DocumentEditor item={item} name={null} content="" version={null} onDone={show} onCancel={() => setMode("view")} />}
+        {mode === "note" && <NoteForm backend={backend} onDone={show} onCancel={() => setMode("view")} />}
+        {mode === "newSpec" && <DocumentEditor backend={backend} name={null} content="" version={null} onDone={show} onCancel={() => setMode("view")} />}
         {mode === "edit" && name && doc.data && (
-          <DocumentEditor item={item} name={name} content={doc.data.content} version={doc.data.version} onDone={show} onCancel={() => setMode("view")} />
+          <DocumentEditor backend={backend} name={name} content={doc.data.content} version={doc.data.version} onDone={show} onCancel={() => setMode("view")} />
         )}
       </div>
     </Modal>
   );
 }
 
-function NoteForm({ item, onDone, onCancel }: { item: Item; onDone: (name: string) => void; onCancel: () => void }) {
+function NoteForm({ backend, onDone, onCancel }: { backend: DocumentBackend; onDone: (name: string) => void; onCancel: () => void }) {
   const i18n = useI18n();
   const { t, vocab } = i18n;
-  const append = useAppendNotes();
+  const append = backend.useAppend();
   const [form, setForm] = useState<NotesForm>({ topic: "", discussed: "", decided: "", open: "", summary: "" });
   const set = (key: keyof NotesForm, value: string) => setForm((f) => ({ ...f, [key]: value }));
-  const hasSummary = Boolean(item.summary);
+  const hasSummary = backend.hasSummary;
 
   return (
     <form
@@ -121,7 +180,7 @@ function NoteForm({ item, onDone, onCancel }: { item: Item; onDone: (name: strin
       aria-label={t("doc.addNote")}
       onSubmit={(e) => {
         e.preventDefault();
-        append.mutate({ sourceId: item.source_id, itemId: item.id, body: notesRequest(form, hasSummary) }, { onSuccess: (doc) => onDone(doc.name) });
+        append.mutate(notesRequest(form, hasSummary), { onSuccess: (doc) => onDone(doc.name) });
       }}
     >
       <label className="field">
@@ -159,7 +218,7 @@ function NoteForm({ item, onDone, onCancel }: { item: Item; onDone: (name: strin
 }
 
 interface DocumentEditorProps {
-  item: Item;
+  backend: DocumentBackend;
   /** Null for a new spec; its name then comes from the topic. */
   name: string | null;
   content: string;
@@ -170,19 +229,19 @@ interface DocumentEditorProps {
 
 /** Edits the whole text of a notes or spec document (or a new spec) with a markdown preview.
  *  A version conflict keeps the text and can show the current state before saving anyway. */
-function DocumentEditor({ item, name, content, version, onDone, onCancel }: DocumentEditorProps) {
+function DocumentEditor({ backend, name, content, version, onDone, onCancel }: DocumentEditorProps) {
   const i18n = useI18n();
   const { t } = i18n;
-  const write = useWriteDocument();
+  const write = backend.useWrite();
   const [text, setText] = useState(content);
   const [topic, setTopic] = useState("");
   const [base, setBase] = useState(version);
   const [theirs, setTheirs] = useState<string | null>(null);
-  const target = name ?? specName(item.id, topic);
+  const target = name ?? specName(backend.id, topic);
   const conflict = write.error instanceof ApiError && write.error.code === "version_conflict";
 
   const loadTheirs = async () => {
-    const current = await fetchDocument(item.source_id, item.id, target);
+    const current = await backend.fetch(target);
     write.reset();
     setTheirs(current.content);
     setBase(current.version);
@@ -194,7 +253,7 @@ function DocumentEditor({ item, name, content, version, onDone, onCancel }: Docu
       aria-label={t("doc.edit")}
       onSubmit={(e) => {
         e.preventDefault();
-        write.mutate({ sourceId: item.source_id, itemId: item.id, name: target, content: text, version: base }, { onSuccess: (doc) => onDone(doc.name) });
+        write.mutate({ name: target, content: text, version: base }, { onSuccess: (doc) => onDone(doc.name) });
       }}
     >
       {name === null && (

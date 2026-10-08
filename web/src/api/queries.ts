@@ -300,3 +300,318 @@ export async function fetchUiState(): Promise<Record<string, unknown>> {
 export async function saveUiState(state: Record<string, unknown>): Promise<void> {
   await unwrap(api.PUT("/api/v2/ui-state", { body: state }));
 }
+
+// ---------- Notes ----------
+
+/** Everything about notes lives under one prefix, so one invalidation refreshes index, details, lists and counter. */
+const notesKeys = {
+  all: ["notes"] as const,
+  index: ["notes", "index"] as const,
+};
+
+function refreshNotes(client: QueryClient) {
+  void client.invalidateQueries({ queryKey: notesKeys.all });
+}
+
+/** Topics and notes of all projects without long texts. The topic tree and the lists are cut from it by `domain/notes`. */
+export function useNotesIndex(paused: boolean) {
+  return useQuery({
+    queryKey: notesKeys.index,
+    queryFn: () => unwrap(api.GET("/api/v2/notes/index", { params: { query: {} } })),
+    refetchInterval: paused ? false : POLL_INTERVAL_MS,
+  });
+}
+
+/** A mutation on notes data that refreshes all notes queries once it has settled. */
+function useNotesMutation<TArgs, TResult>(call: (args: TArgs) => Promise<TResult>) {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: call, onSettled: () => refreshNotes(client) });
+}
+
+type TopicAddress = { project: string; label: string };
+type NoteAddress = { project: string; label: string };
+
+export function useCreateTopic() {
+  return useNotesMutation(({ project, ...body }: { project: string } & Schemas["TopicIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/topics", { params: { path: { project } }, body })),
+  );
+}
+
+export function useUpdateTopic() {
+  return useNotesMutation(({ project, label, ...body }: TopicAddress & Schemas["TopicEditIn"]) =>
+    unwrap(api.PATCH("/api/v2/projects/{project}/topics/{label}", { params: { path: { project, label } }, body })),
+  );
+}
+
+export function useMoveTopic() {
+  return useNotesMutation(({ project, label, parent }: TopicAddress & { parent: string | null }) =>
+    unwrap(api.POST("/api/v2/projects/{project}/topics/{label}/move", { params: { path: { project, label } }, body: { parent } })),
+  );
+}
+
+/** Moves a topic to the trash; with content only `cascade` works (topic_has_content otherwise). */
+export function useDeleteTopic() {
+  return useNotesMutation(({ project, label, cascade }: TopicAddress & { cascade: boolean }) =>
+    unwrap(api.DELETE("/api/v2/projects/{project}/topics/{label}", { params: { path: { project, label }, query: { cascade } } })),
+  );
+}
+
+export function useCreateNote() {
+  return useNotesMutation(({ project, ...body }: { project: string } & Schemas["NoteIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes", { params: { path: { project } }, body })),
+  );
+}
+
+/** An edit of one note; `version` is the one last read, a changed note answers version_conflict. */
+export function useUpdateNote() {
+  return useNotesMutation(({ project, label, ...body }: NoteAddress & Schemas["NoteEditIn"]) =>
+    unwrap(api.PATCH("/api/v2/projects/{project}/notes/{label}", { params: { path: { project, label } }, body })),
+  );
+}
+
+export function useDeleteNote() {
+  return useNotesMutation(({ project, label }: NoteAddress) =>
+    unwrap(api.DELETE("/api/v2/projects/{project}/notes/{label}", { params: { path: { project, label } } })),
+  );
+}
+
+// ----- one note: detail, links, documents -----
+
+const noteKey = (project: string, label: string) => ["notes", "note", project, label] as const;
+
+/** One note with its long text, triggers and state. */
+export function useNote(project: string, label: string) {
+  return useQuery({
+    queryKey: noteKey(project, label),
+    queryFn: () => unwrap(api.GET("/api/v2/projects/{project}/notes/{label}", { params: { path: { project, label } } })),
+  });
+}
+
+/** Closes a note as done or dropped (it goes to the archive). */
+export function useFinishNote() {
+  return useNotesMutation(({ project, label, version, status }: NoteAddress & { version: string; status: "done" | "dropped" }) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/finish", { params: { path: { project, label } }, body: { version, status } })),
+  );
+}
+
+/** "Keep": only the review date moves on. */
+export function useKeepNote() {
+  return useNotesMutation(({ project, label, version }: NoteAddress & { version: string }) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/keep", { params: { path: { project, label } }, body: { version } })),
+  );
+}
+
+export function useNoteLinks(project: string, label: string) {
+  return useQuery({
+    queryKey: ["notes", "links", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/projects/{project}/notes/{label}/links", { params: { path: { project, label } } })),
+  });
+}
+
+export function useAddLink() {
+  return useNotesMutation(({ project, label, ...body }: NoteAddress & Schemas["LinkIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/links", { params: { path: { project, label } }, body })),
+  );
+}
+
+export function useRemoveLink() {
+  return useNotesMutation(({ project, label, linkId }: NoteAddress & { linkId: number }) =>
+    unwrap(api.DELETE("/api/v2/projects/{project}/notes/{label}/links/{link_id}", { params: { path: { project, label, link_id: linkId } } })),
+  );
+}
+
+/** The names of the notes and specs of a note. */
+export function useNoteDocumentList(project: string, label: string) {
+  return useQuery({
+    queryKey: ["notes", "documents", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/projects/{project}/notes/{label}/documents", { params: { path: { project, label } } })),
+  });
+}
+
+/** A notes or spec document of a note, addressed by its name. */
+export function useNoteDocument(project: string, label: string, name: string | null) {
+  return useQuery({
+    queryKey: ["notes", "document", project, label, name ?? ""] as const,
+    queryFn: () => fetchNoteDocument(project, label, name ?? ""),
+    enabled: name !== null,
+  });
+}
+
+export function fetchNoteDocument(project: string, label: string, name: string) {
+  return unwrap(api.GET("/api/v2/projects/{project}/notes/{label}/documents/{name}", { params: { path: { project, label, name } } }));
+}
+
+/** Replaces a document in `version` with the whole new text, or creates it (`version` null). */
+export function useWriteNoteDocument() {
+  return useNotesMutation(
+    ({ project, label, name, content, version }: NoteAddress & { name: string; content: string; version: string | null }) =>
+      unwrap(
+        api.PUT("/api/v2/projects/{project}/notes/{label}/documents/{name}", {
+          params: { path: { project, label, name } },
+          body: { content, version },
+        }),
+      ),
+  );
+}
+
+/** Appends a dated notes entry (the first one creates the notes document). */
+export function useAppendNoteEntry() {
+  return useNotesMutation(({ project, label, body }: NoteAddress & { body: Schemas["NotesEntryIn"] }) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/notes", { params: { path: { project, label } }, body })),
+  );
+}
+
+// ----- triggers and snoozing -----
+
+export function useAddTrigger() {
+  return useNotesMutation(({ project, label, ...body }: NoteAddress & Schemas["TriggerIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/triggers", { params: { path: { project, label } }, body })),
+  );
+}
+
+export function useRemoveTrigger() {
+  return useNotesMutation(({ project, label, triggerId }: NoteAddress & { triggerId: number }) =>
+    unwrap(api.DELETE("/api/v2/projects/{project}/notes/{label}/triggers/{trigger_id}", { params: { path: { project, label, trigger_id: triggerId } } })),
+  );
+}
+
+/** Back to waiting: fired triggers are reset; a new `trigger` replaces all old ones. */
+export function useSnoozeNote() {
+  return useNotesMutation(({ project, label, ...body }: NoteAddress & Schemas["NoteSnoozeIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/snooze", { params: { path: { project, label } }, body })),
+  );
+}
+
+// ----- due notes: the counter and the list -----
+
+export const DUE_COUNT_INTERVAL_MS = 60_000;
+
+/**
+ * How many notes are due in all projects, for the red exclamation mark: the cheap request, never the list.
+ * Asked every minute and when the window gets focus; polling pauses like the backlog's.
+ */
+export function useDueCount(paused: boolean) {
+  return useQuery({
+    queryKey: ["notes", "due-count"] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notes/due/count")),
+    refetchInterval: paused ? false : DUE_COUNT_INTERVAL_MS,
+    refetchOnWindowFocus: true,
+  });
+}
+
+// ----- promoting a note, demoting an item, notes of an item -----
+
+/** Turns a note into an Epic, Story or Task of its project; the note goes to the archive. Backlog and notes reload. */
+export function usePromoteNote() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ project, label, ...body }: NoteAddress & Schemas["PromoteIn"]) =>
+      unwrap(api.POST("/api/v2/notes/{project}/{label}/promote", { params: { path: { project, label } }, body })),
+    onSettled: () => {
+      refreshNotes(client);
+      void client.invalidateQueries({ queryKey: keys.backlog });
+    },
+  });
+}
+
+/** Turns an open item back into a note; the item is closed. Backlog, trash and notes reload. */
+export function useDemoteItem() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sourceId, id, ...body }: { sourceId: string; id: string } & Schemas["DemoteIn"]) =>
+      unwrap(api.POST("/api/v2/items/{source_id}/{item_id}/demote", { params: { path: { source_id: sourceId, item_id: id } }, body })),
+    onSettled: () => {
+      refreshNotes(client);
+      refreshSources(client);
+      void client.invalidateQueries({ queryKey: ["trash"] });
+    },
+  });
+}
+
+/** The notes (of all projects, not those in the trash) that point at an item; `project` is the item's project name. */
+export function useNotesLinkedToItem(project: string, label: string) {
+  return useQuery({
+    queryKey: ["notes", "linked-to-item", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/projects/{project}/items/{label}/notes", { params: { path: { project, label } } })),
+  });
+}
+
+// ----- the list of due notes and its actions -----
+
+/** All due notes with reason and possible actions. Only while the list is open (`enabled`); it does not poll. */
+export function useDueList(enabled: boolean) {
+  return useQuery({
+    queryKey: ["notes", "due-list"] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notes/due")),
+    enabled,
+  });
+}
+
+/** The open notices of one note, oldest first. */
+export function useNoteNotices(project: string, label: string, enabled = true) {
+  return useQuery({
+    queryKey: ["notes", "notices", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notices", { params: { query: { project, label, side: "note", open: true } } })),
+    enabled,
+  });
+}
+
+/** Decides an open notice: keep, detach, drop, or promote (with the item's fields, or after a promotion). */
+export function useDecideNotice() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: number } & Schemas["NoticeDecisionIn"]) =>
+      unwrap(api.POST("/api/v2/notices/{notice_id}/decision", { params: { path: { notice_id: id } }, body })),
+    onSettled: () => {
+      refreshNotes(client);
+      void client.invalidateQueries({ queryKey: keys.backlog });
+    },
+  });
+}
+
+export function fetchNote(project: string, label: string) {
+  return unwrap(api.GET("/api/v2/projects/{project}/notes/{label}", { params: { path: { project, label } } }));
+}
+
+/**
+ * Closes or keeps a note from the due list. The list only knows a snapshot, so the note is read right before the
+ * action and the action is made on its current version.
+ */
+export function useDueNoteAction() {
+  return useNotesMutation(async ({ project, label, action }: NoteAddress & { action: "done" | "dropped" | "keep" }) => {
+    const { version } = await fetchNote(project, label);
+    const path = { project, label };
+    return action === "keep"
+      ? unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/keep", { params: { path }, body: { version } }))
+      : unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/finish", { params: { path }, body: { version, status: action } }));
+  });
+}
+
+// ----- notes at an item, notes settings -----
+
+/** The open notices of an item (a note that points at it was dropped or promoted), oldest first. */
+export function useItemNotices(project: string, label: string) {
+  return useQuery({
+    queryKey: ["notes", "item-notices", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notices", { params: { query: { project, label, side: "item", open: true } } })),
+  });
+}
+
+/** Takes note of an item's notice: it is decided and gone from the item. */
+export function useAcknowledgeNotice() {
+  return useNotesMutation(({ id }: { id: number }) =>
+    unwrap(api.POST("/api/v2/notices/{notice_id}/decision", { params: { path: { notice_id: id } }, body: { decision: "acknowledge" } })),
+  );
+}
+
+/** The two options of notes: review interval in days and the deepest allowed level of topics. */
+export function useNotesSettings() {
+  return useQuery({
+    queryKey: ["notes", "settings"] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notes/settings")),
+  });
+}
+
+export function useSaveNotesSettings() {
+  return useNotesMutation((body: Schemas["NotesSettingsIn"]) => unwrap(api.PUT("/api/v2/notes/settings", { body })));
+}

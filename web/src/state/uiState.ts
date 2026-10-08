@@ -2,12 +2,18 @@
 // so configs/ui_state.json keeps working across the switch.
 import type { Lang } from "../i18n/messages";
 
-export const VIEWS = ["tree", "graph", "kanban", "trash"] as const;
+export const VIEWS = ["tree", "graph", "kanban", "notes", "trash"] as const;
 export type View = (typeof VIEWS)[number];
 export const BACKENDS = ["markdown", "database"] as const;
 /** Where a project is stored: the same two values the API uses. */
 export type DefaultBackend = (typeof BACKENDS)[number];
 export type HiddenKind = "hiddenProjects" | "hiddenStatuses" | "hiddenPriorities";
+
+/** A note is addressed by its project and label (labels count per project). */
+export interface NoteRef {
+  project: string;
+  label: string;
+}
 
 export interface UiState {
   hiddenProjects: ReadonlySet<string>;
@@ -23,6 +29,10 @@ export interface UiState {
   lang: Lang;
   /** The storage a new project is preselected with. */
   defaultBackend: DefaultBackend;
+  /** Notes area: the project the topic tree is limited to (null = all), the chosen topic, and the open note. */
+  notesProject: string | null;
+  notesTopic: NoteRef | null;
+  selectedNote: NoteRef | null;
 }
 
 export const INITIAL_UI_STATE: UiState = {
@@ -36,6 +46,9 @@ export const INITIAL_UI_STATE: UiState = {
   currentView: "tree",
   lang: "de",
   defaultBackend: "markdown",
+  notesProject: null,
+  notesTopic: null,
+  selectedNote: null,
 };
 
 const SET_KEYS = ["hiddenProjects", "hiddenStatuses", "hiddenPriorities", "collapsed", "markedProjects"] as const;
@@ -55,6 +68,14 @@ export function mergeStored(base: UiState, raw: unknown): UiState {
   if (VIEWS.includes(r.currentView as View)) next.currentView = r.currentView as View;
   if (r.lang === "de" || r.lang === "en") next.lang = r.lang;
   if (BACKENDS.includes(r.defaultBackend as DefaultBackend)) next.defaultBackend = r.defaultBackend as DefaultBackend;
+  if (typeof r.notesProject === "string" || r.notesProject === null) next.notesProject = r.notesProject;
+  const ref = (value: unknown): NoteRef | null | undefined => {
+    if (value === null) return null;
+    const v = value as Partial<NoteRef> | undefined;
+    return typeof v?.project === "string" && typeof v.label === "string" ? { project: v.project, label: v.label } : undefined;
+  };
+  next.notesTopic = ref(r.notesTopic) ?? next.notesTopic;
+  next.selectedNote = ref(r.selectedNote) ?? next.selectedNote;
   return next;
 }
 
@@ -70,6 +91,9 @@ export function snapshot(state: UiState): Record<string, unknown> {
     currentView: state.currentView,
     lang: state.lang,
     defaultBackend: state.defaultBackend,
+    notesProject: state.notesProject,
+    notesTopic: state.notesTopic,
+    selectedNote: state.selectedNote,
   };
 }
 
@@ -84,7 +108,11 @@ export type UiAction =
   | { type: "select"; uid: string | null }
   | { type: "view"; view: View }
   | { type: "lang"; lang: Lang }
-  | { type: "defaultBackend"; backend: DefaultBackend };
+  | { type: "defaultBackend"; backend: DefaultBackend }
+  | { type: "notesScope"; project: string | null; topic: NoteRef | null }
+  | { type: "selectNote"; note: NoteRef | null }
+  /** Jumps into the Notes area to one note (from the due list, an item, or a link). */
+  | { type: "openNote"; note: NoteRef };
 
 function toggled(set: ReadonlySet<string>, value: string): Set<string> {
   const next = new Set(set);
@@ -126,5 +154,11 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, lang: action.lang };
     case "defaultBackend":
       return { ...state, defaultBackend: action.backend };
+    case "notesScope":
+      return { ...state, notesProject: action.project, notesTopic: action.topic };
+    case "selectNote":
+      return { ...state, selectedNote: action.note };
+    case "openNote":
+      return { ...state, currentView: "notes", selectedNote: action.note };
   }
 }

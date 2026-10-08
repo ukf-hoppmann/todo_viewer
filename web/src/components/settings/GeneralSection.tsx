@@ -2,6 +2,7 @@ import { useStorageInfo } from "../../api/queries";
 import { describeError, useI18n } from "../../i18n/i18n";
 import { BACKENDS } from "../../state/uiState";
 import { useUiState } from "../../state/useUiStateStore";
+import { NotesSettings } from "./NotesSettings";
 
 /** The central database (read-only) and the storage new projects start with. */
 export function GeneralSection() {
@@ -44,6 +45,8 @@ export function GeneralSection() {
         ))}
       </div>
       <p className="hint">{t("settings.defaultBackend.hint")}</p>
+
+      <NotesSettings />
     </div>
   );
 }

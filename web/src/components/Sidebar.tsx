@@ -1,3 +1,4 @@
+import { DueBadge } from "./DueBadge";
 import type { SourceStatus } from "../api/client";
 import { priorityColor, statusColor } from "../domain/colors";
 import type { FilterOptions } from "../domain/model";
@@ -19,16 +20,22 @@ interface SidebarProps {
   syncStates: ReadonlyMap<string, SyncState>;
   /** Opens the settings at this project. */
   onOpenProject: (source: SourceStatus) => void;
+  /** Number of due notes (the red exclamation mark shows if above zero) and what a click on it does. */
+  dueCount?: number;
+  onOpenDue?: () => void;
 }
 
-export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource, onOpenSettings, syncStates, onOpenProject }: SidebarProps) {
+export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource, onOpenSettings, syncStates, onOpenProject, dueCount = 0, onOpenDue }: SidebarProps) {
   const { t, vocab } = useI18n();
   const { state, dispatch } = useUiState();
 
   return (
     <aside className="sidebar">
       <div className="sidebar-head">
-        <h1>{t("app.title")}</h1>
+        <div className="sidebar-title">
+          <h1>{t("app.title")}</h1>
+          {onOpenDue && <DueBadge count={dueCount} onOpen={onOpenDue} />}
+        </div>
         <div className="sidebar-tools">
           <div className="lang-switch" role="group" aria-label="Sprache / Language">
             {LANGS.map((lang) => (

@@ -29,8 +29,8 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 | HTTP-API | FastAPI-Router `/api/v2`, Pydantic-Schemas, zentrale Fehlerübersetzung, Auslieferung von `web/dist` | `backend/todo_viewer/api/` |
 | Logging | Konfiguration (structlog über das Standard-`logging`, auch für uvicorn), key=value-Zeilen, Rotation; Request-Middleware mit Request-ID und einer Zeile pro Request | `backend/todo_viewer/infrastructure/log_setup.py`, `backend/todo_viewer/api/request_log.py` |
 | Composition Root | Setzt Adapter und Services per Konstruktor-Injection zusammen; liest Einstellungen aus der Umgebung | `backend/todo_viewer/bootstrap.py`, `backend/main.py` |
-| Frontend | React 19 + Vite + TypeScript, TanStack Query; Views Baum, Graph (React Flow + ELK), Kanban, Papierkorb; Detail-Panel mit direkt änderbaren Feldern (Status, Priorität, Bereich, Pflicht für Parent, Abhängigkeiten) und Bearbeiten-Modus, Dialoge zum Anlegen, Löschen und für Dokumente; Einstellungsmenü (⚙ in der Sidebar) aus einer Abschnittsliste (`components/settings/sections.tsx`, ein neuer Abschnitt ist ein neuer Eintrag), „Allgemein“ (Datenbank lesend, Standard-Speicherort für neue Projekte) und „Projekte“ (Karte je Projekt: Primärquelle wechseln, Ordner, Spiegel, Sync-Stand, Sync mit Richtung; das ⚠ in der Sidebar öffnet die Karte; der Sync-Stand wird über `GET /sync-status` nur auf Anforderung geholt, `Modal` schließt bei Escape nur den obersten Dialog) | `web/src/` |
-| Frontend-Domain | Filter, Baum, Fortschritt, Abhängigkeitsgraph, Edit-Regeln als reine Funktionen | `web/src/domain/` |
+| Frontend | React 19 + Vite + TypeScript, TanStack Query; Views Baum, Graph (React Flow + ELK), Kanban, Notes (Topic-Baum, Notes-Liste, Detail mit Auslösern, Links und Dokumenten; `NoteDetail` mit dem Markdown-Renderer wird erst beim Öffnen einer Note geladen, der `DocumentDialog` wird für Items und Notes über ein `DocumentBackend` genutzt), Papierkorb; rotes Ausrufezeichen (`DueBadge`, Zähler über `GET /notes/due/count` jede Minute und beim Fokussieren des Fensters, auch im Tab-Titel) und Fällig-Modal (`DueModal`, Liste nur bei geöffnetem Modal); Detail-Panel mit direkt änderbaren Feldern (Status, Priorität, Bereich, Pflicht für Parent, Abhängigkeiten) und Bearbeiten-Modus, Dialoge zum Anlegen, Löschen und für Dokumente; Einstellungsmenü (⚙ in der Sidebar) aus einer Abschnittsliste (`components/settings/sections.tsx`, ein neuer Abschnitt ist ein neuer Eintrag), „Allgemein“ (Datenbank lesend, Standard-Speicherort für neue Projekte) und „Projekte“ (Karte je Projekt: Primärquelle wechseln, Ordner, Spiegel, Sync-Stand, Sync mit Richtung; das ⚠ in der Sidebar öffnet die Karte; der Sync-Stand wird über `GET /sync-status` nur auf Anforderung geholt, `Modal` schließt bei Escape nur den obersten Dialog) | `web/src/` |
+| Frontend-Domain | Filter, Baum, Fortschritt, Abhängigkeitsgraph, Edit-Regeln, Topic-Baum, Schnellwahlen zum Zurückstellen, Gruppierung der Fälligen, Tab-Titel und Beförderungs-Entwurf als reine Funktionen | `web/src/domain/` |
 | API-Client | Aus dem OpenAPI-Schema generierte Typen (`schema.d.ts`), Client, Query-Hooks | `web/src/api/` |
 
 ## Datenfluss
@@ -91,8 +91,8 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 - Projektliste (Name, Backend, Ordner, `sync_path`, Reihenfolge; `source_id` =
   UUID): zentrale Datenbank. Ort der Datenbank (`storage_url`): `configs/config.json`.
 - UI-Zustand (ausgeblendete Filterwerte, eingeklappte Knoten, markierte
-  Projekte, Ansicht, Auswahl, Suche, Sprache): zentrale Datenbank, über die API
-  gelesen und geschrieben.
+  Projekte, Ansicht, Auswahl, Suche, Sprache, im Notes-Bereich Projekt, Topic und geöffnete
+  Note): zentrale Datenbank, über die API gelesen und geschrieben.
 - Log: Datei aus `LOG_FILE` (im Container `./logs/` auf dem Host), nach Größe rotiert.
 - Im Container liegt `configs/` per Volume auf dem Host; die Nachbar-Repos sind
   unter demselben absoluten Pfad beschreibbar eingebunden.

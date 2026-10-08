@@ -193,6 +193,19 @@ abgebildet.
 - **Papierkorb**: Gelöschte Items aller Projekte mit Löschdatum.
   „Wiederherstellen“ holt ein Item samt Kindern zurück, „Endgültig löschen“
   entfernt es nach einer Bestätigung samt Kindern, Notizen und Specs.
+- **Notes**: Gedanken mit Wiedervorlage, getrennt vom Backlog. Links der Topic-Baum
+  (anlegen, umbenennen, verschieben, Termin setzen, löschen; „Alle Notes“ zeigt alles),
+  daneben die Notes des gewählten Topics samt Unter-Topics, fällige zuerst. Das Detail
+  zeigt Kurzfassung, Langtext (Markdown), Status und Prüf-Datum und bietet Bearbeiten,
+  Befördern (zu Epic, Story oder Task), Erledigen, Verwerfen, Zurückstellen, Behalten und
+  Löschen; dazu Auslöser (Zeitpunkt, Ereignis „Item erreicht Status“, Termin des Topics),
+  Links auf Items (auch anderer Projekte), Topics und Notes sowie Notizen und Specs wie
+  beim Backlog. Ein Item zeigt im Detail die Notes, die auf es verweisen, und lässt sich
+  über „Zur Note zurückstufen“ (nur im Status Open) zurück in eine Note verwandeln.
+  Ein dezentes rotes Ausrufezeichen neben dem Titel zeigt die Zahl fälliger Notes (auch
+  im Tab-Titel); ein Klick öffnet die Liste, gruppiert nach Grund (Auslöser,
+  Änderungshinweis, Termin, Prüfung), mit den Aktionen je Note. Prüf-Intervall und
+  Topic-Tiefe stellt man im Einstellungsmenü unter „Allgemein“ ein.
 
 Klick auf ein Item öffnet das Detail-Panel rechts mit allen geparsten Feldern
 (inkl. aller Freitext-Felder wie `Implementation`, `Verification`, `Context` etc.).

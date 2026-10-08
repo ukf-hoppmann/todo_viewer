@@ -479,9 +479,16 @@ def test_item_edit_checks_lifecycle_rules_before_writing():
 class RecordingListener:
     def __init__(self) -> None:
         self.calls: list[tuple[str, str, str]] = []
+        self.events: list[tuple[str, ...]] = []
 
     def item_status_changed(self, project: str, item_id: str, status: str) -> None:
         self.calls.append((project, item_id, status))
+
+    def item_deleted(self, project: str, item_id: str) -> None:
+        self.events.append(("deleted", project, item_id))
+
+    def item_retyped(self, project: str, old_id: str, new_id: str) -> None:
+        self.events.append(("retyped", project, old_id, new_id))
 
 
 def _items_with_listener(items: list[Item]) -> tuple[ItemService, FakeBacklogs, RecordingListener]:
@@ -562,6 +569,52 @@ def test_trash_delete_restore_and_purge_with_children():
     assert (backlogs.items, documents.deleted) == ([], ["S", "T"])
 
 
+def _trash_with_listener(items: list[Item]):
+    backlogs, listener = FakeBacklogs(items), RecordingListener()
+    trash = TrashService(backlogs, FakeDocuments(), TrashPlanner(LifecycleRules()), lambda: date(2026, 9, 28),
+                         listener)
+    return trash, backlogs, listener
+
+
+def test_deleting_announces_every_deleted_item_after_it_was_written():
+    story = Item(id="S", title="s", project="p", item_type="Story")
+    task = Item(id="T", title="t", project="p", parent="S", required_for_parent=True)
+    trash, backlogs, listener = _trash_with_listener([story, task])
+
+    trash.delete(Source("p", "/p"), "S", story.version, cascade=True)
+
+    assert listener.events == [("deleted", "p", "S"), ("deleted", "p", "T")]
+    assert all(i.deleted for i in backlogs.items)
+
+
+def test_nothing_is_announced_when_the_delete_is_refused():
+    story = Item(id="S", title="s", project="p", item_type="Story")
+    task = Item(id="T", title="t", project="p", parent="S", required_for_parent=True)
+    trash, _, listener = _trash_with_listener([story, task])
+
+    with pytest.raises(VersionConflictError):
+        trash.delete(Source("p", "/p"), "S", "outdated", cascade=True)
+    with pytest.raises(LifecycleViolationError):
+        trash.delete(Source("p", "/p"), "S", story.version, cascade=False)
+
+    assert listener.events == []
+
+
+def test_restoring_and_purging_announce_nothing():
+    story = Item(id="S", title="s", project="p", item_type="Story")
+    trash, _, listener = _trash_with_listener([story])
+    src = Source("p", "/p")
+    deleted = trash.delete(src, "S", story.version, cascade=False)
+    listener.events.clear()
+
+    restored = trash.restore(src, "S", deleted[0].item.version)
+    again = trash.delete(src, "S", restored[0].item.version, cascade=False)
+    listener.events.clear()
+    trash.purge(src, "S", again[0].item.version)
+
+    assert listener.events == []
+
+
 def test_item_edit_rejects_field_before_touching_storage():
     service, backlogs = _items([])
 
@@ -588,6 +641,28 @@ def _retype_service(items: list[Item], files: dict[str, str] | None = None):
     return service, backlogs, documents
 
 
+class OrderedNotes(FakeNotes):
+    """Records the order in which the links were moved and the listener was told."""
+
+    def __init__(self, log: list[str]) -> None:
+        super().__init__()
+        self.log = log
+
+    def relink_item(self, project: str, old_label: str, new_label: str) -> None:
+        super().relink_item(project, old_label, new_label)
+        self.log.append("relinked")
+
+
+class OrderedListener(RecordingListener):
+    def __init__(self, log: list[str]) -> None:
+        super().__init__()
+        self.log = log
+
+    def item_retyped(self, project: str, old_id: str, new_id: str) -> None:
+        super().item_retyped(project, old_id, new_id)
+        self.log.append("announced")
+
+
 def _retype_items() -> list[Item]:
     return [
         Item(id="STORY-001", title="Story", project="p", item_type="Story", required_for_parent=None,
@@ -596,6 +671,30 @@ def _retype_items() -> list[Item]:
         Item(id="TASK-002", title="Other", project="p", dependencies=["STORY-001"],
              notes=["TASK-002_notes.md"], summary="s"),
     ]
+
+
+def test_retype_announces_the_new_id_after_the_links_were_moved():
+    log: list[str] = []
+    backlogs, documents = FakeBacklogs(_retype_items()), FakeDocuments()
+    listener = OrderedListener(log)
+    service = RetypeService(backlogs, documents, RetypePlanner(), LifecycleRules(),
+                            OrderedNotes(log), listener)  # type: ignore[arg-type]
+
+    service.retype(Source("P", "/p"), "STORY-001", backlogs.items[0].version, "Task")
+
+    assert listener.events == [("retyped", "P", "STORY-001", "TASK-003")]
+    assert log == ["relinked", "announced"]
+
+
+def test_retype_announces_nothing_when_it_is_refused():
+    backlogs, listener = FakeBacklogs(_retype_items()), RecordingListener()
+    service = RetypeService(backlogs, FakeDocuments(), RetypePlanner(), LifecycleRules(), FakeNotes(),
+                            listener)  # type: ignore[arg-type]
+
+    with pytest.raises(VersionConflictError):
+        service.retype(Source("P", "/p"), "STORY-001", "outdated", "Task")
+
+    assert listener.events == []
 
 
 def test_retype_gives_a_new_id_and_follows_references_and_documents():

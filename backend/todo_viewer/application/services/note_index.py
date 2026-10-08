@@ -6,7 +6,9 @@ from datetime import UTC, datetime
 from todo_viewer.domain.errors import SourceGoneError, ValueRequiredError
 from todo_viewer.domain.notes import (
     FINISHED_STATUSES,
+    NOTE_SIDE_DECISIONS,
     LinkTarget,
+    NoteReason,
     NoteStatus,
     TargetKind,
     Topic,
@@ -21,6 +23,8 @@ from .notes import NoteService, NoteView
 
 # What the owner can do with a note that is due; the UI and Claude offer exactly these.
 DUE_ACTIONS = ("keep", "snooze", "done", "dropped")
+# A note that is due because of a notice is decided with the options of the notice instead.
+NOTICE_ACTIONS = tuple(d.value for d in NOTE_SIDE_DECISIONS)
 
 
 def _now() -> datetime:
@@ -96,7 +100,8 @@ class NoteIndexService:
             for view in self._notes.due(name):
                 topic = view.note.topic
                 fired = tuple(t for t in view.triggers if t.id in view.evaluation.fired)
-                found.append(DueNote(view, () if topic is None else topic_path(topics, topic), fired))
+                actions = NOTICE_ACTIONS if view.evaluation.reason is NoteReason.NOTICE else DUE_ACTIONS
+                found.append(DueNote(view, () if topic is None else topic_path(topics, topic), fired, actions))
         return found
 
     def due_count(self) -> dict[str, int]:
@@ -147,4 +152,4 @@ class NoteIndexService:
         return counts
 
 
-__all__ = ["DUE_ACTIONS", "DueNote", "IndexedTopic", "NoteIndexService", "NotesIndex"]
+__all__ = ["DUE_ACTIONS", "NOTICE_ACTIONS", "DueNote", "IndexedTopic", "NoteIndexService", "NotesIndex"]

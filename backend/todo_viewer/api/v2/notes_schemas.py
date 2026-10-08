@@ -10,6 +10,7 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictInt, model_validator
 
 from todo_viewer.application.services import (
+    DecisionResult,
     DueNote,
     IndexedTopic,
     LinkedNote,
@@ -22,10 +23,13 @@ from todo_viewer.domain.notes import (
     Link,
     LinkTarget,
     NewTrigger,
+    Notice,
+    NoticeDecision,
     TargetKind,
     Topic,
     Trigger,
     TriggerKind,
+    decision_options,
 )
 from todo_viewer.domain.notes import NotesSettings as NotesSettingsValue
 
@@ -235,6 +239,48 @@ class TriggerOut(BaseModel):
                    fired_at=trigger.fired_at, already_met=trigger.already_met)
 
 
+class NoticeCounterpartOut(BaseModel):
+    kind: str = Field(description="item for a notice to a note, note for a notice to an item")
+    project: str
+    label: str
+
+
+class NoticeOut(BaseModel):
+    """A notice that a linked item or note changed. It stays open until someone decides."""
+
+    id: int
+    side: Literal["note", "item"] = Field(description="Who is told: the note, or the item")
+    project: str = Field(description="Project of the one who is told")
+    label: str = Field(description="Label of the one who is told: a note label, or an item ID")
+    cause: str = Field(description="item_completed, item_rejected, item_deleted, item_retyped, "
+                                   "project_unreachable, note_dropped, or note_promoted")
+    counterpart: NoticeCounterpartOut = Field(description="The other end: the item for a note, the note for an item")
+    created_at: datetime
+    decided_at: datetime | None = Field(description="null while the notice is open")
+    decision: str | None = Field(description="keep, detach, drop, promote, or acknowledge; null while open")
+    options: list[str] = Field(description="What can be chosen: keep, detach, drop, promote for a note; "
+                                           "acknowledge for an item")
+
+    @classmethod
+    def of(cls, notice: Notice) -> NoticeOut:
+        target = notice.counterpart
+        return cls(id=notice.id, side=notice.side.value, project=notice.project,
+                   label=notice.label, cause=notice.cause.value,
+                   counterpart=NoticeCounterpartOut(kind=target.kind.value, project=target.project,
+                                                    label=target.label),
+                   created_at=notice.created_at, decided_at=notice.decided_at,
+                   decision=None if notice.decision is None else notice.decision.value,
+                   options=[d.value for d in decision_options(notice.side)])
+
+
+class NoticeDecisionIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision: NoticeDecision
+    version: str | None = Field(default=None, description="Version of the note the decision is based on; "
+                                                          "default: the stored one")
+
+
 class NoteOut(BaseModel):
     project: str
     label: str
@@ -243,11 +289,12 @@ class NoteOut(BaseModel):
     body: str | None
     status: str = Field(description="The effective status: `due` is derived from the triggers and the review date")
     stored_status: str = Field(description="The stored status (waiting, snoozed, done, dropped, promoted)")
-    reason: str | None = Field(description="Why the note is due: trigger, review_expired, or topic_due")
+    reason: str | None = Field(description="Why the note is due: trigger, notice, review_expired, or topic_due")
     topic: str | None
     review_at: datetime | None
     trigger_mode: str
     triggers: list[TriggerOut]
+    open_notices: list[NoticeOut] = Field(description="Notices that nobody has decided yet; they make the note due")
     archived: bool
     deleted: datetime | None
     created: datetime | None
@@ -260,8 +307,19 @@ class NoteOut(BaseModel):
                    body=note.body, status=view.evaluation.status.value, stored_status=note.status.value,
                    reason=None if view.evaluation.reason is None else view.evaluation.reason.value,
                    topic=note.topic, review_at=note.review_at, trigger_mode=note.trigger_mode.value,
-                   triggers=[TriggerOut.of(t) for t in view.triggers], archived=note.archived,
+                   triggers=[TriggerOut.of(t) for t in view.triggers],
+                   open_notices=[NoticeOut.of(n) for n in view.open_notices], archived=note.archived,
                    deleted=note.deleted, created=note.created, updated=note.updated)
+
+
+class NoticeDecisionOut(BaseModel):
+    notice: NoticeOut
+    note: NoteOut | None = Field(description="The note after the decision; null for a notice to an item")
+
+    @classmethod
+    def of(cls, result: DecisionResult) -> NoticeDecisionOut:
+        return cls(notice=NoticeOut.of(result.notice),
+                   note=None if result.note is None else NoteOut.of(result.note))
 
 
 class TrashOut(BaseModel):
@@ -306,7 +364,7 @@ class IndexNoteOut(BaseModel):
     label: str
     summary: str
     status: str = Field(description="waiting, due, snoozed, done, dropped, or promoted")
-    reason: str | None = Field(description="Why the note is due: trigger, review_expired, or topic_due")
+    reason: str | None = Field(description="Why the note is due: trigger, notice, review_expired, or topic_due")
     review_at: datetime | None = Field(description="When the note must be looked at again at the latest")
     topic: str | None
     archived: bool
@@ -353,8 +411,9 @@ class DueCountOut(BaseModel):
 class DueNoteOut(IndexNoteOut):
     topic_path: list[str] = Field(description="The names of the topic and its parents; empty without a topic")
     triggers: list[TriggerOut] = Field(description="The triggers that have arrived")
-    actions: list[Literal["keep", "snooze", "done", "dropped"]] = Field(
-        description="What can be done with the note: keep, snooze, or close it as done or dropped")
+    actions: list[Literal["keep", "snooze", "done", "dropped", "detach", "drop", "promote"]] = Field(
+        description="What can be done with the note: keep, snooze, or close it as done or dropped; for the reason "
+                    "notice: keep, detach, drop, or promote (decide the notice)")
 
     @classmethod
     def of_due(cls, due: DueNote) -> DueNoteOut:

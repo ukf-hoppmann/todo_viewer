@@ -5,6 +5,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+import structlog
+
 from todo_viewer.domain.errors import (
     InvalidValueError,
     ItemNotFoundError,
@@ -39,25 +41,34 @@ from todo_viewer.domain.notes import (
     LinkRole,
     LinkTarget,
     NewNote,
+    NewNotice,
     NewTrigger,
     Note,
     NoteChanges,
     NoteEvaluation,
     NotesSettings,
     NoteStatus,
+    Notice,
+    NoticeCause,
+    NoticeDecision,
+    NoticeSide,
     TargetKind,
     Topic,
     Trigger,
     TriggerKind,
     TriggerMode,
+    check_decision,
     default_review_at,
     evaluate,
     event_hit,
+    item_status_notice_cause,
     trigger_arrived,
 )
 from todo_viewer.domain.source import Source
 
 from ..ports import BacklogRepository, Clock, NoteRepository, SourceRepository
+
+log = structlog.get_logger(__name__)
 
 
 def _now() -> datetime:
@@ -71,6 +82,10 @@ def _summary(text: str) -> str:
     return stripped
 
 
+# Closing a note this way tells the items it references; `done` tells nobody.
+_NOTE_CLOSED_CAUSES = {NoteStatus.DROPPED: NoticeCause.NOTE_DROPPED, NoteStatus.PROMOTED: NoticeCause.NOTE_PROMOTED}
+
+
 @dataclass(frozen=True)
 class NoteView:
     """A note as stored, with its triggers and what they say about it right now."""
@@ -78,6 +93,15 @@ class NoteView:
     note: Note
     triggers: tuple[Trigger, ...]
     evaluation: NoteEvaluation
+    open_notices: tuple[Notice, ...] = ()
+
+
+@dataclass(frozen=True)
+class DecisionResult:
+    """The notice after the decision and, for a notice to a note, the note as it is now."""
+
+    notice: Notice
+    note: NoteView | None
 
 
 @dataclass(frozen=True)
@@ -267,13 +291,68 @@ class NoteService:
             for trigger in self._notes.triggers_of(link.project, link.note):
                 if trigger.link_id == link.id and event_hit(trigger, status):
                     self._notes.mark_fired(link.project, link.note, trigger.id, now)
+        cause = item_status_notice_cause(status)
+        if cause is not None:
+            self._tell_notes(LinkTarget(TargetKind.ITEM, project, item_id), cause)
+
+    def item_deleted(self, project: str, item_id: str) -> None:
+        """Tells the notes that reference the item that it is in the trash now."""
+        self._tell_notes(LinkTarget(TargetKind.ITEM, project, item_id), NoticeCause.ITEM_DELETED)
+
+    def item_retyped(self, project: str, old_id: str, new_id: str) -> None:
+        """Tells the notes that reference the item that it has a new id. Their links point at `new_id` already."""
+        self._tell_notes(LinkTarget(TargetKind.ITEM, project, new_id), NoticeCause.ITEM_RETYPED)
+
+    # --- notices ---
+
+    def add_notice(self, new: NewNotice) -> Notice:
+        """Tells a note or an item that the other end changed. An open notice of the same kind stays the only one."""
+        return self._notes.add_notice(new)
+
+    def notices(self, project: str, label: str, side: NoticeSide, open_only: bool = True) -> list[Notice]:
+        """The notices of a note (side `note`) or of an item (side `item`), oldest first."""
+        if side is NoticeSide.NOTE:
+            self._notes.get_note(project, label)
+        return self._notes.notices_of(project, label, side, open_only)
+
+    def decide(self, notice_id: int, decision: NoticeDecision, version: str | None = None) -> DecisionResult:
+        """Decides an open notice. The effect is applied first; a failure leaves the notice open.
+
+        Notice to a note: `keep` moves the review date, `detach` removes the reference link to the item, `drop`
+        drops the note, `promote` is not connected yet. Notice to an item: `acknowledge`. `version` is the note's
+        version the decision is based on (default: the stored one).
+        """
+        notice = self._notes.get_notice(notice_id)
+        check_decision(notice, decision)
+        if notice.side is NoticeSide.ITEM:
+            return DecisionResult(self._notes.decide_notice(notice_id, decision, self._clock()), None)
+        note = self._notes.get_note(notice.project, notice.label)
+        expected = version or note.version
+        if note.version != expected:
+            raise VersionConflictError(note.label)
+        if decision is NoticeDecision.KEEP:
+            self._notes.update_note(note.project, note.label, expected,
+                                    keep_changes(note, self._clock(), self._settings().review_days))
+        elif decision is NoticeDecision.DETACH:
+            check_editable(note)
+            for link in self._notes.links_of(note.project, note.label):
+                if link.target == notice.counterpart and link.role is LinkRole.REFERENCE:
+                    self._notes.remove_link(note.project, note.label, link.id)
+        elif decision is NoticeDecision.DROP:
+            self.finish(note.project, note.label, expected, NoteStatus.DROPPED)
+        decided = self._notes.decide_notice(notice_id, decision, self._clock())
+        return DecisionResult(decided, self.show(note.project, note.label))
 
     # --- lifecycle, archive, trash ---
 
     def finish(self, project: str, label: str, version: str, target: NoteStatus) -> NoteView:
         """Done, dropped, or promoted: the note moves to the archive."""
         note = self._notes.get_note(project, label)
-        return self._view(self._notes.update_note(project, label, version, finish_changes(note, target)))
+        view = self._view(self._notes.update_note(project, label, version, finish_changes(note, target)))
+        cause = _NOTE_CLOSED_CAUSES.get(target)
+        if cause is not None:
+            self._tell_items(note, cause)
+        return view
 
     def delete_note(self, project: str, label: str) -> NoteView:
         check_delete_note(self._notes.get_note(project, label))
@@ -318,6 +397,41 @@ class NoteService:
 
     # --- helpers ---
 
+    def _tell_items(self, note: Note, cause: NoticeCause) -> None:
+        """A notice for every item the note references. The note is closed already: a failure here is logged and
+        never reaches the caller, and it does not stop the other items."""
+        try:
+            links = [link for link in self._notes.links_of(note.project, note.label)
+                     if link.role is LinkRole.REFERENCE and link.target.kind is TargetKind.ITEM]
+        except Exception:
+            log.exception("notice_links_failed", project=note.project, note=note.label, cause=cause.value)
+            return
+        about = LinkTarget(TargetKind.NOTE, note.project, note.label)
+        for link in links:
+            try:
+                self._notes.add_notice(NewNotice(NoticeSide.ITEM, link.target.project, link.target.label, cause,
+                                                 about))
+            except Exception:
+                log.exception("notice_failed", project=link.target.project, item=link.target.label,
+                              note=note.label, cause=cause.value)
+
+    def _tell_notes(self, item: LinkTarget, cause: NoticeCause) -> None:
+        """A notice for every open note in use that references the item. The item change is written already:
+        a failure here is logged and never reaches the caller, and it does not stop the other notes."""
+        try:
+            links = [link for link in self._notes.links_to(item) if link.role is LinkRole.REFERENCE]
+        except Exception:
+            log.exception("notice_links_failed", project=item.project, item=item.label, cause=cause.value)
+            return
+        for link in links:
+            try:
+                note = self._notes.get_note(link.project, link.note)
+                if note.deleted is None and note.status not in FINISHED_STATUSES:
+                    self._notes.add_notice(NewNotice(NoticeSide.NOTE, link.project, link.note, cause, item))
+            except Exception:
+                log.exception("notice_failed", project=link.project, note=link.note, item=item.label,
+                              cause=cause.value)
+
     def _new_review_date(self) -> datetime:
         return default_review_at(self._clock(), self._settings().review_days)
 
@@ -326,7 +440,9 @@ class NoteService:
 
     def _view(self, note: Note) -> NoteView:
         triggers = self._notes.triggers_of(note.project, note.label)
-        return NoteView(note, tuple(triggers), evaluate(note, triggers, self._topic_due(note), self._clock()))
+        open_notices = self._notes.notices_of(note.project, note.label, NoticeSide.NOTE, open_only=True)
+        evaluation = evaluate(note, triggers, self._topic_due(note), self._clock(), len(open_notices))
+        return NoteView(note, tuple(triggers), evaluation, tuple(open_notices))
 
     def _source(self, project: str) -> Source:
         found = next((s for s in self._sources.all() if s.project == project), None)

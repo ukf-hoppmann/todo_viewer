@@ -144,6 +144,26 @@ MIGRATIONS: dict[int, list[str]] = {
             PRIMARY KEY (project_id, kind)
         )""",
     ],
+    # Notices between notes and items. They name the note and the item by project and label, like links, so a
+    # notice survives whatever happens to the item; `project` and `label` are the one who is told.
+    7: [
+        """CREATE TABLE note_notices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            side VARCHAR(10) NOT NULL,
+            project_id VARCHAR(64) NOT NULL,
+            label VARCHAR(100) NOT NULL,
+            cause VARCHAR(30) NOT NULL,
+            counterpart_kind VARCHAR(10) NOT NULL,
+            counterpart_project VARCHAR(64) NOT NULL,
+            counterpart_label VARCHAR(100) NOT NULL,
+            created_at TEXT NOT NULL,
+            decided_at TEXT,
+            decision VARCHAR(20)
+        )""",
+        "CREATE INDEX note_notices_who ON note_notices (side, project_id, label)",
+        "CREATE INDEX note_notices_counterpart ON note_notices (counterpart_kind, counterpart_project, "
+        "counterpart_label)",
+    ],
 }
 
 CURRENT_VERSION = max(MIGRATIONS)

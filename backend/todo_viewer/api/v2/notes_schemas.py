@@ -30,6 +30,7 @@ from todo_viewer.domain.notes import (
     Trigger,
     TriggerKind,
     decision_options,
+    target_display,
 )
 from todo_viewer.domain.notes import NotesSettings as NotesSettingsValue
 
@@ -197,12 +198,14 @@ class LinkOut(BaseModel):
     kind: str
     target_project: str
     target: str = Field(description="Label of the item, topic, or note it points at")
+    target_display: str = Field(description="The target as 'project · label'")
     role: str = Field(description="reference, origin, or trigger (the link of an event trigger)")
 
     @classmethod
     def of(cls, link: Link) -> LinkOut:
         return cls(id=link.id, note=link.note, project=link.project, kind=link.target.kind.value,
-                   target_project=link.target.project, target=link.target.label, role=link.role.value)
+                   target_project=link.target.project, target=link.target.label,
+                   target_display=target_display(link.target.project, link.target.label), role=link.role.value)
 
 
 class LinkedNoteOut(BaseModel):
@@ -228,6 +231,7 @@ class TriggerOut(BaseModel):
     at: datetime | None
     target_project: str | None
     target: str | None = Field(description="Event: label of the item that is watched")
+    target_display: str | None = Field(description="Event: the item as 'project · label'")
     target_status: str | None
     fired_at: datetime | None
     already_met: bool
@@ -237,7 +241,9 @@ class TriggerOut(BaseModel):
         target = trigger.target
         return cls(id=trigger.id, kind=trigger.kind.value, at=trigger.at,
                    target_project=None if target is None else target.project,
-                   target=None if target is None else target.label, target_status=trigger.target_status,
+                   target=None if target is None else target.label,
+                   target_display=None if target is None else target_display(target.project, target.label),
+                   target_status=trigger.target_status,
                    fired_at=trigger.fired_at, already_met=trigger.already_met)
 
 

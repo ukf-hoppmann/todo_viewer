@@ -22,6 +22,7 @@ from todo_viewer.domain.notes import (
     format_label,
     subtree_height,
     subtree_labels,
+    target_display,
     topic_depth,
     topic_path,
     utc,
@@ -136,3 +137,7 @@ def test_changed_settings_refuse_values_out_of_range(depth, days, field):
         changed_settings(NotesSettings(), depth, days)
 
     assert caught.value.details["field"] == field
+
+
+def test_a_link_target_is_shown_as_project_and_label():
+    assert target_display("demo", "STORY-001") == "demo · STORY-001"

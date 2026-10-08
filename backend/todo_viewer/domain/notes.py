@@ -178,6 +178,11 @@ class LinkTarget:
     label: str
 
 
+def target_display(project: str, label: str) -> str:
+    """How a link target is named in the API and the UI: project and label."""
+    return f"{project} · {label}"
+
+
 @dataclass(frozen=True)
 class Link:
     """From a note to an item, a topic, or another note. Item links hold project plus item label."""

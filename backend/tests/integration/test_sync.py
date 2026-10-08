@@ -331,3 +331,60 @@ def test_what_the_target_of_a_markdown_project_has_extra_is_deleted_only_when_as
     dropped = setup.service.run(project, FROM_MD, setup.service.preview(project, FROM_MD).token, True, "en")
     assert [e.label for e in dropped.deleted] == ["TASK-070"]
     assert setup.versions(mirror) == setup.versions(setup.project)
+
+
+class Heard:
+    """Records what the sync tells the listener about items whose status changed."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str, str]] = []
+
+    def item_status_changed(self, project: str, item_id: str, status: str) -> None:
+        self.calls.append((project, item_id, status))
+
+    def item_deleted(self, project: str, item_id: str) -> None: ...
+
+
+def _changed_in_markdown(setup: Setup) -> Item:
+    """Exports the project, then sets one item to Completed in the exported folder, as an editor outside would."""
+    setup.service.run(setup.project, TO_MD, setup.service.preview(setup.project, TO_MD).token, False, "en")
+    markdown = dataclasses.replace(setup.project, backend="markdown", path=str(setup.tmp / "md"), sync_path=None)
+    items = setup.backlogs.load(markdown).items
+    open_item = next(i for i in items if i.status != "Completed")
+    setup.backlogs.write_backlog(markdown, [dataclasses.replace(i, status="Completed") if i is open_item else i
+                                            for i in items], "en")
+    return open_item
+
+
+def test_a_status_change_that_the_sync_brings_into_the_primary_source_is_announced(setup: Setup):
+    heard = Heard()
+    service = SyncService(setup.backlogs, setup.documents, heard)
+    changed = _changed_in_markdown(setup)
+
+    service.run(setup.project, FROM_MD, service.preview(setup.project, FROM_MD).token, False, "en")
+
+    assert heard.calls == [("P", changed.id, "Completed")]
+
+
+def test_a_sync_into_the_mirror_or_without_status_changes_announces_nothing(setup: Setup):
+    heard = Heard()
+    service = SyncService(setup.backlogs, setup.documents, heard)
+    _changed_in_markdown(setup)
+
+    service.run(setup.project, TO_MD, service.preview(setup.project, TO_MD).token, True, "en")  # mirror is the target
+    service.run(setup.project, FROM_MD, service.preview(setup.project, FROM_MD).token, False, "en")  # now equal
+
+    assert heard.calls == []
+
+
+def test_a_listener_that_fails_does_not_fail_the_sync(setup: Setup):
+    class Broken(Heard):
+        def item_status_changed(self, project: str, item_id: str, status: str) -> None:
+            raise RuntimeError("boom")
+
+    service = SyncService(setup.backlogs, setup.documents, Broken())
+    _changed_in_markdown(setup)
+
+    result = service.run(setup.project, FROM_MD, service.preview(setup.project, FROM_MD).token, False, "en")
+
+    assert len(result.preview.changed) == 1

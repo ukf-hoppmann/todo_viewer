@@ -1608,6 +1608,11 @@ export interface components {
              * @description Label of the item, topic, or note it points at
              */
             target: string;
+            /**
+             * Target Display
+             * @description The target as 'project · label'
+             */
+            target_display: string;
             /** Target Project */
             target_project: string;
         };
@@ -2357,6 +2362,11 @@ export interface components {
              * @description Event: label of the item that is watched
              */
             target: string | null;
+            /**
+             * Target Display
+             * @description Event: the item as 'project · label'
+             */
+            target_display: string | null;
             /** Target Project */
             target_project: string | null;
             /** Target Status */

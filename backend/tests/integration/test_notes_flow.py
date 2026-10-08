@@ -1,6 +1,7 @@
 """Notes with triggers, review, archive, and trash across the real container: database project, no mocks."""
 from __future__ import annotations
 
+import shutil
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -8,7 +9,7 @@ import pytest
 
 from todo_viewer.application.container import Container
 from todo_viewer.bootstrap import Settings, build_container
-from todo_viewer.domain.errors import NoteLifecycleError
+from todo_viewer.domain.errors import LinkProjectUnknownError, LinkTargetNotFoundError, NoteLifecycleError
 from todo_viewer.domain.item import Status
 from todo_viewer.domain.notes import (
     LinkRole,
@@ -157,3 +158,66 @@ def test_closing_a_demoted_item_does_not_tell_the_note_it_became(container: Cont
     label = done.note.note.label
     assert container.notes.notices(PROJECT, label, NoticeSide.NOTE, open_only=False) == []
     assert container.items.get(source, task.id).item.status == Status.REJECTED
+
+
+def test_a_trigger_in_one_project_fires_when_an_item_of_another_project_completes(container: Container,
+                                                                                  source: Source):
+    other = container.sources.add("other-path", "other", backend="database")
+    story = new_story(container, other)
+    target = LinkTarget(TargetKind.ITEM, "other", story)
+    note = container.notes.create(PROJECT, "continue when the other project is done").note
+    container.notes.add_trigger(PROJECT, note.label, NewTrigger(TriggerKind.EVENT, target=target,
+                                                                target_status=Status.COMPLETED))
+    assert container.notes.due(PROJECT) == []
+
+    container.items.edit(other, story, container.items.get(other, story).item.version,
+                         {"status": Status.COMPLETED}, "done")
+
+    assert [(v.note.label, v.evaluation.reason) for v in container.notes.due(PROJECT)] == [
+        (note.label, NoteReason.TRIGGER)]
+    # The way back: the item in the other project knows the note.
+    assert [(v.link.project, v.view.note.label) for v in container.notes.notes_linking_to(target)] == [
+        (PROJECT, note.label)]
+
+
+def test_a_target_that_has_the_status_already_is_marked_already_met(container: Container, source: Source):
+    other = container.sources.add("other-path", "other", backend="database")
+    story = new_story(container, other)
+    container.items.edit(other, story, container.items.get(other, story).item.version,
+                         {"status": Status.COMPLETED}, "done")
+    note = container.notes.create(PROJECT, "already there").note
+
+    trigger = container.notes.add_trigger(PROJECT, note.label, NewTrigger(
+        TriggerKind.EVENT, target=LinkTarget(TargetKind.ITEM, "other", story), target_status=Status.COMPLETED))
+
+    assert trigger.already_met and trigger.fired_at is not None
+
+
+def test_links_to_unknown_projects_and_missing_items_are_refused_with_their_own_errors(container: Container,
+                                                                                       source: Source):
+    container.sources.add("other-path", "other", backend="database")
+    note = container.notes.create(PROJECT, "somewhere").note
+
+    with pytest.raises(LinkProjectUnknownError):
+        container.notes.add_link(PROJECT, note.label, LinkTarget(TargetKind.ITEM, "nowhere", "STORY-001"))
+    with pytest.raises(LinkProjectUnknownError):
+        container.notes.add_trigger(PROJECT, note.label, NewTrigger(
+            TriggerKind.EVENT, target=LinkTarget(TargetKind.ITEM, "nowhere", "STORY-001"),
+            target_status=Status.COMPLETED))
+    with pytest.raises(LinkTargetNotFoundError):
+        container.notes.add_link(PROJECT, note.label, LinkTarget(TargetKind.ITEM, "other", "STORY-099"))
+
+
+def test_a_markdown_project_can_be_the_target_of_a_trigger(container: Container, source: Source, tmp_path: Path):
+    folder = tmp_path / "md"
+    folder.mkdir()
+    shutil.copy(Path(__file__).parents[1] / "fixtures" / "backlog" / "TODO.md", folder / "TODO.md")
+    markdown = container.sources.add(str(folder), "md", backend="markdown")
+    note = container.notes.create(PROJECT, "wait for the markdown project").note
+    container.notes.add_trigger(PROJECT, note.label, NewTrigger(
+        TriggerKind.EVENT, target=LinkTarget(TargetKind.ITEM, "md", "STORY-001"), target_status=Status.IN_PROGRESS))
+
+    container.items.edit(markdown, "STORY-001", container.items.get(markdown, "STORY-001").item.version,
+                         {"status": Status.IN_PROGRESS}, None)
+
+    assert [v.evaluation.reason for v in container.notes.due(PROJECT)] == [NoteReason.TRIGGER]

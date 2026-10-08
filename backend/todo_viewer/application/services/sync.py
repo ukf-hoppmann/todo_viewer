@@ -5,6 +5,8 @@ from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+import structlog
+
 from todo_viewer.domain.documents import content_version
 from todo_viewer.domain.errors import DocumentForbiddenError, DocumentNotFoundError, SyncSourceInvalidError
 from todo_viewer.domain.item import Item
@@ -21,7 +23,9 @@ from todo_viewer.domain.sync import (
     sync_pair,
 )
 
-from ..ports import BacklogRepository, DocumentStore
+from ..ports import BacklogRepository, DocumentStore, ItemStatusListener
+
+log = structlog.get_logger(__name__)
 
 # A markdown folder that does not exist yet or has no TODO.md is a target that is still empty.
 _EMPTY_TARGET = frozenset({"not_found", "no_todo"})
@@ -56,9 +60,11 @@ class _Side:
 class SyncService:
     """Copies all data of a database project to its markdown folder or back; nothing happens by itself."""
 
-    def __init__(self, backlogs: BacklogRepository, documents: DocumentStore):
+    def __init__(self, backlogs: BacklogRepository, documents: DocumentStore,
+                 listener: ItemStatusListener | None = None):
         self._backlogs = backlogs
         self._documents = documents
+        self._listener = listener
         self._locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
         self._guard = threading.Lock()
 
@@ -108,9 +114,24 @@ class SyncService:
                 for entry in preview.missing_documents:
                     assert entry.name is not None
                     self._documents.delete_document(target.source, entry.label, entry.name)
+            if target.source.backend == source.backend:  # the target is the primary source: its truth changed
+                self._announce_status_changes(source.project, origin.items, target.items)
             return SyncResult(preview, deleted=self._missing(preview) if delete_missing else (),
                               kept=() if delete_missing else self._missing(preview),
                               fingerprints=self._fingerprints(source))
+
+    def _announce_status_changes(self, project: str, origin: Sequence[Item], target: Sequence[Item]) -> None:
+        """Tells the listener about every item whose status the sync changed, so event triggers can arrive. A
+        failure is logged and never fails the sync, which is written already."""
+        if self._listener is None:
+            return
+        before = {item.id: item.status for item in target}
+        for item in origin:
+            if item.id in before and before[item.id] != item.status:
+                try:
+                    self._listener.item_status_changed(project, item.id, item.status)
+                except Exception:
+                    log.exception("sync_status_announce_failed", project=project, item=item.id)
 
     def _fingerprints(self, source: Source) -> SideFingerprints | None:
         sides = primary_and_mirror(source)

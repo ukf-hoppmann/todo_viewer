@@ -13,6 +13,7 @@ from todo_viewer.domain.errors import (
     ItemNotFoundError,
     LinkExistsError,
     LinkNotFoundError,
+    LinkProjectUnknownError,
     LinkTargetNotFoundError,
     NoteLifecycleError,
     NoteNotFoundError,
@@ -457,19 +458,24 @@ class NoteService:
             raise SourceGoneError()
         return found
 
+    def _link_source(self, project: str) -> Source:
+        try:
+            return self._source(project)
+        except SourceGoneError as gone:
+            raise LinkProjectUnknownError(project) from gone
+
     def _check_target(self, target: LinkTarget) -> None:
+        source = self._link_source(target.project)
         try:
             if target.kind is TargetKind.ITEM:
-                self._backlogs.get(self._source(target.project), target.label)
+                self._backlogs.get(source, target.label)
             elif target.kind is TargetKind.TOPIC:
-                self._source(target.project)
                 if self._notes.get_topic(target.project, target.label).deleted is not None:
                     raise TopicNotFoundError(target.label)
             else:
-                self._source(target.project)
                 if self._notes.get_note(target.project, target.label).deleted is not None:
                     raise NoteNotFoundError(target.label)
-        except (ItemNotFoundError, TopicNotFoundError, NoteNotFoundError, SourceGoneError) as gone:
+        except (ItemNotFoundError, TopicNotFoundError, NoteNotFoundError) as gone:
             raise LinkTargetNotFoundError(target.kind.value, target.project, target.label) from gone
 
     def _checked_trigger(self, note: Note, new: NewTrigger) -> NewTrigger:
@@ -486,7 +492,7 @@ class NoteService:
             raise InvalidValueError("target_status", tuple(EVENT_STATUSES))
         if new.target.kind is not TargetKind.ITEM:
             raise InvalidValueError("target", (TargetKind.ITEM.value,))
-        item = self._backlogs.get(self._source(new.target.project), new.target.label)
+        item = self._backlogs.get(self._link_source(new.target.project), new.target.label)
         if item.status == new.target_status:
             return dataclasses.replace(new, fired_at=self._clock(), already_met=True)
         return new

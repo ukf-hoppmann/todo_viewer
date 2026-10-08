@@ -248,6 +248,13 @@ class LinkTargetNotFoundError(NotFoundError):
                          project=project, id=label)
 
 
+class LinkProjectUnknownError(NotFoundError):
+    code = "link_project_unknown"
+
+    def __init__(self, project: str):
+        super().__init__(f"Project '{project}' is not registered.", project=project)
+
+
 class LinkExistsError(ConflictError):
     code = "link_exists"
 

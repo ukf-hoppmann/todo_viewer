@@ -1238,6 +1238,11 @@
             "title": "Target",
             "type": "string"
           },
+          "target_display": {
+            "description": "The target as 'project \u00b7 label'",
+            "title": "Target Display",
+            "type": "string"
+          },
           "target_project": {
             "title": "Target Project",
             "type": "string"
@@ -1250,6 +1255,7 @@
           "kind",
           "target_project",
           "target",
+          "target_display",
           "role"
         ],
         "title": "LinkOut",
@@ -3098,6 +3104,18 @@
             "description": "Event: label of the item that is watched",
             "title": "Target"
           },
+          "target_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Event: the item as 'project \u00b7 label'",
+            "title": "Target Display"
+          },
           "target_project": {
             "anyOf": [
               {
@@ -3127,6 +3145,7 @@
           "at",
           "target_project",
           "target",
+          "target_display",
           "target_status",
           "fired_at",
           "already_met"

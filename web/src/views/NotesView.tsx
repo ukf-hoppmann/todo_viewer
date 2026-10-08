@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
 import { useNotesIndex, useSourceList } from "../api/queries";
 import { NoteCreateDialog } from "../components/NoteCreateDialog";
+import { NoteDetail } from "../components/NoteDetail";
 import { NoteList } from "../components/NoteList";
 import { TopicTree } from "../components/TopicTree";
+import type { Item } from "../domain/model";
 import { notesOfTopic, sortNotes } from "../domain/notes";
 import { describeError, useI18n } from "../i18n/i18n";
 import { usePollingPaused } from "../state/pollingPause";
 import { useUiState } from "../state/useUiStateStore";
 
 /** The Notes area: the topic tree on the left, the notes of the chosen topic next to it. */
-export function NotesView() {
+export function NotesView({ items }: { items: readonly Item[] }) {
   const i18n = useI18n();
   const { t } = i18n;
   const { state, dispatch } = useUiState();
@@ -76,6 +78,18 @@ export function NotesView() {
           onSelect={(note) => dispatch({ type: "selectNote", note })}
         />
       </section>
+      {state.selectedNote && (
+        <NoteDetail
+          key={`${state.selectedNote.project}/${state.selectedNote.label}`}
+          note={state.selectedNote}
+          projects={projects}
+          topics={allTopics ?? []}
+          notes={index.data.notes}
+          items={items}
+          onClose={() => dispatch({ type: "selectNote", note: null })}
+          onOpenNote={(note) => dispatch({ type: "selectNote", note })}
+        />
+      )}
       {creating && (
         <NoteCreateDialog
           projects={projects}

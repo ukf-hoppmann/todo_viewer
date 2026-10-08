@@ -60,7 +60,7 @@ export function App() {
   const views: Record<View, () => React.ReactNode> = {
     tree: () => <TreeView visible={model.visible} items={model.items} onSelect={select} />,
     kanban: () => <KanbanView visible={model.visible} items={model.items} onSelect={select} />,
-    notes: () => <NotesView />,
+    notes: () => <NotesView items={model.items} />,
     trash: () => <TrashView sources={model.sources} />,
     graph: () => (
       <Suspense fallback={<div className="view" />}>

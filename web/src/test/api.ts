@@ -1,3 +1,4 @@
+import type { Schemas } from "../api/client";
 import type { IndexNote, IndexTopic } from "../domain/notes";
 import { sourceStatus } from "./render";
 
@@ -55,4 +56,43 @@ export function notesBaseRoutes(topics: IndexTopic[], notes: IndexNote[]): Route
     { method: "GET", path: "/api/v2/backlog", respond: () => ({ items: [], sources: [sourceStatus({ id: "s1", project: "P", backend: "database" })] }) },
     { method: "GET", path: "/api/v2/notes/index", respond: () => ({ topics, notes }) },
   ];
+}
+
+export function noteOut(label: string, over: Partial<Schemas["NoteOut"]> = {}): Schemas["NoteOut"] {
+  return {
+    project: "P",
+    label,
+    version: `v-${label}`,
+    summary: `Summary ${label}`,
+    body: null,
+    status: "waiting",
+    stored_status: "waiting",
+    reason: null,
+    topic: null,
+    review_at: "2027-06-15T12:00:00Z",
+    trigger_mode: "any",
+    triggers: [],
+    open_notices: [],
+    archived: false,
+    deleted: null,
+    created: null,
+    updated: null,
+    ...over,
+  };
+}
+
+export function linkOut(id: number, over: Partial<Schemas["LinkOut"]> = {}): Schemas["LinkOut"] {
+  return {
+    id,
+    note: "NOTE-001",
+    project: "P",
+    kind: "item",
+    target_project: "P",
+    target: "STORY-001",
+    target_display: "P · STORY-001",
+    role: "reference",
+    reachable: true,
+    unreachable_reason: null,
+    ...over,
+  };
 }

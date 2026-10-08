@@ -345,9 +345,9 @@ input.field-edit {
 @media (max-width: 720px) { .spec-editor { grid-template-columns: 1fr; } }
 
 /* ---------- notes ---------- */
-.notes-view { flex-direction: row; gap: 16px; padding: 0; overflow: hidden; }
-.notes-side { width: 280px; flex-shrink: 0; overflow-y: auto; padding: 16px 0 16px 16px; }
-.notes-main { flex: 1; min-width: 0; overflow-y: auto; padding: 16px 16px 16px 0; }
+.notes-view { flex-direction: row; gap: 16px; padding: 0; overflow-x: auto; overflow-y: hidden; }
+.notes-side { width: 240px; flex-shrink: 0; overflow-y: auto; padding: 16px 0 16px 16px; }
+.notes-main { flex: 1; min-width: 260px; overflow-y: auto; padding: 16px 16px 16px 0; }
 .notes-project { display: block; margin-bottom: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
 .notes-project select { display: block; width: 100%; margin-top: 3px; }
 .notes-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -376,3 +376,18 @@ input.field-edit {
 .badge.due, .badge.note-due { background: var(--status-rejected); color: white; }
 .badge.note-snoozed { background: var(--status-await); color: var(--on-color); }
 .badge.note-done, .badge.note-promoted { background: var(--status-done); color: var(--on-color); }
+.note-detail { width: 380px; flex-shrink: 0; overflow-y: auto; padding: 16px; border-left: 1px solid var(--panel-border); background: var(--panel); }
+.note-detail-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.note-title { font-size: 16px; margin: 0 0 8px; }
+.note-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 12px; }
+.note-actions { flex-wrap: wrap; }
+.note-section { margin-top: 18px; }
+.note-section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); margin: 0 0 6px; }
+.note-links { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.note-link { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; }
+.note-link-title { color: var(--text); }
+.note-docs { display: flex; flex-wrap: wrap; gap: 6px; }
+.note-link-form { margin-top: 8px; }
+.link-btn { background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; font: inherit; text-decoration: underline; }
+.badge.unreachable { background: var(--status-progress); color: var(--on-color); }
+.mono { font-family: ui-monospace, Menlo, monospace; }

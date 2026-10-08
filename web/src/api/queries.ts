@@ -374,3 +374,89 @@ export function useDeleteNote() {
     unwrap(api.DELETE("/api/v2/projects/{project}/notes/{label}", { params: { path: { project, label } } })),
   );
 }
+
+// ----- one note: detail, links, documents -----
+
+const noteKey = (project: string, label: string) => ["notes", "note", project, label] as const;
+
+/** One note with its long text, triggers and state. */
+export function useNote(project: string, label: string) {
+  return useQuery({
+    queryKey: noteKey(project, label),
+    queryFn: () => unwrap(api.GET("/api/v2/projects/{project}/notes/{label}", { params: { path: { project, label } } })),
+  });
+}
+
+/** Closes a note as done or dropped (it goes to the archive). */
+export function useFinishNote() {
+  return useNotesMutation(({ project, label, version, status }: NoteAddress & { version: string; status: "done" | "dropped" }) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/finish", { params: { path: { project, label } }, body: { version, status } })),
+  );
+}
+
+/** "Keep": only the review date moves on. */
+export function useKeepNote() {
+  return useNotesMutation(({ project, label, version }: NoteAddress & { version: string }) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/keep", { params: { path: { project, label } }, body: { version } })),
+  );
+}
+
+export function useNoteLinks(project: string, label: string) {
+  return useQuery({
+    queryKey: ["notes", "links", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/projects/{project}/notes/{label}/links", { params: { path: { project, label } } })),
+  });
+}
+
+export function useAddLink() {
+  return useNotesMutation(({ project, label, ...body }: NoteAddress & Schemas["LinkIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/links", { params: { path: { project, label } }, body })),
+  );
+}
+
+export function useRemoveLink() {
+  return useNotesMutation(({ project, label, linkId }: NoteAddress & { linkId: number }) =>
+    unwrap(api.DELETE("/api/v2/projects/{project}/notes/{label}/links/{link_id}", { params: { path: { project, label, link_id: linkId } } })),
+  );
+}
+
+/** The names of the notes and specs of a note. */
+export function useNoteDocumentList(project: string, label: string) {
+  return useQuery({
+    queryKey: ["notes", "documents", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/projects/{project}/notes/{label}/documents", { params: { path: { project, label } } })),
+  });
+}
+
+/** A notes or spec document of a note, addressed by its name. */
+export function useNoteDocument(project: string, label: string, name: string | null) {
+  return useQuery({
+    queryKey: ["notes", "document", project, label, name ?? ""] as const,
+    queryFn: () => fetchNoteDocument(project, label, name ?? ""),
+    enabled: name !== null,
+  });
+}
+
+export function fetchNoteDocument(project: string, label: string, name: string) {
+  return unwrap(api.GET("/api/v2/projects/{project}/notes/{label}/documents/{name}", { params: { path: { project, label, name } } }));
+}
+
+/** Replaces a document in `version` with the whole new text, or creates it (`version` null). */
+export function useWriteNoteDocument() {
+  return useNotesMutation(
+    ({ project, label, name, content, version }: NoteAddress & { name: string; content: string; version: string | null }) =>
+      unwrap(
+        api.PUT("/api/v2/projects/{project}/notes/{label}/documents/{name}", {
+          params: { path: { project, label, name } },
+          body: { content, version },
+        }),
+      ),
+  );
+}
+
+/** Appends a dated notes entry (the first one creates the notes document). */
+export function useAppendNoteEntry() {
+  return useNotesMutation(({ project, label, body }: NoteAddress & { body: Schemas["NotesEntryIn"] }) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/notes", { params: { path: { project, label } }, body })),
+  );
+}

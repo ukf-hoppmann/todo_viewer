@@ -20,7 +20,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("NotesView", () => {
   it("shows the topic tree and all notes, due first with their status and reason", async () => {
     stubRoutes(notesBaseRoutes(TOPICS, NOTES));
-    renderWithProviders(<NotesView />);
+    renderWithProviders(<NotesView items={[]} />);
 
     expect(await screen.findByRole("button", { name: /Ideas/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Later/ })).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe("NotesView", () => {
 
   it("filters the list to the chosen topic and its sub-topics", async () => {
     stubRoutes(notesBaseRoutes(TOPICS, NOTES));
-    renderWithProviders(<NotesView />);
+    renderWithProviders(<NotesView items={[]} />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Ideas/ }));
     expect(screen.getByText("An idea")).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("NotesView", () => {
 
   it("opens the chosen note in the UI state", async () => {
     stubRoutes(notesBaseRoutes(TOPICS, NOTES));
-    renderWithProviders(<NotesView />);
+    renderWithProviders(<NotesView items={[]} />);
 
     await userEvent.click(await screen.findByText("No topic yet"));
 
@@ -62,7 +62,7 @@ describe("NotesView", () => {
       ...notesBaseRoutes(TOPICS, NOTES),
       { method: "POST", path: "/api/v2/projects/P/topics", respond: () => new Response(JSON.stringify({ label: "TOPIC-004" }), { status: 201, headers: { "Content-Type": "application/json" } }) },
     ]);
-    renderWithProviders(<NotesView />);
+    renderWithProviders(<NotesView items={[]} />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Plans/ }));
     await userEvent.click(screen.getByRole("button", { name: "＋ Unter-Topic" }));
@@ -80,7 +80,7 @@ describe("NotesView", () => {
       ...notesBaseRoutes(TOPICS, NOTES),
       { method: "POST", path: "/api/v2/projects/P/topics", respond: () => errorResponse(400, "topic_too_deep", { id: "TOPIC-004", max_depth: "3" }) },
     ]);
-    renderWithProviders(<NotesView />);
+    renderWithProviders(<NotesView items={[]} />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Later/ }));
     await userEvent.click(screen.getByRole("button", { name: "＋ Unter-Topic" }));
@@ -96,7 +96,7 @@ describe("NotesView", () => {
       { method: "PATCH", path: "/api/v2/projects/P/topics/TOPIC-003", respond: () => ({}) },
       { method: "POST", path: "/api/v2/projects/P/topics/TOPIC-003/move", respond: () => ({}) },
     ]);
-    renderWithProviders(<NotesView />);
+    renderWithProviders(<NotesView items={[]} />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Plans/ }));
     await userEvent.click(screen.getByRole("button", { name: "Umbenennen" }));
@@ -123,7 +123,7 @@ describe("NotesView", () => {
           new URL(request.url).searchParams.get("cascade") === "true" ? { topics: [], notes: [] } : errorResponse(409, "topic_has_content", { id: "TOPIC-001", items: "NOTE-001, TOPIC-002" }),
       },
     ]);
-    renderWithProviders(<NotesView />);
+    renderWithProviders(<NotesView items={[]} />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Ideas/ }));
     await userEvent.click(screen.getByRole("button", { name: "Löschen" }));
@@ -141,7 +141,7 @@ describe("NotesView", () => {
       ...notesBaseRoutes(TOPICS, NOTES),
       { method: "POST", path: "/api/v2/projects/P/notes", respond: () => new Response(JSON.stringify({ project: "P", label: "NOTE-004" }), { status: 201, headers: { "Content-Type": "application/json" } }) },
     ]);
-    renderWithProviders(<NotesView />);
+    renderWithProviders(<NotesView items={[]} />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Plans/ }));
     await userEvent.click(screen.getByRole("button", { name: "＋ Note" }));
@@ -160,7 +160,7 @@ describe("NotesView", () => {
 
   it("wants a summary before a note can be created", async () => {
     stubRoutes(notesBaseRoutes(TOPICS, NOTES));
-    renderWithProviders(<NotesView />);
+    renderWithProviders(<NotesView items={[]} />);
 
     await userEvent.click(await screen.findByRole("button", { name: "＋ Note" }));
 

@@ -324,6 +324,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Notices
+         * @description The notices of one note (`side=note`, `label` is the note label) or one item (`side=item`, `label` is the
+         *     item ID) in `project`, oldest first. With `open=true` only those nobody has decided yet.
+         */
+        get: operations["list_notices_api_v2_notices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notices/{notice_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide Notice
+         * @description Decides an open notice. For a note: keep (the link stays, the review date moves), detach (the link to the
+         *     item goes), drop (the note is dropped); promote is not available yet. For an item: acknowledge. Answers with the
+         *     notice and, for a note, the note as it is now. Errors: notice_already_decided (409), decision_not_available
+         *     (409), version_conflict (409), notice_not_found (404).
+         */
+        post: operations["decide_notice_api_v2_notices__notice_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/projects/{project}/items/{label}/notes": {
         parameters: {
             query?: never;
@@ -1101,9 +1145,9 @@ export interface components {
         DueNoteOut: {
             /**
              * Actions
-             * @description What can be done with the note: keep, snooze, or close it as done or dropped
+             * @description What can be done with the note: keep, snooze, or close it as done or dropped; for the reason notice: keep, detach, drop, or promote (decide the notice)
              */
-            actions: ("keep" | "snooze" | "done" | "dropped")[];
+            actions: ("keep" | "snooze" | "done" | "dropped" | "detach" | "drop" | "promote")[];
             /** Archived */
             archived: boolean;
             /** Label */
@@ -1112,7 +1156,7 @@ export interface components {
             project: string;
             /**
              * Reason
-             * @description Why the note is due: trigger, review_expired, or topic_due
+             * @description Why the note is due: trigger, notice, review_expired, or topic_due
              */
             reason: string | null;
             /**
@@ -1223,7 +1267,7 @@ export interface components {
             project: string;
             /**
              * Reason
-             * @description Why the note is due: trigger, review_expired, or topic_due
+             * @description Why the note is due: trigger, notice, review_expired, or topic_due
              */
             reason: string | null;
             /**
@@ -1634,11 +1678,16 @@ export interface components {
             deleted: string | null;
             /** Label */
             label: string;
+            /**
+             * Open Notices
+             * @description Notices that nobody has decided yet; they make the note due
+             */
+            open_notices: components["schemas"]["todo_viewer__api__v2__notes_schemas__NoticeOut"][];
             /** Project */
             project: string;
             /**
              * Reason
-             * @description Why the note is due: trigger, review_expired, or topic_due
+             * @description Why the note is due: trigger, notice, review_expired, or topic_due
              */
             reason: string | null;
             /** Review At */
@@ -1735,20 +1784,44 @@ export interface components {
              */
             review_days: number;
         };
-        /**
-         * NoticeOut
-         * @description Something to know after a successful change; `code` is stable (translate it), `message` is English.
-         */
-        NoticeOut: {
-            /** Code */
-            code: string;
-            /** Details */
-            details?: {
-                [key: string]: string;
-            };
-            /** Message */
-            message: string;
+        /** NoticeCounterpartOut */
+        NoticeCounterpartOut: {
+            /**
+             * Kind
+             * @description item for a notice to a note, note for a notice to an item
+             */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Project */
+            project: string;
         };
+        /**
+         * NoticeDecision
+         * @enum {string}
+         */
+        NoticeDecision: "keep" | "detach" | "drop" | "promote" | "acknowledge";
+        /** NoticeDecisionIn */
+        NoticeDecisionIn: {
+            decision: components["schemas"]["NoticeDecision"];
+            /**
+             * Version
+             * @description Version of the note the decision is based on; default: the stored one
+             */
+            version?: string | null;
+        };
+        /** NoticeDecisionOut */
+        NoticeDecisionOut: {
+            /** @description The note after the decision; null for a notice to an item */
+            note: components["schemas"]["NoteOut"] | null;
+            notice: components["schemas"]["todo_viewer__api__v2__notes_schemas__NoticeOut"];
+        };
+        /**
+         * NoticeSide
+         * @description Who is told: the note (a linked item changed) or the item (a linked note was dropped or promoted).
+         * @enum {string}
+         */
+        NoticeSide: "note" | "item";
         /** ProblemOut */
         ProblemOut: {
             /** Code */
@@ -1764,7 +1837,7 @@ export interface components {
              * Notices
              * @description E.g. external_references_may_remain: check docs outside the backlog
              */
-            notices: components["schemas"]["NoticeOut"][];
+            notices: components["schemas"]["todo_viewer__api__v2__schemas__NoticeOut"][];
             /** Old Id */
             old_id: string;
         };
@@ -2133,6 +2206,71 @@ export interface components {
         VersionIn: {
             /** Version */
             version: string;
+        };
+        /**
+         * NoticeOut
+         * @description A notice that a linked item or note changed. It stays open until someone decides.
+         */
+        todo_viewer__api__v2__notes_schemas__NoticeOut: {
+            /**
+             * Cause
+             * @description item_completed, item_rejected, item_deleted, item_retyped, project_unreachable, note_dropped, or note_promoted
+             */
+            cause: string;
+            /** @description The other end: the item for a note, the note for an item */
+            counterpart: components["schemas"]["NoticeCounterpartOut"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Decided At
+             * @description null while the notice is open
+             */
+            decided_at: string | null;
+            /**
+             * Decision
+             * @description keep, detach, drop, promote, or acknowledge; null while open
+             */
+            decision: string | null;
+            /** Id */
+            id: number;
+            /**
+             * Label
+             * @description Label of the one who is told: a note label, or an item ID
+             */
+            label: string;
+            /**
+             * Options
+             * @description What can be chosen: keep, detach, drop, promote for a note; acknowledge for an item
+             */
+            options: string[];
+            /**
+             * Project
+             * @description Project of the one who is told
+             */
+            project: string;
+            /**
+             * Side
+             * @description Who is told: the note, or the item
+             * @enum {string}
+             */
+            side: "note" | "item";
+        };
+        /**
+         * NoticeOut
+         * @description Something to know after a successful change; `code` is stable (translate it), `message` is English.
+         */
+        todo_viewer__api__v2__schemas__NoticeOut: {
+            /** Code */
+            code: string;
+            /** Details */
+            details?: {
+                [key: string]: string;
+            };
+            /** Message */
+            message: string;
         };
     };
     responses: never;
@@ -3285,6 +3423,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotesSettingsOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notices_api_v2_notices_get: {
+        parameters: {
+            query: {
+                project: string;
+                label: string;
+                side?: components["schemas"]["NoticeSide"];
+                open?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["todo_viewer__api__v2__notes_schemas__NoticeOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_notice_api_v2_notices__notice_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoticeDecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeDecisionOut"];
                 };
             };
             /** @description Bad Request */

@@ -304,3 +304,26 @@ class NoteLifecycleError(ConflictError):
         items = ", ".join(related)
         message = self.MESSAGES.get(code, "Rule {code} violated by {id}.").format(id=label, items=items, code=code)
         super().__init__(message, code=code, id=label, items=items)
+
+
+class NoticeNotFoundError(NotFoundError):
+    code = "notice_not_found"
+
+    def __init__(self, notice_id: int):
+        super().__init__(f"Notice {notice_id} not found.", id=str(notice_id))
+
+
+class NoticeAlreadyDecidedError(ConflictError):
+    code = "notice_already_decided"
+
+    def __init__(self, notice_id: int):
+        super().__init__(f"Notice {notice_id} has been decided already.", id=str(notice_id))
+
+
+class DecisionNotAvailableError(ConflictError):
+    """The option exists but cannot be used yet (e.g. promoting a note before STORY-042)."""
+
+    code = "decision_not_available"
+
+    def __init__(self, decision: str):
+        super().__init__(f"The decision '{decision}' is not available yet.", decision=decision)

@@ -13,7 +13,15 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
 from .documents import DocumentKind
-from .errors import DocumentForbiddenError, InvalidValueError, TopicLoopError, TopicNotFoundError, TopicTooDeepError
+from .errors import (
+    DecisionNotAvailableError,
+    DocumentForbiddenError,
+    InvalidValueError,
+    NoticeAlreadyDecidedError,
+    TopicLoopError,
+    TopicNotFoundError,
+    TopicTooDeepError,
+)
 from .item import Status
 
 DEFAULT_MAX_TOPIC_DEPTH = 3
@@ -84,6 +92,7 @@ class NoteReason(StrEnum):
     TRIGGER = "trigger"
     REVIEW_EXPIRED = "review_expired"
     TOPIC_DUE = "topic_due"
+    NOTICE = "notice"
 
 
 # The statuses an item can reach that make an event trigger arrive.
@@ -204,6 +213,88 @@ class Trigger:
     link_id: int | None = None  # event: the link with role `trigger` that belongs to it
 
 
+# --- notices between notes and items ---
+
+class NoticeSide(StrEnum):
+    """Who is told: the note (a linked item changed) or the item (a linked note was dropped or promoted)."""
+
+    NOTE = "note"
+    ITEM = "item"
+
+
+class NoticeCause(StrEnum):
+    ITEM_COMPLETED = "item_completed"
+    ITEM_REJECTED = "item_rejected"
+    ITEM_DELETED = "item_deleted"
+    ITEM_RETYPED = "item_retyped"
+    PROJECT_UNREACHABLE = "project_unreachable"
+    NOTE_DROPPED = "note_dropped"
+    NOTE_PROMOTED = "note_promoted"
+
+
+class NoticeDecision(StrEnum):
+    KEEP = "keep"
+    DETACH = "detach"
+    DROP = "drop"
+    PROMOTE = "promote"
+    ACKNOWLEDGE = "acknowledge"
+
+
+NOTE_SIDE_DECISIONS = (NoticeDecision.KEEP, NoticeDecision.DETACH, NoticeDecision.DROP, NoticeDecision.PROMOTE)
+ITEM_SIDE_DECISIONS = (NoticeDecision.ACKNOWLEDGE,)
+# Offered, but not connected yet (STORY-042 connects it).
+UNAVAILABLE_DECISIONS = (NoticeDecision.PROMOTE,)
+
+
+@dataclass(frozen=True)
+class NewNotice:
+    """`project` and `label` name the one who is told (the note or the item), `counterpart` the other end."""
+
+    side: NoticeSide
+    project: str
+    label: str
+    cause: NoticeCause
+    counterpart: LinkTarget
+
+
+@dataclass(frozen=True)
+class Notice:
+    id: int
+    side: NoticeSide
+    project: str
+    label: str
+    cause: NoticeCause
+    counterpart: LinkTarget
+    created_at: datetime
+    decided_at: datetime | None = None
+    decision: NoticeDecision | None = None
+
+    @property
+    def is_open(self) -> bool:
+        return self.decided_at is None
+
+
+def decision_options(side: NoticeSide) -> tuple[NoticeDecision, ...]:
+    """What can be chosen for a notice on this side, the not yet connected options included."""
+    return NOTE_SIDE_DECISIONS if side is NoticeSide.NOTE else ITEM_SIDE_DECISIONS
+
+
+def item_status_notice_cause(status: str) -> NoticeCause | None:
+    """The notice a linked note gets when an item reaches `status`; only the closing statuses cause one."""
+    return {Status.COMPLETED: NoticeCause.ITEM_COMPLETED, Status.REJECTED: NoticeCause.ITEM_REJECTED}.get(status)
+
+
+def check_decision(notice: Notice, decision: NoticeDecision) -> None:
+    """The decision must belong to the notice's side, be connected, and the notice must still be open."""
+    if not notice.is_open:
+        raise NoticeAlreadyDecidedError(notice.id)
+    allowed = decision_options(notice.side)
+    if decision not in allowed:
+        raise InvalidValueError("decision", tuple(d.value for d in allowed))
+    if decision in UNAVAILABLE_DECISIONS:
+        raise DecisionNotAvailableError(decision.value)
+
+
 # --- triggers and the review date ---
 
 @dataclass(frozen=True)
@@ -237,9 +328,11 @@ def default_review_at(now: datetime, review_days: int) -> datetime:
     return now + timedelta(days=review_days)
 
 
-def evaluate(note: Note, triggers: Sequence[Trigger], topic_due: datetime | None, now: datetime) -> NoteEvaluation:
+def evaluate(note: Note, triggers: Sequence[Trigger], topic_due: datetime | None, now: datetime,
+             open_notices: int = 0) -> NoteEvaluation:
     """The effective status of a note. Waiting and snoozed notes become due by a trigger (all of them in mode
-    `all`) or by an expired review date; finished notes are never due, and a due note stays due."""
+    `all`), an open notice, or an expired review date; finished notes are never due, and a due note stays due.
+    The reason is the first that applies: trigger, notice, topic due date, review date."""
     if note.status in FINISHED_STATUSES or note.deleted is not None:
         return NoteEvaluation(note.status, None, (), False)
     arrived = [t for t in triggers if trigger_arrived(t, now, topic_due)]
@@ -248,8 +341,12 @@ def evaluate(note: Note, triggers: Sequence[Trigger], topic_due: datetime | None
     fired = tuple(t.id for t in arrived)
     if triggered:
         only_topic = all(t.kind is TriggerKind.TOPIC_DUE for t in arrived)
-        return NoteEvaluation(NoteStatus.DUE, NoteReason.TOPIC_DUE if only_topic else NoteReason.TRIGGER,
-                              fired, all_fired)
+        if not only_topic:
+            return NoteEvaluation(NoteStatus.DUE, NoteReason.TRIGGER, fired, all_fired)
+        reason = NoteReason.NOTICE if open_notices > 0 else NoteReason.TOPIC_DUE
+        return NoteEvaluation(NoteStatus.DUE, reason, fired, all_fired)
+    if open_notices > 0:
+        return NoteEvaluation(NoteStatus.DUE, NoteReason.NOTICE, fired, all_fired)
     if note.review_at is not None and utc(note.review_at) <= utc(now):
         return NoteEvaluation(NoteStatus.DUE, NoteReason.REVIEW_EXPIRED, fired, all_fired)
     return NoteEvaluation(note.status, None, fired, all_fired)

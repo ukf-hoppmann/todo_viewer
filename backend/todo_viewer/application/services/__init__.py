@@ -5,7 +5,7 @@ from .misc import FolderBrowseService, StorageService, UiStateService
 from .note_documents import NoteDocument, NoteDocumentService
 from .note_index import DueNote, IndexedTopic, NoteIndexService, NotesIndex
 from .note_settings import NotesSettingsService
-from .notes import LinkedNote, NoteService, NoteView, TrashContents
+from .notes import DecisionResult, LinkedNote, NoteService, NoteView, TrashContents
 from .retype import RetypeResult, RetypeService
 from .sources import SourceLookup, SourceService
 from .sync import SideFingerprints, SyncResult, SyncService
@@ -14,6 +14,7 @@ from .topics import TopicService
 from .trash import TrashService
 
 __all__ = [
+    "DecisionResult",
     "BackupService",
     "BacklogOverviewService",
     "DocumentResult",

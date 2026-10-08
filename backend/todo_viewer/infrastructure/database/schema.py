@@ -144,3 +144,18 @@ note_counters = sa.Table(
     sa.Column("kind", sa.String(10), primary_key=True),
     sa.Column("last", sa.Integer, nullable=False),
 )
+
+note_notices = sa.Table(
+    "note_notices", metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("side", sa.String(10), nullable=False),
+    sa.Column("project_id", sa.String(64), nullable=False),
+    sa.Column("label", sa.String(100), nullable=False),
+    sa.Column("cause", sa.String(30), nullable=False),
+    sa.Column("counterpart_kind", sa.String(10), nullable=False),
+    sa.Column("counterpart_project", sa.String(64), nullable=False),
+    sa.Column("counterpart_label", sa.String(100), nullable=False),
+    sa.Column("created_at", sa.Text, nullable=False),
+    sa.Column("decided_at", sa.Text),
+    sa.Column("decision", sa.String(20)),
+)

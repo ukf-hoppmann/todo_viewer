@@ -15,10 +15,14 @@ from todo_viewer.domain.notes import (
     LinkRole,
     LinkTarget,
     NewNote,
+    NewNotice,
     NewTrigger,
     Note,
     NoteChanges,
     NotesSettings,
+    Notice,
+    NoticeDecision,
+    NoticeSide,
     Topic,
     Trigger,
 )
@@ -163,6 +167,20 @@ class NoteRepository(Protocol):
 
     def reset_triggers(self, project: str, label: str) -> list[Trigger]:
         """Makes every trigger of the note unfired again (`fired_at` and `already_met` cleared)."""
+
+    def add_notice(self, new: NewNotice) -> Notice:
+        """Stores an open notice. If one with the same side, cause, and ends is open already, returns that one.
+        Raises NoteNotFoundError if the note of the notice does not exist."""
+
+    def get_notice(self, notice_id: int) -> Notice:
+        """Raises NoticeNotFoundError."""
+
+    def notices_of(self, project: str, label: str, side: NoticeSide, open_only: bool) -> list[Notice]:
+        """The notices for whom `project` plus `label` is the one who is told (a note on side `note`, an item on
+        side `item`), oldest first."""
+
+    def decide_notice(self, notice_id: int, decision: NoticeDecision, at: datetime) -> Notice:
+        """Closes the notice. Whether the decision is allowed is checked in `domain`, not here."""
 
     def trash_topics(self, project: str, topics: Sequence[str], notes: Sequence[str], at: datetime) -> None:
         """Puts the topics and notes in the trash in one transaction (all or nothing)."""

@@ -15,6 +15,7 @@ from todo_viewer.domain.documents import content_version
 from todo_viewer.domain.errors import (
     DocumentNotFoundError,
     NoteNotFoundError,
+    NoticeNotFoundError,
     TopicNotFoundError,
     VersionConflictError,
 )
@@ -23,10 +24,15 @@ from todo_viewer.domain.notes import (
     LinkRole,
     LinkTarget,
     NewNote,
+    NewNotice,
     NewTrigger,
     Note,
     NoteChanges,
     NoteStatus,
+    Notice,
+    NoticeCause,
+    NoticeDecision,
+    NoticeSide,
     TargetKind,
     Topic,
     Trigger,
@@ -40,7 +46,7 @@ from todo_viewer.domain.notes import (
 )
 
 from .engine import Database
-from .schema import note_counters, note_documents, note_links, note_triggers, notes, projects, topics
+from .schema import note_counters, note_documents, note_links, note_notices, note_triggers, notes, projects, topics
 
 
 def _now() -> datetime:
@@ -199,6 +205,14 @@ class DatabaseNoteRepository:
                 note_links.c.target_kind == TargetKind.NOTE.value, note_links.c.target_project == project,
                 note_links.c.target_label == label, note_links.c.note_uid != old_uid)
                 .values(target_project=target_project, target_label=new_label))
+            # Notices name the note by project and label: they follow it to the new note.
+            conn.execute(sa.update(note_notices).where(
+                note_notices.c.side == NoticeSide.NOTE.value, note_notices.c.project_id == project,
+                note_notices.c.label == label).values(project_id=target_project, label=new_label))
+            conn.execute(sa.update(note_notices).where(
+                note_notices.c.counterpart_kind == TargetKind.NOTE.value,
+                note_notices.c.counterpart_project == project, note_notices.c.counterpart_label == label)
+                .values(counterpart_project=target_project, counterpart_label=new_label))
             conn.execute(sa.update(notes).where(notes.c.uid == old_uid).values(deleted=_text(at)))
             return _note(conn, target_project, new_label)
 
@@ -234,6 +248,13 @@ class DatabaseNoteRepository:
             conn.execute(sa.update(note_links).where(
                 note_links.c.target_kind == TargetKind.ITEM.value, note_links.c.target_project == project,
                 note_links.c.target_label == old_label).values(target_label=new_label))
+            conn.execute(sa.update(note_notices).where(
+                note_notices.c.side == NoticeSide.NOTE.value, note_notices.c.counterpart_kind == TargetKind.ITEM.value,
+                note_notices.c.counterpart_project == project, note_notices.c.counterpart_label == old_label)
+                .values(counterpart_label=new_label))
+            conn.execute(sa.update(note_notices).where(
+                note_notices.c.side == NoticeSide.ITEM.value, note_notices.c.project_id == project,
+                note_notices.c.label == old_label).values(label=new_label))
 
     # --- triggers ---
 
@@ -281,6 +302,48 @@ class DatabaseNoteRepository:
             ids: list[int] = list(conn.execute(sa.select(note_triggers.c.id).where(note_triggers.c.note_uid == uid)
                                                .order_by(note_triggers.c.id)).scalars())
             return [_trigger(conn, label, i) for i in ids]
+
+    # --- notices ---
+
+    def add_notice(self, new: NewNotice) -> Notice:
+        """An open notice with the same cause for the same two ends is returned instead of a second one."""
+        with self._db.begin() as conn:
+            _check_notice_ends(conn, new.side, new.project, new.label, new.counterpart)
+            same = conn.execute(sa.select(note_notices.c.id).where(
+                note_notices.c.side == new.side.value, note_notices.c.project_id == new.project,
+                note_notices.c.label == new.label, note_notices.c.cause == new.cause.value,
+                note_notices.c.counterpart_kind == new.counterpart.kind.value,
+                note_notices.c.counterpart_project == new.counterpart.project,
+                note_notices.c.counterpart_label == new.counterpart.label,
+                note_notices.c.decided_at.is_(None))).scalar()
+            if same is not None:
+                return _notice(conn, int(same))
+            result = conn.execute(sa.insert(note_notices).values(
+                side=new.side.value, project_id=new.project, label=new.label, cause=new.cause.value,
+                counterpart_kind=new.counterpart.kind.value, counterpart_project=new.counterpart.project,
+                counterpart_label=new.counterpart.label, created_at=_text(self._clock())))
+            return _notice(conn, _new_id(result))
+
+    def get_notice(self, notice_id: int) -> Notice:
+        with self._db.begin() as conn:
+            return _notice(conn, notice_id)
+
+    def notices_of(self, project: str, label: str, side: NoticeSide, open_only: bool) -> list[Notice]:
+        with self._db.begin() as conn:
+            query = sa.select(note_notices.c.id).where(
+                note_notices.c.side == side.value, note_notices.c.project_id == project,
+                note_notices.c.label == label).order_by(note_notices.c.id)
+            if open_only:
+                query = query.where(note_notices.c.decided_at.is_(None))
+            ids: list[int] = list(conn.execute(query).scalars())
+            return [_notice(conn, i) for i in ids]
+
+    def decide_notice(self, notice_id: int, decision: NoticeDecision, at: datetime) -> Notice:
+        with self._db.begin() as conn:
+            _notice(conn, notice_id)
+            conn.execute(sa.update(note_notices).where(note_notices.c.id == notice_id)
+                         .values(decision=decision.value, decided_at=_text(at)))
+            return _notice(conn, notice_id)
 
     # --- trash and purge ---
 
@@ -384,6 +447,11 @@ def _purge_note(conn: sa.Connection, project: str, label: str) -> None:
     conn.execute(sa.delete(note_links).where(
         note_links.c.target_kind == TargetKind.NOTE.value, note_links.c.target_project == project,
         note_links.c.target_label == label))
+    conn.execute(sa.delete(note_notices).where(
+        sa.or_(sa.and_(note_notices.c.side == NoticeSide.NOTE.value, note_notices.c.project_id == project,
+                       note_notices.c.label == label),
+               sa.and_(note_notices.c.counterpart_kind == TargetKind.NOTE.value,
+                       note_notices.c.counterpart_project == project, note_notices.c.counterpart_label == label))))
     conn.execute(sa.delete(note_documents).where(note_documents.c.note_uid == uid))
     conn.execute(sa.delete(notes).where(notes.c.uid == uid))
 
@@ -495,3 +563,27 @@ def _content(conn: sa.Connection, note_uid: str, name: str) -> str | None:
     content: str | None = conn.execute(sa.select(note_documents.c.content).where(
         note_documents.c.note_uid == note_uid, note_documents.c.name == name)).scalar()
     return content
+
+
+def _check_notice_ends(conn: sa.Connection, side: NoticeSide, project: str, label: str,
+                       counterpart: LinkTarget) -> None:
+    """The note of a notice must exist, whichever side it is on."""
+    if side is NoticeSide.NOTE:
+        _note_uid(conn, project, label)
+    else:
+        _note_uid(conn, counterpart.project, counterpart.label)
+
+
+def _notice(conn: sa.Connection, notice_id: int) -> Notice:
+    row = conn.execute(sa.select(note_notices).where(note_notices.c.id == notice_id)).first()
+    if row is None:
+        raise NoticeNotFoundError(notice_id)
+    created = _moment(row.created_at)
+    assert created is not None
+    return Notice(id=row.id, side=NoticeSide(row.side), project=row.project_id, label=row.label,
+                  cause=NoticeCause(row.cause),
+                  counterpart=LinkTarget(TargetKind(row.counterpart_kind), row.counterpart_project,
+                                         row.counterpart_label),
+                  created_at=created,
+                  decided_at=_moment(row.decided_at),
+                  decision=None if row.decision is None else NoticeDecision(row.decision))

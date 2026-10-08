@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from todo_viewer.application.services import NoteService
-from todo_viewer.domain.notes import LinkRole, LinkTarget, NoteStatus, TargetKind, TriggerMode
+from todo_viewer.domain.notes import LinkRole, LinkTarget, NoteStatus, NoticeSide, TargetKind, TriggerMode
 
 from ..dependencies import NoteDocuments, NoteIndex, Notes, NotesSettings, Topics
 from .notes_schemas import (
@@ -27,6 +27,9 @@ from .notes_schemas import (
     NoteSnoozeIn,
     NotesSettingsIn,
     NotesSettingsOut,
+    NoticeDecisionIn,
+    NoticeDecisionOut,
+    NoticeOut,
     TopicEditIn,
     TopicIn,
     TopicMoveIn,
@@ -42,6 +45,24 @@ ERRORS: dict[int | str, dict[str, Any]] = {
 
 router = APIRouter(prefix="/api/v2/projects/{project}", responses=ERRORS)
 global_router = APIRouter(prefix="/api/v2/notes", responses=ERRORS)
+notices_router = APIRouter(prefix="/api/v2/notices", responses=ERRORS)
+
+
+@notices_router.get("", tags=["notices"])
+def list_notices(notes: Notes, project: str, label: str, side: NoticeSide = NoticeSide.NOTE,
+                 open_only: bool = Query(False, alias="open")) -> list[NoticeOut]:
+    """The notices of one note (`side=note`, `label` is the note label) or one item (`side=item`, `label` is the
+    item ID) in `project`, oldest first. With `open=true` only those nobody has decided yet."""
+    return [NoticeOut.of(n) for n in notes.notices(project, label, side, open_only)]
+
+
+@notices_router.post("/{notice_id}/decision", tags=["notices"])
+def decide_notice(notice_id: int, body: NoticeDecisionIn, notes: Notes) -> NoticeDecisionOut:
+    """Decides an open notice. For a note: keep (the link stays, the review date moves), detach (the link to the
+    item goes), drop (the note is dropped); promote is not available yet. For an item: acknowledge. Answers with the
+    notice and, for a note, the note as it is now. Errors: notice_already_decided (409), decision_not_available
+    (409), version_conflict (409), notice_not_found (404)."""
+    return NoticeDecisionOut.of(notes.decide(notice_id, body.decision, body.version))
 
 
 @global_router.get("/index", tags=["notes-index"])

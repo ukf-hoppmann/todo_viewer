@@ -181,13 +181,16 @@
       "DueNoteOut": {
         "properties": {
           "actions": {
-            "description": "What can be done with the note: keep, snooze, or close it as done or dropped",
+            "description": "What can be done with the note: keep, snooze, or close it as done or dropped; for the reason notice: keep, detach, drop, or promote (decide the notice)",
             "items": {
               "enum": [
                 "keep",
                 "snooze",
                 "done",
-                "dropped"
+                "dropped",
+                "detach",
+                "drop",
+                "promote"
               ],
               "type": "string"
             },
@@ -215,7 +218,7 @@
                 "type": "null"
               }
             ],
-            "description": "Why the note is due: trigger, review_expired, or topic_due",
+            "description": "Why the note is due: trigger, notice, review_expired, or topic_due",
             "title": "Reason"
           },
           "review_at": {
@@ -493,7 +496,7 @@
                 "type": "null"
               }
             ],
-            "description": "Why the note is due: trigger, review_expired, or topic_due",
+            "description": "Why the note is due: trigger, notice, review_expired, or topic_due",
             "title": "Reason"
           },
           "review_at": {
@@ -1566,6 +1569,14 @@
             "title": "Label",
             "type": "string"
           },
+          "open_notices": {
+            "description": "Notices that nobody has decided yet; they make the note due",
+            "items": {
+              "$ref": "#/components/schemas/todo_viewer__api__v2__notes_schemas__NoticeOut"
+            },
+            "title": "Open Notices",
+            "type": "array"
+          },
           "project": {
             "title": "Project",
             "type": "string"
@@ -1579,7 +1590,7 @@
                 "type": "null"
               }
             ],
-            "description": "Why the note is due: trigger, review_expired, or topic_due",
+            "description": "Why the note is due: trigger, notice, review_expired, or topic_due",
             "title": "Reason"
           },
           "review_at": {
@@ -1661,6 +1672,7 @@
           "review_at",
           "trigger_mode",
           "triggers",
+          "open_notices",
           "archived",
           "deleted",
           "created",
@@ -1841,31 +1853,98 @@
         "title": "NotesSettingsOut",
         "type": "object"
       },
-      "NoticeOut": {
-        "description": "Something to know after a successful change; `code` is stable (translate it), `message` is English.",
+      "NoticeCounterpartOut": {
         "properties": {
-          "code": {
-            "title": "Code",
+          "kind": {
+            "description": "item for a notice to a note, note for a notice to an item",
+            "title": "Kind",
             "type": "string"
           },
-          "details": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "title": "Details",
-            "type": "object"
+          "label": {
+            "title": "Label",
+            "type": "string"
           },
-          "message": {
-            "title": "Message",
+          "project": {
+            "title": "Project",
             "type": "string"
           }
         },
         "required": [
-          "code",
-          "message"
+          "kind",
+          "project",
+          "label"
         ],
-        "title": "NoticeOut",
+        "title": "NoticeCounterpartOut",
         "type": "object"
+      },
+      "NoticeDecision": {
+        "enum": [
+          "keep",
+          "detach",
+          "drop",
+          "promote",
+          "acknowledge"
+        ],
+        "title": "NoticeDecision",
+        "type": "string"
+      },
+      "NoticeDecisionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/NoticeDecision"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Version of the note the decision is based on; default: the stored one",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "NoticeDecisionIn",
+        "type": "object"
+      },
+      "NoticeDecisionOut": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NoteOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The note after the decision; null for a notice to an item"
+          },
+          "notice": {
+            "$ref": "#/components/schemas/todo_viewer__api__v2__notes_schemas__NoticeOut"
+          }
+        },
+        "required": [
+          "notice",
+          "note"
+        ],
+        "title": "NoticeDecisionOut",
+        "type": "object"
+      },
+      "NoticeSide": {
+        "description": "Who is told: the note (a linked item changed) or the item (a linked note was dropped or promoted).",
+        "enum": [
+          "note",
+          "item"
+        ],
+        "title": "NoticeSide",
+        "type": "string"
       },
       "ProblemOut": {
         "properties": {
@@ -1894,7 +1973,7 @@
           "notices": {
             "description": "E.g. external_references_may_remain: check docs outside the backlog",
             "items": {
-              "$ref": "#/components/schemas/NoticeOut"
+              "$ref": "#/components/schemas/todo_viewer__api__v2__schemas__NoticeOut"
             },
             "title": "Notices",
             "type": "array"
@@ -2801,6 +2880,121 @@
           "version"
         ],
         "title": "VersionIn",
+        "type": "object"
+      },
+      "todo_viewer__api__v2__notes_schemas__NoticeOut": {
+        "description": "A notice that a linked item or note changed. It stays open until someone decides.",
+        "properties": {
+          "cause": {
+            "description": "item_completed, item_rejected, item_deleted, item_retyped, project_unreachable, note_dropped, or note_promoted",
+            "title": "Cause",
+            "type": "string"
+          },
+          "counterpart": {
+            "$ref": "#/components/schemas/NoticeCounterpartOut",
+            "description": "The other end: the item for a note, the note for an item"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null while the notice is open",
+            "title": "Decided At"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "keep, detach, drop, promote, or acknowledge; null while open",
+            "title": "Decision"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "label": {
+            "description": "Label of the one who is told: a note label, or an item ID",
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "description": "What can be chosen: keep, detach, drop, promote for a note; acknowledge for an item",
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "project": {
+            "description": "Project of the one who is told",
+            "title": "Project",
+            "type": "string"
+          },
+          "side": {
+            "description": "Who is told: the note, or the item",
+            "enum": [
+              "note",
+              "item"
+            ],
+            "title": "Side",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "side",
+          "project",
+          "label",
+          "cause",
+          "counterpart",
+          "created_at",
+          "decided_at",
+          "decision",
+          "options"
+        ],
+        "title": "NoticeOut",
+        "type": "object"
+      },
+      "todo_viewer__api__v2__schemas__NoticeOut": {
+        "description": "Something to know after a successful change; `code` is stable (translate it), `message` is English.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "NoticeOut",
         "type": "object"
       }
     }
@@ -4439,6 +4633,214 @@
         "summary": "Put Settings",
         "tags": [
           "notes-settings"
+        ]
+      }
+    },
+    "/api/v2/notices": {
+      "get": {
+        "description": "The notices of one note (`side=note`, `label` is the note label) or one item (`side=item`, `label` is the\nitem ID) in `project`, oldest first. With `open=true` only those nobody has decided yet.",
+        "operationId": "list_notices_api_v2_notices_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project",
+            "required": true,
+            "schema": {
+              "title": "Project",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "label",
+            "required": true,
+            "schema": {
+              "title": "Label",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "side",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/NoticeSide",
+              "default": "note"
+            }
+          },
+          {
+            "in": "query",
+            "name": "open",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Open",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/todo_viewer__api__v2__notes_schemas__NoticeOut"
+                  },
+                  "title": "Response List Notices Api V2 Notices Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Notices",
+        "tags": [
+          "notices"
+        ]
+      }
+    },
+    "/api/v2/notices/{notice_id}/decision": {
+      "post": {
+        "description": "Decides an open notice. For a note: keep (the link stays, the review date moves), detach (the link to the\nitem goes), drop (the note is dropped); promote is not available yet. For an item: acknowledge. Answers with the\nnotice and, for a note, the note as it is now. Errors: notice_already_decided (409), decision_not_available\n(409), version_conflict (409), notice_not_found (404).",
+        "operationId": "decide_notice_api_v2_notices__notice_id__decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notice_id",
+            "required": true,
+            "schema": {
+              "title": "Notice Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoticeDecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoticeDecisionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide Notice",
+        "tags": [
+          "notices"
         ]
       }
     },

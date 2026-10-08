@@ -39,17 +39,22 @@ from todo_viewer.domain.notes import (
     LinkRole,
     LinkTarget,
     NewNote,
+    NewNotice,
     NewTrigger,
     Note,
     NoteChanges,
     NoteEvaluation,
     NotesSettings,
     NoteStatus,
+    Notice,
+    NoticeDecision,
+    NoticeSide,
     TargetKind,
     Topic,
     Trigger,
     TriggerKind,
     TriggerMode,
+    check_decision,
     default_review_at,
     evaluate,
     event_hit,
@@ -78,6 +83,15 @@ class NoteView:
     note: Note
     triggers: tuple[Trigger, ...]
     evaluation: NoteEvaluation
+    open_notices: tuple[Notice, ...] = ()
+
+
+@dataclass(frozen=True)
+class DecisionResult:
+    """The notice after the decision and, for a notice to a note, the note as it is now."""
+
+    notice: Notice
+    note: NoteView | None
 
 
 @dataclass(frozen=True)
@@ -268,6 +282,46 @@ class NoteService:
                 if trigger.link_id == link.id and event_hit(trigger, status):
                     self._notes.mark_fired(link.project, link.note, trigger.id, now)
 
+    # --- notices ---
+
+    def add_notice(self, new: NewNotice) -> Notice:
+        """Tells a note or an item that the other end changed. An open notice of the same kind stays the only one."""
+        return self._notes.add_notice(new)
+
+    def notices(self, project: str, label: str, side: NoticeSide, open_only: bool = True) -> list[Notice]:
+        """The notices of a note (side `note`) or of an item (side `item`), oldest first."""
+        if side is NoticeSide.NOTE:
+            self._notes.get_note(project, label)
+        return self._notes.notices_of(project, label, side, open_only)
+
+    def decide(self, notice_id: int, decision: NoticeDecision, version: str | None = None) -> DecisionResult:
+        """Decides an open notice. The effect is applied first; a failure leaves the notice open.
+
+        Notice to a note: `keep` moves the review date, `detach` removes the reference link to the item, `drop`
+        drops the note, `promote` is not connected yet. Notice to an item: `acknowledge`. `version` is the note's
+        version the decision is based on (default: the stored one).
+        """
+        notice = self._notes.get_notice(notice_id)
+        check_decision(notice, decision)
+        if notice.side is NoticeSide.ITEM:
+            return DecisionResult(self._notes.decide_notice(notice_id, decision, self._clock()), None)
+        note = self._notes.get_note(notice.project, notice.label)
+        expected = version or note.version
+        if note.version != expected:
+            raise VersionConflictError(note.label)
+        if decision is NoticeDecision.KEEP:
+            self._notes.update_note(note.project, note.label, expected,
+                                    keep_changes(note, self._clock(), self._settings().review_days))
+        elif decision is NoticeDecision.DETACH:
+            check_editable(note)
+            for link in self._notes.links_of(note.project, note.label):
+                if link.target == notice.counterpart and link.role is LinkRole.REFERENCE:
+                    self._notes.remove_link(note.project, note.label, link.id)
+        elif decision is NoticeDecision.DROP:
+            self._notes.update_note(note.project, note.label, expected, finish_changes(note, NoteStatus.DROPPED))
+        decided = self._notes.decide_notice(notice_id, decision, self._clock())
+        return DecisionResult(decided, self.show(note.project, note.label))
+
     # --- lifecycle, archive, trash ---
 
     def finish(self, project: str, label: str, version: str, target: NoteStatus) -> NoteView:
@@ -326,7 +380,9 @@ class NoteService:
 
     def _view(self, note: Note) -> NoteView:
         triggers = self._notes.triggers_of(note.project, note.label)
-        return NoteView(note, tuple(triggers), evaluate(note, triggers, self._topic_due(note), self._clock()))
+        open_notices = self._notes.notices_of(note.project, note.label, NoticeSide.NOTE, open_only=True)
+        evaluation = evaluate(note, triggers, self._topic_due(note), self._clock(), len(open_notices))
+        return NoteView(note, tuple(triggers), evaluation, tuple(open_notices))
 
     def _source(self, project: str) -> Source:
         found = next((s for s in self._sources.all() if s.project == project), None)

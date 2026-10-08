@@ -12,6 +12,7 @@ from todo_viewer.domain.errors import (
     DocumentForbiddenError,
     DocumentNotFoundError,
     NoteNotFoundError,
+    NoticeNotFoundError,
     TopicLoopError,
     TopicNotFoundError,
     TopicTooDeepError,
@@ -21,9 +22,13 @@ from todo_viewer.domain.notes import (
     LinkRole,
     LinkTarget,
     NewNote,
+    NewNotice,
     NewTrigger,
     NoteChanges,
     NoteStatus,
+    NoticeCause,
+    NoticeDecision,
+    NoticeSide,
     TargetKind,
     TriggerKind,
     TriggerMode,
@@ -434,3 +439,128 @@ def test_a_single_note_can_be_purged(notes: NoteRepository):
     with pytest.raises(NoteNotFoundError):
         notes.get_note(P, note.label)
     assert notes.get_note(P, keep.label) == keep
+
+
+# ---------- notices ----------
+
+def note_notice(label: str, item_label: str = "STORY-001", cause: NoticeCause = NoticeCause.ITEM_COMPLETED,
+                project: str = P, item_project: str = P) -> NewNotice:
+    return NewNotice(NoticeSide.NOTE, project, label, cause, item(item_label, item_project))
+
+
+def item_notice(note_label: str, item_label: str = "STORY-001", cause: NoticeCause = NoticeCause.NOTE_DROPPED,
+                project: str = P) -> NewNotice:
+    return NewNotice(NoticeSide.ITEM, project, item_label, cause, LinkTarget(TargetKind.NOTE, P, note_label))
+
+
+def test_a_notice_is_stored_open_with_both_sides(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+
+    stored = notes.add_notice(note_notice(note.label))
+
+    assert (stored.side, stored.project, stored.label, stored.cause) == (
+        NoticeSide.NOTE, P, note.label, NoticeCause.ITEM_COMPLETED)
+    assert stored.counterpart == item("STORY-001")
+    assert stored.is_open and stored.decision is None and stored.created_at.utcoffset() == timedelta(0)
+    assert notes.get_notice(stored.id) == stored
+
+
+def test_an_open_notice_of_the_same_cause_and_counterpart_is_not_added_twice(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    first = notes.add_notice(note_notice(note.label))
+
+    again = notes.add_notice(note_notice(note.label))
+    other_cause = notes.add_notice(note_notice(note.label, cause=NoticeCause.ITEM_REJECTED))
+    other_item = notes.add_notice(note_notice(note.label, "STORY-002"))
+
+    assert again == first
+    assert len({first.id, other_cause.id, other_item.id}) == 3
+    assert len(notes.notices_of(P, note.label, NoticeSide.NOTE, open_only=True)) == 3
+
+
+def test_a_decided_notice_does_not_block_a_new_one_of_the_same_cause(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    first = notes.add_notice(note_notice(note.label))
+    notes.decide_notice(first.id, NoticeDecision.KEEP, NOON)
+
+    second = notes.add_notice(note_notice(note.label))
+
+    assert second.id != first.id and second.is_open
+
+
+def test_notices_are_read_per_side_open_or_all(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    mine = notes.add_notice(note_notice(note.label))
+    decided = notes.add_notice(note_notice(note.label, "STORY-002"))
+    notes.decide_notice(decided.id, NoticeDecision.DETACH, NOON)
+    on_item = notes.add_notice(item_notice(note.label))
+
+    assert notes.notices_of(P, note.label, NoticeSide.NOTE, open_only=True) == [mine]
+    assert [n.id for n in notes.notices_of(P, note.label, NoticeSide.NOTE, open_only=False)] == [mine.id, decided.id]
+    assert notes.notices_of(P, "STORY-001", NoticeSide.ITEM, open_only=True) == [on_item]
+    assert notes.notices_of(Q, "STORY-001", NoticeSide.ITEM, open_only=False) == []  # same label, other project
+
+
+def test_deciding_closes_the_notice_with_the_decision_and_the_moment(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    stored = notes.add_notice(note_notice(note.label))
+
+    decided = notes.decide_notice(stored.id, NoticeDecision.KEEP, NOON)
+
+    assert (decided.decision, decided.decided_at, decided.is_open) == (NoticeDecision.KEEP, NOON, False)
+    assert decided.decided_at is not None and decided.decided_at.utcoffset() == timedelta(0)
+    assert notes.get_notice(stored.id) == decided
+
+
+def test_an_unknown_notice_is_an_error(notes: NoteRepository):
+    with pytest.raises(NoticeNotFoundError):
+        notes.get_notice(99)
+    with pytest.raises(NoticeNotFoundError):
+        notes.decide_notice(99, NoticeDecision.KEEP, NOON)
+
+
+def test_notices_of_an_unknown_note_are_an_error(notes: NoteRepository):
+    with pytest.raises(NoteNotFoundError):
+        notes.add_notice(note_notice("NOTE-009"))
+
+
+def test_notices_follow_a_new_item_label(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    notes.add_notice(note_notice(note.label))
+    notes.add_notice(item_notice(note.label))
+    other_project = notes.add_notice(item_notice(note.label, project=Q))
+
+    notes.relink_item(P, "STORY-001", "TASK-007")
+
+    assert notes.notices_of(P, note.label, NoticeSide.NOTE, open_only=False)[0].counterpart == item("TASK-007")
+    assert len(notes.notices_of(P, "TASK-007", NoticeSide.ITEM, open_only=False)) == 1
+    assert notes.get_notice(other_project.id).label == "STORY-001"
+
+
+def test_notices_come_along_when_a_note_changes_project(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    mine = notes.add_notice(note_notice(note.label))
+    on_item = notes.add_notice(item_notice(note.label))
+
+    moved = notes.move_note(P, note.label, Q, None, NOON)
+
+    assert notes.notices_of(P, note.label, NoticeSide.NOTE, open_only=False) == []
+    assert [(n.id, n.project, n.label) for n in notes.notices_of(Q, moved.label, NoticeSide.NOTE, open_only=False)] == [
+        (mine.id, Q, moved.label)]
+    assert notes.get_notice(on_item.id).counterpart == LinkTarget(TargetKind.NOTE, Q, moved.label)
+
+
+def test_purging_a_note_removes_its_notices_and_those_that_name_it(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    keep = notes.create_note(P, NewNote("b"))
+    mine = notes.add_notice(note_notice(note.label))
+    on_item = notes.add_notice(item_notice(note.label))
+    kept = notes.add_notice(note_notice(keep.label))
+    notes.delete_note(P, note.label, NOON)
+
+    notes.purge_note(P, note.label)
+
+    for gone in (mine, on_item):
+        with pytest.raises(NoticeNotFoundError):
+            notes.get_notice(gone.id)
+    assert notes.get_notice(kept.id) == kept

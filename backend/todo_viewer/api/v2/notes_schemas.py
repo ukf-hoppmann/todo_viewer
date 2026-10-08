@@ -5,6 +5,7 @@ Points in time are ISO timestamps with a time zone; they are returned in UTC.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
@@ -54,6 +55,50 @@ class TopicMoveIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     parent: str | None = Field(default=None, description="Label of the new parent; null makes it a root topic")
+
+
+class NoteIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    summary: str = Field(description="One line; this is what the index shows")
+    body: str | None = Field(default=None, description="The long text")
+    topic: str | None = Field(default=None, description="Label of a topic of the same project")
+    review_at: AwareDatetime | None = Field(default=None, description="Default: now plus `notes.review_days`")
+    trigger_mode: Literal["any", "all"] = "any"
+
+
+class NoteEditIn(BaseModel):
+    """Only the fields sent change. null clears `body`, `topic`, and `review_at`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: str
+    summary: str | None = None
+    body: str | None = None
+    topic: str | None = None
+    review_at: AwareDatetime | None = None
+    trigger_mode: Literal["any", "all"] | None = None
+
+    @model_validator(mode="after")
+    def _not_empty(self) -> NoteEditIn:
+        if self.model_fields_set <= {"version"}:
+            raise ValueError("at least one field to change is required")
+        if "summary" in self.model_fields_set and self.summary is None:
+            raise ValueError("summary cannot be cleared")
+        if "trigger_mode" in self.model_fields_set and self.trigger_mode is None:
+            raise ValueError("trigger_mode cannot be cleared")
+        return self
+
+    def cleared(self, field: str) -> bool:
+        return field in self.model_fields_set and getattr(self, field) is None
+
+
+class NoteMoveIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: str
+    project: str = Field(description="The project the note moves to")
+    topic: str | None = Field(default=None, description="Label of a topic of the new project")
 
 
 class TriggerOut(BaseModel):

@@ -4,9 +4,11 @@ import dataclasses
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from todo_viewer.domain.errors import InvalidValueError, SourceGoneError, ValueRequiredError
+from todo_viewer.domain.errors import InvalidValueError, SourceGoneError, ValueRequiredError, VersionConflictError
 from todo_viewer.domain.note_lifecycle import (
     check_delete_note,
+    check_editable,
+    check_movable,
     check_purge_note,
     finish_changes,
     keep_changes,
@@ -45,6 +47,13 @@ from ..ports import BacklogRepository, Clock, NoteRepository, SourceRepository
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def _summary(text: str) -> str:
+    stripped = text.strip()
+    if not stripped:
+        raise ValueRequiredError("summary")
+    return stripped
 
 
 @dataclass(frozen=True)
@@ -98,16 +107,41 @@ class NoteService:
 
     def create(self, project: str, summary: str, body: str | None = None, topic: str | None = None,
                review_at: datetime | None = None, trigger_mode: TriggerMode = TriggerMode.ANY) -> NoteView:
+        self._source(project)
         review = review_at or self._new_review_date()
-        return self._view(self._notes.create_note(project, NewNote(summary, body, topic, review, trigger_mode)))
+        return self._view(self._notes.create_note(project, NewNote(_summary(summary), body, topic, review,
+                                                                   trigger_mode)))
 
     def edit(self, project: str, label: str, version: str, summary: str | None = None,
-             body: str | None = None) -> NoteView:
-        """A changed text sets a new review date."""
+             body: str | None = None, clear_body: bool = False, topic: str | None = None,
+             clear_topic: bool = False, review_at: datetime | None = None, clear_review_at: bool = False,
+             trigger_mode: TriggerMode | None = None) -> NoteView:
+        """Changes the given fields of an open note. A changed text sets a new review date unless one is given."""
         current = self._notes.get_note(project, label)
-        changed = (summary is not None and summary != current.summary) or (body is not None and body != current.body)
-        changes = NoteChanges(summary=summary, body=body, review_at=self._new_review_date() if changed else None)
+        check_editable(current)
+        summary = None if summary is None else _summary(summary)
+        changed = ((summary is not None and summary != current.summary)
+                   or (body is not None and body != current.body) or (clear_body and current.body is not None))
+        if review_at is None and not clear_review_at and changed:
+            review_at = self._new_review_date()
+        changes = NoteChanges(summary=summary, body=body, clear_body=clear_body, topic=topic,
+                              clear_topic=clear_topic, review_at=review_at, clear_review_at=clear_review_at,
+                              trigger_mode=trigger_mode)
         return self._view(self._notes.update_note(project, label, version, changes))
+
+    def move_to_project(self, project: str, label: str, version: str, target_project: str,
+                        target_topic: str | None = None) -> NoteView:
+        """Creates the note in `target_project` with a new label and puts the old one in the trash.
+
+        The topic belongs to the old project and is not taken along; `target_topic` is one of the new project.
+        Triggers, links, and documents come along. Returns the new note.
+        """
+        note = self._notes.get_note(project, label)
+        check_movable(note, target_project)
+        if note.version != version:
+            raise VersionConflictError(label)
+        self._source(target_project)
+        return self._view(self._notes.move_note(project, label, target_project, target_topic, self._clock()))
 
     def keep(self, project: str, label: str, version: str) -> NoteView:
         """The owner looked at the note and keeps it as it is: only the review date moves."""

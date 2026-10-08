@@ -263,6 +263,7 @@ class NoteLifecycleError(ConflictError):
         "note_closed": "{id} is closed (archived); restore it first.",
         "note_deleted": "{id} is in the trash; restore it first.",
         "note_not_deleted": "{id} is not in the trash.",
+        "note_same_project": "{id} is in that project already.",
         "note_not_restorable": "{id} is neither archived nor in the trash.",
         "topic_has_content": "{id} still holds {items}. Confirm with cascade.",
         "topic_deleted": "{id} is in the trash or lies below a topic in the trash: restore {items} first.",

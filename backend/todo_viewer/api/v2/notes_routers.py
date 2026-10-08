@@ -5,15 +5,70 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from todo_viewer.domain.notes import TriggerMode
+
 from ..dependencies import Notes, Topics
-from .notes_schemas import TopicEditIn, TopicIn, TopicMoveIn, TopicOut, TrashOut
-from .schemas import ErrorOut
+from .notes_schemas import (
+    NoteEditIn,
+    NoteIn,
+    NoteMoveIn,
+    NoteOut,
+    TopicEditIn,
+    TopicIn,
+    TopicMoveIn,
+    TopicOut,
+    TrashOut,
+)
+from .schemas import ErrorOut, VersionIn
 
 ERRORS: dict[int | str, dict[str, Any]] = {
     status: {"model": ErrorOut} for status in (400, 403, 404, 409)
 }
 
 router = APIRouter(prefix="/api/v2/projects/{project}", responses=ERRORS)
+
+
+@router.post("/notes", tags=["notes"], status_code=201)
+def create_note(project: str, body: NoteIn, notes: Notes) -> NoteOut:
+    """Creates an open note. Without `review_at` it must be looked at again after `notes.review_days`."""
+    return NoteOut.of(notes.create(project, body.summary, body.body, body.topic, body.review_at,
+                                   TriggerMode(body.trigger_mode)))
+
+
+@router.get("/notes/{label}", tags=["notes"])
+def get_note(project: str, label: str, notes: Notes) -> NoteOut:
+    """One note, with its triggers and its state right now (`status` is `due` when a trigger arrived or the review
+    date passed). Also finds archived notes and notes in the trash."""
+    return NoteOut.of(notes.show(project, label))
+
+
+@router.patch("/notes/{label}", tags=["notes"])
+def edit_note(project: str, label: str, body: NoteEditIn, notes: Notes) -> NoteOut:
+    """Changes the fields sent, in `version`; 409 version_conflict if the note changed in the meantime.
+
+    A changed text sets a new review date unless `review_at` is sent. null clears `body`, `topic`, `review_at`.
+    Closed notes and notes in the trash cannot be changed (409 note_closed / note_deleted).
+    """
+    mode = None if body.trigger_mode is None else TriggerMode(body.trigger_mode)
+    return NoteOut.of(notes.edit(
+        project, label, body.version, summary=body.summary, body=body.body, clear_body=body.cleared("body"),
+        topic=body.topic, clear_topic=body.cleared("topic"), review_at=body.review_at,
+        clear_review_at=body.cleared("review_at"),
+        trigger_mode=mode))
+
+
+@router.post("/notes/{label}/keep", tags=["notes"])
+def keep_note(project: str, label: str, body: VersionIn, notes: Notes) -> NoteOut:
+    """The owner looked at the note and keeps it as it is: only the review date moves."""
+    return NoteOut.of(notes.keep(project, label, body.version))
+
+
+@router.post("/notes/{label}/move", tags=["notes"])
+def move_note(project: str, label: str, body: NoteMoveIn, notes: Notes) -> NoteOut:
+    """Moves the note to another project: it is created there with a new label (triggers, links, and documents come
+    along) and the old one goes to the trash. The answer is the new note; its `label` is the new one.
+    """
+    return NoteOut.of(notes.move_to_project(project, label, body.version, body.project, body.topic))
 
 
 @router.get("/topics", tags=["topics"])

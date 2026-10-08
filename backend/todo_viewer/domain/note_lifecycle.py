@@ -20,6 +20,18 @@ def _active(note: Note) -> None:
         raise NoteLifecycleError("note_closed", note.label)
 
 
+def check_editable(note: Note) -> None:
+    """Only an open note in use can be changed."""
+    _active(note)
+
+
+def check_movable(note: Note, target_project: str) -> None:
+    """An open note moves to another project, never to its own."""
+    _active(note)
+    if note.project == target_project:
+        raise NoteLifecycleError("note_same_project", note.label)
+
+
 def finish_changes(note: Note, target: NoteStatus) -> NoteChanges:
     """Closing as done, dropped, or promoted puts the note in the archive."""
     if target not in FINISHED_STATUSES:

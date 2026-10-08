@@ -300,3 +300,77 @@ export async function fetchUiState(): Promise<Record<string, unknown>> {
 export async function saveUiState(state: Record<string, unknown>): Promise<void> {
   await unwrap(api.PUT("/api/v2/ui-state", { body: state }));
 }
+
+// ---------- Notes ----------
+
+/** Everything about notes lives under one prefix, so one invalidation refreshes index, details, lists and counter. */
+const notesKeys = {
+  all: ["notes"] as const,
+  index: ["notes", "index"] as const,
+};
+
+function refreshNotes(client: QueryClient) {
+  void client.invalidateQueries({ queryKey: notesKeys.all });
+}
+
+/** Topics and notes of all projects without long texts. The topic tree and the lists are cut from it by `domain/notes`. */
+export function useNotesIndex(paused: boolean) {
+  return useQuery({
+    queryKey: notesKeys.index,
+    queryFn: () => unwrap(api.GET("/api/v2/notes/index", { params: { query: {} } })),
+    refetchInterval: paused ? false : POLL_INTERVAL_MS,
+  });
+}
+
+/** A mutation on notes data that refreshes all notes queries once it has settled. */
+function useNotesMutation<TArgs, TResult>(call: (args: TArgs) => Promise<TResult>) {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: call, onSettled: () => refreshNotes(client) });
+}
+
+type TopicAddress = { project: string; label: string };
+type NoteAddress = { project: string; label: string };
+
+export function useCreateTopic() {
+  return useNotesMutation(({ project, ...body }: { project: string } & Schemas["TopicIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/topics", { params: { path: { project } }, body })),
+  );
+}
+
+export function useUpdateTopic() {
+  return useNotesMutation(({ project, label, ...body }: TopicAddress & Schemas["TopicEditIn"]) =>
+    unwrap(api.PATCH("/api/v2/projects/{project}/topics/{label}", { params: { path: { project, label } }, body })),
+  );
+}
+
+export function useMoveTopic() {
+  return useNotesMutation(({ project, label, parent }: TopicAddress & { parent: string | null }) =>
+    unwrap(api.POST("/api/v2/projects/{project}/topics/{label}/move", { params: { path: { project, label } }, body: { parent } })),
+  );
+}
+
+/** Moves a topic to the trash; with content only `cascade` works (topic_has_content otherwise). */
+export function useDeleteTopic() {
+  return useNotesMutation(({ project, label, cascade }: TopicAddress & { cascade: boolean }) =>
+    unwrap(api.DELETE("/api/v2/projects/{project}/topics/{label}", { params: { path: { project, label }, query: { cascade } } })),
+  );
+}
+
+export function useCreateNote() {
+  return useNotesMutation(({ project, ...body }: { project: string } & Schemas["NoteIn"]) =>
+    unwrap(api.POST("/api/v2/projects/{project}/notes", { params: { path: { project } }, body })),
+  );
+}
+
+/** An edit of one note; `version` is the one last read, a changed note answers version_conflict. */
+export function useUpdateNote() {
+  return useNotesMutation(({ project, label, ...body }: NoteAddress & Schemas["NoteEditIn"]) =>
+    unwrap(api.PATCH("/api/v2/projects/{project}/notes/{label}", { params: { path: { project, label } }, body })),
+  );
+}
+
+export function useDeleteNote() {
+  return useNotesMutation(({ project, label }: NoteAddress) =>
+    unwrap(api.DELETE("/api/v2/projects/{project}/notes/{label}", { params: { path: { project, label } } })),
+  );
+}

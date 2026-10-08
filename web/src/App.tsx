@@ -16,13 +16,14 @@ import { useBacklogModel } from "./state/useBacklogModel";
 import { UiStateContext, useUiStateStore } from "./state/useUiStateStore";
 import { type View, VIEWS } from "./state/uiState";
 import { KanbanView } from "./views/KanbanView";
+import { NotesView } from "./views/NotesView";
 import { TrashView } from "./views/TrashView";
 import { TreeView } from "./views/TreeView";
 
 // React Flow + dagre are only loaded when the dependency view is opened.
 const GraphView = lazy(() => import("./views/GraphView").then((m) => ({ default: m.GraphView })));
 
-const TAB_LABELS: Record<View, MessageKey> = { tree: "tab.tree", graph: "tab.graph", kanban: "tab.kanban", trash: "tab.trash" };
+const TAB_LABELS: Record<View, MessageKey> = { tree: "tab.tree", graph: "tab.graph", kanban: "tab.kanban", notes: "tab.notes", trash: "tab.trash" };
 
 type SourceDialogState = { source: SourceStatus | null } | null;
 type SyncDialogState = { source: SourceStatus; mode: SyncMode } | null;
@@ -59,6 +60,7 @@ export function App() {
   const views: Record<View, () => React.ReactNode> = {
     tree: () => <TreeView visible={model.visible} items={model.items} onSelect={select} />,
     kanban: () => <KanbanView visible={model.visible} items={model.items} onSelect={select} />,
+    notes: () => <NotesView />,
     trash: () => <TrashView sources={model.sources} />,
     graph: () => (
       <Suspense fallback={<div className="view" />}>
@@ -104,7 +106,7 @@ export function App() {
               ) : (
                 views[state.currentView]()
               )}
-              {selected && state.currentView !== "trash" && (
+              {selected && state.currentView !== "trash" && state.currentView !== "notes" && (
                 <DetailPanel
                   key={selected.uid}
                   item={selected}

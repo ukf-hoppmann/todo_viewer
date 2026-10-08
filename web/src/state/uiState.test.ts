@@ -23,6 +23,9 @@ describe("uiState", () => {
       currentView: "kanban",
       lang: "en",
       defaultBackend: "markdown",
+      notesProject: null,
+      notesTopic: null,
+      selectedNote: null,
     });
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "nope", lang: "fr" })).toEqual(INITIAL_UI_STATE);
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "trash" }).currentView).toBe("trash");
@@ -57,5 +60,19 @@ describe("uiState", () => {
     const chosen = uiReducer(INITIAL_UI_STATE, { type: "defaultBackend", backend: "database" });
     expect(chosen.defaultBackend).toBe("database");
     expect(snapshot(chosen).defaultBackend).toBe("database");
+  });
+
+  it("remembers the Notes area and jumps to a note", () => {
+    const scoped = uiReducer(INITIAL_UI_STATE, { type: "notesScope", project: "P", topic: { project: "P", label: "TOPIC-001" } });
+    expect(snapshot(scoped)).toMatchObject({ notesProject: "P", notesTopic: { project: "P", label: "TOPIC-001" } });
+
+    const opened = uiReducer(scoped, { type: "openNote", note: { project: "Q", label: "NOTE-004" } });
+    expect(opened.currentView).toBe("notes");
+    expect(snapshot(opened).selectedNote).toEqual({ project: "Q", label: "NOTE-004" });
+
+    const restored = mergeStored(INITIAL_UI_STATE, snapshot(opened));
+    expect(restored.selectedNote).toEqual({ project: "Q", label: "NOTE-004" });
+    expect(mergeStored(INITIAL_UI_STATE, { selectedNote: { project: 1 } }).selectedNote).toBeNull();
+    expect(uiReducer(opened, { type: "selectNote", note: null }).selectedNote).toBeNull();
   });
 });

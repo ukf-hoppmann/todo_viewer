@@ -1,4 +1,4 @@
-import { alreadyMet, buildTopicTree, describeTrigger, formatDate, snoozePresets, toIsoWithZone, notesOfTopic, sortNotes, topicPath, type IndexNote, type IndexTopic } from "./notes";
+import { alreadyMet, badgeLabel, buildTopicTree, describeTrigger, formatDate, snoozePresets, tabTitle, toIsoWithZone, notesOfTopic, sortNotes, topicPath, type IndexNote, type IndexTopic } from "./notes";
 
 function topic(label: string, over: Partial<IndexTopic> = {}): IndexTopic {
   return { project: "P", label, name: `Name ${label}`, parent: null, path: [], due_at: null, due: false, note_count: 0, ...over };
@@ -173,5 +173,23 @@ describe("describeTrigger", () => {
 
   it("names a topic due trigger", () => {
     expect(describeTrigger({ ...base, kind: "topic_due" }, "de").key).toBe("trigger.topicDue");
+  });
+});
+
+describe("tabTitle", () => {
+  it("puts the number of due notes in front of the title, and nothing at zero", () => {
+    expect(tabTitle("ToDo Viewer", 0)).toBe("ToDo Viewer");
+    expect(tabTitle("ToDo Viewer", 1)).toBe("(1) ToDo Viewer");
+    expect(tabTitle("ToDo Viewer", 99)).toBe("(99) ToDo Viewer");
+    expect(tabTitle("ToDo Viewer", 100)).toBe("(99+) ToDo Viewer");
+  });
+});
+
+describe("badgeLabel", () => {
+  it("shows the number up to 99 and 99+ above", () => {
+    expect(badgeLabel(1)).toBe("1");
+    expect(badgeLabel(99)).toBe("99");
+    expect(badgeLabel(100)).toBe("99+");
+    expect(badgeLabel(2500)).toBe("99+");
   });
 });

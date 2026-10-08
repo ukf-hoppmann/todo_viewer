@@ -1,6 +1,6 @@
-import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { Schemas, SourceStatus } from "./api/client";
-import { useRemoveSource, useSyncStatuses } from "./api/queries";
+import { useDueCount, useRemoveSource, useSyncStatuses } from "./api/queries";
 import { CreateItemDialog } from "./components/CreateItemDialog";
 import { DetailPanel } from "./components/DetailPanel";
 import { RetypeNotice } from "./components/RetypeNotice";
@@ -10,8 +10,10 @@ import { SourceDialog } from "./components/SourceDialog";
 import { SyncDialog } from "./components/SyncDialog";
 import type { SyncMode, SyncState } from "./domain/sync";
 import { type Uid, uidOf } from "./domain/model";
+import { tabTitle } from "./domain/notes";
 import { createI18n, describeError, I18nContext } from "./i18n/i18n";
 import type { MessageKey } from "./i18n/messages";
+import { usePollingPaused } from "./state/pollingPause";
 import { useBacklogModel } from "./state/useBacklogModel";
 import { UiStateContext, useUiStateStore } from "./state/useUiStateStore";
 import { type View, VIEWS } from "./state/uiState";
@@ -39,6 +41,14 @@ export function App() {
   const [creating, setCreating] = useState(false);
   // null = closed; focusId is the project the menu was opened for (from its badge), if any.
   const [settings, setSettings] = useState<{ focusId?: string } | null>(null);
+  const dueCount = useDueCount(usePollingPaused()).data?.count ?? 0;
+  const baseTitle = i18n.t("app.title");
+  useEffect(() => {
+    document.title = tabTitle(baseTitle, dueCount);
+    return () => {
+      document.title = baseTitle;
+    };
+  }, [baseTitle, dueCount]);
   const syncStatuses = useSyncStatuses();
   const syncStates = useMemo(() => new Map<string, SyncState>(syncStatuses.data?.map((s) => [s.source_id, s.state])), [syncStatuses.data]);
   // Kept here, not in the detail panel: the panel is rebuilt when the selection moves to the new id.
@@ -83,6 +93,8 @@ export function App() {
             onOpenSettings={() => setSettings({})}
             syncStates={syncStates}
             onOpenProject={(source) => setSettings({ focusId: source.id })}
+            dueCount={dueCount}
+            onOpenDue={() => dispatch({ type: "view", view: "notes" })}
           />
           <main className="main">
             <nav className="tabs">

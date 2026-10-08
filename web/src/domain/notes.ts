@@ -151,3 +151,13 @@ export function describeTrigger(trigger: TriggerInfo, lang: string): TriggerText
   const at = trigger.at === null ? "" : new Date(trigger.at).toLocaleString(lang === "de" ? "de-DE" : "en-GB");
   return { key: "trigger.time", params: { at }, fired, alreadyMet: false };
 }
+
+/** The number on the red exclamation mark: exact up to 99, then `99+`. */
+export function badgeLabel(count: number): string {
+  return count > 99 ? "99+" : String(count);
+}
+
+/** The title of the browser tab: with the number of due notes in front, if there are any. */
+export function tabTitle(base: string, count: number): string {
+  return count > 0 ? `(${badgeLabel(count)}) ${base}` : base;
+}

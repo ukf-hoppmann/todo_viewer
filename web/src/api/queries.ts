@@ -481,3 +481,20 @@ export function useSnoozeNote() {
     unwrap(api.POST("/api/v2/projects/{project}/notes/{label}/snooze", { params: { path: { project, label } }, body })),
   );
 }
+
+// ----- due notes: the counter and the list -----
+
+export const DUE_COUNT_INTERVAL_MS = 60_000;
+
+/**
+ * How many notes are due in all projects, for the red exclamation mark: the cheap request, never the list.
+ * Asked every minute and when the window gets focus; polling pauses like the backlog's.
+ */
+export function useDueCount(paused: boolean) {
+  return useQuery({
+    queryKey: ["notes", "due-count"] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/notes/due/count")),
+    refetchInterval: paused ? false : DUE_COUNT_INTERVAL_MS,
+    refetchOnWindowFocus: true,
+  });
+}

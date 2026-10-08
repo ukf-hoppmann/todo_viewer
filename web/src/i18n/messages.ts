@@ -369,6 +369,7 @@ const de = {
   "topic.due": "Termin",
   "topic.dialog.dueTitle": "Termin von {name}",
   "topic.dialog.due": "Termin (leer: kein Termin)",
+  "due.badge": "{n} fällige Notes oder Hinweise",
 };
 
 export type MessageKey = keyof typeof de;
@@ -742,6 +743,7 @@ const en: Record<MessageKey, string> = {
   "topic.due": "Due date",
   "topic.dialog.dueTitle": "Due date of {name}",
   "topic.dialog.due": "Due date (empty: none)",
+  "due.badge": "{n} due notes or notices",
 };
 
 export const MESSAGES = { de, en };

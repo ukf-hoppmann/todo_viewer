@@ -231,6 +231,580 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/notes/due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Due Notes
+         * @description The due notes of all projects with the reason, the topic path, the triggers that arrived, and the actions
+         *     that are possible, ordered by project and label.
+         */
+        get: operations["due_notes_api_v2_notes_due_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/due/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Due Count
+         * @description How many notes are due in all projects: a cheap call for the red exclamation mark.
+         */
+        get: operations["due_count_api_v2_notes_due_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Notes Index
+         * @description Topics and notes with only label, status, due reason, review date, and summary: no long texts.
+         *
+         *     Without filters: the open notes of all projects. `project` keeps one project; `topic` (needs `project`) keeps
+         *     the notes in that topic and its sub-topics and the topics of that subtree; `status` is the effective status
+         *     (waiting, due, snoozed, done, dropped, promoted); `due=true` keeps the due notes; `linked_item` (in
+         *     `linked_project`, default `project`) keeps the notes that point at the item by a link or an event trigger.
+         *     `archived=true` reads the archive instead; a closed `status` does so by itself.
+         */
+        get: operations["notes_index_api_v2_notes_index_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Settings
+         * @description The global notes options.
+         */
+        get: operations["get_settings_api_v2_notes_settings_get"];
+        /**
+         * Put Settings
+         * @description Changes the options sent and saves them in config.json; they apply from the next request on, no restart.
+         *
+         *     Topics that are nested deeper than a lowered `max_topic_depth` stay; only new topics and moves are checked.
+         */
+        put: operations["put_settings_api_v2_notes_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/items/{label}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Notes Linking To Item
+         * @description The notes (of all projects) that point at this item of the project, by link or by event trigger.
+         */
+        get: operations["notes_linking_to_item_api_v2_projects__project__items__label__notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Note
+         * @description Creates an open note. Without `review_at` it must be looked at again after `notes.review_days`.
+         */
+        post: operations["create_note_api_v2_projects__project__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Note
+         * @description One note, with its triggers and its state right now (`status` is `due` when a trigger arrived or the review
+         *     date passed). Also finds archived notes and notes in the trash.
+         */
+        get: operations["get_note_api_v2_projects__project__notes__label__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Note
+         * @description Moves the note to the trash. Removing it for good is not possible over HTTP; the owner does that.
+         */
+        delete: operations["delete_note_api_v2_projects__project__notes__label__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Edit Note
+         * @description Changes the fields sent, in `version`; 409 version_conflict if the note changed in the meantime.
+         *
+         *     A changed text sets a new review date unless `review_at` is sent. null clears `body`, `topic`, `review_at`.
+         *     Closed notes and notes in the trash cannot be changed (409 note_closed / note_deleted).
+         */
+        patch: operations["edit_note_api_v2_projects__project__notes__label__patch"];
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/backlinks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Notes Linking To Note
+         * @description The notes (of all projects) that point at this note.
+         */
+        get: operations["notes_linking_to_note_api_v2_projects__project__notes__label__backlinks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Documents
+         * @description The names of the notes and specs of the note; read one via `/documents/{name}`.
+         */
+        get: operations["list_documents_api_v2_projects__project__notes__label__documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/documents/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Document
+         * @description A notes or spec document of the note, with its version. Names of other notes: 403 forbidden.
+         */
+        get: operations["read_document_api_v2_projects__project__notes__label__documents__name__get"];
+        /**
+         * Write Document
+         * @description Replaces a document in `version` with the whole new text, or creates it with version null. 409
+         *     version_conflict if it changed in the meantime. New dated notes entries: POST …/notes.
+         */
+        put: operations["write_document_api_v2_projects__project__notes__label__documents__name__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finish Note
+         * @description Closes the note as `done` or `dropped`; it moves to the archive and cannot be changed until restored.
+         */
+        post: operations["finish_note_api_v2_projects__project__notes__label__finish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/keep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep Note
+         * @description The owner looked at the note and keeps it as it is: only the review date moves.
+         */
+        post: operations["keep_note_api_v2_projects__project__notes__label__keep_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Links
+         * @description The links that start at the note, among them the links of its event triggers (role `trigger`).
+         */
+        get: operations["list_links_api_v2_projects__project__notes__label__links_get"];
+        put?: never;
+        /**
+         * Add Link
+         * @description Links an open note to an item, a topic, or another note. The target must exist (404 link_target_not_found);
+         *     an item may be in another project (`target_project`). The same link twice is 409 link_exists.
+         */
+        post: operations["add_link_api_v2_projects__project__notes__label__links_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/links/{link_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Link
+         * @description Removes a link and returns the ones left. The link of an event trigger goes with its trigger.
+         */
+        delete: operations["remove_link_api_v2_projects__project__notes__label__links__link_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move Note
+         * @description Moves the note to another project: it is created there with a new label (triggers, links, and documents come
+         *     along) and the old one goes to the trash. The answer is the new note; its `label` is the new one.
+         */
+        post: operations["move_note_api_v2_projects__project__notes__label__move_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Append Notes
+         * @description Appends a dated Discussed/Decided/Open entry to `<LABEL>_notes.md` (created on first use).
+         */
+        post: operations["append_notes_api_v2_projects__project__notes__label__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore Note
+         * @description From the archive or the trash back to waiting, with a new review date. Refused (409 topic_deleted) while its
+         *     topic is in the trash.
+         */
+        post: operations["restore_note_api_v2_projects__project__notes__label__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/snooze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Snooze Note
+         * @description Back to waiting with a new review date. Fired triggers are reset; a given `trigger` replaces all old ones,
+         *     and without it the triggers that cannot arrive again (time, topic) are removed.
+         */
+        post: operations["snooze_note_api_v2_projects__project__notes__label__snooze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/triggers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Trigger
+         * @description Adds a trigger that makes the note due and returns the note. An event trigger also links the note to the
+         *     item; if the item has the status already, the trigger fires at once and is marked `already_met`.
+         */
+        post: operations["add_trigger_api_v2_projects__project__notes__label__triggers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/notes/{label}/triggers/{trigger_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Trigger
+         * @description Removes the trigger and the link of an event trigger; returns the note.
+         */
+        delete: operations["remove_trigger_api_v2_projects__project__notes__label__triggers__trigger_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Topics
+         * @description The topics of a project; with `include_deleted` the ones in the trash as well.
+         */
+        get: operations["list_topics_api_v2_projects__project__topics_get"];
+        put?: never;
+        /**
+         * Create Topic
+         * @description Creates a topic, optionally below `parent`. Refused beyond `notes.max_topic_depth` (400 topic_too_deep).
+         */
+        post: operations["create_topic_api_v2_projects__project__topics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/topics/{label}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Topic */
+        get: operations["get_topic_api_v2_projects__project__topics__label__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Topic
+         * @description Moves the topic to the trash and returns the trash.
+         *
+         *     A topic with sub-topics or notes needs `cascade=true`; they go with it. Otherwise 409 topic_has_content lists
+         *     them in `details.items`.
+         */
+        delete: operations["delete_topic_api_v2_projects__project__topics__label__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Edit Topic
+         * @description Renames the topic and/or sets its due date; `due_at: null` removes the date.
+         */
+        patch: operations["edit_topic_api_v2_projects__project__topics__label__patch"];
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/topics/{label}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move Topic
+         * @description Moves the topic with its subtree below `parent` (null: to the top).
+         *
+         *     Refused when it would make a loop (400 topic_loop) or the subtree would exceed the depth limit
+         *     (400 topic_too_deep).
+         */
+        post: operations["move_topic_api_v2_projects__project__topics__label__move_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/topics/{label}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Notes Linking To Topic
+         * @description The notes (of all projects) that point at this topic; notes in the trash are left out.
+         */
+        get: operations["notes_linking_to_topic_api_v2_projects__project__topics__label__notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/topics/{label}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore Topic
+         * @description Takes the topic and what was deleted with it out of the trash; their notes get a new review date.
+         */
+        post: operations["restore_topic_api_v2_projects__project__topics__label__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/projects/{project}/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Trash
+         * @description The topics and notes of the project in the trash.
+         */
+        get: operations["trash_api_v2_projects__project__trash_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/sources": {
         parameters: {
             query?: never;
@@ -511,6 +1085,61 @@ export interface components {
              */
             name: string;
         };
+        /** DueCountOut */
+        DueCountOut: {
+            /** By Project */
+            by_project: {
+                [key: string]: number;
+            };
+            /**
+             * Count
+             * @description Due notes in all projects
+             */
+            count: number;
+        };
+        /** DueNoteOut */
+        DueNoteOut: {
+            /**
+             * Actions
+             * @description What can be done with the note: keep, snooze, or close it as done or dropped
+             */
+            actions: ("keep" | "snooze" | "done" | "dropped")[];
+            /** Archived */
+            archived: boolean;
+            /** Label */
+            label: string;
+            /** Project */
+            project: string;
+            /**
+             * Reason
+             * @description Why the note is due: trigger, review_expired, or topic_due
+             */
+            reason: string | null;
+            /**
+             * Review At
+             * @description When the note must be looked at again at the latest
+             */
+            review_at: string | null;
+            /**
+             * Status
+             * @description waiting, due, snoozed, done, dropped, or promoted
+             */
+            status: string;
+            /** Summary */
+            summary: string;
+            /** Topic */
+            topic: string | null;
+            /**
+             * Topic Path
+             * @description The names of the topic and its parents; empty without a topic
+             */
+            topic_path: string[];
+            /**
+             * Triggers
+             * @description The triggers that have arrived
+             */
+            triggers: components["schemas"]["TriggerOut"][];
+        };
         /** ErrorOut */
         ErrorOut: {
             /** Code */
@@ -581,10 +1210,69 @@ export interface components {
             /** Type */
             type: string;
         };
+        /**
+         * IndexNoteOut
+         * @description A note without its long text; read the note for that.
+         */
+        IndexNoteOut: {
+            /** Archived */
+            archived: boolean;
+            /** Label */
+            label: string;
+            /** Project */
+            project: string;
+            /**
+             * Reason
+             * @description Why the note is due: trigger, review_expired, or topic_due
+             */
+            reason: string | null;
+            /**
+             * Review At
+             * @description When the note must be looked at again at the latest
+             */
+            review_at: string | null;
+            /**
+             * Status
+             * @description waiting, due, snoozed, done, dropped, or promoted
+             */
+            status: string;
+            /** Summary */
+            summary: string;
+            /** Topic */
+            topic: string | null;
+        };
         /** IndexOut */
         IndexOut: {
             /** Items */
             items: components["schemas"]["IndexItemOut"][];
+        };
+        /** IndexTopicOut */
+        IndexTopicOut: {
+            /**
+             * Due
+             * @description The due date has passed
+             */
+            due: boolean;
+            /** Due At */
+            due_at: string | null;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+            /**
+             * Note Count
+             * @description Open notes directly in this topic
+             */
+            note_count: number;
+            /** Parent */
+            parent: string | null;
+            /**
+             * Path
+             * @description The names from the root topic down to this one
+             */
+            path: string[];
+            /** Project */
+            project: string;
         };
         /**
          * ItemCreateIn
@@ -747,6 +1435,257 @@ export interface components {
              */
             version: string;
         };
+        /** LinkIn */
+        LinkIn: {
+            /**
+             * Kind
+             * @description What the note points at
+             * @enum {string}
+             */
+            kind: "item" | "topic" | "note";
+            /**
+             * Role
+             * @default reference
+             * @enum {string}
+             */
+            role: "reference" | "origin";
+            /**
+             * Target
+             * @description Label of the item, topic, or note
+             */
+            target: string;
+            /**
+             * Target Project
+             * @description Its project; default: the note's project
+             */
+            target_project?: string | null;
+        };
+        /** LinkOut */
+        LinkOut: {
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /**
+             * Note
+             * @description Label of the note the link starts at
+             */
+            note: string;
+            /**
+             * Project
+             * @description Project of that note
+             */
+            project: string;
+            /**
+             * Role
+             * @description reference, origin, or trigger (the link of an event trigger)
+             */
+            role: string;
+            /**
+             * Target
+             * @description Label of the item, topic, or note it points at
+             */
+            target: string;
+            /** Target Project */
+            target_project: string;
+        };
+        /**
+         * LinkedNoteOut
+         * @description A note that points at something; the long text stays out, read the note for it.
+         */
+        LinkedNoteOut: {
+            /** Label */
+            label: string;
+            /** Link Id */
+            link_id: number;
+            /** Project */
+            project: string;
+            /** Role */
+            role: string;
+            /** Status */
+            status: string;
+            /** Summary */
+            summary: string;
+        };
+        /** NoteDocumentIn */
+        NoteDocumentIn: {
+            /**
+             * Content
+             * @description The whole new text of the document
+             */
+            content: string;
+            /**
+             * Version
+             * @description Version last read; null to create a new document
+             */
+            version: string | null;
+        };
+        /** NoteDocumentOut */
+        NoteDocumentOut: {
+            /** Content */
+            content: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "notes" | "spec";
+            /**
+             * Name
+             * @description `<LABEL>_notes.md`, `<LABEL>_spec.md`, or `<LABEL>_spec_<topic>.md`
+             */
+            name: string;
+            /**
+             * Version
+             * @description Changes with the content; required to replace the document
+             */
+            version: string;
+        };
+        /** NoteDocumentRefOut */
+        NoteDocumentRefOut: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "notes" | "spec";
+            /** Name */
+            name: string;
+        };
+        /**
+         * NoteEditIn
+         * @description Only the fields sent change. null clears `body`, `topic`, and `review_at`.
+         */
+        NoteEditIn: {
+            /** Body */
+            body?: string | null;
+            /** Review At */
+            review_at?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Topic */
+            topic?: string | null;
+            /** Trigger Mode */
+            trigger_mode?: ("any" | "all") | null;
+            /** Version */
+            version: string;
+        };
+        /** NoteFinishIn */
+        NoteFinishIn: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "done" | "dropped";
+            /** Version */
+            version: string;
+        };
+        /** NoteIn */
+        NoteIn: {
+            /**
+             * Body
+             * @description The long text
+             */
+            body?: string | null;
+            /**
+             * Review At
+             * @description Default: now plus `notes.review_days`
+             */
+            review_at?: string | null;
+            /**
+             * Summary
+             * @description One line; this is what the index shows
+             */
+            summary: string;
+            /**
+             * Topic
+             * @description Label of a topic of the same project
+             */
+            topic?: string | null;
+            /**
+             * Trigger Mode
+             * @default any
+             * @enum {string}
+             */
+            trigger_mode: "any" | "all";
+        };
+        /** NoteMoveIn */
+        NoteMoveIn: {
+            /**
+             * Project
+             * @description The project the note moves to
+             */
+            project: string;
+            /**
+             * Topic
+             * @description Label of a topic of the new project
+             */
+            topic?: string | null;
+            /** Version */
+            version: string;
+        };
+        /** NoteOut */
+        NoteOut: {
+            /** Archived */
+            archived: boolean;
+            /** Body */
+            body: string | null;
+            /** Created */
+            created: string | null;
+            /** Deleted */
+            deleted: string | null;
+            /** Label */
+            label: string;
+            /** Project */
+            project: string;
+            /**
+             * Reason
+             * @description Why the note is due: trigger, review_expired, or topic_due
+             */
+            reason: string | null;
+            /** Review At */
+            review_at: string | null;
+            /**
+             * Status
+             * @description The effective status: `due` is derived from the triggers and the review date
+             */
+            status: string;
+            /**
+             * Stored Status
+             * @description The stored status (waiting, snoozed, done, dropped, promoted)
+             */
+            stored_status: string;
+            /** Summary */
+            summary: string;
+            /** Topic */
+            topic: string | null;
+            /** Trigger Mode */
+            trigger_mode: string;
+            /** Triggers */
+            triggers: components["schemas"]["TriggerOut"][];
+            /** Updated */
+            updated: string | null;
+            /**
+             * Version
+             * @description Changes with every change of the note; required for edits
+             */
+            version: string;
+        };
+        /** NoteSnoozeIn */
+        NoteSnoozeIn: {
+            /**
+             * Review At
+             * @description Default: now plus `notes.review_days`
+             */
+            review_at?: string | null;
+            /** @description Replaces all old triggers */
+            trigger?: components["schemas"]["TriggerIn"] | null;
+            /** Version */
+            version: string;
+        };
+        /**
+         * NoteStatus
+         * @enum {string}
+         */
+        NoteStatus: "waiting" | "due" | "snoozed" | "done" | "dropped" | "promoted";
         /**
          * NotesEntryIn
          * @description One dated notes entry; the date is set by the server.
@@ -765,6 +1704,36 @@ export interface components {
             summary?: string | null;
             /** Topic */
             topic: string;
+        };
+        /** NotesIndexOut */
+        NotesIndexOut: {
+            /** Notes */
+            notes: components["schemas"]["IndexNoteOut"][];
+            /** Topics */
+            topics: components["schemas"]["IndexTopicOut"][];
+        };
+        /**
+         * NotesSettingsIn
+         * @description Only the options sent change. Whole numbers: depth 1 to 10, review days 1 to 3650.
+         */
+        NotesSettingsIn: {
+            /** Max Topic Depth */
+            max_topic_depth?: number | null;
+            /** Review Days */
+            review_days?: number | null;
+        };
+        /** NotesSettingsOut */
+        NotesSettingsOut: {
+            /**
+             * Max Topic Depth
+             * @description How many levels topics may nest (`notes.max_topic_depth`)
+             */
+            max_topic_depth: number;
+            /**
+             * Review Days
+             * @description Days until a note must be looked at again (`notes.review_days`)
+             */
+            review_days: number;
         };
         /**
          * NoticeOut
@@ -1036,6 +2005,116 @@ export interface components {
              * @enum {string}
              */
             state: "none" | "in_sync" | "mirror_changed" | "primary_changed" | "both_changed" | "unknown" | "unreadable";
+        };
+        /**
+         * TopicEditIn
+         * @description Only the fields sent change; `due_at: null` removes the due date.
+         */
+        TopicEditIn: {
+            /** Due At */
+            due_at?: string | null;
+            /** Name */
+            name?: string | null;
+        };
+        /** TopicIn */
+        TopicIn: {
+            /** Due At */
+            due_at?: string | null;
+            /** Name */
+            name: string;
+            /** Parent */
+            parent?: string | null;
+        };
+        /** TopicMoveIn */
+        TopicMoveIn: {
+            /**
+             * Parent
+             * @description Label of the new parent; null makes it a root topic
+             */
+            parent?: string | null;
+        };
+        /** TopicOut */
+        TopicOut: {
+            /** Created */
+            created: string | null;
+            /**
+             * Deleted
+             * @description When the topic was moved to the trash; null if in use
+             */
+            deleted: string | null;
+            /** Due At */
+            due_at: string | null;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+            /**
+             * Parent
+             * @description Label of the parent topic
+             */
+            parent: string | null;
+            /** Project */
+            project: string;
+        };
+        /** TrashOut */
+        TrashOut: {
+            /** Notes */
+            notes: components["schemas"]["NoteOut"][];
+            /** Topics */
+            topics: components["schemas"]["TopicOut"][];
+        };
+        /**
+         * TriggerIn
+         * @description A time trigger needs `at`; an event trigger `target` and `target_status`; a topic trigger the note's topic.
+         */
+        TriggerIn: {
+            /**
+             * At
+             * @description time: the moment it arrives
+             */
+            at?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "time" | "event" | "topic_due";
+            /**
+             * Target
+             * @description event: label of the item that is watched
+             */
+            target?: string | null;
+            /**
+             * Target Project
+             * @description event: its project; default: the note's project
+             */
+            target_project?: string | null;
+            /**
+             * Target Status
+             * @description event: In progress, Awaiting confirmation, Completed, or Rejected
+             */
+            target_status?: string | null;
+        };
+        /** TriggerOut */
+        TriggerOut: {
+            /** Already Met */
+            already_met: boolean;
+            /** At */
+            at: string | null;
+            /** Fired At */
+            fired_at: string | null;
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /**
+             * Target
+             * @description Event: label of the item that is watched
+             */
+            target: string | null;
+            /** Target Project */
+            target_project: string | null;
+            /** Target Status */
+            target_status: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1896,6 +2975,2344 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RetypeOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    due_notes_api_v2_notes_due_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DueNoteOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    due_count_api_v2_notes_due_count_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DueCountOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    notes_index_api_v2_notes_index_get: {
+        parameters: {
+            query?: {
+                project?: string | null;
+                topic?: string | null;
+                status?: components["schemas"]["NoteStatus"] | null;
+                due?: boolean;
+                linked_item?: string | null;
+                linked_project?: string | null;
+                archived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesIndexOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_v2_notes_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesSettingsOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    put_settings_api_v2_notes_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesSettingsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesSettingsOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    notes_linking_to_item_api_v2_projects__project__items__label__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedNoteOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_note_api_v2_projects__project__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_note_api_v2_projects__project__notes__label__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_note_api_v2_projects__project__notes__label__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_note_api_v2_projects__project__notes__label__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteEditIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    notes_linking_to_note_api_v2_projects__project__notes__label__backlinks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedNoteOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_v2_projects__project__notes__label__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteDocumentRefOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_document_api_v2_projects__project__notes__label__documents__name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteDocumentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_document_api_v2_projects__project__notes__label__documents__name__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteDocumentIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteDocumentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finish_note_api_v2_projects__project__notes__label__finish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteFinishIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    keep_note_api_v2_projects__project__notes__label__keep_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_links_api_v2_projects__project__notes__label__links_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_link_api_v2_projects__project__notes__label__links_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_link_api_v2_projects__project__notes__label__links__link_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+                link_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_note_api_v2_projects__project__notes__label__move_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteMoveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    append_notes_api_v2_projects__project__notes__label__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesEntryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteDocumentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_note_api_v2_projects__project__notes__label__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    snooze_note_api_v2_projects__project__notes__label__snooze_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteSnoozeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_trigger_api_v2_projects__project__notes__label__triggers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TriggerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_trigger_api_v2_projects__project__notes__label__triggers__trigger_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+                trigger_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_topics_api_v2_projects__project__topics_get: {
+        parameters: {
+            query?: {
+                include_deleted?: boolean;
+            };
+            header?: never;
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_topic_api_v2_projects__project__topics_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopicIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_topic_api_v2_projects__project__topics__label__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_topic_api_v2_projects__project__topics__label__delete: {
+        parameters: {
+            query?: {
+                cascade?: boolean;
+            };
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_topic_api_v2_projects__project__topics__label__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopicEditIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_topic_api_v2_projects__project__topics__label__move_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopicMoveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    notes_linking_to_topic_api_v2_projects__project__topics__label__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedNoteOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_topic_api_v2_projects__project__topics__label__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trash_api_v2_projects__project__trash_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashOut"];
                 };
             };
             /** @description Bad Request */

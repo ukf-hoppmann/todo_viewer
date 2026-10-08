@@ -18,7 +18,8 @@ TARGET = PROJECT_ROOT / "web" / "src" / "api" / "openapi.json"
 
 def v2_schema() -> dict[str, Any]:
     app = FastAPI(title="ToDo Viewer API", version="2")
-    app.include_router(v2.router)
+    for router in v2.ROUTERS:
+        app.include_router(router)
     return app.openapi()
 
 

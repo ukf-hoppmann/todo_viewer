@@ -20,9 +20,8 @@ def create_app(container: Container, frontend_dir: Path) -> FastAPI:
     app.state.container = container
     install_error_handlers(app)
     app.add_middleware(RequestLogMiddleware)
-    app.include_router(v2.router)
-    app.include_router(v2.notes_router)
-    app.include_router(v2.notes_global_router)
+    for router in v2.ROUTERS:
+        app.include_router(router)
     # Mounted last: everything that is not an API route is a frontend file.
     app.mount("/", FrontendFiles(frontend_dir), name="frontend")
     return app

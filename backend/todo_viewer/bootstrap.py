@@ -17,6 +17,7 @@ from todo_viewer.application.services import (
     DocumentService,
     FolderBrowseService,
     ItemService,
+    NoteService,
     RetypeService,
     SourceLookup,
     SourceService,
@@ -31,7 +32,7 @@ from todo_viewer.domain.editing import EditPlanner
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.retype import RetypePlanner
 from todo_viewer.domain.trash import TrashPlanner
-from todo_viewer.infrastructure.config import JsonFile, storage_url
+from todo_viewer.infrastructure.config import JsonFile, notes_settings, storage_url
 from todo_viewer.infrastructure.database import (
     Database,
     DatabaseBacklogRepository,
@@ -105,12 +106,15 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     raw_backup = RoutingRawBackup({"markdown": MarkdownRawBackup(LayoutFactory(resolver)),
                                    "database": DatabaseRawBackup()})
     backup = BackupService(raw_backup, sync, settings.config_dir / "backups")
+    note_repo = DatabaseNoteRepository(database)
+    notes = NoteService(note_repo, source_repo, backlogs, notes_settings(config))
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
-        items=ItemService(backlogs, planner, rules, ItemFactory(planner), today),
+        items=ItemService(backlogs, planner, rules, ItemFactory(planner), today, notes),
         trash=TrashService(backlogs, documents, TrashPlanner(rules), today),
-        retype=RetypeService(backlogs, documents, RetypePlanner(), rules, DatabaseNoteRepository(database)),
+        notes=notes,
+        retype=RetypeService(backlogs, documents, RetypePlanner(), rules, note_repo),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver), sync, backup),
         source_lookup=lookup,
         documents=DocumentService(backlogs, documents, planner, rules, today),

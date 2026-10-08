@@ -82,6 +82,68 @@ MIGRATIONS: dict[int, list[str]] = {
     5: [
         "ALTER TABLE projects ADD COLUMN mirror_disabled BOOLEAN NOT NULL DEFAULT 0",
     ],
+    # Topics, notes, links, and triggers. Links hold project plus label of their target, not a key.
+    6: [
+        f"""CREATE TABLE topics (
+            uid VARCHAR(36) PRIMARY KEY,
+            project_id VARCHAR(64) NOT NULL REFERENCES projects (id),
+            label VARCHAR(100) NOT NULL,
+            name TEXT NOT NULL,
+            parent_uid VARCHAR(36) REFERENCES topics (uid) {_DEFERRED},
+            due_at TEXT,
+            created TEXT NOT NULL,
+            deleted TEXT,
+            UNIQUE (project_id, label)
+        )""",
+        f"""CREATE TABLE notes (
+            uid VARCHAR(36) PRIMARY KEY,
+            project_id VARCHAR(64) NOT NULL REFERENCES projects (id),
+            label VARCHAR(100) NOT NULL,
+            summary TEXT NOT NULL,
+            body TEXT,
+            status VARCHAR(20) NOT NULL,
+            topic_uid VARCHAR(36) REFERENCES topics (uid) {_DEFERRED},
+            review_at TEXT,
+            trigger_mode VARCHAR(10) NOT NULL,
+            created TEXT NOT NULL,
+            updated TEXT NOT NULL,
+            archived BOOLEAN NOT NULL DEFAULT 0,
+            deleted TEXT,
+            UNIQUE (project_id, label)
+        )""",
+        f"""CREATE TABLE note_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            note_uid VARCHAR(36) NOT NULL REFERENCES notes (uid) ON DELETE CASCADE {_DEFERRED},
+            target_kind VARCHAR(10) NOT NULL,
+            target_project VARCHAR(64) NOT NULL,
+            target_label VARCHAR(100) NOT NULL,
+            role VARCHAR(10) NOT NULL
+        )""",
+        "CREATE INDEX note_links_target ON note_links (target_kind, target_project, target_label)",
+        f"""CREATE TABLE note_triggers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            note_uid VARCHAR(36) NOT NULL REFERENCES notes (uid) ON DELETE CASCADE {_DEFERRED},
+            kind VARCHAR(10) NOT NULL,
+            at TEXT,
+            link_id INTEGER REFERENCES note_links (id) ON DELETE SET NULL {_DEFERRED},
+            target_status TEXT,
+            fired_at TEXT,
+            already_met BOOLEAN NOT NULL DEFAULT 0
+        )""",
+        f"""CREATE TABLE note_documents (
+            note_uid VARCHAR(36) NOT NULL REFERENCES notes (uid) ON DELETE CASCADE {_DEFERRED},
+            name VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            PRIMARY KEY (note_uid, name)
+        )""",
+        # The last number given per project and kind; numbers are never reused.
+        """CREATE TABLE note_counters (
+            project_id VARCHAR(64) NOT NULL,
+            kind VARCHAR(10) NOT NULL,
+            last INTEGER NOT NULL,
+            PRIMARY KEY (project_id, kind)
+        )""",
+    ],
 }
 
 CURRENT_VERSION = max(MIGRATIONS)

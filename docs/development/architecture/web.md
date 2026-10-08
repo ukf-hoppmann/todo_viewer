@@ -26,3 +26,9 @@ Applies to `web/**` in addition to `../architecture.md`.
 
 - Large libraries used by only one view (graph layout, markdown rendering)
   SHOULD be loaded on demand.
+
+## 5. Notes
+
+- Notes data MUST be held by TanStack Query (section 3). Grouping of due notes,
+  rules for quick actions (snooze, done, drop), and the count shown in the
+  tab title MUST be pure functions in `src/domain/`.

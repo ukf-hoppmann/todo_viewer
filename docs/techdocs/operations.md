@@ -22,7 +22,8 @@
   automatisch auf den aktuellen Stand migriert (Tabelle `schema_version`, nur
   vorwärts; Version 3 ergänzt die Spalte `mirror_database`, bestehende Projekte
   bekommen keinen Datenbank-Spiegel; Version 5 die Spalte `mirror_disabled`, bestehende
-  Datenbank-Projekte mit Ordner behalten ihren Spiegel eingeschaltet). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
+  Datenbank-Projekte mit Ordner behalten ihren Spiegel eingeschaltet; Version 6 legt die Tabellen für
+  Topics, Notes, Links, Auslöser, Note-Dokumente und die Label-Zähler an). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
   im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
 - Primärquelle eines Projekts wechseln (UI: ⚙ → Projekte → „Primärquelle
   wechseln…“; API: Sync, dann `PUT /sources/{id}` mit neuem `backend`): Der

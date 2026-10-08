@@ -1,0 +1,334 @@
+"""The contract of the notes store: label assignment, topic depth, links, triggers, documents, project change."""
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
+
+from todo_viewer.application.ports import NoteDocumentStore, NoteRepository
+from todo_viewer.domain.documents import content_version
+from todo_viewer.domain.errors import (
+    DocumentForbiddenError,
+    DocumentNotFoundError,
+    NoteNotFoundError,
+    TopicLoopError,
+    TopicNotFoundError,
+    TopicTooDeepError,
+    VersionConflictError,
+)
+from todo_viewer.domain.notes import (
+    LinkRole,
+    LinkTarget,
+    NewNote,
+    NewTrigger,
+    NoteChanges,
+    NoteStatus,
+    TargetKind,
+    TriggerKind,
+    TriggerMode,
+)
+from todo_viewer.infrastructure.database.engine import Database
+from todo_viewer.infrastructure.database.notes import DatabaseNoteDocumentStore, DatabaseNoteRepository
+
+P, Q = "proj-a", "proj-b"
+NOON = datetime(2027, 12, 11, 9, 0, tzinfo=timezone(timedelta(hours=1)))
+
+
+@pytest.fixture(params=["database"])
+def stores(request: pytest.FixtureRequest, tmp_path: Path) -> tuple[NoteRepository, NoteDocumentStore]:
+    db = Database(f"sqlite:///{tmp_path / 'todo.db'}")
+    return DatabaseNoteRepository(db), DatabaseNoteDocumentStore(db)
+
+
+@pytest.fixture
+def notes(stores: tuple[NoteRepository, NoteDocumentStore]) -> NoteRepository:
+    return stores[0]
+
+
+@pytest.fixture
+def documents(stores: tuple[NoteRepository, NoteDocumentStore]) -> NoteDocumentStore:
+    return stores[1]
+
+
+def item(label: str, project: str = P) -> LinkTarget:
+    return LinkTarget(TargetKind.ITEM, project, label)
+
+
+# ---------- labels ----------
+
+def test_labels_count_per_project_and_type(notes: NoteRepository):
+    assert [notes.create_note(P, NewNote("a")).label, notes.create_note(P, NewNote("b")).label,
+            notes.create_note(Q, NewNote("c")).label] == ["NOTE-001", "NOTE-002", "NOTE-001"]
+    assert [notes.create_topic(P, "t", None, None, 3).label, notes.create_topic(Q, "t", None, None, 3).label,
+            notes.create_topic(P, "u", None, None, 3).label] == ["TOPIC-001", "TOPIC-001", "TOPIC-002"]
+
+
+def test_a_label_is_never_given_twice(notes: NoteRepository):
+    notes.create_note(P, NewNote("a"))
+    notes.delete_note(P, "NOTE-001", NOON)
+
+    assert notes.create_note(P, NewNote("b")).label == "NOTE-002"
+
+
+# ---------- topics ----------
+
+def test_topics_nest_up_to_the_configured_depth(notes: NoteRepository):
+    a = notes.create_topic(P, "a", None, None, 3)
+    b = notes.create_topic(P, "b", a.label, None, 3)
+    c = notes.create_topic(P, "c", b.label, None, 3)
+
+    assert (b.parent, c.parent) == (a.label, b.label)
+    with pytest.raises(TopicTooDeepError):
+        notes.create_topic(P, "d", c.label, None, 3)
+    assert notes.create_topic(P, "d", c.label, None, 4).label == "TOPIC-004"  # the refused one used no number
+
+
+def test_a_topic_has_an_optional_due_date_stored_unambiguously(notes: NoteRepository):
+    topic = notes.create_topic(P, "a", None, NOON, 3)
+
+    assert topic.due_at == NOON
+    assert topic.due_at is not None and topic.due_at.utcoffset() == timedelta(0)
+    assert notes.update_topic(P, topic.label, "renamed", None).due_at is None
+    assert notes.get_topic(P, topic.label).name == "renamed"
+
+
+def test_an_unknown_parent_is_refused(notes: NoteRepository):
+    with pytest.raises(TopicNotFoundError):
+        notes.create_topic(P, "a", "TOPIC-099", None, 3)
+
+
+def test_moving_a_topic_keeps_the_limits(notes: NoteRepository):
+    a = notes.create_topic(P, "a", None, None, 3)
+    b = notes.create_topic(P, "b", a.label, None, 3)
+    c = notes.create_topic(P, "c", None, None, 3)
+    d = notes.create_topic(P, "d", c.label, None, 3)
+
+    with pytest.raises(TopicLoopError):
+        notes.move_topic(P, a.label, b.label, 3)
+    with pytest.raises(TopicTooDeepError):
+        notes.move_topic(P, c.label, b.label, 3)  # c has a child: 2 + 2 levels
+    assert notes.move_topic(P, d.label, b.label, 3).parent == b.label
+    assert [t.label for t in notes.list_topics(P)] == [a.label, b.label, c.label, d.label]
+
+
+# ---------- notes ----------
+
+def test_a_note_starts_waiting_with_any_mode(notes: NoteRepository):
+    topic = notes.create_topic(P, "t", None, None, 3)
+    note = notes.create_note(P, NewNote("short", body="long", topic=topic.label, review_at=NOON))
+
+    assert (note.status, note.trigger_mode, note.topic, note.body, note.review_at) == (
+        NoteStatus.WAITING, TriggerMode.ANY, topic.label, "long", NOON)
+    assert notes.get_note(P, note.label) == note
+
+
+def test_a_note_with_an_unknown_topic_is_refused(notes: NoteRepository):
+    with pytest.raises(TopicNotFoundError):
+        notes.create_note(P, NewNote("a", topic="TOPIC-001"))
+    assert notes.list_notes(P) == []
+
+
+def test_update_replaces_only_the_given_fields(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a", body="b"))
+
+    changed = notes.update_note(P, note.label, note.version, NoteChanges(
+        summary="a2", status=NoteStatus.SNOOZED, trigger_mode=TriggerMode.ALL, clear_body=True))
+
+    assert (changed.summary, changed.body, changed.status, changed.trigger_mode) == (
+        "a2", None, NoteStatus.SNOOZED, TriggerMode.ALL)
+    assert changed.version != note.version
+
+
+def test_update_of_a_stale_version_is_refused(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    notes.update_note(P, note.label, note.version, NoteChanges(summary="b"))
+
+    with pytest.raises(VersionConflictError):
+        notes.update_note(P, note.label, note.version, NoteChanges(summary="c"))
+    assert notes.get_note(P, note.label).summary == "b"
+
+
+def test_deleted_notes_leave_the_list_and_can_come_back(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+
+    notes.delete_note(P, note.label, NOON)
+    assert notes.list_notes(P) == []
+    assert [n.label for n in notes.list_notes(P, include_deleted=True)] == [note.label]
+    assert notes.restore_note(P, note.label).deleted is None
+    assert [n.label for n in notes.list_notes(P)] == [note.label]
+
+
+def test_an_unknown_note_is_an_error(notes: NoteRepository):
+    with pytest.raises(NoteNotFoundError):
+        notes.get_note(P, "NOTE-001")
+
+
+# ---------- links ----------
+
+def test_a_link_has_a_role_and_can_be_found_from_its_target(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    other = notes.create_note(Q, NewNote("b"))
+
+    ref = notes.add_link(P, note.label, item("TASK-001"), LinkRole.REFERENCE)
+    origin = notes.add_link(Q, other.label, item("TASK-001", P), LinkRole.ORIGIN)  # across projects
+
+    assert notes.links_of(P, note.label) == [ref]
+    assert [(link.project, link.note, link.role) for link in notes.links_to(item("TASK-001"))] == [
+        (P, note.label, LinkRole.REFERENCE), (Q, other.label, LinkRole.ORIGIN)]
+    assert origin.target.project == P
+    notes.remove_link(P, note.label, ref.id)
+    assert notes.links_of(P, note.label) == []
+
+
+def test_a_link_can_point_to_a_topic_or_a_note(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+
+    notes.add_link(P, note.label, LinkTarget(TargetKind.TOPIC, P, "TOPIC-001"), LinkRole.REFERENCE)
+    notes.add_link(P, note.label, LinkTarget(TargetKind.NOTE, P, "NOTE-009"), LinkRole.ORIGIN)
+
+    assert [link.target.kind for link in notes.links_of(P, note.label)] == [TargetKind.TOPIC, TargetKind.NOTE]
+
+
+def test_links_follow_a_new_item_label(notes: NoteRepository):
+    """The retype of an item changes its label; its links and event triggers must follow."""
+    note = notes.create_note(P, NewNote("a"))
+    notes.add_link(P, note.label, item("STORY-001"), LinkRole.REFERENCE)
+    notes.add_trigger(P, note.label, NewTrigger(TriggerKind.EVENT, target=item("STORY-001"),
+                                                target_status="Completed"))
+    notes.add_link(P, note.label, item("STORY-002"), LinkRole.REFERENCE)
+
+    notes.relink_item(P, "STORY-001", "TASK-007")
+
+    assert [link.target.label for link in notes.links_of(P, note.label)] == ["TASK-007", "TASK-007", "STORY-002"]
+    assert [t.target.label for t in notes.triggers_of(P, note.label) if t.target] == ["TASK-007"]
+    assert notes.links_to(item("STORY-001")) == []
+
+
+def test_relinking_leaves_the_same_label_of_another_project_alone(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    notes.add_link(P, note.label, item("STORY-001", Q), LinkRole.REFERENCE)
+
+    notes.relink_item(P, "STORY-001", "TASK-007")
+
+    assert notes.links_of(P, note.label)[0].target.label == "STORY-001"
+
+
+# ---------- triggers ----------
+
+def test_trigger_kinds_and_their_state(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+
+    time = notes.add_trigger(P, note.label, NewTrigger(TriggerKind.TIME, at=NOON))
+    event = notes.add_trigger(P, note.label, NewTrigger(
+        TriggerKind.EVENT, target=item("TASK-007"), target_status="Completed", fired_at=NOON, already_met=True))
+    topic = notes.add_trigger(P, note.label, NewTrigger(TriggerKind.TOPIC_DUE))
+
+    assert (time.at, time.fired_at, time.target) == (NOON, None, None)
+    assert (event.target, event.target_status, event.fired_at, event.already_met) == (
+        item("TASK-007"), "Completed", NOON, True)
+    assert topic.kind is TriggerKind.TOPIC_DUE
+    assert notes.triggers_of(P, note.label) == [time, event, topic]
+
+
+def test_an_event_trigger_has_a_link_with_the_role_trigger(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    event = notes.add_trigger(P, note.label, NewTrigger(TriggerKind.EVENT, target=item("TASK-007"),
+                                                        target_status="Completed"))
+
+    assert [(link.id, link.role) for link in notes.links_of(P, note.label)] == [(event.link_id, LinkRole.TRIGGER)]
+    notes.remove_trigger(P, note.label, event.id)
+    assert notes.links_of(P, note.label) == [] and notes.triggers_of(P, note.label) == []
+
+
+def test_every_trigger_arrives_on_its_own(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+    first = notes.add_trigger(P, note.label, NewTrigger(TriggerKind.TIME, at=NOON))
+    notes.add_trigger(P, note.label, NewTrigger(TriggerKind.TIME, at=NOON))
+
+    fired = notes.mark_fired(P, note.label, first.id, NOON + timedelta(hours=1))
+
+    assert fired.fired_at == NOON + timedelta(hours=1)
+    assert [t.fired_at is not None for t in notes.triggers_of(P, note.label)] == [True, False]
+
+
+# ---------- documents ----------
+
+def test_notes_and_specs_of_a_note_can_be_saved_and_read(notes: NoteRepository, documents: NoteDocumentStore):
+    note = notes.create_note(P, NewNote("a"))
+
+    documents.write(P, note.label, "NOTE-001_notes.md", "# notes\n", None)
+    documents.write(P, note.label, "NOTE-001_spec.md", "# spec\n", None)
+    documents.write(P, note.label, "NOTE-001_spec_api.md", "# api\n", None)
+
+    assert documents.read(P, note.label, "NOTE-001_spec.md") == "# spec\n"
+    assert documents.names(P, note.label) == ["NOTE-001_notes.md", "NOTE-001_spec.md", "NOTE-001_spec_api.md"]
+    documents.write(P, note.label, "NOTE-001_spec.md", "# spec 2\n", content_version("# spec\n"))
+    assert documents.append(P, note.label, "NOTE-001_notes.md", "more", "# h") == "# notes\n\nmore"
+    assert documents.append(P, note.label, "NOTE-001_spec_new.md", "x", "# h") == "# h\nx"
+    documents.delete_document(P, note.label, "NOTE-001_spec.md")
+    with pytest.raises(DocumentNotFoundError):
+        documents.read(P, note.label, "NOTE-001_spec.md")
+
+
+def test_a_stale_document_write_is_refused(notes: NoteRepository, documents: NoteDocumentStore):
+    note = notes.create_note(P, NewNote("a"))
+    documents.write(P, note.label, "NOTE-001_notes.md", "one", None)
+
+    with pytest.raises(VersionConflictError):
+        documents.write(P, note.label, "NOTE-001_notes.md", "two", content_version("old"))
+    with pytest.raises(VersionConflictError):
+        documents.write(P, note.label, "NOTE-001_notes.md", "two", None)
+
+
+def test_foreign_document_names_are_refused(notes: NoteRepository, documents: NoteDocumentStore):
+    note = notes.create_note(P, NewNote("a"))
+
+    with pytest.raises(DocumentForbiddenError):
+        documents.write(P, note.label, "NOTE-002_notes.md", "x", None)
+
+
+# ---------- change of project ----------
+
+def test_a_note_that_changes_project_is_a_new_note_there(notes: NoteRepository, documents: NoteDocumentStore):
+    notes.create_note(Q, NewNote("already there"))
+    topic = notes.create_topic(Q, "t", None, None, 3)
+    note = notes.create_note(P, NewNote("a", body="b", review_at=NOON))
+    note = notes.update_note(P, note.label, note.version, NoteChanges(status=NoteStatus.SNOOZED))
+    notes.add_link(P, note.label, item("TASK-001"), LinkRole.REFERENCE)
+    event = notes.add_trigger(P, note.label, NewTrigger(TriggerKind.EVENT, target=item("TASK-002"),
+                                                        target_status="Completed"))
+    notes.mark_fired(P, note.label, event.id, NOON)
+    documents.write(P, note.label, "NOTE-001_notes.md", "# notes\n", None)
+    pointing = notes.create_note(P, NewNote("points at the first"))
+    notes.add_link(P, pointing.label, LinkTarget(TargetKind.NOTE, P, note.label), LinkRole.REFERENCE)
+
+    moved = notes.move_note(P, note.label, Q, topic.label, NOON)
+
+    assert (moved.project, moved.label) == (Q, "NOTE-002")
+    assert (moved.summary, moved.body, moved.status, moved.topic, moved.review_at) == (
+        "a", "b", NoteStatus.SNOOZED, topic.label, NOON)
+    assert notes.get_note(P, note.label).deleted == NOON
+    assert [n.label for n in notes.list_notes(P)] == [pointing.label]
+    assert [(link.role, link.target.label) for link in notes.links_of(Q, moved.label)] == [
+        (LinkRole.REFERENCE, "TASK-001"), (LinkRole.TRIGGER, "TASK-002")]
+    new_event = notes.triggers_of(Q, moved.label)[0]
+    assert (new_event.fired_at, new_event.target) == (NOON, item("TASK-002")) and new_event.link_id is not None
+    assert documents.read(Q, moved.label, "NOTE-002_notes.md") == "# notes\n"
+    assert notes.links_of(P, pointing.label)[0].target == LinkTarget(TargetKind.NOTE, Q, moved.label)
+
+
+def test_a_failed_move_changes_nothing(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a"))
+
+    with pytest.raises(TopicNotFoundError):
+        notes.move_note(P, note.label, Q, "TOPIC-009", NOON)
+
+    assert notes.list_notes(Q) == [] and notes.get_note(P, note.label).deleted is None
+    assert notes.create_note(Q, NewNote("x")).label == "NOTE-001"
+
+
+def test_moments_are_returned_in_utc(notes: NoteRepository):
+    note = notes.create_note(P, NewNote("a", review_at=NOON))
+
+    assert note.review_at == NOON and note.review_at is not None and note.review_at.tzinfo == UTC

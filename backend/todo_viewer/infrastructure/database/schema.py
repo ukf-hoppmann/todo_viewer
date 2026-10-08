@@ -79,3 +79,68 @@ documents = sa.Table(
     sa.Column("name", sa.String(255), primary_key=True),
     sa.Column("content", sa.Text, nullable=False),
 )
+
+topics = sa.Table(
+    "topics", metadata,
+    sa.Column("uid", sa.String(36), primary_key=True),
+    sa.Column("project_id", sa.String(64), nullable=False),
+    sa.Column("label", sa.String(100), nullable=False),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("parent_uid", sa.String(36)),
+    sa.Column("due_at", sa.Text),
+    sa.Column("created", sa.Text, nullable=False),
+    sa.Column("deleted", sa.Text),
+)
+
+notes = sa.Table(
+    "notes", metadata,
+    sa.Column("uid", sa.String(36), primary_key=True),
+    sa.Column("project_id", sa.String(64), nullable=False),
+    sa.Column("label", sa.String(100), nullable=False),
+    sa.Column("summary", sa.Text, nullable=False),
+    sa.Column("body", sa.Text),
+    sa.Column("status", sa.String(20), nullable=False),
+    sa.Column("topic_uid", sa.String(36)),
+    sa.Column("review_at", sa.Text),
+    sa.Column("trigger_mode", sa.String(10), nullable=False),
+    sa.Column("created", sa.Text, nullable=False),
+    sa.Column("updated", sa.Text, nullable=False),
+    sa.Column("archived", sa.Boolean, nullable=False, server_default=sa.false()),
+    sa.Column("deleted", sa.Text),
+)
+
+note_links = sa.Table(
+    "note_links", metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("note_uid", sa.String(36), nullable=False),
+    sa.Column("target_kind", sa.String(10), nullable=False),
+    sa.Column("target_project", sa.String(64), nullable=False),
+    sa.Column("target_label", sa.String(100), nullable=False),
+    sa.Column("role", sa.String(10), nullable=False),
+)
+
+note_triggers = sa.Table(
+    "note_triggers", metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("note_uid", sa.String(36), nullable=False),
+    sa.Column("kind", sa.String(10), nullable=False),
+    sa.Column("at", sa.Text),
+    sa.Column("link_id", sa.Integer),
+    sa.Column("target_status", sa.Text),
+    sa.Column("fired_at", sa.Text),
+    sa.Column("already_met", sa.Boolean, nullable=False, server_default=sa.false()),
+)
+
+note_documents = sa.Table(
+    "note_documents", metadata,
+    sa.Column("note_uid", sa.String(36), primary_key=True),
+    sa.Column("name", sa.String(255), primary_key=True),
+    sa.Column("content", sa.Text, nullable=False),
+)
+
+note_counters = sa.Table(
+    "note_counters", metadata,
+    sa.Column("project_id", sa.String(64), primary_key=True),
+    sa.Column("kind", sa.String(10), primary_key=True),
+    sa.Column("last", sa.Integer, nullable=False),
+)

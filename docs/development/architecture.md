@@ -10,6 +10,8 @@ tests/architecture/test_layers.py". -->
 
 ### 1. Storage backends behind ports
 
+- This section governs the backlog (items and their documents). Notes
+  (section 3) are not part of it.
 - Each project MUST have exactly one primary source, chosen per project:
   markdown files or the central database. The primary source holds the truth:
   every request reads from and writes to it. A project MAY additionally keep a
@@ -46,6 +48,26 @@ tests/architecture/test_layers.py". -->
   `backend/tests/api_v2/test_openapi.py`.
 - Errors MUST be returned as `{code, message, details}` with a stable `code`;
   the frontend translates codes, not messages.
+
+### 3. Notes, topics, and links
+
+- Notes, topics, links, and triggers MUST live only in the central database,
+  whatever the primary source of the project is. They MUST NOT be written to
+  `TODO.md`, to any other markdown file, or to a mirror by an ordinary
+  request; only the optional export (STORY-047) mirrors them as files.
+  Why: markdown projects have no keys and no transactions across items, and
+  notes must keep their links and triggers when a project switches backend.
+  Enforced by: `pyproject.toml` (`[tool.importlinter]`, the markdown adapter
+  does not import notes modules).
+- Labels (`NOTE-001`, `TOPIC-001`) are counted per project and type, are never
+  reused, and never change inside a project.
+- Whether a trigger has arrived MUST be decided by a pure function in
+  `domain` that receives the current time as a parameter. There MUST be no
+  background timer: time triggers are evaluated when notes are read, event
+  triggers in the use case that changes an item's status.
+  Why: tests need a fixed clock, and an idle viewer must cost nothing.
+- Points in time MUST be stored unambiguously (UTC) and shown and entered in
+  the time zone of the machine the viewer runs on.
 
 ## Scopes
 

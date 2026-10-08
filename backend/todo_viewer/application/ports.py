@@ -4,11 +4,23 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Protocol
 
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.editing import ChangeSet
 from todo_viewer.domain.item import Item
+from todo_viewer.domain.notes import (
+    Link,
+    LinkRole,
+    LinkTarget,
+    NewNote,
+    NewTrigger,
+    Note,
+    NoteChanges,
+    Topic,
+    Trigger,
+)
 from todo_viewer.domain.source import Source, SourceProblem
 
 
@@ -85,6 +97,85 @@ class DocumentStore(Protocol):
         """
 
 
+class NoteRepository(Protocol):
+    """Topics, notes, links, and triggers of all projects, addressed by project id plus label.
+
+    Writes are transactional. Triggers are only stored here; whether one has arrived is decided in `domain`.
+    """
+
+    def create_topic(self, project: str, name: str, parent: str | None, due_at: datetime | None,
+                     max_depth: int) -> Topic:
+        """Raises TopicNotFoundError for an unknown `parent`, TopicTooDeepError beyond `max_depth`."""
+
+    def get_topic(self, project: str, label: str) -> Topic: ...
+
+    def list_topics(self, project: str) -> list[Topic]: ...
+
+    def update_topic(self, project: str, label: str, name: str, due_at: datetime | None) -> Topic: ...
+
+    def move_topic(self, project: str, label: str, parent: str | None, max_depth: int) -> Topic:
+        """Raises TopicLoopError or TopicTooDeepError (the whole subtree counts)."""
+
+    def create_note(self, project: str, new: NewNote) -> Note:
+        """Raises TopicNotFoundError for an unknown topic."""
+
+    def get_note(self, project: str, label: str) -> Note:
+        """Active or in the trash; raises NoteNotFoundError."""
+
+    def list_notes(self, project: str, include_deleted: bool = False) -> list[Note]: ...
+
+    def update_note(self, project: str, label: str, expected_version: str, changes: NoteChanges) -> Note:
+        """Raises VersionConflictError if the stored note no longer has `expected_version`."""
+
+    def delete_note(self, project: str, label: str, at: datetime) -> Note:
+        """Moves the note to the trash."""
+
+    def restore_note(self, project: str, label: str) -> Note: ...
+
+    def move_note(self, project: str, label: str, target_project: str, target_topic: str | None, at: datetime) -> Note:
+        """Creates the note in `target_project` with a new label (links, triggers, and documents come along, links
+        from other notes follow) and puts the old one in the trash. Returns the new note."""
+
+    def add_link(self, project: str, label: str, target: LinkTarget, role: LinkRole) -> Link: ...
+
+    def remove_link(self, project: str, label: str, link_id: int) -> None: ...
+
+    def links_of(self, project: str, label: str) -> list[Link]: ...
+
+    def links_to(self, target: LinkTarget) -> list[Link]:
+        """Links of any project that point at `target`; the note of a link is in `Link.note` with its project in
+        `Link.project`."""
+
+    def relink_item(self, project: str, old_label: str, new_label: str) -> None:
+        """Points every link and trigger on the item `old_label` of `project` at `new_label`."""
+
+    def add_trigger(self, project: str, label: str, new: NewTrigger) -> Trigger:
+        """An event trigger also gets a link with role `trigger` to its item."""
+
+    def triggers_of(self, project: str, label: str) -> list[Trigger]: ...
+
+    def mark_fired(self, project: str, label: str, trigger_id: int, at: datetime) -> Trigger: ...
+
+    def remove_trigger(self, project: str, label: str, trigger_id: int) -> None:
+        """Removes the trigger and the link that belongs to it."""
+
+
+class NoteDocumentStore(Protocol):
+    """Notes and specs of notes (`<LABEL>_notes.md`, `<LABEL>_spec.md`), addressed by project id, label, and name."""
+
+    def names(self, project: str, label: str) -> list[str]: ...
+
+    def read(self, project: str, label: str, name: str) -> str:
+        """Raises DocumentForbiddenError for names the store does not accept, DocumentNotFoundError if missing."""
+
+    def write(self, project: str, label: str, name: str, content: str, expected_version: str | None) -> None:
+        """Replaces a document still at `expected_version` (None: must not exist); else VersionConflictError."""
+
+    def append(self, project: str, label: str, name: str, text: str, header: str) -> str: ...
+
+    def delete_document(self, project: str, label: str, name: str) -> None: ...
+
+
 @dataclass(frozen=True)
 class StorageDescription:
     """What the central database is: its type (e.g. "sqlite"), where it is (no secrets), its schema version."""
@@ -143,6 +234,8 @@ __all__ = [
     "FolderBrowser",
     "FolderEntry",
     "FolderListing",
+    "NoteDocumentStore",
+    "NoteRepository",
     "ProjectNameSuggester",
     "RawBackup",
     "SourceRepository",

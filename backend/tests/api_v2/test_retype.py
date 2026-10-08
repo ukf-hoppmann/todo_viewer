@@ -119,10 +119,10 @@ def test_a_link_from_a_note_survives_the_retype(api, workspace):
     _setup(workspace)
     task = _item(api, "TASK-002")
     notes = DatabaseNoteRepository(Database(f"sqlite:///{workspace.config_dir / 'todo.db'}"))
-    note = notes.create_note(task["source_id"], NewNote("remember"))
-    notes.add_link(task["source_id"], note.label, LinkTarget(TargetKind.ITEM, task["source_id"], "TASK-002"),
+    note = notes.create_note("backlog", NewNote("remember"))
+    notes.add_link("backlog", note.label, LinkTarget(TargetKind.ITEM, "backlog", "TASK-002"),
                    LinkRole.REFERENCE)
 
     assert _retype(api, task, "Story").status_code == 200
 
-    assert [link.target.label for link in notes.links_of(task["source_id"], note.label)] == ["STORY-002"]
+    assert [link.target.label for link in notes.links_of("backlog", note.label)] == ["STORY-002"]

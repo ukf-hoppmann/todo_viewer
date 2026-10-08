@@ -61,10 +61,10 @@ class RetypeService:
 
         self._documents.relabel_documents(source, item_id, plan.new_id, plan.document_renames)
         try:
-            self._notes.relink_item(source.id, item_id, plan.new_id)
+            self._notes.relink_item(source.project, item_id, plan.new_id)
             stored = self._backlogs.apply_all(source, list(plan.changes))
         except Exception:
-            self._notes.relink_item(source.id, plan.new_id, item_id)
+            self._notes.relink_item(source.project, plan.new_id, item_id)
             self._documents.relabel_documents(source, plan.new_id, item_id,
                                               {new: old for old, new in plan.document_renames.items()})
             raise

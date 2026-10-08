@@ -16,6 +16,7 @@ from todo_viewer.domain.errors import (
     InvalidValueError,
     NoteLifecycleError,
     SourceGoneError,
+    TopicNotFoundError,
     ValueRequiredError,
     VersionConflictError,
 )
@@ -66,7 +67,8 @@ class World:
         self.repo = DatabaseNoteRepository(Database(f"sqlite:///{tmp_path / 'todo.db'}"), self.clock)
         # The fake serves the same items for every source, so both projects know STORY-001 and STORY-002.
         self.backlogs = InMemoryBacklogRepository([item("STORY-001"), item("STORY-002", Status.COMPLETED)])
-        self.service = NoteService(self.repo, Sources(), self.backlogs, settings, self.clock)  # type: ignore[arg-type]
+        self.service = NoteService(self.repo, Sources(), self.backlogs, (lambda: settings) if settings else None,
+                                   self.clock)  # type: ignore[arg-type]
 
 
 @pytest.fixture
@@ -492,3 +494,79 @@ def test_links_survive_the_trash(world: World):
     world.service.restore_note(P, note.label)
 
     assert [link.target for link in world.repo.links_of(P, note.label)] == [story()]
+
+
+# ---------- editing more than the text, moving to another project ----------
+
+def test_an_edit_sets_and_clears_topic_body_review_date_and_mode(world: World):
+    topic = world.repo.create_topic(P, "t", None, None, 3)
+    note = world.service.create(P, "idea", body="b").note
+    later = START + timedelta(days=3)
+
+    edited = world.service.edit(P, note.label, note.version, topic=topic.label, review_at=later,
+                                trigger_mode=TriggerMode.ALL)
+    assert (edited.note.topic, edited.note.review_at, edited.note.trigger_mode) == (topic.label, later, TriggerMode.ALL)
+
+    cleared = world.service.edit(P, note.label, edited.note.version, clear_topic=True, clear_body=True)
+    assert (cleared.note.topic, cleared.note.body) == (None, None)
+    assert cleared.note.review_at == START + timedelta(days=30)  # the text changed
+
+
+def test_an_edit_with_an_unknown_topic_or_a_stale_version_is_refused(world: World):
+    note = world.service.create(P, "idea").note
+
+    with pytest.raises(TopicNotFoundError):
+        world.service.edit(P, note.label, note.version, topic="TOPIC-009")
+    world.service.edit(P, note.label, note.version, summary="new")
+    with pytest.raises(VersionConflictError):
+        world.service.edit(P, note.label, note.version, summary="stale")
+
+
+def test_a_closed_or_deleted_note_cannot_be_edited(world: World):
+    done = world.service.create(P, "a").note
+    finished = world.service.finish(P, done.label, done.version, NoteStatus.DONE)
+    gone = world.service.create(P, "b").note
+    world.service.delete_note(P, gone.label)
+
+    with pytest.raises(NoteLifecycleError) as closed:
+        world.service.edit(P, done.label, finished.note.version, summary="x")
+    with pytest.raises(NoteLifecycleError) as deleted:
+        world.service.edit(P, gone.label, world.repo.get_note(P, gone.label).version, summary="x")
+    assert (closed.value.code, deleted.value.code) == ("note_closed", "note_deleted")
+
+
+def test_creating_a_note_in_an_unknown_project_is_refused(world: World):
+    with pytest.raises(SourceGoneError):
+        world.service.create("nowhere", "idea")
+
+
+def test_a_note_moves_to_another_project_with_a_new_label(world: World):
+    note = world.service.create(P, "idea", body="b").note
+    world.service.add_trigger(P, note.label, event())
+    target_topic = world.repo.create_topic(Q, "t", None, None, 3)
+
+    moved = world.service.move_to_project(P, note.label, note.version, Q, target_topic.label)
+
+    assert (moved.note.project, moved.note.label, moved.note.topic) == (Q, "NOTE-001", target_topic.label)
+    assert [t.target_status for t in moved.triggers] == [Status.COMPLETED]
+    old = world.service.show(P, note.label)
+    assert old.note.deleted is not None
+    assert world.service.overview(P) == []
+
+
+def test_moving_checks_version_project_and_state(world: World):
+    note = world.service.create(P, "idea").note
+
+    with pytest.raises(VersionConflictError):
+        world.service.move_to_project(P, note.label, "stale", Q)
+    with pytest.raises(SourceGoneError):
+        world.service.move_to_project(P, note.label, note.version, "nowhere")
+    with pytest.raises(TopicNotFoundError):
+        world.service.move_to_project(P, note.label, note.version, Q, "TOPIC-009")
+    with pytest.raises(NoteLifecycleError) as same:
+        world.service.move_to_project(P, note.label, note.version, P)
+    assert same.value.code == "note_same_project"
+    world.service.delete_note(P, note.label)
+    with pytest.raises(NoteLifecycleError) as deleted:
+        world.service.move_to_project(P, note.label, world.repo.get_note(P, note.label).version, Q)
+    assert deleted.value.code == "note_deleted"

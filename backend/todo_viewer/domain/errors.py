@@ -233,6 +233,35 @@ class NoteNotFoundError(NotFoundError):
         super().__init__(f"Note '{label}' not found.", id=label)
 
 
+class LinkNotFoundError(NotFoundError):
+    code = "link_not_found"
+
+    def __init__(self, link_id: int):
+        super().__init__(f"Link {link_id} not found.", id=str(link_id))
+
+
+class LinkTargetNotFoundError(NotFoundError):
+    code = "link_target_not_found"
+
+    def __init__(self, kind: str, project: str, label: str):
+        super().__init__(f"Link target {kind} '{label}' not found in project '{project}'.", kind=kind,
+                         project=project, id=label)
+
+
+class LinkExistsError(ConflictError):
+    code = "link_exists"
+
+    def __init__(self, label: str):
+        super().__init__(f"'{label}' has this link already.", id=label)
+
+
+class TriggerNotFoundError(NotFoundError):
+    code = "trigger_not_found"
+
+    def __init__(self, trigger_id: int):
+        super().__init__(f"Trigger {trigger_id} not found.", id=str(trigger_id))
+
+
 class TopicNotFoundError(NotFoundError):
     code = "topic_not_found"
 
@@ -263,6 +292,8 @@ class NoteLifecycleError(ConflictError):
         "note_closed": "{id} is closed (archived); restore it first.",
         "note_deleted": "{id} is in the trash; restore it first.",
         "note_not_deleted": "{id} is not in the trash.",
+        "link_belongs_to_trigger": "A link of {id} belongs to an event trigger; remove the trigger instead.",
+        "note_same_project": "{id} is in that project already.",
         "note_not_restorable": "{id} is neither archived nor in the trash.",
         "topic_has_content": "{id} still holds {items}. Confirm with cascade.",
         "topic_deleted": "{id} is in the trash or lies below a topic in the trash: restore {items} first.",

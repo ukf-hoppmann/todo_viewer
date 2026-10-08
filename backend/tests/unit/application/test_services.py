@@ -625,7 +625,7 @@ def test_retype_points_the_links_of_notes_at_the_new_id():
 
     service.retype(Source("P", "/p", id="proj"), "STORY-001", backlogs.items[0].version, "Task")
 
-    assert notes.relinked == [("proj", "STORY-001", "TASK-003")]
+    assert notes.relinked == [("P", "STORY-001", "TASK-003")]
 
 
 def test_retype_without_documents_on_disk_still_works():

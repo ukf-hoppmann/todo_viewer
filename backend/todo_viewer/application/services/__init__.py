@@ -2,11 +2,15 @@ from .backup import BackupService
 from .documents import DocumentResult, DocumentService
 from .items import BacklogOverviewService, ItemResult, ItemService, SourceBacklog
 from .misc import FolderBrowseService, StorageService, UiStateService
-from .notes import NoteService, NoteView, TrashContents
+from .note_documents import NoteDocument, NoteDocumentService
+from .note_index import DueNote, IndexedTopic, NoteIndexService, NotesIndex
+from .note_settings import NotesSettingsService
+from .notes import LinkedNote, NoteService, NoteView, TrashContents
 from .retype import RetypeResult, RetypeService
 from .sources import SourceLookup, SourceService
 from .sync import SideFingerprints, SyncResult, SyncService
 from .syncstatus import SyncStatus, SyncStatusService
+from .topics import TopicService
 from .trash import TrashService
 
 __all__ = [
@@ -14,10 +18,18 @@ __all__ = [
     "BacklogOverviewService",
     "DocumentResult",
     "DocumentService",
+    "DueNote",
     "FolderBrowseService",
     "ItemResult",
+    "IndexedTopic",
     "ItemService",
+    "LinkedNote",
+    "NoteDocument",
+    "NoteDocumentService",
+    "NoteIndexService",
     "NoteService",
+    "NotesIndex",
+    "NotesSettingsService",
     "NoteView",
     "RetypeResult",
     "RetypeService",
@@ -30,6 +42,7 @@ __all__ = [
     "SyncService",
     "SyncStatus",
     "SyncStatusService",
+    "TopicService",
     "TrashContents",
     "TrashService",
     "UiStateService",

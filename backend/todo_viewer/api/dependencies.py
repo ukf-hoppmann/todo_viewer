@@ -11,12 +11,17 @@ from todo_viewer.application.services import (
     DocumentService,
     FolderBrowseService,
     ItemService,
+    NoteDocumentService,
+    NoteIndexService,
+    NoteService,
+    NotesSettingsService,
     RetypeService,
     SourceLookup,
     SourceService,
     StorageService,
     SyncService,
     SyncStatusService,
+    TopicService,
     TrashService,
     UiStateService,
 )
@@ -40,6 +45,26 @@ def _items(c: ContainerDep) -> ItemService:
 
 def _trash(c: ContainerDep) -> TrashService:
     return c.trash
+
+
+def _notes(c: ContainerDep) -> NoteService:
+    return c.notes
+
+
+def _note_documents(c: ContainerDep) -> NoteDocumentService:
+    return c.note_documents
+
+
+def _notes_settings(c: ContainerDep) -> NotesSettingsService:
+    return c.notes_settings
+
+
+def _note_index(c: ContainerDep) -> NoteIndexService:
+    return c.note_index
+
+
+def _topics(c: ContainerDep) -> TopicService:
+    return c.topics
 
 
 def _retype(c: ContainerDep) -> RetypeService:
@@ -81,6 +106,11 @@ def _ui_state(c: ContainerDep) -> UiStateService:
 Overview = Annotated[BacklogOverviewService, Depends(_overview)]
 Items = Annotated[ItemService, Depends(_items)]
 Trash = Annotated[TrashService, Depends(_trash)]
+Notes = Annotated[NoteService, Depends(_notes)]
+NoteDocuments = Annotated[NoteDocumentService, Depends(_note_documents)]
+NotesSettings = Annotated[NotesSettingsService, Depends(_notes_settings)]
+NoteIndex = Annotated[NoteIndexService, Depends(_note_index)]
+Topics = Annotated[TopicService, Depends(_topics)]
 Retype = Annotated[RetypeService, Depends(_retype)]
 Sources = Annotated[SourceService, Depends(_sources)]
 Lookup = Annotated[SourceLookup, Depends(_source_lookup)]

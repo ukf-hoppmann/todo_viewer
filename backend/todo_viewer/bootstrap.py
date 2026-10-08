@@ -17,13 +17,17 @@ from todo_viewer.application.services import (
     DocumentService,
     FolderBrowseService,
     ItemService,
+    NoteDocumentService,
+    NoteIndexService,
     NoteService,
+    NotesSettingsService,
     RetypeService,
     SourceLookup,
     SourceService,
     StorageService,
     SyncService,
     SyncStatusService,
+    TopicService,
     TrashService,
     UiStateService,
 )
@@ -32,11 +36,12 @@ from todo_viewer.domain.editing import EditPlanner
 from todo_viewer.domain.lifecycle import LifecycleRules
 from todo_viewer.domain.retype import RetypePlanner
 from todo_viewer.domain.trash import TrashPlanner
-from todo_viewer.infrastructure.config import JsonFile, notes_settings, storage_url
+from todo_viewer.infrastructure.config import JsonFile, JsonNotesSettingsStore, storage_url
 from todo_viewer.infrastructure.database import (
     Database,
     DatabaseBacklogRepository,
     DatabaseDocumentStore,
+    DatabaseNoteDocumentStore,
     DatabaseNoteRepository,
     DatabaseRawBackup,
     DatabaseSourceRepository,
@@ -107,13 +112,18 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
                                    "database": DatabaseRawBackup()})
     backup = BackupService(raw_backup, sync, settings.config_dir / "backups")
     note_repo = DatabaseNoteRepository(database)
-    notes = NoteService(note_repo, source_repo, backlogs, notes_settings(config))
+    note_settings = NotesSettingsService(JsonNotesSettingsStore(config))
+    notes = NoteService(note_repo, source_repo, backlogs, note_settings.current)
 
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
         items=ItemService(backlogs, planner, rules, ItemFactory(planner), today, notes),
         trash=TrashService(backlogs, documents, TrashPlanner(rules), today),
         notes=notes,
+        topics=TopicService(note_repo, source_repo, note_settings.current),
+        notes_settings=note_settings,
+        note_index=NoteIndexService(notes, note_repo, source_repo),
+        note_documents=NoteDocumentService(note_repo, DatabaseNoteDocumentStore(database), today),
         retype=RetypeService(backlogs, documents, RetypePlanner(), rules, note_repo),
         sources=SourceService(source_repo, backlogs, GitProjectNameSuggester(resolver), sync, backup),
         source_lookup=lookup,

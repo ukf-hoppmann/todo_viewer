@@ -21,8 +21,8 @@
 | Einstellung | Typ | Standard | Pflicht | Wirkung |
 |---|---|---|---|---|
 | `storage_url` | SQLAlchemy-URL | `sqlite:///<CONFIG_DIR>/todo.db` | nein | Zentrale Datenbank. Sie enthält die Projektliste, den UI-Zustand und die Inhalte der Projekte mit `backend: database`. Wird beim Start gelesen (Änderung braucht einen Neustart); ein fehlender Ordner für die SQLite-Datei wird angelegt. Zugangsdaten dürfen in der URL stehen; sie werden nicht geloggt |
-| `notes.review_days` | positive Ganzzahl | `30` | nein | Prüf-Datum jeder Note: so viele Tage nach Anlage, Textänderung, Zurückstellen und „behalten“ wird die Note fällig. Gilt für alle Notes und Projekte; wird beim Start gelesen. Ungültige Werte fallen auf den Standard zurück |
-| `notes.max_topic_depth` | positive Ganzzahl | `3` | nein | Höchste Verschachtelungstiefe von Topics; ungültige Werte fallen auf den Standard zurück |
+| `notes.review_days` | positive Ganzzahl | `30` | nein | Prüf-Datum jeder Note: so viele Tage nach Anlage, Textänderung, Zurückstellen und „behalten“ wird die Note fällig. Gilt für alle Notes und Projekte; wird beim Start gelesen. Ungültige Werte fallen auf den Standard zurück. Ändern geht auch über `PUT /api/v2/notes/settings` (1 bis 3650): die API schreibt den Wert hierher und er gilt sofort, ohne Neustart |
+| `notes.max_topic_depth` | positive Ganzzahl | `3` | nein | Höchste Verschachtelungstiefe von Topics; ungültige Werte fallen auf den Standard zurück. Ändern auch über `PUT /api/v2/notes/settings` (1 bis 10), wirksam ohne Neustart; schon tiefer verschachtelte Topics bleiben, nur neue und verschobene werden geprüft |
 
 Unbekannte Schlüssel bleiben beim Schreiben erhalten. Fehlt die Datei, gilt
 der Standard.

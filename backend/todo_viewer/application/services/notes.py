@@ -1,12 +1,28 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from todo_viewer.domain.errors import InvalidValueError, SourceGoneError, ValueRequiredError
+from todo_viewer.domain.errors import (
+    InvalidValueError,
+    ItemNotFoundError,
+    LinkExistsError,
+    LinkNotFoundError,
+    LinkTargetNotFoundError,
+    NoteLifecycleError,
+    NoteNotFoundError,
+    SourceGoneError,
+    TopicNotFoundError,
+    TriggerNotFoundError,
+    ValueRequiredError,
+    VersionConflictError,
+)
 from todo_viewer.domain.note_lifecycle import (
     check_delete_note,
+    check_editable,
+    check_movable,
     check_purge_note,
     finish_changes,
     keep_changes,
@@ -19,6 +35,7 @@ from todo_viewer.domain.note_lifecycle import (
 from todo_viewer.domain.notes import (
     EVENT_STATUSES,
     FINISHED_STATUSES,
+    Link,
     LinkRole,
     LinkTarget,
     NewNote,
@@ -47,6 +64,13 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+def _summary(text: str) -> str:
+    stripped = text.strip()
+    if not stripped:
+        raise ValueRequiredError("summary")
+    return stripped
+
+
 @dataclass(frozen=True)
 class NoteView:
     """A note as stored, with its triggers and what they say about it right now."""
@@ -54,6 +78,14 @@ class NoteView:
     note: Note
     triggers: tuple[Trigger, ...]
     evaluation: NoteEvaluation
+
+
+@dataclass(frozen=True)
+class LinkedNote:
+    """A note that points at something, with the link it does it by."""
+
+    link: Link
+    view: NoteView
 
 
 @dataclass(frozen=True)
@@ -70,11 +102,11 @@ class NoteService:
     """
 
     def __init__(self, notes: NoteRepository, sources: SourceRepository, backlogs: BacklogRepository,
-                 settings: NotesSettings | None = None, clock: Clock = _now):
+                 settings: Callable[[], NotesSettings] | None = None, clock: Clock = _now):
         self._notes = notes
         self._sources = sources
         self._backlogs = backlogs
-        self._settings = settings or NotesSettings()
+        self._settings = settings or NotesSettings
         self._clock = clock
 
     # --- reading ---
@@ -98,52 +130,125 @@ class NoteService:
 
     def create(self, project: str, summary: str, body: str | None = None, topic: str | None = None,
                review_at: datetime | None = None, trigger_mode: TriggerMode = TriggerMode.ANY) -> NoteView:
+        self._source(project)
         review = review_at or self._new_review_date()
-        return self._view(self._notes.create_note(project, NewNote(summary, body, topic, review, trigger_mode)))
+        return self._view(self._notes.create_note(project, NewNote(_summary(summary), body, topic, review,
+                                                                   trigger_mode)))
 
     def edit(self, project: str, label: str, version: str, summary: str | None = None,
-             body: str | None = None) -> NoteView:
-        """A changed text sets a new review date."""
+             body: str | None = None, clear_body: bool = False, topic: str | None = None,
+             clear_topic: bool = False, review_at: datetime | None = None, clear_review_at: bool = False,
+             trigger_mode: TriggerMode | None = None) -> NoteView:
+        """Changes the given fields of an open note. A changed text sets a new review date unless one is given."""
         current = self._notes.get_note(project, label)
-        changed = (summary is not None and summary != current.summary) or (body is not None and body != current.body)
-        changes = NoteChanges(summary=summary, body=body, review_at=self._new_review_date() if changed else None)
+        check_editable(current)
+        summary = None if summary is None else _summary(summary)
+        changed = ((summary is not None and summary != current.summary)
+                   or (body is not None and body != current.body) or (clear_body and current.body is not None))
+        if review_at is None and not clear_review_at and changed:
+            review_at = self._new_review_date()
+        changes = NoteChanges(summary=summary, body=body, clear_body=clear_body, topic=topic,
+                              clear_topic=clear_topic, review_at=review_at, clear_review_at=clear_review_at,
+                              trigger_mode=trigger_mode)
         return self._view(self._notes.update_note(project, label, version, changes))
+
+    def move_to_project(self, project: str, label: str, version: str, target_project: str,
+                        target_topic: str | None = None) -> NoteView:
+        """Creates the note in `target_project` with a new label and puts the old one in the trash.
+
+        The topic belongs to the old project and is not taken along; `target_topic` is one of the new project.
+        Triggers, links, and documents come along. Returns the new note.
+        """
+        note = self._notes.get_note(project, label)
+        check_movable(note, target_project)
+        if note.version != version:
+            raise VersionConflictError(label)
+        self._source(target_project)
+        return self._view(self._notes.move_note(project, label, target_project, target_topic, self._clock()))
 
     def keep(self, project: str, label: str, version: str) -> NoteView:
         """The owner looked at the note and keeps it as it is: only the review date moves."""
         note = self._notes.get_note(project, label)
         return self._view(self._notes.update_note(project, label, version,
-                                                  keep_changes(note, self._clock(), self._settings.review_days)))
+                                                  keep_changes(note, self._clock(), self._settings().review_days)))
+
+    # --- links ---
+
+    def links_of(self, project: str, label: str) -> list[Link]:
+        self._notes.get_note(project, label)
+        return self._notes.links_of(project, label)
+
+    def add_link(self, project: str, label: str, target: LinkTarget, role: LinkRole = LinkRole.REFERENCE) -> Link:
+        """Links an open note to an item, a topic, or another note. The target must exist; a link exists once."""
+        note = self._notes.get_note(project, label)
+        check_editable(note)
+        if role is LinkRole.TRIGGER:
+            raise InvalidValueError("role", (LinkRole.REFERENCE.value, LinkRole.ORIGIN.value))
+        if target.kind is TargetKind.NOTE and (target.project, target.label) == (project, label):
+            raise InvalidValueError("target", ("another note",))
+        self._check_target(target)
+        if any(link.target == target and link.role is role for link in self._notes.links_of(project, label)):
+            raise LinkExistsError(label)
+        return self._notes.add_link(project, label, target, role)
+
+    def remove_link(self, project: str, label: str, link_id: int) -> list[Link]:
+        """Removes a link of an open note and returns the links that are left. The link of an event trigger goes
+        with its trigger."""
+        note = self._notes.get_note(project, label)
+        check_editable(note)
+        found = next((link for link in self._notes.links_of(project, label) if link.id == link_id), None)
+        if found is None:
+            raise LinkNotFoundError(link_id)
+        if found.role is LinkRole.TRIGGER:
+            raise NoteLifecycleError("link_belongs_to_trigger", label)
+        self._notes.remove_link(project, label, link_id)
+        return self._notes.links_of(project, label)
+
+    def notes_linking_to(self, target: LinkTarget) -> list[LinkedNote]:
+        """The notes (in all projects, not those in the trash) that point at the target."""
+        if target.kind is TargetKind.ITEM:
+            self._source(target.project)
+        found = []
+        for link in self._notes.links_to(target):
+            note = self._notes.get_note(link.project, link.note)
+            if note.deleted is None:
+                found.append(LinkedNote(link, self._view(note)))
+        return found
 
     # --- triggers ---
 
     def add_trigger(self, project: str, label: str, new: NewTrigger) -> Trigger:
         """An event whose target already has the status fires at once and is marked `already_met`."""
         note = self._notes.get_note(project, label)
-        if new.kind is TriggerKind.TIME and new.at is None:
-            raise ValueRequiredError("at")
-        if new.kind is TriggerKind.TOPIC_DUE and note.topic is None:
-            raise ValueRequiredError("topic")
-        if new.kind is TriggerKind.EVENT:
-            new = self._checked_event(new)
-        return self._notes.add_trigger(project, label, new)
+        check_editable(note)
+        return self._notes.add_trigger(project, label, self._checked_trigger(note, new))
+
+    def remove_trigger(self, project: str, label: str, trigger_id: int) -> NoteView:
+        """Removes a trigger of an open note, with the link that belongs to it."""
+        note = self._notes.get_note(project, label)
+        check_editable(note)
+        if all(t.id != trigger_id for t in self._notes.triggers_of(project, label)):
+            raise TriggerNotFoundError(trigger_id)
+        self._notes.remove_trigger(project, label, trigger_id)
+        return self._view(note)
 
     def snooze(self, project: str, label: str, version: str, review_at: datetime | None = None,
                trigger: NewTrigger | None = None) -> NoteView:
         """Back to waiting: fired triggers are reset, a new trigger replaces all old ones.
 
         A time or topic trigger that has passed cannot arrive a second time; without a new trigger it is removed,
-        or the note would be due again at once.
+        or the note would be due again at once. A new trigger is checked before anything changes.
         """
         note = self._notes.get_note(project, label)
         now = self._clock()
-        self._notes.update_note(project, label, version, snooze_changes(note, now, self._settings.review_days,
-                                                                        review_at))
+        changes = snooze_changes(note, now, self._settings().review_days, review_at)
+        checked = None if trigger is None else self._checked_trigger(note, trigger)
+        self._notes.update_note(project, label, version, changes)
         topic_due = self._topic_due(note)
-        if trigger is not None:
+        if checked is not None:
             for old in self._notes.triggers_of(project, label):
                 self._notes.remove_trigger(project, label, old.id)
-            self.add_trigger(project, label, trigger)
+            self._notes.add_trigger(project, label, checked)
         else:
             for old in self._notes.reset_triggers(project, label):
                 if old.kind is not TriggerKind.EVENT and trigger_arrived(old, now, topic_due):
@@ -178,7 +283,7 @@ class NoteService:
         """From the archive or the trash back to waiting, with a new review date."""
         note = self._notes.get_note(project, label)
         changes = restore_note_changes(note, self._notes.list_topics(project, include_deleted=True), self._clock(),
-                                       self._settings.review_days)
+                                       self._settings().review_days)
         if note.deleted is not None:
             note = self._notes.restore_note(project, label)
         return self._view(self._notes.update_note(project, label, note.version, changes))
@@ -214,7 +319,7 @@ class NoteService:
     # --- helpers ---
 
     def _new_review_date(self) -> datetime:
-        return default_review_at(self._clock(), self._settings.review_days)
+        return default_review_at(self._clock(), self._settings().review_days)
 
     def _topic_due(self, note: Note) -> datetime | None:
         return None if note.topic is None else self._notes.get_topic(note.project, note.topic).due_at
@@ -228,6 +333,28 @@ class NoteService:
         if found is None:
             raise SourceGoneError()
         return found
+
+    def _check_target(self, target: LinkTarget) -> None:
+        try:
+            if target.kind is TargetKind.ITEM:
+                self._backlogs.get(self._source(target.project), target.label)
+            elif target.kind is TargetKind.TOPIC:
+                self._source(target.project)
+                if self._notes.get_topic(target.project, target.label).deleted is not None:
+                    raise TopicNotFoundError(target.label)
+            else:
+                self._source(target.project)
+                if self._notes.get_note(target.project, target.label).deleted is not None:
+                    raise NoteNotFoundError(target.label)
+        except (ItemNotFoundError, TopicNotFoundError, NoteNotFoundError, SourceGoneError) as gone:
+            raise LinkTargetNotFoundError(target.kind.value, target.project, target.label) from gone
+
+    def _checked_trigger(self, note: Note, new: NewTrigger) -> NewTrigger:
+        if new.kind is TriggerKind.TIME and new.at is None:
+            raise ValueRequiredError("at")
+        if new.kind is TriggerKind.TOPIC_DUE and note.topic is None:
+            raise ValueRequiredError("topic")
+        return self._checked_event(new) if new.kind is TriggerKind.EVENT else new
 
     def _checked_event(self, new: NewTrigger) -> NewTrigger:
         if new.target is None:

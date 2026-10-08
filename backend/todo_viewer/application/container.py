@@ -8,13 +8,17 @@ from .services import (
     DocumentService,
     FolderBrowseService,
     ItemService,
+    NoteDocumentService,
+    NoteIndexService,
     NoteService,
+    NotesSettingsService,
     RetypeService,
     SourceLookup,
     SourceService,
     StorageService,
     SyncService,
     SyncStatusService,
+    TopicService,
     TrashService,
     UiStateService,
 )
@@ -26,6 +30,10 @@ class Container:
     items: ItemService
     trash: TrashService
     notes: NoteService
+    topics: TopicService
+    note_documents: NoteDocumentService
+    notes_settings: NotesSettingsService
+    note_index: NoteIndexService
     retype: RetypeService
     sources: SourceService
     source_lookup: SourceLookup

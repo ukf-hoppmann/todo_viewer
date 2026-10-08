@@ -331,6 +331,21 @@ Build, antwortet der Server mit 503 und einem Hinweis.
     `link_exists`; der Link eines Ereignis-Auslösers geht nur mit dem
     Auslöser (409 `link_belongs_to_trigger`). Links auf Items speichern Projekt
     und Item-Label und folgen dem Item bei `retype`.
+  - Projektübergreifend: Ein Item-Ziel (Link oder Ereignis-Auslöser) darf in
+    einem anderen registrierten Projekt liegen; ein nicht registriertes
+    Projekt ist 404 `link_project_unknown`. Links und Auslöser nennen das
+    Ziel auch als `target_display` (`Projekt · Label`). Ein Statuswechsel
+    feuert Auslöser in allen Projekten, auch einer, den ein Sync in die
+    Primärquelle einspielt.
+  - Erreichbarkeit: `GET /notes/{label}/links` (und die Antwort von `DELETE`)
+    nennt je Link `reachable` und `unreachable_reason`
+    (`project_not_registered` oder `source_unreadable`); die Auslöser in
+    `NoteOut` haben beides ebenfalls (`reachable` ist `null` ohne Ziel). Der
+    Wert wird beim Lesen einer Note, ihrer Links und der Fällig-Liste
+    berechnet, nicht gespeichert; Index und Zähler prüfen nichts. Beim ersten
+    Entdecken legt der Server einen Hinweis `project_unreachable` an (kein
+    zweiter für dasselbe Ziel, auch nicht nach einer Entscheidung); er bleibt
+    offen, wenn das Projekt zurückkehrt. Es entsteht kein Fehler.
   - Dokumente heißen `<LABEL>_notes.md`, `<LABEL>_spec.md` oder
     `<LABEL>_spec_<thema>.md` mit dem Label der eigenen Note, sonst 403
     `forbidden`.
@@ -363,7 +378,7 @@ Build, antwortet der Server mit 503 und einem Hinweis.
 | HTTP | Codes |
 |---|---|
 | 400 | `topic_too_deep` (Tiefe über `max_topic_depth`, auch beim Verschieben des ganzen Teilbaums), `topic_loop` (Topic unter sich selbst), `value_required`, `invalid_value` |
-| 404 | `note_not_found`, `topic_not_found`, `trigger_not_found`, `link_not_found`, `link_target_not_found`, `source_gone` (unbekanntes Projekt) |
+| 404 | `note_not_found`, `topic_not_found`, `trigger_not_found`, `link_not_found`, `link_target_not_found`, `link_project_unknown` (Projekt eines Link-Ziels nicht registriert), `source_gone` (unbekanntes Projekt) |
 | 409 | `version_conflict`, `note_closed`, `note_deleted`, `note_not_restorable`, `note_same_project`, `topic_has_content` (`details.items`), `topic_deleted`, `topic_not_deleted`, `link_exists`, `link_belongs_to_trigger` |
 
 ### Hinweise zwischen Notes und Items

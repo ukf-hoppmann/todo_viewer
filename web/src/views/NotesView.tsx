@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useNotesIndex, useSourceList } from "../api/queries";
 import { NoteCreateDialog } from "../components/NoteCreateDialog";
-import { NoteDetail } from "../components/NoteDetail";
 import { NoteList } from "../components/NoteList";
 import { TopicTree } from "../components/TopicTree";
 import type { Item } from "../domain/model";
@@ -9,6 +8,9 @@ import { notesOfTopic, sortNotes } from "../domain/notes";
 import { describeError, useI18n } from "../i18n/i18n";
 import { usePollingPaused } from "../state/pollingPause";
 import { useUiState } from "../state/useUiStateStore";
+
+// The detail brings the markdown renderer; it is loaded when a note is opened.
+const NoteDetail = lazy(() => import("../components/NoteDetail").then((m) => ({ default: m.NoteDetail })));
 
 /** The Notes area: the topic tree on the left, the notes of the chosen topic next to it. */
 export function NotesView({ items }: { items: readonly Item[] }) {
@@ -79,16 +81,18 @@ export function NotesView({ items }: { items: readonly Item[] }) {
         />
       </section>
       {state.selectedNote && (
-        <NoteDetail
-          key={`${state.selectedNote.project}/${state.selectedNote.label}`}
-          note={state.selectedNote}
-          projects={projects}
-          topics={allTopics ?? []}
-          notes={index.data.notes}
-          items={items}
-          onClose={() => dispatch({ type: "selectNote", note: null })}
-          onOpenNote={(note) => dispatch({ type: "selectNote", note })}
-        />
+        <Suspense fallback={null}>
+          <NoteDetail
+            key={`${state.selectedNote.project}/${state.selectedNote.label}`}
+            note={state.selectedNote}
+            projects={projects}
+            topics={allTopics ?? []}
+            notes={index.data.notes}
+            items={items}
+            onClose={() => dispatch({ type: "selectNote", note: null })}
+            onOpenNote={(note) => dispatch({ type: "selectNote", note })}
+          />
+        </Suspense>
       )}
       {creating && (
         <NoteCreateDialog

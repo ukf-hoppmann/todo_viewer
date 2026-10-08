@@ -10,6 +10,8 @@ import { Markdown } from "./DocumentDialog";
 import { Modal } from "./Modal";
 import { NoteDocuments } from "./NoteDocuments";
 import { NoteLinks } from "./NoteLinks";
+import { NoteOrigin } from "./OriginLink";
+import { PromoteNoteDialog } from "./PromoteNoteDialog";
 import { SnoozeDialog } from "./SnoozeDialog";
 import { TriggerEditor } from "./TriggerEditor";
 
@@ -34,6 +36,7 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
   const [draft, setDraft] = useState<{ summary: string; body: string; topic: string; version: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [snoozing, setSnoozing] = useState(false);
+  const [promoting, setPromoting] = useState(false);
   const data = query.data;
 
   if (query.error && !data) {
@@ -148,6 +151,7 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
               </span>
             )}
           </div>
+          <NoteOrigin project={data.project} label={data.label} promoted={data.status === "promoted"} />
           {data.body ? <Markdown text={data.body} /> : <div className="hint">{t("note.detail.noBody")}</div>}
           {readOnly ? (
             <div className="hint warn-box">{t("note.detail.closedHint")}</div>
@@ -155,6 +159,9 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
             <div className="detail-actions note-actions">
               <button className="btn small" onClick={startEdit}>
                 {t("note.detail.edit")}
+              </button>
+              <button className="btn small" onClick={() => setPromoting(true)}>
+                {t("promote.button")}
               </button>
               <button className="btn small" disabled={finish.isPending} onClick={() => finish.mutate({ project: data.project, label: data.label, version: data.version, status: "done" })}>
                 {t("note.action.done")}
@@ -202,6 +209,7 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
       />
       <NoteDocuments project={data.project} label={data.label} summary={data.summary} readOnly={readOnly} />
 
+      {promoting && <PromoteNoteDialog note={data} items={items} onClose={() => setPromoting(false)} />}
       {snoozing && (
         <SnoozeDialog
           project={data.project}

@@ -498,3 +498,40 @@ export function useDueCount(paused: boolean) {
     refetchOnWindowFocus: true,
   });
 }
+
+// ----- promoting a note, demoting an item, notes of an item -----
+
+/** Turns a note into an Epic, Story or Task of its project; the note goes to the archive. Backlog and notes reload. */
+export function usePromoteNote() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ project, label, ...body }: NoteAddress & Schemas["PromoteIn"]) =>
+      unwrap(api.POST("/api/v2/notes/{project}/{label}/promote", { params: { path: { project, label } }, body })),
+    onSettled: () => {
+      refreshNotes(client);
+      void client.invalidateQueries({ queryKey: keys.backlog });
+    },
+  });
+}
+
+/** Turns an open item back into a note; the item is closed. Backlog, trash and notes reload. */
+export function useDemoteItem() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sourceId, id, ...body }: { sourceId: string; id: string } & Schemas["DemoteIn"]) =>
+      unwrap(api.POST("/api/v2/items/{source_id}/{item_id}/demote", { params: { path: { source_id: sourceId, item_id: id } }, body })),
+    onSettled: () => {
+      refreshNotes(client);
+      refreshSources(client);
+      void client.invalidateQueries({ queryKey: ["trash"] });
+    },
+  });
+}
+
+/** The notes (of all projects, not those in the trash) that point at an item; `project` is the item's project name. */
+export function useNotesLinkedToItem(project: string, label: string) {
+  return useQuery({
+    queryKey: ["notes", "linked-to-item", project, label] as const,
+    queryFn: () => unwrap(api.GET("/api/v2/projects/{project}/items/{label}/notes", { params: { path: { project, label } } })),
+  });
+}

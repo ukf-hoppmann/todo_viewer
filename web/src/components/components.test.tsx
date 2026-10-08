@@ -100,10 +100,15 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
-/** Answers the trash request of the detail panel itself; every other request goes to `handler`. */
+/** Answers the requests of the detail panel itself (the trash, the notes pointing at the item); every other request
+ *  goes to `handler`. */
 function stubApi(handler: (request: Request) => Promise<Response>, trash: unknown[] = []) {
-  vi.stubGlobal("fetch", async (request: Request) =>
-    new URL(request.url).pathname === "/api/v2/trash" ? jsonResponse(trash) : handler(request));
+  vi.stubGlobal("fetch", async (request: Request) => {
+    const path = new URL(request.url).pathname;
+    if (path === "/api/v2/trash") return jsonResponse(trash);
+    if (/^\/api\/v2\/projects\/[^/]+\/items\/[^/]+\/notes$/.test(path)) return jsonResponse([]);
+    return handler(request);
+  });
 }
 
 function renderPanel(item: (typeof items)[number]) {

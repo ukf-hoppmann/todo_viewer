@@ -266,6 +266,101 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 Alle übrigen Pfade liefern das gebaute Frontend aus `web/dist`; fehlt der
 Build, antwortet der Server mit 503 und einem Hinweis.
 
+## HTTP-API v2: Topics, Notes und Links
+
+- Zweck: Topics, Notes (Gedanken mit Wiedervorlage), ihre Links und Auslöser
+  lesen und bearbeiten. Die Daten liegen immer in der zentralen Datenbank,
+  egal welche Primärquelle das Projekt hat (Entscheidung:
+  [STORY-039](../todo/items/STORY-039/STORY-039_notes.md)).
+- Aufruf / Endpunkt: Präfix `/api/v2`. Topics und Notes werden über den
+  **Projektnamen** (`project`, nicht die `source_id`) und ihr Label adressiert
+  (`TOPIC-001`, `NOTE-001`); Labels zählen je Projekt und Typ und werden nie
+  wiederverwendet. Pfade unterhalb von `/projects/{project}`:
+
+| Methode und Pfad | Zweck |
+|---|---|
+| `GET /topics?include_deleted=…`, `POST /topics` | Topics lesen bzw. anlegen (`{name, parent?, due_at?}`, 201). |
+| `GET /topics/{label}`, `PATCH /topics/{label}` | Ein Topic lesen; umbenennen und Termin setzen (`{name?, due_at?}`, `due_at: null` entfernt den Termin). |
+| `POST /topics/{label}/move` | Mit allen Unter-Topics unter `{parent}` verschieben (`null`: nach oben). |
+| `DELETE /topics/{label}?cascade=…`, `POST /topics/{label}/restore` | Topic in den Papierkorb bzw. zurück; Antwort ist der Papierkorb `{topics, notes}`. Mit Inhalt nur mit `cascade=true`. |
+| `POST /notes` | Note anlegen (`{summary, body?, topic?, review_at?, trigger_mode?}`, 201). |
+| `GET /notes/{label}`, `PATCH /notes/{label}` | Eine Note mit Auslösern und abgeleitetem Zustand lesen (auch archivierte und gelöschte); ändern (`{version, summary?, body?, topic?, review_at?, trigger_mode?}`, `null` leert `body`, `topic`, `review_at`). |
+| `POST /notes/{label}/keep` | „Behalten“: nur das Prüf-Datum rückt vor (`{version}`). |
+| `POST /notes/{label}/move` | Projektwechsel (`{version, project, topic?}`): die Note entsteht im Zielprojekt mit neuem Label, die alte kommt in den Papierkorb; Antwort ist die neue Note. |
+| `POST /notes/{label}/triggers`, `DELETE /notes/{label}/triggers/{id}` | Auslöser anlegen (`{kind: time\|event\|topic_due, at?, target?, target_project?, target_status?}`, 201) bzw. entfernen; Antwort ist die Note. |
+| `POST /notes/{label}/finish` | Erledigen oder verwerfen (`{version, status: done\|dropped}`); die Note geht ins Archiv. |
+| `POST /notes/{label}/snooze` | Zurückstellen (`{version, review_at?, trigger?}`): wieder wartend, gefeuerte Auslöser zurückgesetzt, ein neuer `trigger` ersetzt alle alten. |
+| `DELETE /notes/{label}`, `POST /notes/{label}/restore` | Note in den Papierkorb; aus Archiv oder Papierkorb wieder wartend mit neuem Prüf-Datum. |
+| `GET /trash` | Topics und Notes des Projekts im Papierkorb. Endgültiges Löschen gibt es über HTTP nicht. |
+| `GET /notes/{label}/links`, `POST /notes/{label}/links`, `DELETE /notes/{label}/links/{id}` | Links einer Note lesen; setzen (`{kind: item\|topic\|note, target, target_project?, role?: reference\|origin}`, 201); lösen (Antwort: übrige Links). |
+| `GET /items/{label}/notes`, `GET /topics/{label}/notes`, `GET /notes/{label}/backlinks` | Rückwärts: Notes (aller Projekte, ohne Papierkorb), die auf das Item, Topic oder die Note zeigen, mit `{project, label, summary, status, role, link_id}`. |
+| `GET /notes/{label}/documents`, `GET`/`PUT /notes/{label}/documents/{name}`, `POST /notes/{label}/notes` | Notizen und Specs einer Note: Namen, lesen mit `version`, ersetzen oder anlegen (`{content, version}`), datierten Eintrag anhängen (`{topic, discussed?, decided?, open?}`). |
+
+  Projektübergreifend (Präfix `/notes`):
+
+| Methode und Pfad | Zweck |
+|---|---|
+| `GET /notes/index` | Schlanker Index ohne Langtexte (siehe unten). |
+| `GET /notes/due/count` | Nur der Zähler `{count, by_project}` für das Ausrufezeichen. |
+| `GET /notes/due` | Alle fälligen Notes mit Grund, Topic-Pfad, eingetroffenen Auslösern und möglichen Aktionen. |
+| `GET /notes/settings`, `PUT /notes/settings` | Die Optionen `max_topic_depth` und `review_days` lesen bzw. ändern. |
+
+- Eingabe:
+  - Zeitpunkte sind ISO-8601 **mit Zeitzone** (sonst 400 `bad_request`); die
+    API gibt sie in UTC zurück. „Morgen früh“ löst der Aufrufer auf.
+  - Notes tragen eine `version`; jede Änderung, `keep`, `finish`, `snooze`
+    und `move` braucht die zuletzt gelesene (sonst 409 `version_conflict`).
+    Topics, Auslöser und Links haben keine Version.
+  - Geschlossene (archivierte) Notes und Notes im Papierkorb lassen sich nicht
+    ändern, auch ihre Dokumente, Auslöser und Links nicht (409 `note_closed`
+    bzw. `note_deleted`); lesen geht immer. Zurückholen: `restore`.
+  - Auslöser: `time` braucht `at`; `event` braucht `target` (Label eines
+    Items, im Projekt der Note oder in `target_project`) und `target_status`
+    (`In progress`, `Awaiting confirmation`, `Completed`, `Rejected`) und legt
+    einen Link mit Rolle `trigger` an; hat das Item den Status schon, feuert
+    der Auslöser sofort (`already_met`). `topic_due` braucht ein Topic an der
+    Note. Mit `trigger_mode` `any` genügt ein Auslöser, mit `all` müssen alle
+    eingetroffen sein. Ein ungültiger Auslöser beim Zurückstellen ändert
+    nichts.
+  - Links: Das Ziel muss existieren (404 `link_target_not_found`, auch für
+    Topics und Notes im Papierkorb); derselbe Link zweimal ist 409
+    `link_exists`; der Link eines Ereignis-Auslösers geht nur mit dem
+    Auslöser (409 `link_belongs_to_trigger`). Links auf Items speichern Projekt
+    und Item-Label und folgen dem Item bei `retype`.
+  - Dokumente heißen `<LABEL>_notes.md`, `<LABEL>_spec.md` oder
+    `<LABEL>_spec_<thema>.md` mit dem Label der eigenen Note, sonst 403
+    `forbidden`.
+  - Index: `GET /notes/index?project=&topic=&status=&due=&linked_item=&linked_project=&archived=`.
+    Ohne Filter: die offenen Notes aller Projekte. `topic` braucht `project`
+    und schließt Unter-Topics ein; `status` ist der abgeleitete Status
+    (`waiting`, `due`, `snoozed`, `done`, `dropped`, `promoted`); `due=true` hält
+    nur fällige; `linked_item` (in `linked_project`, sonst `project`) hält die
+    Notes, die per Link oder Ereignis-Auslöser auf das Item zeigen;
+    `archived=true` (oder ein abgeschlossener `status`) liest das Archiv.
+  - Einstellungen: `PUT /notes/settings` mit `max_topic_depth` (1 bis 10) und/oder
+    `review_days` (1 bis 3650), nur Ganzzahlen. Sie werden in `config.json`
+    gespeichert und wirken sofort; schon tiefer verschachtelte Topics bleiben.
+- Ausgabe:
+  - Note: `{project, label, version, summary, body, status, stored_status,
+    reason, topic, review_at, trigger_mode, triggers, archived, deleted,
+    created, updated}`. `status` ist der abgeleitete Status (`due`, wenn ein
+    Auslöser eingetroffen oder das Prüf-Datum verstrichen ist), `stored_status`
+    der gespeicherte; `reason` ist `trigger`, `review_expired` oder
+    `topic_due`.
+  - Index: `{topics, notes}`; Notes nur mit `project`, `label`, `summary`,
+    `status`, `reason`, `review_at`, `topic`, `archived`; Topics mit `path`
+    (Namen von der Wurzel), `due_at`, `due` und `note_count`. Fällig-Liste: wie
+    ein Index-Eintrag plus `topic_path`, `triggers` (die eingetroffenen) und
+    `actions` (`keep`, `snooze`, `done`, `dropped`).
+  - Dokumente: `{name, kind, content, version}`.
+- Fehler: `{code, message, details}` wie oben. Zusätzlich:
+
+| HTTP | Codes |
+|---|---|
+| 400 | `topic_too_deep` (Tiefe über `max_topic_depth`, auch beim Verschieben des ganzen Teilbaums), `topic_loop` (Topic unter sich selbst), `value_required`, `invalid_value` |
+| 404 | `note_not_found`, `topic_not_found`, `trigger_not_found`, `link_not_found`, `link_target_not_found`, `source_gone` (unbekanntes Projekt) |
+| 409 | `version_conflict`, `note_closed`, `note_deleted`, `note_not_restorable`, `note_same_project`, `topic_has_content` (`details.items`), `topic_deleted`, `topic_not_deleted`, `link_exists`, `link_belongs_to_trigger` |
+
 ## Nutzung durch Agenten
 
 - Zweck: Agenten (z. B. der `todo`-Skill des Claude_Harness) pflegen Backlogs

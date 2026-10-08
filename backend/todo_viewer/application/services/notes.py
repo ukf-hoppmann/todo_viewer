@@ -4,7 +4,13 @@ import dataclasses
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from todo_viewer.domain.errors import InvalidValueError, SourceGoneError, ValueRequiredError, VersionConflictError
+from todo_viewer.domain.errors import (
+    InvalidValueError,
+    SourceGoneError,
+    TriggerNotFoundError,
+    ValueRequiredError,
+    VersionConflictError,
+)
 from todo_viewer.domain.note_lifecycle import (
     check_delete_note,
     check_editable,
@@ -154,30 +160,35 @@ class NoteService:
     def add_trigger(self, project: str, label: str, new: NewTrigger) -> Trigger:
         """An event whose target already has the status fires at once and is marked `already_met`."""
         note = self._notes.get_note(project, label)
-        if new.kind is TriggerKind.TIME and new.at is None:
-            raise ValueRequiredError("at")
-        if new.kind is TriggerKind.TOPIC_DUE and note.topic is None:
-            raise ValueRequiredError("topic")
-        if new.kind is TriggerKind.EVENT:
-            new = self._checked_event(new)
-        return self._notes.add_trigger(project, label, new)
+        check_editable(note)
+        return self._notes.add_trigger(project, label, self._checked_trigger(note, new))
+
+    def remove_trigger(self, project: str, label: str, trigger_id: int) -> NoteView:
+        """Removes a trigger of an open note, with the link that belongs to it."""
+        note = self._notes.get_note(project, label)
+        check_editable(note)
+        if all(t.id != trigger_id for t in self._notes.triggers_of(project, label)):
+            raise TriggerNotFoundError(trigger_id)
+        self._notes.remove_trigger(project, label, trigger_id)
+        return self._view(note)
 
     def snooze(self, project: str, label: str, version: str, review_at: datetime | None = None,
                trigger: NewTrigger | None = None) -> NoteView:
         """Back to waiting: fired triggers are reset, a new trigger replaces all old ones.
 
         A time or topic trigger that has passed cannot arrive a second time; without a new trigger it is removed,
-        or the note would be due again at once.
+        or the note would be due again at once. A new trigger is checked before anything changes.
         """
         note = self._notes.get_note(project, label)
         now = self._clock()
-        self._notes.update_note(project, label, version, snooze_changes(note, now, self._settings.review_days,
-                                                                        review_at))
+        changes = snooze_changes(note, now, self._settings.review_days, review_at)
+        checked = None if trigger is None else self._checked_trigger(note, trigger)
+        self._notes.update_note(project, label, version, changes)
         topic_due = self._topic_due(note)
-        if trigger is not None:
+        if checked is not None:
             for old in self._notes.triggers_of(project, label):
                 self._notes.remove_trigger(project, label, old.id)
-            self.add_trigger(project, label, trigger)
+            self._notes.add_trigger(project, label, checked)
         else:
             for old in self._notes.reset_triggers(project, label):
                 if old.kind is not TriggerKind.EVENT and trigger_arrived(old, now, topic_due):
@@ -262,6 +273,13 @@ class NoteService:
         if found is None:
             raise SourceGoneError()
         return found
+
+    def _checked_trigger(self, note: Note, new: NewTrigger) -> NewTrigger:
+        if new.kind is TriggerKind.TIME and new.at is None:
+            raise ValueRequiredError("at")
+        if new.kind is TriggerKind.TOPIC_DUE and note.topic is None:
+            raise ValueRequiredError("topic")
+        return self._checked_event(new) if new.kind is TriggerKind.EVENT else new
 
     def _checked_event(self, new: NewTrigger) -> NewTrigger:
         if new.target is None:

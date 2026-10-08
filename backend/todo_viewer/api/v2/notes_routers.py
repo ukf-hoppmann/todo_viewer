@@ -5,19 +5,22 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from todo_viewer.domain.notes import TriggerMode
+from todo_viewer.domain.notes import NoteStatus, TriggerMode
 
 from ..dependencies import Notes, Topics
 from .notes_schemas import (
     NoteEditIn,
+    NoteFinishIn,
     NoteIn,
     NoteMoveIn,
     NoteOut,
+    NoteSnoozeIn,
     TopicEditIn,
     TopicIn,
     TopicMoveIn,
     TopicOut,
     TrashOut,
+    TriggerIn,
 )
 from .schemas import ErrorOut, VersionIn
 
@@ -69,6 +72,53 @@ def move_note(project: str, label: str, body: NoteMoveIn, notes: Notes) -> NoteO
     along) and the old one goes to the trash. The answer is the new note; its `label` is the new one.
     """
     return NoteOut.of(notes.move_to_project(project, label, body.version, body.project, body.topic))
+
+
+@router.post("/notes/{label}/triggers", tags=["notes"], status_code=201)
+def add_trigger(project: str, label: str, body: TriggerIn, notes: Notes) -> NoteOut:
+    """Adds a trigger that makes the note due and returns the note. An event trigger also links the note to the
+    item; if the item has the status already, the trigger fires at once and is marked `already_met`."""
+    notes.add_trigger(project, label, body.new(project))
+    return NoteOut.of(notes.show(project, label))
+
+
+@router.delete("/notes/{label}/triggers/{trigger_id}", tags=["notes"])
+def remove_trigger(project: str, label: str, trigger_id: int, notes: Notes) -> NoteOut:
+    """Removes the trigger and the link of an event trigger; returns the note."""
+    return NoteOut.of(notes.remove_trigger(project, label, trigger_id))
+
+
+@router.post("/notes/{label}/finish", tags=["notes"])
+def finish_note(project: str, label: str, body: NoteFinishIn, notes: Notes) -> NoteOut:
+    """Closes the note as `done` or `dropped`; it moves to the archive and cannot be changed until restored."""
+    return NoteOut.of(notes.finish(project, label, body.version, NoteStatus(body.status)))
+
+
+@router.post("/notes/{label}/snooze", tags=["notes"])
+def snooze_note(project: str, label: str, body: NoteSnoozeIn, notes: Notes) -> NoteOut:
+    """Back to waiting with a new review date. Fired triggers are reset; a given `trigger` replaces all old ones,
+    and without it the triggers that cannot arrive again (time, topic) are removed."""
+    trigger = None if body.trigger is None else body.trigger.new(project)
+    return NoteOut.of(notes.snooze(project, label, body.version, body.review_at, trigger))
+
+
+@router.delete("/notes/{label}", tags=["notes"])
+def delete_note(project: str, label: str, notes: Notes) -> NoteOut:
+    """Moves the note to the trash. Removing it for good is not possible over HTTP; the owner does that."""
+    return NoteOut.of(notes.delete_note(project, label))
+
+
+@router.post("/notes/{label}/restore", tags=["notes"])
+def restore_note(project: str, label: str, notes: Notes) -> NoteOut:
+    """From the archive or the trash back to waiting, with a new review date. Refused (409 topic_deleted) while its
+    topic is in the trash."""
+    return NoteOut.of(notes.restore_note(project, label))
+
+
+@router.get("/trash", tags=["trash"])
+def trash(project: str, notes: Notes) -> TrashOut:
+    """The topics and notes of the project in the trash."""
+    return TrashOut.of(notes.trash(project))
 
 
 @router.get("/topics", tags=["topics"])

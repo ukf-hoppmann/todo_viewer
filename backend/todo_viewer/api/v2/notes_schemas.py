@@ -10,7 +10,7 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from todo_viewer.application.services import NoteView, TrashContents
-from todo_viewer.domain.notes import Topic, Trigger
+from todo_viewer.domain.notes import LinkTarget, NewTrigger, TargetKind, Topic, Trigger, TriggerKind
 
 
 class TopicOut(BaseModel):
@@ -99,6 +99,39 @@ class NoteMoveIn(BaseModel):
     version: str
     project: str = Field(description="The project the note moves to")
     topic: str | None = Field(default=None, description="Label of a topic of the new project")
+
+
+class TriggerIn(BaseModel):
+    """A time trigger needs `at`; an event trigger `target` and `target_status`; a topic trigger the note's topic."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["time", "event", "topic_due"]
+    at: AwareDatetime | None = Field(default=None, description="time: the moment it arrives")
+    target: str | None = Field(default=None, description="event: label of the item that is watched")
+    target_project: str | None = Field(default=None, description="event: its project; default: the note's project")
+    target_status: str | None = Field(
+        default=None, description="event: In progress, Awaiting confirmation, Completed, or Rejected")
+
+    def new(self, project: str) -> NewTrigger:
+        target = None if self.target is None else LinkTarget(TargetKind.ITEM, self.target_project or project,
+                                                             self.target)
+        return NewTrigger(TriggerKind(self.kind), at=self.at, target=target, target_status=self.target_status)
+
+
+class NoteFinishIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: str
+    status: Literal["done", "dropped"]
+
+
+class NoteSnoozeIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: str
+    review_at: AwareDatetime | None = Field(default=None, description="Default: now plus `notes.review_days`")
+    trigger: TriggerIn | None = Field(default=None, description="Replaces all old triggers")
 
 
 class TriggerOut(BaseModel):

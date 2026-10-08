@@ -233,6 +233,13 @@ class NoteNotFoundError(NotFoundError):
         super().__init__(f"Note '{label}' not found.", id=label)
 
 
+class TriggerNotFoundError(NotFoundError):
+    code = "trigger_not_found"
+
+    def __init__(self, trigger_id: int):
+        super().__init__(f"Trigger {trigger_id} not found.", id=str(trigger_id))
+
+
 class TopicNotFoundError(NotFoundError):
     code = "topic_not_found"
 

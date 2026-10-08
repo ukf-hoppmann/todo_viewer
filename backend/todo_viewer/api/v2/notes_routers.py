@@ -5,10 +5,14 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from todo_viewer.domain.notes import NoteStatus, TriggerMode
+from todo_viewer.application.services import NoteService
+from todo_viewer.domain.notes import LinkRole, LinkTarget, NoteStatus, TargetKind, TriggerMode
 
 from ..dependencies import Notes, Topics
 from .notes_schemas import (
+    LinkedNoteOut,
+    LinkIn,
+    LinkOut,
     NoteEditIn,
     NoteFinishIn,
     NoteIn,
@@ -113,6 +117,50 @@ def restore_note(project: str, label: str, notes: Notes) -> NoteOut:
     """From the archive or the trash back to waiting, with a new review date. Refused (409 topic_deleted) while its
     topic is in the trash."""
     return NoteOut.of(notes.restore_note(project, label))
+
+
+@router.get("/notes/{label}/links", tags=["links"])
+def list_links(project: str, label: str, notes: Notes) -> list[LinkOut]:
+    """The links that start at the note, among them the links of its event triggers (role `trigger`)."""
+    return [LinkOut.of(link) for link in notes.links_of(project, label)]
+
+
+@router.post("/notes/{label}/links", tags=["links"], status_code=201)
+def add_link(project: str, label: str, body: LinkIn, notes: Notes) -> LinkOut:
+    """Links an open note to an item, a topic, or another note. The target must exist (404 link_target_not_found);
+    an item may be in another project (`target_project`). The same link twice is 409 link_exists."""
+    target = LinkTarget(TargetKind(body.kind), body.target_project or project, body.target)
+    return LinkOut.of(notes.add_link(project, label, target, LinkRole(body.role)))
+
+
+@router.delete("/notes/{label}/links/{link_id}", tags=["links"])
+def remove_link(project: str, label: str, link_id: int, notes: Notes) -> list[LinkOut]:
+    """Removes a link and returns the ones left. The link of an event trigger goes with its trigger."""
+    return [LinkOut.of(link) for link in notes.remove_link(project, label, link_id)]
+
+
+@router.get("/notes/{label}/backlinks", tags=["links"])
+def notes_linking_to_note(project: str, label: str, notes: Notes) -> list[LinkedNoteOut]:
+    """The notes (of all projects) that point at this note."""
+    notes.show(project, label)
+    return _linked(notes, TargetKind.NOTE, project, label)
+
+
+@router.get("/topics/{label}/notes", tags=["links"])
+def notes_linking_to_topic(project: str, label: str, notes: Notes, topics: Topics) -> list[LinkedNoteOut]:
+    """The notes (of all projects) that point at this topic; notes in the trash are left out."""
+    topics.get(project, label)
+    return _linked(notes, TargetKind.TOPIC, project, label)
+
+
+@router.get("/items/{label}/notes", tags=["links"])
+def notes_linking_to_item(project: str, label: str, notes: Notes) -> list[LinkedNoteOut]:
+    """The notes (of all projects) that point at this item of the project, by link or by event trigger."""
+    return _linked(notes, TargetKind.ITEM, project, label)
+
+
+def _linked(notes: NoteService, kind: TargetKind, project: str, label: str) -> list[LinkedNoteOut]:
+    return [LinkedNoteOut.of(n) for n in notes.notes_linking_to(LinkTarget(kind, project, label))]
 
 
 @router.get("/trash", tags=["trash"])

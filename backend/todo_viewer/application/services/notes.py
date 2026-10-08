@@ -6,7 +6,14 @@ from datetime import UTC, datetime
 
 from todo_viewer.domain.errors import (
     InvalidValueError,
+    ItemNotFoundError,
+    LinkExistsError,
+    LinkNotFoundError,
+    LinkTargetNotFoundError,
+    NoteLifecycleError,
+    NoteNotFoundError,
     SourceGoneError,
+    TopicNotFoundError,
     TriggerNotFoundError,
     ValueRequiredError,
     VersionConflictError,
@@ -27,6 +34,7 @@ from todo_viewer.domain.note_lifecycle import (
 from todo_viewer.domain.notes import (
     EVENT_STATUSES,
     FINISHED_STATUSES,
+    Link,
     LinkRole,
     LinkTarget,
     NewNote,
@@ -69,6 +77,14 @@ class NoteView:
     note: Note
     triggers: tuple[Trigger, ...]
     evaluation: NoteEvaluation
+
+
+@dataclass(frozen=True)
+class LinkedNote:
+    """A note that points at something, with the link it does it by."""
+
+    link: Link
+    view: NoteView
 
 
 @dataclass(frozen=True)
@@ -154,6 +170,49 @@ class NoteService:
         note = self._notes.get_note(project, label)
         return self._view(self._notes.update_note(project, label, version,
                                                   keep_changes(note, self._clock(), self._settings.review_days)))
+
+    # --- links ---
+
+    def links_of(self, project: str, label: str) -> list[Link]:
+        self._notes.get_note(project, label)
+        return self._notes.links_of(project, label)
+
+    def add_link(self, project: str, label: str, target: LinkTarget, role: LinkRole = LinkRole.REFERENCE) -> Link:
+        """Links an open note to an item, a topic, or another note. The target must exist; a link exists once."""
+        note = self._notes.get_note(project, label)
+        check_editable(note)
+        if role is LinkRole.TRIGGER:
+            raise InvalidValueError("role", (LinkRole.REFERENCE.value, LinkRole.ORIGIN.value))
+        if target.kind is TargetKind.NOTE and (target.project, target.label) == (project, label):
+            raise InvalidValueError("target", ("another note",))
+        self._check_target(target)
+        if any(link.target == target and link.role is role for link in self._notes.links_of(project, label)):
+            raise LinkExistsError(label)
+        return self._notes.add_link(project, label, target, role)
+
+    def remove_link(self, project: str, label: str, link_id: int) -> list[Link]:
+        """Removes a link of an open note and returns the links that are left. The link of an event trigger goes
+        with its trigger."""
+        note = self._notes.get_note(project, label)
+        check_editable(note)
+        found = next((link for link in self._notes.links_of(project, label) if link.id == link_id), None)
+        if found is None:
+            raise LinkNotFoundError(link_id)
+        if found.role is LinkRole.TRIGGER:
+            raise NoteLifecycleError("link_belongs_to_trigger", label)
+        self._notes.remove_link(project, label, link_id)
+        return self._notes.links_of(project, label)
+
+    def notes_linking_to(self, target: LinkTarget) -> list[LinkedNote]:
+        """The notes (in all projects, not those in the trash) that point at the target."""
+        if target.kind is TargetKind.ITEM:
+            self._source(target.project)
+        found = []
+        for link in self._notes.links_to(target):
+            note = self._notes.get_note(link.project, link.note)
+            if note.deleted is None:
+                found.append(LinkedNote(link, self._view(note)))
+        return found
 
     # --- triggers ---
 
@@ -273,6 +332,21 @@ class NoteService:
         if found is None:
             raise SourceGoneError()
         return found
+
+    def _check_target(self, target: LinkTarget) -> None:
+        try:
+            if target.kind is TargetKind.ITEM:
+                self._backlogs.get(self._source(target.project), target.label)
+            elif target.kind is TargetKind.TOPIC:
+                self._source(target.project)
+                if self._notes.get_topic(target.project, target.label).deleted is not None:
+                    raise TopicNotFoundError(target.label)
+            else:
+                self._source(target.project)
+                if self._notes.get_note(target.project, target.label).deleted is not None:
+                    raise NoteNotFoundError(target.label)
+        except (ItemNotFoundError, TopicNotFoundError, NoteNotFoundError, SourceGoneError) as gone:
+            raise LinkTargetNotFoundError(target.kind.value, target.project, target.label) from gone
 
     def _checked_trigger(self, note: Note, new: NewTrigger) -> NewTrigger:
         if new.kind is TriggerKind.TIME and new.at is None:

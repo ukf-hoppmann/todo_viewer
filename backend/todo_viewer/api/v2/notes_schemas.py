@@ -9,8 +9,8 @@ from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-from todo_viewer.application.services import NoteView, TrashContents
-from todo_viewer.domain.notes import LinkTarget, NewTrigger, TargetKind, Topic, Trigger, TriggerKind
+from todo_viewer.application.services import LinkedNote, NoteView, TrashContents
+from todo_viewer.domain.notes import Link, LinkTarget, NewTrigger, TargetKind, Topic, Trigger, TriggerKind
 
 
 class TopicOut(BaseModel):
@@ -132,6 +132,47 @@ class NoteSnoozeIn(BaseModel):
     version: str
     review_at: AwareDatetime | None = Field(default=None, description="Default: now plus `notes.review_days`")
     trigger: TriggerIn | None = Field(default=None, description="Replaces all old triggers")
+
+
+class LinkIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["item", "topic", "note"] = Field(description="What the note points at")
+    target: str = Field(description="Label of the item, topic, or note")
+    target_project: str | None = Field(default=None, description="Its project; default: the note's project")
+    role: Literal["reference", "origin"] = "reference"
+
+
+class LinkOut(BaseModel):
+    id: int
+    note: str = Field(description="Label of the note the link starts at")
+    project: str = Field(description="Project of that note")
+    kind: str
+    target_project: str
+    target: str = Field(description="Label of the item, topic, or note it points at")
+    role: str = Field(description="reference, origin, or trigger (the link of an event trigger)")
+
+    @classmethod
+    def of(cls, link: Link) -> LinkOut:
+        return cls(id=link.id, note=link.note, project=link.project, kind=link.target.kind.value,
+                   target_project=link.target.project, target=link.target.label, role=link.role.value)
+
+
+class LinkedNoteOut(BaseModel):
+    """A note that points at something; the long text stays out, read the note for it."""
+
+    project: str
+    label: str
+    summary: str
+    status: str
+    role: str
+    link_id: int
+
+    @classmethod
+    def of(cls, linked: LinkedNote) -> LinkedNoteOut:
+        note = linked.view.note
+        return cls(project=note.project, label=note.label, summary=note.summary,
+                   status=linked.view.evaluation.status.value, role=linked.link.role.value, link_id=linked.link.id)
 
 
 class TriggerOut(BaseModel):

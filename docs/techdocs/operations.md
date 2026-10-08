@@ -84,6 +84,31 @@
 - Das Frontend wird pro Anfrage gesucht: ein späteres `npm --prefix web run build`
   wird ohne Neustart ausgeliefert.
 
+## Notes im Betrieb
+
+- Speicherort: Topics, Notes, Links, Auslöser und Note-Dokumente liegen nur in
+  der zentralen Datenbank (`configs/todo.db`), unabhängig von der Primärquelle
+  der Projekte. Sie gehören zur Sicherung der Datenbank (siehe „Deployment“);
+  die Backups beim Wechsel einer Primärquelle enthalten sie nicht, und ein
+  Markdown-Ordner oder -Spiegel enthält keine Notes.
+- Zeit: Zeitpunkte (Auslöser, Prüf-Datum, Topic-Termine) speichert und liefert
+  die API in UTC. Die Oberfläche zeigt und erfragt sie in der Zeitzone des
+  Browsers, also des Rechners, an dem man den Viewer bedient. Wer die API
+  direkt aufruft, übergibt ISO 8601 mit Zeitzone.
+- Kein Hintergrund-Takt: Ob eine Note fällig ist, wird beim Lesen berechnet. Das
+  Ausrufezeichen fragt den Zähler jede Minute und beim Fokussieren des Fensters
+  ab; ein stehender Viewer ohne offenes Fenster kostet nichts und meldet nichts.
+- Prüf-Intervall und Topic-Tiefe stehen in `config.json` (`notes.review_days`,
+  `notes.max_topic_depth`, siehe [Konfiguration](configuration.md)) und wirken
+  ohne Neustart.
+- Nicht erreichbare Projekte: Zeigt ein Link oder Auslöser auf ein Projekt, das
+  nicht (mehr) eingetragen oder nicht lesbar ist, bleibt er stehen und wird als
+  nicht erreichbar markiert; der Server legt einmalig einen Hinweis
+  `project_unreachable` an. Es entsteht kein Fehler, und der Hinweis
+  bleibt auch nach der Rückkehr des Projekts offen, bis man ihn entscheidet.
+- Endgültig löschen: Es gibt kein endgültiges Löschen von Notes und Topics über
+  HTTP; der Papierkorb wird nur im Service für den Besitzer geleert.
+
 ## Log
 
 Das Backend schreibt pro Ereignis eine Zeile (Format und Level: siehe

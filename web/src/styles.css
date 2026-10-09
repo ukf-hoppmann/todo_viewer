@@ -337,6 +337,9 @@ input.field-edit {
 .trash-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px solid var(--panel-border); }
 .trash-row .trash-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trash-row .trash-meta { color: var(--text-dim); font-size: 11px; }
+.trash-row input[type="checkbox"], .trash-bar input[type="checkbox"] { margin: 0; }
+.trash-bar { display: flex; align-items: center; gap: 8px; padding: 4px 4px 8px; border-bottom: 1px solid var(--panel-border); }
+.trash-bar .hint { flex: 1; }
 
 /* ---------- documents ---------- */
 .doc-tab-actions { margin-left: auto; display: flex; gap: 6px; }

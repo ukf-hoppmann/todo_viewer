@@ -198,7 +198,11 @@ Papierkorb nur nach Suche und Projekten. Die Suche gilt für alle Tabs gemeinsam
 - **Papierkorb**: Gelöschte Items der in der Sidebar gewählten Projekte mit Löschdatum,
   gefiltert nach dem Suchtext.
   „Wiederherstellen“ holt ein Item samt Kindern zurück, „Endgültig löschen“
-  entfernt es nach einer Bestätigung samt Kindern, Notizen und Specs.
+  entfernt es nach einer Bestätigung samt Kindern, Notizen und Specs (beides als
+  Icon-Buttons in der Zeile). Mit den Checkboxen vor den Zeilen und dem Haken oben
+  (alle an/ab) lassen sich mehrere Items wählen und gemeinsam wiederherstellen oder
+  nach einer Bestätigung endgültig löschen. Ist ein Item mit seinem Vorfahren gewählt,
+  wird nur der Vorfahre angefragt; was nicht klappt, wird mit Grund genannt.
 - **Notes**: Gedanken mit Wiedervorlage, getrennt vom Backlog. Links der Topic-Baum
   (auf- und zuklappbar, Einrückung mit Führungslinie; die Zahl ist die Summe samt
   Unter-Topics, der Hovertext nennt die direkten Notes; anlegen, umbenennen, verschieben,

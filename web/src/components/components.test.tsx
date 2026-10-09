@@ -759,3 +759,67 @@ describe("TrashView filters", () => {
     expect(screen.queryByText("TASK-3 — Alpha too")).not.toBeInTheDocument();
   });
 });
+
+describe("TrashView selection", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const trashed = [
+    apiItem("STORY-1", { type: "Story", deleted: "2026-10-01" }),
+    apiItem("TASK-1", { parent: "STORY-1", deleted: "2026-10-01" }),
+    apiItem("TASK-2", { deleted: "2026-10-01" }),
+  ];
+
+  function stubTrash(fail: string | null = null) {
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async (request) => {
+      const url = new URL(request.url);
+      if (request.method === "GET") return jsonResponse(url.searchParams.get("source_id") === "s" ? trashed : []);
+      if (fail !== null && url.pathname.includes(fail)) return jsonResponse({ code: "version_conflict", message: "changed", details: {} }, 409);
+      return jsonResponse([]);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return () => fetchMock.mock.calls.map(([r]) => r).filter((r) => r.method !== "GET").map((r) => [r.method, new URL(r.url).pathname]);
+  }
+
+  it("ticks all with the head box and purges the topmost ticked items after one confirmation", async () => {
+    const writes = stubTrash();
+    renderWithProviders(<TrashView sources={SOURCES} />);
+    await screen.findByText("TASK-2 — Title TASK-2");
+    const all = screen.getByRole("checkbox", { name: "Alle auswählen" }) as HTMLInputElement;
+    const purgeSelected = screen.getByRole("button", { name: "Auswahl endgültig löschen" });
+    expect(purgeSelected).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "TASK-1 auswählen" }));
+    expect(all.indeterminate).toBe(true);
+    await userEvent.click(all);
+    expect(screen.getByText("3 ausgewählt")).toBeInTheDocument();
+
+    await userEvent.click(purgeSelected);
+    expect(screen.getByText("3 Einträge endgültig löschen?")).toBeInTheDocument();
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Endgültig löschen" }));
+
+    await waitFor(() => expect(writes()).toEqual([
+      ["DELETE", "/api/v2/trash/s/STORY-1"],
+      ["DELETE", "/api/v2/trash/s/TASK-2"],
+    ]));
+    await userEvent.click(all);
+    await userEvent.click(all);
+    expect(all.checked).toBe(false);
+  });
+
+  it("restores the ticked items and names the ones that failed", async () => {
+    const writes = stubTrash("TASK-2");
+    renderWithProviders(<TrashView sources={SOURCES} />);
+    await screen.findByText("TASK-2 — Title TASK-2");
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "TASK-1 auswählen" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "TASK-2 auswählen" }));
+    await userEvent.click(screen.getByRole("button", { name: "Auswahl wiederherstellen" }));
+
+    expect(await screen.findByText(/Nicht bearbeitet: TASK-2/)).toBeInTheDocument();
+    expect(writes()).toEqual([
+      ["POST", "/api/v2/trash/s/TASK-1/restore"],
+      ["POST", "/api/v2/trash/s/TASK-2/restore"],
+    ]);
+    expect(screen.getByText("0 ausgewählt")).toBeInTheDocument();
+  });
+});

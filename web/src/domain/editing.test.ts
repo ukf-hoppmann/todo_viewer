@@ -15,6 +15,7 @@ import {
   rebaseDraft,
   retypeTargets,
   specName,
+  topmostSelected,
 } from "./editing";
 import { toItems } from "./model";
 
@@ -146,6 +147,21 @@ describe("trash", () => {
       ["A", ["TASK-3"]],
       ["P", ["TASK-2", "TASK-1"]],
     ]);
+  });
+
+  it("asks only for the topmost chosen items, since an item takes its descendants along", () => {
+    const trashed = toItems([
+      apiItem("EPIC-1", { type: "Epic" }),
+      apiItem("STORY-1", { type: "Story", parent: "EPIC-1" }),
+      apiItem("TASK-1", { parent: "STORY-1" }),
+      apiItem("TASK-2", { parent: "STORY-9" }),
+      apiItem("TASK-1", { source_id: "t", key: "t/TASK-1", project: "Q", parent: "EPIC-1" }),
+    ]);
+    const keys = (...k: string[]) => new Set(k);
+
+    expect(topmostSelected(trashed, keys("s/EPIC-1", "s/TASK-1", "t/TASK-1", "s/TASK-2")).map((i) => i.key)).toEqual(["s/EPIC-1", "s/TASK-2", "t/TASK-1"]);
+    expect(topmostSelected(trashed, keys("s/STORY-1", "s/TASK-1")).map((i) => i.key)).toEqual(["s/STORY-1"]);
+    expect(topmostSelected(trashed, keys())).toEqual([]);
   });
 });
 

@@ -14,8 +14,8 @@
   --status-done: #3ab26b;
   --status-rejected: #d5544a;
   --note-dropped: #8a4f4b;
-  --note-level-1: rgba(58, 178, 107, 0.10);
-  --note-level-2: rgba(255, 255, 255, 0.05);
+  --note-level-1: #1a1e26;
+  --note-level-2: #232833;
   --prio-urgent: #e05a4e;
   --prio-important: #d5a13a;
   --prio-normal: #6b7280;
@@ -360,8 +360,12 @@ input.field-edit {
 .nt-note .node-title, .nt-topic .node-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nt-none { color: var(--text-dim); font-style: italic; }
 .nt-project-bar { height: 6px; border-radius: 3px; background: var(--accent); margin: 4px 0 10px; }
-.tree-node.nt-level-1 { background: var(--note-level-1); border-radius: 6px; padding: 2px 6px 4px 0; margin-bottom: 6px; }
-.node-children > .tree-node.nt-level-2 { background: var(--note-level-2); border-radius: 0 6px 6px 0; margin: 2px 0; padding-bottom: 2px; }
+/* Extended marking: grey steps instead of tints (calmer on the dark ground), the level shown by a stripe on the left. */
+.tree-node.nt-level-1 {
+  background: var(--note-level-1); border: 1px solid var(--panel-border); border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0; padding: 2px 6px 4px 0; margin-bottom: 6px;
+}
+.node-children > .tree-node.nt-level-2 { background: var(--note-level-2); border-left: 2px solid var(--status-open); margin: 2px 0; padding-bottom: 2px; }
 .notes-head .check { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--text-dim); cursor: pointer; }
 .nt-project, .nt-topic { position: relative; }
 /* The actions lie over the end of the line while it is hovered or focused, so they take no room from the title. */

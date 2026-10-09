@@ -37,6 +37,8 @@ export function NoteTree({ tree, allTopics, projects, selected, searching, onSel
   const [deleting, setDeleting] = useState<IndexTopic | null>(null);
   const isOpen = (key: string) => searching || !state.collapsed.has(key);
   const keys = topicKeys(tree);
+  // Extended marking: the whole area of a topic on level 1 and 2 gets its own background.
+  const level = (depth: number) => (state.notesHighlight && depth <= 2 ? ` nt-level-${depth}` : "");
   const allCollapsed = keys.length > 0 && keys.every((k) => state.collapsed.has(k));
 
   const caret = (key: string, hasChildren: boolean) => {
@@ -86,11 +88,11 @@ export function NoteTree({ tree, allTopics, projects, selected, searching, onSel
     );
   };
 
-  const topicNode = (node: NoteTreeTopic) => {
+  const topicNode = (node: NoteTreeTopic, depth: number) => {
     const { topic } = node;
     const hasChildren = node.children.length > 0 || node.notes.length > 0;
     return (
-      <div key={node.key} className="tree-node">
+      <div key={node.key} className={`tree-node${level(depth)}`}>
         <div className="node-line">
           {caret(node.key, hasChildren)}
           <div className="node-row nt-topic">
@@ -111,7 +113,7 @@ export function NoteTree({ tree, allTopics, projects, selected, searching, onSel
         </div>
         {hasChildren && isOpen(node.key) && (
           <div className="node-children">
-            {node.children.map(topicNode)}
+            {node.children.map((child) => topicNode(child, depth + 1))}
             {node.notes.map(noteNode)}
           </div>
         )}
@@ -139,9 +141,10 @@ export function NoteTree({ tree, allTopics, projects, selected, searching, onSel
               <IconButton icon="folderPlus" label={t("notes.newTopicIn", { p: p.project })} onClick={() => setDialog({ kind: "create", project: p.project, parent: null })} />
             </span>
           </div>
-          {p.topics.map(topicNode)}
+          <div className="nt-project-bar" />
+          {p.topics.map((node) => topicNode(node, 1))}
           {p.withoutTopic.length > 0 && (
-            <div className="tree-node">
+            <div className={`tree-node${level(1)}`}>
               <div className="node-line">
                 {caret(p.withoutTopicKey, true)}
                 <div className="node-row nt-topic">

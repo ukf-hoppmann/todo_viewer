@@ -25,6 +25,7 @@ describe("uiState", () => {
       lang: "en",
       defaultBackend: "markdown",
       selectedNote: null,
+      notesHighlight: true,
     });
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "nope", lang: "fr" })).toEqual(INITIAL_UI_STATE);
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "trash" }).currentView).toBe("trash");
@@ -47,6 +48,14 @@ describe("uiState", () => {
     expect([...mergeStored(INITIAL_UI_STATE, snapshot(shown)).hiddenNoteStatuses]).toEqual(["dropped", "promoted"]);
     const reset = uiReducer({ ...shown, hiddenNoteStatuses: new Set(["waiting"]) }, { type: "resetNoteStatuses" });
     expect(reset.hiddenNoteStatuses).toEqual(INITIAL_UI_STATE.hiddenNoteStatuses);
+  });
+
+  it("switches the extended marking of the notes tree, on by default, and keeps it", () => {
+    expect(INITIAL_UI_STATE.notesHighlight).toBe(true);
+    const plain = uiReducer(INITIAL_UI_STATE, { type: "notesHighlight", on: false });
+    expect(plain.notesHighlight).toBe(false);
+    expect(mergeStored(INITIAL_UI_STATE, snapshot(plain)).notesHighlight).toBe(false);
+    expect(mergeStored(INITIAL_UI_STATE, { notesHighlight: "no" }).notesHighlight).toBe(true);
   });
 
   it("marks projects and collapses or expands a set of nodes at once", () => {

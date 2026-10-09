@@ -37,6 +37,25 @@ describe("NotesView", () => {
     expect(screen.queryByLabelText("inkl. Unterthemen")).not.toBeInTheDocument();
   });
 
+  it("shades topic levels 1 and 2 with their content, and the checkbox switches to the plain tree", async () => {
+    stubRoutes(notesBaseRoutes(TOPICS, NOTES));
+    renderWithProviders(<NotesView items={[]} />);
+    await screen.findByText("Later");
+    const area = (name: string) => screen.getByText(name).closest(".tree-node") as HTMLElement;
+
+    expect(area("Ideas")).toHaveClass("nt-level-1");
+    expect(area("Plans")).toHaveClass("nt-level-1");
+    expect(area("Ohne Topic")).toHaveClass("nt-level-1");
+    expect(area("Later")).toHaveClass("nt-level-2");
+    expect(within(area("Ideas")).getByText("Something for later")).toBeInTheDocument();
+    expect(document.querySelectorAll(".nt-project-bar")).toHaveLength(1);
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Erweiterte Markierung" }));
+    expect(area("Ideas")).not.toHaveClass("nt-level-1");
+    expect(area("Later")).not.toHaveClass("nt-level-2");
+    expect(document.querySelectorAll(".nt-project-bar")).toHaveLength(1);
+  });
+
   it("opens the chosen note in the UI state", async () => {
     stubRoutes(notesBaseRoutes(TOPICS, NOTES));
     renderWithProviders(<NotesView items={[]} />);

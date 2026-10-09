@@ -61,6 +61,7 @@ UI-Zustand hat) und in `ui_state.json.bak` umbenannt.
 |---|---|---|---|---|
 | `hiddenProjects`, `hiddenStatuses`, `hiddenPriorities` | Liste von Strings | leer | nein | Ausgeblendete Filterwerte (englische Werte) |
 | `hiddenNoteStatuses` | Liste von Strings | `done`, `dropped`, `promoted` | nein | Ausgeblendete Note-Status im Notes-Bereich, getrennt von `hiddenStatuses` |
+| `notesHighlight` | Boolean | `true` | nein | Erweiterte Markierung im Notes-Baum: Flächen für Topic-Ebene 1 und 2 |
 | `collapsed` | Liste von Strings | leer | nein | Eingeklappte Knoten im Backlog-Baum (Item-UIDs) und im Notes-Baum (`note-project:<Projekt>`, `note-topic:<Projekt>/<Label>`, `note-none:<Projekt>`) |
 | `markedProjects` | Liste von Strings | leer | nein | Markierte Projekte, auf die „Epics/Stories zuklappen/aufklappen“ wirken; leer = alle |
 | `search` | String | leer | nein | Suchbegriff, gemeinsam für alle Tabs |

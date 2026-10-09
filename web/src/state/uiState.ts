@@ -33,6 +33,8 @@ export interface UiState {
   defaultBackend: DefaultBackend;
   /** Notes area: the open note (projects, statuses and search come from the sidebar). */
   selectedNote: NoteRef | null;
+  /** Notes tree: topic levels 1 and 2 get their own background (extended marking); off is the plain tree. */
+  notesHighlight: boolean;
 }
 
 export const INITIAL_UI_STATE: UiState = {
@@ -48,6 +50,7 @@ export const INITIAL_UI_STATE: UiState = {
   lang: "de",
   defaultBackend: "markdown",
   selectedNote: null,
+  notesHighlight: true,
 };
 
 const SET_KEYS = ["hiddenProjects", "hiddenStatuses", "hiddenPriorities", "hiddenNoteStatuses", "collapsed", "markedProjects"] as const;
@@ -73,6 +76,7 @@ export function mergeStored(base: UiState, raw: unknown): UiState {
     return typeof v?.project === "string" && typeof v.label === "string" ? { project: v.project, label: v.label } : undefined;
   };
   next.selectedNote = ref(r.selectedNote) ?? next.selectedNote;
+  if (typeof r.notesHighlight === "boolean") next.notesHighlight = r.notesHighlight;
   return next;
 }
 
@@ -90,6 +94,7 @@ export function snapshot(state: UiState): Record<string, unknown> {
     lang: state.lang,
     defaultBackend: state.defaultBackend,
     selectedNote: state.selectedNote,
+    notesHighlight: state.notesHighlight,
   };
 }
 
@@ -108,6 +113,7 @@ export type UiAction =
   | { type: "lang"; lang: Lang }
   | { type: "defaultBackend"; backend: DefaultBackend }
   | { type: "selectNote"; note: NoteRef | null }
+  | { type: "notesHighlight"; on: boolean }
   /** Jumps into the Notes area to one note (from the due list, an item, or a link). */
   | { type: "openNote"; note: NoteRef };
 
@@ -155,6 +161,8 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, defaultBackend: action.backend };
     case "selectNote":
       return { ...state, selectedNote: action.note };
+    case "notesHighlight":
+      return { ...state, notesHighlight: action.on };
     case "openNote":
       return { ...state, currentView: "notes", selectedNote: action.note };
   }

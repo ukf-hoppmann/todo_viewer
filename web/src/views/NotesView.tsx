@@ -70,6 +70,10 @@ export function NotesView({ items }: { items: readonly Item[] }) {
       <section className="notes-main">
         <div className="notes-head">
           <span className="hint">{t("notes.count", { n: shownCount })}</span>
+          <label className="check" title={t("notes.highlightHint")}>
+            <input type="checkbox" checked={state.notesHighlight} onChange={(e) => dispatch({ type: "notesHighlight", on: e.target.checked })} />
+            {t("notes.highlight")}
+          </label>
           {filtered && <IconButton icon="reset" label={t("notes.filter.reset")} onClick={reset} />}
           <button
             className="btn small primary"

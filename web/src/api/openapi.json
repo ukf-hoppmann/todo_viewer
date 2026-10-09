@@ -4794,7 +4794,7 @@
     },
     "/api/v2/notes/index": {
       "get": {
-        "description": "Topics and notes with only label, status, due reason, review date, and summary: no long texts.\n\nWithout filters: the open notes of all projects. `project` keeps one project; `topic` (needs `project`) keeps\nthe notes in that topic and its sub-topics and the topics of that subtree; `status` is the effective status\n(waiting, due, snoozed, done, dropped, promoted); `due=true` keeps the due notes; `linked_item` (in\n`linked_project`, default `project`) keeps the notes that point at the item by a link or an event trigger.\n`archived=true` reads the archive instead; a closed `status` does so by itself.",
+        "description": "Topics and notes with only label, status, due reason, review date, and summary: no long texts.\n\nWithout filters: the open notes of all projects. `project` keeps one project; `topic` (needs `project`) keeps\nthe notes in that topic and its sub-topics and the topics of that subtree; `status` (repeatable) keeps the notes\nwith one of these effective statuses (waiting, due, snoozed, done, dropped, promoted); `due=true` keeps the due\nnotes; `linked_item` (in `linked_project`, default `project`) keeps the notes that point at the item by a link or\nan event trigger.\n`archived=true` reads the archive instead; a closed `status` is read from the archive by itself, also mixed\nwith open ones.",
         "operationId": "notes_index_api_v2_notes_index_get",
         "parameters": [
           {
@@ -4836,7 +4836,10 @@
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/NoteStatus"
+                  "items": {
+                    "$ref": "#/components/schemas/NoteStatus"
+                  },
+                  "type": "array"
                 },
                 {
                   "type": "null"

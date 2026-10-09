@@ -39,7 +39,7 @@ export function NotesView({ items }: { items: readonly Item[] }) {
   const onlyProject = visible.size === 1 ? [...visible][0] : undefined;
   const filter: NotesIndexFilter = {
     ...(onlyProject !== undefined && { project: onlyProject }),
-    ...(status !== "" && { status }),
+    ...(status !== "" && { status: [status] }),
     ...(dueOnly && { due: true }),
   };
   const index = useNotesIndex(paused, filter);

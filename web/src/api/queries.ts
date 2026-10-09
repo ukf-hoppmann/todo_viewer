@@ -316,7 +316,7 @@ function refreshNotes(client: QueryClient) {
 /** What the server filters in the notes index: one project, the effective status, only the due notes. A closed status reads the archive. */
 export interface NotesIndexFilter {
   project?: string;
-  status?: Schemas["NoteStatus"];
+  status?: Schemas["NoteStatus"][];
   due?: boolean;
 }
 

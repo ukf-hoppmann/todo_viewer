@@ -22,13 +22,22 @@ interface NoteTreeProps {
 
 const REASONS = ["trigger", "notice", "topic_due", "review_expired"];
 
-/** Notes as a tree like the backlog: project → topic → sub-topic → note. The actions of a topic sit in its row. */
+/** The keys of every topic node (and „Ohne Topic“) in the tree, for collapsing or expanding all at once. */
+function topicKeys(tree: readonly NoteTreeProject[]): string[] {
+  const walk = (nodes: readonly NoteTreeTopic[]): string[] => nodes.flatMap((n) => [n.key, ...walk(n.children)]);
+  return tree.flatMap((p) => [...walk(p.topics), ...(p.withoutTopic.length > 0 ? [p.withoutTopicKey] : [])]);
+}
+
+/** Notes laid out like the backlog tree: per project the topics, sub-topics and notes, one line each. The actions of a
+ *  topic sit in its line. */
 export function NoteTree({ tree, allTopics, projects, selected, searching, onSelect, onCreateNote }: NoteTreeProps) {
   const { t, lang } = useI18n();
   const { state, dispatch } = useUiState();
   const [dialog, setDialog] = useState<TopicDialogMode | null>(null);
   const [deleting, setDeleting] = useState<IndexTopic | null>(null);
   const isOpen = (key: string) => searching || !state.collapsed.has(key);
+  const keys = topicKeys(tree);
+  const allCollapsed = keys.length > 0 && keys.every((k) => state.collapsed.has(k));
 
   const caret = (key: string, hasChildren: boolean) => {
     const open = isOpen(key);
@@ -41,96 +50,112 @@ export function NoteTree({ tree, allTopics, projects, selected, searching, onSel
         title={hasChildren ? (open ? t("topic.collapse") : t("topic.expand")) : undefined}
         onClick={() => dispatch({ type: "toggleCollapsed", uid: key })}
       >
-        {hasChildren ? (open ? "▼" : "▶") : ""}
+        {hasChildren ? (open ? "▾" : "▸") : ""}
       </button>
     );
   };
 
-  const noteRow = (note: IndexNote) => {
+  const noteNode = (note: IndexNote) => {
     const isSelected = selected?.project === note.project && selected.label === note.label;
     const reason = note.reason && REASONS.includes(note.reason) ? t(`note.reason.${note.reason}` as MessageKey) : null;
+    const color = noteStatusColor(note.status);
+    const status = t(`note.status.${note.status}` as MessageKey);
     return (
-      <li key={`${note.project}/${note.label}`} className="nt-node">
-        <div className="nt-line">
+      <div key={`${note.project}/${note.label}`} className="tree-node">
+        <div className="node-line">
           <span className="caret" />
-          <button className={`nt-note${isSelected ? " selected" : ""}`} aria-pressed={isSelected} onClick={() => onSelect({ project: note.project, label: note.label })}>
-            <span className="nt-summary-line">
-              <span className="dot" style={{ background: noteStatusColor(note.status) }} />
+          <button
+            className={`node-row nt-note${isSelected ? " selected" : ""}`}
+            aria-pressed={isSelected}
+            title={note.summary}
+            onClick={() => onSelect({ project: note.project, label: note.label })}
+          >
+            <span className="dot" title={status} style={{ background: color }} />
+            <span className="node-type" title={status} style={{ background: color, color: "var(--on-color)" }}>
+              {t("notes.typeNote")}
+            </span>
+            <span className="node-title">
+              {`${note.label} — `}
               <span className="nt-summary">{note.summary}</span>
             </span>
-            <span className="note-meta">
-              <span className={`badge note-${note.status}`}>{t(`note.status.${note.status}` as MessageKey)}</span>
-              {reason && <span className="note-reason">{reason}</span>}
-              {note.review_at && <span className="note-review">{t("notes.review", { d: formatDate(note.review_at, lang) })}</span>}
-              <span className="note-label">{note.label}</span>
-            </span>
+            {reason && <span className="node-progress">{reason}</span>}
+            {note.review_at && <span className="node-progress">{t("notes.review", { d: formatDate(note.review_at, lang) })}</span>}
           </button>
         </div>
-      </li>
+      </div>
     );
   };
 
-  const topicRow = (node: NoteTreeTopic) => {
+  const topicNode = (node: NoteTreeTopic) => {
     const { topic } = node;
     const hasChildren = node.children.length > 0 || node.notes.length > 0;
     return (
-      <li key={node.key} className="nt-node">
-        <div className="nt-line nt-topic">
+      <div key={node.key} className="tree-node">
+        <div className="node-line">
           {caret(node.key, hasChildren)}
-          <span className="nt-name">{topic.name}</span>
-          {topic.due && <span className="badge due" title={t("notes.due")}>!</span>}
-          <span className="topic-count" title={t("notes.countHint", { n: node.count })}>{node.count}</span>
-          <span className="nt-actions">
-            <IconButton icon="plus" label={t("notes.newNoteIn", { t: topic.name })} onClick={() => onCreateNote(topic.project, topic.label)} />
-            <IconButton icon="subfolderPlus" label={t("topic.newChild")} onClick={() => setDialog({ kind: "create", project: topic.project, parent: topic })} />
-            <IconButton icon="rename" label={t("topic.rename")} onClick={() => setDialog({ kind: "rename", topic })} />
-            <IconButton icon="calendar" label={t("topic.due")} onClick={() => setDialog({ kind: "due", topic })} />
-            <IconButton icon="move" label={t("topic.move")} onClick={() => setDialog({ kind: "move", topic })} />
-            <IconButton icon="trash" label={t("topic.delete")} variant="danger" onClick={() => setDeleting(topic)} />
-          </span>
+          <div className="node-row nt-topic">
+            <span className="dot" style={{ background: topic.due ? "var(--status-rejected)" : "var(--prio-none)" }} />
+            <span className="node-type">{t("notes.typeTopic")}</span>
+            <span className="node-title">{topic.name}</span>
+            {topic.due && <span className="badge due" title={t("notes.due")}>!</span>}
+            <span className="node-progress" title={t("notes.countHint", { n: node.count })}>{node.count}</span>
+            <span className="nt-actions">
+              <IconButton icon="plus" label={t("notes.newNoteIn", { t: topic.name })} onClick={() => onCreateNote(topic.project, topic.label)} />
+              <IconButton icon="subfolderPlus" label={t("topic.newChild")} onClick={() => setDialog({ kind: "create", project: topic.project, parent: topic })} />
+              <IconButton icon="rename" label={t("topic.rename")} onClick={() => setDialog({ kind: "rename", topic })} />
+              <IconButton icon="calendar" label={t("topic.due")} onClick={() => setDialog({ kind: "due", topic })} />
+              <IconButton icon="move" label={t("topic.move")} onClick={() => setDialog({ kind: "move", topic })} />
+              <IconButton icon="trash" label={t("topic.delete")} variant="danger" onClick={() => setDeleting(topic)} />
+            </span>
+          </div>
         </div>
         {hasChildren && isOpen(node.key) && (
-          <ul className="nt-list nt-children">
-            {node.children.map(topicRow)}
-            {node.notes.map(noteRow)}
-          </ul>
+          <div className="node-children">
+            {node.children.map(topicNode)}
+            {node.notes.map(noteNode)}
+          </div>
         )}
-      </li>
+      </div>
     );
   };
 
   return (
     <div className="note-tree">
-      {tree.map((p) => {
-        const hasChildren = p.topics.length > 0 || p.withoutTopic.length > 0;
-        return (
-          <section key={p.key} className="nt-project" aria-label={p.project}>
-            <div className="nt-line nt-project-line">
-              {caret(p.key, hasChildren)}
-              <span className="nt-name project-title">{`${p.project} (${p.count})`}</span>
-              <span className="nt-actions">
-                <IconButton icon="plus" label={t("notes.newNoteNoTopic")} onClick={() => onCreateNote(p.project, null)} />
-                <IconButton icon="folderPlus" label={t("notes.newTopicIn", { p: p.project })} onClick={() => setDialog({ kind: "create", project: p.project, parent: null })} />
-              </span>
+      <div className="collapse-bar">
+        <button
+          className="btn small"
+          disabled={keys.length === 0 || searching}
+          onClick={() => dispatch({ type: "setCollapsed", uids: keys, collapsed: !allCollapsed })}
+        >
+          {t(allCollapsed ? "notes.expandTopics" : "notes.collapseTopics")}
+        </button>
+      </div>
+      {tree.map((p) => (
+        <section key={p.key} className="project-group" aria-label={p.project}>
+          <div className="project-title nt-project">
+            <span>{`${p.project} (${p.count})`}</span>
+            <span className="nt-actions">
+              <IconButton icon="plus" label={t("notes.newNoteNoTopic")} onClick={() => onCreateNote(p.project, null)} />
+              <IconButton icon="folderPlus" label={t("notes.newTopicIn", { p: p.project })} onClick={() => setDialog({ kind: "create", project: p.project, parent: null })} />
+            </span>
+          </div>
+          {p.topics.map(topicNode)}
+          {p.withoutTopic.length > 0 && (
+            <div className="tree-node">
+              <div className="node-line">
+                {caret(p.withoutTopicKey, true)}
+                <div className="node-row nt-topic">
+                  <span className="dot" style={{ background: "var(--prio-none)" }} />
+                  <span className="node-type">{t("notes.typeTopic")}</span>
+                  <span className="node-title nt-none">{t("notes.noTopic")}</span>
+                  <span className="node-progress">{p.withoutTopic.length}</span>
+                </div>
+              </div>
+              {isOpen(p.withoutTopicKey) && <div className="node-children">{p.withoutTopic.map(noteNode)}</div>}
             </div>
-            {hasChildren && isOpen(p.key) && (
-              <ul className="nt-list nt-children">
-                {p.topics.map(topicRow)}
-                {p.withoutTopic.length > 0 && (
-                  <li className="nt-node">
-                    <div className="nt-line nt-topic">
-                      {caret(p.withoutTopicKey, true)}
-                      <span className="nt-name nt-none">{t("notes.noTopic")}</span>
-                      <span className="topic-count">{p.withoutTopic.length}</span>
-                    </div>
-                    {isOpen(p.withoutTopicKey) && <ul className="nt-list nt-children">{p.withoutTopic.map(noteRow)}</ul>}
-                  </li>
-                )}
-              </ul>
-            )}
-          </section>
-        );
-      })}
+          )}
+        </section>
+      ))}
       {dialog && <TopicDialog mode={dialog} topics={allTopics} projects={projects} onClose={() => setDialog(null)} />}
       {deleting && <TopicDeleteDialog topic={deleting} onClose={() => setDeleting(null)} onDeleted={() => setDeleting(null)} />}
     </div>

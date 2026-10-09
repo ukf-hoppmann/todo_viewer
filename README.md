@@ -205,7 +205,9 @@ Papierkorb nur nach Suche und Projekten. Die Suche gilt für alle Tabs gemeinsam
   wird nur der Vorfahre angefragt; was nicht klappt, wird mit Grund genannt.
 - **Notes**: Gedanken mit Wiedervorlage, getrennt vom Backlog. Die Notes stehen wie das
   Backlog in einem Baum: Projekt → Topic → Unter-Topic → Note, Notes ohne (bekanntes)
-  Topic unter „Ohne Topic“ am Projekt. Knoten sind auf- und zuklappbar (gespeichert wie
+  Topic unter „Ohne Topic“ am Projekt, aufgebaut wie der Backlog-Baum: eine Zeile je Knoten mit
+  Punkt, Kennzeichen „Topic“ bzw. „Note“ (in der Statusfarbe, Status im Hovertext) und
+  „Label — Kurzfassung“. Knoten sind auf- und zuklappbar, „Topics zuklappen“ klappt alle (gespeichert wie
   im Backlog-Baum; beim Suchen ist alles offen, eine von anderswo geöffnete Note klappt
   ihren Zweig auf), leere Topics bleiben sichtbar, die Zahl ist die Summe der gezeigten
   Notes samt Unter-Topics, fällige zuerst. Die Aktionen eines Topics (neue Note darin,

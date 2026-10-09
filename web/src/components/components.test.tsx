@@ -708,3 +708,47 @@ describe("DocumentDialog writing", () => {
     expect(await put.clone().json()).toEqual({ content: "# Notes\n\n- corrected", version: "n1" });
   });
 });
+
+describe("Sidebar sections per tab", () => {
+  const props = {
+    options: { projects: ["P"], statuses: ["Open"], priorities: ["Normal"] },
+    sources: [],
+    onAddSource: vi.fn(),
+    onEditSource: vi.fn(),
+    onRemoveSource: vi.fn(),
+    onSyncSource: vi.fn(),
+    onOpenSettings: vi.fn(),
+    syncStates: new Map(),
+    onOpenProject: vi.fn(),
+  };
+
+  it("shows status and priority of the backlog in the backlog views only", () => {
+    const { unmount } = renderWithProviders(<Sidebar {...props} />, { currentView: "kanban" });
+    expect(screen.getByRole("heading", { name: "Status" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Priorität" })).toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(<Sidebar {...props} />, { currentView: "trash" });
+    expect(screen.getByRole("checkbox", { name: "P" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Status" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Priorität" })).not.toBeInTheDocument();
+  });
+});
+
+describe("TrashView filters", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps the trashed items of the ticked projects that match the search", async () => {
+    const trashed = {
+      s: [apiItem("TASK-1", { title: "Alpha", deleted: "2026-10-01" }), apiItem("TASK-2", { title: "Beta", deleted: "2026-10-01" })],
+      t: [apiItem("TASK-3", { source_id: "t", key: "t/TASK-3", project: "Q", title: "Alpha too", deleted: "2026-10-01" })],
+    };
+    vi.stubGlobal("fetch", async (request: Request) => jsonResponse(trashed[new URL(request.url).searchParams.get("source_id") as "s" | "t"]));
+
+    renderWithProviders(<TrashView sources={SOURCES} />, { hiddenProjects: new Set(["Q"]), search: "alph" });
+
+    expect(await screen.findByText("TASK-1 — Alpha")).toBeInTheDocument();
+    expect(screen.queryByText("TASK-2 — Beta")).not.toBeInTheDocument();
+    expect(screen.queryByText("TASK-3 — Alpha too")).not.toBeInTheDocument();
+  });
+});

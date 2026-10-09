@@ -3,14 +3,17 @@ import type { SourceStatus } from "../api/client";
 import { usePurgeItem, useRestoreItem, useTrash } from "../api/queries";
 import { Modal } from "../components/Modal";
 import { groupTrash } from "../domain/editing";
-import { type Item, toItems } from "../domain/model";
+import { filterItems, type Item, toItems } from "../domain/model";
 import { describeError, useI18n } from "../i18n/i18n";
+import { useUiState } from "../state/useUiStateStore";
 
 interface TrashViewProps {
   sources: SourceStatus[];
 }
 
-/** Deleted items of all backlogs; restore or purge them, each with their descendants. */
+const NOTHING_HIDDEN: ReadonlySet<string> = new Set();
+
+/** Deleted items of the projects ticked in the sidebar, cut by its search; restore or purge them with their descendants. */
 export function TrashView({ sources }: TrashViewProps) {
   const i18n = useI18n();
   const { t, vocab } = i18n;
@@ -18,8 +21,14 @@ export function TrashView({ sources }: TrashViewProps) {
   const results = useTrash(usable.map((s) => s.id));
   const restore = useRestoreItem();
   const purge = usePurgeItem();
+  const { state } = useUiState();
   const [purging, setPurging] = useState<Item | null>(null);
-  const items = toItems(results.flatMap((r) => r.data ?? []));
+  const items = filterItems(toItems(results.flatMap((r) => r.data ?? [])), {
+    hiddenProjects: state.hiddenProjects,
+    hiddenStatuses: NOTHING_HIDDEN,
+    hiddenPriorities: NOTHING_HIDDEN,
+    search: state.search,
+  });
   const groups = groupTrash(items);
   const error = results.find((r) => r.error)?.error ?? restore.error ?? purge.error;
   const address = (item: Item) => ({ sourceId: item.source_id, id: item.id, version: item.version });

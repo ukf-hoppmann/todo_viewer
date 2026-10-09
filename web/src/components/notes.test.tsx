@@ -18,7 +18,7 @@ const NOTES = [
 afterEach(() => vi.unstubAllGlobals());
 
 /** The row of a topic (or project), where its actions sit. */
-const row = (name: string | RegExp) => screen.getByText(name).closest(".nt-line") as HTMLElement;
+const row = (name: string | RegExp) => screen.getByText(name).closest(".node-line, .project-title") as HTMLElement;
 
 describe("NotesView", () => {
   it("shows project, topics, sub-topics and notes as one tree, empty topics and notes without topic included", async () => {
@@ -26,11 +26,12 @@ describe("NotesView", () => {
     renderWithProviders(<NotesView items={[]} />);
 
     expect(await screen.findByText("P (3)")).toBeInTheDocument();
-    const lines = [...document.querySelectorAll(".nt-name, .nt-summary")].map((e) => e.textContent);
-    expect(lines).toEqual(["P (3)", "Ideas", "Later", "Something for later", "An idea", "Plans", "Ohne Topic", "No topic yet"]);
+    const lines = [...document.querySelectorAll(".node-title")].map((e) => e.textContent);
+    expect(lines).toEqual(["Ideas", "Later", "NOTE-002 — Something for later", "NOTE-001 — An idea", "Plans", "Ohne Topic", "NOTE-003 — No topic yet"]);
+    expect(within(row("Later")).getByText("Topic")).toHaveClass("node-type");
     expect(within(row("Ideas")).getByText("2")).toBeInTheDocument();
     const first = screen.getByText("An idea").closest(".nt-note") as HTMLElement;
-    expect(within(first).getByText("fällig")).toBeInTheDocument();
+    expect(within(first).getAllByTitle("fällig")).toHaveLength(2);
     expect(within(first).getByText("Auslöser")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Nach Topic gruppieren" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("inkl. Unterthemen")).not.toBeInTheDocument();
@@ -54,6 +55,12 @@ describe("NotesView", () => {
     expect(screen.queryByText("Later")).not.toBeInTheDocument();
     await userEvent.click(within(row("Ideas")).getByRole("button", { name: "Aufklappen" }));
     expect(screen.getByText("Later")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Topics zuklappen" }));
+    expect(screen.queryByText("Ideas")).toBeInTheDocument();
+    expect(screen.queryByText("Later")).not.toBeInTheDocument();
+    expect(screen.queryByText("No topic yet")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Topics aufklappen" }));
+    expect(screen.getByText("No topic yet")).toBeInTheDocument();
     first.unmount();
 
     renderWithProviders(<NotesView items={[]} />, {

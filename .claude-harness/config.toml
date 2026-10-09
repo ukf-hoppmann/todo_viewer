@@ -9,6 +9,7 @@ language = "de"     # ISO 639-1 language of generated documents
 # Modules: true = active, false = inactive. Unlisted modules are inactive.
 [modules]
 todo = true
+notes = true
 daily = true
 techdocs = true
 development = true
@@ -17,6 +18,8 @@ semver = true
 # Backlog folder, relative to docs.root. backend: "api" = the AI works through
 # the ToDo-Viewer's HTTP API at api_url (the server checks format and rules);
 # "files" = the AI edits the Markdown files directly and a hook checks them.
+# With "api" the AI never touches TODO.md, archive.md or items/, and they are
+# not required (the server may keep the backlog in its database).
 [todo]
 path = "todo"
 backend = "api"

@@ -1,5 +1,5 @@
 // TanStack Query hooks: the only place components talk to the API.
-import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ItemFields, type Schemas, unwrap } from "./client";
 
 export const POLL_INTERVAL_MS = 5000;
@@ -325,6 +325,8 @@ export function useNotesIndex(paused: boolean, filter: NotesIndexFilter = {}) {
   return useQuery({
     queryKey: [...notesKeys.index, filter],
     queryFn: () => unwrap(api.GET("/api/v2/notes/index", { params: { query: filter } })),
+    // A changed filter keeps the last answer on screen until the new one is there, instead of a loading view.
+    placeholderData: keepPreviousData,
     refetchInterval: paused ? false : POLL_INTERVAL_MS,
   });
 }

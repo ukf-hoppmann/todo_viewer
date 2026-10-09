@@ -60,9 +60,10 @@ UI-Zustand hat) und in `ui_state.json.bak` umbenannt.
 | Einstellung | Typ | Standard | Pflicht | Wirkung |
 |---|---|---|---|---|
 | `hiddenProjects`, `hiddenStatuses`, `hiddenPriorities` | Liste von Strings | leer | nein | Ausgeblendete Filterwerte (englische Werte) |
+| `hiddenNoteStatuses` | Liste von Strings | `done`, `dropped`, `promoted` | nein | Ausgeblendete Note-Status im Notes-Bereich, getrennt von `hiddenStatuses` |
 | `collapsed` | Liste von Strings | leer | nein | Eingeklappte Knoten im Baum |
 | `markedProjects` | Liste von Strings | leer | nein | Markierte Projekte, auf die „Epics/Stories zuklappen/aufklappen“ wirken; leer = alle |
-| `search` | String | leer | nein | Suchbegriff |
+| `search` | String | leer | nein | Suchbegriff, gemeinsam für alle Tabs |
 | `selectedId` | String oder `null` | `null` | nein | Ausgewähltes Item |
 | `currentView` | `tree`/`graph`/`kanban`/`trash` | `tree` | nein | Aktive Ansicht |
 | `lang` | `de`/`en` | `de` | nein | Anzeigesprache |

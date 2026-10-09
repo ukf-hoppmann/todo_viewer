@@ -71,23 +71,6 @@ export function topicSubtree(topics: readonly IndexTopic[], project: string, lab
   return found;
 }
 
-/**
- * The notes of one topic (with `includeSubtopics` of everything below it). Without a topic: all notes, or those of
- * `project` if one is given.
- */
-export function notesOfTopic(
-  notes: readonly IndexNote[],
-  topics: readonly IndexTopic[],
-  project: string | null,
-  topicLabel: string | null,
-  includeSubtopics: boolean,
-): IndexNote[] {
-  const inProject = project === null ? notes : notes.filter((n) => n.project === project);
-  if (project === null || topicLabel === null) return [...inProject];
-  const labels = includeSubtopics ? topicSubtree(topics, project, topicLabel) : new Set([topicLabel]);
-  return inProject.filter((n) => n.topic !== null && labels.has(n.topic));
-}
-
 const reviewTime = (note: IndexNote) => (note.review_at === null ? Number.POSITIVE_INFINITY : Date.parse(note.review_at));
 
 /** Due notes first, then by review date (none last), then by project and label. */
@@ -186,26 +169,70 @@ export function searchNotes(notes: readonly IndexNote[], query: string): IndexNo
   });
 }
 
-export interface NoteGroup {
+export interface NoteTreeTopic {
+  topic: IndexTopic;
+  /** Key of the node for collapsing, see `noteTreeAncestors`. */
   key: string;
-  /** Names from the root topic down; empty for the notes without topic. */
-  path: string[];
+  children: NoteTreeTopic[];
+  /** The notes directly in the topic, in the order of `sortNotes`. */
   notes: IndexNote[];
+  /** Notes shown in the topic and everything below it. */
+  count: number;
 }
 
-/** The notes grouped by topic, in the order of the topic paths; the notes without topic come last. Keeps the order inside a group. */
-export function groupNotesByTopic(notes: readonly IndexNote[], topics: readonly IndexTopic[]): NoteGroup[] {
-  const groups = new Map<string, NoteGroup>();
-  for (const n of notes) {
-    const known = n.topic === null ? undefined : topics.find((x) => x.project === n.project && x.label === n.topic);
-    const path = known ? topicPath(topics, n.project, known.label) : [];
-    const key = known ? topicKey(n.project, known.label) : `${n.project}\u0000`;
-    const group = groups.get(key) ?? { key, path, notes: [] };
-    group.notes.push(n);
-    groups.set(key, group);
+export interface NoteTreeProject {
+  project: string;
+  key: string;
+  topics: NoteTreeTopic[];
+  /** Notes without topic or with a topic that is not known (any more); shown under „Ohne Thema“. */
+  withoutTopic: IndexNote[];
+  withoutTopicKey: string;
+  count: number;
+}
+
+const projectKey = (project: string) => `note-project:${project}`;
+const topicNodeKey = (project: string, label: string) => `note-topic:${project}/${label}`;
+const withoutTopicKey = (project: string) => `note-none:${project}`;
+
+/**
+ * Project → topic → sub-topic → note, for the projects given (in that order, also those without notes). Without a
+ * search every topic stays, empty ones too; with a search only the matching notes stay, with the topics on their way
+ * and the topics whose name contains every word.
+ */
+export function buildNoteTree(projects: readonly string[], topics: readonly IndexTopic[], notes: readonly IndexNote[], search: string): NoteTreeProject[] {
+  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
+  const shown = sortNotes(searchNotes(notes, search));
+  const known = new Set(topics.map((t) => topicKey(t.project, t.label)));
+  const nameMatches = (topic: IndexTopic) => words.length > 0 && words.every((w) => topic.name.toLowerCase().includes(w));
+
+  const convert = (node: TopicNode): NoteTreeTopic | null => {
+    const children = node.children.map(convert).filter((c): c is NoteTreeTopic => c !== null);
+    const own = shown.filter((n) => n.project === node.topic.project && n.topic === node.topic.label);
+    const count = own.length + children.reduce((sum, c) => sum + c.count, 0);
+    if (words.length > 0 && count === 0 && children.length === 0 && !nameMatches(node.topic)) return null;
+    return { topic: node.topic, key: topicNodeKey(node.topic.project, node.topic.label), children, notes: own, count };
+  };
+
+  const forest = buildTopicTree(topics);
+  return projects.map((project) => {
+    const roots = forest.filter((n) => n.topic.project === project).map(convert).filter((c): c is NoteTreeTopic => c !== null);
+    const withoutTopic = shown.filter((n) => n.project === project && (n.topic === null || !known.has(topicKey(project, n.topic))));
+    const count = withoutTopic.length + roots.reduce((sum, c) => sum + c.count, 0);
+    return { project, key: projectKey(project), topics: roots, withoutTopic, withoutTopicKey: withoutTopicKey(project), count };
+  });
+}
+
+/** The keys of the tree nodes above a note, from the project down, so that unfolding them shows the note. */
+export function noteTreeAncestors(topics: readonly IndexTopic[], note: Pick<IndexNote, "project" | "topic">): string[] {
+  const byLabel = new Map(topics.filter((t) => t.project === note.project).map((t) => [t.label, t]));
+  if (note.topic === null || !byLabel.has(note.topic)) return [projectKey(note.project), withoutTopicKey(note.project)];
+  const chain: string[] = [];
+  const seen = new Set<string>();
+  for (let current = byLabel.get(note.topic); current && !seen.has(current.label); current = current.parent === null ? undefined : byLabel.get(current.parent)) {
+    seen.add(current.label);
+    chain.unshift(topicNodeKey(note.project, current.label));
   }
-  const noTopic = (g: NoteGroup) => g.path.length === 0;
-  return [...groups.values()].sort((a, b) => Number(noTopic(a)) - Number(noTopic(b)) || a.path.join("\u0000").localeCompare(b.path.join("\u0000")));
+  return [projectKey(note.project), ...chain];
 }
 
 export interface OutlineEntry {

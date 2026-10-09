@@ -178,6 +178,24 @@ export function groupTrash(items: readonly Item[]): { project: string; items: It
   }));
 }
 
+/** The chosen trash items (by `key`) without those whose ancestor is chosen too: restoring or purging an item takes
+ *  its descendants along, so asking for them again would fail. Sorted by key. */
+export function topmostSelected(items: readonly Item[], chosen: ReadonlySet<string>): Item[] {
+  const byKey = new Map(items.map((i) => [i.key, i]));
+  const ancestorChosen = (item: Item): boolean => {
+    const seen = new Set<string>();
+    for (let parent = item.parent; parent !== null; ) {
+      const key = `${item.source_id}/${parent}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      if (chosen.has(key)) return true;
+      parent = byKey.get(key)?.parent ?? null;
+    }
+    return false;
+  };
+  return items.filter((i) => chosen.has(i.key) && !ancestorChosen(i)).sort((a, b) => a.key.localeCompare(b.key));
+}
+
 // ---------- notes and specs ----------
 
 export interface NotesForm {

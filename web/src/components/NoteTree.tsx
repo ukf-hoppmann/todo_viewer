@@ -54,12 +54,16 @@ export function NoteTree({ tree, allTopics, projects, selected, searching, onSel
         <div className="nt-line">
           <span className="caret" />
           <button className={`nt-note${isSelected ? " selected" : ""}`} aria-pressed={isSelected} onClick={() => onSelect({ project: note.project, label: note.label })}>
-            <span className="dot" style={{ background: noteStatusColor(note.status) }} />
-            <span className="nt-summary">{note.summary}</span>
-            <span className={`badge note-${note.status}`}>{t(`note.status.${note.status}` as MessageKey)}</span>
-            {reason && <span className="note-reason">{reason}</span>}
-            {note.review_at && <span className="note-review">{t("notes.review", { d: formatDate(note.review_at, lang) })}</span>}
-            <span className="note-label">{note.label}</span>
+            <span className="nt-summary-line">
+              <span className="dot" style={{ background: noteStatusColor(note.status) }} />
+              <span className="nt-summary">{note.summary}</span>
+            </span>
+            <span className="note-meta">
+              <span className={`badge note-${note.status}`}>{t(`note.status.${note.status}` as MessageKey)}</span>
+              {reason && <span className="note-reason">{reason}</span>}
+              {note.review_at && <span className="note-review">{t("notes.review", { d: formatDate(note.review_at, lang) })}</span>}
+              <span className="note-label">{note.label}</span>
+            </span>
           </button>
         </div>
       </li>

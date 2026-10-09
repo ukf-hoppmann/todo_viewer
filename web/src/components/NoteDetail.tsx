@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ApiError } from "../api/client";
 import { useDeleteNote, useFinishNote, useKeepNote, useNote, useUpdateNote } from "../api/queries";
 import type { Item } from "../domain/model";
-import { formatDate, type IndexNote, type IndexTopic } from "../domain/notes";
+import { formatDate, outline, type IndexNote, type IndexTopic } from "../domain/notes";
+import { IconButton } from "./IconButton";
 import { describeError, useI18n } from "../i18n/i18n";
 import type { MessageKey } from "../i18n/messages";
 import type { NoteRef } from "../state/uiState";
@@ -37,6 +38,8 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
   const [deleting, setDeleting] = useState(false);
   const [snoozing, setSnoozing] = useState(false);
   const [promoting, setPromoting] = useState(false);
+  const [large, setLarge] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const data = query.data;
 
   if (query.error && !data) {
@@ -75,14 +78,61 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
     if (fresh) setDraft({ summary: fresh.summary, body: fresh.body ?? "", topic: fresh.topic ?? "", version: fresh.version });
   };
 
+  const finishWith = (status: "done" | "dropped") => finish.mutate({ project: data.project, label: data.label, version: data.version, status });
+  const headings = large && data.body ? outline(data.body) : [];
+  // The rendered headings come in the order of `outline`, so the nth entry scrolls to the nth heading.
+  const scrollToHeading = (index: number) =>
+    bodyRef.current?.querySelectorAll("h1, h2, h3, h4, h5, h6")[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   return (
-    <aside className="note-detail">
+    <>
+      {large && <div className="note-backdrop" onClick={() => setLarge(false)} />}
+      <aside className={`note-detail${large ? " large" : ""}`}>
       <div className="note-detail-head">
         <span className="note-label">{`${data.project} · ${data.label}`}</span>
-        <button className="btn small" onClick={onClose}>
-          {t("close")}
-        </button>
+        <div className="note-toolbar">
+          {!draft && !readOnly && (
+            <>
+              <IconButton icon="edit" label={t("note.detail.edit")} onClick={startEdit} />
+              <IconButton icon="promote" label={t("promote.button")} onClick={() => setPromoting(true)} />
+              <IconButton icon="done" label={t("note.action.done")} disabled={finish.isPending} onClick={() => finishWith("done")} />
+              <IconButton icon="drop" label={t("note.action.dropped")} disabled={finish.isPending} onClick={() => finishWith("dropped")} />
+              <IconButton icon="snooze" label={t("snooze.button")} onClick={() => setSnoozing(true)} />
+              <IconButton
+                icon="keep"
+                label={t("note.action.keep")}
+                disabled={keep.isPending}
+                onClick={() => keep.mutate({ project: data.project, label: data.label, version: data.version })}
+              />
+              <IconButton icon="trash" label={t("note.action.delete")} variant="danger" onClick={() => setDeleting(true)} />
+              <span className="toolbar-sep" />
+            </>
+          )}
+          <IconButton
+            icon={large ? "collapse" : "expand"}
+            label={large ? t("note.detail.collapse") : t("note.detail.expand")}
+            pressed={large}
+            onClick={() => setLarge(!large)}
+          />
+          <IconButton icon="close" label={t("close")} onClick={onClose} />
+        </div>
       </div>
+      <div className="note-detail-scroll">
+      {headings.length > 0 && !draft && (
+        <nav className="note-outline" aria-label={t("note.detail.outline")}>
+          <h3>{t("note.detail.outline")}</h3>
+          <ul>
+            {headings.map((h, i) => (
+              <li key={i} style={{ paddingLeft: (h.depth - 1) * 10 }}>
+                <button className="link-btn" onClick={() => scrollToHeading(i)}>
+                  {h.text}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+      <div className="note-content" ref={bodyRef}>
 
       {draft ? (
         <form
@@ -97,10 +147,17 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
             {t("note.detail.summary")}
             <input autoFocus value={draft.summary} onChange={(e) => setDraft({ ...draft, summary: e.target.value })} />
           </label>
-          <label className="field">
-            {t("note.detail.body")}
-            <textarea value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
-          </label>
+          <div className={large ? "spec-editor" : undefined}>
+            <label className="field">
+              {t("note.detail.body")}
+              <textarea value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
+            </label>
+            {large && (
+              <div className="spec-preview">
+                <Markdown text={draft.body} />
+              </div>
+            )}
+          </div>
           <label className="field">
             {t("note.detail.topic")}
             <select value={draft.topic} onChange={(e) => setDraft({ ...draft, topic: e.target.value })}>
@@ -144,7 +201,16 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
           <div className="note-facts">
             <span className={`badge note-${data.status}`}>{t(`note.status.${data.status}` as MessageKey)}</span>
             {data.reason && <span className="note-reason">{t(`note.reason.${data.reason}` as MessageKey)}</span>}
-            {topicName && <span className="hint">{topicName}</span>}
+            {topicName && (
+              <span className="note-crumbs" title={t("note.detail.topic")}>
+                {topicName.split(" › ").map((name, i, all) => (
+                  <span key={i} className="crumb">
+                    {name}
+                    {i < all.length - 1 && <span className="crumb-sep"> › </span>}
+                  </span>
+                ))}
+              </span>
+            )}
             {data.review_at && (
               <span className="hint">
                 {t("note.detail.reviewAt")}: {formatDate(data.review_at, lang)}
@@ -153,33 +219,7 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
           </div>
           <NoteOrigin project={data.project} label={data.label} promoted={data.status === "promoted"} />
           {data.body ? <Markdown text={data.body} /> : <div className="hint">{t("note.detail.noBody")}</div>}
-          {readOnly ? (
-            <div className="hint warn-box">{t("note.detail.closedHint")}</div>
-          ) : (
-            <div className="detail-actions note-actions">
-              <button className="btn small" onClick={startEdit}>
-                {t("note.detail.edit")}
-              </button>
-              <button className="btn small" onClick={() => setPromoting(true)}>
-                {t("promote.button")}
-              </button>
-              <button className="btn small" disabled={finish.isPending} onClick={() => finish.mutate({ project: data.project, label: data.label, version: data.version, status: "done" })}>
-                {t("note.action.done")}
-              </button>
-              <button className="btn small" disabled={finish.isPending} onClick={() => finish.mutate({ project: data.project, label: data.label, version: data.version, status: "dropped" })}>
-                {t("note.action.dropped")}
-              </button>
-              <button className="btn small" onClick={() => setSnoozing(true)}>
-                {t("snooze.button")}
-              </button>
-              <button className="btn small" disabled={keep.isPending} onClick={() => keep.mutate({ project: data.project, label: data.label, version: data.version })}>
-                {t("note.action.keep")}
-              </button>
-              <button className="btn small danger" onClick={() => setDeleting(true)}>
-                {t("note.action.delete")}
-              </button>
-            </div>
-          )}
+          {readOnly && <div className="hint warn-box">{t("note.detail.closedHint")}</div>}
           {actionError && (
             <div className="field-error" role="alert">
               {t("err.save", { e: describeError(i18n, actionError) })}
@@ -221,7 +261,10 @@ export function NoteDetail({ note: ref, projects, topics, notes, items, onClose,
         />
       )}
       {deleting && <NoteDeleteDialog project={data.project} label={data.label} onClose={() => setDeleting(false)} onDeleted={onClose} />}
-    </aside>
+      </div>
+      </div>
+      </aside>
+    </>
   );
 }
 

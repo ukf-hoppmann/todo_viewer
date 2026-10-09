@@ -7,6 +7,8 @@ export type IndexTopic = Schemas["IndexTopicOut"];
 export interface TopicNode {
   topic: IndexTopic;
   children: TopicNode[];
+  /** Open notes in the topic and everything below it (`topic.note_count` counts only the notes directly in it). */
+  total: number;
 }
 
 const topicKey = (project: string, label: string) => `${project}\u0000${label}`;
@@ -16,7 +18,7 @@ const byName = (a: TopicNode, b: TopicNode) =>
 
 /** The topics as a forest. Labels count per project, so parents are looked up within the project; an orphan becomes a root. */
 export function buildTopicTree(topics: readonly IndexTopic[]): TopicNode[] {
-  const nodes = new Map(topics.map((topic) => [topicKey(topic.project, topic.label), { topic, children: [] as TopicNode[] }]));
+  const nodes = new Map(topics.map((topic) => [topicKey(topic.project, topic.label), { topic, children: [] as TopicNode[], total: 0 }]));
   const roots: TopicNode[] = [];
   for (const node of nodes.values()) {
     const parent = node.topic.parent === null ? undefined : nodes.get(topicKey(node.topic.project, node.topic.parent));
@@ -24,7 +26,10 @@ export function buildTopicTree(topics: readonly IndexTopic[]): TopicNode[] {
   }
   const sort = (list: TopicNode[]) => {
     list.sort(byName);
-    for (const node of list) sort(node.children);
+    for (const node of list) {
+      sort(node.children);
+      node.total = node.topic.note_count + node.children.reduce((sum, child) => sum + child.total, 0);
+    }
   };
   sort(roots);
   return roots;
@@ -160,4 +165,59 @@ export function badgeLabel(count: number): string {
 /** The title of the browser tab: with the number of due notes in front, if there are any. */
 export function tabTitle(base: string, count: number): string {
   return count > 0 ? `(${badgeLabel(count)}) ${base}` : base;
+}
+
+/** Notes whose summary, label or project contains every word of `query` (case-insensitive); an empty query keeps all. */
+export function searchNotes(notes: readonly IndexNote[], query: string): IndexNote[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [...notes];
+  return notes.filter((n) => {
+    const text = `${n.summary} ${n.label} ${n.project}`.toLowerCase();
+    return words.every((w) => text.includes(w));
+  });
+}
+
+export interface NoteGroup {
+  key: string;
+  /** Names from the root topic down; empty for the notes without topic. */
+  path: string[];
+  notes: IndexNote[];
+}
+
+/** The notes grouped by topic, in the order of the topic paths; the notes without topic come last. Keeps the order inside a group. */
+export function groupNotesByTopic(notes: readonly IndexNote[], topics: readonly IndexTopic[]): NoteGroup[] {
+  const groups = new Map<string, NoteGroup>();
+  for (const n of notes) {
+    const known = n.topic === null ? undefined : topics.find((x) => x.project === n.project && x.label === n.topic);
+    const path = known ? topicPath(topics, n.project, known.label) : [];
+    const key = known ? topicKey(n.project, known.label) : `${n.project}\u0000`;
+    const group = groups.get(key) ?? { key, path, notes: [] };
+    group.notes.push(n);
+    groups.set(key, group);
+  }
+  const noTopic = (g: NoteGroup) => g.path.length === 0;
+  return [...groups.values()].sort((a, b) => Number(noTopic(a)) - Number(noTopic(b)) || a.path.join("\u0000").localeCompare(b.path.join("\u0000")));
+}
+
+export interface OutlineEntry {
+  depth: number;
+  text: string;
+}
+
+/** The headings of a markdown text in order (ATX headings outside code fences), for a table of contents. */
+export function outline(markdown: string): OutlineEntry[] {
+  const entries: OutlineEntry[] = [];
+  let fence: string | null = null;
+  for (const line of markdown.split(/\r?\n/)) {
+    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+    if (marker) {
+      if (fence === null) fence = marker[0] ?? null;
+      else if (marker[0] === fence) fence = null;
+      continue;
+    }
+    if (fence !== null) continue;
+    const heading = /^ {0,3}(#{1,6})[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(line);
+    if (heading) entries.push({ depth: heading[1]?.length ?? 1, text: heading[2] ?? "" });
+  }
+  return entries;
 }

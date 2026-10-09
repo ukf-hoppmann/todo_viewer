@@ -313,11 +313,18 @@ function refreshNotes(client: QueryClient) {
   void client.invalidateQueries({ queryKey: notesKeys.all });
 }
 
+/** What the server filters in the notes index: one project, the effective status, only the due notes. A closed status reads the archive. */
+export interface NotesIndexFilter {
+  project?: string;
+  status?: Schemas["NoteStatus"];
+  due?: boolean;
+}
+
 /** Topics and notes of all projects without long texts. The topic tree and the lists are cut from it by `domain/notes`. */
-export function useNotesIndex(paused: boolean) {
+export function useNotesIndex(paused: boolean, filter: NotesIndexFilter = {}) {
   return useQuery({
-    queryKey: notesKeys.index,
-    queryFn: () => unwrap(api.GET("/api/v2/notes/index", { params: { query: {} } })),
+    queryKey: [...notesKeys.index, filter],
+    queryFn: () => unwrap(api.GET("/api/v2/notes/index", { params: { query: filter } })),
     refetchInterval: paused ? false : POLL_INTERVAL_MS,
   });
 }

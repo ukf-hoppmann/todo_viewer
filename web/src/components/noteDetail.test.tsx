@@ -217,4 +217,43 @@ describe("NoteDocuments", () => {
     await waitFor(() => expect(calls.some((c) => c.method === "POST")).toBe(true));
     expect(await calls.find((c) => c.method === "POST")!.body()).toMatchObject({ topic: "First talk", discussed: ["A point"] });
   });
+  it("puts the actions in a toolbar at the top, as icon buttons with a hover text", async () => {
+    stubRoutes(detailRoutes());
+    renderDetail();
+
+    const edit = await screen.findByRole("button", { name: "Bearbeiten" });
+    expect(edit).toHaveAttribute("title", "Bearbeiten");
+    expect(edit.closest(".note-detail-head")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Löschen" })).toHaveAttribute("title", "Löschen");
+  });
+
+  it("collapses a section and keeps its add button in the header", async () => {
+    stubRoutes(detailRoutes());
+    renderDetail();
+
+    await screen.findByText("P · STORY-001");
+    const toggle = screen.getByRole("button", { name: "Links" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    await userEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Parse backlog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "＋ Link" })).toBeInTheDocument();
+  });
+
+  it("opens the large view with a table of contents that follows the headings", async () => {
+    stubRoutes(detailRoutes(noteOut("NOTE-001", { body: "# Part one\ntext\n## Part two\nmore", topic: "TOPIC-001" })));
+    renderDetail();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Großansicht" }));
+
+    const outline = screen.getByRole("navigation", { name: "Inhalt" });
+    expect(within(outline).getByRole("button", { name: "Part one" })).toBeInTheDocument();
+    expect(within(outline).getByRole("button", { name: "Part two" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Großansicht schließen" })).toHaveAttribute("aria-pressed", "true");
+
+    await userEvent.click(screen.getByRole("button", { name: "Großansicht schließen" }));
+    expect(screen.queryByRole("navigation", { name: "Inhalt" })).not.toBeInTheDocument();
+  });
 });

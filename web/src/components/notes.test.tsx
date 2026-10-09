@@ -166,4 +166,64 @@ describe("NotesView", () => {
 
     expect(screen.getByRole("button", { name: "Anlegen" })).toBeDisabled();
   });
+  it("sends status, due and project to the server instead of cutting them in the browser", async () => {
+    const calls = stubRoutes(notesBaseRoutes(TOPICS, NOTES));
+    renderWithProviders(<NotesView items={[]} />);
+    await screen.findByText("An idea");
+
+    await userEvent.selectOptions(screen.getByLabelText("Status"), "snoozed");
+    await waitFor(() => expect(calls.some((c) => c.path === "/api/v2/notes/index" && c.search.includes("status=snoozed"))).toBe(true));
+    await userEvent.click(screen.getByLabelText("Nur fällige"));
+    await waitFor(() => expect(calls.some((c) => c.search.includes("status=snoozed") && c.search.includes("due=true"))).toBe(true));
+  });
+
+  it("searches the notes and resets all filters", async () => {
+    stubRoutes(notesBaseRoutes(TOPICS, NOTES));
+    renderWithProviders(<NotesView items={[]} />);
+    await screen.findByText("An idea");
+
+    await userEvent.type(screen.getByLabelText("Notes durchsuchen…"), "later");
+    expect(screen.queryByText("An idea")).not.toBeInTheDocument();
+    expect(screen.getByText("Something for later")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Filter zurücksetzen" }));
+    expect(screen.getByText("An idea")).toBeInTheDocument();
+  });
+
+  it("can leave out the notes of sub-topics", async () => {
+    stubRoutes(notesBaseRoutes(TOPICS, NOTES));
+    renderWithProviders(<NotesView items={[]} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /Ideas/ }));
+    expect(screen.getByText("Something for later")).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText("inkl. Unterthemen"));
+
+    expect(screen.queryByText("Something for later")).not.toBeInTheDocument();
+    expect(screen.getByText("An idea")).toBeInTheDocument();
+  });
+
+  it("shows the total with sub-topics in the tree and collapses a branch", async () => {
+    stubRoutes(notesBaseRoutes(TOPICS, NOTES));
+    renderWithProviders(<NotesView items={[]} />);
+
+    const ideas = (await screen.findByRole("button", { name: /Ideas/ })) as HTMLElement;
+    expect(within(ideas).getByText("2")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Later/ })).toBeInTheDocument();
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Zuklappen" })[0]!);
+    expect(screen.queryByRole("button", { name: /Later/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Aufklappen" }));
+    expect(screen.getByRole("button", { name: /Later/ })).toBeInTheDocument();
+  });
+
+  it("groups the list by topic path", async () => {
+    stubRoutes(notesBaseRoutes(TOPICS, NOTES));
+    renderWithProviders(<NotesView items={[]} />);
+    await screen.findByText("An idea");
+
+    await userEvent.click(screen.getByRole("button", { name: "Nach Topic gruppieren" }));
+
+    expect(screen.getByText("Ideas › Later")).toBeInTheDocument();
+    expect(screen.getByText("Ohne Topic")).toBeInTheDocument();
+  });
 });

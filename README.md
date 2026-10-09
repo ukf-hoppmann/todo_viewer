@@ -203,17 +203,20 @@ Papierkorb nur nach Suche und Projekten. Die Suche gilt für alle Tabs gemeinsam
   (alle an/ab) lassen sich mehrere Items wählen und gemeinsam wiederherstellen oder
   nach einer Bestätigung endgültig löschen. Ist ein Item mit seinem Vorfahren gewählt,
   wird nur der Vorfahre angefragt; was nicht klappt, wird mit Grund genannt.
-- **Notes**: Gedanken mit Wiedervorlage, getrennt vom Backlog. Links der Topic-Baum
-  (auf- und zuklappbar, Einrückung mit Führungslinie; die Zahl ist die Summe samt
-  Unter-Topics, der Hovertext nennt die direkten Notes; anlegen, umbenennen, verschieben,
-  Termin setzen, löschen als Icon-Buttons mit Hovertext; „Alle Notes“ zeigt alles),
-  daneben die Notes des gewählten Topics, fällige zuerst. Status, Projekte und Suchtext
+- **Notes**: Gedanken mit Wiedervorlage, getrennt vom Backlog. Die Notes stehen wie das
+  Backlog in einem Baum: Projekt → Topic → Unter-Topic → Note, Notes ohne (bekanntes)
+  Topic unter „Ohne Topic“ am Projekt. Knoten sind auf- und zuklappbar (gespeichert wie
+  im Backlog-Baum; beim Suchen ist alles offen, eine von anderswo geöffnete Note klappt
+  ihren Zweig auf), leere Topics bleiben sichtbar, die Zahl ist die Summe der gezeigten
+  Notes samt Unter-Topics, fällige zuerst. Die Aktionen eines Topics (neue Note darin,
+  Unter-Topic, Umbenennen, Termin, Verschieben, Löschen) erscheinen als Icons beim
+  Überfahren der Zeile, am Projekt „Neue Note ohne Topic“ und „Neues Topic“. Status, Projekte und Suchtext
   wählt die Sidebar: die Note-Status (wartet, fällig, zurückgestellt, erledigt, verworfen,
   befördert) sind beliebig kombinierbar, standardmäßig sind die offenen angehakt. Der
   Server filtert über `GET /notes/index` nach den Status (abgeschlossene liest er aus dem
   Archiv) und bei genau einem Projekt nach dem Projekt; Suche und mehrere Projekte filtert
-  der Browser. Über der Liste stehen „inkl. Unterthemen“, Gruppierung nach Topic und
-  „Filter zurücksetzen“ (offene Status, leere Suche). Das Detail zeigt oben
+  der Browser; bei einer Suche bleiben die Treffer, die Topics auf ihrem Weg und Topics,
+  deren Name passt. Über dem Baum steht „Filter zurücksetzen“ (offene Status, leere Suche). Das Detail zeigt oben
   eine feste Leiste mit den Aktionen als Icon-Buttons (Bearbeiten, Befördern zu Epic,
   Story oder Task, Erledigen, Verwerfen, Zurückstellen, Behalten, Löschen, Großansicht,
   Schließen), darunter Kurzfassung, Topic-Pfad, Status, Prüf-Datum und Langtext (Markdown).

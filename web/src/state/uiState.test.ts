@@ -24,7 +24,6 @@ describe("uiState", () => {
       currentView: "kanban",
       lang: "en",
       defaultBackend: "markdown",
-      notesTopic: null,
       selectedNote: null,
     });
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "nope", lang: "fr" })).toEqual(INITIAL_UI_STATE);
@@ -73,10 +72,10 @@ describe("uiState", () => {
   });
 
   it("remembers the Notes area and jumps to a note", () => {
-    const scoped = uiReducer(INITIAL_UI_STATE, { type: "notesScope", topic: { project: "P", label: "TOPIC-001" } });
-    expect(snapshot(scoped)).toMatchObject({ notesTopic: { project: "P", label: "TOPIC-001" } });
+    // A topic chosen by an older version is no longer part of the state.
+    expect(snapshot(mergeStored(INITIAL_UI_STATE, { notesTopic: { project: "P", label: "TOPIC-001" } }))).not.toHaveProperty("notesTopic");
 
-    const opened = uiReducer(scoped, { type: "openNote", note: { project: "Q", label: "NOTE-004" } });
+    const opened = uiReducer(INITIAL_UI_STATE, { type: "openNote", note: { project: "Q", label: "NOTE-004" } });
     expect(opened.currentView).toBe("notes");
     expect(snapshot(opened).selectedNote).toEqual({ project: "Q", label: "NOTE-004" });
 

@@ -31,8 +31,7 @@ export interface UiState {
   lang: Lang;
   /** The storage a new project is preselected with. */
   defaultBackend: DefaultBackend;
-  /** Notes area: the chosen topic and the open note (the projects shown are those ticked in the sidebar). */
-  notesTopic: NoteRef | null;
+  /** Notes area: the open note (projects, statuses and search come from the sidebar). */
   selectedNote: NoteRef | null;
 }
 
@@ -48,7 +47,6 @@ export const INITIAL_UI_STATE: UiState = {
   currentView: "tree",
   lang: "de",
   defaultBackend: "markdown",
-  notesTopic: null,
   selectedNote: null,
 };
 
@@ -74,7 +72,6 @@ export function mergeStored(base: UiState, raw: unknown): UiState {
     const v = value as Partial<NoteRef> | undefined;
     return typeof v?.project === "string" && typeof v.label === "string" ? { project: v.project, label: v.label } : undefined;
   };
-  next.notesTopic = ref(r.notesTopic) ?? next.notesTopic;
   next.selectedNote = ref(r.selectedNote) ?? next.selectedNote;
   return next;
 }
@@ -92,7 +89,6 @@ export function snapshot(state: UiState): Record<string, unknown> {
     currentView: state.currentView,
     lang: state.lang,
     defaultBackend: state.defaultBackend,
-    notesTopic: state.notesTopic,
     selectedNote: state.selectedNote,
   };
 }
@@ -111,7 +107,6 @@ export type UiAction =
   | { type: "view"; view: View }
   | { type: "lang"; lang: Lang }
   | { type: "defaultBackend"; backend: DefaultBackend }
-  | { type: "notesScope"; topic: NoteRef | null }
   | { type: "selectNote"; note: NoteRef | null }
   /** Jumps into the Notes area to one note (from the due list, an item, or a link). */
   | { type: "openNote"; note: NoteRef };
@@ -158,8 +153,6 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, lang: action.lang };
     case "defaultBackend":
       return { ...state, defaultBackend: action.backend };
-    case "notesScope":
-      return { ...state, notesTopic: action.topic };
     case "selectNote":
       return { ...state, selectedNote: action.note };
     case "openNote":

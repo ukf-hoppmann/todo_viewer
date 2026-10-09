@@ -1,4 +1,4 @@
-import { NOTE_STATUSES, shownNoteStatuses, alreadyMet, badgeLabel, buildTopicTree, describeTrigger, formatDate, snoozePresets, tabTitle, toIsoWithZone, notesOfTopic, sortNotes, topicPath, searchNotes, groupNotesByTopic, outline, type IndexNote, type IndexTopic } from "./notes";
+import { NOTE_STATUSES, shownNoteStatuses, alreadyMet, badgeLabel, buildNoteTree, buildTopicTree, describeTrigger, formatDate, noteTreeAncestors, snoozePresets, tabTitle, toIsoWithZone, sortNotes, topicPath, searchNotes, outline, type IndexNote, type IndexTopic, type NoteTreeTopic } from "./notes";
 
 describe("shownNoteStatuses", () => {
   it("lists the statuses not hidden, in the order of the life cycle", () => {
@@ -63,26 +63,50 @@ describe("topicPath", () => {
   });
 });
 
-describe("notesOfTopic", () => {
+describe("buildNoteTree", () => {
   const notes = [
-    note("NOTE-001", { topic: "TOPIC-001" }),
-    note("NOTE-002", { topic: "TOPIC-002" }),
-    note("NOTE-003", { topic: "TOPIC-003" }),
-    note("NOTE-004"),
-    note("NOTE-001", { project: "Q", topic: "TOPIC-001" }),
+    note("NOTE-001", { topic: "TOPIC-001", summary: "Root idea" }),
+    note("NOTE-002", { topic: "TOPIC-003", summary: "Deep thought", status: "due" }),
+    note("NOTE-003", { summary: "Loose end" }),
+    note("NOTE-004", { topic: "TOPIC-404", summary: "Lost topic" }),
+    note("NOTE-001", { project: "Q", summary: "Other project" }),
   ];
+  const names = (list: readonly NoteTreeTopic[]): unknown[] =>
+    list.map((n) => [n.topic.name, n.count, n.notes.map((x) => x.label), names(n.children)]);
 
-  it("keeps the notes of the topic only", () => {
-    expect(notesOfTopic(notes, TOPICS, "P", "TOPIC-002", false).map((n) => n.label)).toEqual(["NOTE-002"]);
+  it("nests project, topics, sub-topics and notes, keeps empty topics and puts notes without topic apart", () => {
+    const tree = buildNoteTree(["P", "Q"], TOPICS, notes, "");
+
+    expect(tree.map((p) => [p.project, p.key, p.count])).toEqual([["P", "note-project:P", 4], ["Q", "note-project:Q", 1]]);
+    expect(names(tree[0]!.topics)).toEqual([
+      ["Another root", 0, [], []],
+      ["Root", 2, ["NOTE-001"], [["Mid", 1, [], [["Deep", 1, ["NOTE-002"], []]]]]],
+    ]);
+    expect(tree[0]!.topics[1]!.key).toBe("note-topic:P/TOPIC-001");
+    expect(tree[0]!.withoutTopic.map((n) => n.label)).toEqual(["NOTE-003", "NOTE-004"]);
+    expect(tree[1]!.topics).toEqual([]);
+    expect(tree[1]!.withoutTopic.map((n) => n.summary)).toEqual(["Other project"]);
   });
 
-  it("includes the notes of all sub-topics on request", () => {
-    expect(notesOfTopic(notes, TOPICS, "P", "TOPIC-001", true).map((n) => n.label)).toEqual(["NOTE-001", "NOTE-002", "NOTE-003"]);
+  it("shows only the projects asked for, also without notes", () => {
+    expect(buildNoteTree(["R"], TOPICS, notes, "").map((p) => [p.project, p.count, p.topics.length])).toEqual([["R", 0, 0]]);
   });
 
-  it("returns every note without a topic selection, and only those of the project when one is given", () => {
-    expect(notesOfTopic(notes, TOPICS, null, null, true)).toHaveLength(5);
-    expect(notesOfTopic(notes, TOPICS, "P", null, true).map((n) => n.label)).toEqual(["NOTE-001", "NOTE-002", "NOTE-003", "NOTE-004"]);
+  it("keeps only matching notes and the topics on their way when searching, plus topics whose name matches", () => {
+    const deep = buildNoteTree(["P"], TOPICS, notes, "deep")[0]!;
+    expect(names(deep.topics)).toEqual([["Root", 1, [], [["Mid", 1, [], [["Deep", 1, ["NOTE-002"], []]]]]]]);
+    expect(deep.withoutTopic).toEqual([]);
+
+    const another = buildNoteTree(["P"], TOPICS, notes, "another")[0]!;
+    expect(names(another.topics)).toEqual([["Another root", 0, [], []]]);
+  });
+
+  it("names the nodes to unfold so that a note becomes visible", () => {
+    expect(noteTreeAncestors(TOPICS, note("NOTE-002", { topic: "TOPIC-003" }))).toEqual([
+      "note-project:P", "note-topic:P/TOPIC-001", "note-topic:P/TOPIC-002", "note-topic:P/TOPIC-003",
+    ]);
+    expect(noteTreeAncestors(TOPICS, note("NOTE-003"))).toEqual(["note-project:P", "note-none:P"]);
+    expect(noteTreeAncestors(TOPICS, note("NOTE-004", { topic: "TOPIC-404" }))).toEqual(["note-project:P", "note-none:P"]);
   });
 });
 
@@ -228,27 +252,6 @@ describe("searchNotes", () => {
 
   it("keeps everything for an empty query", () => {
     expect(searchNotes(notes, "  ")).toHaveLength(2);
-  });
-});
-
-describe("groupNotesByTopic", () => {
-  const topics = [topic("TOPIC-001", { name: "Work" }), topic("TOPIC-002", { name: "groupmeeting", parent: "TOPIC-001" })];
-
-  it("groups by topic path in path order and puts notes without topic last", () => {
-    const groups = groupNotesByTopic(
-      [note("NOTE-001"), note("NOTE-002", { topic: "TOPIC-002" }), note("NOTE-003", { topic: "TOPIC-001" }), note("NOTE-004", { topic: "TOPIC-002" })],
-      topics,
-    );
-
-    expect(groups.map((g) => [g.path.join(" › "), g.notes.map((n) => n.label)])).toEqual([
-      ["Work", ["NOTE-003"]],
-      ["Work › groupmeeting", ["NOTE-002", "NOTE-004"]],
-      ["", ["NOTE-001"]],
-    ]);
-  });
-
-  it("treats a note with an unknown topic as one without topic", () => {
-    expect(groupNotesByTopic([note("NOTE-001", { topic: "TOPIC-404" })], topics).map((g) => g.path)).toEqual([[]]);
   });
 });
 

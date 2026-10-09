@@ -29,8 +29,7 @@ export interface UiState {
   lang: Lang;
   /** The storage a new project is preselected with. */
   defaultBackend: DefaultBackend;
-  /** Notes area: the project the topic tree is limited to (null = all), the chosen topic, and the open note. */
-  notesProject: string | null;
+  /** Notes area: the chosen topic and the open note (the projects shown are those ticked in the sidebar). */
   notesTopic: NoteRef | null;
   selectedNote: NoteRef | null;
 }
@@ -46,7 +45,6 @@ export const INITIAL_UI_STATE: UiState = {
   currentView: "tree",
   lang: "de",
   defaultBackend: "markdown",
-  notesProject: null,
   notesTopic: null,
   selectedNote: null,
 };
@@ -68,7 +66,6 @@ export function mergeStored(base: UiState, raw: unknown): UiState {
   if (VIEWS.includes(r.currentView as View)) next.currentView = r.currentView as View;
   if (r.lang === "de" || r.lang === "en") next.lang = r.lang;
   if (BACKENDS.includes(r.defaultBackend as DefaultBackend)) next.defaultBackend = r.defaultBackend as DefaultBackend;
-  if (typeof r.notesProject === "string" || r.notesProject === null) next.notesProject = r.notesProject;
   const ref = (value: unknown): NoteRef | null | undefined => {
     if (value === null) return null;
     const v = value as Partial<NoteRef> | undefined;
@@ -91,7 +88,6 @@ export function snapshot(state: UiState): Record<string, unknown> {
     currentView: state.currentView,
     lang: state.lang,
     defaultBackend: state.defaultBackend,
-    notesProject: state.notesProject,
     notesTopic: state.notesTopic,
     selectedNote: state.selectedNote,
   };
@@ -109,7 +105,7 @@ export type UiAction =
   | { type: "view"; view: View }
   | { type: "lang"; lang: Lang }
   | { type: "defaultBackend"; backend: DefaultBackend }
-  | { type: "notesScope"; project: string | null; topic: NoteRef | null }
+  | { type: "notesScope"; topic: NoteRef | null }
   | { type: "selectNote"; note: NoteRef | null }
   /** Jumps into the Notes area to one note (from the due list, an item, or a link). */
   | { type: "openNote"; note: NoteRef };
@@ -155,7 +151,7 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
     case "defaultBackend":
       return { ...state, defaultBackend: action.backend };
     case "notesScope":
-      return { ...state, notesProject: action.project, notesTopic: action.topic };
+      return { ...state, notesTopic: action.topic };
     case "selectNote":
       return { ...state, selectedNote: action.note };
     case "openNote":

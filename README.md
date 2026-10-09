@@ -198,9 +198,10 @@ abgebildet.
   Unter-Topics, der Hovertext nennt die direkten Notes; anlegen, umbenennen, verschieben,
   Termin setzen, löschen als Icon-Buttons mit Hovertext; „Alle Notes“ zeigt alles),
   daneben die Notes des gewählten Topics, fällige zuerst. Über der Liste filtert eine
-  Leiste nach Status, „Nur fällige“ und Projekt (diese drei filtert der Server über
-  `GET /notes/index`; ein abgeschlossener Status liest das Archiv), nach Suchtext (im
-  Browser), „inkl. Unterthemen“ ein/aus und Gruppierung nach Topic. Das Detail zeigt oben
+  Leiste nach Status und „Nur fällige“ (der Server filtert über `GET /notes/index`; ein
+  abgeschlossener Status liest das Archiv) und nach Suchtext (im Browser). Die Projekte
+  wählt die Projektliste in der linken Spalte (bei genau einem Projekt filtert der Server),
+  dazu „inkl. Unterthemen“ ein/aus und Gruppierung nach Topic. Das Detail zeigt oben
   eine feste Leiste mit den Aktionen als Icon-Buttons (Bearbeiten, Befördern zu Epic,
   Story oder Task, Erledigen, Verwerfen, Zurückstellen, Behalten, Löschen, Großansicht,
   Schließen), darunter Kurzfassung, Topic-Pfad, Status, Prüf-Datum und Langtext (Markdown).

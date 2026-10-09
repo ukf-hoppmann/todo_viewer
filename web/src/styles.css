@@ -348,8 +348,6 @@ input.field-edit {
 .notes-view { flex-direction: row; gap: 16px; padding: 0; overflow-x: auto; overflow-y: hidden; }
 .notes-side { width: 240px; flex-shrink: 0; overflow-y: auto; padding: 16px 0 16px 16px; }
 .notes-main { flex: 1; min-width: 260px; overflow-y: auto; padding: 16px 16px 16px 0; }
-.notes-project { display: block; margin-bottom: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
-.notes-project select { display: block; width: 100%; margin-top: 3px; }
 .notes-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .topic-tools { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
 .topic-list { list-style: none; margin: 0; padding: 0; }

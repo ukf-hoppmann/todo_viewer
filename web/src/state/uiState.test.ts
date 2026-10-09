@@ -23,7 +23,6 @@ describe("uiState", () => {
       currentView: "kanban",
       lang: "en",
       defaultBackend: "markdown",
-      notesProject: null,
       notesTopic: null,
       selectedNote: null,
     });
@@ -63,8 +62,8 @@ describe("uiState", () => {
   });
 
   it("remembers the Notes area and jumps to a note", () => {
-    const scoped = uiReducer(INITIAL_UI_STATE, { type: "notesScope", project: "P", topic: { project: "P", label: "TOPIC-001" } });
-    expect(snapshot(scoped)).toMatchObject({ notesProject: "P", notesTopic: { project: "P", label: "TOPIC-001" } });
+    const scoped = uiReducer(INITIAL_UI_STATE, { type: "notesScope", topic: { project: "P", label: "TOPIC-001" } });
+    expect(snapshot(scoped)).toMatchObject({ notesTopic: { project: "P", label: "TOPIC-001" } });
 
     const opened = uiReducer(scoped, { type: "openNote", note: { project: "Q", label: "NOTE-004" } });
     expect(opened.currentView).toBe("notes");

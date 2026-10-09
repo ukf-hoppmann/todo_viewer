@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { errorResponse, indexNote, indexTopic, notesBaseRoutes, stubRoutes } from "../test/api";
-import { renderWithProviders } from "../test/render";
+import { renderWithProviders, sourceStatus } from "../test/render";
 import { NotesView } from "../views/NotesView";
 
 const TOPICS = [
@@ -225,5 +225,17 @@ describe("NotesView", () => {
 
     expect(screen.getByText("Ideas › Later")).toBeInTheDocument();
     expect(screen.getByText("Ohne Topic")).toBeInTheDocument();
+  });
+  it("shows only the projects ticked in the sidebar and lets the server cut when one is left", async () => {
+    const two = [
+      { method: "GET" as const, path: "/api/v2/backlog", respond: () => ({ items: [], sources: [sourceStatus({ id: "s1", project: "P", backend: "database" }), sourceStatus({ id: "s2", project: "Q", backend: "database" })] }) },
+      { method: "GET" as const, path: "/api/v2/notes/index", respond: () => ({ topics: [], notes: [indexNote("NOTE-001", { summary: "In P" }), indexNote("NOTE-002", { summary: "In Q", project: "Q" })] }) },
+    ];
+    const calls = stubRoutes(two);
+    renderWithProviders(<NotesView items={[]} />, { hiddenProjects: new Set(["Q"]) });
+
+    expect(await screen.findByText("In P")).toBeInTheDocument();
+    expect(screen.queryByText("In Q")).not.toBeInTheDocument();
+    await waitFor(() => expect(calls.some((c) => c.path === "/api/v2/notes/index" && c.search.includes("project=P"))).toBe(true));
   });
 });

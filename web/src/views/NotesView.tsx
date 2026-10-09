@@ -32,32 +32,32 @@ export function NotesView({ items }: { items: readonly Item[] }) {
   const [subtopics, setSubtopics] = useState(true);
   const [grouped, setGrouped] = useState(false);
 
-  // The server cuts by project, status and due; the unfiltered index stays for the topic dialogs and the link pickers.
+  // The projects ticked in the sidebar. The server cuts by one project, status and due; with several projects ticked the
+  // browser cuts by the project. The unfiltered index stays for the topic dialogs and the link pickers.
+  const projects = useMemo(() => [...new Set((sources.data ?? []).filter((s) => !s.problem).map((s) => s.project))], [sources.data]);
+  const visible = useMemo(() => new Set(projects.filter((p) => !state.hiddenProjects.has(p))), [projects, state.hiddenProjects]);
+  const onlyProject = visible.size === 1 ? [...visible][0] : undefined;
   const filter: NotesIndexFilter = {
-    ...(state.notesProject !== null && { project: state.notesProject }),
+    ...(onlyProject !== undefined && { project: onlyProject }),
     ...(status !== "" && { status }),
     ...(dueOnly && { due: true }),
   };
   const index = useNotesIndex(paused, filter);
   const everything = useNotesIndex(paused);
   const filtered = status !== "" || dueOnly || search.trim() !== "";
+  const topic = state.notesTopic !== null && visible.has(state.notesTopic.project) ? state.notesTopic : null;
 
-  const projects = useMemo(() => [...new Set((sources.data ?? []).filter((s) => !s.problem).map((s) => s.project))], [sources.data]);
   const allTopics = everything.data?.topics ?? index.data?.topics;
-  const shownTopics = index.data?.topics;
-  const topics = useMemo(
-    () => (shownTopics ?? []).filter((x) => state.notesProject === null || x.project === state.notesProject),
-    [shownTopics, state.notesProject],
-  );
+  const shownTopics = useMemo(() => (index.data?.topics ?? []).filter((x) => visible.has(x.project)), [index.data?.topics, visible]);
   const notes = useMemo(
     () =>
       sortNotes(
         searchNotes(
-          notesOfTopic(index.data?.notes ?? [], shownTopics ?? [], state.notesTopic?.project ?? state.notesProject, state.notesTopic?.label ?? null, subtopics),
+          notesOfTopic((index.data?.notes ?? []).filter((n) => visible.has(n.project)), shownTopics, topic?.project ?? null, topic?.label ?? null, subtopics),
           search,
         ),
       ),
-    [index.data?.notes, shownTopics, state.notesProject, state.notesTopic, subtopics, search],
+    [index.data?.notes, shownTopics, visible, topic, subtopics, search],
   );
   const groups = useMemo(() => (grouped ? groupNotesByTopic(notes, shownTopics ?? []) : null), [grouped, notes, shownTopics]);
   const reset = () => {
@@ -65,7 +65,7 @@ export function NotesView({ items }: { items: readonly Item[] }) {
     setDueOnly(false);
     setSearch("");
   };
-  const defaultProject = state.notesTopic?.project ?? state.notesProject ?? projects[0] ?? "";
+  const defaultProject = topic?.project ?? [...visible][0] ?? projects[0] ?? "";
 
   if (index.error && !index.data) return <div className="load-error">{t("err.load", { e: describeError(i18n, index.error) })}</div>;
   if (!index.data) return <div className="view hint">{t("notes.loading")}</div>;
@@ -73,27 +73,13 @@ export function NotesView({ items }: { items: readonly Item[] }) {
   return (
     <div className="view notes-view">
       <aside className="notes-side">
-        <label className="field notes-project">
-          {t("notes.project")}
-          <select
-            value={state.notesProject ?? ""}
-            onChange={(e) => dispatch({ type: "notesScope", project: e.target.value || null, topic: null })}
-          >
-            <option value="">{t("notes.allProjects")}</option>
-            {projects.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </label>
         <TopicTree
-          topics={topics}
+          topics={shownTopics}
           allTopics={allTopics ?? []}
           projects={projects}
           defaultProject={defaultProject}
-          selected={state.notesTopic}
-          onSelect={(topic) => dispatch({ type: "notesScope", project: state.notesProject, topic })}
+          selected={topic}
+          onSelect={(topic) => dispatch({ type: "notesScope", topic })}
         />
       </aside>
       <section className="notes-main">
@@ -117,7 +103,7 @@ export function NotesView({ items }: { items: readonly Item[] }) {
             {t("notes.filter.dueOnly")}
           </label>
           <input type="search" className="notes-search" placeholder={t("notes.filter.search")} aria-label={t("notes.filter.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
-          {state.notesTopic && (
+          {topic && (
             <label className="check" title={t("notes.filter.subtopicsHint")}>
               <input type="checkbox" checked={subtopics} onChange={(e) => setSubtopics(e.target.checked)} />
               {t("notes.filter.subtopics")}
@@ -131,7 +117,7 @@ export function NotesView({ items }: { items: readonly Item[] }) {
           groups={groups}
           notes={notes}
           selected={state.selectedNote}
-          showProject={state.notesProject === null && projects.length > 1}
+          showProject={visible.size > 1}
           onSelect={(note) => dispatch({ type: "selectNote", note })}
         />
       </section>
@@ -154,7 +140,7 @@ export function NotesView({ items }: { items: readonly Item[] }) {
           projects={projects}
           topics={allTopics ?? []}
           project={defaultProject}
-          topic={state.notesTopic?.project === defaultProject ? state.notesTopic.label : null}
+          topic={topic?.project === defaultProject ? topic.label : null}
           onClose={() => setCreating(false)}
           onCreated={(note) => {
             setCreating(false);

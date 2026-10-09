@@ -194,14 +194,23 @@ abgebildet.
   „Wiederherstellen“ holt ein Item samt Kindern zurück, „Endgültig löschen“
   entfernt es nach einer Bestätigung samt Kindern, Notizen und Specs.
 - **Notes**: Gedanken mit Wiedervorlage, getrennt vom Backlog. Links der Topic-Baum
-  (anlegen, umbenennen, verschieben, Termin setzen, löschen; „Alle Notes“ zeigt alles),
-  daneben die Notes des gewählten Topics samt Unter-Topics, fällige zuerst. Das Detail
-  zeigt Kurzfassung, Langtext (Markdown), Status und Prüf-Datum und bietet Bearbeiten,
-  Befördern (zu Epic, Story oder Task), Erledigen, Verwerfen, Zurückstellen, Behalten und
-  Löschen; dazu Auslöser (Zeitpunkt, Ereignis „Item erreicht Status“, Termin des Topics),
-  Links auf Items (auch anderer Projekte), Topics und Notes sowie Notizen und Specs wie
-  beim Backlog. Ein Item zeigt im Detail die Notes, die auf es verweisen, und lässt sich
-  über „Zur Note zurückstufen“ (nur im Status Open) zurück in eine Note verwandeln.
+  (auf- und zuklappbar, Einrückung mit Führungslinie; die Zahl ist die Summe samt
+  Unter-Topics, der Hovertext nennt die direkten Notes; anlegen, umbenennen, verschieben,
+  Termin setzen, löschen als Icon-Buttons mit Hovertext; „Alle Notes“ zeigt alles),
+  daneben die Notes des gewählten Topics, fällige zuerst. Über der Liste filtert eine
+  Leiste nach Status, „Nur fällige“ und Projekt (diese drei filtert der Server über
+  `GET /notes/index`; ein abgeschlossener Status liest das Archiv), nach Suchtext (im
+  Browser), „inkl. Unterthemen“ ein/aus und Gruppierung nach Topic. Das Detail zeigt oben
+  eine feste Leiste mit den Aktionen als Icon-Buttons (Bearbeiten, Befördern zu Epic,
+  Story oder Task, Erledigen, Verwerfen, Zurückstellen, Behalten, Löschen, Großansicht,
+  Schließen), darunter Kurzfassung, Topic-Pfad, Status, Prüf-Datum und Langtext (Markdown).
+  Die Großansicht öffnet die Note fast vollbildschirmgroß mit Inhaltsverzeichnis aus den
+  Überschriften; beim Bearbeiten steht die Vorschau neben dem Editor. Auslöser (Zeitpunkt,
+  Ereignis „Item erreicht Status“, Termin des Topics), Links auf Items (auch anderer
+  Projekte), Topics und Notes sowie Notizen und Specs wie beim Backlog sind einklappbare
+  Abschnitte, deren Hinzufügen-Buttons in der Überschrift stehen. Ein Item zeigt im Detail
+  die Notes, die auf es verweisen, und lässt sich über „Zur Note zurückstufen“ (nur im
+  Status Open) zurück in eine Note verwandeln.
   Ein dezentes rotes Ausrufezeichen neben dem Titel zeigt die Zahl fälliger Notes (auch
   im Tab-Titel); ein Klick öffnet die Liste, gruppiert nach Grund (Auslöser,
   Änderungshinweis, Termin, Prüfung), mit den Aktionen je Note. Prüf-Intervall und

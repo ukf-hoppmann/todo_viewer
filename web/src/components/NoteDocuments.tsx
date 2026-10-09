@@ -9,6 +9,8 @@ import {
 import { useI18n } from "../i18n/i18n";
 import { type DocumentBackend, DocumentDialog, type DocumentMode } from "./DocumentDialog";
 import { documentLinks } from "./documentLinks";
+import { IconButton } from "./IconButton";
+import { NoteSection } from "./NoteSection";
 
 interface NoteDocumentsProps {
   project: string;
@@ -56,8 +58,17 @@ export function NoteDocuments({ project, label, summary, readOnly }: NoteDocumen
   const links = documentLinks({ documents }, t("doc.notes"), t("doc.spec"));
 
   return (
-    <section className="note-section">
-      <h3>{t("note.docs.title")}</h3>
+    <NoteSection
+      title={t("note.docs.title")}
+      action={
+        !readOnly && (
+          <>
+            <IconButton icon="note" label={t("doc.addNote")} onClick={() => setOpen({ name: null, mode: "note" })} />
+            <IconButton icon="spec" label={t("doc.addSpec")} onClick={() => setOpen({ name: null, mode: "newSpec" })} />
+          </>
+        )
+      }
+    >
       {links.length === 0 && <div className="hint">{t("note.docs.none")}</div>}
       <div className="note-docs">
         {links.map((link) => (
@@ -65,16 +76,6 @@ export function NoteDocuments({ project, label, summary, readOnly }: NoteDocumen
             {link.label}
           </button>
         ))}
-        {!readOnly && (
-          <>
-            <button className="btn small" onClick={() => setOpen({ name: null, mode: "note" })}>
-              {t("doc.addNote")}
-            </button>
-            <button className="btn small" onClick={() => setOpen({ name: null, mode: "newSpec" })}>
-              {t("doc.addSpec")}
-            </button>
-          </>
-        )}
       </div>
       {open && (
         <DocumentDialog
@@ -84,6 +85,6 @@ export function NoteDocuments({ project, label, summary, readOnly }: NoteDocumen
           onClose={() => setOpen(null)}
         />
       )}
-    </section>
+    </NoteSection>
   );
 }

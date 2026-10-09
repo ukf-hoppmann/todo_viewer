@@ -5,6 +5,8 @@ import type { Item } from "../domain/model";
 import { describeTrigger, type IndexTopic, toIsoWithZone, type TriggerInfo } from "../domain/notes";
 import { describeError, useI18n } from "../i18n/i18n";
 import { EventTriggerFields, eventTrigger, useEventDraft } from "./EventTriggerFields";
+import { IconButton } from "./IconButton";
+import { NoteSection } from "./NoteSection";
 
 interface TriggerEditorProps {
   project: string;
@@ -47,8 +49,10 @@ export function TriggerEditor({ project, label, triggers, topic, projects, items
   };
 
   return (
-    <section className="note-section">
-      <h3>{t("trigger.title")}</h3>
+    <NoteSection
+      title={t("trigger.title")}
+      action={!readOnly && !adding && <IconButton icon="plus" label={t("trigger.add")} onClick={() => setAdding(true)} />}
+    >
       {triggers.length === 0 && <div className="hint">{t("trigger.empty")}</div>}
       <ul className="note-links">
         {triggers.map((trigger) => {
@@ -60,9 +64,7 @@ export function TriggerEditor({ project, label, triggers, topic, projects, items
               {text.alreadyMet && <span className="hint">{t("trigger.wasMet")}</span>}
               {trigger.reachable === false && <span className="badge unreachable">{t("note.links.unreachable")}</span>}
               {!readOnly && (
-                <button className="btn small" disabled={remove.isPending} onClick={() => remove.mutate({ project, label, triggerId: trigger.id })}>
-                  {t("trigger.remove")}
-                </button>
+                <IconButton icon="close" label={t("trigger.remove")} disabled={remove.isPending} onClick={() => remove.mutate({ project, label, triggerId: trigger.id })} />
               )}
             </li>
           );
@@ -72,11 +74,6 @@ export function TriggerEditor({ project, label, triggers, topic, projects, items
         <div className="field-error" role="alert">
           {describeError(i18n, remove.error)}
         </div>
-      )}
-      {!readOnly && !adding && (
-        <button className="btn small" onClick={() => setAdding(true)}>
-          {t("trigger.add")}
-        </button>
       )}
       {!readOnly && adding && (
         <form
@@ -118,6 +115,6 @@ export function TriggerEditor({ project, label, triggers, topic, projects, items
           </div>
         </form>
       )}
-    </section>
+    </NoteSection>
   );
 }

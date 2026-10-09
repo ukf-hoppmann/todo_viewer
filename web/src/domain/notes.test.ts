@@ -1,4 +1,4 @@
-import { alreadyMet, badgeLabel, buildTopicTree, describeTrigger, formatDate, snoozePresets, tabTitle, toIsoWithZone, notesOfTopic, sortNotes, topicPath, type IndexNote, type IndexTopic } from "./notes";
+import { alreadyMet, badgeLabel, buildTopicTree, describeTrigger, formatDate, snoozePresets, tabTitle, toIsoWithZone, notesOfTopic, sortNotes, topicPath, searchNotes, groupNotesByTopic, outline, type IndexNote, type IndexTopic } from "./notes";
 
 function topic(label: string, over: Partial<IndexTopic> = {}): IndexTopic {
   return { project: "P", label, name: `Name ${label}`, parent: null, path: [], due_at: null, due: false, note_count: 0, ...over };
@@ -191,5 +191,67 @@ describe("badgeLabel", () => {
     expect(badgeLabel(99)).toBe("99");
     expect(badgeLabel(100)).toBe("99+");
     expect(badgeLabel(2500)).toBe("99+");
+  });
+});
+
+describe("topic totals", () => {
+  it("adds the notes of all sub-topics to the total, while note_count stays the direct count", () => {
+    const tree = buildTopicTree([
+      topic("TOPIC-001", { name: "Root", note_count: 1 }),
+      topic("TOPIC-002", { name: "Mid", parent: "TOPIC-001", note_count: 0 }),
+      topic("TOPIC-003", { name: "Deep", parent: "TOPIC-002", note_count: 2 }),
+    ]);
+
+    expect(tree[0]?.total).toBe(3);
+    expect(tree[0]?.children[0]?.total).toBe(2);
+    expect(tree[0]?.topic.note_count).toBe(1);
+  });
+});
+
+describe("searchNotes", () => {
+  const notes = [note("NOTE-001", { summary: "Vortrag KI" }), note("NOTE-002", { summary: "Steuer", project: "Q" })];
+
+  it("keeps notes that contain every word in summary, label or project", () => {
+    expect(searchNotes(notes, "vortrag ki").map((n) => n.label)).toEqual(["NOTE-001"]);
+    expect(searchNotes(notes, "note-002").map((n) => n.label)).toEqual(["NOTE-002"]);
+    expect(searchNotes(notes, "q steuer").map((n) => n.label)).toEqual(["NOTE-002"]);
+    expect(searchNotes(notes, "vortrag steuer")).toEqual([]);
+  });
+
+  it("keeps everything for an empty query", () => {
+    expect(searchNotes(notes, "  ")).toHaveLength(2);
+  });
+});
+
+describe("groupNotesByTopic", () => {
+  const topics = [topic("TOPIC-001", { name: "Work" }), topic("TOPIC-002", { name: "groupmeeting", parent: "TOPIC-001" })];
+
+  it("groups by topic path in path order and puts notes without topic last", () => {
+    const groups = groupNotesByTopic(
+      [note("NOTE-001"), note("NOTE-002", { topic: "TOPIC-002" }), note("NOTE-003", { topic: "TOPIC-001" }), note("NOTE-004", { topic: "TOPIC-002" })],
+      topics,
+    );
+
+    expect(groups.map((g) => [g.path.join(" › "), g.notes.map((n) => n.label)])).toEqual([
+      ["Work", ["NOTE-003"]],
+      ["Work › groupmeeting", ["NOTE-002", "NOTE-004"]],
+      ["", ["NOTE-001"]],
+    ]);
+  });
+
+  it("treats a note with an unknown topic as one without topic", () => {
+    expect(groupNotesByTopic([note("NOTE-001", { topic: "TOPIC-404" })], topics).map((g) => g.path)).toEqual([[]]);
+  });
+});
+
+describe("outline", () => {
+  it("lists ATX headings with their depth and skips code fences", () => {
+    const md = "# Title\ntext\n```\n# not a heading\n```\n## Part ##\n####### seven\n### Sub";
+
+    expect(outline(md)).toEqual([
+      { depth: 1, text: "Title" },
+      { depth: 2, text: "Part" },
+      { depth: 3, text: "Sub" },
+    ]);
   });
 });

@@ -6,7 +6,9 @@ import { type Item, uidOf } from "../domain/model";
 import { describeError, useI18n } from "../i18n/i18n";
 import type { MessageKey } from "../i18n/messages";
 import type { NoteRef } from "../state/uiState";
+import { IconButton } from "./IconButton";
 import { ItemPicker } from "./ItemPicker";
+import { NoteSection } from "./NoteSection";
 
 interface NoteLinksProps {
   project: string;
@@ -58,8 +60,10 @@ export function NoteLinks({ project, label, readOnly, projects, topics, notes, i
   };
 
   return (
-    <section className="note-section">
-      <h3>{t("note.links.title")}</h3>
+    <NoteSection
+      title={t("note.links.title")}
+      action={!readOnly && !adding && <IconButton icon="plus" label={t("note.links.add")} onClick={() => setAdding(true)} />}
+    >
       {links.data?.length === 0 && <div className="hint">{t("note.links.empty")}</div>}
       <ul className="note-links">
         {(links.data ?? []).map((link) => {
@@ -78,9 +82,7 @@ export function NoteLinks({ project, label, readOnly, projects, topics, notes, i
               {item && <span className="hint">{i18n.vocab("status", item.status)}</span>}
               {!link.reachable && <span className="badge unreachable" title={link.unreachable_reason ?? ""}>{t("note.links.unreachable")}</span>}
               {!readOnly && link.role === "reference" && (
-                <button className="btn small" disabled={remove.isPending} onClick={() => remove.mutate({ project, label, linkId: link.id })}>
-                  {t("note.links.remove")}
-                </button>
+                <IconButton icon="close" label={t("note.links.remove")} disabled={remove.isPending} onClick={() => remove.mutate({ project, label, linkId: link.id })} />
               )}
             </li>
           );
@@ -90,11 +92,6 @@ export function NoteLinks({ project, label, readOnly, projects, topics, notes, i
         <div className="field-error" role="alert">
           {describeError(i18n, links.error ?? remove.error)}
         </div>
-      )}
-      {!readOnly && !adding && (
-        <button className="btn small" onClick={() => setAdding(true)}>
-          {t("note.links.add")}
-        </button>
       )}
       {!readOnly && adding && (
         <form
@@ -160,6 +157,6 @@ export function NoteLinks({ project, label, readOnly, projects, topics, notes, i
           </div>
         </form>
       )}
-    </section>
+    </NoteSection>
   );
 }

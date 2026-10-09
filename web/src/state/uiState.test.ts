@@ -16,6 +16,7 @@ describe("uiState", () => {
       hiddenProjects: ["A"],
       hiddenStatuses: [],
       hiddenPriorities: [],
+      hiddenNoteStatuses: ["done", "dropped", "promoted"],
       collapsed: ["P::EPIC-1"],
       markedProjects: ["A"],
       search: "x",
@@ -37,6 +38,16 @@ describe("uiState", () => {
     expect([...uiReducer(hidden, { type: "toggleHidden", kind: "hiddenStatuses", value: "Rejected" }).hiddenStatuses]).toEqual([]);
     const shown = uiReducer({ ...INITIAL_UI_STATE, hiddenProjects: new Set(["A"]) }, { type: "showProject", project: "A" });
     expect(shown.hiddenProjects.size).toBe(0);
+  });
+
+  it("keeps the note status filter apart from the backlog filters, closed notes hidden by default", () => {
+    expect([...INITIAL_UI_STATE.hiddenNoteStatuses]).toEqual(["done", "dropped", "promoted"]);
+    const shown = uiReducer(INITIAL_UI_STATE, { type: "toggleHidden", kind: "hiddenNoteStatuses", value: "done" });
+    expect([...shown.hiddenNoteStatuses]).toEqual(["dropped", "promoted"]);
+    expect(shown.hiddenStatuses).toBe(INITIAL_UI_STATE.hiddenStatuses);
+    expect([...mergeStored(INITIAL_UI_STATE, snapshot(shown)).hiddenNoteStatuses]).toEqual(["dropped", "promoted"]);
+    const reset = uiReducer({ ...shown, hiddenNoteStatuses: new Set(["waiting"]) }, { type: "resetNoteStatuses" });
+    expect(reset.hiddenNoteStatuses).toEqual(INITIAL_UI_STATE.hiddenNoteStatuses);
   });
 
   it("marks projects and collapses or expands a set of nodes at once", () => {

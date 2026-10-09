@@ -7,7 +7,7 @@ export type View = (typeof VIEWS)[number];
 export const BACKENDS = ["markdown", "database"] as const;
 /** Where a project is stored: the same two values the API uses. */
 export type DefaultBackend = (typeof BACKENDS)[number];
-export type HiddenKind = "hiddenProjects" | "hiddenStatuses" | "hiddenPriorities";
+export type HiddenKind = "hiddenProjects" | "hiddenStatuses" | "hiddenPriorities" | "hiddenNoteStatuses";
 
 /** A note is addressed by its project and label (labels count per project). */
 export interface NoteRef {
@@ -19,6 +19,8 @@ export interface UiState {
   hiddenProjects: ReadonlySet<string>;
   hiddenStatuses: ReadonlySet<string>;
   hiddenPriorities: ReadonlySet<string>;
+  /** Notes area: the note statuses not shown; apart from the backlog's statuses. */
+  hiddenNoteStatuses: ReadonlySet<string>;
   /** Collapsed tree nodes (item uids). */
   collapsed: ReadonlySet<string>;
   /** Projects the tree's collapse buttons act on; empty means all. */
@@ -38,6 +40,7 @@ export const INITIAL_UI_STATE: UiState = {
   hiddenProjects: new Set(),
   hiddenStatuses: new Set(),
   hiddenPriorities: new Set(),
+  hiddenNoteStatuses: new Set(["done", "dropped", "promoted"]),
   collapsed: new Set(),
   markedProjects: new Set(),
   search: "",
@@ -49,7 +52,7 @@ export const INITIAL_UI_STATE: UiState = {
   selectedNote: null,
 };
 
-const SET_KEYS = ["hiddenProjects", "hiddenStatuses", "hiddenPriorities", "collapsed", "markedProjects"] as const;
+const SET_KEYS = ["hiddenProjects", "hiddenStatuses", "hiddenPriorities", "hiddenNoteStatuses", "collapsed", "markedProjects"] as const;
 
 function stringSet(value: unknown): Set<string> | undefined {
   return Array.isArray(value) ? new Set(value.filter((v): v is string => typeof v === "string")) : undefined;
@@ -81,6 +84,7 @@ export function snapshot(state: UiState): Record<string, unknown> {
     hiddenProjects: [...state.hiddenProjects],
     hiddenStatuses: [...state.hiddenStatuses],
     hiddenPriorities: [...state.hiddenPriorities],
+    hiddenNoteStatuses: [...state.hiddenNoteStatuses],
     collapsed: [...state.collapsed],
     markedProjects: [...state.markedProjects],
     search: state.search,
@@ -96,6 +100,8 @@ export function snapshot(state: UiState): Record<string, unknown> {
 export type UiAction =
   | { type: "load"; stored: unknown }
   | { type: "toggleHidden"; kind: HiddenKind; value: string }
+  /** Back to the open notes: the closed note statuses hidden, the others shown. */
+  | { type: "resetNoteStatuses" }
   | { type: "showProject"; project: string }
   | { type: "toggleCollapsed"; uid: string }
   | { type: "setCollapsed"; uids: readonly string[]; collapsed: boolean }
@@ -123,6 +129,8 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return mergeStored(state, action.stored);
     case "toggleHidden":
       return { ...state, [action.kind]: toggled(state[action.kind], action.value) };
+    case "resetNoteStatuses":
+      return { ...state, hiddenNoteStatuses: INITIAL_UI_STATE.hiddenNoteStatuses };
     case "showProject": {
       const hiddenProjects = new Set(state.hiddenProjects);
       hiddenProjects.delete(action.project);

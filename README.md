@@ -209,8 +209,8 @@ Papierkorb nur nach Suche und Projekten. Die Suche gilt für alle Tabs gemeinsam
   Punkt, Kennzeichen „Topic“ bzw. „Note“ (in der Statusfarbe, Status im Hovertext) und
   „Label — Kurzfassung“. Unter jedem Projekt trennt ein durchgehender Balken die Projekte.
   Mit „Erweiterte Markierung“ (Checkbox oben, gespeichert, Standard an) ist der Bereich eines
-  Topics der ersten Ebene samt Inhalt grünlich hinterlegt, der eines Topics der zweiten Ebene
-  grau; ohne Haken bleibt der schlichte Baum. Knoten sind auf- und zuklappbar, „Topics zuklappen“ klappt alle (gespeichert wie
+  Topics der ersten Ebene samt Inhalt hellgrau hinterlegt und links blau gekantet, der eines
+  Topics der zweiten Ebene noch heller mit grauer Kante; ohne Haken bleibt der schlichte Baum. Knoten sind auf- und zuklappbar, „Topics zuklappen“ klappt alle (gespeichert wie
   im Backlog-Baum; beim Suchen ist alles offen, eine von anderswo geöffnete Note klappt
   ihren Zweig auf), leere Topics bleiben sichtbar, die Zahl ist die Summe der gezeigten
   Notes samt Unter-Topics, fällige zuerst. Die Aktionen eines Topics (neue Note darin,

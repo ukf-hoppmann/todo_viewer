@@ -728,6 +728,13 @@ describe("Sidebar sections per tab", () => {
     expect(screen.getByRole("heading", { name: "Priorität" })).toBeInTheDocument();
     unmount();
 
+    const notes = renderWithProviders(<Sidebar {...props} />, { currentView: "notes" });
+    expect(screen.queryByRole("heading", { name: "Priorität" })).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "fällig" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "erledigt" })).not.toBeChecked();
+    expect(screen.queryByRole("checkbox", { name: "Offen" })).not.toBeInTheDocument();
+    notes.unmount();
+
     renderWithProviders(<Sidebar {...props} />, { currentView: "trash" });
     expect(screen.getByRole("checkbox", { name: "P" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Status" })).not.toBeInTheDocument();

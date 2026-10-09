@@ -1,11 +1,12 @@
 import { DueBadge } from "./DueBadge";
 import type { SourceStatus } from "../api/client";
-import { priorityColor, statusColor } from "../domain/colors";
+import { noteStatusColor, priorityColor, statusColor } from "../domain/colors";
 import type { FilterOptions } from "../domain/model";
+import { NOTE_STATUSES } from "../domain/notes";
 import { sidebarSections } from "../domain/sidebar";
 import { needsAttention, type SyncState } from "../domain/sync";
 import { useI18n } from "../i18n/i18n";
-import { LANGS } from "../i18n/messages";
+import { LANGS, type MessageKey } from "../i18n/messages";
 import { useUiState } from "../state/useUiStateStore";
 import type { HiddenKind } from "../state/uiState";
 
@@ -103,7 +104,16 @@ export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveS
               />
             );
           case "noteStatus":
-            return null;
+            return (
+              <FilterGroup
+                key={section}
+                title={t("filter.status")}
+                kind="hiddenNoteStatuses"
+                values={NOTE_STATUSES}
+                color={noteStatusColor}
+                label={(v) => t(`note.status.${v}` as MessageKey)}
+              />
+            );
         }
       })}
     </aside>
@@ -113,7 +123,7 @@ export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveS
 interface FilterGroupProps {
   title: string;
   kind: HiddenKind;
-  values: string[];
+  values: readonly string[];
   color: (value: string) => string;
   label: (value: string) => string;
 }

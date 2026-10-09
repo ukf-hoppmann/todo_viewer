@@ -352,10 +352,12 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   - Index: `GET /notes/index?project=&topic=&status=&due=&linked_item=&linked_project=&archived=`.
     Ohne Filter: die offenen Notes aller Projekte. `topic` braucht `project`
     und schließt Unter-Topics ein; `status` ist der abgeleitete Status
-    (`waiting`, `due`, `snoozed`, `done`, `dropped`, `promoted`); `due=true` hält
+    (`waiting`, `due`, `snoozed`, `done`, `dropped`, `promoted`) und darf mehrfach
+    stehen (`?status=waiting&status=due`): dann gilt jeder davon; `due=true` hält
     nur fällige; `linked_item` (in `linked_project`, sonst `project`) hält die
     Notes, die per Link oder Ereignis-Auslöser auf das Item zeigen;
-    `archived=true` (oder ein abgeschlossener `status`) liest das Archiv.
+    `archived=true` liest nur das Archiv; abgeschlossene Werte in `status` lesen das
+    Archiv zusätzlich, offene und abgeschlossene dürfen gemischt werden.
   - Einstellungen: `PUT /notes/settings` mit `max_topic_depth` (1 bis 10) und/oder
     `review_days` (1 bis 3650), nur Ganzzahlen. Sie werden in `config.json`
     gespeichert und wirken sofort; schon tiefer verschachtelte Topics bleiben.

@@ -13,10 +13,23 @@ const PRIORITY_COLORS: Record<string, string> = {
   Prospective: "var(--prio-later)",
 };
 
+const NOTE_STATUS_COLORS: Record<string, string> = {
+  waiting: "var(--status-open)",
+  due: "var(--status-rejected)",
+  snoozed: "var(--status-await)",
+  done: "var(--status-done)",
+  dropped: "var(--note-dropped)",
+  promoted: "var(--prio-later)",
+};
+
 const FALLBACK_PALETTE = ["#5b8cff", "#3ab26b", "#a06bd5", "#d59a3a", "#d5544a", "#4a7fd5"];
 
 export function statusColor(status: string): string {
   return STATUS_COLORS[status] ?? "var(--status-open)";
+}
+
+export function noteStatusColor(status: string): string {
+  return NOTE_STATUS_COLORS[status] ?? "var(--status-open)";
 }
 
 /** Known priorities have fixed colors; unknown ones get a stable color from their name. */

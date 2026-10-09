@@ -311,10 +311,12 @@ export interface paths {
          * @description Topics and notes with only label, status, due reason, review date, and summary: no long texts.
          *
          *     Without filters: the open notes of all projects. `project` keeps one project; `topic` (needs `project`) keeps
-         *     the notes in that topic and its sub-topics and the topics of that subtree; `status` is the effective status
-         *     (waiting, due, snoozed, done, dropped, promoted); `due=true` keeps the due notes; `linked_item` (in
-         *     `linked_project`, default `project`) keeps the notes that point at the item by a link or an event trigger.
-         *     `archived=true` reads the archive instead; a closed `status` does so by itself.
+         *     the notes in that topic and its sub-topics and the topics of that subtree; `status` (repeatable) keeps the notes
+         *     with one of these effective statuses (waiting, due, snoozed, done, dropped, promoted); `due=true` keeps the due
+         *     notes; `linked_item` (in `linked_project`, default `project`) keeps the notes that point at the item by a link or
+         *     an event trigger.
+         *     `archived=true` reads the archive instead; a closed `status` is read from the archive by itself, also mixed
+         *     with open ones.
          */
         get: operations["notes_index_api_v2_notes_index_get"];
         put?: never;
@@ -3556,7 +3558,7 @@ export interface operations {
             query?: {
                 project?: string | null;
                 topic?: string | null;
-                status?: components["schemas"]["NoteStatus"] | null;
+                status?: components["schemas"]["NoteStatus"][] | null;
                 due?: boolean;
                 linked_item?: string | null;
                 linked_project?: string | null;

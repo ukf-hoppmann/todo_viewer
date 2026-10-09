@@ -107,6 +107,15 @@ def test_the_index_filters_by_status_and_due(notes_api):
     assert notes_api.get(INDEX, status="sleeping").status_code == 400
 
 
+def test_the_index_filters_by_several_statuses_open_and_closed_together(notes_api):
+    _world(notes_api)
+    assert _labels(notes_api.get(INDEX, status=["waiting", "due"])) == [
+        "demo/NOTE-001", "demo/NOTE-002", "demo/NOTE-003", "other/NOTE-001"]
+    assert _labels(notes_api.get(INDEX, status=["due", "done"])) == ["demo/NOTE-002", "demo/NOTE-004"]
+    assert _labels(notes_api.get(INDEX, status=["done", "dropped"])) == ["demo/NOTE-004"]
+    assert notes_api.get(INDEX, status=["due", "sleeping"]).status_code == 400
+
+
 def test_the_index_reads_the_archive_on_request(notes_api):
     _world(notes_api)
     assert _labels(notes_api.get(INDEX, archived="true")) == ["demo/NOTE-004"]

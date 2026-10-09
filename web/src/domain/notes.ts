@@ -4,6 +4,15 @@ import type { Schemas } from "../api/client";
 export type IndexNote = Schemas["IndexNoteOut"];
 export type IndexTopic = Schemas["IndexTopicOut"];
 
+export type NoteStatus = Schemas["NoteStatus"];
+/** The effective statuses of a note in the order of its life cycle; the last three are closed (archived). */
+export const NOTE_STATUSES: readonly NoteStatus[] = ["waiting", "due", "snoozed", "done", "dropped", "promoted"];
+
+/** The statuses the sidebar leaves ticked, for the index request; empty means no note is shown. */
+export function shownNoteStatuses(hidden: ReadonlySet<string>): NoteStatus[] {
+  return NOTE_STATUSES.filter((s) => !hidden.has(s));
+}
+
 export interface TopicNode {
   topic: IndexTopic;
   children: TopicNode[];

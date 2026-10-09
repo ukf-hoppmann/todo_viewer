@@ -1,7 +1,7 @@
 """Topics, notes, and links of API v2. Everything is addressed by project (name) plus label."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Query
 
@@ -99,17 +99,20 @@ def promote_note(project: str, label: str, body: PromoteIn, conversion: Conversi
 
 @global_router.get("/index", tags=["notes-index"])
 def notes_index(index: NoteIndex, project: str | None = None, topic: str | None = None,
-                status: NoteStatus | None = None, due: bool = False, linked_item: str | None = None,
-                linked_project: str | None = None, archived: bool = False) -> NotesIndexOut:
+                status: Annotated[list[NoteStatus] | None, Query()] = None, due: bool = False,
+                linked_item: str | None = None, linked_project: str | None = None,
+                archived: bool = False) -> NotesIndexOut:
     """Topics and notes with only label, status, due reason, review date, and summary: no long texts.
 
     Without filters: the open notes of all projects. `project` keeps one project; `topic` (needs `project`) keeps
-    the notes in that topic and its sub-topics and the topics of that subtree; `status` is the effective status
-    (waiting, due, snoozed, done, dropped, promoted); `due=true` keeps the due notes; `linked_item` (in
-    `linked_project`, default `project`) keeps the notes that point at the item by a link or an event trigger.
-    `archived=true` reads the archive instead; a closed `status` does so by itself.
+    the notes in that topic and its sub-topics and the topics of that subtree; `status` (repeatable) keeps the notes
+    with one of these effective statuses (waiting, due, snoozed, done, dropped, promoted); `due=true` keeps the due
+    notes; `linked_item` (in `linked_project`, default `project`) keeps the notes that point at the item by a link or
+    an event trigger.
+    `archived=true` reads the archive instead; a closed `status` is read from the archive by itself, also mixed
+    with open ones.
     """
-    return NotesIndexOut.of(index.index(project, topic, status, due, linked_item, linked_project, archived))
+    return NotesIndexOut.of(index.index(project, topic, status or (), due, linked_item, linked_project, archived))
 
 
 @global_router.get("/due/count", tags=["notes-index"])

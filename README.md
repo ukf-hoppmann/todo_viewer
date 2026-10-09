@@ -167,6 +167,11 @@ abgebildet.
 
 ## Views
 
+Die Sidebar links ist für alle Views gleich aufgebaut: Suche und Projektliste stehen
+immer dort, darunter die Filter des aktiven Tabs. Baum, Abhängigkeiten und Kanban
+filtern nach Status und Priorität des Backlogs, Notes nach den Note-Status, der
+Papierkorb nur nach Suche und Projekten. Die Suche gilt für alle Tabs gemeinsam.
+
 - **Baum**: Epic → Story → Task Hierarchie pro Projekt, mit Fortschrittsbalken.
   Items mit Kindern zeigen direkt hinter dem Titel einen Fortschrittskreis
   (Tortendiagramm) mit „erledigt/gesamt“ über alle Nachkommen; Kanban-Karten
@@ -190,18 +195,21 @@ abgebildet.
   weitere Knoten, Esc oder ein Klick ins Leere setzt alles zurück.
 - **Kanban**: Spalten nach Status (Open, In progress, Awaiting confirmation,
   Completed, Rejected).
-- **Papierkorb**: Gelöschte Items aller Projekte mit Löschdatum.
+- **Papierkorb**: Gelöschte Items der in der Sidebar gewählten Projekte mit Löschdatum,
+  gefiltert nach dem Suchtext.
   „Wiederherstellen“ holt ein Item samt Kindern zurück, „Endgültig löschen“
   entfernt es nach einer Bestätigung samt Kindern, Notizen und Specs.
 - **Notes**: Gedanken mit Wiedervorlage, getrennt vom Backlog. Links der Topic-Baum
   (auf- und zuklappbar, Einrückung mit Führungslinie; die Zahl ist die Summe samt
   Unter-Topics, der Hovertext nennt die direkten Notes; anlegen, umbenennen, verschieben,
   Termin setzen, löschen als Icon-Buttons mit Hovertext; „Alle Notes“ zeigt alles),
-  daneben die Notes des gewählten Topics, fällige zuerst. Über der Liste filtert eine
-  Leiste nach Status und „Nur fällige“ (der Server filtert über `GET /notes/index`; ein
-  abgeschlossener Status liest das Archiv) und nach Suchtext (im Browser). Die Projekte
-  wählt die Projektliste in der linken Spalte (bei genau einem Projekt filtert der Server),
-  dazu „inkl. Unterthemen“ ein/aus und Gruppierung nach Topic. Das Detail zeigt oben
+  daneben die Notes des gewählten Topics, fällige zuerst. Status, Projekte und Suchtext
+  wählt die Sidebar: die Note-Status (wartet, fällig, zurückgestellt, erledigt, verworfen,
+  befördert) sind beliebig kombinierbar, standardmäßig sind die offenen angehakt. Der
+  Server filtert über `GET /notes/index` nach den Status (abgeschlossene liest er aus dem
+  Archiv) und bei genau einem Projekt nach dem Projekt; Suche und mehrere Projekte filtert
+  der Browser. Über der Liste stehen „inkl. Unterthemen“, Gruppierung nach Topic und
+  „Filter zurücksetzen“ (offene Status, leere Suche). Das Detail zeigt oben
   eine feste Leiste mit den Aktionen als Icon-Buttons (Bearbeiten, Befördern zu Epic,
   Story oder Task, Erledigen, Verwerfen, Zurückstellen, Behalten, Löschen, Großansicht,
   Schließen), darunter Kurzfassung, Topic-Pfad, Status, Prüf-Datum und Langtext (Markdown).

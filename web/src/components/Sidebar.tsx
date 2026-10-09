@@ -1,10 +1,12 @@
 import { DueBadge } from "./DueBadge";
 import type { SourceStatus } from "../api/client";
-import { priorityColor, statusColor } from "../domain/colors";
+import { noteStatusColor, priorityColor, statusColor } from "../domain/colors";
 import type { FilterOptions } from "../domain/model";
+import { NOTE_STATUSES } from "../domain/notes";
+import { sidebarSections } from "../domain/sidebar";
 import { needsAttention, type SyncState } from "../domain/sync";
 import { useI18n } from "../i18n/i18n";
-import { LANGS } from "../i18n/messages";
+import { LANGS, type MessageKey } from "../i18n/messages";
 import { useUiState } from "../state/useUiStateStore";
 import type { HiddenKind } from "../state/uiState";
 
@@ -25,6 +27,7 @@ interface SidebarProps {
   onOpenDue?: () => void;
 }
 
+/** Search and projects for every tab; below them the filter sections of the active tab (`sidebarSections`). */
 export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource, onOpenSettings, syncStates, onOpenProject, dueCount = 0, onOpenDue }: SidebarProps) {
   const { t, vocab } = useI18n();
   const { state, dispatch } = useUiState();
@@ -76,20 +79,43 @@ export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveS
         />
       </section>
 
-      <FilterGroup
-        title={t("filter.status")}
-        kind="hiddenStatuses"
-        values={options.statuses}
-        color={statusColor}
-        label={(v) => vocab("status", v)}
-      />
-      <FilterGroup
-        title={t("filter.priority")}
-        kind="hiddenPriorities"
-        values={options.priorities}
-        color={priorityColor}
-        label={(v) => vocab("priority", v)}
-      />
+      {sidebarSections(state.currentView).map((section) => {
+        switch (section) {
+          case "itemStatus":
+            return (
+              <FilterGroup
+                key={section}
+                title={t("filter.status")}
+                kind="hiddenStatuses"
+                values={options.statuses}
+                color={statusColor}
+                label={(v) => vocab("status", v)}
+              />
+            );
+          case "itemPriority":
+            return (
+              <FilterGroup
+                key={section}
+                title={t("filter.priority")}
+                kind="hiddenPriorities"
+                values={options.priorities}
+                color={priorityColor}
+                label={(v) => vocab("priority", v)}
+              />
+            );
+          case "noteStatus":
+            return (
+              <FilterGroup
+                key={section}
+                title={t("filter.status")}
+                kind="hiddenNoteStatuses"
+                values={NOTE_STATUSES}
+                color={noteStatusColor}
+                label={(v) => t(`note.status.${v}` as MessageKey)}
+              />
+            );
+        }
+      })}
     </aside>
   );
 }
@@ -97,7 +123,7 @@ export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveS
 interface FilterGroupProps {
   title: string;
   kind: HiddenKind;
-  values: string[];
+  values: readonly string[];
   color: (value: string) => string;
   label: (value: string) => string;
 }

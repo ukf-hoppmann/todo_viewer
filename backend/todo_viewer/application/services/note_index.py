@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -65,29 +66,34 @@ class NoteIndexService:
         self._sources = sources
         self._clock = clock
 
-    def index(self, project: str | None = None, topic: str | None = None, status: NoteStatus | None = None,
-              due: bool = False, linked_item: str | None = None, linked_project: str | None = None,
-              archived: bool = False) -> NotesIndex:
-        """Open notes (with `archived`: the archive; a closed `status` reads the archive too) and the topics.
+    def index(self, project: str | None = None, topic: str | None = None,
+              statuses: Collection[NoteStatus] = (), due: bool = False, linked_item: str | None = None,
+              linked_project: str | None = None, archived: bool = False) -> NotesIndex:
+        """Open notes (with `archived`: the archive) and the topics.
 
-        `topic` includes its sub-topics and needs `project`; `linked_item` (in `linked_project`, default `project`)
-        keeps the notes that point at the item by a link or by an event trigger.
+        `statuses` keeps the notes with one of these effective statuses; open and closed statuses may be mixed, the
+        closed ones are read from the archive. `topic` includes its sub-topics and needs `project`; `linked_item` (in
+        `linked_project`, default `project`) keeps the notes that point at the item by a link or by an event trigger.
         """
         projects = self._projects(project)
         if topic is not None and project is None:
             raise ValueRequiredError("project")
         target = self._linked(linked_item, linked_project or project)
         keep_topics = None if topic is None else self._topic_labels(project or "", topic)
-        reading_archive = archived or (status in FINISHED_STATUSES)
+        wanted = frozenset(statuses)
+        reading_archive = archived or not wanted.isdisjoint(FINISHED_STATUSES)
+        reading_open = not archived and (not wanted or not wanted <= FINISHED_STATUSES)
         linked = None if target is None else {(n.view.note.project, n.view.note.label)
                                               for n in self._notes.notes_linking_to(target)}
         topics: list[IndexedTopic] = []
         notes: list[NoteView] = []
         for name in projects:
             all_topics = self._repo.list_topics(name)
-            views = self._notes.overview(name, archived=reading_archive)
-            notes += [v for v in views if self._wanted(v, keep_topics, status, due, linked)]
-            counts = self._counts(name, views if not reading_archive else self._notes.overview(name))
+            open_views = self._notes.overview(name)
+            views = (open_views if reading_open else []) + (self._notes.overview(name, archived=True)
+                                                            if reading_archive else [])
+            notes += [v for v in views if self._wanted(v, keep_topics, wanted, due, linked)]
+            counts = self._counts(name, open_views)
             topics += [IndexedTopic(t, topic_path(all_topics, t.label), self._topic_due(t), counts.get(t.label, 0))
                        for t in all_topics if keep_topics is None or t.label in keep_topics]
         return NotesIndex(topics, notes)
@@ -134,11 +140,11 @@ class NoteIndexService:
         return topic.due_at is not None and utc(topic.due_at) <= utc(self._clock())
 
     @staticmethod
-    def _wanted(view: NoteView, topics: frozenset[str] | None, status: NoteStatus | None, due: bool,
+    def _wanted(view: NoteView, topics: frozenset[str] | None, statuses: frozenset[NoteStatus], due: bool,
                 linked: set[tuple[str, str]] | None) -> bool:
         note = view.note
         return ((topics is None or note.topic in topics)
-                and (status is None or view.evaluation.status is status)
+                and (not statuses or view.evaluation.status in statuses)
                 and (not due or view.evaluation.status is NoteStatus.DUE)
                 and (linked is None or (note.project, note.label) in linked))
 

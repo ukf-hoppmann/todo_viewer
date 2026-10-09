@@ -1,4 +1,12 @@
-import { alreadyMet, badgeLabel, buildTopicTree, describeTrigger, formatDate, snoozePresets, tabTitle, toIsoWithZone, notesOfTopic, sortNotes, topicPath, searchNotes, groupNotesByTopic, outline, type IndexNote, type IndexTopic } from "./notes";
+import { NOTE_STATUSES, shownNoteStatuses, alreadyMet, badgeLabel, buildTopicTree, describeTrigger, formatDate, snoozePresets, tabTitle, toIsoWithZone, notesOfTopic, sortNotes, topicPath, searchNotes, groupNotesByTopic, outline, type IndexNote, type IndexTopic } from "./notes";
+
+describe("shownNoteStatuses", () => {
+  it("lists the statuses not hidden, in the order of the life cycle", () => {
+    expect(shownNoteStatuses(new Set(["done", "dropped", "promoted"]))).toEqual(["waiting", "due", "snoozed"]);
+    expect(shownNoteStatuses(new Set())).toEqual(NOTE_STATUSES);
+    expect(shownNoteStatuses(new Set(NOTE_STATUSES))).toEqual([]);
+  });
+});
 
 function topic(label: string, over: Partial<IndexTopic> = {}): IndexTopic {
   return { project: "P", label, name: `Name ${label}`, parent: null, path: [], due_at: null, due: false, note_count: 0, ...over };

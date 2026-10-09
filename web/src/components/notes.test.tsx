@@ -166,28 +166,35 @@ describe("NotesView", () => {
 
     expect(screen.getByRole("button", { name: "Anlegen" })).toBeDisabled();
   });
-  it("sends status, due and project to the server instead of cutting them in the browser", async () => {
+  it("sends the statuses ticked in the sidebar to the server instead of cutting them in the browser", async () => {
     const calls = stubRoutes(notesBaseRoutes(TOPICS, NOTES));
-    renderWithProviders(<NotesView items={[]} />);
+    renderWithProviders(<NotesView items={[]} />, { hiddenNoteStatuses: new Set(["waiting", "snoozed", "dropped", "promoted"]) });
     await screen.findByText("An idea");
 
-    await userEvent.selectOptions(screen.getByLabelText("Status"), "snoozed");
-    await waitFor(() => expect(calls.some((c) => c.path === "/api/v2/notes/index" && c.search.includes("status=snoozed"))).toBe(true));
-    await userEvent.click(screen.getByLabelText("Nur fällige"));
-    await waitFor(() => expect(calls.some((c) => c.search.includes("status=snoozed") && c.search.includes("due=true"))).toBe(true));
+    const index = calls.filter((c) => c.path === "/api/v2/notes/index" && c.search.includes("status="));
+    expect(index.map((c) => c.search)).toContain("?status=due&status=done");
+    expect(screen.queryByRole("combobox", { name: "Status" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Nur fällige")).not.toBeInTheDocument();
   });
 
-  it("searches the notes and resets all filters", async () => {
+  it("shows nothing when no status is ticked", async () => {
     stubRoutes(notesBaseRoutes(TOPICS, NOTES));
-    renderWithProviders(<NotesView items={[]} />);
-    await screen.findByText("An idea");
+    renderWithProviders(<NotesView items={[]} />, { hiddenNoteStatuses: new Set(["waiting", "due", "snoozed", "done", "dropped", "promoted"]) });
 
-    await userEvent.type(screen.getByLabelText("Notes durchsuchen…"), "later");
+    expect(await screen.findByText("0 Notes")).toBeInTheDocument();
     expect(screen.queryByText("An idea")).not.toBeInTheDocument();
-    expect(screen.getByText("Something for later")).toBeInTheDocument();
+  });
+
+  it("searches the notes with the sidebar search and resets search and statuses", async () => {
+    stubRoutes(notesBaseRoutes(TOPICS, NOTES));
+    renderWithProviders(<NotesView items={[]} />, { search: "later", hiddenNoteStatuses: new Set(["promoted"]) });
+
+    expect(await screen.findByText("Something for later")).toBeInTheDocument();
+    expect(screen.queryByText("An idea")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Filter zurücksetzen" }));
     expect(screen.getByText("An idea")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Filter zurücksetzen" })).not.toBeInTheDocument();
   });
 
   it("can leave out the notes of sub-topics", async () => {

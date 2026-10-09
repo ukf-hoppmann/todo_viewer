@@ -13,6 +13,7 @@
   --status-await: #a06bd5;
   --status-done: #3ab26b;
   --status-rejected: #d5544a;
+  --note-dropped: #8a4f4b;
   --prio-urgent: #e05a4e;
   --prio-important: #d5a13a;
   --prio-normal: #6b7280;
@@ -422,7 +423,6 @@ input.field-edit {
 .icon { flex-shrink: 0; }
 .notes-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12.5px; }
 .notes-filter .check { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
-.notes-search { flex: 1; min-width: 140px; }
 .note-group { margin-bottom: 14px; }
 .note-group-head { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 12px; color: var(--text-dim); }
 .note-group-path { font-weight: 600; color: var(--text); }

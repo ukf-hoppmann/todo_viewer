@@ -32,11 +32,21 @@ tests/architecture/test_layers.py". -->
 - Database backend: writes MUST be transactional and MUST abort with a
   conflict error instead of overwriting an item that changed since it was
   read. The schema MUST change only through versioned migrations.
-- Data moves between backends only through an explicit sync requested by the
-  user or an API call, never automatically, not even after a write to the
-  primary source. A sync MUST offer a preview and MUST NOT delete anything on
-  the target without explicit confirmation. Its direction defaults to primary
-  source → mirror and MAY be chosen per run.
+- Data moves between backends only through a sync. A sync is requested by the
+  user or an API call, or, only for a project whose owner switched auto-sync
+  on (default: off), started by the application itself. Without the switch
+  nothing moves automatically, not even after a write to the primary source.
+  A manual sync MUST offer a preview and MUST NOT delete anything without an
+  explicit decision.
+- A sync compares entry by entry with the state stored at the last sync. An
+  entry changed on one side only is carried to the other side. An entry
+  changed on both sides, created on both sides with different content, or
+  deleted on one side is a conflict and MUST NOT be overwritten or deleted;
+  the owner decides per conflict (database, file, or defer). The direction
+  MAY be restricted per run.
+- An automatic sync MUST carry only conflict-free changes, MUST NOT delete
+  anything, MUST NOT read unreadable files or files containing merge markers,
+  and MUST create a backup before writing to the database.
 - Whether a mirror differs from the primary source since the last sync MUST be
   detectable without changing any data, so the UI can show it.
 
@@ -63,8 +73,10 @@ tests/architecture/test_layers.py". -->
   reused, and never change inside a project.
 - Whether a trigger has arrived MUST be decided by a pure function in
   `domain` that receives the current time as a parameter. There MUST be no
-  background timer: time triggers are evaluated when notes are read, event
-  triggers in the use case that changes an item's status.
+  background timer for triggers: time triggers are evaluated when notes are
+  read, event triggers in the use case that changes an item's status. The
+  optional auto-sync of section 1 is exempt; it runs only while at least one
+  project has its switch on.
   Why: tests need a fixed clock, and an idle viewer must cost nothing.
 - Points in time MUST be stored unambiguously (UTC) and shown and entered in
   the time zone of the machine the viewer runs on.

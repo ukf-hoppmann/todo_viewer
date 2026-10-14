@@ -16,50 +16,59 @@ Nur die Umwandlung (reine Funktionen, keine Dateien, kein Port). Adapter in TASK
 - Modelle in `domain/notes.py` (`Note`, `Topic`, `Link`, `Trigger`, `LinkTarget`, Enums). Dokumente einer Note sind eigene Dateien (`<LABEL>_notes.md`, `<LABEL>_spec.md`) und gehören in TASK-025, nicht in diese Funktionen.
 - Vorbild für Golden-Files: `backend/tests/golden/` und die Tests in `tests/characterization/`.
 
-## Festgelegtes Format
-Feldnamen sind **englisch** (wie in `TODO.md`), Inhalte in der Sprache des Nutzers.
+## Festgelegtes Format (Stand 2026-10-14)
+Feldnamen sind **englisch** (wie in `TODO.md`), Inhalte in der Sprache des Nutzers. Ein Eintrag je Zeile (Auslöser, Links), damit Git sauber zusammenführt. Änderungen gegenüber dem ersten Entwurf: Topic als Label statt Pfad; `Created`, `Updated`, `Archived`, `Deleted` gehören dazu (Papierkorb und Archiv werden mitgespiegelt); Notes ohne Label; Zähler.
 
 Datei `NOTE-001.md`:
 ```
 # NOTE-001
 Summary: <eine Zeile>
 Status: waiting
-Topic: Projekte / Umbau            # Pfad aus Topic-Namen, leer wenn keins
-Review: 2026-11-07T08:00:00Z
+Topic: TOPIC-001                  # Label; leer, wenn keins; new:<Name> = label-loser Eintrag in topics.md
+Review: 2026-11-07T08:00:00Z      # leer, wenn keins
 Mode: any
+Created: 2026-10-01T09:30:00Z
+Updated: 2026-10-12T08:00:00Z
 Archived: false
+Deleted:                          # Zeitpunkt, wenn im Papierkorb; sonst leer
 Triggers:
 - time 2026-10-12T08:00:00Z [fired 2026-10-12T08:00:00Z]
-- event MeinProjekt:STORY-003 Completed [already_met]
+- event MeinProjekt:STORY-003 Completed [fired 2026-10-12T08:00:00Z] [already_met]
 - topic_due
 Links:
 - reference MeinProjekt:STORY-004
-- reference topic:NOTE-007
+- reference topic:TOPIC-002
+- reference note:NOTE-007
 - origin MeinProjekt:STORY-009
 
 <Langtext, Markdown, unverändert>
 ```
 - Zeitpunkte als UTC mit `Z`. Labels, nie `uid`. Link-Ziel `Projekt:Label` (Item), `topic:TOPIC-001`, `note:NOTE-007` (gleiches Projekt).
-- Die Zeile `Links:` enthält die Links ohne die der Rolle `trigger` (sie sind durch `event`-Auslöser dargestellt).
+- Die Zeile `Links:` enthält die Links ohne die der Rolle `trigger` (sie sind durch `event`-Auslöser dargestellt; der Import legt sie wieder an).
+- **Note ohne Label** (in der Cloud angelegt): Datei `new-<kurzname>.md`, erste Zeile `# NEW`, sonst gleich. `Created` und `Updated` dürfen dann fehlen (der Import setzt den Zeitpunkt des Imports). Verweise auf sie: `note:new-<kurzname>`.
 - Leerer Langtext: nach der Kopfzeile endet die Datei.
-Datei `topics.md`: eingerückte Liste, ein Eintrag je Topic: `- TOPIC-001 | <Name> | due=<Zeitpunkt oder leer>`; zwei Leerzeichen Einrückung je Ebene.
+- Änderungshinweise (`note_notices`) gehören nicht ins Format.
+
+Datei `topics.md`: eingerückte Liste, ein Eintrag je Topic, zwei Leerzeichen Einrückung je Ebene: `- TOPIC-001 | <Name> | due=<Zeitpunkt oder leer> | created=<Zeitpunkt> | deleted=<Zeitpunkt oder leer>`. Ein Topic ohne Label: `- NEW | <Name> | due=…` (`created` und `deleted` dürfen fehlen).
+
+Datei `counters.md`: je Typ die höchste je vergebene Nummer, eine Zeile je Typ: `NOTE: 15`, `TOPIC: 7`. Sie sorgt dafür, dass Labels auch nach einem Neuaufbau aus den Dateien nie wiederverwendet werden.
 
 ## Zu tun
-1. Neues Modul `domain/notes_markdown.py` (nur Standardbibliothek): `render_note(note, triggers, links, topic_path) -> str`, `parse_note(text) -> ParsedNote` (Note-Felder, Trigger-Beschreibungen, Link-Beschreibungen **ohne** `uid`/`id`), `render_topics(topics) -> str`, `parse_topics(text) -> list[ParsedTopic]`. Zeilenenden bleiben erhalten (`\n`; ein Aufruf mit `\r\n` bleibt `\r\n`).
+1. Neues Modul `domain/notes_markdown.py` (nur Standardbibliothek): `render_note(note, triggers, links, topic_label) -> str`, `parse_note(text) -> ParsedNote` (Note-Felder, Trigger-Beschreibungen, Link-Beschreibungen **ohne** `uid`/`id`), `render_topics(topics) -> str`, `parse_topics(text) -> list[ParsedTopic]`, `render_counters(counters) -> str`, `parse_counters(text) -> dict`. Zeilenenden bleiben erhalten (`\n`; ein Aufruf mit `\r\n` bleibt `\r\n`).
 2. Strenge Fehler: unbekannte Kopfzeile, ungültiger Status, kaputter Zeitpunkt → `InvalidValueError`/eigener `NoteFormatError` mit Zeilennummer (kein stilles Überspringen).
 3. Namen mit `|` oder Zeilenumbruch im Topic-Namen: Format maskiert sie (`\|`) und der Parser macht es rückgängig; im Test abgedeckt.
 
 ## Dateien
-`domain/notes_markdown.py` (neu), Tests `backend/tests/unit/domain/test_notes_markdown.py` (neu), Golden-Files `backend/tests/golden/notes/` (`note_full.md`, `note_minimal.md`, `topics.md`).
+`domain/notes_markdown.py` (neu), Tests `backend/tests/unit/domain/test_notes_markdown.py` (neu), Golden-Files `backend/tests/golden/notes/` (`note_full.md`, `note_minimal.md`, `note_new.md`, `note_trashed_archived.md`, `topics.md`, `counters.md`).
 
 ## Nicht anfassen
 Ports, Adapter, Sync, Datenbank, die Dokumente der Note.
 
 ## Tests (zuerst)
-Round-Trip je Golden-File: voll (alle Felder, drei Auslöser, drei Linkarten, Langtext mit Markdown, Umlauten und Leerzeilen), minimal (nur Summary), leerer Langtext, `\r\n`, Topic mit `|` im Namen, Topic-Tiefe 3; Format-Fehler mit Zeilennummer.
+Round-Trip je Golden-File: voll (alle Felder, drei Auslöserarten mit `fired` und `already_met`, vier Linkarten, Langtext mit Markdown, Umlauten und Leerzeilen), minimal (nur Summary), Note ohne Label, Note im Papierkorb und archiviert, leerer Langtext, `\r\n`, Topic mit `|` im Namen, Topic-Tiefe 3, Topic ohne Label, Zähler; Format-Fehler mit Zeilennummer.
 
 ## Stoppen und fragen
-Wenn eine Eigenschaft der Note im Format fehlt (z. B. `Deleted`, `Created`/`Updated`): sie gehören **nicht** hinein (Papierkorb wird nicht gespiegelt); sonst fragen.
+Wenn eine Eigenschaft der Note oder des Topics im Format fehlt, die in der Datenbank steht und hier nicht aufgeführt ist, oder wenn ein Wert nicht verlustfrei abbildbar ist. (Änderungshinweise sind ausdrücklich nicht Teil des Formats.)
 
 ## Abnahme
 Golden-Files pinnen das Format; Round-Trip-Tests grün; `scripts/check.sh` grün.

@@ -68,17 +68,31 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Created: 2026-10-06.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Notes sind in der API und Datenbank zu Hause; Markdown ist nur
-    Export, Import und Sync-Option, kein Normalbetrieb. Notes inklusive
-    Notizen und Specs werden über den vorhandenen Spiegel-Mechanismus als
-    Dateien exportiert und wieder eingelesen, damit Claude sie auch in der
-    Cloud nutzen kann. Links bleiben im Spiegel Verweise auf Labels.
-  - Completion criteria: Round-Trip ohne Verlust von Text, Notizen, Specs,
-    Links, Auslösern und Terminen.
-  - Summary: Notes mit Notizen und Specs lassen sich als Markdown
-    exportieren, importieren und abgleichen, damit Claude sie auch in der
-    Cloud nutzen kann; Markdown ist dabei nur Sync-Option.
+  - Dependencies: `STORY-057`, `STORY-058`.
+  - Goal: Notes mit Topics, Links, Auslösern, Dokumenten sowie Archiv- und
+    Papierkorbstand lassen sich als Markdown-Dateien im Spiegel-Ordner des
+    Projekts ablegen und wieder einlesen — im selben Sync, mit derselben
+    Vorschau, demselben Status und denselben Konfliktentscheidungen wie der
+    Backlog (STORY-057, STORY-058). So kann Claude Notes in der Cloud
+    (claude.ai) als Dateien lesen und bearbeiten; sie kommen über Git zurück
+    und werden lokal in die Datenbank übernommen. Notes bleiben in API und
+    Datenbank zu Hause, Markdown ist nur Export, Import und Sync-Option. In
+    den Dateien neu angelegte Notes tragen kein Label; die Datenbank vergibt
+    es beim Import. Links bleiben im Spiegel Verweise auf Labels.
+  - Completion criteria: - Round-Trip Datenbank → Dateien → leere Datenbank
+    ohne Verlust von Text, Notizen, Specs, Links, Auslösern (inkl. fired_at
+    und already_met), Terminen, Topic-Baum, Archiv- und Papierkorbstand und
+    Label-Zählern. - Notes und Backlog laufen in einem Sync (eine Vorschau,
+    ein Status, ein Konflikt-Dialog). - Eine in den Dateien ohne Label
+    angelegte Note erhält beim Import das nächste freie Label; die Datei
+    heißt danach NOTE-xxx.md; Verweise darauf werden umgeschrieben. - Links
+    auf unbekannte Ziele bleiben erhalten. - Änderungshinweise werden nicht
+    gespiegelt. - Das Dateiformat ist in docs/techdocs/interfaces.md
+    beschrieben, damit der Harness dagegen bauen kann. - Tests und
+    scripts/check.sh sind grün.
+  - Summary: Notes (mit Topics, Links, Auslösern und Dokumenten) lassen sich
+    im selben Sync wie der Backlog als Markdown ablegen und einlesen, damit
+    Claude sie in der Cloud nutzen kann; Markdown bleibt nur Sync-Option.
   - Notes: `items/STORY-047/STORY-047_notes.md`.
   - Spec: `items/STORY-047/STORY-047_spec.md`.
 
@@ -114,15 +128,21 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: None.
-  - Goal: Eine Note mit Kurzfassung, Status, Topic-Pfad, Prüf-Datum,
-    Auslösern, Modus, Links und Langtext (sowie die Topic-Struktur) lässt
-    sich in Markdown-Text umwandeln und wieder einlesen. Der Round-Trip
-    verliert nichts. Das Format ist durch Golden-Files festgelegt.
+  - Goal: Eine Note mit Kurzfassung, Status, Topic (Label), Prüf-Datum,
+    Auslösern (inkl. fired_at und already_met), Modus, Links,
+    Created/Updated, Archiv- und Papierkorbstand und Langtext, die
+    Topic-Struktur und die Label-Zähler lassen sich in Markdown-Text
+    umwandeln und wieder einlesen. Auch Notes und Topics ohne Label (in der
+    Cloud angelegt) sind Teil des Formats. Der Round-Trip verliert nichts.
+    Das Format ist durch Golden-Files festgelegt.
   - Completion criteria: Round-Trip ohne Verlust für Text, Status, Topic,
-    Prüf-Datum, Auslöser, Modus, Links und Termine; Golden-File-Tests pinnen
-    das Format; scripts/check.sh ist grün.
+    Prüf-Datum, Auslöser, Modus, Links, Termine, Created/Updated, Archiv-
+    und Papierkorbstand und Zähler; Notes und Topics ohne Label sind
+    abgedeckt; Golden-File-Tests pinnen das Format; scripts/check.sh ist
+    grün.
   - Summary: Reine Funktionen, die Notes und Topics in Markdown-Dateien
     schreiben und wieder einlesen, ohne Verlust.
+  - Notes: `items/TASK-024/TASK-024_notes.md`.
   - Spec: `items/TASK-024/TASK-024_spec.md`.
 
 - `TASK-025` **Notes-Spiegel: Port und Datei-Adapter mit atomarem Schreiben**
@@ -134,21 +154,24 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: `TASK-024`.
-  - Goal: Es gibt einen Port NotesMirror und einen Datei-Adapter, der pro
-    Projekt den Ordner notes/ im Spiegel-Ordner liest und schreibt:
-    NOTE-xxx.md, die zugehörigen Notizen-/Spec-Dateien und topics.md.
-    Schreiben ist atomar; eine Datei, die sich seit dem Lesen geändert hat,
-    führt zu einem Konfliktfehler. Ob der Spiegel sich geändert hat, lässt
-    sich ohne Änderung erkennen.
+  - Goal: Es gibt einen Port NotesMirror und einen Datei-Adapter (Paket
+    infrastructure/notes_files/), der pro Projekt den Ordner notes/ im
+    Spiegel-Ordner liest und schreibt: NOTE-xxx.md, die zugehörigen
+    Notizen-/Spec-Dateien, topics.md und counters.md, auch Notes ohne Label
+    (new-<kurzname>.md) sowie archivierte und Papierkorb-Notes. Schreiben
+    ist atomar; eine Datei, die sich seit dem Lesen geändert hat, führt zu
+    einem Konfliktfehler. Ob der Spiegel sich geändert hat, lässt sich ohne
+    Änderung erkennen.
   - Completion criteria: Lesen, Schreiben, atomares Ersetzen, Konflikt und
     Änderungserkennung sind per Test abgedeckt; die Importlinter-Regeln
     halten; scripts/check.sh ist grün.
   - Summary: Port und Adapter, die Notes samt Dokumenten als Dateien in den
     Spiegel-Ordner schreiben und von dort lesen, atomar und mit
     Konflikterkennung.
+  - Notes: `items/TASK-025/TASK-025_notes.md`.
   - Spec: `items/TASK-025/TASK-025_spec.md`.
 
-- `TASK-026` **Notes-Sync: Vorschau, Richtung, Konflikte und Label-Kollisionen**
+- `TASK-026` **Notes in den gemeinsamen Sync aufnehmen**
   - Type: Task.
   - Parent: `STORY-047`.
   - Required for parent: Yes.
@@ -156,23 +179,32 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Created: 2026-10-08.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `TASK-025`.
-  - Goal: Ein Sync-Use-Case gleicht die Notes eines Projekts zwischen
-    Datenbank und Notes-Spiegel ab. Er bietet eine Vorschau, löscht nichts
-    ohne Bestätigung, lässt die Richtung wählen (Standard: Datenbank →
-    Spiegel) und bricht bei Konflikten ab. Beim Import vergibt die
-    Zielumgebung für fehlende Labels neue; bei Kollisionen entscheidet die
-    Vorschau. Der Round-Trip verliert nichts.
-  - Completion criteria: Round-Trip ohne Verlust von Text, Notizen, Specs,
-    Links, Auslösern und Terminen (Golden-File-Test über die ganze Kette);
-    Vorschau, Richtung, Konfliktabbruch und Kollisionsbehandlung sind
-    getestet; Änderungs-Erkennung funktioniert; scripts/check.sh ist grün.
+  - Dependencies: `TASK-024`, `TASK-025`, `TASK-033`.
+  - Goal: Topics, Notes, Links, Auslöser, Note-Dokumente und Label-Zähler
+    laufen im bestehenden Sync (derselbe Endpunkt, dieselbe Vorschau,
+    dasselbe Token, derselbe Status, dieselben Konfliktentscheidungen aus
+    STORY-057). Beim Import erhalten Notes und Topics ohne Label das nächste
+    freie Label des Projekts, Verweise darauf werden umgeschrieben, die
+    Zähler laufen weiter, Labels werden nie wiederverwendet. Notes liegen
+    immer in der Datenbank, die Dateiseite ist für Notes immer der Spiegel.
+    Der Round-Trip verliert nichts.
+  - Completion criteria: - Round-Trip Datenbank → Spiegel → leere Datenbank
+    (Golden-File-Test über die ganze Kette) ohne Verlust von Text, Notizen,
+    Specs, Links, Auslösern inkl. fired_at und already_met, Terminen,
+    Topic-Baum, Archiv- und Papierkorbstand und Zählern. - Vorschau, Status
+    (Spiegel extern geändert, Konflikte) und Ausführen decken Backlog und
+    Notes gemeinsam ab; Konflikte werden wie im Backlog entschieden. -
+    Label-lose Notes bekommen beim Import ein neues Label; Verweise werden
+    umgeschrieben; der Zähler steigt nie rückwärts. - Links auf unbekannte
+    Ziele bleiben erhalten. - Tests (inkl. Prüfung an einer Kopie der echten
+    Datenbank); scripts/check.sh ist grün.
   - Summary: Sync-Use-Case, der Notes zwischen Datenbank und Spiegel
     abgleicht, mit Vorschau, Richtungswahl, Konfliktabbruch und
     Label-Kollisionsbehandlung beim Import.
+  - Notes: `items/TASK-026/TASK-026_notes.md`.
   - Spec: `items/TASK-026/TASK-026_spec.md`.
 
-- `TASK-027` **Notes-Sync im Einstellungsmenü bedienen**
+- `TASK-027` **Notes im gemeinsamen Sync-Dialog bedienen**
   - Type: Task.
   - Parent: `STORY-047`.
   - Required for parent: Yes.
@@ -180,18 +212,22 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Created: 2026-10-08.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `TASK-026`.
-  - Goal: Der Besitzer kann im Einstellungsmenü für ein Projekt den
-    Notes-Sync starten: Richtung wählen, Vorschau ansehen, Kollisionen
-    entscheiden, Löschen bestätigen und ausführen. Ein geänderter Spiegel
-    wird angezeigt.
-  - Completion criteria: Vorschau, Richtungswahl, Kollisionsentscheidung,
-    Bestätigung des Löschens und Ausführen sind in der UI möglich; der
-    Status 'Spiegel extern geändert' erscheint; Komponententests;
-    scripts/check.sh ist grün.
+  - Dependencies: `TASK-026`, `STORY-058`.
+  - Goal: Der gemeinsame Sync-Dialog (Einstellungsmenü) zeigt in der
+    Vorschau auch Topics, Notes und Note-Dokumente (neu, geändert,
+    unverändert, nur im Ziel) und nutzt für Konflikte den Konflikt-Dialog
+    aus STORY-058. Der Status „Spiegel extern geändert“ und die Zahl offener
+    Konflikte erfassen Notes mit. Es gibt keinen eigenen Notes-Sync-Dialog.
+  - Completion criteria: - Die Vorschau im Sync-Dialog listet auch Topics,
+    Notes und Note-Dokumente. - Konflikte bei Notes werden im
+    Konflikt-Dialog entschieden (Datenbank, Datei, aufschieben). - Das
+    Statussymbol erscheint auch bei extern geänderten Notes-Dateien. -
+    Komponenten- und Unit-Tests; Screenshot als Beleg; scripts/check.sh ist
+    grün.
   - Summary: Im Sync-Dialog der Projekte lässt sich der Notes-Sync mit
     Vorschau, Richtung und Entscheidungen ausführen; der Änderungsstatus
     wird angezeigt.
+  - Notes: `items/TASK-027/TASK-027_notes.md`.
   - Spec: `items/TASK-027/TASK-027_spec.md`.
 
 - `STORY-048` **Notes und Topics ohne Projekt anlegen**
@@ -321,3 +357,161 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ohne Harness-Bezug. 6. Der Cutover ist erfolgt und der Altcode entfernt.
   - Summary: Kompletter Neubau des ToDo-Viewers mit besserer Architektur und
     relationaler Datenstruktur, als eigenständiges Tool mit API für die KI.
+
+- `STORY-057` **Abgleich pro Eintrag mit Konfliktmeldung**
+  - Type: Story.
+  - Parent: `EPIC-006`.
+  - Required for parent: Yes.
+  - Status: Open.
+  - Created: 2026-10-14.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Sync zwischen Datenbank und Markdown-Spiegel merkt sich für
+    jeden Eintrag (Item, Papierkorb-Eintrag, Dokument), welchen Stand er
+    beim letzten Sync hatte, und erkennt dadurch pro Eintrag, welche Seite
+    ihn geändert hat. Wurde ein Eintrag auf beiden Seiten geändert oder auf
+    beiden Seiten mit derselben ID neu angelegt, meldet der Sync einen
+    Konflikt und überschreibt nichts. Beim Ausführen wird je Konflikt
+    Datenbank, Datei oder Aufschieben gewählt; aufgeschobene Konflikte
+    bleiben auf beiden Seiten unberührt und werden beim nächsten Abgleich
+    wieder gemeldet. Vor jeder Schema-Migration und vor jedem Sync, der in
+    die Datenbank schreibt, legt der Viewer automatisch ein Backup an. So
+    lässt sich der Backlog zwischen Rechnern und Cloud über Git abgleichen,
+    ohne dass Änderungen stillschweigend verloren gehen.
+  - Completion criteria: - Änderung auf beiden Seiten oder dieselbe neue ID
+    auf beiden Seiten führt nie zu stillem Überschreiben, sondern zu einem
+    gemeldeten Konflikt. - Jeder Konflikt lässt sich per API mit Datenbank,
+    Datei oder Aufschieben entscheiden; Einträge ohne Konflikt werden trotz
+    aufgeschobener Konflikte abgeglichen. - Der Sync-Status nennt die Zahl
+    der offenen Konflikte. - Der Stand je Eintrag überlebt die Migration der
+    echten Datenbank (an einer Kopie geprüft). - Vor Migration und
+    datenbankschreibendem Sync liegt ein Backup in configs/backups (die
+    letzten 10 automatischen bleiben). - Tests und scripts/check.sh sind
+    grün; Architektur- und Technikdoku sind aktuell.
+  - Summary: Der Sync merkt sich pro Eintrag den Stand des letzten
+    Abgleichs, meldet echte Konflikte statt zu überschreiben und lässt dich
+    je Konflikt zwischen Datenbank, Datei und Aufschieben wählen.
+  - Notes: `items/STORY-057/STORY-057_notes.md`.
+  - Spec: `items/STORY-057/STORY-057_spec.md`.
+
+- `STORY-058` **Konflikte im Sync mit Diff-Ansicht entscheiden**
+  - Type: Story.
+  - Parent: `EPIC-006`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-10-14.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `STORY-057`.
+  - Goal: Im Sync-Dialog des Einstellungsmenüs zeigt die UI die Konflikte
+    des Abgleichs einzeln an: Items feldweise nebeneinander (Datenbank und
+    Datei), Dokumente und Texte als Textvergleich mit hervorgehobenen
+    Unterschieden. Zu jedem Konflikt wählt der Besitzer Datenbank
+    übernehmen, Datei übernehmen oder Aufschieben; ausgeführt wird erst nach
+    Bestätigung. Aufgeschobene Konflikte bleiben als offen sichtbar, sodass
+    der Besitzer sie später nach händischen Änderungen wieder aufnehmen
+    kann.
+  - Completion criteria: - Der Sync-Dialog zeigt jeden Konflikt mit beiden
+    Fassungen und den Unterschieden (Items feldweise, Texte als
+    Textvergleich). - Pro Konflikt sind die drei Entscheidungen möglich; sie
+    gehen mit der Bestätigung an die API. Ausführen ist erst nach der
+    Vorschau möglich. - Aufgeschobene Konflikte erscheinen im Status als
+    offen (Zahl) und werden beim nächsten Sync wieder angeboten. -
+    Komponenten- und Unit-Tests; Screenshot als Beleg; scripts/check.sh
+    grün; Doku aktuell.
+  - Summary: Im Sync-Dialog siehst du jeden Konflikt mit beiden Fassungen
+    und den Unterschieden und entscheidest pro Konflikt: Datenbank
+    übernehmen, Datei übernehmen oder aufschieben.
+  - Notes: `items/STORY-058/STORY-058_notes.md`.
+  - Spec: `items/STORY-058/STORY-058_spec.md`.
+
+- `TASK-031` **Automatisches Datenbank-Backup vor Migration und Sync**
+  - Type: Task.
+  - Parent: `STORY-057`.
+  - Required for parent: Yes.
+  - Status: Open.
+  - Created: 2026-10-14.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Datenbank wird automatisch gesichert, bevor eine
+    Schema-Migration läuft und bevor ein Sync in die Datenbank schreibt. Die
+    Sicherung ist eine konsistente Kopie (auch im WAL-Betrieb) in
+    configs/backups und besteht eine Integritätsprüfung; von den automatisch
+    angelegten Sicherungen bleiben die letzten 10. Scheitert die Sicherung,
+    läuft die Migration bzw. der Sync nicht, und der Fehler wird gemeldet.
+  - Completion criteria: - Vor jeder Migration, die etwas ändert, und vor
+    jedem Sync, der in die Datenbank schreibt, liegt ein Backup (Dateiname
+    mit Zeitstempel und Anlass). - Test mit festgelegter Uhr: Dateiname und
+    Aufbewahrung der letzten 10; von Hand angelegte Sicherungen bleiben
+    unberührt. - Scheitert das Backup, bleiben Datenbank und Spiegel
+    unverändert, und der Fehler kommt mit stabilem Code zurück. - Das Backup
+    besteht die Integritätsprüfung. - scripts/check.sh grün; Betriebsdoku
+    beschreibt Ort und Aufbewahrung.
+  - Summary: Vor jeder Migration und vor jedem Sync, der die Datenbank
+    ändert, legt der Viewer selbst eine geprüfte Sicherung an; bei einem
+    Fehler geht so nichts verloren.
+  - Spec: `items/TASK-031/TASK-031_spec.md`.
+
+- `TASK-032` **Stand je Eintrag speichern und Änderungsseite erkennen**
+  - Type: Task.
+  - Parent: `STORY-057`.
+  - Required for parent: Yes.
+  - Status: Open.
+  - Created: 2026-10-14.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-031`.
+  - Goal: Nach jedem Sync speichert die Datenbank pro Eintrag (Item,
+    Papierkorb-Eintrag, Dokument) dessen Stand; eine versionierte Migration
+    legt die Tabelle an. Die Sync-Vorschau nennt pro Eintrag, welche Seite
+    ihn seit dem letzten Sync geändert hat (keine, Datenbank, Datei, beide,
+    auf beiden Seiten neu), und zählt die Konflikte; der Sync-Status nennt
+    diese Zahl. Für Einträge ohne gespeicherten Stand (vor dem ersten Sync
+    nach der Migration) gilt: nur auf einer Seite vorhanden = dort neu; auf
+    beiden Seiten vorhanden und verschieden = Konflikt.
+  - Completion criteria: - Nach einem Sync ist der Stand jedes abgeglichenen
+    Eintrags gespeichert; die Migration läuft an einer Kopie der echten
+    Datenbank fehlerfrei. - Die Vorschau unterscheidet pro Eintrag:
+    unverändert, nur Datenbank geändert, nur Datei geändert, beide geändert,
+    auf beiden Seiten neu. - Der Sync-Status enthält die Zahl der Konflikte.
+    - Die Klassifikation ist eine reine Funktion in domain mit Unit-Tests
+    für alle Fälle; Contract-Test für den neuen Speicher; scripts/check.sh
+    grün; Technikdoku aktuell.
+  - Summary: Der Sync merkt sich pro Eintrag den Stand des letzten Abgleichs
+    und zeigt in der Vorschau, welche Seite was geändert hat und wo echte
+    Konflikte liegen.
+  - Spec: `items/TASK-032/TASK-032_spec.md`.
+
+- `TASK-033` **Konflikte beim Sync entscheiden: Datenbank, Datei oder aufschieben**
+  - Type: Task.
+  - Parent: `STORY-057`.
+  - Required for parent: Yes.
+  - Status: Open.
+  - Created: 2026-10-14.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-032`.
+  - Goal: Der Sync-Aufruf nimmt je Konflikt eine Entscheidung entgegen:
+    Datenbank übernehmen, Datei übernehmen oder aufschieben. Entschiedene
+    Konflikte werden in die gewählte Richtung übertragen. Aufgeschobene und
+    nicht entschiedene Konflikte bleiben auf beiden Seiten unverändert und
+    behalten ihren alten Stand, sodass sie beim nächsten Abgleich wieder
+    gemeldet werden. Alle Einträge ohne Konflikt werden regulär abgeglichen.
+    Die Vorschau liefert zu jedem Konflikt beide Fassungen (Item-Felder bzw.
+    Dokumenttext), damit eine UI sie vergleichen kann; das Token schützt wie
+    bisher vor Änderungen zwischen Vorschau und Ausführen.
+  - Completion criteria: - Entscheidung „Datenbank“ überschreibt die Datei,
+    „Datei“ überschreibt die Datenbank, „aufschieben“ ändert an dem Eintrag
+    nichts. - Ein Lauf mit aufgeschobenen Konflikten gleicht alle übrigen
+    Einträge ab; der nächste Lauf meldet die aufgeschobenen wieder. - Ein
+    Konflikt ohne Entscheidung gilt als aufgeschoben (der Lauf bricht nicht
+    ab). - Macht der Besitzer beide Seiten eines aufgeschobenen Eintrags von
+    Hand gleich, ist der Konflikt danach weg. - Tests für jede Entscheidung,
+    den Mischfall und das Token; OpenAPI neu erzeugt; scripts/check.sh grün;
+    Technikdoku aktuell.
+  - Summary: Beim Ausführen des Syncs wählst du pro Konflikt Datenbank,
+    Datei oder Aufschieben; Aufgeschobenes bleibt unberührt und wird beim
+    nächsten Abgleich wieder gemeldet.
+  - Spec: `items/TASK-033/TASK-033_spec.md`.

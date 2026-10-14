@@ -18,31 +18,30 @@
 - Prüfen im Browser: `preview_start` mit der Dev-Konfiguration aus `.claude/launch.json` (existiert sie nicht, anlegen), Screenshot als Beleg.
 
 ## Ziel
-Bedienung des Notes-Syncs (STORY-047) in der UI.
+Notes im vorhandenen Sync-Dialog bedienen (STORY-047). Es gibt keinen eigenen Notes-Dialog und keine eigene Schaltfläche.
 
 ## Schon vorhanden
-- API (TASK-026): `GET /api/v2/sources/{source_id}/notes-sync-status`, `POST /api/v2/sources/{source_id}/notes-sync` (`direction`, `dry_run`, `decisions`, `confirm_delete`).
-- `components/SyncDialog.tsx` (Vorschau, Richtung, Bestätigung des Backlog-Syncs), `domain/sync.ts` (+ `sync.test.ts`), `settings/ProjectsSection.tsx`, Hooks für den Backlog-Sync in `api/queries.ts`.
-- Hinweis: `ProjectsSection.tsx` und `styles.css` haben in der Arbeitskopie uncommittete Änderungen; vorher `git status` prüfen und nichts davon verwerfen.
+- Gemeinsame Sync-API mit Notes (TASK-026), Konflikt-Dialog (STORY-058), `components/SyncDialog.tsx`, `domain/sync.ts` (+ `sync.test.ts`), `settings/ProjectsSection.tsx`, Hooks für den Sync in `api/queries.ts`.
+- Hinweis: `ProjectsSection.tsx` und `styles.css` können uncommittete Änderungen haben; vorher `git status` prüfen und nichts davon verwerfen.
 
 ## Zu tun
-1. `domain/sync.ts` (oder neu `domain/notesSync.ts`, + Test): `summarizePreview(preview)` (Zählungen), `needsDecision(preview)`, `canRun(preview, decisions, confirmDelete)`.
-2. Hooks: `useNotesSyncStatus(sourceId)`, `useNotesSyncPreview`, `useRunNotesSync`.
-3. `components/NotesSyncDialog.tsx` (oder Erweiterung von `SyncDialog` als zweiter Reiter, je nachdem, was das kleinere Risiko ist; bevorzugt eigener Dialog, der Layout und Textbausteine des `SyncDialog` wiederverwendet): Richtung, Vorschau-Tabelle (neu/geändert/unverändert/nur im Ziel/Kollision), Entscheidung je Kollision (`keep_db`, `take_mirror`, `import_as_new`), Checkbox „Im Ziel löschen“ nur wenn die Vorschau Einträge „nur im Ziel“ enthält, Ausführen erst nach Vorschau.
-4. In `settings/ProjectsSection.tsx` je Projekt mit Spiegel-Ordner: Button „Notes abgleichen“ und das Statussymbol „Spiegel extern geändert“.
+1. `domain/sync.ts` (+ Test): `summarizePreview` zählt auch Topics, Notes und Note-Dokumente; die Konfliktzahl umfasst Notes.
+2. `SyncDialog.tsx`: Abschnitte für Topics, Notes und Note-Dokumente in der Vorschau (neu, geändert, unverändert, nur im Ziel).
+3. Konflikt-Dialog (STORY-058) um die Darstellung von Note- und Topic-Konflikten erweitern: Felder nebeneinander, Langtext und Note-Dokumente als Textvergleich.
+4. Statussymbol in der Sidebar und in `ProjectsSection.tsx`: braucht keinen neuen Code, wenn der Status schon gemeinsam ist (TASK-026); sonst anpassen.
 5. i18n-Texte (Keys englisch).
 
 ## Dateien
-`web/src/components/NotesSyncDialog.tsx` (neu), `settings/ProjectsSection.tsx`, `web/src/domain/` (Funktionen + Test), `api/queries.ts`, `i18n/messages.ts`, Test `web/src/components/sync.test.tsx` (Ergänzung).
+`web/src/components/SyncDialog.tsx`, Konflikt-Komponenten aus STORY-058, `settings/ProjectsSection.tsx`, `web/src/domain/sync.ts` (+ Test), `api/queries.ts`, `i18n/messages.ts`, Test `web/src/components/sync.test.tsx` (Ergänzung).
 
 ## Nicht anfassen
-Den Backlog-Sync-Dialog (außer geteilten Textbausteinen), Backend.
+Backend, die Mechanik des Konflikt-Dialogs (nur um Notes erweitern).
 
 ## Tests
-Unit: `summarizePreview`, `needsDecision`, `canRun`. Komponenten: Vorschau wird geladen, Ausführen ist gesperrt bis alle Kollisionen entschieden sind, Löschen verlangt die Checkbox, Konfliktfehler (`mirror_conflict`) wird als Text angezeigt, Statussymbol bei externer Änderung.
+Unit: `summarizePreview` mit Notes, Konfliktzahl. Komponenten: Vorschau zeigt Topics, Notes und Note-Dokumente; Note-Konflikt erscheint im Konflikt-Dialog mit Textvergleich; Ausführen erst nach Vorschau; Fehler (`mirror_conflict`, `sync_stale`) wird als Text angezeigt; Statussymbol bei extern geänderter Notes-Datei.
 
 ## Stoppen und fragen
-Wenn `ProjectsSection.tsx` mit den uncommitteten Änderungen kollidiert oder wenn ein Projekt ohne Spiegel-Ordner den Button zeigen soll.
+Wenn `ProjectsSection.tsx` mit den uncommitteten Änderungen kollidiert oder wenn der Konflikt-Dialog aus STORY-058 Note-Felder nicht generisch darstellen kann.
 
 ## Abnahme
-Manuell: Projekt mit Spiegel-Ordner, Vorschau, Export und Import einer Note einmal durchspielen (Screenshot); Tests grün; `scripts/check.sh` grün.
+Manuell: Projekt mit Spiegel-Ordner, Vorschau, Export und Import einer Note einmal durchspielen, einen Notes-Konflikt entscheiden (Screenshot); Tests grün; `scripts/check.sh` grün.

@@ -370,25 +370,29 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Goal: Der Sync zwischen Datenbank und Markdown-Spiegel merkt sich für
     jeden Eintrag (Item, Papierkorb-Eintrag, Dokument), welchen Stand er
     beim letzten Sync hatte, und erkennt dadurch pro Eintrag, welche Seite
-    ihn geändert hat. Wurde ein Eintrag auf beiden Seiten geändert oder auf
-    beiden Seiten mit derselben ID neu angelegt, meldet der Sync einen
-    Konflikt und überschreibt nichts. Beim Ausführen wird je Konflikt
-    Datenbank, Datei oder Aufschieben gewählt; aufgeschobene Konflikte
-    bleiben auf beiden Seiten unberührt und werden beim nächsten Abgleich
-    wieder gemeldet. Vor jeder Schema-Migration und vor jedem Sync, der in
-    die Datenbank schreibt, legt der Viewer automatisch ein Backup an. So
-    lässt sich der Backlog zwischen Rechnern und Cloud über Git abgleichen,
-    ohne dass Änderungen stillschweigend verloren gehen.
-  - Completion criteria: - Änderung auf beiden Seiten oder dieselbe neue ID
-    auf beiden Seiten führt nie zu stillem Überschreiben, sondern zu einem
-    gemeldeten Konflikt. - Jeder Konflikt lässt sich per API mit Datenbank,
-    Datei oder Aufschieben entscheiden; Einträge ohne Konflikt werden trotz
-    aufgeschobener Konflikte abgeglichen. - Der Sync-Status nennt die Zahl
-    der offenen Konflikte. - Der Stand je Eintrag überlebt die Migration der
-    echten Datenbank (an einer Kopie geprüft). - Vor Migration und
-    datenbankschreibendem Sync liegt ein Backup in configs/backups (die
-    letzten 10 automatischen bleiben). - Tests und scripts/check.sh sind
-    grün; Architektur- und Technikdoku sind aktuell.
+    ihn geändert hat. Ein Lauf überträgt jeden Eintrag von der Seite, die
+    ihn geändert hat, auf die andere (beidseitiger Abgleich). Wurde ein
+    Eintrag auf beiden Seiten geändert, auf beiden Seiten mit derselben ID
+    neu angelegt oder auf einer Seite gelöscht, meldet der Sync einen
+    Konflikt und überschreibt oder löscht nichts. Beim Ausführen wird je
+    Konflikt Datenbank, Datei oder Aufschieben gewählt; aufgeschobene
+    Konflikte bleiben auf beiden Seiten unberührt und werden beim nächsten
+    Abgleich wieder gemeldet. Vor jeder Schema-Migration und vor jedem Sync,
+    der in die Datenbank schreibt, legt der Viewer automatisch ein Backup
+    an. So lässt sich der Backlog zwischen Rechnern und Cloud über Git
+    abgleichen, ohne dass Änderungen stillschweigend verloren gehen.
+  - Completion criteria: - Änderung auf beiden Seiten, dieselbe neue ID auf
+    beiden Seiten oder Löschung auf einer Seite führt nie zu stillem
+    Überschreiben, Löschen oder Wiederbeleben, sondern zu einem gemeldeten
+    Konflikt. - Ein Lauf überträgt konfliktfreie Änderungen in beide
+    Richtungen; `direction` schränkt nur ein. - Jeder Konflikt lässt sich
+    per API mit Datenbank, Datei oder Aufschieben entscheiden; Einträge ohne
+    Konflikt werden trotz aufgeschobener Konflikte abgeglichen. - Der
+    Sync-Status nennt die Zahl der offenen Konflikte. - Der Stand je Eintrag
+    überlebt die Migration der echten Datenbank (an einer Kopie geprüft). -
+    Vor Migration und datenbankschreibendem Sync liegt ein Backup in
+    configs/backups. - Tests und scripts/check.sh sind grün; Architektur-
+    und Technikdoku sind aktuell.
   - Summary: Der Sync merkt sich pro Eintrag den Stand des letzten
     Abgleichs, meldet echte Konflikte statt zu überschreiben und lässt dich
     je Konflikt zwischen Datenbank, Datei und Aufschieben wählen.
@@ -467,10 +471,12 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Papierkorb-Eintrag, Dokument) dessen Stand; eine versionierte Migration
     legt die Tabelle an. Die Sync-Vorschau nennt pro Eintrag, welche Seite
     ihn seit dem letzten Sync geändert hat (keine, Datenbank, Datei, beide,
-    auf beiden Seiten neu), und zählt die Konflikte; der Sync-Status nennt
-    diese Zahl. Für Einträge ohne gespeicherten Stand (vor dem ersten Sync
-    nach der Migration) gilt: nur auf einer Seite vorhanden = dort neu; auf
-    beiden Seiten vorhanden und verschieden = Konflikt.
+    auf beiden Seiten neu, auf einer Seite gelöscht), und zählt die
+    Konflikte (beide geändert, beidseitig neu mit verschiedenem Inhalt,
+    gelöscht); der Sync-Status nennt diese Zahl. Für Einträge ohne
+    gespeicherten Stand (vor dem ersten Sync nach der Migration) gilt: nur
+    auf einer Seite vorhanden = dort neu; auf beiden Seiten vorhanden und
+    verschieden = Konflikt.
   - Completion criteria: - Nach einem Sync ist der Stand jedes abgeglichenen
     Eintrags gespeichert; die Migration läuft an einer Kopie der echten
     Datenbank fehlerfrei. - Die Vorschau unterscheidet pro Eintrag:
@@ -494,11 +500,12 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Priority: Normal.
   - Dependencies: `TASK-032`.
   - Goal: Der Sync-Aufruf nimmt je Konflikt eine Entscheidung entgegen:
-    Datenbank übernehmen, Datei übernehmen oder aufschieben. Entschiedene
-    Konflikte werden in die gewählte Richtung übertragen. Aufgeschobene und
-    nicht entschiedene Konflikte bleiben auf beiden Seiten unverändert und
-    behalten ihren alten Stand, sodass sie beim nächsten Abgleich wieder
-    gemeldet werden. Alle Einträge ohne Konflikt werden regulär abgeglichen.
+    Datenbank übernehmen, Datei übernehmen oder aufschieben; das gilt auch
+    für Löschungen auf einer Seite. Entschiedene Konflikte werden in die
+    gewählte Richtung übertragen. Aufgeschobene und nicht entschiedene
+    Konflikte bleiben auf beiden Seiten unverändert und behalten ihren alten
+    Stand, sodass sie beim nächsten Abgleich wieder gemeldet werden. Alle
+    Einträge ohne Konflikt werden regulär abgeglichen, in beide Richtungen.
     Die Vorschau liefert zu jedem Konflikt beide Fassungen (Item-Felder bzw.
     Dokumenttext), damit eine UI sie vergleichen kann; das Token schützt wie
     bisher vor Änderungen zwischen Vorschau und Ausführen.
@@ -515,3 +522,41 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Datei oder Aufschieben; Aufgeschobenes bleibt unberührt und wird beim
     nächsten Abgleich wieder gemeldet.
   - Spec: `items/TASK-033/TASK-033_spec.md`.
+
+- `STORY-059` **Auto-Sync für Projekte mit Spiegel (abschaltbar)**
+  - Type: Story.
+  - Parent: `EPIC-006`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-10-14.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-057`.
+  - Goal: Der Viewer gleicht ein Projekt mit Spiegel-Ordner automatisch ab,
+    wenn sich eine Seite geändert hat, zum Beispiel nach einem Pull aus der
+    Cloud, ohne dass der Besitzer daran denken muss. Der Auto-Sync ist pro
+    Projekt ein- und ausschaltbar (Standard: aus). Er überträgt alles
+    Konfliktfreie in die jeweils andere Seite. Konflikte, Löschungen und
+    Unlesbares überträgt er nie, sondern lässt sie offen und zeigt sie an,
+    bis der Besitzer im Sync-Dialog entscheidet. Vor einem Lauf, der in die
+    Datenbank schreibt, liegt ein Backup (mit Aufbewahrung, die häufige
+    Läufe aushält). Letzter Lauf und Zahl offener Konflikte sind sichtbar.
+  - Completion criteria: - Pro Projekt gibt es einen Schalter im
+    Einstellungsmenü und in der API (Standard: aus). Ausgeschaltet verändert
+    der Viewer nichts von selbst. - Eingeschaltet übernimmt der Viewer
+    Änderungen der Dateien (z. B. nach einem Pull) und der Datenbank
+    innerhalb des eingestellten Intervalls in die jeweils andere Seite, ohne
+    Klick; beim Start läuft ein Abgleich. - Konflikte und Löschungen werden
+    nie automatisch übertragen; sie bleiben offen und im Status sichtbar. -
+    Dateien mit Git-Merge-Markern oder unlesbare Dateien werden nicht
+    eingelesen; der Lauf pausiert mit Meldung. Ein noch laufender Pull wird
+    abgewartet (Beruhigungszeit). - Vor einem automatischen Lauf, der in die
+    Datenbank schreibt, liegt ein Backup; häufige Läufe verdrängen ältere
+    Sicherungen nicht. - Tests ohne echten Timer (feste Uhr);
+    Architekturregel §1 ist geändert und vom Besitzer freigegeben;
+    scripts/check.sh grün; Doku aktuell.
+  - Summary: Der Viewer gleicht ein Projekt mit Spiegel-Ordner von selbst
+    ab, wenn du den Schalter eingeschaltet hast, damit du nach einem Pull
+    aus der Cloud den Sync nicht vergessen kannst. Konflikte und Löschungen
+    bleiben offen, bis du entscheidest.
+  - Spec: `items/STORY-059/STORY-059_spec.md`.

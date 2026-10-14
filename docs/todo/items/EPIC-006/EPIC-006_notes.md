@@ -27,3 +27,9 @@
 ### Open
 
 - Verhältnis zu den Harness-Änderungen (Dateimodus in der Cloud) bleibt beim Besitzer.
+
+## 2026-10-14 — Auto-Sync-Story angelegt (2026-10-14)
+
+### Decided
+
+- STORY-059 (Auto-Sync, abschaltbar, hängt von STORY-057 ab) angelegt, weil der Besitzer einen echten Auto-Sync will. Er berührt die Architekturregeln §1 und §3; der Wortlaut der Änderung liegt dem Besitzer zur Freigabe vor.

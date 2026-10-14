@@ -20,6 +20,8 @@ Der Sync-Lauf nimmt je Konflikt eine Entscheidung entgegen und überträgt nur, 
 - Das Token deckt die Konfliktliste mit ab; ändert sich eine Seite seit der Vorschau, antwortet der Server wie bisher mit 409 `sync_stale`.
 - Antwort: `resolved` (was übertragen wurde), `deferred` (offen geblieben), `kept` und `deleted` wie bisher.
 - Aufgeschobene Einträge: Inhalt beider Seiten und gespeicherter Stand bleiben unverändert.
+- Löschungen sind Konflikte: `database` heißt, der Zustand der Datenbank gilt (fehlt der Eintrag dort, wird er in der Datei gelöscht; fehlt er in der Datei, wird er dort wiederhergestellt), `markdown` entsprechend; `defer` lässt beides stehen. `delete_missing` entfällt (Vorschlag, im Plan zu bestätigen).
+- `direction` ist optional und schränkt nur ein, welche Richtungen der Lauf ausführt; ohne Angabe läuft der Abgleich in beide Richtungen.
 - Die Vorschau liefert je Konflikt beide Fassungen (Item: alle Felder als Werte; Dokument: Text beider Seiten), damit STORY-058 sie vergleichen kann.
 - Der Stand je Eintrag wird am Ende des Laufs nur für wirklich übertragene Einträge geschrieben; bricht ein Lauf mitten drin ab, gelten die übrigen nicht als synchron.
 - Läuft der Sync in die Datenbank, liegt vorher ein Backup (TASK-031).

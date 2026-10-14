@@ -19,13 +19,16 @@ Pro Eintrag den Stand des letzten Syncs speichern und daraus ableiten, welche Se
 - Eintragsschlüssel: (Art, Label, Name). Art `item` oder `document`; Papierkorb-Items sind Items mit `deleted`; Name nur bei Dokumenten. STORY-047 ergänzt weitere Arten.
 - Gespeichert wird die Version beider Seiten, die nach dem Sync übereinstimmen (`Item.version`, `content_version`). Nur Versionen, kein Inhalt. Eine Tabelle, Schlüssel inkl. Projekt-ID, versionierte Migration (nächste Nummer in `migrations.py`), Port in `application/ports.py` mit Contract-Test, Datenbank-Adapter in `infrastructure/database/`.
 - Geschrieben wird der Stand nur am Ende eines erfolgreichen Syncs (`confirm`), und nur für Einträge, die danach auf beiden Seiten gleich sind. Aufgeschobene Konflikte und absichtlich stehen gelassene Einträge (`kept`) bekommen keinen neuen Stand.
-- Die Klassifikation ist eine reine Funktion in `domain/sync.py`. Seiten heißen `database` und `markdown`, unabhängig von der Primärquelle. Ergebnisse: unverändert, nur Datenbank geändert, nur Markdown geändert, beide geändert, nur in der Datenbank neu, nur in Markdown neu, auf beiden Seiten neu mit verschiedenem Inhalt. Konflikt = beide geändert oder auf beiden Seiten neu mit verschiedenem Inhalt.
+- Die Klassifikation ist eine reine Funktion in `domain/sync.py`. Seiten heißen `database` und `markdown`, unabhängig von der Primärquelle. Ergebnisse: unverändert, nur Datenbank geändert, nur Markdown geändert, beide geändert, nur in der Datenbank neu, nur in Markdown neu, auf beiden Seiten neu mit verschiedenem Inhalt, in der Datenbank gelöscht, in Markdown gelöscht (Stand vorhanden, Eintrag fehlt auf einer Seite). Konflikt = beide geändert, auf beiden Seiten neu mit verschiedenem Inhalt oder gelöscht auf einer Seite (Besitzer, 2026-10-14: Löschungen sind Konflikte).
 - Ohne gespeicherten Stand (vor dem ersten Sync nach der Migration): nur auf einer Seite vorhanden = dort neu; auf beiden Seiten vorhanden und verschieden = Konflikt.
 - `Source.baseline` und `classify` bleiben für den Gesamtstatus erhalten; `SyncStatusService` ergänzt die Zahl der Konflikte (`conflicts`).
 - `SyncPreview` erhält je Eintrag die Änderungsseite; API-Schema und generierte TS-Typen ändern sich.
 
-## Offen (hängt an der offenen Frage zur Richtung in STORY-057)
-- Ob `direction` die Klassifikation beeinflusst oder nur einschränkt, entscheidet der Besitzer vor dem Plan.
+## Festgelegt: Richtung
+- Beidseitiger Abgleich (Variante A, STORY-057): `direction` beeinflusst die Klassifikation nicht, sie schränkt nur ein, welche Richtungen ein Lauf ausführt.
+
+## Offen
+- Hash oder Snapshot: Ob statt der Version der Inhalt des letzten gemeinsamen Stands gespeichert wird (nötig für automatisches Zusammenführen), hängt an der Merge-Frage in STORY-057. Empfehlung: Snapshot.
 
 ## Dateien
 `domain/sync.py`, `domain/source.py`, `application/ports.py`, `application/services/sync.py`, `syncstatus.py`, `application/container.py`, `bootstrap.py`, `infrastructure/database/schema.py`, `migrations.py`, neues Modul für den Speicher, `api/v2/schemas.py`, `routers.py`, Tests `backend/tests/{unit/domain,unit/application,contract,integration,api_v2}`, `docs/techdocs/{architecture,interfaces,operations}.md`.

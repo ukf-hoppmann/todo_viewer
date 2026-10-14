@@ -20,3 +20,15 @@
 
 - Richtung: beidseitiger Abgleich pro Eintrag mit direction als Einschränkung (Vorschlag) oder Richtung wie bisher mit Konflikt bei Änderung nur auf der Zielseite.
 - Gelöschte Einträge: weiter als „fehlt“ melden (Vorschlag) oder als Konflikt.
+
+## 2026-10-14 — Entscheidungen vom 2026-10-14 (Richtung, Löschungen, Auto-Sync)
+
+### Decided
+
+- Variante A: beidseitiger Abgleich pro Eintrag; direction nur als Einschränkung.
+- Löschungen werden wie Konflikte entschieden (Datenbank, Datei, aufschieben); delete_missing entfällt (Vorschlag).
+- Der Besitzer will einen echten, abschaltbaren Auto-Sync: STORY-059. Er berührt Architektur §1 und §3; der Wortlaut der Änderung steht zur Freigabe.
+
+### Open
+
+- Merge: automatisches Zusammenführen von Konflikten gewünscht (Aussage „Konflikte sollten gemerged sein“)? Wirkt auf TASK-032 (Snapshot statt Hash).

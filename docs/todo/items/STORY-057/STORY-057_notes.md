@@ -32,3 +32,9 @@
 ### Open
 
 - Merge: automatisches Zusammenführen von Konflikten gewünscht (Aussage „Konflikte sollten gemerged sein“)? Wirkt auf TASK-032 (Snapshot statt Hash).
+
+## 2026-10-14 — Merge entschieden (2026-10-14)
+
+### Decided
+
+- Variante (a): Konflikte liegen zur Entscheidung bereit (Datenbank, Datei, aufschieben; Diff-Ansicht in STORY-058). Kein automatischer Merge; gespeichert wird die Version (Hash) je Eintrag. Ein automatischer Merge wäre eine spätere eigene Story.

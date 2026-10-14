@@ -559,4 +559,5 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ab, wenn du den Schalter eingeschaltet hast, damit du nach einem Pull
     aus der Cloud den Sync nicht vergessen kannst. Konflikte und Löschungen
     bleiben offen, bis du entscheidest.
+  - Notes: `items/STORY-059/STORY-059_notes.md`.
   - Spec: `items/STORY-059/STORY-059_spec.md`.

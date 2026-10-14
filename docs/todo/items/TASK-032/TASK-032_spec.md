@@ -27,8 +27,8 @@ Pro Eintrag den Stand des letzten Syncs speichern und daraus ableiten, welche Se
 ## Festgelegt: Richtung
 - Beidseitiger Abgleich (Variante A, STORY-057): `direction` beeinflusst die Klassifikation nicht, sie schränkt nur ein, welche Richtungen ein Lauf ausführt.
 
-## Offen
-- Hash oder Snapshot: Ob statt der Version der Inhalt des letzten gemeinsamen Stands gespeichert wird (nötig für automatisches Zusammenführen), hängt an der Merge-Frage in STORY-057. Empfehlung: Snapshot.
+## Festgelegt: Hash
+- Gespeichert wird die Version (Hash), nicht der Inhalt (Besitzer, 2026-10-14: Konflikte liegen zur Entscheidung bereit, kein automatischer Merge). Ein späterer automatischer Merge bräuchte den Inhalt und damit eine weitere Migration.
 
 ## Dateien
 `domain/sync.py`, `domain/source.py`, `application/ports.py`, `application/services/sync.py`, `syncstatus.py`, `application/container.py`, `bootstrap.py`, `infrastructure/database/schema.py`, `migrations.py`, neues Modul für den Speicher, `api/v2/schemas.py`, `routers.py`, Tests `backend/tests/{unit/domain,unit/application,contract,integration,api_v2}`, `docs/techdocs/{architecture,interfaces,operations}.md`.

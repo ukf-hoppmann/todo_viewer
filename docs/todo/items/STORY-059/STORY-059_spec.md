@@ -8,8 +8,8 @@ Wer Dateien aus der Cloud (claude.ai, Git) pullt, darf den Sync nicht vergessen 
 - Alles Konfliktfreie wird abgeglichen (beidseitig pro Eintrag, STORY-057). Konflikte und Löschungen werden nie automatisch übertragen; sie bleiben offen und sichtbar, bis der Besitzer im Sync-Dialog entscheidet (STORY-058).
 - Der Auto-Sync löscht nie etwas.
 
-## Konflikt mit einer Architekturregel (Entwurf, NICHT freigegeben, nicht umsetzen vor Freigabe)
-`docs/development/architecture.md` §1 verbietet heute jede automatische Datenübertragung („never automatically, not even after a write to the primary source“); EPIC-004 hat das so festgelegt. Vorgeschlagene Änderung (Wortlaut in der Antwort an den Besitzer, hier Kurzfassung):
+## Architekturregel (geändert und vom Besitzer freigegeben am 2026-10-14)
+Bisher verbot `docs/development/architecture.md` §1 jede automatische Datenübertragung (so festgelegt in EPIC-004). Die Änderung steht jetzt in §1 und §3 dieser Datei und ist verbindlich. Kurzfassung:
 - §1: Daten wandern nur durch einen Sync. Ein Sync wird angefordert (Besitzer oder API-Aufruf) oder, nur bei Projekten mit eingeschaltetem Auto-Sync-Schalter, vom Viewer selbst gestartet. Ohne den Schalter (Standard: aus) wandert nichts von selbst.
 - §1: Der Sync vergleicht Eintrag für Eintrag mit dem Stand des letzten Syncs. Ein nur auf einer Seite geänderter Eintrag geht auf die andere Seite; Änderung auf beiden Seiten, beidseitig neu mit verschiedenem Inhalt oder Löschung auf einer Seite sind Konflikte und werden nie überschrieben; der Besitzer entscheidet je Konflikt (Datenbank, Datei, aufschieben). Die Richtung darf je Lauf eingeschränkt werden (statt Standardrichtung Primärquelle → Spiegel).
 - §1: Ein automatischer Sync überträgt nur Konfliktfreies, löscht nie, liest keine unlesbaren Dateien und keine Dateien mit Merge-Markern und legt vor einem Schreiben in die Datenbank ein Backup an.
@@ -25,8 +25,6 @@ Wer Dateien aus der Cloud (claude.ai, Git) pullt, darf den Sync nicht vergessen 
 - Sobald STORY-047 fertig ist, deckt der Auto-Sync die Notes mit ab (derselbe Sync).
 
 ## Offen
-- Freigabe der Architekturänderung durch den Besitzer.
-- Merge-Frage aus STORY-057 (sollen Konflikte automatisch zusammengeführt werden, wo es eindeutig ist?).
 - Standard des Intervalls, Namen der Einstellungen, ob die Beruhigungszeit einstellbar sein soll.
 
 ## Betroffene Stellen (Stand der Analyse)

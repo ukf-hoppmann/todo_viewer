@@ -46,3 +46,9 @@
 ### Decided
 
 - EPIC-002 wird wieder geöffnet; die UI dafür kommt als eigene Story unter EPIC-002.
+
+## 2026-10-09 — Wieder geöffnet für Mehrfachauswahl im Papierkorb
+
+### Decided
+
+- Auf Wunsch des Owners wieder geöffnet: Der Papierkorb bekommt eine Mehrfachauswahl (neue Story). Die Papierkorb-Ansicht selbst stammt aus STORY-014.

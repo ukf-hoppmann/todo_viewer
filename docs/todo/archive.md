@@ -494,26 +494,6 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Resolution: Vom Projektverantwortlichen am 2026-09-30 bestätigt.
   - Notes: `items/STORY-018/STORY-018_notes.md`.
 
-- `EPIC-002` **Backlog-Pflege in der UI**
-  - Type: Epic.
-  - Status: Completed.
-  - Created: 2026-09-27.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: In der UI lassen sich Items anlegen und löschen, ihre
-    Freitext-Felder (Titel, Goal, Completion criteria, Summary, Area,
-    Parent, Dependencies) bearbeiten sowie Notes-Einträge und Specs
-    schreiben. Die UI nutzt dafür die Endpunkte aus `EPIC-001`.
-  - Completion criteria: Alle Pflichtkinder sind abgeschlossen; jede
-    genannte Funktion ist in der UI bedienbar, Fehlercodes der API werden
-    übersetzt angezeigt, und der Projektverantwortliche hat die Bedienung
-    geprüft.
-  - Summary: Alles, was künftig ein Agent über die API am Backlog ändern
-    kann, soll auch direkt in der Oberfläche möglich sein.
-  - Resolution: Vom Projektverantwortlichen am 2026-09-30 bestätigt.
-  - Notes: `items/EPIC-002/EPIC-002_notes.md`.
-
 - `STORY-019` **Architekturregeln für wählbares Speicher-Backend öffnen**
   - Type: Story.
   - Parent: `EPIC-003`.
@@ -1022,3 +1002,918 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     ein Einstellungsmenü bündelt Primärquelle, Pfade, Sync und Status.
   - Resolution: Confirmed by the project owner on 2026-09-30.
   - Notes: `items/EPIC-004/EPIC-004_notes.md`.
+
+- `STORY-046` **Doku und Release für Notes und Topics**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-06.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Techdocs (Architektur, Schnittstellen, Betrieb, Konfiguration
+    inklusive Prüf-Intervall), README und Release.
+  - Completion criteria: Doku beschreibt Modell, API, Auslöser und
+    Bedienung; Release ist getaggt.
+  - Summary: Techdocs (Architektur, Schnittstellen, Betrieb, Konfiguration
+    inklusive Prüf-Intervall), README und Release.
+  - Resolution: Vom Besitzer bestätigt am 2026-10-08: Techdocs zu Notes und
+    Topics ergänzt (Betriebsteil), Routen, Antwortfelder und Fehlercodes
+    gegen den Code abgeglichen; kein eigenes Release, da nur Doku (v0.8.0
+    trägt die Funktionen).
+  - Notes: `items/STORY-046/STORY-046_notes.md`.
+  - Spec: `items/STORY-046/STORY-046_spec.md`.
+
+- `TASK-004` **Topics-API: anlegen, lesen, ändern, verschieben, löschen**
+  - Type: Task.
+  - Parent: `STORY-039`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Topics lassen sich über API v2 anlegen, lesen, umbenennen, mit
+    Termin versehen, verschieben (Tiefe und Schleifen werden geprüft), in
+    den Papierkorb löschen (mit Kaskade) und wiederherstellen. Der Rahmen
+    für alle Notes-Routen (Router-Gruppe, Schemas, Fehlerabbildung,
+    Container) steht.
+  - Completion criteria: Alle genannten Topic-Operationen sind per API-Test
+    abgedeckt, inklusive der Fehlerfälle; test_openapi.py ist grün;
+    scripts/check.sh ist grün.
+  - Summary: HTTP-Routen für Topics samt Service-Rahmen, Fehlercodes und
+    Verdrahtung; die Basis für alle weiteren Notes-Routen.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Spec: `items/TASK-004/TASK-004_spec.md`.
+
+- `TASK-005` **Notes-API: anlegen, lesen, ändern, Projekt wechseln**
+  - Type: Task.
+  - Parent: `STORY-039`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-004`.
+  - Goal: Notes lassen sich über API v2 anlegen, lesen (mit Auslösern und
+    abgeleitetem Zustand), ändern (Kurzfassung, Langtext, Topic,
+    Auslöser-Modus), als geprüft behalten und in ein anderes Projekt
+    verschieben. Gleichzeitige Änderungen werden über den Versionstoken
+    erkannt.
+  - Completion criteria: Alle Operationen sind per API-Test abgedeckt,
+    inklusive Versionskonflikt und Projektwechsel; scripts/check.sh ist
+    grün.
+  - Summary: HTTP-Routen für Notes (anlegen, lesen, ändern, behalten,
+    Projektwechsel) mit Versionstoken.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Spec: `items/TASK-005/TASK-005_spec.md`.
+
+- `TASK-006` **Notes-API: Lebenszyklus, Auslöser, Archiv und Papierkorb**
+  - Type: Task.
+  - Parent: `STORY-039`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-005`.
+  - Goal: Der Lebenszyklus einer Note ist über API v2 bedienbar: erledigen,
+    verwerfen, zurückstellen (mit neuem Datum oder neuem Auslöser), Auslöser
+    anlegen und entfernen, löschen, wiederherstellen, Papierkorb lesen.
+    Endgültiges Löschen gibt es nicht über HTTP.
+  - Completion criteria: Jede Operation ist per API-Test abgedeckt, auch die
+    abgelehnten Übergänge; es gibt keine Purge-Route; scripts/check.sh ist
+    grün.
+  - Summary: HTTP-Routen für Erledigen, Verwerfen, Zurückstellen, Auslöser
+    setzen/entfernen, Löschen, Wiederherstellen und die Papierkorb-Liste.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Spec: `items/TASK-006/TASK-006_spec.md`.
+
+- `TASK-007` **Links-API: setzen, lösen, in beide Richtungen abfragen**
+  - Type: Task.
+  - Parent: `STORY-039`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-005`.
+  - Goal: Links lassen sich über API v2 setzen und lösen und in beide
+    Richtungen abfragen (Links einer Note; Notes, die auf ein Item, Topic
+    oder eine Note zeigen). Das Ziel wird geprüft.
+  - Completion criteria: Links setzen, lösen und beide Abfragen sind per
+    API-Test abgedeckt, auch das nicht gefundene Ziel; ein Link auf ein Item
+    übersteht retype; scripts/check.sh ist grün.
+  - Summary: HTTP-Routen und Service für Links von Notes auf Items, Topics
+    und andere Notes; Abfrage der Notes zu einem Item.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Spec: `items/TASK-007/TASK-007_spec.md`.
+
+- `TASK-008` **Dokumente einer Note: Notizen und Specs lesen und schreiben**
+  - Type: Task.
+  - Parent: `STORY-039`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-005`.
+  - Goal: Notizen und Specs einer Note lassen sich über API v2 lesen,
+    vollständig ersetzen und (für Notizen) mit einem datierten Eintrag
+    ergänzen. Der Versionstoken schützt vor gleichzeitigen Änderungen.
+  - Completion criteria: Lesen, Schreiben, Anhängen und Versionskonflikt
+    sind per API-Test abgedeckt; unzulässige Dateinamen werden abgelehnt;
+    scripts/check.sh ist grün.
+  - Summary: HTTP-Routen und Service für Notizen und Specs einer Note, wie
+    beim Backlog, mit Versionstoken.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Spec: `items/TASK-008/TASK-008_spec.md`.
+
+- `TASK-009` **Notes-Index, Fällig-Zähler, Fällig-Liste und Notes-Einstellungen**
+  - Type: Task.
+  - Parent: `STORY-039`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-006`, `TASK-007`.
+  - Goal: Ein LLM und die UI laden nur das Nötige: ein Index mit Label,
+    Status, Fälligkeit und Kurzfassung (filterbar), eine billige
+    Zähler-Abfrage und eine projektübergreifende Fällig-Liste mit Grund und
+    möglichen Aktionen. Die Notes-Einstellungen (Prüf-Intervall,
+    Topic-Tiefe) sind lesbar und schreibbar und wirken ohne Neustart.
+  - Completion criteria: Index (alle Filter, nie Langtexte), Zähler und
+    Fällig-Liste sind per API-Test abgedeckt; der Zähler ändert sich, wenn
+    eine Note fällig wird oder aufgelöst wird; Einstellungen wirken sofort;
+    test_openapi.py ist grün.
+  - Summary: Schlanker Index ohne Langtexte mit Filtern, billiger Zähler und
+    globale Fällig-Liste; dazu Lesen und Schreiben der Notes-Einstellungen.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Spec: `items/TASK-009/TASK-009_spec.md`.
+
+- `TASK-010` **Hinweis-Modell: speichern, fällig machen, entscheiden**
+  - Type: Task.
+  - Parent: `STORY-041`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-009`.
+  - Goal: Es gibt Änderungshinweise als Daten in der Datenbank. Ein offener
+    Hinweis macht die Note fällig (Grund notice), erscheint im Zähler und in
+    der Fällig-Liste und bleibt, bis jemand entscheidet. Die Entscheidungen
+    behalten, abkoppeln und verwerfen sind über API v2 möglich; die
+    Entscheidung befördern wird von STORY-042 angeschlossen.
+  - Completion criteria: Hinweise lassen sich speichern, lesen und
+    entscheiden; jede Entscheidung führt zum beschriebenen Zustand; ein
+    offener Hinweis macht die Note fällig und zählt im Zähler; Migration und
+    Contract-Suite sind grün; scripts/check.sh ist grün.
+  - Summary: Datenmodell, Service und API für Änderungshinweise; offene
+    Hinweise machen eine Note fällig; Entscheidungen behalten, abkoppeln,
+    verwerfen.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-010/TASK-010_notes.md`.
+  - Spec: `items/TASK-010/TASK-010_spec.md`.
+
+- `TASK-011` **Hinweise an Notes bei Änderung eines verlinkten Items**
+  - Type: Task.
+  - Parent: `STORY-041`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-010`.
+  - Goal: Wird ein Item, auf das eine Note per Link der Rolle reference
+    zeigt, abgeschlossen, verworfen, gelöscht oder im Typ geändert, bekommt
+    die Note einen offenen Hinweis. Bei Links der Rolle trigger und origin
+    entsteht kein Hinweis.
+  - Completion criteria: Für jede der vier Ursachen entsteht genau ein
+    Hinweis (Testmatrix, auch projektübergreifend); trigger- und
+    origin-Links erzeugen keinen; scripts/check.sh ist grün.
+  - Summary: Abschluss, Verwerfen, Löschen und Typwechsel eines verlinkten
+    Items erzeugen einen Hinweis an der Note.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-011/TASK-011_notes.md`.
+  - Spec: `items/TASK-011/TASK-011_spec.md`.
+
+- `TASK-012` **Hinweise an Items, wenn eine verlinkte Note verworfen oder befördert wird**
+  - Type: Task.
+  - Parent: `STORY-041`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-010`.
+  - Goal: Wird eine Note verworfen oder befördert, bekommen die Items, auf
+    die sie per Link der Rolle reference zeigt, einen Hinweis, den man zur
+    Kenntnis nehmen kann. Der Hinweis ist über die API am Item abfragbar.
+  - Completion criteria: Verwerfen und Befördern erzeugen je einen Hinweis
+    pro verlinktem Item; acknowledge schließt ihn; scripts/check.sh ist
+    grün.
+  - Summary: Verwerfen oder Befördern einer Note erzeugt einen Hinweis an
+    den verlinkten Items zur Kenntnisnahme.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-012/TASK-012_notes.md`.
+  - Spec: `items/TASK-012/TASK-012_spec.md`.
+
+- `TASK-013` **Note zu Task, Story oder Epic befördern (Backend)**
+  - Type: Task.
+  - Parent: `STORY-042`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-007`, `TASK-008`, `TASK-010`.
+  - Goal: Eine Note wird über die API zu einem Task, einer Story oder einem
+    Epic: Das Item entsteht über den normalen Anlageweg mit allen
+    Backlog-Prüfungen, Langtext, Notizen und Specs der Note wandern an das
+    Item, die Note gilt als befördert und wird archiviert, der Link origin
+    bleibt. Ein abgebrochener Vorgang ist erkennbar und wiederholbar.
+  - Completion criteria: Beförderung funktioniert für alle drei Typen;
+    fehlende Pflichtfelder und geschlossener Parent werden abgelehnt;
+    Notizen und Specs sind am Item vorhanden; ein Abbruch nach dem Anlegen
+    verliert nichts und die Wiederholung legt kein zweites Item an;
+    scripts/check.sh ist grün.
+  - Summary: Service und API-Route, die aus einer Note ein Backlog-Item
+    machen, Notizen und Specs mitnehmen und die Herkunft verlinken.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-013/TASK-013_notes.md`.
+  - Spec: `items/TASK-013/TASK-013_spec.md`.
+
+- `TASK-014` **Offenes Item zur Note zurückstufen (Backend)**
+  - Type: Task.
+  - Parent: `STORY-042`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-013`.
+  - Goal: Ein Item im Status Open ohne Kinder, das weder Parent noch
+    Dependency eines anderen Items ist, lässt sich über die API zur Note
+    zurückstufen: Die Note übernimmt Kurzfassung, Notizen und Specs und
+    bekommt den Link origin; das Item wird mit der Resolution 'zur Notiz
+    zurückgestuft' abgeschlossen. Unzulässige Rückstufungen werden mit Grund
+    abgelehnt.
+  - Completion criteria: Erfolgsfall und jeder Ablehnungsgrund sind per Test
+    abgedeckt; Notizen und Specs stehen an der Note; ein Abbruch nach dem
+    Anlegen der Note verliert nichts und die Wiederholung legt keine zweite
+    Note an; scripts/check.sh ist grün.
+  - Summary: Service und API-Route, die ein noch nicht begonnenes Item ohne
+    Anhang in eine Note zurückverwandeln, mit Ablehnungsgründen.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-014/TASK-014_notes.md`.
+  - Spec: `items/TASK-014/TASK-014_spec.md`.
+
+- `TASK-015` **UI-Dialoge für Beförderung und Rückstufung**
+  - Type: Task.
+  - Parent: `STORY-042`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-014`, `TASK-019`.
+  - Goal: Der Besitzer befördert eine Note über ein vorausgefülltes Formular
+    (Typ, Bereich, Ziel, Abschlusskriterien, Parent) zu einem Item und stuft
+    ein offenes Item über einen Dialog zur Note zurück. Fehler der API
+    werden mit Grund angezeigt.
+  - Completion criteria: Beide Dialoge funktionieren gegen die API, zeigen
+    Ablehnungsgründe lokalisiert und sind mit Komponententests abgedeckt;
+    die Herkunft ist am Item und an der Note sichtbar; scripts/check.sh ist
+    grün.
+  - Summary: Beförderung und Rückstufung sind in der Oberfläche bedienbar,
+    die Herkunft ist verlinkt.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-015/TASK-015_notes.md`.
+  - Spec: `items/TASK-015/TASK-015_spec.md`.
+
+- `TASK-016` **Projektübergreifende Links und Ereignis-Auslöser prüfen und absichern**
+  - Type: Task.
+  - Parent: `STORY-044`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-007`.
+  - Goal: Ein Link darf auf ein Item eines anderen registrierten Projekts
+    zeigen. API und Anzeige nennen es als Projekt und Label. Ein
+    Ereignis-Auslöser in Projekt A feuert, wenn das Item in Projekt B den
+    Zielstatus erreicht. Die Rückrichtung ist am Item im anderen Projekt
+    abfragbar.
+  - Completion criteria: Zwei-Projekte-Integrationstest: Merker in A mit
+    Auslöser auf ein Item in B wird fällig, wenn das Item den Zielstatus
+    erreicht; links-to zeigt die Note von B aus; unbekannte Projekte werden
+    abgelehnt; scripts/check.sh ist grün.
+  - Summary: Links und Ereignis-Auslöser dürfen auf Items anderer
+    registrierter Projekte zeigen; Anzeige, Rückrichtung und Auslösung sind
+    per Zwei-Projekte-Test belegt.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-016/TASK-016_notes.md`.
+  - Spec: `items/TASK-016/TASK-016_spec.md`.
+
+- `TASK-017` **Nicht erreichbare Projekte: Link markieren und Hinweis erzeugen**
+  - Type: Task.
+  - Parent: `STORY-044`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-016`, `TASK-010`.
+  - Goal: Ist das Zielprojekt eines Links entfernt oder seine Quelle nicht
+    lesbar, wird der Link als nicht erreichbar gemeldet und die Note bekommt
+    einen Hinweis, ohne dass ein Fehler entsteht. Wird das Projekt wieder
+    erreichbar, verschwindet die Markierung; der Hinweis bleibt, bis jemand
+    entscheidet.
+  - Completion criteria: Entferntes und nicht lesbares Projekt führen zu
+    unreachable und genau einem Hinweis, nicht zu einem Fehler; nach
+    Rückkehr des Projekts ist der Link wieder erreichbar und der Hinweis
+    noch offen; scripts/check.sh ist grün.
+  - Summary: Entfernte oder nicht lesbare Projekte markieren den Link als
+    nicht erreichbar und erzeugen einen Hinweis statt eines Fehlers.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-017/TASK-017_notes.md`.
+  - Spec: `items/TASK-017/TASK-017_spec.md`.
+
+- `TASK-018` **Notes-Bereich: Gerüst, Topic-Baum und Notes-Liste**
+  - Type: Task.
+  - Parent: `STORY-045`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-004`, `TASK-005`, `TASK-006`, `TASK-009`.
+  - Goal: Es gibt einen Bereich Notes neben dem Backlog. Links der
+    Topic-Baum, rechts die Notes des gewählten Topics (Kurzfassung, Status,
+    Fälligkeit). Topics und Notes lassen sich anlegen, ändern und löschen.
+    Die Grundlagen (Query-Hooks, reine Domain-Funktionen, i18n-Keys) stehen
+    für die weiteren UI-Tasks.
+  - Completion criteria: Der Besitzer legt Topics und Notes an, sieht sie im
+    Baum und in der Liste, ändert und löscht sie; die Domain-Funktionen
+    haben Unit-Tests, die Komponenten Komponententests; scripts/check.sh ist
+    grün.
+  - Summary: Der Bereich Notes mit Topic-Baum und Notes-Liste ist da; Topics
+    und Notes lassen sich anlegen, ändern, verschieben und löschen.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-018/TASK-018_notes.md`.
+  - Spec: `items/TASK-018/TASK-018_spec.md`.
+
+- `TASK-019` **Notes-Bereich: Detailansicht, Dokumente und Links**
+  - Type: Task.
+  - Parent: `STORY-045`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-018`, `TASK-007`, `TASK-008`.
+  - Goal: Eine gewählte Note zeigt ihre Kurzfassung und ihren Langtext
+    (bearbeitbar), ihre Links (setzen und lösen, auch auf Items anderer
+    Projekte) sowie ihre Notizen und Specs (lesen und schreiben wie beim
+    Backlog). Konflikte durch gleichzeitige Änderungen werden angezeigt.
+  - Completion criteria: Kurzfassung und Langtext lassen sich ändern, Links
+    setzen und lösen, Notizen und Specs lesen und schreiben; ein
+    Versionskonflikt erscheint als Meldung; Komponententests;
+    scripts/check.sh ist grün.
+  - Summary: Eine gewählte Note zeigt Kurzfassung, Langtext, Links und
+    Notizen/Specs; alles lässt sich ändern, Versionskonflikte werden
+    gemeldet.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-019/TASK-019_notes.md`.
+  - Spec: `items/TASK-019/TASK-019_spec.md`.
+
+- `TASK-020` **Notes-Bereich: Auslöser anzeigen, bearbeiten und Zurückstellen**
+  - Type: Task.
+  - Parent: `STORY-045`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-019`, `TASK-006`.
+  - Goal: Auslöser einer Note lassen sich in der Detailansicht anlegen und
+    entfernen: Zeitpunkt (Datum und Uhrzeit in der Zeitzone des Rechners),
+    Ereignis (Item und Zielstatus wählen) und Topic-Termin. Bereits erfüllte
+    Ziele werden vor dem Speichern angezeigt. Zurückstellen ist mit
+    Schnellwahl (morgen, in einer Woche, in 30 Tagen, eigenes Datum, bei
+    Ereignis) möglich. Der Modus any/all ist vorbereitet, aber nicht
+    bedienbar.
+  - Completion criteria: Alle drei Auslöser-Arten lassen sich anlegen und
+    entfernen; ein bereits erreichter Zielstatus wird vor dem Speichern
+    gemeldet; Zurückstellen mit den Schnellwahlen funktioniert;
+    Domain-Funktionen und Komponenten sind getestet; scripts/check.sh ist
+    grün.
+  - Summary: Auslöser lassen sich anlegen und entfernen, Notes lassen sich
+    zurückstellen, Topics bekommen einen Termin.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-020/TASK-020_notes.md`.
+  - Spec: `items/TASK-020/TASK-020_spec.md`.
+
+- `TASK-021` **Rotes Ausrufezeichen mit Zähler und Tab-Titel**
+  - Type: Task.
+  - Parent: `STORY-045`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-009`, `TASK-018`.
+  - Goal: Neben dem Titel 'ToDo-Viewer' oben links steht ein dezentes rotes
+    Ausrufezeichen, solange es fällige Notes oder offene Hinweise gibt, mit
+    der Anzahl (global über alle Projekte). Der Zähler wird alle etwa 60
+    Sekunden und beim Fokussieren des Fensters abgefragt. Die Anzahl steht
+    auch im Tab-Titel. Ohne Fälliges verschwindet das Icon.
+  - Completion criteria: Das Icon erscheint und verschwindet mit dem Zustand
+    der Daten; der Zähler wird per Intervall und bei Fensterfokus abgefragt;
+    der Tab-Titel trägt die Zahl; Domain-Funktion und Komponente sind
+    getestet; scripts/check.sh ist grün.
+  - Summary: Das rote Ausrufezeichen zeigt die Zahl fälliger Notes neben dem
+    Titel und im Tab-Titel.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-021/TASK-021_notes.md`.
+  - Spec: `items/TASK-021/TASK-021_spec.md`.
+
+- `TASK-022` **Fällig-Modal mit Gruppierung und Aktionen**
+  - Type: Task.
+  - Parent: `STORY-045`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-021`, `TASK-020`, `TASK-015`, `TASK-010`.
+  - Goal: Ein Klick auf das Ausrufezeichen öffnet ein Modal mit allen
+    fälligen Notes, gruppiert nach Grund (Auslöser, Prüfung, Termin,
+    Änderungshinweis). Je Zeile gibt es die Aktionen zurückstellen
+    (Schnellwahlen), erledigen, verwerfen, befördern und in Notes öffnen;
+    bei Hinweisen zusätzlich behalten und abkoppeln. Die Zeile bleibt, bis
+    sie bearbeitet ist; es gibt kein Popup außerhalb des Modals.
+  - Completion criteria: Das Modal zeigt alle fälligen Notes nach Grund
+    gruppiert, jede Aktion wirkt und die Zeile verschwindet erst nach der
+    Bearbeitung; Gruppierung und Aktionsregeln sind Unit-getestet;
+    scripts/check.sh ist grün.
+  - Summary: Das Fällig-Modal zeigt alle fälligen Notes nach Grund gruppiert
+    mit den Aktionen; eine Zeile bleibt, bis die Aktion beim Server gelang.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-022/TASK-022_notes.md`.
+  - Spec: `items/TASK-022/TASK-022_spec.md`.
+
+- `TASK-023` **Verlinkte Notes am Backlog-Item und Notes-Einstellungen**
+  - Type: Task.
+  - Parent: `STORY-045`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-08.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-019`, `TASK-007`, `TASK-009`, `TASK-012`.
+  - Goal: Im Detail eines Backlog-Items erscheinen die Notes, die darauf
+    verweisen, auch aus anderen Projekten, mit Status und Sprung zur Note,
+    sowie offene Hinweise zur Kenntnisnahme. Im Einstellungsabschnitt
+    'Allgemein' lassen sich Prüf-Intervall (Standard 30) und maximale
+    Topic-Tiefe (Standard 3) einstellen.
+  - Completion criteria: Das Item-Detail zeigt verlinkte Notes mit Status
+    und Link in die Notes-Ansicht; offene Item-Hinweise lassen sich zur
+    Kenntnis nehmen; die Einstellungen werden gelesen und gespeichert;
+    Komponententests; scripts/check.sh ist grün.
+  - Summary: Das Item-Detail zeigt verlinkte Notes und offene Hinweise; die
+    Notes-Optionen stehen im Einstellungsmenü.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/TASK-023/TASK-023_notes.md`.
+  - Spec: `items/TASK-023/TASK-023_spec.md`.
+
+- `STORY-037` **Architekturregeln für Topics, Notes und Links**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-06.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die verbindlichen Architekturregeln beschreiben, wo Topics, Notes
+    und Links in den Schichten liegen: Notes sind datenbankprimär, nur in
+    der zentralen Datenbank, nie in TODO.md; Links zeigen auf die interne
+    uid; die Auslöser-Prüfung liegt im Viewer.
+  - Completion criteria: Die Regeln in docs/development/architecture.md sind
+    ergänzt und mit Begründung versehen; die Architektur-Prüfung kennt die
+    neuen Bausteine.
+  - Summary: Die verbindlichen Architekturregeln beschreiben, wo Topics,
+    Notes und Links in den Schichten liegen: Notes sind datenbankprimär, nur
+    in der zentralen Datenbank, nie in TODO.md; Links zeigen auf die in
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/STORY-037/STORY-037_notes.md`.
+  - Spec: `items/STORY-037/STORY-037_spec.md`.
+
+- `STORY-038` **Datenmodell: Topics, Notes und Links in der Datenbank**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-06.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Relationales Modell mit Migration: Topic (uid, label, Name,
+    Eltern-Topic, Tiefe standardmäßig 3, konfigurierbar, optionaler Termin),
+    Note (uid, label, Kurzfassung, optionaler Langtext, Status, Topic,
+    Prüf-Datum, Heimatprojekt, Modus für Auslöser 'any' oder 'all'), Link
+    (Note zu Item, Topic oder Note; Rolle Bezug, Auslöser oder Herkunft;
+    auch projektübergreifend) und Auslöser (Zeitpunkt, Ereignis,
+    Topic-Termin; jeder mit eigenem Zustand und Eintreffzeitpunkt). Eine
+    Note kann wie ein Backlog-Item Notizen und Specs als Dokumente tragen.
+    Labels NOTE-001 und TOPIC-001 zählen pro Projekt und Typ und ändern sich
+    innerhalb eines Projekts nie. Ein Projektwechsel legt die Note im
+    Zielprojekt neu an (neues Label) und löscht die alte; die Link-Prüfungen
+    greifen dabei automatisch.
+  - Completion criteria: Migration läuft auf bestehender Datenbank; Tiefe
+    (Standard 3, konfigurierbar), Label-Vergabe, Link-Rollen und
+    Auslöser-Modus sind per Tests abgedeckt; ein Link überlebt einen
+    Typwechsel (retype) des Items; Notizen und Specs an einer Note lassen
+    sich speichern und lesen; ein Projektwechsel erzeugt im Zielprojekt eine
+    Note mit neuem Label und löscht die alte, Links werden dabei geprüft.
+  - Summary: Datenmodell mit Migration für Topics (Tiefe 3), Notes (mit
+    Notizen und Specs), Links und Auslöser; Labels zählen pro Projekt, ein
+    Projektwechsel legt die Note neu an.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/STORY-038/STORY-038_notes.md`.
+  - Spec: `items/STORY-038/STORY-038_spec.md`.
+
+- `STORY-039` **API für Topics, Notes und Links inklusive schlanker Übersicht**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-06.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Anlegen, Lesen, Ändern, Verschieben (Topic; bei Notes auch
+    Projektwechsel als Neuanlegen mit neuem Label und Löschen der alten
+    Note), Löschen für Topics und Notes sowie Links setzen und lösen.
+    Notizen und Specs einer Note lassen sich wie beim Backlog lesen und
+    schreiben. Ein schlanker Index liefert je Topic und Note nur Label,
+    Status, Fälligkeit und Kurzfassung, filterbar nach Topic, Projekt,
+    Status, fällig und verlinktem Item (Notes zu Item X); dazu eine reine
+    Zähler-Abfrage für fällige Notes. So lädt ein LLM nur relevante
+    Langtexte. Version-Token gegen gleichzeitige Änderungen wie beim
+    Backlog.
+  - Completion criteria: Ein LLM kann über die API alle Operationen
+    ausführen; der Index ist ohne Langtexte nutzbar; Konflikte werden
+    erkannt.
+  - Summary: API für Topics, Notes und Links inklusive Projektwechsel,
+    Notizen und Specs, schlankem Index und Zähler-Abfrage für fällige Notes.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/STORY-039/STORY-039_notes.md`.
+  - Spec: `items/STORY-039/STORY-039_spec.md`.
+
+- `STORY-040` **Auslöser und Wiedervorlage im Viewer**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-06.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Viewer prüft selbst, ohne LLM und ohne Hintergrund-Takt:
+    Zeitpunkt erreicht (beim Lesen ausgewertet, Zeitzone des Rechners),
+    Ereignis an einem verlinkten Item (Status In progress, Awaiting
+    confirmation, Completed oder Rejected erreicht; ist das Ziel bei Anlage
+    schon erreicht, feuert der Auslöser sofort und ist so markiert),
+    Topic-Termin erreicht. Eine Note kann mehrere Auslöser haben; jeder
+    reagiert einzeln, zusätzlich wird erkannt, wenn alle eingetroffen sind.
+    Ein Modus 'any' (Standard) oder 'all' ist im Modell vorgesehen, die
+    Bedienung folgt später. Jede Note hat ein Prüf-Datum (Standard 30 Tage,
+    globale Option); es wird bei Anlage, Textänderung, Zurückstellen und
+    'behalten' zurückgesetzt und gilt für alle Notes. Ausgelöst ist nicht
+    erledigt: Zustände wartend, fällig, zurückgestellt (setzt gefeuerte
+    Auslöser zurück, wieder wartend mit neuem Datum oder Ereignis),
+    erledigt, verworfen, befördert. Eine fällige Note bleibt fällig, bis sie
+    zurückgestellt, erledigt, verworfen oder gelöscht ist. Zeiten sind
+    konkrete Zeitpunkte; die Auflösung von 'morgen früh' macht der Aufrufer.
+  - Completion criteria: Zeit-, Ereignis- und Termin-Auslöser lösen ohne
+    offene Sitzung aus; Zurückstellen setzt die Note wieder auf wartend;
+    Wiedervorlage und Standardwert sind per Test geprüft.
+  - Summary: Der Viewer erkennt Zeit-, Ereignis- und Termin-Auslöser sowie
+    die 30-Tage-Wiedervorlage selbst, ohne LLM und ohne Hintergrund-Takt;
+    fällige Notes bleiben fällig, bis sie bearbeitet sind.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/STORY-040/STORY-040_notes.md`.
+  - Spec: `items/STORY-040/STORY-040_spec.md`.
+
+- `STORY-042` **Beförderung und Rückstufung zwischen Note und Item**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-06.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Note wird zu Task, Story oder Epic: Kurzfassung wird Titel und
+    Kurzfassung, Langtext, Notizen und Specs werden die Notizen und Specs
+    des Items, die Note gilt als befördert und wird archiviert, der Link
+    Herkunft bleibt. Fehlende Pflichtfelder (Typ, Bereich, Ziel,
+    Abschlusskriterien, Parent) liefert der Aufrufer; die UI zeigt ein
+    vorausgefülltes Formular, alle Backlog-Prüfungen laufen. Item wird zur
+    Note nur im Status Open, ohne Kinder, ohne dass es Parent oder
+    Dependency eines anderen Items ist: das Item wird mit Resolution 'zur
+    Notiz zurückgestuft' abgeschlossen, seine Notizen und Specs wandern an
+    die neue Note, die Note erhält den Link Herkunft. Beide behalten ihre
+    eigene ID.
+  - Completion criteria: Beide Richtungen funktionieren über API und UI;
+    Herkunft ist an Note und Item sichtbar; unzulässige Rückstufungen werden
+    mit Grund abgelehnt.
+  - Summary: Eine Note wird zu Task, Story oder Epic und umgekehrt ein
+    offenes Item ohne Anhang zur Note; Notizen und Specs wandern in beide
+    Richtungen mit, die Herkunft bleibt sichtbar.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/STORY-042/STORY-042_notes.md`.
+  - Spec: `items/STORY-042/STORY-042_spec.md`.
+
+- `STORY-043` **Archiv und Papierkorb für Notes**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-06.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Erledigte, verworfene und beförderte Notes wandern ins Archiv,
+    gelöschte in den Papierkorb, jeweils wiederherstellbar; endgültiges
+    Löschen nur durch den Besitzer. Orientierung ist das Backlog.
+  - Completion criteria: Lebenszyklus, Archiv, Papierkorb und
+    Wiederherstellen sind per Test abgedeckt.
+  - Summary: Erledigte, verworfene und beförderte Notes wandern ins Archiv,
+    gelöschte in den Papierkorb, jeweils wiederherstellbar; endgültiges
+    Löschen nur durch den Besitzer
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/STORY-043/STORY-043_notes.md`.
+  - Spec: `items/STORY-043/STORY-043_spec.md`.
+
+- `STORY-044` **Projektübergreifende Links**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-06.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Ein Link darf auf ein Item in einem anderen registrierten Projekt
+    zeigen; Anzeige und API nennen es als Projekt und Label.
+    Ereignis-Auslöser funktionieren projektübergreifend; die Rückrichtung
+    erscheint am Item im anderen Projekt. Ist das Projekt nicht erreichbar,
+    wird der Link als nicht erreichbar markiert und löst einen
+    Änderungshinweis aus.
+  - Completion criteria: Ein Merker in Projekt A, der auf ein Item in
+    Projekt B wartet, löst bei dessen Abschluss aus; ein entferntes Projekt
+    erzeugt einen Hinweis statt eines Fehlers.
+  - Summary: Ein Link darf auf ein Item in einem anderen registrierten
+    Projekt zeigen; Anzeige und API nennen es als Projekt und Label
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/STORY-044/STORY-044_notes.md`.
+  - Spec: `items/STORY-044/STORY-044_spec.md`.
+
+- `STORY-045` **Bereich Notes: Topic-Baum, Notes und rotes Ausrufezeichen**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-06.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Eigener Bereich neben dem Backlog: Topic-Baum, Notes mit
+    Kurzfassung und Langtext, Links setzen. Ein dezentes rotes
+    Ausrufezeichen zeigt fällige Notes; ein Klick öffnet die Liste mit den
+    Aktionen zurückstellen, erledigen, verwerfen, befördern. Am Backlog-Item
+    erscheinen verlinkte Notes. Anzeigetexte über die Lokalisation, Keys
+    englisch. Kein Popup in dieser Stufe.
+  - Completion criteria: Der Besitzer legt Topics und Notes an, sieht
+    Fälliges, handelt darauf und erreicht Notes vom Item aus.
+  - Summary: Eigener Bereich Notes mit Topic-Baum, Notes, Auslösern, rotem
+    Ausrufezeichen, Fällig-Modal und Notes am Backlog-Item.
+  - Resolution: Vom Projektinhaber bestätigt (2026-10-08).
+  - Notes: `items/STORY-045/STORY-045_notes.md`.
+  - Spec: `items/STORY-045/STORY-045_spec.md`.
+
+- `STORY-052` **Papierkorb: Mehrfachauswahl mit Alle-Haken, Auswahl löschen oder wiederherstellen, Icon-Buttons**
+  - Type: Story.
+  - Parent: `EPIC-002`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-10-09.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Im Papierkorb lassen sich mehrere Items auf einmal endgültig
+    löschen oder wiederherstellen; die Aktionen sind Icon-Buttons.
+  - Completion criteria: 1. Jede Zeile hat eine Checkbox; ein Haken oben
+    wählt alle sichtbaren Items an oder ab (teilweise gewählt wird
+    angezeigt). 2. „Auswahl endgültig löschen“ löscht nach einer Bestätigung
+    mit der Anzahl alle gewählten Items samt Kindern; „Auswahl
+    wiederherstellen“ holt sie zurück. 3. Ist ein Item und sein Vorfahre
+    gewählt, wird nur der Vorfahre angefragt; Fehler einzelner Items werden
+    gemeldet, die übrigen trotzdem bearbeitet. 4. Wiederherstellen und
+    Löschen sind auch je Zeile Icon-Buttons mit Hovertext. 5. Tests und Doku
+    sind angepasst.
+  - Summary: Der Papierkorb bekommt Checkboxen, einen Alle-Haken und
+    Aktionen für die Auswahl, alles mit Icons.
+  - Resolution: Vom Owner am 2026-10-09 bestätigt.
+
+- `EPIC-002` **Backlog-Pflege in der UI**
+  - Type: Epic.
+  - Status: Completed.
+  - Created: 2026-09-27.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: In der UI lassen sich Items anlegen und löschen, ihre
+    Freitext-Felder (Titel, Goal, Completion criteria, Summary, Area,
+    Parent, Dependencies) bearbeiten sowie Notes-Einträge und Specs
+    schreiben. Die UI nutzt dafür die Endpunkte aus `EPIC-001`.
+  - Completion criteria: Alle Pflichtkinder sind abgeschlossen; jede
+    genannte Funktion ist in der UI bedienbar, Fehlercodes der API werden
+    übersetzt angezeigt, und der Projektverantwortliche hat die Bedienung
+    geprüft.
+  - Summary: Alles, was künftig ein Agent über die API am Backlog ändern
+    kann, soll auch direkt in der Oberfläche möglich sein.
+  - Resolution: Confirmed by the project owner on 2026-10-09.
+  - Notes: `items/EPIC-002/EPIC-002_notes.md`.
+
+- `TASK-028` **Notes-Index: Filter nach mehreren Status**
+  - Type: Task.
+  - Parent: `STORY-050`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-09.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Notes-Index der API v2 filtert in einem Aufruf nach einer
+    Liste von Status, einschließlich des abgeleiteten Status „fällig“.
+  - Completion criteria: Der Index nimmt mehrere Status an und liefert genau
+    die Notes mit einem dieser effektiven Status; ohne Angabe bleibt das
+    bisherige Verhalten. API-Tests, OpenAPI-Schema und interfaces.md sind
+    angepasst.
+  - Resolution: Vom Owner am 2026-10-09 bestätigt. (mit STORY-050)
+
+- `TASK-029` **Sidebar als Hülle mit tababhängigen Filterabschnitten**
+  - Type: Task.
+  - Parent: `STORY-050`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-09.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Sidebar zeigt Suche und Projekte immer und darunter die
+    Filterabschnitte, die der aktive Tab vorgibt.
+  - Completion criteria: Baum, Kanban und Graph zeigen wie bisher Status und
+    Priorität; der Papierkorb zeigt nur Suche und Projekte. Das Verhalten
+    der Backlog-Filter bleibt unverändert; Komponententests decken die
+    Abschnitte je Tab ab.
+  - Resolution: Vom Owner am 2026-10-09 bestätigt. (mit STORY-050)
+
+- `TASK-030` **Notes-Status als Sidebar-Filter, Notes-Filterleiste verschlanken**
+  - Type: Task.
+  - Parent: `STORY-050`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-09.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Im Notes-Bereich filtert die Sidebar nach den Note-Status
+    (mehrfach wählbar) und die Sidebar-Suche ersetzt die eigene Notes-Suche.
+  - Completion criteria: Note-Status erscheinen als Checkboxen mit Farben,
+    Standard wartet/fällig/zurückgestellt; die Auswahl wird getrennt von den
+    Backlog-Filtern gespeichert. Status-Dropdown, „Nur fällige“ und das
+    Notes-Suchfeld sind entfernt. Tests sind angepasst.
+  - Resolution: Vom Owner am 2026-10-09 bestätigt. (mit STORY-050)
+
+- `STORY-050` **Sidebar als tababhängige Filterhülle; Notes-Status als Sidebar-Filter**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-10-09.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `STORY-049`.
+  - Goal: Die linke Sidebar ist eine einheitliche Filterebene für alle
+    Bereiche: Suche und Projekte stehen immer dort, die übrigen Abschnitte
+    füllt der aktive Tab. Im Notes-Bereich filtert die Sidebar nach den
+    Note-Status statt nach Backlog-Status und Priorität.
+  - Completion criteria: 1. Sidebar zeigt immer Suche und Projekte;
+    Baum/Kanban/Graph zusätzlich Status und Priorität des Backlogs, Notes
+    die Note-Status (wartet, fällig, zurückgestellt, erledigt, verworfen,
+    befördert), Papierkorb keine weiteren Abschnitte. 2. Note-Status sind
+    mehrfach wählbar; Standard sind wartet, fällig und zurückgestellt
+    (entspricht „Offene Notes“). 3. Status-Dropdown, „Nur fällige“ und das
+    eigene Suchfeld entfallen in der Notes-Filterleiste; „Unterthemen
+    einbeziehen“ und „Gruppieren“ bleiben. 4. Die Notes-Status-Auswahl wird
+    getrennt von den Backlog-Filtern gespeichert und beeinflusst diese
+    nicht. 5. Der Notes-Index der API akzeptiert mehrere Status in einem
+    Aufruf. 6. Tests und technische Doku sind angepasst.
+  - Summary: Die Sidebar wird zur Hülle, die je nach Tab passende Filter
+    zeigt. Notes bekommen dort ihre eigenen Status als Checkboxen; eine
+    Priorität für Notes ist bewusst nicht Teil dieser Story.
+  - Resolution: Vom Owner am 2026-10-09 bestätigt.
+  - Notes: `items/STORY-050/STORY-050_notes.md`.
+
+- `STORY-051` **Notes als Baum darstellen wie im Backlog (Projekt → Topic → Note)**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-10-09.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `STORY-050`.
+  - Goal: Der Notes-Bereich zeigt Topics und Notes als aufklappbaren Baum im
+    Hauptbereich, aufgebaut wie der Backlog-Baum. Der eigene Topic-Baum
+    links entfällt, die Sidebar bleibt die einzige Navigations- und
+    Filterebene.
+  - Completion criteria: 1. Notes erscheinen als Baum Projekt → Topic →
+    Unterthema → Note, auf- und zuklappbar wie im Backlog-Baum. 2. Notes
+    ohne Topic stehen unter einem Knoten „Ohne Thema“ direkt unter dem
+    Projekt. 3. Leere Topics bleiben sichtbar und lassen sich bearbeiten. 4.
+    Jede Topic-Zeile bietet ihre Aktionen (+ Note, Unterthema, Umbenennen,
+    Termin, Verschieben, Löschen) als Icons in der Zeile; eine neue Note
+    landet in diesem Topic. 5. Die eigene Topic-Spalte sowie die Schalter
+    „Gruppieren“ und „Unterthemen einbeziehen“ entfallen. 6. Die
+    Sidebar-Filter aus STORY-050 wirken auf den Baum. 7. Tests und
+    technische Doku sind angepasst.
+  - Summary: Notes und Topics werden wie das Backlog als Baum gezeigt. Damit
+    gibt es links nur noch die Sidebar, und Gruppierung sowie Schachtelung
+    zeigt der Baum von selbst.
+  - Resolution: Vom Owner am 2026-10-09 bestätigt.
+  - Notes: `items/STORY-051/STORY-051_notes.md`.
+
+- `STORY-053` **Notes-Baum: Projektbalken und erweiterte Markierung der Topic-Ebenen**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-10-09.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Projekte und Topics sind im Notes-Baum optisch klar gruppiert;
+    eine Checkbox wechselt zwischen der markierten und der schlichten
+    Ansicht.
+  - Completion criteria: 1. Unter jedem Projekttitel liegt ein durchgehender
+    Balken als Trenner (kein Fortschritt). 2. Mit „Erweiterte Markierung“
+    ist der Bereich eines Topics der Ebene 1 (Zeile samt Inhalt) dezent
+    grünlich hinterlegt, der Bereich eines Topics der Ebene 2 darin dezent
+    grau; tiefere Ebenen und Notes ohne eigene Fläche. 3. Die Checkbox
+    „Erweiterte Markierung“ in der Kopfzeile des Notes-Bereichs schaltet
+    zwischen dieser und der schlichten Ansicht; die Wahl wird mit dem
+    UI-Zustand gespeichert, Standard ist an. 4. Der Balken im Backlog-Baum
+    bleibt unverändert. 5. Tests und Doku sind angepasst.
+  - Summary: Der Notes-Baum bekommt Projektbalken und zwei dezente Flächen
+    für Topic-Ebene 1 und 2, abschaltbar per Checkbox.
+  - Resolution: Confirmed by the project owner on 2026-10-09.
+  - Notes: `items/STORY-053/STORY-053_notes.md`.
+
+- `STORY-049` **Notes-Bereich: Filter, Großansicht, Steuerung oben und sichtbare Schachtelung**
+  - Type: Story.
+  - Parent: `EPIC-005`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-10-09.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Notes-Bereich lässt sich wie das Backend filtern, eine Note
+    lässt sich groß lesen und bearbeiten, die Aktionen stehen oben im Detail
+    und die Themen-Schachtelung ist so gut sichtbar wie im To-do-Baum.
+  - Completion criteria: 1. Filterleiste (Status, nur fällig, Projekt,
+    Suche) schickt Status, fällig und Projekt als Query an /notes/index; der
+    Umfang eines Themas (inkl. Unterthemen) ist abschaltbar; Zähler im Baum
+    zeigen die Summe inkl. Unterthemen. 2. Großansicht einer Note mit
+    Inhaltsverzeichnis und Bearbeiten (Vorschau neben dem Editor). 3. Feste
+    Kopfleiste im Detail mit Aktionen als Icon-Buttons mit Hovertext;
+    Auslöser, Links und Notizen/Specs als einklappbare Abschnitte mit
+    Hinzufügen-Buttons in der Überschrift. 4. Themen-Baum mit Einrückung,
+    Führungslinien und Auf-/Zuklappen; Gruppierung nach Topic in der Liste;
+    Topic-Pfad im Detail. 5. Icon-Buttons mit Hovertext statt großer
+    Textbuttons, wo sinnvoll. Tests und Doku angepasst.
+  - Summary: Der Notes-Bereich bekommt echte Filter, eine Großansicht, die
+    Steuerung oben im Detail, Icon-Buttons mit Hovertext und eine gut
+    sichtbare Themen-Schachtelung.
+  - Resolution: Confirmed by the project owner on 2026-10-09.
+  - Notes: `items/STORY-049/STORY-049_notes.md`.

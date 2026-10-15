@@ -23,7 +23,7 @@
   vorwärts; Version 3 ergänzt die Spalte `mirror_database`, bestehende Projekte
   bekommen keinen Datenbank-Spiegel; Version 5 die Spalte `mirror_disabled`, bestehende
   Datenbank-Projekte mit Ordner behalten ihren Spiegel eingeschaltet; Version 6 legt die Tabellen für
-  Topics, Notes, Links, Auslöser, Note-Dokumente und die Label-Zähler an; Version 7 die Tabelle `note_notices` für die Hinweise zwischen Notes und Items). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
+  Topics, Notes, Links, Auslöser, Note-Dokumente und die Label-Zähler an; Version 7 die Tabelle `note_notices` für die Hinweise zwischen Notes und Items; Version 8 die Tabelle `sync_entries` mit der Version jedes Items und Dokuments auf beiden Seiten nach dem letzten Sync, je Projekt und Markdown-Ordner, nur Versionen). Vor einer Migration legt der Dienst ein Backup an (siehe unten). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
   im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
 - Primärquelle eines Projekts wechseln (UI: ⚙ → Projekte → „Primärquelle
   wechseln…“; API: Sync, dann `PUT /sources/{id}` mit neuem `backend`): Der
@@ -42,6 +42,14 @@
   API standardmäßig `en`); Einträge und Dokumente sind inhaltlich gleich,
   Zeilenumbrüche und die Reihenfolge der Felder sind normalisiert. Ein
   bestehender Spiegel-Ordner behält seinen Kopftext.
+- Stand je Eintrag: Nach jedem Sync speichert die Datenbank die Version aller Items
+  und Dokumente, die dann auf beiden Seiten gleich sind (`sync_entries`, Schlüssel
+  Projekt, Markdown-Ordner, Art, Label, Name). Daran erkennt der nächste Sync, welche
+  Seite einen Eintrag geändert hat. Aufgeschobene Konflikte bekommen keinen neuen
+  Stand. Ändert man den Ordner des Projekts, beginnt es für den neuen Ordner ohne
+  Stand (nur auf einer Seite vorhanden = neu, auf beiden verschieden =
+  Konflikt); der Stand des alten Ordners bleibt liegen und gilt wieder, wenn man
+  zu ihm zurückkehrt. Kein Inhalt wird gespeichert.
 - Sync-Status: Nach jedem Sync über die API speichert die Datenbank einen
   Fingerabdruck beider Seiten und die Zeit (Spalten `last_sync_at`,
   `synced_primary`, `synced_mirror`); der Status (`GET /sources/{id}/sync-status`)
@@ -178,6 +186,9 @@ grep ' req=1a2b3c4d ' logs/todo-viewer.log                     # alles zu einem 
 | Ein Test meldet veraltete API-Typen | v2-API geändert, `openapi.json`/`schema.d.ts` nicht neu erzeugt | `.venv/bin/python backend/scripts/export_openapi.py && npm --prefix web run gen:api` |
 | Sync bricht mit `sync_stale` ab | Seit der Vorschau hat sich die Datenbank oder der Ordner geändert (oder es fehlt das `token`) | Vorschau neu holen und bestätigen |
 | Sync bricht mit `sync_source_invalid` ab (`details.reason`) | Der Sync-Ordner fehlt (`not_found`), hat keine `TODO.md` (`no_todo`) oder ist kein Backlog (`unsupported_format`, `parse_error`); es wurde nichts geändert | Ordner bzw. Datei reparieren, Vorschau wiederholen |
-| Umstellen des Speicherorts mit `sync_required` abgelehnt | Beide Seiten sind nicht gleich (z. B. Fehlendes auf dem Ziel, das nicht gelöscht wurde) | Sync mit Vorschau ausführen (Fehlendes löschen), dann erneut umstellen |
+| Umstellen des Speicherorts mit `sync_required` abgelehnt | Beide Seiten sind nicht gleich (z. B. ein offener Konflikt oder ein Eintrag, den die Richtung ausschloss) | Sync mit Vorschau ausführen, Konflikte entscheiden, dann erneut umstellen |
+| Sync meldet Konflikte, die nicht verschwinden | Ein Konflikt bleibt ohne Entscheidung auf beiden Seiten unberührt und wird wieder gemeldet | Je Konflikt `database` oder `markdown` entscheiden, oder beide Seiten von Hand gleich machen |
+| Sync (Löschen per Entscheidung) bricht mit `lifecycle_violation` ab | Andere Items verweisen auf den Eintrag, der gelöscht werden soll | Verweise lösen oder die andere Seite entscheiden; es wurde nichts geändert |
+| 409 `database_backup_failed` beim Sync oder bei der ersten Anfrage nach einem Update | Die Sicherung der Datenbank vor Sync oder Migration schlug fehl (Ordner `configs/backups/` nicht beschreibbar, Platte voll) | Ursache beheben und wiederholen; bis dahin wird nichts migriert oder synchronisiert |
 | Datenbank-Projekt mit ⚠ `db_unavailable` | Die Datenbank lässt sich nicht öffnen (Datei gesperrt, `storage_url` falsch, Server nicht erreichbar); Log: `database_unavailable` | `storage_url` und Datei bzw. Dienst prüfen |
 | Datenbank-Projekt lässt sich nicht austragen (`project_not_empty`) | Es hat noch Items | Zuerst auf Markdown ablegen (Umstellen) oder die Items löschen |

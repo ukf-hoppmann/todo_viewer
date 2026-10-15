@@ -177,43 +177,74 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     Markdown behält die Kopie in der Datenbank. Ein Projekt aus einer früheren
     Version hat keinen Spiegel, bis man ihn einschaltet.
   - Sync (`POST /sources/{source_id}/sync`,
-    `{direction?, confirm?, token?, delete_missing?, language?}`; Entscheidungen:
-    [STORY-023](../todo/items/STORY-023/STORY-023_spec.md)): für Projekte mit
+    `{direction?, confirm?, token?, resolutions?, language?}`; Entscheidungen:
+    [STORY-023](../todo/items/STORY-023/STORY-023_spec.md),
+    [STORY-057](../todo/items/STORY-057/STORY-057_spec.md)): für Projekte mit
     Spiegel (Datenbank-Projekt mit `sync_path`, Markdown-Projekt mit
     Datenbank-Spiegel; ein Markdown-Projekt ohne Spiegel liest nur in die
-    Datenbank). `direction` ist `to_md` (Datenbank → Ordner) oder `from_md`
-    (Ordner → Datenbank); fehlt sie, gilt die Richtung von der Primärquelle zum
-    Spiegel (siehe unten). Übertragen werden `TODO.md`,
-    `archive.md`, Papierkorb sowie Notes und Specs (auch Themen-Specs) aller
-    Items. Ohne `confirm` ist der Aufruf eine Vorschau und ändert nichts:
-    `items` und `documents` mit `created`, `changed` (Ziel wird überschrieben),
-    `unchanged` (Anzahl) und `missing` (nur auf dem Ziel vorhanden), dazu
-    `skipped` (Dokumente, die der Sync nicht trägt: als Pfad notiert,
-    nicht lesbar oder fehlend) und ein `token`, das den Stand beider Seiten
-    kennzeichnet. Mit `confirm: true` und diesem `token` wird ausgeführt; hat
-    sich seitdem eine Seite geändert (oder fehlt das `token`), antwortet der
-    Server mit 409 `sync_stale`. `missing` bleibt auf dem Ziel stehen und
-    kommt als `kept` zurück; nur mit `delete_missing: true` wird es gelöscht
-    (`deleted`). `language` (`en`, Standard, oder `de`) gilt für neu angelegte
-    Markdown-Dateien; ein fehlender Zielordner wird bei `to_md` angelegt. Die
-    Markdown-Dateien sind danach normalisiert, nicht byte-gleich zu früheren
-    Fassungen; Export → Import → Export ergibt gleiche Dateien und Items mit
-    gleicher `version`. Ein Backlog, der nicht lesbar ist, bricht vor jeder
-    Änderung ab (400 `sync_source_invalid`, `details.reason` = Grund, etwa
-    `not_found`, `unsupported_format`, `parse_error`). Dokumente eines Items
-    findet der Sync über dessen Felder `Notes`/`Spec`; Dateien im Ordner
-    `items/<ID>/`, die dort nicht stehen, sieht er nicht. Die Richtung wählt
-    man je Aufruf; Standard ist von der Primärquelle zum Spiegel (Datenbank-
-    Projekt: `to_md`, Markdown-Projekt: `from_md`), die Gegenrichtung
-    überschreibt die Primärquelle mit dem Spiegel und zeigt die Vorschau
-    genauso. Ein Markdown-Projekt mit Datenbank-Spiegel akzeptiert beide
-    Richtungen; ohne Spiegel nur `from_md` (Ordner → Datenbank unter
-    derselben `source_id`, das ist der Weg beim Umstellen), `to_md` ergibt 409
+    Datenbank). Der Abgleich läuft **pro Eintrag** und beidseitig: ein Item oder
+    Dokument, das nur in der Datenbank geändert oder neu ist, geht in den Ordner,
+    eines, das nur im Ordner geändert oder neu ist, in die Datenbank. Dafür
+    speichert der Dienst je Eintrag die Version nach dem letzten Sync (Tabelle
+    `sync_entries`, nur Versionen). Übertragen werden `TODO.md`, `archive.md`,
+    Papierkorb sowie Notes und Specs (auch Themen-Specs) aller Items. Ohne
+    `confirm` ist der Aufruf eine Vorschau und ändert nichts: `items` und
+    `documents` mit `created` und `changed` (je Eintrag `origin`: `database` oder
+    `markdown`, die Seite, deren Fassung übertragen wird) und `unchanged`
+    (Anzahl); `conflicts` mit je `kind` (`item`/`document`), `label`, `name`,
+    `reason` (`both_changed`: seit dem letzten Sync auf beiden Seiten geändert,
+    `both_new`: auf beiden Seiten neu mit verschiedenem Inhalt,
+    `database_deleted`/`markdown_deleted`: auf dieser Seite seit dem letzten Sync
+    gelöscht) und beiden Fassungen `database`/`markdown` (Item: `fields` als Liste
+    aus `name` und `value`; Dokument: `text`; `null`, wenn der Eintrag auf der
+    Seite fehlt); dazu `skipped` (Dokumente, die der Sync nicht trägt: als Pfad
+    notiert, nicht lesbar oder fehlend) und ein `token`, das den Stand beider
+    Seiten und des gespeicherten Syncstands kennzeichnet. Ohne gespeicherten Stand
+    (vor dem ersten Sync) gilt: nur auf einer Seite vorhanden = dort neu; auf
+    beiden Seiten verschieden = Konflikt. Mit `confirm: true` und diesem `token`
+    wird ausgeführt; hat sich seitdem eine Seite oder der Syncstand geändert (oder
+    fehlt das `token`), antwortet der Server mit 409 `sync_stale`. Ein
+    **Konflikt wird nie überschrieben oder gelöscht**: `resolutions` ist eine
+    Liste aus `{kind, label, name?, choice}` mit `choice` `database` (der Zustand
+    der Datenbank gilt: ihre Fassung geht in den Ordner; fehlt der Eintrag in der
+    Datenbank, wird er im Ordner gelöscht), `markdown` (der Zustand des Ordners
+    gilt, entsprechend: fehlt der Eintrag im Ordner, wird er in der Datenbank
+    gelöscht) oder `defer`. Ohne Entscheidung gilt `defer`: der
+    Konflikt bleibt auf beiden Seiten und im gespeicherten Stand unverändert und
+    wird beim nächsten Abgleich wieder gemeldet; macht man beide Seiten von
+    Hand gleich, ist er keiner mehr. Die Antwort mit `confirm` nennt `resolved`
+    (übertragen, mit `origin`), `deleted` (durch Entscheidung gelöscht), `deferred`
+    (offen gebliebene Konflikte) und `kept` (davon die Löschungen: der Eintrag
+    bleibt, wo er ist). `direction` (`to_md` oder `from_md`) ist optional und
+    schränkt nur ein, welche Seite der Lauf schreibt (`to_md` nur den Ordner,
+    `from_md` nur die Datenbank); ohne Angabe läuft der Abgleich in beide
+    Richtungen. Eine Entscheidung, die eine ausgeschlossene Seite schreiben würde,
+    bleibt aufgeschoben. `delete_missing` gibt es nicht mehr (400 `bad_request`):
+    gelöscht wird nur durch die Entscheidung eines Konflikts. Wer ein
+    Item löscht, auf das andere Items verweisen, bekommt von der Seite, die
+    das prüft, einen Fehler (z. B. 409 `lifecycle_violation`); der Lauf bricht dann ab, die
+    Datenbank wird zuerst und in einer Transaktion geschrieben. Vor einem Lauf, der in die Datenbank schreibt,
+    legt der Dienst ein Backup an (409 `database_backup_failed`, wenn das scheitert). `language`
+    (`en`, Standard, oder `de`) gilt für neu angelegte Markdown-Dateien; ein
+    fehlender Zielordner wird angelegt, wo die Ordnerseite Ziel sein darf (ohne
+    `direction` bei einem Datenbank-Projekt, bei `to_md`). Die Markdown-Dateien sind danach
+    normalisiert, nicht byte-gleich zu früheren Fassungen; Export → Import →
+    Export ergibt gleiche Dateien und Items mit gleicher `version`. Ein Backlog,
+    der nicht lesbar ist, bricht vor jeder Änderung ab (400 `sync_source_invalid`,
+    `details.reason` = Grund, etwa `not_found`, `unsupported_format`,
+    `parse_error`). Dokumente eines Items findet der Sync über dessen Felder
+    `Notes`/`Spec`; Dateien im Ordner `items/<ID>/`, die dort nicht stehen, sieht
+    er nicht. Ein Markdown-Projekt mit Datenbank-Spiegel akzeptiert alle
+    Angaben; ohne Spiegel läuft nur `from_md` (Ordner → Datenbank unter derselben
+    `source_id`, das ist der Weg beim Umstellen), `to_md` ergibt 409
     `sync_same_backend`. Das Umstellen der Primärquelle ist `PUT /sources/{id}`
-    mit neuem `backend` nach dem Sync (siehe Projekte). Es gibt keinen
-    automatischen Sync.
+    mit neuem `backend` nach dem Sync (siehe Projekte). Ein automatischer Sync
+    (STORY-059) ist noch nicht gebaut.
   - Sync-Status (`GET /sources/{source_id}/sync-status`, für alle Projekte
-    `GET /sync-status`): `{source_id, state, last_sync_at}`. `state` sagt, welche
+    `GET /sync-status`): `{source_id, state, last_sync_at, conflicts}`. `conflicts` zählt die Einträge,
+    die eine Entscheidung brauchen (beide Seiten geändert, auf beiden neu mit
+    verschiedenem Inhalt, auf einer Seite gelöscht); `state` kann dabei
+    `in_sync` sagen, weil ein aufgeschobener Konflikt keine Änderung ist. `state` sagt, welche
     Seite sich seit dem letzten Sync über diese API bewegt hat: `none` (kein
     Spiegel), `in_sync`, `mirror_changed` (z. B. eine KI hat die
     Markdown-Dateien bearbeitet), `primary_changed`, `both_changed`. Dazu
@@ -222,7 +253,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     lesbar, die Anfrage scheitert deshalb nicht). `last_sync_at` ist die Zeit
     des letzten Syncs mit `confirm` (ISO 8601), `null` ohne. Verglichen wird der
     Inhalt aller Items und Dokumente beider Seiten; was ein Sync absichtlich
-    stehen ließ (`kept`), zählt nicht als Änderung. Der Status wird erst beim
+    stehen ließ (aufgeschobene Konflikte), zählt nicht als Änderung. Der Status wird erst beim
     Aufruf berechnet (er liest beide Seiten) und steht nicht in den Listen der
     Projekte (`GET /sources`, `GET /backlog`); das Lesen ändert und
     synchronisiert nichts. Ändert man Ordner oder Spiegel eines Projekts oder
@@ -259,7 +290,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 400 | `bad_request` (Validierung, auch unbekannte Felder), `sync_path_missing` (Projekt hat keinen `sync_path`), `sync_source_invalid` (Quelle oder Ziel des Syncs nicht lesbar), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `file_not_found`, `item_not_found` |
-| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `sync_required` (Backend per `PUT` umstellen, obwohl die Seiten sich unterscheiden), `backup_failed` (Backend per `PUT` umstellen, aber das Backup der bisherigen Primärquelle schlug fehl; `details.reason`, nichts geändert), `sync_same_backend` (Markdown-Projekt mit `to_md`: Markdown-Projekte lassen sich nur in die Datenbank lesen), `sync_stale` (Sync: eine Seite änderte sich seit der Vorschau), `database_backup_failed` (die automatische Sicherung der Datenbank vor einem Sync oder einer Migration schlug fehl; `details.reason`, nichts geändert) |
+| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `sync_required` (Backend per `PUT` umstellen, obwohl die Seiten sich unterscheiden), `backup_failed` (Backend per `PUT` umstellen, aber das Backup der bisherigen Primärquelle schlug fehl; `details.reason`, nichts geändert), `sync_same_backend` (Markdown-Projekt mit `to_md`: Markdown-Projekte lassen sich nur in die Datenbank lesen), `sync_stale` (Sync: eine Seite oder der gespeicherte Syncstand änderte sich seit der Vorschau), `database_backup_failed` (die automatische Sicherung der Datenbank vor einem Sync oder einer Migration schlug fehl; `details.reason`, nichts geändert) |
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 

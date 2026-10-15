@@ -74,11 +74,32 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   Spalten in `projects`). Aufgezeichnet wird nur, wenn der Sync über diesen
   Dienst läuft (nicht beim Backup); Lesen schreibt nie. Berechnet wird der
   Status nur auf Anforderung (`/sync-status`), nicht mit den Projektlisten.
-- Abgleich Datenbank ⇄ Markdown: nur auf Anforderung (`POST /sources/{id}/sync`),
-  nie automatisch. `SyncService` (`application/services/sync.py`) arbeitet mit
+  Dazu meldet er die Zahl der offenen Konflikte (`conflicts`); `state` kann
+  `in_sync` sagen, solange ein aufgeschobener Konflikt offen ist.
+- Abgleich Datenbank ⇄ Markdown pro Eintrag: auf Anforderung
+  (`POST /sources/{id}/sync`); ein automatischer Start ist nur für Projekte mit
+  eingeschaltetem Schalter vorgesehen (Architekturregel §1, Umsetzung STORY-059).
+  `SyncService` (`application/services/sync.py`) arbeitet mit
   denselben Ports auf zwei Quellen desselben Projekts (Datenbank und
-  Markdown-Ordner am `sync_path`); der Vergleich (neu/geändert/fehlend, Token)
-  liegt in `domain/sync.py`, geschrieben wird über `write_backlog` und die
+  Markdown-Ordner am `sync_path`). Der Vergleich liegt in `domain/sync.py`
+  (reine Funktionen): `classify_entry` stellt je Eintrag (Art `item` oder
+  `document`, Label, bei Dokumenten Name) aus der Version beider Seiten und dem
+  gespeicherten Stand fest, welche Seite ihn geändert hat (unverändert, nur
+  Datenbank/nur Markdown geändert oder neu, beide geändert, auf beiden neu mit
+  verschiedenem Inhalt, auf einer Seite gelöscht); `plan_sync` macht daraus die
+  Vorschau (`created`/`changed` mit `origin`, `conflicts` mit beiden Fassungen,
+  Token), `decide` aus den Entscheidungen des Besitzers (`Resolution`) die
+  Schritte eines Laufs. Ein Eintrag, den nur eine Seite geändert hat, geht auf
+  die andere; Konflikte (beide Seiten geändert, auf beiden neu, auf einer Seite
+  gelöscht) werden nie überschrieben oder gelöscht, sondern je Eintrag mit
+  `database`, `markdown` oder `defer` entschieden; ohne Entscheidung bleiben sie
+  unberührt und werden wieder gemeldet. `direction` schränkt nur ein, welche Seite
+  ein Lauf schreibt. Gespeichert wird je Eintrag nur die Version beider Seiten nach
+  dem letzten Sync, der sie gleich ließ (Port `SyncStateStore`, Tabelle
+  `sync_entries` je Projekt und Markdown-Ordner), nach einem Lauf für alle
+  Einträge, die dann auf beiden Seiten gleich sind. Vor einem Lauf, der in die
+  Datenbank schreibt, legt der Port `DatabaseBackup` ein Backup an. Geschrieben wird erst die Datenbank-,
+  dann die Ordnerseite, je über `write_backlog` und die
   Dokument-Ports. Die Markdown-Seite rendert dafür alle Felder
   (`EntryRenderer.render_full`), den Text um die Einträge lässt sie stehen.
   Das Umstellen des Backends (`SourceService.update`) verlangt vorher einen

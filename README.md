@@ -50,10 +50,17 @@ oder die **Datenbank**. Die andere Seite darf als **Spiegel** geführt werden
 Datenbank-Projekt); der Spiegel wird nur durch einen Sync geschrieben, nie
 automatisch. Beim Hinzufügen wählst du die Primärquelle (Vorauswahl im
 Einstellungsmenü); Datenbank-Projekte tragen in der Liste das Kürzel „DB“. Der
-Sync zeigt erst eine **Vorschau** (neu, geändert, unverändert; was nur auf dem
-Ziel liegt, steht als Warnung dabei und bleibt stehen, es sei denn, du löschst
-es), dann **Ausführen**; die Richtung ist wählbar, Standard ist von der
-Primärquelle zum Spiegel. Beim **Wechsel der Primärquelle** (Einstellungsmenü →
+Sync gleicht **pro Eintrag** ab und zeigt erst eine **Vorschau**: was nur in
+der Datenbank geändert oder neu ist, geht in den Ordner, was nur im Ordner
+geändert oder neu ist, in die Datenbank (neu, geändert, unverändert). Ein
+Eintrag, der auf beiden Seiten geändert, auf beiden neu oder auf einer Seite
+gelöscht wurde, ist ein **Konflikt**: er wird nie überschrieben oder gelöscht, die
+Vorschau liefert beide Fassungen, und du entscheidest je Konflikt über die API
+(`database`, `markdown` oder aufschieben; ohne Entscheidung bleibt er
+unberührt und wird wieder gemeldet). Dann **Ausführen**; die Richtung kann auf
+eine Seite eingeschränkt werden. Vor einem Sync in die Datenbank sichert der
+Dienst die Datenbank (`configs/backups/todo-<Zeit>-sync.db`, ebenso vor einer
+Schema-Migration; die letzten 10 bleiben). Beim **Wechsel der Primärquelle** (Einstellungsmenü →
 Projekte) wird vorher synchronisiert und ein Backup der bisherigen
 Primärquelle angelegt; danach bleibt die bisherige Seite als Spiegel, die
 Item-IDs bleiben gleich. Dieselben Schritte gibt es über die API
@@ -148,7 +155,7 @@ Im Abschnitt „Projekte“ steht pro Projekt eine Karte: Primärquelle
 ein Backup der bisherigen Primärquelle unter `configs/backups/`), der
 Markdown-Ordner, der Spiegel (Datenbank-Spiegel ein/aus bzw. Markdown-Ordner als
 Spiegel, der sich aus- und wieder einschalten lässt, ohne den Ordner neu zu wählen), der Stand des Spiegels mit dem letzten Sync und „Sync…“ mit wählbarer
-Richtung (Standard: von der Primärquelle zum Spiegel). Ein ⚠ hinter dem
+Einschränkung der Richtung (Standard: beide Richtungen). Ein ⚠ hinter dem
 Projektnamen in der Sidebar heißt: der Spiegel wurde seit dem letzten Sync
 geändert (oder ist nicht lesbar); ein Klick öffnet die Karte dieses Projekts. Der
 Stand wird beim Laden der Seite, bei Fensterfokus, beim Öffnen des Menüs, mit

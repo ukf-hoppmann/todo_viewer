@@ -20,7 +20,7 @@ const mirrored = sourceStatus({
   id: "s4", project: "Mirrored", backend: "markdown", path: "/repos/m/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/m/docs", mirror: "database",
 });
 
-const status = (source: SourceStatus, state: Status["state"], last: string | null = null): Status => ({ source_id: source.id, state, last_sync_at: last });
+const status = (source: SourceStatus, state: Status["state"], last: string | null = null): Status => ({ source_id: source.id, state, last_sync_at: last, conflicts: 0 });
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -136,16 +136,17 @@ describe("ProjectsSection: switching the primary source and syncing", () => {
     expect(within(group).getByRole("button", { name: "Sync…" })).toBeDisabled();
   });
 
-  it("syncs from the primary source to the mirror unless the other direction is chosen", async () => {
-    const calls = stub([mirrored], [status(mirrored, "mirror_changed")], () => jsonResponse({ executed: false, token: "t", items: { created: [], changed: [], unchanged: 0, missing: [] }, documents: { created: [], changed: [], unchanged: 0, missing: [] }, skipped: [], deleted: [], kept: [] }));
+  it("syncs in both directions unless the run is restricted to one", async () => {
+    const section = { created: [], changed: [], unchanged: 0 };
+    const calls = stub([mirrored], [status(mirrored, "mirror_changed")], () => jsonResponse({ executed: false, token: "t", items: section, documents: section, conflicts: [], skipped: [], resolved: [], deleted: [], deferred: [], kept: [] }));
     renderWithProviders(<ProjectsSection />);
 
     await userEvent.click(within(await screen.findByRole("group", { name: "Mirrored" })).getByRole("button", { name: "Sync…" }));
-    expect(screen.getByRole("radio", { name: "Ordner → Datenbank (Standard)" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /In beide Richtungen/ })).toBeChecked();
     await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
 
     await waitFor(() => expect(calls.some((c) => c.path === "/api/v2/sources/s4/sync")).toBe(true));
-    expect(calls.find((c) => c.path === "/api/v2/sources/s4/sync")!.body.direction).toBe("from_md");
+    expect(calls.find((c) => c.path === "/api/v2/sources/s4/sync")!.body.direction).toBeNull();
   });
 
   it("closes only the dialog on top when Escape is pressed", async () => {

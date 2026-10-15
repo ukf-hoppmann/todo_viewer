@@ -10,33 +10,36 @@ export type SyncMode = "sync" | "switch";
 
 const sections = (p: SyncPreview) => [p.items, p.documents];
 
-/** How many items and documents a sync would create, overwrite, or find missing on the target. */
+/** How many items and documents a sync would carry over: new on one side or changed on one side only. */
 export function changeCount(p: SyncPreview): number {
-  return sections(p).reduce((sum, s) => sum + s.created.length + s.changed.length + s.missing.length, 0);
+  return sections(p).reduce((sum, s) => sum + s.created.length + s.changed.length, 0);
 }
 
-/** Entries only the target has: they stay unless the user asks to delete them. */
-export function hasMissing(p: SyncPreview): boolean {
-  return sections(p).some((s) => s.missing.length > 0);
+/** Entries that need a decision: nothing of them is touched until the owner decides. */
+export function conflictCount(p: SyncPreview): number {
+  return p.conflicts.length;
 }
 
 export function isInSync(p: SyncPreview): boolean {
-  return changeCount(p) === 0;
+  return changeCount(p) === 0 && conflictCount(p) === 0;
 }
 
-/** A switch needs both sides equal afterwards, so what is missing on the target has to be deleted. */
-export function canRun(p: SyncPreview, mode: SyncMode, deleteMissing: boolean): boolean {
-  return mode === "sync" || !hasMissing(p) || deleteMissing;
+/** A switch needs both sides equal afterwards, so it waits for the conflicts to be decided. */
+export function canRun(p: SyncPreview, mode: SyncMode): boolean {
+  return mode === "sync" || conflictCount(p) === 0;
+}
+
+/** Which side(s) a run may write: both (each entry travels from the side that changed it) or only one. */
+export type SyncScope = SyncDirection | "both";
+
+/** The `direction` of the request: null lets the sync run in both directions. */
+export function directionOf(scope: SyncScope): SyncDirection | null {
+  return scope === "both" ? null : scope;
 }
 
 /** Direction of the sync that precedes a switch away from `backend`. */
 export function switchDirection(backend: "markdown" | "database"): SyncDirection {
   return backend === "markdown" ? "from_md" : "to_md";
-}
-
-/** The default direction of a sync: from the primary source to its mirror. */
-export function defaultDirection(primary: "markdown" | "database"): SyncDirection {
-  return primary === "database" ? "to_md" : "from_md";
 }
 
 /** Whether the sidebar marks the project: the mirror changed or cannot be read, so something is left to do. */

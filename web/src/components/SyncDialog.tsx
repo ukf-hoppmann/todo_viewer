@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { SourceStatus } from "../api/client";
 import { useSwitchBackend, useSyncSource } from "../api/queries";
-import { canRun, defaultDirection, hasMissing, isInSync, type SyncDirection, type SyncMode, type SyncPreview, switchDirection } from "../domain/sync";
+import { canRun, directionOf, isInSync, type SyncMode, type SyncPreview, type SyncScope, switchDirection } from "../domain/sync";
 import { ApiError } from "../api/client";
 import { describeError, type I18n, useI18n } from "../i18n/i18n";
 import { Modal } from "./Modal";
@@ -15,8 +15,10 @@ interface SyncDialogProps {
   onSwitched: (project: string) => void;
 }
 
-type Entry = SyncPreview["items"]["created"][number];
+type Entry = Pick<SyncPreview["items"]["created"][number], "label" | "name" | "title">;
 const entryText = (e: Entry) => (e.name ? `${e.label} / ${e.name}` : `${e.label} — ${e.title}`);
+/** Which side the entry comes from: the arrow points to where it goes. */
+const origin = (e: { origin: "database" | "markdown" | null }) => (e.origin === "database" ? " →" : e.origin === "markdown" ? " ←" : "");
 
 /** Like describeError, but names why a folder could not be synced. */
 function syncError(i18n: I18n, error: unknown): string {
@@ -35,10 +37,8 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
   const move = useSwitchBackend();
   const switching = mode === "switch";
   const folder = source.backend === "database" ? (source.sync_path ?? "") : source.path;
-  const primaryToMirror = defaultDirection(source.backend);
-  const [chosen, setChosen] = useState<SyncDirection>(primaryToMirror);
-  const direction = switching ? switchDirection(source.backend) : chosen;
-  const [deleteMissing, setDeleteMissing] = useState(false);
+  const [chosen, setChosen] = useState<SyncScope>("both");
+  const direction = switching ? switchDirection(source.backend) : directionOf(chosen);
 
   const preview: SyncPreview | null = sync.data && !sync.data.executed ? sync.data : null;
   const result: SyncPreview | null = sync.data?.executed ? sync.data : null;
@@ -48,7 +48,7 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
 
   const run = () => {
     if (!preview) return;
-    const confirmed = { ...request, token: preview.token, deleteMissing };
+    const confirmed = { ...request, token: preview.token };
     if (switching) {
       move.mutate({ ...confirmed, backend: source.backend === "markdown" ? "database" : "markdown" }, { onSuccess: (saved) => onSwitched(saved.project) });
     } else {
@@ -72,27 +72,26 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
         <>
           <p>{t("sync.folder", { f: folder })}</p>
           <div className="backend-choice" role="radiogroup" aria-label={t("sync.direction")}>
-            {(["to_md", "from_md"] as const).map((d) => (
+            {(["both", "to_md", "from_md"] as const).map((d) => (
               <label key={d}>
                 <input
                   type="radio"
                   name="direction"
-                  checked={direction === d}
+                  checked={chosen === d}
                   onChange={() => {
                     setChosen(d);
                     sync.reset();
-                    setDeleteMissing(false);
                   }}
                 />
                 {t(`sync.dir.${d}`)}
-                {d === primaryToMirror && ` ${t("sync.dir.default")}`}
+                {d === "both" && ` ${t("sync.dir.default")}`}
               </label>
             ))}
           </div>
         </>
       )}
 
-      {preview && <PreviewView preview={preview} deleteMissing={deleteMissing} onDeleteMissing={setDeleteMissing} switching={switching} />}
+      {preview && <PreviewView preview={preview} switching={switching} />}
       {result && <ResultView result={result} />}
       {error && (
         <div className="field-error" role="alert">
@@ -110,7 +109,7 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
           </button>
         )}
         {preview && (
-          <button className="btn primary" disabled={busy || !canRun(preview, mode, deleteMissing)} onClick={run}>
+          <button className="btn primary" disabled={busy || !canRun(preview, mode)} onClick={run}>
             {t(switching ? "sync.runSwitch" : "sync.run")}
           </button>
         )}
@@ -119,14 +118,8 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
   );
 }
 
-function PreviewView({ preview, deleteMissing, onDeleteMissing, switching }: {
-  preview: SyncPreview;
-  deleteMissing: boolean;
-  onDeleteMissing: (value: boolean) => void;
-  switching: boolean;
-}) {
+function PreviewView({ preview, switching }: { preview: SyncPreview; switching: boolean }) {
   const { t } = useI18n();
-  const missing = [...preview.items.missing, ...preview.documents.missing];
   return (
     <div className="sync-preview">
       {isInSync(preview) && <div className="sync-equal">{t("sync.inSync")}</div>}
@@ -138,29 +131,25 @@ function PreviewView({ preview, deleteMissing, onDeleteMissing, switching }: {
             <div>{t("sync.count", { n: s.created.length, c: s.changed.length, u: s.unchanged })}</div>
             <ul className="sync-list">
               {s.created.map((e) => (
-                <li key={`+${e.label}${e.name ?? ""}`}>{`＋ ${entryText(e)}`}</li>
+                <li key={`+${e.label}${e.name ?? ""}`}>{`＋ ${entryText(e)}${origin(e)}`}</li>
               ))}
               {s.changed.map((e) => (
-                <li key={`~${e.label}${e.name ?? ""}`} title={t("sync.changedHint")}>{`≠ ${entryText(e)}`}</li>
+                <li key={`~${e.label}${e.name ?? ""}`} title={t("sync.changedHint")}>{`≠ ${entryText(e)}${origin(e)}`}</li>
               ))}
             </ul>
           </section>
         );
       })}
-      {missing.length > 0 && (
-        <div className="sync-missing" role="group" aria-label={t("sync.missing.title")}>
-          <h4>⚠ {t("sync.missing.title")}</h4>
-          <p>{t("sync.missing.hint")}</p>
+      {preview.conflicts.length > 0 && (
+        <div className="sync-missing" role="group" aria-label={t("sync.conflicts.title")}>
+          <h4>⚠ {t("sync.conflicts.title")}</h4>
+          <p>{t("sync.conflicts.hint")}</p>
           <ul className="sync-list">
-            {missing.map((e) => (
-              <li key={`-${e.label}${e.name ?? ""}`}>{entryText(e)}</li>
+            {preview.conflicts.map((c) => (
+              <li key={`c${c.kind}${c.label}${c.name ?? ""}`}>{`${entryText(c)} (${t(`sync.conflict.${c.reason}`)})`}</li>
             ))}
           </ul>
-          <label>
-            <input type="checkbox" checked={deleteMissing} onChange={(e) => onDeleteMissing(e.target.checked)} />
-            {t("sync.deleteMissing")}
-          </label>
-          {switching && !deleteMissing && hasMissing(preview) && <p className="field-error">{t("sync.deleteMissing.needed")}</p>}
+          {switching && <p className="field-error">{t("sync.conflicts.needed")}</p>}
         </div>
       )}
       {preview.skipped.length > 0 && (
@@ -183,7 +172,7 @@ function ResultView({ result }: { result: SyncPreview }) {
     <div className="sync-result">
       <div>{t("sync.done")}</div>
       {result.deleted.length > 0 && <div>{t("sync.done.deleted", { n: result.deleted.length })}</div>}
-      {result.kept.length > 0 && <div>{t("sync.done.kept", { n: result.kept.length })}</div>}
+      {result.deferred.length > 0 && <div>{t("sync.done.deferred", { n: result.deferred.length })}</div>}
     </div>
   );
 }

@@ -7,15 +7,21 @@ import { SyncDialog } from "./SyncDialog";
 type Out = Schemas["SyncOut"];
 type Section = Schemas["SyncSectionOut"];
 
-const entry = (label: string, name: string | null = null) => ({ label, title: `Title ${label}`, name });
-const section = (over: Partial<Section> = {}): Section => ({ created: [], changed: [], unchanged: 0, missing: [], ...over });
+const entry = (label: string, name: string | null = null, origin: "database" | "markdown" | null = null) => ({ label, title: `Title ${label}`, name, origin });
+const conflict = (label: string, reason: Schemas["SyncConflictOut"]["reason"] = "both_changed") => ({
+  kind: "item" as const, label, title: `Title ${label}`, name: null, reason, database: null, markdown: null,
+});
+const section = (over: Partial<Section> = {}): Section => ({ created: [], changed: [], unchanged: 0, ...over });
 const answer = (over: Partial<Out> = {}): Out => ({
   executed: false,
   token: "tok-1",
   items: section(),
   documents: section(),
+  conflicts: [],
   skipped: [],
+  resolved: [],
   deleted: [],
+  deferred: [],
   kept: [],
   ...over,
 });
@@ -37,8 +43,9 @@ function stubApi(handler: (request: Request, body: Record<string, unknown>) => R
 }
 
 const previewWith = answer({
-  items: section({ created: [entry("TASK-1")], changed: [entry("TASK-2")], unchanged: 4, missing: [entry("TASK-9")] }),
-  documents: section({ created: [entry("TASK-1", "TASK-1_notes.md")], unchanged: 2 }),
+  items: section({ created: [entry("TASK-1", null, "database")], changed: [entry("TASK-2", null, "markdown")], unchanged: 4 }),
+  documents: section({ created: [entry("TASK-1", "TASK-1_notes.md", "database")], unchanged: 2 }),
+  conflicts: [conflict("TASK-9", "database_deleted")],
   skipped: [entry("TASK-3", "items/TASK-3/x.md")],
 });
 
@@ -51,7 +58,7 @@ describe("SyncDialog: syncing a database project", () => {
   const source = sourceStatus();
   const open = (onClose = vi.fn()) => renderWithProviders(<SyncDialog source={source} mode="sync" onClose={onClose} onSwitched={vi.fn()} />);
 
-  it("asks for a preview first and shows what would happen, with the entries only the target has as a warning", async () => {
+  it("asks for a preview first and shows what would happen, with the conflicts as a warning", async () => {
     const calls = stubApi(server(previewWith));
     open();
 
@@ -59,36 +66,24 @@ describe("SyncDialog: syncing a database project", () => {
 
     expect(await screen.findByText("1 neu · 1 geändert · 4 unverändert")).toBeInTheDocument();
     expect(screen.getByText("1 neu · 0 geändert · 2 unverändert")).toBeInTheDocument();
-    expect(calls).toEqual([{ method: "POST", path: "/api/v2/sources/s1/sync", body: { direction: "to_md", confirm: false, delete_missing: false, language: "de" } }]);
-    const warning = screen.getByRole("group", { name: "Nur auf dem Ziel vorhanden" });
-    expect(within(warning).getByText("TASK-9 — Title TASK-9")).toBeInTheDocument();
-    expect(screen.getByText("≠ TASK-2 — Title TASK-2")).toBeInTheDocument();  // marked as overwritten
+    expect(calls).toEqual([{ method: "POST", path: "/api/v2/sources/s1/sync", body: { direction: null, confirm: false, resolutions: [], language: "de" } }]);
+    const warning = screen.getByRole("group", { name: "Konflikte" });
+    expect(within(warning).getByText("TASK-9 — Title TASK-9 (in der Datenbank gelöscht)")).toBeInTheDocument();
+    expect(screen.getByText("＋ TASK-1 — Title TASK-1 →")).toBeInTheDocument();  // comes from the database
+    expect(screen.getByText("≠ TASK-2 — Title TASK-2 ←")).toBeInTheDocument();  // comes from the folder
     expect(screen.getByText(/items\/TASK-3\/x\.md/)).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Diese Einträge auf dem Ziel löschen" })).not.toBeChecked();
   });
 
-  it("carries the sync out with the token of the preview and keeps missing entries unless told to delete them", async () => {
-    const calls = stubApi(server(previewWith, { kept: [entry("TASK-9")] }));
+  it("carries the sync out with the token of the preview and reports the conflicts that stayed", async () => {
+    const calls = stubApi(server(previewWith, { deferred: [entry("TASK-9")] }));
     open();
 
     await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
     await userEvent.click(await screen.findByRole("button", { name: "Ausführen" }));
 
     expect(await screen.findByText("Sync abgeschlossen.")).toBeInTheDocument();
-    expect(calls[1]!.body).toEqual({ direction: "to_md", confirm: true, token: "tok-1", delete_missing: false, language: "de" });
-    expect(screen.getByText("Fehlende Einträge, die stehen geblieben sind: 1")).toBeInTheDocument();
-  });
-
-  it("deletes the missing entries only when the box is ticked", async () => {
-    const calls = stubApi(server(previewWith, { deleted: [entry("TASK-9")] }));
-    open();
-
-    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
-    await userEvent.click(await screen.findByRole("checkbox", { name: "Diese Einträge auf dem Ziel löschen" }));
-    await userEvent.click(screen.getByRole("button", { name: "Ausführen" }));
-
-    expect(await screen.findByText("Gelöscht: 1")).toBeInTheDocument();
-    expect(calls[1]!.body).toMatchObject({ confirm: true, delete_missing: true });
+    expect(calls[1]!.body).toEqual({ direction: null, confirm: true, token: "tok-1", resolutions: [], language: "de" });
+    expect(screen.getByText("Aufgeschobene Konflikte: 1")).toBeInTheDocument();
   });
 
   it("changing the direction drops the preview and sends the other direction", async () => {
@@ -97,7 +92,7 @@ describe("SyncDialog: syncing a database project", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
     await screen.findByText("1 neu · 1 geändert · 4 unverändert");
-    await userEvent.click(screen.getByRole("radio", { name: "Ordner → Datenbank" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Nur Ordner → Datenbank" }));
 
     expect(screen.queryByText("1 neu · 1 geändert · 4 unverändert")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Ausführen" })).not.toBeInTheDocument();
@@ -160,26 +155,18 @@ describe("SyncDialog: switching the storage of a project", () => {
     expect(calls.map((c) => [c.method, c.path])).toEqual([
       ["POST", "/api/v2/sources/s1/sync"], ["POST", "/api/v2/sources/s1/sync"], ["PUT", "/api/v2/sources/s1"]]);
     expect(calls[0]!.body.direction).toBe("from_md");
-    expect(calls[1]!.body).toMatchObject({ confirm: true, token: "tok-1", delete_missing: false });
+    expect(calls[1]!.body).toMatchObject({ confirm: true, token: "tok-1" });
     expect(calls[2]!.body).toEqual({ path: "", backend: "database" });
   });
 
-  it("does not switch while entries only the target has would remain, unless they are deleted", async () => {
-    const calls = stubApi(switching(answer({ items: section({ missing: [entry("TASK-9")] }) })));
-    const onSwitched = vi.fn();
-    renderWithProviders(<SyncDialog source={markdown} mode="switch" onClose={vi.fn()} onSwitched={onSwitched} />);
+  it("does not switch while conflicts are undecided", async () => {
+    stubApi(switching(answer({ conflicts: [conflict("TASK-9")] })));
+    renderWithProviders(<SyncDialog source={markdown} mode="switch" onClose={vi.fn()} onSwitched={vi.fn()} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
-    const button = await screen.findByRole("button", { name: "Übernehmen und umstellen" });
-    expect(button).toBeDisabled();
-    expect(screen.getByText("Zum Umstellen müssen beide Seiten gleich sein: die fehlenden Einträge müssen gelöscht werden.")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("checkbox", { name: "Diese Einträge auf dem Ziel löschen" }));
-    expect(button).toBeEnabled();
-    await userEvent.click(button);
-
-    await waitFor(() => expect(onSwitched).toHaveBeenCalled());
-    expect(calls[1]!.body).toMatchObject({ confirm: true, delete_missing: true });
+    expect(await screen.findByRole("button", { name: "Übernehmen und umstellen" })).toBeDisabled();
+    expect(screen.getByText("Zum Umstellen müssen die Konflikte entschieden sein.")).toBeInTheDocument();
   });
 
   it("writes the database out and moves the project back to its folder", async () => {
@@ -215,31 +202,28 @@ describe("SyncDialog: the direction", () => {
     backend: "markdown", path: "/repos/a/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/a/docs", mirror: "database",
   });
 
-  it("starts from the primary source to the mirror and says so", () => {
+  it("starts with both directions and says so", () => {
     stubApi(server(answer()));
-    const { unmount } = renderWithProviders(<SyncDialog source={sourceStatus()} mode="sync" onClose={vi.fn()} onSwitched={vi.fn()} />);
+    renderWithProviders(<SyncDialog source={sourceStatus()} mode="sync" onClose={vi.fn()} onSwitched={vi.fn()} />);
 
-    expect(screen.getByRole("radio", { name: /Datenbank → Ordner/ })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "Datenbank → Ordner (Standard)" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Ordner → Datenbank" })).not.toBeChecked();
-    unmount();
-
-    renderWithProviders(<SyncDialog source={markdownWithMirror} mode="sync" onClose={vi.fn()} onSwitched={vi.fn()} />);
-    expect(screen.getByRole("radio", { name: "Ordner → Datenbank (Standard)" })).toBeChecked();
-    expect(screen.getByText("Sync-Ordner: /repos/a/docs")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /In beide Richtungen/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /In beide Richtungen.*\(Standard\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Nur Datenbank → Ordner" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "Nur Ordner → Datenbank" })).not.toBeChecked();
   });
 
-  it("previews a markdown project with a database mirror from the folder, and the other way when asked", async () => {
+  it("restricts the run to one side when asked", async () => {
     const calls = stubApi(server(answer()));
     renderWithProviders(<SyncDialog source={markdownWithMirror} mode="sync" onClose={vi.fn()} onSwitched={vi.fn()} />);
 
+    expect(screen.getByText("Sync-Ordner: /repos/a/docs")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
     await waitFor(() => expect(calls).toHaveLength(1));
-    await userEvent.click(screen.getByRole("radio", { name: "Datenbank → Ordner" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Nur Datenbank → Ordner" }));
     await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
 
     await waitFor(() => expect(calls).toHaveLength(2));
-    expect(calls.map((c) => c.body.direction)).toEqual(["from_md", "to_md"]);
+    expect(calls.map((c) => c.body.direction)).toEqual([null, "to_md"]);
   });
 });
 

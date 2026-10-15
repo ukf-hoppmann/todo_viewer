@@ -365,6 +365,71 @@ class DatabaseNoteRepository:
                 conn.execute(sa.update(notes).where(notes.c.uid == _note_uid(conn, project, label))
                              .values(deleted=None))
 
+    def store_topic(self, project: str, topic: Topic) -> None:
+        with self._db.begin() as conn:
+            _ensure_project(conn, project)
+            values = dict(name=topic.name, due_at=_text(topic.due_at),
+                          created=_text(topic.created) or _text(self._clock()), deleted=_text(topic.deleted),
+                          parent_uid=None if topic.parent is None else _topic_uid(conn, project, topic.parent))
+            existing = conn.execute(sa.select(topics.c.uid).where(topics.c.project_id == project,
+                                                                   topics.c.label == topic.label)).scalar()
+            if existing is None:
+                conn.execute(sa.insert(topics).values(uid=str(uuid.uuid4()), project_id=project, label=topic.label,
+                                                      **values))
+            else:
+                conn.execute(sa.update(topics).where(topics.c.uid == existing).values(**values))
+
+    def store_note(self, project: str, note: Note, links: Sequence[tuple[LinkTarget, LinkRole]],
+                   triggers: Sequence[NewTrigger]) -> None:
+        with self._db.begin() as conn:
+            _ensure_project(conn, project)
+            now = _text(self._clock())
+            values = dict(summary=note.summary, body=note.body, status=note.status.value,
+                          topic_uid=None if note.topic is None else _topic_uid(conn, project, note.topic),
+                          review_at=_text(note.review_at), trigger_mode=note.trigger_mode.value,
+                          created=_text(note.created) or now, updated=_text(note.updated) or now,
+                          archived=note.archived, deleted=_text(note.deleted))
+            uid = conn.execute(sa.select(notes.c.uid).where(notes.c.project_id == project,
+                                                            notes.c.label == note.label)).scalar()
+            if uid is None:
+                uid = str(uuid.uuid4())
+                conn.execute(sa.insert(notes).values(uid=uid, project_id=project, label=note.label, **values))
+            else:
+                conn.execute(sa.update(notes).where(notes.c.uid == uid).values(**values))
+                conn.execute(sa.delete(note_triggers).where(note_triggers.c.note_uid == uid))
+                conn.execute(sa.delete(note_links).where(note_links.c.note_uid == uid))
+            for target, role in links:
+                _insert_link(conn, uid, target, role)
+            for new in triggers:
+                link_id = None
+                if new.kind is TriggerKind.EVENT and new.target is not None:
+                    link_id = _insert_link(conn, uid, new.target, LinkRole.TRIGGER)
+                conn.execute(sa.insert(note_triggers).values(
+                    note_uid=uid, kind=new.kind.value, at=_text(new.at), link_id=link_id,
+                    target_status=new.target_status, fired_at=_text(new.fired_at), already_met=new.already_met))
+
+    def counters(self, project: str) -> dict[str, int]:
+        with self._db.begin() as conn:
+            rows = conn.execute(sa.select(note_counters.c.kind, note_counters.c.last)
+                                .where(note_counters.c.project_id == project)).all()
+        return {r.kind: int(r.last) for r in rows}
+
+    def raise_counter(self, project: str, kind: str, minimum: int) -> None:
+        with self._db.begin() as conn:
+            _ensure_project(conn, project)
+            last = conn.execute(sa.select(note_counters.c.last).where(
+                note_counters.c.project_id == project, note_counters.c.kind == kind)).scalar()
+            if last is None:
+                conn.execute(sa.insert(note_counters).values(project_id=project, kind=kind, last=minimum))
+            elif last < minimum:
+                conn.execute(sa.update(note_counters).where(note_counters.c.project_id == project,
+                                                            note_counters.c.kind == kind).values(last=minimum))
+
+    def next_label(self, project: str, kind: str) -> str:
+        with self._db.begin() as conn:
+            _ensure_project(conn, project)
+            return _next_label(conn, project, kind)
+
     def purge_note(self, project: str, label: str) -> None:
         with self._db.begin() as conn:
             _purge_note(conn, project, label)

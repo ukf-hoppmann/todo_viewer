@@ -133,6 +133,32 @@ class SyncConflict:
 
 
 @dataclass(frozen=True)
+class SyncSection:
+    """What a sync finds of one kind of entries (topics, notes, note documents)."""
+
+    created: tuple[SyncEntry, ...] = ()
+    changed: tuple[SyncEntry, ...] = ()
+    unchanged: int = 0
+
+
+@dataclass(frozen=True)
+class ExtraEntry:
+    """An entry of another kind (a topic, a note, a document of a note) with its version on each side (None: missing).
+
+    The documents of a note name it as `parent`: they travel with a note that is new, and are compared on their own
+    when the note exists on both sides; those of a note that is gone from one side follow the decision about the note.
+    """
+
+    key: EntryKey
+    title: str
+    database: str | None
+    markdown: str | None
+    database_view: SideView | None = None
+    markdown_view: SideView | None = None
+    parent: EntryKey | None = None
+
+
+@dataclass(frozen=True)
 class SyncPreview:
     created: tuple[SyncEntry, ...]  # new on one side, carried to the other
     changed: tuple[SyncEntry, ...]  # changed on one side only, carried to the other
@@ -144,6 +170,9 @@ class SyncPreview:
     skipped: tuple[SyncEntry, ...]
     # Identifies the state of both sides and of the stored sync state the preview was made from.
     token: str
+    topics: SyncSection = SyncSection()
+    notes: SyncSection = SyncSection()
+    note_documents: SyncSection = SyncSection()
 
 
 @dataclass(frozen=True)
@@ -262,12 +291,12 @@ def classify_entry(database: str | None, markdown: str | None, stored: EntryStat
 
 def plan_sync(database_items: Sequence[Item], markdown_items: Sequence[Item], database_docs: Documents,
               markdown_docs: Documents, states: Mapping[EntryKey, EntryState],
-              skipped: Sequence[SyncEntry] = ()) -> SyncPlan:
+              skipped: Sequence[SyncEntry] = (), extras: Sequence[ExtraEntry] = ()) -> SyncPlan:
     """What a sync finds: every entry classified by the versions on both sides and the state after the last sync.
 
     Items are equal if their versions are; documents if their contents are. The documents of an item that exists on
     one side only travel with it if it is new; those of a deleted item are not listed on their own, they follow the
-    decision about the item.
+    decision about the item. `extras` are entries of other kinds, planned the same way.
     """
     database = {i.id: i for i in database_items}
     markdown = {i.id: i for i in markdown_items}
@@ -297,9 +326,34 @@ def plan_sync(database_items: Sequence[Item], markdown_items: Sequence[Item], da
             entries.append(PlannedEntry(EntryKey("document", label, name), titles[label], change))
     texts = {EntryKey("document", label, name): (database_docs.get((label, name)), markdown_docs.get((label, name)))
              for label in labels for name in _document_names(label, database_docs, markdown_docs)}
-    preview = _preview(entries, database, markdown, texts, skipped, _token(database_items, markdown_items,
-                                                                          database_docs, markdown_docs, states))
+    extra_views = _plan_extras(extras, states, entries)
+    preview = _preview(entries, database, markdown, texts, skipped,
+                       _token(database_items, markdown_items, database_docs, markdown_docs, states, extras),
+                       extra_views)
     return SyncPlan(preview, tuple(entries))
+
+
+def _plan_extras(extras: Sequence[ExtraEntry], states: Mapping[EntryKey, EntryState],
+                 entries: list[PlannedEntry]) -> dict[EntryKey, tuple[SideView | None, SideView | None]]:
+    """Classifies the extra entries (parents before their documents) and adds them to `entries`."""
+    changes: dict[EntryKey, Change] = {}
+    by_key = {e.key: e for e in extras}
+    views: dict[EntryKey, tuple[SideView | None, SideView | None]] = {}
+    for extra in sorted(extras, key=lambda e: e.parent is not None):
+        if extra.parent is None:
+            change = classify_entry(extra.database, extra.markdown, states.get(extra.key))
+        else:
+            parent = by_key.get(extra.parent)
+            if parent is not None and parent.database is not None and parent.markdown is not None:
+                change = classify_entry(extra.database, extra.markdown, states.get(extra.key))
+            elif changes.get(extra.parent) in (Change.DATABASE_NEW, Change.MARKDOWN_NEW):
+                change = changes[extra.parent]
+            else:
+                continue
+        changes[extra.key] = change
+        views[extra.key] = (extra.database_view, extra.markdown_view)
+        entries.append(PlannedEntry(extra.key, extra.title, change))
+    return views
 
 
 def _document_names(label: str, *documents: Documents) -> list[str]:
@@ -310,12 +364,15 @@ _ORIGIN = {Change.DATABASE_NEW: Side.DATABASE, Change.DATABASE_CHANGED: Side.DAT
            Change.MARKDOWN_NEW: Side.MARKDOWN, Change.MARKDOWN_CHANGED: Side.MARKDOWN}
 
 
+_EXTRA_KINDS = ("topic", "note", "note_document")
+
+
 def _preview(entries: Sequence[PlannedEntry], database: Mapping[str, Item], markdown: Mapping[str, Item],
              texts: Mapping[EntryKey, tuple[str | None, str | None]], skipped: Sequence[SyncEntry],
-             token: str) -> SyncPreview:
-    created: dict[str, list[SyncEntry]] = {"item": [], "document": []}
-    changed: dict[str, list[SyncEntry]] = {"item": [], "document": []}
-    unchanged = {"item": 0, "document": 0}
+             token: str, extra_views: Mapping[EntryKey, tuple[SideView | None, SideView | None]]) -> SyncPreview:
+    created: dict[str, list[SyncEntry]] = {k: [] for k in ("item", "document", *_EXTRA_KINDS)}
+    changed: dict[str, list[SyncEntry]] = {k: [] for k in ("item", "document", *_EXTRA_KINDS)}
+    unchanged = {k: 0 for k in ("item", "document", *_EXTRA_KINDS)}
     conflicts: list[SyncConflict] = []
     for planned in entries:
         key, change = planned.key, planned.change
@@ -327,16 +384,25 @@ def _preview(entries: Sequence[PlannedEntry], database: Mapping[str, Item], mark
         elif change in (Change.DATABASE_CHANGED, Change.MARKDOWN_CHANGED):
             changed[key.kind].append(entry)
         elif change.is_conflict:
-            if key.kind == "item":
-                views = (database.get(key.label), markdown.get(key.label))
-                sides = tuple(None if item is None else SideView(fields=item_fields(item)) for item in views)
+            sides: tuple[SideView | None, SideView | None]
+            if key.kind in _EXTRA_KINDS:
+                sides = extra_views[key]
+            elif key.kind == "item":
+                d_item, m_item = database.get(key.label), markdown.get(key.label)
+                sides = (None if d_item is None else SideView(fields=item_fields(d_item)),
+                         None if m_item is None else SideView(fields=item_fields(m_item)))
             else:
-                sides = tuple(None if text is None else SideView(text=text) for text in texts[key])
+                d_text, m_text = texts[key]
+                sides = (None if d_text is None else SideView(text=d_text),
+                         None if m_text is None else SideView(text=m_text))
             conflicts.append(SyncConflict(entry, change, sides[0], sides[1]))
-    conflicts.sort(key=lambda c: c.entry.kind != "item")  # stable: items first
+    order = {"item": 0, "document": 1, "topic": 2, "note": 3, "note_document": 4}
+    conflicts.sort(key=lambda c: order[c.entry.kind])  # stable: items first, then documents, topics, notes
+    sections = {k: SyncSection(tuple(created[k]), tuple(changed[k]), unchanged[k]) for k in _EXTRA_KINDS}
     return SyncPreview(tuple(created["item"]), tuple(changed["item"]), unchanged["item"],
                        tuple(created["document"]), tuple(changed["document"]), unchanged["document"],
-                       tuple(conflicts), tuple(skipped), token)
+                       tuple(conflicts), tuple(skipped), token, sections["topic"], sections["note"],
+                       sections["note_document"])
 
 
 def item_fields(item: Item) -> tuple[tuple[str, str], ...]:
@@ -419,7 +485,8 @@ def check_token(expected: str | None, current: str) -> None:
 
 
 def _token(database_items: Sequence[Item], markdown_items: Sequence[Item], database_docs: Documents,
-           markdown_docs: Documents, states: Mapping[EntryKey, EntryState]) -> str:
+           markdown_docs: Documents, states: Mapping[EntryKey, EntryState],
+           extras: Sequence[ExtraEntry] = ()) -> str:
     digest = hashlib.sha256()
     for side, items, docs in (("database", database_items, database_docs), ("markdown", markdown_items, markdown_docs)):
         digest.update(side.encode())
@@ -427,6 +494,8 @@ def _token(database_items: Sequence[Item], markdown_items: Sequence[Item], datab
             digest.update(f"\0i{item.id}\0{item.version}".encode())
         for (label, name), content in sorted(docs.items()):
             digest.update(f"\0d{label}\0{name}\0{content_version(content)}".encode())
+    for extra in sorted(extras, key=lambda e: e.key):
+        digest.update(f"\0x{extra.key.kind}\0{extra.key.label}\0{extra.key.name}\0{extra.database}\0{extra.markdown}".encode())
     digest.update(b"state")
     for key, state in sorted(states.items()):
         digest.update(f"\0{key.kind}\0{key.label}\0{key.name}\0{state.database}\0{state.markdown}".encode())

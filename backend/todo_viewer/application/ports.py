@@ -189,6 +189,25 @@ class NoteRepository(Protocol):
     def restore_topics(self, project: str, topics: Sequence[str], notes: Sequence[str]) -> None:
         """Takes the topics and notes out of the trash in one transaction."""
 
+    def store_topic(self, project: str, topic: Topic) -> None:
+        """Takes over a topic as it is (label, name, parent, due date, created, deleted): inserts it or replaces the
+        stored one of that label. The parent must exist (TopicNotFoundError); the depth limit is not applied."""
+
+    def store_note(self, project: str, note: Note, links: Sequence[tuple[LinkTarget, LinkRole]],
+                   triggers: Sequence[NewTrigger]) -> None:
+        """Takes over a note as it is, with its times, archive and trash state, and replaces its links and triggers
+        by the given ones (an event trigger also gets its link of the role trigger); documents and notices stay. The
+        topic must exist (TopicNotFoundError)."""
+
+    def counters(self, project: str) -> dict[str, int]:
+        """The highest number ever given per kind (`note`, `topic`); a kind never used is missing."""
+
+    def raise_counter(self, project: str, kind: str, minimum: int) -> None:
+        """Makes the counter at least `minimum`; it never goes down."""
+
+    def next_label(self, project: str, kind: str) -> str:
+        """Gives the next free label of the kind and counts it."""
+
     def purge_note(self, project: str, label: str) -> None:
         """Removes the note for good, with its links, triggers, and documents. The label is not reused."""
 

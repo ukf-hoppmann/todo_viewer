@@ -1,6 +1,7 @@
 """The contract of the notes store: label assignment, topic depth, links, triggers, documents, project change."""
 from __future__ import annotations
 
+import dataclasses
 from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -24,12 +25,14 @@ from todo_viewer.domain.notes import (
     NewNote,
     NewNotice,
     NewTrigger,
+    Note,
     NoteChanges,
     NoteStatus,
     NoticeCause,
     NoticeDecision,
     NoticeSide,
     TargetKind,
+    Topic,
     TriggerKind,
     TriggerMode,
 )
@@ -564,3 +567,81 @@ def test_purging_a_note_removes_its_notices_and_those_that_name_it(notes: NoteRe
         with pytest.raises(NoticeNotFoundError):
             notes.get_notice(gone.id)
     assert notes.get_notice(kept.id) == kept
+
+
+# ---------- taking over whole notes and topics (the notes sync) ----------
+
+def test_a_stored_topic_keeps_its_label_times_and_parent_and_is_replaced_by_the_next_store(notes: NoteRepository):
+    root = Topic(P, "TOPIC-005", "Root", None, NOON, NOON, None)
+    child = Topic(P, "TOPIC-006", "Child", "TOPIC-005", None, NOON, NOON)
+
+    notes.store_topic(P, root)
+    notes.store_topic(P, child)
+    notes.store_topic(P, dataclasses.replace(root, name="Renamed", due_at=None))
+
+    assert notes.get_topic(P, "TOPIC-006") == child
+    assert notes.get_topic(P, "TOPIC-005") == dataclasses.replace(root, name="Renamed", due_at=None)
+    assert [t.label for t in notes.list_topics(P, include_deleted=True)] == ["TOPIC-005", "TOPIC-006"]
+
+
+def test_a_topic_below_an_unknown_parent_is_refused(notes: NoteRepository):
+    with pytest.raises(TopicNotFoundError):
+        notes.store_topic(P, Topic(P, "TOPIC-001", "x", "TOPIC-009", None, NOON, None))
+
+
+def test_a_stored_note_takes_over_every_field_link_and_trigger_and_replaces_them_on_the_next_store(
+        notes: NoteRepository):
+    notes.store_topic(P, Topic(P, "TOPIC-001", "t", None, None, NOON, None))
+    note = Note(P, "NOTE-007", "from the files", body="Text", status=NoteStatus.DONE, topic="TOPIC-001", review_at=NOON,
+                trigger_mode=TriggerMode.ALL, created=NOON, updated=NOON + timedelta(days=1), archived=True,
+                deleted=NOON + timedelta(days=2))
+    story = item("STORY-001")
+    links = [(story, LinkRole.REFERENCE), (LinkTarget(TargetKind.NOTE, P, "NOTE-001"), LinkRole.ORIGIN)]
+    triggers = [NewTrigger(TriggerKind.TIME, at=NOON, fired_at=NOON),
+                NewTrigger(TriggerKind.EVENT, target=story, target_status="Completed", fired_at=NOON, already_met=True),
+                NewTrigger(TriggerKind.TOPIC_DUE)]
+
+    notes.store_note(P, note, links, triggers)
+
+    assert notes.get_note(P, "NOTE-007") == note
+    assert [(link.target, link.role) for link in notes.links_of(P, "NOTE-007")] == [
+        *links[:2], (story, LinkRole.TRIGGER)]  # the event trigger brings its link of the role trigger
+    stored = notes.triggers_of(P, "NOTE-007")
+    assert [(t.kind, t.at, t.target, t.target_status, t.fired_at, t.already_met) for t in stored] == [
+        (TriggerKind.TIME, NOON, None, None, NOON, False),
+        (TriggerKind.EVENT, None, story, "Completed", NOON, True),
+        (TriggerKind.TOPIC_DUE, None, None, None, None, False)]
+
+    notes.store_note(P, dataclasses.replace(note, summary="again", topic=None), links[:1], [])
+
+    assert notes.get_note(P, "NOTE-007").summary == "again" and notes.get_note(P, "NOTE-007").topic is None
+    assert [link.target for link in notes.links_of(P, "NOTE-007")] == [story]
+    assert notes.triggers_of(P, "NOTE-007") == []
+
+
+def test_a_stored_note_keeps_its_documents_and_notices(notes: NoteRepository, documents: NoteDocumentStore):
+    note = Note(P, "NOTE-001", "a", created=NOON, updated=NOON)
+    notes.store_note(P, note, [], [])
+    documents.write(P, "NOTE-001", "NOTE-001_notes.md", "# notes\n", None)
+
+    notes.store_note(P, dataclasses.replace(note, summary="b"), [], [])
+
+    assert documents.read(P, "NOTE-001", "NOTE-001_notes.md") == "# notes\n"
+
+
+def test_a_stored_note_under_an_unknown_topic_is_refused(notes: NoteRepository):
+    with pytest.raises(TopicNotFoundError):
+        notes.store_note(P, Note(P, "NOTE-001", "a", topic="TOPIC-009", created=NOON, updated=NOON), [], [])
+
+
+def test_the_counters_only_rise_and_labels_continue_after_them(notes: NoteRepository):
+    assert notes.counters(P) == {}
+    notes.create_note(P, NewNote("a"))
+
+    notes.raise_counter(P, "note", 7)
+    notes.raise_counter(P, "note", 3)  # lower: no effect
+    notes.raise_counter(P, "topic", 2)
+
+    assert notes.counters(P) == {"note": 7, "topic": 2}
+    assert notes.create_note(P, NewNote("b")).label == "NOTE-008"
+    assert notes.next_label(P, "topic") == "TOPIC-003" and notes.next_label(P, "topic") == "TOPIC-004"

@@ -110,6 +110,11 @@ def format_moment(moment: datetime) -> str:
     return text + "Z"
 
 
+def moment_text(value: datetime | None) -> str:
+    """A point in time as text, empty if there is none."""
+    return "" if value is None else format_moment(value)
+
+
 def _moment(text: str, line: int, file: str | None) -> datetime:
     value = text.strip()
     try:
@@ -146,24 +151,21 @@ def to_parsed(note: Note, triggers: Sequence[Trigger], links: Sequence[Link]) ->
 
 def render_parsed(note: ParsedNote, newline: str | None = None) -> str:
     eol = newline or note.newline
-
-    def moment(value: datetime | None) -> str:
-        return "" if value is None else format_moment(value)
-
+    moment = moment_text
     lines = [f"# {note.label or NO_LABEL}", f"Summary: {note.summary}", f"Status: {note.status.value}",
              f"Topic: {note.topic or ''}", f"Review: {moment(note.review_at)}", f"Mode: {note.mode.value}",
              f"Created: {moment(note.created)}", f"Updated: {moment(note.updated)}",
              f"Archived: {'true' if note.archived else 'false'}", f"Deleted: {moment(note.deleted)}"]
     lines = [line.rstrip() for line in lines]
     if note.triggers:
-        lines += ["Triggers:", *(_trigger_line(t) for t in note.triggers)]
+        lines += ["Triggers:", *(trigger_line(t) for t in note.triggers)]
     if note.links:
         lines += ["Links:", *(f"- {link.role.value} {link.target}" for link in note.links)]
     text = eol.join(lines) + eol
     return text + eol + note.body if note.body else text
 
 
-def _trigger_line(trigger: ParsedTrigger) -> str:
+def trigger_line(trigger: ParsedTrigger) -> str:
     if trigger.kind is TriggerKind.TOPIC_DUE:
         text = "- topic_due"
     elif trigger.kind is TriggerKind.TIME:
@@ -431,6 +433,7 @@ __all__ = [
     "ParsedTrigger",
     "TopicLine",
     "format_moment",
+    "moment_text",
     "parse_counters",
     "parse_note",
     "parse_topics",
@@ -439,5 +442,6 @@ __all__ = [
     "render_parsed",
     "render_topics",
     "to_lines",
+    "trigger_line",
     "to_parsed",
 ]

@@ -271,6 +271,28 @@ class SyncStateStore(Protocol):
         """Stores `put` and forgets `remove` in one transaction."""
 
 
+class NotesMirror(Protocol):
+    """The notes folder of a project's markdown side (`<folder>/notes/`): plain files, no notes logic."""
+
+    def read(self, source: Source) -> dict[str, str]:
+        """Name and text of every notes file of the markdown `source` (`NOTE-001.md`, `NOTE-001_notes.md`,
+        `new-idea.md`, `topics.md`, `counters.md`, …), line endings as they are; empty if there is no folder."""
+
+    def write(self, source: Source, name: str, text: str, expected: str | None) -> None:
+        """Writes the file atomically (temporary file and rename), keeping the line ending of the file it replaces.
+        `expected` is the content version of the text read before (None: the file must not exist yet); raises
+        MirrorConflictError if it differs now, and then writes nothing."""
+
+    def delete(self, source: Source, name: str, expected: str) -> None:
+        """Removes the file, under the same condition as `write`."""
+
+    def fingerprint(self, source: Source) -> str:
+        """Identifies names and contents of the notes files; reads only."""
+
+    def files_with_markers(self, source: Source) -> list[str]:
+        """Names of the notes files that contain Git merge markers."""
+
+
 class MergeMarkerCheck(Protocol):
     """Finds files of a markdown backlog that hold Git merge markers, i.e. a merge or pull that is not finished."""
 
@@ -328,6 +350,7 @@ __all__ = [
     "MergeMarkerCheck",
     "NoteDocumentStore",
     "NoteRepository",
+    "NotesMirror",
     "NotesSettingsStore",
     "ProjectNameSuggester",
     "RawBackup",

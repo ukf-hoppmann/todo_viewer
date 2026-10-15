@@ -40,7 +40,11 @@ forbidden_modules = ["fastapi", "pydantic", "starlette", "uvicorn", "sqlalchemy"
 [[tool.importlinter.contracts]]
 name = "Storage adapters do not import each other"
 type = "independence"
-modules = ["todo_viewer.infrastructure.markdown", "todo_viewer.infrastructure.database"]
+modules = [
+    "todo_viewer.infrastructure.markdown",
+    "todo_viewer.infrastructure.database",
+    "todo_viewer.infrastructure.notes_files",
+]
 
 [[tool.importlinter.contracts]]
 name = "The markdown adapter knows nothing about notes"

@@ -176,6 +176,15 @@ class NoteFormatError(DomainError):
                          **({"file": file} if file else {}))
 
 
+class MirrorConflictError(ConflictError):
+    """A file of the notes mirror changed since it was read; nothing was written."""
+
+    code = "mirror_conflict"
+
+    def __init__(self, name: str):
+        super().__init__(f"{name} changed since it was read. Request a new preview.", file=name)
+
+
 # --- sync ---
 
 class AutoSyncNeedsMirrorError(InvalidSourceError):

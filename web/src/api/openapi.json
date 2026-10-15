@@ -2329,13 +2329,16 @@
           "kind": {
             "enum": [
               "item",
-              "document"
+              "document",
+              "topic",
+              "note",
+              "note_document"
             ],
             "title": "Kind",
             "type": "string"
           },
           "label": {
-            "description": "The item's id (for a document: the id of the item it belongs to)",
+            "description": "The item's, topic's or note's label (for a document: that of its item or note)",
             "title": "Label",
             "type": "string"
           },
@@ -2348,7 +2351,7 @@
                 "type": "null"
               }
             ],
-            "description": "Documents: the document name; items: null",
+            "description": "Documents and note documents: the document name; others: null",
             "title": "Name"
           }
         },
@@ -2735,7 +2738,10 @@
           "kind": {
             "enum": [
               "item",
-              "document"
+              "document",
+              "topic",
+              "note",
+              "note_document"
             ],
             "title": "Kind",
             "type": "string"
@@ -2948,6 +2954,14 @@
             "title": "Kept",
             "type": "array"
           },
+          "note_documents": {
+            "$ref": "#/components/schemas/SyncSectionOut",
+            "description": "Notes and specs of notes"
+          },
+          "notes": {
+            "$ref": "#/components/schemas/SyncSectionOut",
+            "description": "Notes: the files of the notes folder; a note written there without a label (`new-<name>.md`) is `created` and gets its label on import"
+          },
           "resolved": {
             "description": "Carried over by this run (`origin`: from which side)",
             "items": {
@@ -2968,6 +2982,10 @@
             "description": "Identifies the state of both sides; send it back to confirm this preview",
             "title": "Token",
             "type": "string"
+          },
+          "topics": {
+            "$ref": "#/components/schemas/SyncSectionOut",
+            "description": "Topics of the notes (STORY-047), compared like items"
           }
         },
         "required": [
@@ -2975,6 +2993,9 @@
           "token",
           "items",
           "documents",
+          "topics",
+          "notes",
+          "note_documents",
           "conflicts",
           "skipped",
           "resolved",

@@ -8,6 +8,7 @@ from .note_documents import NoteDocument, NoteDocumentService
 from .note_index import DueNote, IndexedTopic, NoteIndexService, NotesIndex
 from .note_settings import NotesSettingsService
 from .notes import DecisionResult, LinkedNote, LinkInfo, NoteService, NoteView, TrashContents
+from .notes_sync import NotesSync
 from .retype import RetypeResult, RetypeService
 from .sources import SourceLookup, SourceService
 from .sync import SideFingerprints, SyncResult, SyncService
@@ -38,6 +39,7 @@ __all__ = [
     "NoteService",
     "NotesIndex",
     "NotesSettingsService",
+    "NotesSync",
     "NoteView",
     "Promoted",
     "RetypeResult",

@@ -23,6 +23,7 @@ from todo_viewer.application.services import (
     NoteIndexService,
     NoteService,
     NotesSettingsService,
+    NotesSync,
     RetypeService,
     SourceLookup,
     SourceService,
@@ -62,6 +63,7 @@ from todo_viewer.infrastructure.markdown import (
     build_markdown_repository,
 )
 from todo_viewer.infrastructure.markdown.layout import LayoutFactory, SourcePathResolver
+from todo_viewer.infrastructure.notes_files import FilesNotesMirror
 from todo_viewer.infrastructure.routing import RoutingBacklogRepository, RoutingDocumentStore, RoutingRawBackup
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -123,14 +125,17 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     note_settings = NotesSettingsService(JsonNotesSettingsStore(config))
     notes = NoteService(note_repo, source_repo, backlogs, note_settings.current)
     markers = MarkdownMergeMarkers(LayoutFactory(resolver))
+    note_document_store = DatabaseNoteDocumentStore(database)
+    notes_mirror = FilesNotesMirror(settings.base_dir)  # the notes folder of the markdown side: always a mirror
     sync = SyncService(backlogs, documents, notes, db_backup=file_backup, states=DatabaseSyncStateStore(database),
-                       markers=markers)
+                       markers=markers, notes_sync=NotesSync(note_repo, note_document_store, notes_mirror),
+                       notes_mirror=notes_mirror)
     raw_backup = RoutingRawBackup({"markdown": MarkdownRawBackup(LayoutFactory(resolver)),
                                    "database": DatabaseRawBackup()})
     backup = BackupService(raw_backup, sync, settings.config_dir / "backups")
     items = ItemService(backlogs, planner, rules, ItemFactory(planner), today, notes)
     item_documents = DocumentService(backlogs, documents, planner, rules, today)
-    note_documents = NoteDocumentService(note_repo, DatabaseNoteDocumentStore(database), today)
+    note_documents = NoteDocumentService(note_repo, note_document_store, today)
 
     sync_status = SyncStatusService(sync, source_repo)
     return Container(

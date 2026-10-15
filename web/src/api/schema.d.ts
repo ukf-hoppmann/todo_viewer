@@ -2044,15 +2044,15 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "item" | "document";
+            kind: "item" | "document" | "topic" | "note" | "note_document";
             /**
              * Label
-             * @description The item's id (for a document: the id of the item it belongs to)
+             * @description The item's, topic's or note's label (for a document: that of its item or note)
              */
             label: string;
             /**
              * Name
-             * @description Documents: the document name; items: null
+             * @description Documents and note documents: the document name; others: null
              */
             name?: string | null;
         };
@@ -2232,7 +2232,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "item" | "document";
+            kind: "item" | "document" | "topic" | "note" | "note_document";
             /** Label */
             label: string;
             /** @description The markdown version; null if the entry is missing there */
@@ -2331,6 +2331,10 @@ export interface components {
              * @description Deferred deletions: the entry stays where it is
              */
             kept: components["schemas"]["SyncEntryOut"][];
+            /** @description Notes and specs of notes */
+            note_documents: components["schemas"]["SyncSectionOut"];
+            /** @description Notes: the files of the notes folder; a note written there without a label (`new-<name>.md`) is `created` and gets its label on import */
+            notes: components["schemas"]["SyncSectionOut"];
             /**
              * Resolved
              * @description Carried over by this run (`origin`: from which side)
@@ -2346,6 +2350,8 @@ export interface components {
              * @description Identifies the state of both sides; send it back to confirm this preview
              */
             token: string;
+            /** @description Topics of the notes (STORY-047), compared like items */
+            topics: components["schemas"]["SyncSectionOut"];
         };
         /** SyncSectionOut */
         SyncSectionOut: {

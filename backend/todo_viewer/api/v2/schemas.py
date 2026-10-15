@@ -10,7 +10,7 @@ from todo_viewer.application.services import AutoSyncInfo, DocumentResult, Retyp
 from todo_viewer.domain.documents import DocumentRef, item_documents
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
-from todo_viewer.domain.sync import SideView, SyncConflict, SyncEntry, SyncPreview
+from todo_viewer.domain.sync import SideView, SyncConflict, SyncEntry, SyncPreview, SyncSection
 
 
 class HealthOut(BaseModel):
@@ -311,9 +311,9 @@ class BacklogCreateIn(BaseModel):
 class ResolutionIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    kind: Literal["item", "document"]
-    label: str = Field(description="The item's id (for a document: the id of the item it belongs to)")
-    name: str | None = Field(None, description="Documents: the document name; items: null")
+    kind: Literal["item", "document", "topic", "note", "note_document"]
+    label: str = Field(description="The item's, topic's or note's label (for a document: that of its item or note)")
+    name: str | None = Field(None, description="Documents and note documents: the document name; others: null")
     choice: Literal["database", "markdown", "defer"] = Field(
         description="database / markdown: the state of that side counts (a deletion on the other side is carried "
                     "out, a missing entry is restored there); defer: leave the conflict as it is")
@@ -369,7 +369,7 @@ class SideViewOut(BaseModel):
 
 
 class SyncConflictOut(BaseModel):
-    kind: Literal["item", "document"]
+    kind: Literal["item", "document", "topic", "note", "note_document"]
     label: str
     title: str
     name: str | None = Field(description="Documents: the document name; items: null")
@@ -393,6 +393,10 @@ class SyncOut(BaseModel):
     token: str = Field(description="Identifies the state of both sides; send it back to confirm this preview")
     items: SyncSectionOut
     documents: SyncSectionOut
+    topics: SyncSectionOut = Field(description="Topics of the notes (STORY-047), compared like items")
+    notes: SyncSectionOut = Field(description="Notes: the files of the notes folder; a note written there without a "
+                                              "label (`new-<name>.md`) is `created` and gets its label on import")
+    note_documents: SyncSectionOut = Field(description="Notes and specs of notes")
     conflicts: list[SyncConflictOut] = Field(
         description="Entries that need a decision (`resolutions`); until then nothing of them is touched")
     skipped: list[SyncEntryOut] = Field(description="Documents the sync cannot carry (a path, not readable, missing)")
@@ -406,12 +410,17 @@ class SyncOut(BaseModel):
         def out(entries: tuple[SyncEntry, ...]) -> list[SyncEntryOut]:
             return [SyncEntryOut.of(e) for e in entries]
 
+        def section(found: SyncSection) -> SyncSectionOut:
+            return SyncSectionOut(created=out(found.created), changed=out(found.changed), unchanged=found.unchanged)
+
         return cls(
             executed=result is not None, token=preview.token,
             items=SyncSectionOut(created=out(preview.created), changed=out(preview.changed),
                                  unchanged=preview.unchanged),
             documents=SyncSectionOut(created=out(preview.created_documents), changed=out(preview.changed_documents),
                                      unchanged=preview.unchanged_documents),
+            topics=section(preview.topics), notes=section(preview.notes),
+            note_documents=section(preview.note_documents),
             conflicts=[SyncConflictOut.of(c) for c in preview.conflicts], skipped=out(preview.skipped),
             resolved=out(result.resolved) if result else [], deleted=out(result.deleted) if result else [],
             deferred=out(result.deferred) if result else [], kept=out(result.kept) if result else [])

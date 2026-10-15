@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import threading
 from collections import defaultdict
 from collections.abc import Sequence
@@ -15,11 +16,13 @@ from todo_viewer.domain.errors import (
     SyncSourceInvalidError,
 )
 from todo_viewer.domain.item import Item
+from todo_viewer.domain.notes_sync import NotesSide, extra_entries, side_versions
 from todo_viewer.domain.source import Source
 from todo_viewer.domain.sync import (
     Decisions,
     EntryKey,
     EntryState,
+    ExtraEntry,
     PlannedEntry,
     Resolution,
     Side,
@@ -43,8 +46,10 @@ from ..ports import (
     DocumentStore,
     ItemStatusListener,
     MergeMarkerCheck,
+    NotesMirror,
     SyncStateStore,
 )
+from .notes_sync import MarkdownNotes, NotesSync
 
 log = structlog.get_logger(__name__)
 
@@ -79,6 +84,8 @@ class _Side:
     documents: dict[tuple[str, str], str]
     skipped: list[SyncEntry]
     exists: bool = True
+    notes: NotesSide | None = None  # topics, notes, and note documents of the side, if notes are synced
+    notes_found: MarkdownNotes | None = None  # the markdown side: also the raw files of the notes folder
 
 
 @dataclass(frozen=True)
@@ -95,13 +102,16 @@ class SyncService:
 
     def __init__(self, backlogs: BacklogRepository, documents: DocumentStore,
                  listener: ItemStatusListener | None = None, db_backup: DatabaseBackup | None = None,
-                 states: SyncStateStore | None = None, markers: MergeMarkerCheck | None = None):
+                 states: SyncStateStore | None = None, markers: MergeMarkerCheck | None = None,
+                 notes_sync: NotesSync | None = None, notes_mirror: NotesMirror | None = None):
         self._backlogs = backlogs
         self._documents = documents
         self._listener = listener
         self._db_backup = db_backup
         self._states = states
         self._markers = markers
+        self._notes_sync = notes_sync
+        self._notes_mirror = notes_mirror
         self._locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
         self._guard = threading.Lock()
 
@@ -146,7 +156,7 @@ class SyncService:
             if any(t.to is Side.DATABASE for t in decisions.transfers) and self._db_backup:
                 self._db_backup.create("auto" if auto else "sync")  # raises before anything is written if it fails
             primary_before = (found.database if source.backend == "database" else found.markdown).items
-            done = self._apply(found, decisions, language)
+            done = self._apply(found, decisions, language, direction)
             after = self._read_sides(source, direction)
             if remember:
                 self._remember(source, after, found.states)
@@ -163,15 +173,22 @@ class SyncService:
 
     # --- applying ---
 
-    def _apply(self, found: _Compared, decisions: Decisions, language: str) -> list[Transfer]:
+    def _apply(self, found: _Compared, decisions: Decisions, language: str,
+               direction: SyncDirection | None = None) -> list[Transfer]:
         """Writes the database side first (one transaction), then the folder; returns what was really carried over."""
         done: list[Transfer] = []
+        backlog = [t for t in decisions.transfers if t.key.kind in ("item", "document")]
         for target in (Side.DATABASE, Side.MARKDOWN):
-            steps = [t for t in decisions.transfers if t.to is target]
+            steps = [t for t in backlog if t.to is target]
             if steps:
                 own, other = (found.database, found.markdown) if target is Side.DATABASE else (found.markdown,
                                                                                                found.database)
                 done += self._write_side(target, own, other, steps, language)
+        if self._notes_sync and found.database.notes and found.markdown.notes_found:
+            allowed = direction in (None, SyncDirection.TO_MD)  # an entry without a label renames its file
+            done += self._notes_sync.apply(found.database.source.project, found.markdown.source, found.database.notes,
+                                           found.markdown.notes_found,
+                                           [t for t in decisions.transfers if t not in backlog], allowed)
         return done
 
     def _write_side(self, target: Side, own: _Side, other: _Side, steps: Sequence[Transfer],
@@ -257,8 +274,10 @@ class SyncService:
                   states: dict[EntryKey, EntryState]) -> SideFingerprints | None:
         if source.mirror == "none":
             return None
-        plan = plan_sync(database.items, markdown.items, database.documents, markdown.documents, states)
-        d, m = fingerprint(database.items, database.documents), fingerprint(markdown.items, markdown.documents)
+        plan = plan_sync(database.items, markdown.items, database.documents, markdown.documents, states,
+                         extras=_extras(database, markdown))
+        d = fingerprint(database.items, database.documents, _notes_versions(database))
+        m = fingerprint(markdown.items, markdown.documents, _notes_versions(markdown))
         primary, mirror = (d, m) if source.backend == "database" else (m, d)
         return SideFingerprints(primary, mirror, len(plan.preview.conflicts))
 
@@ -282,7 +301,7 @@ class SyncService:
         database, markdown = self._read_sides(source, direction, strict=auto)
         states = self._states_of(source, markdown)
         plan = plan_sync(database.items, markdown.items, database.documents, markdown.documents, states,
-                         [*database.skipped, *markdown.skipped])
+                         [*database.skipped, *markdown.skipped], _extras(database, markdown))
         return _Compared(database, markdown, states, plan)
 
     def _refuse_merge_markers(self, source: Source) -> None:
@@ -291,6 +310,8 @@ class SyncService:
             return
         _, markdown_source = sync_pair(source, SyncDirection.FROM_MD)
         files = self._markers.files_with_markers(markdown_source)
+        if self._notes_mirror is not None:
+            files = [*files, *self._notes_mirror.files_with_markers(markdown_source)]
         if files:
             raise SyncSourceInvalidError("merge_markers", f"Git merge markers in {', '.join(files)}.")
 
@@ -303,8 +324,13 @@ class SyncService:
                                  (direction is None and source.backend == "database") or
                                  (mirror_may_be_empty and source.backend == "database"))
         database_may_be_empty = mirror_may_be_empty and source.backend == "markdown"
-        return (self._read(database_source, empty_ok=database_may_be_empty),
-                self._read(markdown_source, empty_ok=markdown_may_be_empty))
+        database = self._read(database_source, empty_ok=database_may_be_empty)
+        markdown = self._read(markdown_source, empty_ok=markdown_may_be_empty)
+        if self._notes_sync is not None:  # notes live in the database; the folder `notes/` mirrors them
+            found = self._notes_sync.read_markdown(markdown_source)
+            database = dataclasses.replace(database, notes=self._notes_sync.read_database(database_source.project))
+            markdown = dataclasses.replace(markdown, notes=found.side, notes_found=found)
+        return database, markdown
 
     def _read(self, source: Source, empty_ok: bool) -> _Side:
         """The items and documents of one side."""
@@ -336,9 +362,21 @@ class SyncService:
 
 def _versions(side: _Side) -> dict[EntryKey, str]:
     versions = {EntryKey("item", i.id): i.version for i in side.items}
+    if side.notes is not None:
+        versions.update(side_versions(side.notes))
     versions.update({EntryKey("document", label, name): content_version(text)
                      for (label, name), text in side.documents.items()})
     return versions
+
+
+def _extras(database: _Side, markdown: _Side) -> list[ExtraEntry]:
+    if database.notes is None or markdown.notes is None:
+        return []
+    return extra_entries(database.notes, markdown.notes)
+
+
+def _notes_versions(side: _Side) -> dict[EntryKey, str]:
+    return {} if side.notes is None else side_versions(side.notes)
 
 
 def _other(side: Side) -> Side:

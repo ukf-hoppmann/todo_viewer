@@ -217,13 +217,18 @@ def primary_and_mirror(source: Source) -> tuple[Source, Source] | None:
     return (database, markdown) if source.backend == "database" else (markdown, database)
 
 
-def fingerprint(items: Sequence[Item], documents: Documents) -> str:
-    """Identifies the content of one side: its items (by version) and documents (by content), in any order."""
+def fingerprint(items: Sequence[Item], documents: Documents, extra: Mapping[EntryKey, str] | None = None) -> str:
+    """Identifies the content of one side: its items (by version) and documents (by content), in any order.
+
+    `extra` are the versions of its topics, notes, and note documents; a side without any is identified as before.
+    """
     digest = hashlib.sha256()
     for item in sorted(items, key=lambda i: i.id):
         digest.update(f"\0i{item.id}\0{item.version}".encode())
     for (label, name), content in sorted(documents.items()):
         digest.update(f"\0d{label}\0{name}\0{content_version(content)}".encode())
+    for key, version in sorted((extra or {}).items()):
+        digest.update(f"\0x{key.kind}\0{key.label}\0{key.name}\0{version}".encode())
     return digest.hexdigest()[:16]
 
 

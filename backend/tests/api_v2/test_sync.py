@@ -181,3 +181,31 @@ def test_a_direction_still_overrides_the_default(api, workspace):
     back = api.post(f"/api/v2/sources/{mirrored}/sync", {"direction": "to_md"}).body
 
     assert (back["items"]["created"], back["items"]["changed"]) == ([], [])
+
+
+def test_a_sync_into_the_database_leaves_a_backup_of_the_database(api, workspace):
+    source = _project(api, workspace)
+    _seed(api, source)
+    _sync(api, source, "to_md", confirm=True, token=_sync(api, source, "to_md").body["token"])
+    copy = api.post("/api/v2/sources", {"backend": "database", "project": "Copy",
+                                        "sync_path": str(workspace.root / "md")}).body["id"]
+
+    _sync(api, copy, "from_md", confirm=True, token=_sync(api, copy, "from_md").body["token"])
+
+    backups = [p.name for p in (workspace.config_dir / "backups").iterdir()]
+    assert len(backups) == 1 and backups[0].startswith("todo-") and backups[0].endswith("-sync.db")
+
+
+def test_a_failed_database_backup_stops_the_sync_with_its_code(api, workspace):
+    source = _project(api, workspace)
+    _seed(api, source)
+    _sync(api, source, "to_md", confirm=True, token=_sync(api, source, "to_md").body["token"])
+    copy = api.post("/api/v2/sources", {"backend": "database", "project": "Copy",
+                                        "sync_path": str(workspace.root / "md")}).body["id"]
+    token = _sync(api, copy, "from_md").body["token"]
+    (workspace.config_dir / "backups").write_text("a file where the folder should be")
+
+    resp = _sync(api, copy, "from_md", confirm=True, token=token)
+
+    assert resp.status_code == 409 and resp.body["code"] == "database_backup_failed"
+    assert api.get(f"/api/v2/items/{copy}/STORY-001").status_code == 404

@@ -1,6 +1,7 @@
 """Switching the primary source saves the current one first; without a backup nothing is switched."""
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 
@@ -59,6 +60,7 @@ def test_without_a_backup_nothing_is_switched_and_the_reason_is_named(api, works
     folder = workspace.add_backlog("backlog")
     sid = api.post("/api/v2/sources", {"path": str(folder)}).body["id"]
     _sync(api, sid, "from_md")
+    shutil.rmtree(workspace.config_dir / "backups", ignore_errors=True)  # the sync made a backup of the database
     workspace.config_dir.joinpath("backups").write_text("a file, not a folder", encoding="utf-8")
 
     refused = api.put(f"/api/v2/sources/{sid}", {"backend": "database"})

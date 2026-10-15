@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import contextlib
 import threading
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 from todo_viewer.application.ports import StorageDescription
 
-from .migrations import migrate
+from .migrations import has_pending, migrate
 
 
 def describe_url(url: str) -> tuple[str, str]:
@@ -25,10 +25,15 @@ def describe_url(url: str) -> tuple[str, str]:
 
 
 class Database:
-    """Nothing is opened or created before the first transaction, so markdown-only setups never get a file."""
+    """Nothing is opened or created before the first transaction, so markdown-only setups never get a file.
 
-    def __init__(self, url: str):
+    `before_migration` is called when a database with an older schema is about to be migrated (never for a new, empty
+    one), before anything is changed; if it raises, nothing is migrated and the next transaction tries again.
+    """
+
+    def __init__(self, url: str, before_migration: Callable[[], object] | None = None):
         self._url = url
+        self._before_migration = before_migration
         self._engine: sa.Engine | None = None
         self._migrated = False
         self._lock = threading.Lock()
@@ -54,11 +59,20 @@ class Database:
         if not self._migrated:
             with self._lock:
                 if not self._migrated:
+                    self._protect_before_migration(engine)
                     with engine.begin() as conn:
                         migrate(conn)
                     self._migrated = True
         with engine.begin() as conn:
             yield conn
+
+    def _protect_before_migration(self, engine: sa.Engine) -> None:
+        if self._before_migration is None:
+            return
+        with engine.connect() as conn:
+            pending = has_pending(conn)
+        if pending:
+            self._before_migration()
 
     def _create_engine(self) -> sa.Engine:
         engine = sa.create_engine(self._url)

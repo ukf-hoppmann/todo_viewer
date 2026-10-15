@@ -201,6 +201,13 @@ class BackupFailedError(ConflictError):
                          reason=reason)
 
 
+class DatabaseBackupFailedError(ConflictError):
+    code = "database_backup_failed"
+
+    def __init__(self, reason: str):
+        super().__init__(f"Nothing was changed: the backup of the database failed ({reason}).", reason=reason)
+
+
 class SyncStaleError(ConflictError):
     code = "sync_stale"
 

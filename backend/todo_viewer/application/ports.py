@@ -259,6 +259,14 @@ class RawBackup(Protocol):
         copy (the caller then exports the data instead). Raises OSError if a copy cannot be made or differs."""
 
 
+class DatabaseBackup(Protocol):
+    """A consistent copy of the central database, made before something changes it that cannot be taken back."""
+
+    def create(self, reason: str) -> str | None:
+        """Copies the database (`reason`: "migration" or "sync") and returns the path of the copy; None if there is
+        no database file yet, so nothing to protect. Raises DatabaseBackupFailedError if the copy cannot be made."""
+
+
 class ProjectNameSuggester(Protocol):
     def suggest(self, path: str) -> str: ...
 
@@ -292,6 +300,7 @@ class UiStateStore(Protocol):
 __all__ = [
     "BacklogRepository",
     "Clock",
+    "DatabaseBackup",
     "DocumentStore",
     "FolderBrowser",
     "FolderEntry",

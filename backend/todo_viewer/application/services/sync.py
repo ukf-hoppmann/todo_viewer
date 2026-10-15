@@ -23,7 +23,7 @@ from todo_viewer.domain.sync import (
     sync_pair,
 )
 
-from ..ports import BacklogRepository, DocumentStore, ItemStatusListener
+from ..ports import BacklogRepository, DatabaseBackup, DocumentStore, ItemStatusListener
 
 log = structlog.get_logger(__name__)
 
@@ -61,8 +61,9 @@ class SyncService:
     """Copies all data of a database project to its markdown folder or back; nothing happens by itself."""
 
     def __init__(self, backlogs: BacklogRepository, documents: DocumentStore,
-                 listener: ItemStatusListener | None = None):
+                 listener: ItemStatusListener | None = None, db_backup: DatabaseBackup | None = None):
         self._backlogs = backlogs
+        self._db_backup = db_backup
         self._documents = documents
         self._listener = listener
         self._locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
@@ -96,6 +97,8 @@ class SyncService:
         with self._lock(source):
             origin, target, preview = self._compare(source, direction)
             check_token(token, preview.token)
+            if target.source.backend == "database" and _changes(preview, delete_missing) and self._db_backup:
+                self._db_backup.create("sync")  # raises before anything is written if it fails
             items = merged_items(origin.items, target.items, delete_missing)
             writes = [(label, name, content) for (label, name), content in origin.documents.items()
                       if target.documents.get((label, name)) != content]
@@ -193,6 +196,12 @@ class SyncService:
                 current = None
             self._documents.write(target, label, name, content,
                                   expected_version=None if current is None else content_version(current))
+
+
+def _changes(preview: SyncPreview, delete_missing: bool) -> bool:
+    """True if a sync with this preview would write to the target."""
+    return bool(preview.created or preview.changed or preview.created_documents or preview.changed_documents
+                or (delete_missing and (preview.missing or preview.missing_documents)))
 
 
 __all__ = ["SideFingerprints", "SyncResult", "SyncService"]

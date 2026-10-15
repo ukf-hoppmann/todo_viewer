@@ -9,7 +9,13 @@ import pytest
 
 from todo_viewer.application.services import SyncService
 from todo_viewer.domain.documents import content_version
-from todo_viewer.domain.errors import SyncPathMissingError, SyncSameBackendError, SyncSourceInvalidError, SyncStaleError
+from todo_viewer.domain.errors import (
+    DatabaseBackupFailedError,
+    SyncPathMissingError,
+    SyncSameBackendError,
+    SyncSourceInvalidError,
+    SyncStaleError,
+)
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source
 from todo_viewer.domain.sync import SyncDirection
@@ -388,3 +394,64 @@ def test_a_listener_that_fails_does_not_fail_the_sync(setup: Setup):
     result = service.run(setup.project, FROM_MD, service.preview(setup.project, FROM_MD).token, False, "en")
 
     assert len(result.preview.changed) == 1
+
+
+# --- backup of the database before a sync writes to it (TASK-031) ---
+
+class RecordingBackup:
+    def __init__(self, fail: bool = False) -> None:
+        self.reasons: list[str] = []
+        self.fail = fail
+
+    def create(self, reason: str) -> str | None:
+        if self.fail:
+            raise DatabaseBackupFailedError("disk full")
+        self.reasons.append(reason)
+        return "backup.db"
+
+
+def _with_backup(setup: Setup, backup: RecordingBackup) -> SyncService:
+    return SyncService(setup.backlogs, setup.documents, db_backup=backup)
+
+
+def _export(setup: Setup) -> Source:
+    setup.service.run(setup.project, TO_MD, setup.service.preview(setup.project, TO_MD).token, False, "en")
+    return setup.database_project("copy", setup.tmp / "md")
+
+
+def test_a_sync_into_the_database_makes_a_backup_first(setup: Setup):
+    copy = _export(setup)
+    backup = RecordingBackup()
+    service = _with_backup(setup, backup)
+
+    service.run(copy, FROM_MD, service.preview(copy, FROM_MD).token, False, "en")
+
+    assert backup.reasons == ["sync"]
+
+
+def test_no_backup_for_a_preview_for_a_sync_into_the_folder_or_when_nothing_changes(setup: Setup):
+    backup = RecordingBackup()
+    service = _with_backup(setup, backup)
+    service.preview(setup.project, TO_MD)
+    service.run(setup.project, TO_MD, service.preview(setup.project, TO_MD).token, False, "en")  # writes the folder
+    copy = setup.database_project("copy", setup.tmp / "md")
+    service.preview(copy, FROM_MD)
+    assert backup.reasons == []
+
+    service.run(copy, FROM_MD, service.preview(copy, FROM_MD).token, False, "en")  # first import: a backup
+    service.run(copy, FROM_MD, service.preview(copy, FROM_MD).token, False, "en")  # nothing left to change
+
+    assert backup.reasons == ["sync"]
+
+
+def test_a_failed_backup_leaves_the_database_and_the_folder_unchanged(setup: Setup):
+    copy = _export(setup)
+    service = _with_backup(setup, RecordingBackup(fail=True))
+    files_before = setup.files(setup.tmp / "md")
+    token = service.preview(copy, FROM_MD).token
+
+    with pytest.raises(DatabaseBackupFailedError):
+        service.run(copy, FROM_MD, token, False, "en")
+
+    assert setup.backlogs.load(copy).items == []
+    assert setup.files(setup.tmp / "md") == files_before

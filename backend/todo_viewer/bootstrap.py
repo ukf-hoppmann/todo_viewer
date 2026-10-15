@@ -48,6 +48,7 @@ from todo_viewer.infrastructure.database import (
     DatabaseSourceRepository,
     DatabaseUiStateStore,
     LegacyConfigImport,
+    SqliteFileBackup,
 )
 from todo_viewer.infrastructure.filesystem import GitProjectNameSuggester, LocalFolderBrowser, browse_start_from
 from todo_viewer.infrastructure.log_setup import configure_logging
@@ -98,7 +99,10 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     locks = KeyedLocks()  # shared: backlog files and documents of a folder are written under one lock
     config = JsonFile(settings.config_dir / "config.json")
     # Holds the projects of every backend; created and migrated on first use.
-    database = Database(storage_url(config, f"sqlite:///{settings.config_dir / 'todo.db'}"))
+    url = storage_url(config, f"sqlite:///{settings.config_dir / 'todo.db'}")
+    # A copy of the database file goes into the same folder as the backups made when the primary source is switched.
+    file_backup = SqliteFileBackup.for_url(url, settings.config_dir / "backups")
+    database = Database(url, before_migration=(lambda: file_backup.create("migration")) if file_backup else None)
     # Earlier versions kept sources and UI state in JSON files; they are taken over on first access.
     legacy = LegacyConfigImport(database, config, JsonFile(settings.config_dir / "ui_state.json"))
     backlogs = RoutingBacklogRepository({"markdown": build_markdown_repository(settings.base_dir, locks),
@@ -111,7 +115,7 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     note_repo = DatabaseNoteRepository(database)
     note_settings = NotesSettingsService(JsonNotesSettingsStore(config))
     notes = NoteService(note_repo, source_repo, backlogs, note_settings.current)
-    sync = SyncService(backlogs, documents, notes)
+    sync = SyncService(backlogs, documents, notes, db_backup=file_backup)
     raw_backup = RoutingRawBackup({"markdown": MarkdownRawBackup(LayoutFactory(resolver)),
                                    "database": DatabaseRawBackup()})
     backup = BackupService(raw_backup, sync, settings.config_dir / "backups")

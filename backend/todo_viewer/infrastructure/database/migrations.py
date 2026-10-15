@@ -169,13 +169,21 @@ MIGRATIONS: dict[int, list[str]] = {
 CURRENT_VERSION = max(MIGRATIONS)
 
 
-def migrate(conn: sa.Connection) -> None:
-    """Brings the schema to CURRENT_VERSION; runs inside the caller's transaction."""
+def has_pending(conn: sa.Connection) -> bool:
+    """True if the database holds a schema older than CURRENT_VERSION. A new, empty database has none to protect."""
+    if not sa.inspect(conn).has_table("schema_version"):
+        return False
+    version: int = conn.execute(sa.text("SELECT version FROM schema_version")).scalar_one()
+    return 0 < version < CURRENT_VERSION
+
+
+def migrate(conn: sa.Connection, target: int = CURRENT_VERSION) -> None:
+    """Brings the schema to `target` (default: CURRENT_VERSION); runs inside the caller's transaction."""
     if not sa.inspect(conn).has_table("schema_version"):
         conn.execute(sa.text("CREATE TABLE schema_version (version INTEGER NOT NULL)"))
         conn.execute(sa.text("INSERT INTO schema_version (version) VALUES (0)"))
     version: int = conn.execute(sa.text("SELECT version FROM schema_version")).scalar_one()
-    for number in sorted(n for n in MIGRATIONS if n > version):
+    for number in sorted(n for n in MIGRATIONS if version < n <= target):
         for statement in MIGRATIONS[number]:
             conn.execute(sa.text(statement))
         conn.execute(sa.text("UPDATE schema_version SET version = :v"), {"v": number})

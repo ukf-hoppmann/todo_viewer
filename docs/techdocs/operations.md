@@ -62,8 +62,25 @@
   wird umgestellt und ein angefangener Backup-Ordner wird entfernt.
   Wiederherstellen: den Backup-Ordner als Markdown-Projekt eintragen
   (`POST /sources` mit `path`) oder mit Sync in ein Datenbank-Projekt lesen.
-  Backups werden nicht automatisch gelöscht; `configs/backups/` steht in der
+  Diese Backups werden nicht automatisch gelöscht; `configs/backups/` steht in der
   `.gitignore`.
+- Automatisches Backup der Datenbank: Vor einer Schema-Migration (nur wenn schon
+  eine ältere Datenbank mit Schema existiert, nicht bei einer neuen, leeren) und
+  vor einem Sync, der in die Datenbank schreibt (nicht bei der Vorschau, nicht
+  beim Schreiben in den Markdown-Ordner, nicht wenn nichts zu ändern ist) legt der
+  Dienst eine konsistente Kopie der SQLite-Datei an:
+  `<CONFIG_DIR>/backups/todo-<JJJJMMTT-HHMMSS>-<migration|sync>.db` (zwei in
+  derselben Sekunde: Zusatz `-2`, …). Es ist die SQLite-Backup-Funktion, daher
+  auch im laufenden Betrieb (WAL) vollständig; die Kopie wird auf
+  `integrity_check` und gleiche Zeilenzahlen je Tabelle geprüft und liegt ohne
+  `-wal`/`-shm` da. Aufbewahrt werden die letzten 10 dieser Dateien, ältere
+  automatische werden entfernt; andere Dateien im Ordner (auch von Hand angelegte
+  Kopien) bleiben unberührt. Scheitert die Sicherung, wird nichts migriert bzw.
+  synchronisiert: der Sync antwortet 409 `database_backup_failed`
+  (`details.reason`); die Migration läuft träge beim ersten Zugriff, die erste
+  Anfrage antwortet dann ebenfalls 409 und die nächste versucht es erneut.
+  Wiederherstellen: Dienst stoppen, die Datei als `todo.db` nach `configs/`
+  kopieren (alte `todo.db-wal` und `todo.db-shm` entfernen). Nur für SQLite.
 - Erster Start nach dem Update von einer Version mit Projekten in
   `config.json`: Projekte und UI-Zustand werden in die Datenbank übernommen,
   alle `source_id`s ändern sich einmal (Agenten schlagen sie über den Pfad

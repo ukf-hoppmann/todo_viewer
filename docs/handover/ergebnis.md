@@ -88,7 +88,7 @@ Die Cloud-Sitzung füllt diese Datei je Block aus. Der Besitzer überträgt sie 
 
 ### Block B — Dialog und Auto-Sync (STORY-058, STORY-059)
 
-- Branch, Pull Request, letzter Commit: `cloud/block-b-dialog-auto-sync` (ab `cloud/block-a-abgleich-pro-eintrag`); Pull Request und letzter Commit im Abschlussbericht der Sitzung (PR #2).
+- Branch, Pull Request, letzter Commit: `cloud/block-b-dialog-auto-sync` (ab `cloud/block-a-abgleich-pro-eintrag`); Pull Request: #2, Basis `cloud/block-a-abgleich-pro-eintrag`.
 - `scripts/check.sh`: grün (ruff, mypy `--strict`, import-linter, pytest 1065 bestanden / 1 übersprungen, tsc, eslint, vitest 321 bestanden).
 - Plan des Blocks:
   1. **STORY-058 Diff und Entscheidungen.** Reine Funktionen `domain/diff.ts` (`diffLines`, Zeilenvergleich per längster gemeinsamer Teilfolge, keine neue Abhängigkeit) und in `domain/sync.ts` `conflictKey`, `choiceOf`, `buildResolutions`, `changedFields`; Komponente `SyncConflicts` (Entscheidung je Konflikt, Vorbelegung Aufschieben, Vergleich); `SyncDialog` schickt `resolutions` mit der Bestätigung.
@@ -132,7 +132,7 @@ Die Cloud-Sitzung füllt diese Datei je Block aus. Der Besitzer überträgt sie 
 
 ### Block C — Notes im gemeinsamen Sync (STORY-047: TASK-024 bis TASK-027)
 
-- Branch, Pull Request, letzter Commit: `cloud/block-c-notes-im-sync` (ab `cloud/block-b-dialog-auto-sync`); Pull Request und letzter Commit im Abschlussbericht der Sitzung (@@PR_C@@).
+- Branch, Pull Request, letzter Commit: `cloud/block-c-notes-im-sync` (ab `cloud/block-b-dialog-auto-sync`); Pull Request: #3, Basis `cloud/block-b-dialog-auto-sync`.
 - `scripts/check.sh`: grün (ruff, mypy `--strict`, import-linter 4 Verträge, pytest 1173 bestanden / 1 übersprungen, tsc, eslint, vitest 329 bestanden).
 - Plan des Blocks:
   1. **TASK-024 Format.** `domain/notes_markdown.py` (reine Funktionen): `render_note`/`render_parsed`/`parse_note`, `render_topics`/`parse_topics`, `render_counters`/`parse_counters`, `NoteFormatError` (`note_format`, Zeilennummer); Golden-Files `backend/tests/golden/notes/`.

@@ -10,7 +10,7 @@ from todo_viewer.application.services import DocumentResult, RetypeResult, SyncR
 from todo_viewer.domain.documents import DocumentRef, item_documents
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
-from todo_viewer.domain.sync import SyncEntry, SyncPreview
+from todo_viewer.domain.sync import SideView, SyncConflict, SyncEntry, SyncPreview
 
 
 class HealthOut(BaseModel):
@@ -126,10 +126,15 @@ class SyncStatusOut(BaseModel):
                     "since the last sync (a sync through this API); unknown: never synced and the sides differ; "
                     "unreadable: a side cannot be read")
     last_sync_at: str | None = Field(description="When the project was last synced through this API; null if never")
+    conflicts: int = Field(
+        description="Entries that need a decision: changed on both sides, new on both with different content, or "
+                    "deleted on one side. `state` can say in_sync while this is not 0: what a sync left undecided "
+                    "does not count as a change")
 
     @classmethod
     def of(cls, source: Source, status: SyncStatus) -> SyncStatusOut:
-        return cls(source_id=source.id, state=status.state.value, last_sync_at=status.last_sync_at)
+        return cls(source_id=source.id, state=status.state.value, last_sync_at=status.last_sync_at,
+                   conflicts=status.conflicts)
 
 
 class StorageOut(BaseModel):
@@ -286,17 +291,27 @@ class BacklogCreateIn(BaseModel):
     language: Literal["en", "de"] = Field("en", description="Language of the headings and prose in the new files")
 
 
+class ResolutionIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["item", "document"]
+    label: str = Field(description="The item's id (for a document: the id of the item it belongs to)")
+    name: str | None = Field(None, description="Documents: the document name; items: null")
+    choice: Literal["database", "markdown", "defer"] = Field(
+        description="database / markdown: the state of that side counts (a deletion on the other side is carried "
+                    "out, a missing entry is restored there); defer: leave the conflict as it is")
+
+
 class SyncIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     direction: Literal["to_md", "from_md"] | None = Field(
-        None, description="to_md: write the database side into the markdown folder; from_md: read the markdown "
-                          "folder into the database side. Default: from the primary source to the mirror "
-                          "(database project: to_md, markdown project: from_md)")
+        None, description="Restricts which side a run may write: to_md only the markdown folder, from_md only the "
+                          "database side. Default: both sides, each entry travels from the side that changed it")
     confirm: bool = Field(False, description="false: only preview; true: carry out the sync")
     token: str | None = Field(None, description="The token of the preview being confirmed (required with confirm)")
-    delete_missing: bool = Field(
-        False, description="Also delete what the target has and the origin lacks; otherwise it stays")
+    resolutions: list[ResolutionIn] = Field(
+        default_factory=list, description="One decision per conflict; a conflict without one is deferred")
     language: Literal["en", "de"] = Field("en", description="Language of the headings in markdown files created")
 
 
@@ -304,17 +319,56 @@ class SyncEntryOut(BaseModel):
     label: str = Field(description="The item's id")
     title: str
     name: str | None = Field(description="Documents: the document name; items: null")
+    origin: Literal["database", "markdown"] | None = Field(
+        description="The side whose version is carried over to the other; null for conflicts and deferred entries")
 
     @classmethod
     def of(cls, entry: SyncEntry) -> SyncEntryOut:
-        return cls(label=entry.label, title=entry.title, name=entry.name)
+        return cls(label=entry.label, title=entry.title, name=entry.name,
+                   origin=entry.origin.value if entry.origin else None)
 
 
 class SyncSectionOut(BaseModel):
-    created: list[SyncEntryOut]
-    changed: list[SyncEntryOut] = Field(description="Exist on both sides and differ; the target is overwritten")
+    created: list[SyncEntryOut] = Field(description="New on one side (`origin`); carried to the other")
+    changed: list[SyncEntryOut] = Field(description="Changed on one side only (`origin`); carried to the other")
     unchanged: int
-    missing: list[SyncEntryOut] = Field(description="Only on the target; kept unless delete_missing is set")
+
+
+class FieldOut(BaseModel):
+    name: str
+    value: str
+
+
+class SideViewOut(BaseModel):
+    fields: list[FieldOut] | None = Field(description="Items: every stored field as text; documents: null")
+    text: str | None = Field(description="Documents: the whole text; items: null")
+
+    @classmethod
+    def of(cls, view: SideView | None) -> SideViewOut | None:
+        if view is None:
+            return None
+        return cls(fields=None if view.fields is None else [FieldOut(name=n, value=v) for n, v in view.fields],
+                   text=view.text)
+
+
+class SyncConflictOut(BaseModel):
+    kind: Literal["item", "document"]
+    label: str
+    title: str
+    name: str | None = Field(description="Documents: the document name; items: null")
+    reason: Literal["both_changed", "both_new", "database_deleted", "markdown_deleted"] = Field(
+        description="both_changed: changed on both sides since the last sync; both_new: on both sides with "
+                    "different content and never synced; database_deleted / markdown_deleted: gone from that side "
+                    "since the last sync")
+    database: SideViewOut | None = Field(description="The database version; null if the entry is missing there")
+    markdown: SideViewOut | None = Field(description="The markdown version; null if the entry is missing there")
+
+    @classmethod
+    def of(cls, conflict: SyncConflict) -> SyncConflictOut:
+        entry = conflict.entry
+        return cls(kind=entry.kind, label=entry.label, title=entry.title, name=entry.name,  # type: ignore[arg-type]
+                   reason=conflict.reason.value,  # type: ignore[arg-type]
+                   database=SideViewOut.of(conflict.database), markdown=SideViewOut.of(conflict.markdown))
 
 
 class SyncOut(BaseModel):
@@ -322,9 +376,13 @@ class SyncOut(BaseModel):
     token: str = Field(description="Identifies the state of both sides; send it back to confirm this preview")
     items: SyncSectionOut
     documents: SyncSectionOut
+    conflicts: list[SyncConflictOut] = Field(
+        description="Entries that need a decision (`resolutions`); until then nothing of them is touched")
     skipped: list[SyncEntryOut] = Field(description="Documents the sync cannot carry (a path, not readable, missing)")
-    deleted: list[SyncEntryOut] = Field(description="Missing entries removed from the target")
-    kept: list[SyncEntryOut] = Field(description="Missing entries left on the target")
+    resolved: list[SyncEntryOut] = Field(description="Carried over by this run (`origin`: from which side)")
+    deleted: list[SyncEntryOut] = Field(description="Removed by a decision")
+    deferred: list[SyncEntryOut] = Field(description="Conflicts left as they were")
+    kept: list[SyncEntryOut] = Field(description="Deferred deletions: the entry stays where it is")
 
     @classmethod
     def of(cls, preview: SyncPreview, result: SyncResult | None = None) -> SyncOut:
@@ -334,11 +392,12 @@ class SyncOut(BaseModel):
         return cls(
             executed=result is not None, token=preview.token,
             items=SyncSectionOut(created=out(preview.created), changed=out(preview.changed),
-                                 unchanged=preview.unchanged, missing=out(preview.missing)),
+                                 unchanged=preview.unchanged),
             documents=SyncSectionOut(created=out(preview.created_documents), changed=out(preview.changed_documents),
-                                     unchanged=preview.unchanged_documents, missing=out(preview.missing_documents)),
-            skipped=out(preview.skipped),
-            deleted=out(result.deleted) if result else [], kept=out(result.kept) if result else [])
+                                     unchanged=preview.unchanged_documents),
+            conflicts=[SyncConflictOut.of(c) for c in preview.conflicts], skipped=out(preview.skipped),
+            resolved=out(result.resolved) if result else [], deleted=out(result.deleted) if result else [],
+            deferred=out(result.deferred) if result else [], kept=out(result.kept) if result else [])
 
 
 class DocumentOut(DocumentRefOut):

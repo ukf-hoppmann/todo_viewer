@@ -1,7 +1,7 @@
 """Ports: what the application needs from the outside world. Adapters implement them."""
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -27,6 +27,7 @@ from todo_viewer.domain.notes import (
     Trigger,
 )
 from todo_viewer.domain.source import Source, SourceProblem
+from todo_viewer.domain.sync import EntryKey, EntryState
 
 
 class BacklogRepository(Protocol):
@@ -259,6 +260,17 @@ class RawBackup(Protocol):
         copy (the caller then exports the data instead). Raises OSError if a copy cannot be made or differs."""
 
 
+class SyncStateStore(Protocol):
+    """The versions of every item and document on both sides right after the sync that left them equal."""
+
+    def load(self, project_id: str, folder: str) -> dict[EntryKey, EntryState]:
+        """The stored states of the project with the markdown folder `folder`; empty if it never synced with it."""
+
+    def save(self, project_id: str, folder: str, put: Mapping[EntryKey, EntryState],
+             remove: Collection[EntryKey]) -> None:
+        """Stores `put` and forgets `remove` in one transaction."""
+
+
 class DatabaseBackup(Protocol):
     """A consistent copy of the central database, made before something changes it that cannot be taken back."""
 
@@ -314,5 +326,6 @@ __all__ = [
     "SourceRepository",
     "StorageDescription",
     "StorageInfo",
+    "SyncStateStore",
     "UiStateStore",
 ]

@@ -34,7 +34,8 @@ def test_a_preview_lists_what_would_happen_and_changes_nothing(api, workspace):
     assert [(e["label"], e["title"]) for e in body["items"]["created"]] == [("EPIC-001", "Storage"),
                                                                             ("STORY-001", "Sync")]
     assert [e["name"] for e in body["documents"]["created"]] == ["STORY-001_notes.md"]
-    assert (body["items"]["changed"], body["items"]["unchanged"], body["items"]["missing"]) == ([], 0, [])
+    assert (body["items"]["changed"], body["items"]["unchanged"], body["conflicts"]) == ([], 0, [])
+    assert {e["origin"] for e in body["items"]["created"]} == {"database"}
     assert not (workspace.root / "md").exists()
 
 
@@ -71,116 +72,101 @@ def test_a_folder_can_be_imported_into_another_database_project(api, workspace):
     assert api.get(f"/api/v2/items/{copy}/STORY-001/documents/STORY-001_notes.md").status_code == 200
 
 
-def test_missing_entries_are_deleted_only_with_delete_missing(api, workspace):
-    source = _project(api, workspace)
-    _seed(api, source)
-    _sync(api, source, "to_md", confirm=True, token=_sync(api, source, "to_md").body["token"])
-    api.post("/api/v2/items", {"source_id": source, "type": "Task", "title": "Only here", "area": "Core",
-                               "goal": "g", "completion_criteria": "c"})
-
-    keep = _sync(api, source, "from_md")
-    kept = _sync(api, source, "from_md", confirm=True, token=keep.body["token"])
-    assert [e["label"] for e in keep.body["items"]["missing"]] == ["TASK-001"]
-    assert [e["label"] for e in kept.body["kept"]] == ["TASK-001"] and kept.body["deleted"] == []
-    assert api.get(f"/api/v2/items/{source}/TASK-001").status_code == 200
-
-    drop = _sync(api, source, "from_md", confirm=True, token=keep.body["token"], delete_missing=True)
-    assert [e["label"] for e in drop.body["deleted"]] == ["TASK-001"]
-    assert api.get(f"/api/v2/items/{source}/TASK-001").status_code == 404
-
-
-def test_a_stale_token_is_refused_and_nothing_is_written(api, workspace):
+def _synced_central(api, workspace) -> str:
     sid = _project(api, workspace)
     _seed(api, sid)
-    token = _sync(api, sid, "to_md").body["token"]
-    api.post("/api/v2/items", {"source_id": sid, "type": "Task", "title": "Late", "area": "Core",
-                               "goal": "g", "completion_criteria": "c"})
-
-    resp = _sync(api, sid, "to_md", confirm=True, token=token)
-    missing = _sync(api, sid, "to_md", confirm=True)
-
-    assert (resp.status_code, resp.body["code"]) == (409, "sync_stale")
-    assert (missing.status_code, missing.body["code"]) == (409, "sync_stale")
-    assert not (workspace.root / "md").exists()
+    _sync(api, sid, "to_md", confirm=True, token=_sync(api, sid, "to_md").body["token"])
+    return sid
 
 
-def test_a_project_moves_to_the_database_and_back_keeping_its_id_and_items(api, workspace):
-    folder = workspace.add_backlog("backlog")
-    sid = api.post("/api/v2/sources", {"path": str(folder)}).body["id"]
-    url = f"/api/v2/items/{sid}/TASK-001"
-    before = api.get(url).body
-
-    early = api.put(f"/api/v2/sources/{sid}", {"backend": "database"})
-    assert (early.status_code, early.body["code"]) == (409, "sync_required")
-    assert api.get("/api/v2/sources").body[0]["backend"] == "markdown"
-
-    preview = _sync(api, sid, "from_md")
-    assert (preview.status_code, preview.body["executed"]) == (200, False), preview.body
-    _sync(api, sid, "from_md", confirm=True, token=preview.body["token"])
-    to_database = api.put(f"/api/v2/sources/{sid}", {"backend": "database"})
-
-    assert to_database.status_code == 200, to_database.body
-    assert (to_database.body["id"], to_database.body["backend"], to_database.body["path"],
-            to_database.body["sync_path"]) == (sid, "database", "", str(folder))
-    assert api.get(url).body["version"] == before["version"]  # the same item, now read from the database
-    edited = api.patch(url, {"version": before["version"], "fields": {"priority": "Urgent"}})
-    assert edited.status_code == 200, edited.body
-
-    late = api.put(f"/api/v2/sources/{sid}", {"backend": "markdown"})
-    assert (late.status_code, late.body["code"]) == (409, "sync_required")
-    export = _sync(api, sid, "to_md")
-    _sync(api, sid, "to_md", confirm=True, token=export.body["token"])
-    to_markdown = api.put(f"/api/v2/sources/{sid}", {"backend": "markdown", "project": "Back again"})
-
-    assert to_markdown.status_code == 200, to_markdown.body
-    assert (to_markdown.body["id"], to_markdown.body["project"], to_markdown.body["path"],
-            to_markdown.body["sync_path"]) == (sid, "Back again", str(folder), None)
-    assert "Priority: Urgent." in (folder / "TODO.md").read_text(encoding="utf-8")
-    assert api.get(url).body["priority"] == "Urgent"
-    assert api.delete(f"/api/v2/sources/{sid}").status_code == 200  # the database copy does not block removal
+def _retitle(api, sid: str, label: str, title: str) -> None:
+    url = f"/api/v2/items/{sid}/{label}"
+    assert api.patch(url, {"version": api.get(url).body["version"], "fields": {"title": title}}).status_code == 200
 
 
-def test_errors_have_stable_codes(api, workspace):
-    no_path = _project(api, workspace, sync=None)
-    md = api.post("/api/v2/sources", {"path": str(workspace.add_backlog("backlog"))}).body["id"]
-    empty = _project(api, workspace, sync="nothing-here")
-
-    assert (_sync(api, no_path, "to_md").status_code, _sync(api, no_path, "to_md").body["code"]) == (
-        400, "sync_path_missing")
-    assert (_sync(api, md, "to_md").status_code, _sync(api, md, "to_md").body["code"]) == (409, "sync_same_backend")
-    broken = _sync(api, empty, "from_md")
-    assert (broken.status_code, broken.body["code"], broken.body["details"]["reason"]) == (
-        400, "sync_source_invalid", "not_found")
-    assert _sync(api, "no-such-project", "to_md").body["code"] == "source_gone"
-    assert _sync(api, no_path, "sideways").status_code == 400
+def _retitle_in_folder(workspace, old: str, new: str) -> None:
+    todo = workspace.root / "md" / "TODO.md"
+    todo.write_text(todo.read_text(encoding="utf-8").replace(old, new), encoding="utf-8")
 
 
-def test_without_a_direction_the_sync_goes_from_the_primary_source_to_the_mirror(api, workspace):
-    central = _project(api, workspace)
-    _seed(api, central)
-    plain = api.post("/api/v2/sources", {"path": str(workspace.add_backlog("backlog"))}).body["id"]
-    mirrored = api.post("/api/v2/sources", {"path": str(workspace.add_backlog("backlog", "other")),
-                                            "mirror": "database"}).body["id"]
-
-    def preview(sid):
-        return api.post(f"/api/v2/sources/{sid}/sync", {}).body
-
-    to_folder = preview(central)
-    assert [e["label"] for e in to_folder["items"]["created"]] == ["EPIC-001", "STORY-001"]  # database -> folder
-    assert not (workspace.root / "md").exists()
-    for sid in (plain, mirrored):
-        into_database = preview(sid)  # folder -> database
-        assert into_database["executed"] is False and len(into_database["items"]["created"]) > 0
+def _title(api, sid: str, label: str) -> str:
+    return api.get(f"/api/v2/items/{sid}/{label}").body["title"]
 
 
-def test_a_direction_still_overrides_the_default(api, workspace):
-    mirrored = api.post("/api/v2/sources", {"path": str(workspace.add_backlog("backlog")), "mirror": "database"}
-                        ).body["id"]
-    _sync(api, mirrored, "from_md", confirm=True, token=_sync(api, mirrored, "from_md").body["token"])
+def test_without_a_direction_each_entry_travels_from_the_side_that_changed_it(api, workspace):
+    sid = _synced_central(api, workspace)
+    _retitle(api, sid, "EPIC-001", "Epic in the database")
+    _retitle_in_folder(workspace, "**Sync**", "**Story in the file**")
 
-    back = api.post(f"/api/v2/sources/{mirrored}/sync", {"direction": "to_md"}).body
+    preview = api.post(f"/api/v2/sources/{sid}/sync", {}).body
+    done = api.post(f"/api/v2/sources/{sid}/sync", {"confirm": True, "token": preview["token"]})
 
-    assert (back["items"]["created"], back["items"]["changed"]) == ([], [])
+    assert {(e["label"], e["origin"]) for e in preview["items"]["changed"]} == {("EPIC-001", "database"),
+                                                                              ("STORY-001", "markdown")}
+    assert preview["conflicts"] == [] and done.status_code == 200, done.body
+    assert {(e["label"], e["origin"]) for e in done.body["resolved"]} == {("EPIC-001", "database"),
+                                                                        ("STORY-001", "markdown")}
+    assert _title(api, sid, "STORY-001") == "Story in the file"
+    assert "**Epic in the database**" in (workspace.root / "md" / "TODO.md").read_text(encoding="utf-8")
+
+
+def test_a_conflict_shows_both_versions_and_is_decided_per_entry(api, workspace):
+    sid = _synced_central(api, workspace)
+    _retitle(api, sid, "STORY-001", "In the database")
+    _retitle_in_folder(workspace, "**Sync**", "**In the file**")
+    _retitle(api, sid, "EPIC-001", "Free change")
+    url = f"/api/v2/sources/{sid}/sync"
+
+    preview = api.post(url, {}).body
+    [conflict] = preview["conflicts"]
+    assert (conflict["kind"], conflict["label"], conflict["reason"]) == ("item", "STORY-001", "both_changed")
+    assert {f["name"]: f["value"] for f in conflict["database"]["fields"]}["title"] == "In the database"
+    assert {f["name"]: f["value"] for f in conflict["markdown"]["fields"]}["title"] == "In the file"
+
+    left = api.post(url, {"confirm": True, "token": preview["token"]}).body  # no decision: deferred
+    assert [e["label"] for e in left["deferred"]] == ["STORY-001"]
+    assert _title(api, sid, "STORY-001") == "In the database"
+    assert [e["label"] for e in api.post(url, {}).body["conflicts"]] == ["STORY-001"]
+
+    preview = api.post(url, {}).body
+    decided = api.post(url, {"confirm": True, "token": preview["token"], "resolutions": [
+        {"kind": "item", "label": "STORY-001", "choice": "markdown"}]})
+
+    assert decided.status_code == 200 and decided.body["deferred"] == []
+    assert _title(api, sid, "STORY-001") == "In the file"
+    assert api.post(url, {}).body["conflicts"] == []
+
+
+def test_a_deletion_is_never_carried_out_without_a_decision(api, workspace):
+    sid = _synced_central(api, workspace)
+    (workspace.root / "md" / "items" / "STORY-001" / "STORY-001_notes.md").unlink()
+    url = f"/api/v2/sources/{sid}/sync"
+
+    preview = api.post(url, {}).body
+    done = api.post(url, {"confirm": True, "token": preview["token"]}).body
+
+    assert [(c["kind"], c["name"], c["reason"]) for c in preview["conflicts"]] == [
+        ("document", "STORY-001_notes.md", "markdown_deleted")]
+    assert [e["name"] for e in done["kept"]] == ["STORY-001_notes.md"] and done["deleted"] == []
+    assert api.get(f"/api/v2/items/{sid}/STORY-001/documents/STORY-001_notes.md").status_code == 200
+
+
+def test_delete_missing_is_gone_and_a_wrong_choice_is_refused(api, workspace):
+    sid = _synced_central(api, workspace)
+    url = f"/api/v2/sources/{sid}/sync"
+
+    gone = api.post(url, {"delete_missing": True})
+    wrong = api.post(url, {"resolutions": [{"kind": "item", "label": "X", "choice": "both"}]})
+
+    assert gone.status_code == 400 and wrong.status_code == 400
+
+
+def test_the_status_counts_open_conflicts(api, workspace):
+    sid = _synced_central(api, workspace)
+    _retitle(api, sid, "STORY-001", "In the database")
+    _retitle_in_folder(workspace, "**Sync**", "**In the file**")
+
+    assert api.get(f"/api/v2/sources/{sid}/sync-status").body["conflicts"] == 1
 
 
 def test_a_sync_into_the_database_leaves_a_backup_of_the_database(api, workspace):

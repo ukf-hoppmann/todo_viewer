@@ -4,6 +4,7 @@ import dataclasses
 
 import pytest
 
+from todo_viewer.domain.documents import content_version
 from todo_viewer.domain.errors import (
     BackupFailedError,
     ConflictError,
@@ -15,11 +16,19 @@ from todo_viewer.domain.errors import (
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SyncBaseline
 from todo_viewer.domain.sync import (
+    Change,
+    Choice,
+    EntryKey,
+    EntryState,
+    Resolution,
+    Side,
     SyncDirection,
     SyncEntry,
     SyncState,
     check_token,
     classify,
+    classify_entry,
+    decide,
     default_direction,
     fingerprint,
     merged_items,
@@ -81,76 +90,256 @@ def test_the_switch_needs_a_sync_first():
     assert (error.code, isinstance(error, ConflictError)) == ("sync_required", True)
 
 
-def test_new_changed_unchanged_and_missing_items_are_told_apart():
-    source = [item("TASK-001"), item("TASK-002", "new title"), item("TASK-003")]
-    target = [item("TASK-001"), item("TASK-002", "old title"), item("TASK-009", "gone")]
+# --- one entry: which side changed it (TASK-032) ---
 
-    preview = plan_sync(source, target, {}, {})
+STORED = EntryState(database="v0", markdown="v0")
 
-    assert [e.label for e in preview.created] == ["TASK-003"]
-    assert [e.label for e in preview.changed] == ["TASK-002"]
-    assert preview.unchanged == 1
-    assert preview.missing == (SyncEntry("item", "TASK-009", "gone"),)
+
+@pytest.mark.parametrize("database, markdown, stored, change", [
+    ("v0", "v0", STORED, Change.UNCHANGED),
+    ("v1", "v0", STORED, Change.DATABASE_CHANGED),
+    ("v0", "v1", STORED, Change.MARKDOWN_CHANGED),
+    ("v1", "v2", STORED, Change.BOTH_CHANGED),
+    ("v1", "v1", STORED, Change.UNCHANGED),  # both moved to the same content: nothing left to sync
+    (None, "v0", STORED, Change.DATABASE_DELETED),
+    (None, "v1", STORED, Change.DATABASE_DELETED),  # deleted on one side, changed on the other: still a conflict
+    ("v0", None, STORED, Change.MARKDOWN_DELETED),
+    (None, None, STORED, Change.BOTH_DELETED),
+    ("v1", None, None, Change.DATABASE_NEW),
+    (None, "v1", None, Change.MARKDOWN_NEW),
+    ("v1", "v1", None, Change.UNCHANGED),
+    ("v1", "v2", None, Change.BOTH_NEW),
+])
+def test_an_entry_is_classified_by_its_two_versions_and_the_stored_state(database, markdown, stored, change):
+    assert classify_entry(database, markdown, stored) is change
+
+
+def test_sides_that_differ_while_the_stored_state_matches_neither_are_a_conflict():
+    odd = EntryState(database="a", markdown="b")  # the state itself says the two were different
+
+    assert classify_entry("a", "b", odd) is Change.BOTH_CHANGED
+
+
+def test_only_these_changes_are_conflicts():
+    assert {c for c in Change if c.is_conflict} == {Change.BOTH_CHANGED, Change.BOTH_NEW, Change.DATABASE_DELETED,
+                                                    Change.MARKDOWN_DELETED}
+
+
+def _plan(database, markdown, database_docs=None, markdown_docs=None, states=None):
+    return plan_sync(database, markdown, database_docs or {}, markdown_docs or {}, states or {})
+
+
+def _stored(*items: Item, docs: dict | None = None) -> dict:
+    states = {EntryKey("item", i.id): EntryState(i.version, i.version) for i in items}
+    for (label, name), content in (docs or {}).items():
+        v = content_version(content)
+        states[EntryKey("document", label, name)] = EntryState(v, v)
+    return states
+
+
+def test_a_change_on_one_side_only_is_carried_to_the_other_whichever_side_it_is():
+    """Scenario 1 of STORY-057: the file changes STORY-A, the database changes STORY-B; both survive."""
+    a, b = item("STORY-A", "a"), item("STORY-B", "b")
+    states = _stored(a, b)
+    database = [a, dataclasses.replace(b, title="b in database")]
+    markdown = [dataclasses.replace(a, title="a in file"), b]
+
+    plan = _plan(database, markdown, states=states)
+
+    assert [(e.label, e.origin) for e in plan.preview.changed] == [("STORY-A", Side.MARKDOWN),
+                                                                    ("STORY-B", Side.DATABASE)]
+    assert plan.preview.conflicts == () and plan.preview.created == ()
+
+
+def test_an_entry_new_on_one_side_goes_to_the_other():
+    plan = _plan([item("TASK-001")], [item("TASK-002")])
+
+    assert [(e.label, e.origin) for e in plan.preview.created] == [("TASK-001", Side.DATABASE),
+                                                                    ("TASK-002", Side.MARKDOWN)]
+    assert plan.preview.conflicts == ()
+
+
+def test_the_same_new_id_on_both_sides_with_different_content_is_a_conflict_that_shows_both_versions():
+    """Scenario 2 of STORY-057: nothing is overwritten, both versions are offered for the decision."""
+    plan = _plan([item("STORY-009", "from the database", goal="g1")], [item("STORY-009", "from the file", goal="g2")])
+
+    [conflict] = plan.preview.conflicts
+    assert (conflict.entry.label, conflict.reason) == ("STORY-009", Change.BOTH_NEW)
+    assert dict(conflict.database.fields)["title"] == "from the database"  # type: ignore[union-attr]
+    assert dict(conflict.markdown.fields)["goal"] == "g2"  # type: ignore[union-attr]
+    assert plan.preview.created == () and plan.preview.changed == ()
+
+
+def test_a_deleted_entry_is_a_conflict_with_the_surviving_version():
+    kept = item("TASK-005", "still in the file")
+    plan = _plan([], [kept], states=_stored(kept))
+
+    [conflict] = plan.preview.conflicts
+    assert conflict.reason is Change.DATABASE_DELETED and conflict.database is None
+    assert dict(conflict.markdown.fields)["title"] == "still in the file"  # type: ignore[union-attr]
+
+
+def test_equal_entries_are_unchanged_without_a_stored_state():
+    plan = _plan([item("TASK-001")], [item("TASK-001")])
+
+    assert plan.preview.unchanged == 1 and plan.preview.created == plan.preview.changed == ()
 
 
 def test_trashed_and_archived_state_counts_as_a_change():
-    source = [item("TASK-001", deleted="2026-01-01", location=Location.ARCHIVE)]
-    target = [item("TASK-001")]
+    old = item("TASK-001")
+    plan = _plan([dataclasses.replace(old, deleted="2026-01-01", location=Location.ARCHIVE)], [old],
+                 states=_stored(old))
 
-    assert [e.label for e in plan_sync(source, target, {}, {}).changed] == ["TASK-001"]
+    assert [e.label for e in plan.preview.changed] == ["TASK-001"]
 
 
-def test_documents_are_compared_by_content_including_topic_specs():
+def test_documents_are_classified_by_content_like_items():
     both = [item("STORY-001", "s")]
-    source_docs = {("STORY-001", "STORY-001_spec.md"): "same", ("STORY-001", "STORY-001_spec_ui.md"): "new",
-                   ("STORY-001", "STORY-001_notes.md"): "after"}
-    target_docs = {("STORY-001", "STORY-001_spec.md"): "same", ("STORY-001", "STORY-001_notes.md"): "before",
-                   ("STORY-001", "STORY-001_spec_old.md"): "x"}
+    old = {("STORY-001", "STORY-001_spec.md"): "same", ("STORY-001", "STORY-001_notes.md"): "before"}
+    states = _stored(*both, docs=old)
+    database = {**old, ("STORY-001", "STORY-001_notes.md"): "after", ("STORY-001", "STORY-001_spec_ui.md"): "new"}
 
-    preview = plan_sync(both, both, source_docs, target_docs)
+    plan = _plan(both, both, database, old, states)
 
-    assert preview.created_documents == (SyncEntry("document", "STORY-001", "s", "STORY-001_spec_ui.md"),)
-    assert preview.changed_documents == (SyncEntry("document", "STORY-001", "s", "STORY-001_notes.md"),)
-    assert preview.missing_documents == (SyncEntry("document", "STORY-001", "s", "STORY-001_spec_old.md"),)
-    assert preview.unchanged_documents == 1
-
-
-def test_documents_of_missing_items_are_not_listed_separately():
-    preview = plan_sync([], [item("TASK-009", "gone")], {}, {("TASK-009", "TASK-009_notes.md"): "x"})
-
-    assert preview.missing_documents == ()
+    assert plan.preview.created_documents == (SyncEntry("document", "STORY-001", "s", "STORY-001_spec_ui.md",
+                                                        Side.DATABASE),)
+    assert plan.preview.changed_documents == (SyncEntry("document", "STORY-001", "s", "STORY-001_notes.md",
+                                                        Side.DATABASE),)
+    assert plan.preview.unchanged_documents == 1
 
 
-def test_documents_of_new_items_are_new():
-    preview = plan_sync([item("TASK-001", "t")], [], {("TASK-001", "TASK-001_notes.md"): "x"}, {})
+def test_a_document_changed_on_both_sides_is_a_conflict_with_both_texts():
+    both = [item("TASK-001", "t")]
+    key = ("TASK-001", "TASK-001_notes.md")
+    plan = _plan(both, both, {key: "database text"}, {key: "file text"}, _stored(*both, docs={key: "old"}))
 
-    assert preview.created_documents == (SyncEntry("document", "TASK-001", "t", "TASK-001_notes.md"),)
+    [conflict] = plan.preview.conflicts
+    assert (conflict.entry.kind, conflict.entry.name, conflict.reason) == ("document", key[1], Change.BOTH_CHANGED)
+    assert (conflict.database.text, conflict.markdown.text) == ("database text", "file text")  # type: ignore[union-attr]
+
+
+def test_documents_of_a_new_item_travel_with_it_and_those_of_a_deleted_item_are_not_listed():
+    new, gone = item("TASK-001", "new"), item("TASK-009", "gone")
+    docs = {("TASK-001", "TASK-001_notes.md"): "x"}
+    plan = _plan([new], [gone], docs, {("TASK-009", "TASK-009_notes.md"): "y"}, _stored(gone))
+
+    assert plan.preview.created_documents == (SyncEntry("document", "TASK-001", "new", "TASK-001_notes.md",
+                                                        Side.DATABASE),)
+    assert [c.entry.kind for c in plan.preview.conflicts] == ["item"]
 
 
 def test_skipped_entries_are_passed_through():
     skipped = (SyncEntry("document", "TASK-001", "t", "items/TASK-001/photo.png"),)
 
-    assert plan_sync([], [], {}, {}, skipped).skipped == skipped
+    assert plan_sync([], [], {}, {}, {}, skipped).preview.skipped == skipped
 
 
-def test_merged_items_keep_missing_ones_unless_they_are_to_be_deleted():
-    source = [item("TASK-002"), item("TASK-001")]
-    target = [item("TASK-001"), item("TASK-009")]
+def test_the_token_changes_with_every_change_on_either_side_and_with_the_stored_state():
+    a = item("TASK-001")
+    base = _plan([a], [a], {("TASK-001", "a.md"): "x"}).preview.token
 
-    assert [i.id for i in merged_items(source, target, delete_missing=False)] == ["TASK-002", "TASK-001", "TASK-009"]
-    assert [i.id for i in merged_items(source, target, delete_missing=True)] == ["TASK-002", "TASK-001"]
+    assert _plan([a], [a], {("TASK-001", "a.md"): "x"}).preview.token == base
+    assert _plan([a], [a], {("TASK-001", "a.md"): "y"}).preview.token != base
+    assert _plan([a], [item("TASK-001", "other")], {("TASK-001", "a.md"): "x"}).preview.token != base
+    assert _plan([a], [a], {("TASK-001", "a.md"): "x"}, {("TASK-001", "b.md"): "z"}).preview.token != base
+    assert _plan([a], [a], {("TASK-001", "a.md"): "x"}, states=_stored(a)).preview.token != base
 
 
-def test_token_changes_with_every_change_on_either_side():
-    source, target = [item("TASK-001")], [item("TASK-001")]
-    base = plan_sync(source, target, {("TASK-001", "a.md"): "x"}, {}).token
+# --- what a run does (TASK-033) ---
 
-    assert plan_sync(source, target, {("TASK-001", "a.md"): "x"}, {}).token == base
-    assert plan_sync(source, target, {("TASK-001", "a.md"): "y"}, {}).token != base
-    assert plan_sync(source, [item("TASK-001", "other")], {("TASK-001", "a.md"): "x"}, {}).token != base
-    assert plan_sync([dataclasses.replace(source[0], status="Completed")], target,
-                     {("TASK-001", "a.md"): "x"}, {}).token != base
-    assert plan_sync(source, target, {("TASK-001", "a.md"): "x"}, {("TASK-001", "b.md"): "z"}).token != base
+def _decide(plan, *choices: tuple[str, Choice], direction=None):
+    resolutions = [Resolution("item", label, None, choice) for label, choice in choices]
+    return decide(plan, resolutions, direction)
+
+
+def _moves(decisions):
+    return sorted((t.key.label, t.to.value, "delete" if t.delete else "copy") for t in decisions.transfers)
+
+
+def test_conflict_free_entries_are_carried_without_any_decision_and_conflicts_are_deferred():
+    a, b = item("TASK-001", "a"), item("TASK-002", "b")
+    plan = _plan([dataclasses.replace(a, title="a2"), b, item("TASK-003", "c1")], [a, b, item("TASK-003", "c2")],
+                 states=_stored(a, b))
+
+    decisions = _decide(plan)
+
+    assert _moves(decisions) == [("TASK-001", "markdown", "copy")]
+    assert [e.key.label for e in decisions.deferred] == ["TASK-003"]
+
+
+@pytest.mark.parametrize("choice, moves", [
+    (Choice.DATABASE, [("TASK-001", "markdown", "copy")]),
+    (Choice.MARKDOWN, [("TASK-001", "database", "copy")]),
+    (Choice.DEFER, []),
+])
+def test_a_conflict_takes_the_side_that_was_chosen(choice, moves):
+    plan = _plan([item("TASK-001", "db")], [item("TASK-001", "md")])
+
+    decisions = _decide(plan, ("TASK-001", choice))
+
+    assert _moves(decisions) == moves
+    assert [e.key.label for e in decisions.deferred] == ([] if moves else ["TASK-001"])
+
+
+@pytest.mark.parametrize("missing_in, choice, moves", [
+    ("database", Choice.DATABASE, [("TASK-005", "markdown", "delete")]),  # the database state holds: gone
+    ("database", Choice.MARKDOWN, [("TASK-005", "database", "copy")]),  # the file state holds: restored
+    ("markdown", Choice.DATABASE, [("TASK-005", "markdown", "copy")]),
+    ("markdown", Choice.MARKDOWN, [("TASK-005", "database", "delete")]),
+])
+def test_a_deletion_is_decided_like_a_conflict_and_never_happens_without_a_decision(missing_in, choice, moves):
+    entry = item("TASK-005")
+    sides = ([], [entry]) if missing_in == "database" else ([entry], [])
+    plan = _plan(*sides, states=_stored(entry))
+
+    assert _moves(_decide(plan)) == []
+    assert _moves(_decide(plan, ("TASK-005", choice))) == moves
+
+
+def test_a_direction_only_restricts_which_sides_are_written():
+    a, b = item("TASK-001", "a"), item("TASK-002", "b")
+    plan = _plan([dataclasses.replace(a, title="a2"), b], [a, dataclasses.replace(b, title="b2")], states=_stored(a, b))
+
+    assert _moves(_decide(plan, direction=SyncDirection.TO_MD)) == [("TASK-001", "markdown", "copy")]
+    assert _moves(_decide(plan, direction=SyncDirection.FROM_MD)) == [("TASK-002", "database", "copy")]
+    assert len(_decide(plan).transfers) == 2
+
+
+def test_a_decision_that_writes_the_excluded_side_stays_deferred():
+    plan = _plan([item("TASK-001", "db")], [item("TASK-001", "md")])
+
+    decisions = _decide(plan, ("TASK-001", Choice.MARKDOWN), direction=SyncDirection.TO_MD)
+
+    assert decisions.transfers == () and len(decisions.deferred) == 1
+
+
+def test_a_decision_for_a_document_names_the_document():
+    both = [item("TASK-001", "t")]
+    key = ("TASK-001", "TASK-001_notes.md")
+    plan = _plan(both, both, {key: "d"}, {key: "m"}, _stored(*both, docs={key: "o"}))
+
+    wrong = decide(plan, [Resolution("item", "TASK-001", None, Choice.DATABASE)], None)
+    right = decide(plan, [Resolution("document", key[0], key[1], Choice.MARKDOWN)], None)
+
+    assert wrong.transfers == () and len(wrong.deferred) == 1
+    assert [(t.key.name, t.to) for t in right.transfers] == [(key[1], Side.DATABASE)]
+
+
+# --- the item lists after the transfers ---
+
+def test_taken_items_replace_in_place_new_ones_follow_their_predecessor_and_dropped_ones_go():
+    own = [item("A", "own a"), item("B", "own b"), item("C", "own c")]
+    other = [item("A", "other a"), item("N", "new"), item("B", "other b"), item("C", "other c"), item("Z", "last")]
+
+    merged = merged_items(own, other, take={"A", "N", "Z"}, drop={"C"})
+
+    assert [(i.id, i.title) for i in merged] == [("A", "other a"), ("N", "new"), ("B", "own b"), ("Z", "last")]
+
+
+def test_a_new_item_without_a_predecessor_on_the_other_side_goes_to_the_front():
+    merged = merged_items([item("B")], [item("A"), item("B")], take={"A"}, drop=set())
+
+    assert [i.id for i in merged] == ["A", "B"]
 
 
 def test_check_token_refuses_a_state_that_changed_since_the_preview():

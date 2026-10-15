@@ -201,19 +201,21 @@ export function useSaveSource() {
 
 export interface SyncRequest {
   sourceId: string;
+  /** null: both directions (each entry travels from the side that changed it); otherwise only that side is written. */
   direction: Schemas["SyncIn"]["direction"];
   /** false asks for a preview, true carries the sync out (with the token of the preview). */
   confirm: boolean;
   token?: string;
-  deleteMissing?: boolean;
+  /** One decision per conflict; a conflict without one is deferred. */
+  resolutions?: Schemas["ResolutionIn"][];
   language: "de" | "en";
 }
 
-function runSync({ sourceId, direction, confirm, token, deleteMissing, language }: SyncRequest) {
+function runSync({ sourceId, direction, confirm, token, resolutions, language }: SyncRequest) {
   return unwrap(
     api.POST("/api/v2/sources/{source_id}/sync", {
       params: { path: { source_id: sourceId } },
-      body: { direction, confirm, token, delete_missing: deleteMissing ?? false, language },
+      body: { direction, confirm, token, resolutions: resolutions ?? [], language },
     }),
   );
 }

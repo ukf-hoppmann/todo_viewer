@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
 from todo_viewer.domain.errors import SyncSourceInvalidError
 from todo_viewer.domain.source import Source, SyncBaseline
-from todo_viewer.domain.sync import SyncDirection, SyncState, classify
+from todo_viewer.domain.sync import Resolution, SyncDirection, SyncState, classify
 
 from ..ports import SourceRepository
 from .sync import SideFingerprints, SyncResult, SyncService
@@ -17,6 +17,7 @@ from .sync import SideFingerprints, SyncResult, SyncService
 class SyncStatus:
     state: SyncState
     last_sync_at: str | None  # when the project was last synced through `run`; None if it never was
+    conflicts: int = 0  # entries changed on both sides, created on both, or deleted on one: they need a decision
 
 
 class SyncStatusService:
@@ -40,12 +41,13 @@ class SyncStatusService:
             return SyncStatus(SyncState.UNREADABLE, baseline.at if baseline else None)
         if sides is None:
             return SyncStatus(SyncState.NONE, None)
-        return SyncStatus(classify(sides.primary, sides.mirror, baseline), baseline.at or None if baseline else None)
+        return SyncStatus(classify(sides.primary, sides.mirror, baseline), baseline.at or None if baseline else None,
+                          sides.conflicts)
 
-    def run(self, source: Source, direction: SyncDirection, token: str | None, delete_missing: bool,
-            language: str) -> SyncResult:
+    def run(self, source: Source, token: str | None, resolutions: Sequence[Resolution] = (),
+            direction: SyncDirection | None = None, language: str = "en") -> SyncResult:
         """`SyncService.run`, then the state of both sides is stored as the state of the last sync."""
-        result = self._sync.run(source, direction, token, delete_missing, language)
+        result = self._sync.run(source, token, resolutions, direction, language)
         if result.fingerprints is not None:
             self._record(source, result.fingerprints)
         return result

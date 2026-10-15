@@ -9,8 +9,9 @@ from .file_backup import SqliteFileBackup
 from .notes import DatabaseNoteDocumentStore, DatabaseNoteRepository
 from .repository import DatabaseBacklogRepository
 from .sources import DatabaseSourceRepository
+from .sync_state import DatabaseSyncStateStore
 from .ui_state import DatabaseUiStateStore
 
 __all__ = ["Database", "DatabaseBacklogRepository", "DatabaseDocumentStore", "DatabaseNoteDocumentStore",
-           "DatabaseNoteRepository", "DatabaseRawBackup",
-           "DatabaseSourceRepository", "DatabaseUiStateStore", "LegacyConfigImport", "SqliteFileBackup"]
+           "DatabaseNoteRepository", "DatabaseRawBackup", "DatabaseSourceRepository", "DatabaseSyncStateStore",
+           "DatabaseUiStateStore", "LegacyConfigImport", "SqliteFileBackup"]

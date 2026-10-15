@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Body, Request
 
 from todo_viewer.domain.errors import ConfigMissingError
-from todo_viewer.domain.sync import SyncDirection, default_direction
+from todo_viewer.domain.sync import Choice, Resolution, SyncDirection
 from todo_viewer.domain.trash import live
 
 from ..dependencies import (
@@ -258,21 +258,26 @@ def remove_source(source_id: str, sources: Sources) -> SourceOut:
 @router.post("/sources/{source_id}/sync", tags=["sources"])
 def sync_source(source_id: str, body: SyncIn, sync: Sync, sync_status: SyncStatus, lookup: Lookup,
                 request: Request) -> SyncOut:
-    """Copies all data of a database project between the database and its sync folder (`sync_path`).
+    """Compares a project's database side with its markdown folder entry by entry and carries over what changed.
 
-    Without `confirm` this is a preview and changes nothing: what is created, what differs (`changed`: the target
-    is overwritten) and what the target has that the origin lacks (`missing`), plus a `token`. With `confirm` and
-    that token the sync is carried out; if either side changed since the preview the answer is 409 sync_stale.
-    Missing entries are deleted only with `delete_missing`; otherwise they stay and are listed under `kept`.
+    Each entry travels from the side that changed it: `created` (new on one side) and `changed` (changed on one side
+    only) need no decision. An entry changed on both sides, new on both with different content, or deleted on one
+    side is a `conflict`: both versions are listed, and nothing of it is touched, overwritten or deleted without a
+    decision per conflict in `resolutions` (`database`, `markdown`, or `defer`; no decision means defer; a deferred
+    conflict is reported again by the next sync). Without `confirm` this is a preview and changes nothing and
+    returns a `token`. With `confirm` and that token the sync is carried out; if either side or the stored sync state
+    changed since the preview the answer is 409 sync_stale. `direction` only restricts which side a run may write.
+    A sync that writes to the database makes a backup of it first (409 database_backup_failed if that fails).
     Errors: sync_path_missing (400), sync_same_backend (409), sync_source_invalid (400, `details.reason` names the
     problem, nothing was changed).
     """
     source = lookup.by_id(source_id)
-    direction = SyncDirection(body.direction) if body.direction else default_direction(source)
-    note(request, source=source_id, direction=direction.value, confirm=body.confirm)
+    direction = SyncDirection(body.direction) if body.direction else None
+    note(request, source=source_id, direction=direction.value if direction else "both", confirm=body.confirm)
     if not body.confirm:
         return SyncOut.of(sync.preview(source, direction))
-    result = sync_status.run(source, direction, body.token, body.delete_missing, body.language)
+    resolutions = [Resolution(r.kind, r.label, r.name, Choice(r.choice)) for r in body.resolutions]
+    result = sync_status.run(source, body.token, resolutions, direction, body.language)
     return SyncOut.of(result.preview, result)
 
 

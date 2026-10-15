@@ -958,12 +958,16 @@ export interface paths {
         put?: never;
         /**
          * Sync Source
-         * @description Copies all data of a database project between the database and its sync folder (`sync_path`).
+         * @description Compares a project's database side with its markdown folder entry by entry and carries over what changed.
          *
-         *     Without `confirm` this is a preview and changes nothing: what is created, what differs (`changed`: the target
-         *     is overwritten) and what the target has that the origin lacks (`missing`), plus a `token`. With `confirm` and
-         *     that token the sync is carried out; if either side changed since the preview the answer is 409 sync_stale.
-         *     Missing entries are deleted only with `delete_missing`; otherwise they stay and are listed under `kept`.
+         *     Each entry travels from the side that changed it: `created` (new on one side) and `changed` (changed on one side
+         *     only) need no decision. An entry changed on both sides, new on both with different content, or deleted on one
+         *     side is a `conflict`: both versions are listed, and nothing of it is touched, overwritten or deleted without a
+         *     decision per conflict in `resolutions` (`database`, `markdown`, or `defer`; no decision means defer; a deferred
+         *     conflict is reported again by the next sync). Without `confirm` this is a preview and changes nothing and
+         *     returns a `token`. With `confirm` and that token the sync is carried out; if either side or the stored sync state
+         *     changed since the preview the answer is 409 sync_stale. `direction` only restricts which side a run may write.
+         *     A sync that writes to the database makes a backup of it first (409 database_backup_failed if that fails).
          *     Errors: sync_path_missing (400), sync_same_backend (409), sync_source_invalid (400, `details.reason` names the
          *     problem, nothing was changed).
          */
@@ -1276,6 +1280,13 @@ export interface components {
             };
             /** Message */
             message: string;
+        };
+        /** FieldOut */
+        FieldOut: {
+            /** Name */
+            name: string;
+            /** Value */
+            value: string;
         };
         /** FolderEntryOut */
         FolderEntryOut: {
@@ -2021,6 +2032,30 @@ export interface components {
             /** @description The note, now promoted and archived */
             note: components["schemas"]["NoteOut"];
         };
+        /** ResolutionIn */
+        ResolutionIn: {
+            /**
+             * Choice
+             * @description database / markdown: the state of that side counts (a deletion on the other side is carried out, a missing entry is restored there); defer: leave the conflict as it is
+             * @enum {string}
+             */
+            choice: "database" | "markdown" | "defer";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "item" | "document";
+            /**
+             * Label
+             * @description The item's id (for a document: the id of the item it belongs to)
+             */
+            label: string;
+            /**
+             * Name
+             * @description Documents: the document name; items: null
+             */
+            name?: string | null;
+        };
         /** RetypeOut */
         RetypeOut: {
             /** @description The item under its new id */
@@ -2032,6 +2067,19 @@ export interface components {
             notices: components["schemas"]["todo_viewer__api__v2__schemas__NoticeOut"][];
             /** Old Id */
             old_id: string;
+        };
+        /** SideViewOut */
+        SideViewOut: {
+            /**
+             * Fields
+             * @description Items: every stored field as text; documents: null
+             */
+            fields: components["schemas"]["FieldOut"][] | null;
+            /**
+             * Text
+             * @description Documents: the whole text; items: null
+             */
+            text: string | null;
         };
         /** SourceIn */
         SourceIn: {
@@ -2161,6 +2209,33 @@ export interface components {
              */
             schema_version: number;
         };
+        /** SyncConflictOut */
+        SyncConflictOut: {
+            /** @description The database version; null if the entry is missing there */
+            database: components["schemas"]["SideViewOut"] | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "item" | "document";
+            /** Label */
+            label: string;
+            /** @description The markdown version; null if the entry is missing there */
+            markdown: components["schemas"]["SideViewOut"] | null;
+            /**
+             * Name
+             * @description Documents: the document name; items: null
+             */
+            name: string | null;
+            /**
+             * Reason
+             * @description both_changed: changed on both sides since the last sync; both_new: on both sides with different content and never synced; database_deleted / markdown_deleted: gone from that side since the last sync
+             * @enum {string}
+             */
+            reason: "both_changed" | "both_new" | "database_deleted" | "markdown_deleted";
+            /** Title */
+            title: string;
+        };
         /** SyncEntryOut */
         SyncEntryOut: {
             /**
@@ -2173,6 +2248,11 @@ export interface components {
              * @description Documents: the document name; items: null
              */
             name: string | null;
+            /**
+             * Origin
+             * @description The side whose version is carried over to the other; null for conflicts and deferred entries
+             */
+            origin: ("markdown" | "database") | null;
             /** Title */
             title: string;
         };
@@ -2185,14 +2265,8 @@ export interface components {
              */
             confirm: boolean;
             /**
-             * Delete Missing
-             * @description Also delete what the target has and the origin lacks; otherwise it stays
-             * @default false
-             */
-            delete_missing: boolean;
-            /**
              * Direction
-             * @description to_md: write the database side into the markdown folder; from_md: read the markdown folder into the database side. Default: from the primary source to the mirror (database project: to_md, markdown project: from_md)
+             * @description Restricts which side a run may write: to_md only the markdown folder, from_md only the database side. Default: both sides, each entry travels from the side that changed it
              */
             direction?: ("to_md" | "from_md") | null;
             /**
@@ -2203,6 +2277,11 @@ export interface components {
              */
             language: "en" | "de";
             /**
+             * Resolutions
+             * @description One decision per conflict; a conflict without one is deferred
+             */
+            resolutions?: components["schemas"]["ResolutionIn"][];
+            /**
              * Token
              * @description The token of the preview being confirmed (required with confirm)
              */
@@ -2211,8 +2290,18 @@ export interface components {
         /** SyncOut */
         SyncOut: {
             /**
+             * Conflicts
+             * @description Entries that need a decision (`resolutions`); until then nothing of them is touched
+             */
+            conflicts: components["schemas"]["SyncConflictOut"][];
+            /**
+             * Deferred
+             * @description Conflicts left as they were
+             */
+            deferred: components["schemas"]["SyncEntryOut"][];
+            /**
              * Deleted
-             * @description Missing entries removed from the target
+             * @description Removed by a decision
              */
             deleted: components["schemas"]["SyncEntryOut"][];
             documents: components["schemas"]["SyncSectionOut"];
@@ -2224,9 +2313,14 @@ export interface components {
             items: components["schemas"]["SyncSectionOut"];
             /**
              * Kept
-             * @description Missing entries left on the target
+             * @description Deferred deletions: the entry stays where it is
              */
             kept: components["schemas"]["SyncEntryOut"][];
+            /**
+             * Resolved
+             * @description Carried over by this run (`origin`: from which side)
+             */
+            resolved: components["schemas"]["SyncEntryOut"][];
             /**
              * Skipped
              * @description Documents the sync cannot carry (a path, not readable, missing)
@@ -2242,21 +2336,24 @@ export interface components {
         SyncSectionOut: {
             /**
              * Changed
-             * @description Exist on both sides and differ; the target is overwritten
+             * @description Changed on one side only (`origin`); carried to the other
              */
             changed: components["schemas"]["SyncEntryOut"][];
-            /** Created */
-            created: components["schemas"]["SyncEntryOut"][];
             /**
-             * Missing
-             * @description Only on the target; kept unless delete_missing is set
+             * Created
+             * @description New on one side (`origin`); carried to the other
              */
-            missing: components["schemas"]["SyncEntryOut"][];
+            created: components["schemas"]["SyncEntryOut"][];
             /** Unchanged */
             unchanged: number;
         };
         /** SyncStatusOut */
         SyncStatusOut: {
+            /**
+             * Conflicts
+             * @description Entries that need a decision: changed on both sides, new on both with different content, or deleted on one side. `state` can say in_sync while this is not 0: what a sync left undecided does not count as a change
+             */
+            conflicts: number;
             /**
              * Last Sync At
              * @description When the project was last synced through this API; null if never

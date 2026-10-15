@@ -357,6 +357,24 @@
         "title": "ErrorOut",
         "type": "object"
       },
+      "FieldOut": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ],
+        "title": "FieldOut",
+        "type": "object"
+      },
       "FolderEntryOut": {
         "properties": {
           "has_todo": {
@@ -2295,6 +2313,53 @@
         "title": "PromoteOut",
         "type": "object"
       },
+      "ResolutionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "choice": {
+            "description": "database / markdown: the state of that side counts (a deletion on the other side is carried out, a missing entry is restored there); defer: leave the conflict as it is",
+            "enum": [
+              "database",
+              "markdown",
+              "defer"
+            ],
+            "title": "Choice",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "item",
+              "document"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "description": "The item's id (for a document: the id of the item it belongs to)",
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Documents: the document name; items: null",
+            "title": "Name"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "choice"
+        ],
+        "title": "ResolutionIn",
+        "type": "object"
+      },
       "RetypeOut": {
         "properties": {
           "item": {
@@ -2320,6 +2385,43 @@
           "notices"
         ],
         "title": "RetypeOut",
+        "type": "object"
+      },
+      "SideViewOut": {
+        "properties": {
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Items: every stored field as text; documents: null",
+            "title": "Fields"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Documents: the whole text; items: null",
+            "title": "Text"
+          }
+        },
+        "required": [
+          "fields",
+          "text"
+        ],
+        "title": "SideViewOut",
         "type": "object"
       },
       "SourceIn": {
@@ -2593,6 +2695,82 @@
         "title": "StorageOut",
         "type": "object"
       },
+      "SyncConflictOut": {
+        "properties": {
+          "database": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SideViewOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The database version; null if the entry is missing there"
+          },
+          "kind": {
+            "enum": [
+              "item",
+              "document"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "markdown": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SideViewOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The markdown version; null if the entry is missing there"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Documents: the document name; items: null",
+            "title": "Name"
+          },
+          "reason": {
+            "description": "both_changed: changed on both sides since the last sync; both_new: on both sides with different content and never synced; database_deleted / markdown_deleted: gone from that side since the last sync",
+            "enum": [
+              "both_changed",
+              "both_new",
+              "database_deleted",
+              "markdown_deleted"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "title",
+          "name",
+          "reason",
+          "database",
+          "markdown"
+        ],
+        "title": "SyncConflictOut",
+        "type": "object"
+      },
       "SyncEntryOut": {
         "properties": {
           "label": {
@@ -2612,6 +2790,22 @@
             "description": "Documents: the document name; items: null",
             "title": "Name"
           },
+          "origin": {
+            "anyOf": [
+              {
+                "enum": [
+                  "markdown",
+                  "database"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The side whose version is carried over to the other; null for conflicts and deferred entries",
+            "title": "Origin"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -2620,7 +2814,8 @@
         "required": [
           "label",
           "title",
-          "name"
+          "name",
+          "origin"
         ],
         "title": "SyncEntryOut",
         "type": "object"
@@ -2632,12 +2827,6 @@
             "default": false,
             "description": "false: only preview; true: carry out the sync",
             "title": "Confirm",
-            "type": "boolean"
-          },
-          "delete_missing": {
-            "default": false,
-            "description": "Also delete what the target has and the origin lacks; otherwise it stays",
-            "title": "Delete Missing",
             "type": "boolean"
           },
           "direction": {
@@ -2653,7 +2842,7 @@
                 "type": "null"
               }
             ],
-            "description": "to_md: write the database side into the markdown folder; from_md: read the markdown folder into the database side. Default: from the primary source to the mirror (database project: to_md, markdown project: from_md)",
+            "description": "Restricts which side a run may write: to_md only the markdown folder, from_md only the database side. Default: both sides, each entry travels from the side that changed it",
             "title": "Direction"
           },
           "language": {
@@ -2665,6 +2854,14 @@
             ],
             "title": "Language",
             "type": "string"
+          },
+          "resolutions": {
+            "description": "One decision per conflict; a conflict without one is deferred",
+            "items": {
+              "$ref": "#/components/schemas/ResolutionIn"
+            },
+            "title": "Resolutions",
+            "type": "array"
           },
           "token": {
             "anyOf": [
@@ -2684,8 +2881,24 @@
       },
       "SyncOut": {
         "properties": {
+          "conflicts": {
+            "description": "Entries that need a decision (`resolutions`); until then nothing of them is touched",
+            "items": {
+              "$ref": "#/components/schemas/SyncConflictOut"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "deferred": {
+            "description": "Conflicts left as they were",
+            "items": {
+              "$ref": "#/components/schemas/SyncEntryOut"
+            },
+            "title": "Deferred",
+            "type": "array"
+          },
           "deleted": {
-            "description": "Missing entries removed from the target",
+            "description": "Removed by a decision",
             "items": {
               "$ref": "#/components/schemas/SyncEntryOut"
             },
@@ -2704,11 +2917,19 @@
             "$ref": "#/components/schemas/SyncSectionOut"
           },
           "kept": {
-            "description": "Missing entries left on the target",
+            "description": "Deferred deletions: the entry stays where it is",
             "items": {
               "$ref": "#/components/schemas/SyncEntryOut"
             },
             "title": "Kept",
+            "type": "array"
+          },
+          "resolved": {
+            "description": "Carried over by this run (`origin`: from which side)",
+            "items": {
+              "$ref": "#/components/schemas/SyncEntryOut"
+            },
+            "title": "Resolved",
             "type": "array"
           },
           "skipped": {
@@ -2730,8 +2951,11 @@
           "token",
           "items",
           "documents",
+          "conflicts",
           "skipped",
+          "resolved",
           "deleted",
+          "deferred",
           "kept"
         ],
         "title": "SyncOut",
@@ -2740,7 +2964,7 @@
       "SyncSectionOut": {
         "properties": {
           "changed": {
-            "description": "Exist on both sides and differ; the target is overwritten",
+            "description": "Changed on one side only (`origin`); carried to the other",
             "items": {
               "$ref": "#/components/schemas/SyncEntryOut"
             },
@@ -2748,18 +2972,11 @@
             "type": "array"
           },
           "created": {
+            "description": "New on one side (`origin`); carried to the other",
             "items": {
               "$ref": "#/components/schemas/SyncEntryOut"
             },
             "title": "Created",
-            "type": "array"
-          },
-          "missing": {
-            "description": "Only on the target; kept unless delete_missing is set",
-            "items": {
-              "$ref": "#/components/schemas/SyncEntryOut"
-            },
-            "title": "Missing",
             "type": "array"
           },
           "unchanged": {
@@ -2770,14 +2987,18 @@
         "required": [
           "created",
           "changed",
-          "unchanged",
-          "missing"
+          "unchanged"
         ],
         "title": "SyncSectionOut",
         "type": "object"
       },
       "SyncStatusOut": {
         "properties": {
+          "conflicts": {
+            "description": "Entries that need a decision: changed on both sides, new on both with different content, or deleted on one side. `state` can say in_sync while this is not 0: what a sync left undecided does not count as a change",
+            "title": "Conflicts",
+            "type": "integer"
+          },
           "last_sync_at": {
             "anyOf": [
               {
@@ -2812,7 +3033,8 @@
         "required": [
           "source_id",
           "state",
-          "last_sync_at"
+          "last_sync_at",
+          "conflicts"
         ],
         "title": "SyncStatusOut",
         "type": "object"
@@ -8570,7 +8792,7 @@
     },
     "/api/v2/sources/{source_id}/sync": {
       "post": {
-        "description": "Copies all data of a database project between the database and its sync folder (`sync_path`).\n\nWithout `confirm` this is a preview and changes nothing: what is created, what differs (`changed`: the target\nis overwritten) and what the target has that the origin lacks (`missing`), plus a `token`. With `confirm` and\nthat token the sync is carried out; if either side changed since the preview the answer is 409 sync_stale.\nMissing entries are deleted only with `delete_missing`; otherwise they stay and are listed under `kept`.\nErrors: sync_path_missing (400), sync_same_backend (409), sync_source_invalid (400, `details.reason` names the\nproblem, nothing was changed).",
+        "description": "Compares a project's database side with its markdown folder entry by entry and carries over what changed.\n\nEach entry travels from the side that changed it: `created` (new on one side) and `changed` (changed on one side\nonly) need no decision. An entry changed on both sides, new on both with different content, or deleted on one\nside is a `conflict`: both versions are listed, and nothing of it is touched, overwritten or deleted without a\ndecision per conflict in `resolutions` (`database`, `markdown`, or `defer`; no decision means defer; a deferred\nconflict is reported again by the next sync). Without `confirm` this is a preview and changes nothing and\nreturns a `token`. With `confirm` and that token the sync is carried out; if either side or the stored sync state\nchanged since the preview the answer is 409 sync_stale. `direction` only restricts which side a run may write.\nA sync that writes to the database makes a backup of it first (409 database_backup_failed if that fails).\nErrors: sync_path_missing (400), sync_same_backend (409), sync_source_invalid (400, `details.reason` names the\nproblem, nothing was changed).",
         "operationId": "sync_source_api_v2_sources__source_id__sync_post",
         "parameters": [
           {

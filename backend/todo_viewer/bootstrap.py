@@ -46,6 +46,7 @@ from todo_viewer.infrastructure.database import (
     DatabaseNoteRepository,
     DatabaseRawBackup,
     DatabaseSourceRepository,
+    DatabaseSyncStateStore,
     DatabaseUiStateStore,
     LegacyConfigImport,
     SqliteFileBackup,
@@ -115,7 +116,7 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     note_repo = DatabaseNoteRepository(database)
     note_settings = NotesSettingsService(JsonNotesSettingsStore(config))
     notes = NoteService(note_repo, source_repo, backlogs, note_settings.current)
-    sync = SyncService(backlogs, documents, notes, db_backup=file_backup)
+    sync = SyncService(backlogs, documents, notes, db_backup=file_backup, states=DatabaseSyncStateStore(database))
     raw_backup = RoutingRawBackup({"markdown": MarkdownRawBackup(LayoutFactory(resolver)),
                                    "database": DatabaseRawBackup()})
     backup = BackupService(raw_backup, sync, settings.config_dir / "backups")

@@ -164,6 +164,21 @@ MIGRATIONS: dict[int, list[str]] = {
         "CREATE INDEX note_notices_counterpart ON note_notices (counterpart_kind, counterpart_project, "
         "counterpart_label)",
     ],
+    # The version of every item and document on both sides right after a sync that left them equal, to tell later
+    # which side changed an entry. `folder` is the markdown folder the state was taken with: a state belongs to the
+    # pair of database project and folder. Versions only, no content.
+    8: [
+        """CREATE TABLE sync_entries (
+            project_id VARCHAR(64) NOT NULL,
+            folder TEXT NOT NULL,
+            kind VARCHAR(10) NOT NULL,
+            label VARCHAR(100) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            database_version VARCHAR(64) NOT NULL,
+            markdown_version VARCHAR(64) NOT NULL,
+            PRIMARY KEY (project_id, folder, kind, label, name)
+        )""",
+    ],
 }
 
 CURRENT_VERSION = max(MIGRATIONS)

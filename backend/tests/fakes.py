@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 
 from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.documents import content_version
@@ -17,6 +17,7 @@ from todo_viewer.domain.errors import (
 )
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
+from todo_viewer.domain.sync import EntryKey, EntryState
 
 DOCUMENT_SUFFIXES = {".md", ".markdown", ".txt"}
 
@@ -156,3 +157,20 @@ class InMemoryDocumentStore:
     def _check_name(name: str) -> None:
         if not name or "/" in name or "." + name.rsplit(".", 1)[-1].lower() not in DOCUMENT_SUFFIXES:
             raise DocumentForbiddenError()
+
+
+class InMemorySyncStateStore:
+    """The stored sync state per project and markdown folder."""
+
+    def __init__(self) -> None:
+        self._states: dict[tuple[str, str], dict[EntryKey, EntryState]] = {}
+
+    def load(self, project_id: str, folder: str) -> dict[EntryKey, EntryState]:
+        return dict(self._states.get((project_id, folder), {}))
+
+    def save(self, project_id: str, folder: str, put: Mapping[EntryKey, EntryState],
+             remove: Collection[EntryKey]) -> None:
+        states = self._states.setdefault((project_id, folder), {})
+        for key in remove:
+            states.pop(key, None)
+        states.update(put)

@@ -43,7 +43,7 @@ class BackupService:
     def _export(self, source: Source, target: Path) -> None:
         exported = dataclasses.replace(source, sync_path=str(target))
         preview = self._sync.preview(exported, SyncDirection.TO_MD)
-        self._sync.run(exported, SyncDirection.TO_MD, preview.token, delete_missing=False, language="en")
+        self._sync.run(exported, preview.token, direction=SyncDirection.TO_MD, language="en", remember=False)
         if not self._sync.in_sync(exported, SyncDirection.TO_MD):
             raise OSError("The exported backlog differs from the original.")
 

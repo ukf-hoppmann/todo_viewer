@@ -159,3 +159,14 @@ note_notices = sa.Table(
     sa.Column("decided_at", sa.Text),
     sa.Column("decision", sa.String(20)),
 )
+
+sync_entries = sa.Table(
+    "sync_entries", metadata,
+    sa.Column("project_id", sa.String(64), primary_key=True),
+    sa.Column("folder", sa.Text, primary_key=True),
+    sa.Column("kind", sa.String(10), primary_key=True),
+    sa.Column("label", sa.String(100), primary_key=True),
+    sa.Column("name", sa.String(255), primary_key=True),
+    sa.Column("database_version", sa.String(64), nullable=False),
+    sa.Column("markdown_version", sa.String(64), nullable=False),
+)

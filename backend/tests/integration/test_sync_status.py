@@ -18,6 +18,7 @@ from todo_viewer.infrastructure.database import (
     DatabaseDocumentStore,
     DatabaseRawBackup,
     DatabaseSourceRepository,
+    DatabaseSyncStateStore,
 )
 from todo_viewer.infrastructure.markdown import (
     KeyedLocks,
@@ -43,7 +44,7 @@ class World:
         self.documents = RoutingDocumentStore({"markdown": build_markdown_documents(Path("/"), locks),
                                                "database": DatabaseDocumentStore(db)})
         self.sources = DatabaseSourceRepository(db)
-        self.sync = SyncService(self.backlogs, self.documents)
+        self.sync = SyncService(self.backlogs, self.documents, states=DatabaseSyncStateStore(db))
         self.status = SyncStatusService(self.sync, self.sources, lambda: NOW)
         raw = RoutingRawBackup({"markdown": MarkdownRawBackup(LayoutFactory(SourcePathResolver(Path("/")))),
                                 "database": DatabaseRawBackup()})
@@ -63,7 +64,7 @@ class World:
     def synced(self, source: Source, direction: SyncDirection) -> None:
         stored = self.stored(source)
         token = self.sync.preview(stored, direction).token
-        self.status.run(stored, direction, token, False, "en")
+        self.status.run(stored, token, (), direction, "en")
 
     def retitle(self, source: Source, label: str, title: str = "Edited") -> None:
         """Changes one item of the source's own side."""
@@ -111,7 +112,7 @@ def test_a_mirror_that_was_never_synced_is_unknown_while_the_sides_differ(world:
 def test_equal_sides_are_in_sync_even_without_a_recorded_sync(world: World):
     project = _database_project(world)
     token = world.sync.preview(project, TO_MD).token
-    world.sync.run(project, TO_MD, token, False, "en")  # the plain service records nothing
+    world.sync.run(project, token, (), TO_MD, "en")  # the plain service records nothing
 
     assert world.state(project) is SyncState.IN_SYNC
     assert world.status.status(world.stored(project)).last_sync_at is None
@@ -166,6 +167,7 @@ def test_what_a_sync_left_different_on_purpose_is_not_a_change(world: World):
 
     assert world.backlogs.get(mirror, "TASK-070")
     assert world.state(project) is SyncState.IN_SYNC
+    assert world.status.status(world.stored(project)).conflicts == 1  # the deletion still waits for a decision
 
 
 def test_a_side_that_cannot_be_read_is_reported_not_raised(world: World):
@@ -206,3 +208,22 @@ def test_a_project_whose_mirror_is_switched_off_has_none_although_its_folder_is_
 
     assert world.state(project) is SyncState.NONE
     assert world.stored(project).markdown_path == str(world.tmp / "md")
+
+
+def test_the_status_counts_the_conflicts_and_nothing_else_does(world: World):
+    project = _database_project(world)
+    world.synced(project, TO_MD)
+    assert world.status.status(world.stored(project)).conflicts == 0
+
+    world.retitle(project, "TASK-001", "In the database")
+    world.retitle(_markdown_side(project), "TASK-001", "In the file")
+    world.retitle(_markdown_side(project), "TASK-002")  # one side only: no conflict
+
+    assert world.status.status(world.stored(project)).conflicts == 1
+    assert world.state(project) is SyncState.BOTH_CHANGED
+
+
+def test_a_project_without_a_mirror_has_no_conflicts(world: World):
+    bare = world.add(Source(project="Bare", path="", backend="database", id="bare"))
+
+    assert world.status.status(world.stored(bare)).conflicts == 0

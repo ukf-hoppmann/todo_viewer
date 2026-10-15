@@ -77,3 +77,22 @@ def test_a_database_from_before_the_notes_gets_the_notes_tables(tmp_path: Path):
     assert version == CURRENT_VERSION and kept == ["old"]
     assert {"topics", "notes", "note_links", "note_triggers", "note_documents", "note_counters"} <= set(
         sa.inspect(db.engine).get_table_names())
+
+
+def test_a_database_from_before_the_sync_state_gets_its_table_and_keeps_its_data(tmp_path: Path):
+    db = _db(tmp_path)
+    with db.engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE schema_version (version INTEGER NOT NULL)"))
+        conn.execute(sa.text("INSERT INTO schema_version (version) VALUES (7)"))
+        for number in range(1, 8):
+            for statement in MIGRATIONS[number]:
+                conn.execute(sa.text(statement))
+        conn.execute(sa.text("INSERT INTO projects (id, synced_primary, synced_mirror) VALUES ('old', 'p0', 'm0')"))
+
+    with db.begin() as conn:
+        version = conn.execute(sa.text("SELECT version FROM schema_version")).scalar_one()
+        kept = conn.execute(sa.text("SELECT id, synced_primary, synced_mirror FROM projects")).all()
+        entries = conn.execute(sa.text("SELECT COUNT(*) FROM sync_entries")).scalar_one()
+
+    assert version == CURRENT_VERSION >= 8
+    assert [tuple(r) for r in kept] == [("old", "p0", "m0")] and entries == 0

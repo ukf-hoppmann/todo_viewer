@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { SourceStatus } from "../api/client";
 import { useSwitchBackend, useSyncSource } from "../api/queries";
-import { buildResolutions, canRun, type ConflictChoice, type ConflictChoices, conflictKey, directionOf, isInSync, type SyncMode, type SyncPreview, type SyncScope, switchDirection } from "../domain/sync";
+import { buildResolutions, canRun, visibleKinds, type ConflictChoice, type ConflictChoices, conflictKey, directionOf, isInSync, type SyncMode, type SyncPreview, type SyncScope, switchDirection } from "../domain/sync";
 import { ApiError } from "../api/client";
 import { describeError, type I18n, useI18n } from "../i18n/i18n";
 import { Modal } from "./Modal";
@@ -17,6 +17,7 @@ interface SyncDialogProps {
 }
 
 type Entry = Pick<SyncPreview["items"]["created"][number], "label" | "name" | "title">;
+const FORMAT_REASON = "note_format";
 const entryText = (e: Entry) => (e.name ? `${e.label} / ${e.name}` : `${e.label} — ${e.title}`);
 /** Which side the entry comes from: the arrow points to where it goes. */
 const origin = (e: { origin: "database" | "markdown" | null }) => (e.origin === "database" ? " →" : e.origin === "markdown" ? " ←" : "");
@@ -25,7 +26,9 @@ const origin = (e: { origin: "database" | "markdown" | null }) => (e.origin === 
 function syncError(i18n: I18n, error: unknown): string {
   if (error instanceof ApiError && error.code === "sync_source_invalid") {
     const reason = i18n.errorText(error.details.reason, error.details.reason ?? "");
-    return `${i18n.errorText(error.code, error.message)}: ${reason}`;
+    // A notes file that does not follow the format: the server names the file and the line.
+    const where = error.details.reason === FORMAT_REASON ? ` (${error.message.replace(/^Nothing was changed: /, "")})` : "";
+    return `${i18n.errorText(error.code, error.message)}: ${reason}${where}`;
   }
   return describeError(i18n, error);
 }
@@ -131,7 +134,7 @@ function PreviewView({ preview, switching, choices, onChoose }: {
   return (
     <div className="sync-preview">
       {isInSync(preview) && <div className="sync-equal">{t("sync.inSync")}</div>}
-      {(["items", "documents"] as const).map((kind) => {
+      {visibleKinds(preview).map((kind) => {
         const s = preview[kind];
         return (
           <section key={kind}>

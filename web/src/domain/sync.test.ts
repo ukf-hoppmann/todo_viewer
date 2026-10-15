@@ -1,5 +1,5 @@
 import type { Schemas } from "../api/client";
-import { buildResolutions, canRun, changeCount, changedFields, choiceOf, conflictCount, conflictKey, directionOf, isInSync, needsAttention, type SyncState, switchDirection } from "./sync";
+import { buildResolutions, canRun, summarizePreview, visibleKinds, changeCount, changedFields, choiceOf, conflictCount, conflictKey, directionOf, isInSync, needsAttention, type SyncState, switchDirection } from "./sync";
 
 type Section = Schemas["SyncSectionOut"];
 type Conflict = Schemas["SyncConflictOut"];
@@ -13,6 +13,9 @@ const preview = (items: Partial<Section> = {}, documents: Partial<Section> = {},
   token: "t",
   items: section(items),
   documents: section(documents),
+  topics: section(),
+  notes: section(),
+  note_documents: section(),
   conflicts,
   skipped: [],
   resolved: [],
@@ -104,5 +107,37 @@ describe("deciding conflicts", () => {
 
     expect(changedFields(c).map((f) => f.name)).toEqual(["title"]);
     expect(changedFields({ ...c, database: null }).map((f) => f.name)).toEqual(["id", "title", "goal"]);
+  });
+});
+
+describe("notes in the preview", () => {
+  const notesPreview = (): Schemas["SyncOut"] => ({
+    ...preview({ created: [entry("A")], unchanged: 1 }),
+    topics: section({ unchanged: 2 }),
+    notes: section({ created: [entry("NOTE-1"), entry("NOTE-2")], changed: [entry("NOTE-3")] }),
+    note_documents: section({ changed: [entry("NOTE-3", "NOTE-3_notes.md")] }),
+    conflicts: [{ ...conflict("NOTE-9"), kind: "note" }],
+  });
+
+  it("counts topics, notes, and their documents with the rest", () => {
+    const p = notesPreview();
+
+    expect(changeCount(p)).toBe(5);
+    expect(conflictCount(p)).toBe(1);
+    expect(isInSync(p)).toBe(false);
+    expect(isInSync({ ...preview({ unchanged: 1 }), notes: section({ changed: [entry("NOTE-1")] }) })).toBe(false);
+  });
+
+  it("summarizes each kind and the total", () => {
+    const sum = summarizePreview(notesPreview());
+
+    expect(sum.notes).toEqual({ created: 2, changed: 1, unchanged: 0 });
+    expect(sum.topics).toEqual({ created: 0, changed: 0, unchanged: 2 });
+    expect(sum.total).toEqual({ created: 3, changed: 2, unchanged: 3 });
+  });
+
+  it("shows items and documents always and the notes sections only when there is something in them", () => {
+    expect(visibleKinds(preview())).toEqual(["items", "documents"]);
+    expect(visibleKinds(notesPreview())).toEqual(["items", "documents", "topics", "notes", "note_documents"]);
   });
 });

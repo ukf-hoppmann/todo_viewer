@@ -62,6 +62,12 @@ eine Seite eingeschränkt werden. Vor einem Sync in die Datenbank sichert der
 Dienst die Datenbank (`configs/backups/todo-<Zeit>-sync.db`, ebenso vor einer
 Schema-Migration; die letzten 10 bleiben).
 
+**Notes im Sync:** Topics, Notes (samt Links, Auslösern, Archiv- und Papierkorbstand) und ihre Dokumente laufen im
+selben Sync wie der Backlog (Vorschau, Konflikte, Entscheidungen im selben Dialog); die Dateien liegen im Unterordner
+`notes/` des Markdown-Ordners (Format: [Schnittstellen](docs/techdocs/interfaces.md)). So lassen sich Notes über Git
+zwischen Rechnern und in die Cloud (claude.ai) mitnehmen. Eine in den Dateien angelegte Note ohne Label
+(`new-<kurzname>.md`) bekommt beim Import ihr Label.
+
 **Auto-Sync:** Pro Projekt mit Spiegel lässt sich in Einstellungen → Projekte
 „Automatisch abgleichen“ einschalten (Standard aus). Der Viewer gleicht dann alle
 `AUTO_SYNC_INTERVAL` Sekunden (Standard 30) von selbst ab, was nur eine Seite

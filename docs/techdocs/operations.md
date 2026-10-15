@@ -53,6 +53,12 @@
   jeden Lauf (`auto_sync_run`). Backups: Grund `auto`, höchstens eines pro Stunde;
   aufbewahrt werden die letzten 10 und je Tag der letzten 14 Tage das jüngste.
   Ohne eingeschalteten Schalter läuft kein Timer.
+- Notes im Sync: Ist ein Projekt mit Spiegel-Ordner angelegt, liegen die Notes im Unterordner `notes/` des
+  Markdown-Ordners (Format: [Schnittstellen](interfaces.md)); `git add`/`pull` dieses Ordners trägt Notes zwischen
+  Rechnern und in die Cloud (claude.ai). Eine dort angelegte Note heißt `new-<kurzname>.md` und bekommt beim
+  nächsten Sync ihr Label (die Datei heißt dann `NOTE-xxx.md`). Konflikte entscheidest du im Sync-Dialog.
+  Meldet der Sync `note_format`, nennt die Meldung Datei und Zeile; er hat nichts geändert. Beim ersten Sync
+  nach dem Update gilt der Gesamtstand von Projekten mit Notes einmalig als geändert.
 - Stand je Eintrag: Nach jedem Sync speichert die Datenbank die Version aller Items
   und Dokumente, die dann auf beiden Seiten gleich sind (`sync_entries`, Schlüssel
   Projekt, Markdown-Ordner, Art, Label, Name). Daran erkennt der nächste Sync, welche

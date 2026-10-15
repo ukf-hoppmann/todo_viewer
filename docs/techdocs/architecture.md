@@ -101,6 +101,15 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   Datenbank schreibt, legt der Port `DatabaseBackup` ein Backup an. Geschrieben wird erst die Datenbank-,
   dann die Ordnerseite, je über `write_backlog` und die
   Dokument-Ports.
+- Notes im Sync (STORY-047): Topics, Notes und ihre Dokumente liegen immer in der Datenbank;
+  die Dateiseite ist der Ordner `notes/` im Markdown-Ordner (Port `NotesMirror`, Adapter
+  `infrastructure/notes_files/`, dateiweise und ohne Notes-Logik; das Format steht in
+  `domain/notes_markdown.py`, der Vergleich und die Label-Regeln in `domain/notes_sync.py`). `NotesSync`
+  (`application/services/notes_sync.py`) liest beide Seiten und überträgt Einträge der Arten `topic`, `note` und
+  `note_document`; `SyncService` plant sie über `plan_sync(extras=…)` zusammen mit dem Backlog, dieselbe
+  Klassifikation, Vorschau, Entscheidungen, Stand je Eintrag und Sperre. Neue Methoden am `NoteRepository`
+  (`store_topic`, `store_note`, `counters`, `raise_counter`, `next_label`) nehmen Einträge samt Zeiten und
+  Archiv-/Papierkorbstand wörtlich auf.
 - Auto-Sync (STORY-059): `AutoSyncService` (`application/services/autosync.py`)
   prüft in `tick()` alle Projekte mit eingeschaltetem Schalter (`Source.auto_sync`,
   wirksam nur mit Spiegel) über denselben `SyncService` und dieselbe Sperre je

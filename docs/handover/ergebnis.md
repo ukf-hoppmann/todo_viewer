@@ -127,9 +127,78 @@ Die Cloud-Sitzung füllt diese Datei je Block aus. Der Besitzer überträgt sie 
 - Neue Routen, Fehlercodes, Konfiguration, Migrationen: `PUT/POST /sources` mit `auto_sync`; `SourceOut.auto_sync`; `GET /sync-status` mit `auto_sync`, `auto_last_run_at`, `auto_paused`; Fehler `auto_sync_needs_mirror` (400); `err.merge_markers` (Übersetzung); Umgebungsvariable `AUTO_SYNC_INTERVAL`; Migration 9; Backup-Grund `auto`.
 - Offene Fragen an den Besitzer:
   - Der Sync-Status in der UI wird nur beim Laden, Fokus und von Hand geholt (Regel der Web-Architektur): Ein Lauf des Auto-Syncs erscheint in der UI also erst nach dem nächsten Fokus/Neuladen oder „Status prüfen“. Soll die UI (wie die Fälligkeitsanzeige) minütlich nachfragen, solange irgendein Projekt Auto-Sync hat? Das wäre eine Änderung der Web-Regel (§3 Zustand) und ist hier nicht gebaut.
-  - Die Notes (STORY-047) nimmt der Auto-Sync erst mit Block C mit.
+  - Die Notes (STORY-047) nimmt der Auto-Sync seit Block C mit (derselbe Sync); eine Note ohne Label im Ordner wird dann auch automatisch importiert und ihre Datei umbenannt.
 - Nicht getestet: echter Git-Pull in einem Mehrprozess-Betrieb; Laufzeit der Prüfung bei großen Backlogs (jede Prüfung liest beide Seiten wie `GET /sync-status`, gemessen: nicht); Verhalten im Docker-Betrieb (Timer-Thread beim Herunterfahren: `stop()` wartet höchstens 5 s).
+
+### Block C — Notes im gemeinsamen Sync (STORY-047: TASK-024 bis TASK-027)
+
+- Branch, Pull Request, letzter Commit: `cloud/block-c-notes-im-sync` (ab `cloud/block-b-dialog-auto-sync`); Pull Request und letzter Commit im Abschlussbericht der Sitzung (@@PR_C@@).
+- `scripts/check.sh`: grün (ruff, mypy `--strict`, import-linter 4 Verträge, pytest 1173 bestanden / 1 übersprungen, tsc, eslint, vitest 329 bestanden).
+- Plan des Blocks:
+  1. **TASK-024 Format.** `domain/notes_markdown.py` (reine Funktionen): `render_note`/`render_parsed`/`parse_note`, `render_topics`/`parse_topics`, `render_counters`/`parse_counters`, `NoteFormatError` (`note_format`, Zeilennummer); Golden-Files `backend/tests/golden/notes/`.
+  2. **TASK-025 Datei-Adapter.** Port `NotesMirror` (`read`, `write(expected)`, `delete`, `fingerprint`, `files_with_markers`), Adapter `infrastructure/notes_files/FilesNotesMirror` (atomar, `mirror_conflict`, Zeilenenden bleiben), Import-Linter-Vertrag „unabhängig von markdown und database“.
+  3. **TASK-026 Sync.** `NoteRepository.store_topic/store_note/counters/raise_counter/next_label` (Migration nicht nötig), `domain/notes_sync.py` (Einträge, Versionen, Label-Regeln), `plan_sync(extras=…)` mit `ExtraEntry` und den Abschnitten `topics/notes/note_documents`, `NotesSync` (Lesen und Anwenden), Einbindung in `SyncService`, Status und Fingerabdrücke; API-Abschnitte; Doku des Formats.
+  4. **TASK-027 Oberfläche.** `domain/sync.ts` (`SYNC_KINDS`, `visibleKinds`, `summarizePreview`, Zählung inkl. Notes), `SyncDialog` mit den Abschnitten, `SyncConflicts` stellt `note`, `topic` und `note_document` dar, Fehlertexte.
+  5. **Integration.** `bootstrap.py`, OpenAPI und `schema.d.ts`, Technikdoku (`interfaces`, `architecture`, `operations`), README.
+
+#### TASK-024 — Dateiformat
+
+- Stand: fertig.
+- Commits: `TASK-024: Dateiformat für Notes, Topics und Zähler (domain/notes_markdown.py)`.
+- Abweichungen von der Spec: Das Format folgt der Spec. Ergänzt wurde, was sie offen ließ: Zeitpunkte mit Bruchteilen von Sekunden (`…:00.5Z`) nur wo vorhanden, damit nichts verloren geht; `Topic: new:<Name>` und `note:new-<kurzname>` wie festgelegt; die Kopfzeilen `Summary` bis `Deleted` stehen immer (leer, wenn ohne Wert), `Triggers:`/`Links:` nur wenn es Einträge gibt; ein leerer Langtext und `None` sind dasselbe.
+- Entscheidungen:
+  - Ein Event-Auslöser nennt das Ziel als `Projekt:Label` (Projektnamen mit Leerzeichen sind erlaubt) und den Status am Zeilenende (`Completed`, `In progress`, …).
+  - Ein Link-Ziel `topic:`/`note:` ist nicht von einem Projekt dieses Namens zu unterscheiden (bekannte Grenze, in der Doku genannt).
+  - Dateiname und Label müssen übereinstimmen (`NOTE-001.md` enthält `# NOTE-001`); eine Note ohne Label liegt in `new-<kurzname>.md`.
+- Nicht getestet: der Harness (Dateimodus) gegen das Format (außerhalb der Cloud).
+
+#### TASK-025 — Datei-Adapter
+
+- Stand: fertig.
+- Commits: `TASK-025: Datei-Adapter für den Notes-Spiegel (infrastructure/notes_files)`.
+- Abweichungen von der Spec: Der Port ist **dateiweise** (`read(source) -> {Name: Text}`, `write(source, name, text, expected)`, `delete`, `fingerprint`, `files_with_markers`) statt `write(source, snapshot, expected_fingerprint)`. Grund: Format und Regeln gehören nach `domain`, der Adapter bleibt ohne Notes-Logik; der Konflikt wird je Datei geprüft (`expected` = Inhaltsversion der gelesenen Datei).
+- Entscheidungen: erlaubt sind nur die Dateinamen des Formats (alles andere im Ordner wird weder gelesen noch angefasst); der Spiegel-Ordner ist `<Markdown-Ordner>/notes/` (auch bei Projekten mit Markdown als Primärquelle); temporäre Datei im selben Ordner plus `os.replace`.
+- Neue Fehlercodes: `mirror_conflict` (409), Übersetzung `err.mirror_conflict`.
+- Nicht getestet: Dateisystem ohne atomares Umbenennen (Netzlaufwerke).
+
+#### TASK-026 — Notes im gemeinsamen Sync
+
+- Stand: fertig.
+- Commits: `TASK-026 (1/3): Datenbank-Import …`, `TASK-026: Notes, Topics und Note-Dokumente im gemeinsamen Sync`.
+- Abweichungen von der Spec:
+  - Zähler: `counters.md` ist kein Vergleichseintrag; sie wird geschrieben, wenn ein Lauf Notes in den Ordner schreibt (und die Zähler sich unterscheiden), und beim Import zählt sie als Untergrenze. Ein Projekt, dessen einziger Unterschied die Zähler sind, gilt als gleich.
+  - Der Import ist nicht eine einzige Datenbank-Transaktion (mehrere Aufrufe am `NoteRepository`); Konsistenz kommt aus dem Stand je Eintrag, der nur für wirklich gleiche Einträge geschrieben wird.
+  - Der Gesamt-Fingerabdruck umfasst die Notes nur, wenn es welche gibt: Projekte ohne Notes behalten ihre Baseline; Projekte mit Notes gelten einmalig als geändert (`primary_changed`/`mirror_changed`), bis zum nächsten Sync (wie in der Spec vorhergesagt; die Stop-Bedingung „mehr als der einmalige Wechsel“ trat nicht ein).
+- Entscheidungen (für die Notes `Decided`):
+  - Neue Eintragsarten `topic`, `note`, `note_document` im selben Stand je Eintrag; Dokumente einer neuen Note reisen mit, die einer auf einer Seite fehlenden Note folgen der Entscheidung über die Note.
+  - Label-lose Einträge (`new-…`, `NEW`) sind immer „im Ordner neu“; die Labels vergibt die Datenbank in der Reihenfolge der Datei (Topics) bzw. nach Name (Notes); im selben Lauf wird die Datei in `NOTE-xxx.md` umbenannt (samt Dokumenten, Verweisen und `topics.md`). Bei `direction: from_md` werden sie nicht übernommen (es dürfte sonst der Ordner nicht geschrieben werden und der Eintrag würde beim nächsten Lauf doppelt importiert).
+  - Ein Topic als Elternknoten, der in der Datenbank fehlt, ergibt beim Import ein Topic ohne Eltern; eine Note unter einem unbekannten Topic wird ohne Topic übernommen (der Import scheitert nicht an Regeln).
+  - Eine Note oder ein Topic per Entscheidung löschen = endgültig entfernen (`purge`), mit Dokumenten und Links; Kinder und Notes eines gelöschten Topics verlieren den Verweis.
+  - Format-Fehler brechen den Sync vor jeder Änderung ab (`sync_source_invalid`, `reason=note_format`).
+  - Die Notes laufen im selben Backup-Schritt: jeder Lauf, der in die Datenbank schreibt, sichert vorher (auch Notes).
+- Neue Routen, Fehlercodes, Konfiguration, Migrationen: Antwort von `POST /sources/{id}/sync` mit `topics`, `notes`, `note_documents`; `resolutions[].kind` und `conflicts[].kind` um `topic`, `note`, `note_document`; keine neue Migration (die Tabellen von Version 6 reichen); keine neue Einstellung.
+- Offene Fragen an den Besitzer: (1) Soll `counters.md` auch dann geschrieben werden, wenn sonst nichts zu übertragen ist? (2) Ein Projektname `topic` oder `note` ist als Link-Ziel mehrdeutig (Format-Grenze). (3) Auto-Sync mit Notes importiert Notes ohne Label und benennt Dateien um, ohne zu fragen; soll das nur manuell geschehen?
+- Nicht getestet: ein echter Cloud-Lauf (claude.ai) mit Git; sehr viele Notes (Lesen beider Seiten bei jeder Prüfung, jeder Auto-Lauf liest alle Notes mit Links, Auslösern und Dokumenten); Gleichzeitigkeit zwischen Viewer und Datei-Editor während eines Laufs über den Test mit `mirror_conflict` hinaus.
+
+#### TASK-027 — Notes in der Oberfläche
+
+- Stand: fertig (Komponententests, keine Sichtprüfung).
+- Commits: `TASK-027: Notes im Sync-Dialog` (und Doku).
+- Abweichungen von der Spec: keine. Das Statussymbol braucht keinen neuen Code (Status und Fingerabdrücke sind gemeinsam; getestet über die API: eine extern geänderte Notes-Datei ergibt `mirror_changed`).
+- Entscheidungen: Abschnitte für Topics, Notes und Notes-Dokumente erscheinen nur, wenn etwas drin ist; Note-Konflikte werden feldweise dargestellt, der Langtext (`body`) als Zeilenvergleich, Dokumente der Notes wie Dokumente; Fehlertext für `note_format` nennt Datei und Zeile.
+- Nicht getestet: Screenshot und manueller Durchlauf „Export und Import einer Note, Notes-Konflikt entscheiden“ (siehe unten).
 
 ### Was der Besitzer lokal noch tun muss
 
-- (z. B. Migration an einer Kopie der echten Datenbank prüfen, Backup, `./todo.sh update`, UI-Sichtprüfung, Backlog-Status setzen)
+Reihenfolge der Pull Requests: A (`cloud/block-a-abgleich-pro-eintrag`, PR #1) → B (PR #2) → C. Jeder PR zeigt auf den vorigen Branch; erst A in `cloud/abgleich-bloecke`, dann B, dann C mergen (oder den Stapel in einem Zug), danach `cloud/abgleich-bloecke` nach `main`.
+
+1. **Vor dem Deployment ein Backup** der echten Datenbank (Vorgabe): ab Block A legt der Viewer vor jeder Migration und jedem Sync in die Datenbank selbst eines an (`configs/backups/todo-<Zeit>-<migration|sync|auto>.db`); das erste Mal also vor dem ersten Start mit der neuen Version prüfen, dass der Ordner beschreibbar ist.
+2. **Migrationen 8 (Stand je Eintrag) und 9 (Auto-Sync-Schalter) an einer Kopie von `configs/todo.db` prüfen** (Daten unverändert, Zeilenzahlen gleich) und erst dann `./todo.sh update`. In der Cloud nicht möglich.
+3. **Probelauf des Backups** an der Kopie: erwartete Datei in `configs/backups/` und `integrity_check`.
+4. **Einmaliger Statuswechsel:** Projekte mit Spiegel und Notes gelten nach dem Update einmalig als geändert, bis zum nächsten Sync; danach in Ordnung. Wer will, schaut sich beim ersten Sync die Vorschau genau an: ohne gespeicherten Stand gilt „auf beiden Seiten vorhanden und verschieden“ als Konflikt (Aufschieben ist vorbelegt).
+5. **UI-Sichtprüfung mit Screenshot** (nicht in der Cloud): Sync-Dialog mit Konflikten (Item, Dokument, Note, Topic, Löschung) und allen drei Entscheidungen; Projektkarte mit Auto-Sync-Schalter, letztem Lauf, Pause und Konfliktzahl; Sidebar-Symbol bei Konflikten.
+6. **Auto-Sync ausprobieren:** Schalter an einem Projekt einschalten, Datei per `git pull` ändern, nach zwei Prüfungen (Standard 60 s) ist die Änderung in der Datenbank; Merge-Marker in einer Datei erzeugen (Projekt pausiert); Schalter aus. Intervall über `AUTO_SYNC_INTERVAL` (Sekunden, `0` = kein Timer; im Docker-Betrieb in `docker-compose.yml` ergänzen, wenn ein anderer Wert gewünscht ist).
+7. **Backlog nachtragen** (die Cloud hat `docs/todo/**` bewusst nicht angefasst): Status der Items STORY-057, TASK-031 bis TASK-033, STORY-058, STORY-059, STORY-047, TASK-024 bis TASK-027 setzen (`Awaiting confirmation`), die Entscheidungen aus den Abschnitten oben in die Notes (`Decided`) übernehmen, die offenen Fragen beantworten. Die Spiegel-Dateien dieser Doku (`docs/todo`) danach mit dem Sync neu abgleichen.
+8. **Tagesbericht und SemVer-Release** (nicht in der Cloud): Der Release ändert Verhalten und Schnittstellen (neue Sync-API, `delete_missing` entfällt, neue Migrationen 8 und 9) und ist damit mindestens ein Minor-Schritt, wegen des entfernten Felds `delete_missing` und der geänderten Antwort von `POST /sources/{id}/sync` für Aufrufer der API ein Bruch.
+9. **Harness (Dateimodus)** gegen das Notes-Format in `docs/techdocs/interfaces.md` bauen bzw. prüfen.
+10. **Aufräumen:** `docs/handover/cloud-sync.md` und diese Datei entfernen.

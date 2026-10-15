@@ -191,7 +191,7 @@ describe("ProjectsSection: switching the primary source and syncing", () => {
 
   it("syncs in both directions unless the run is restricted to one", async () => {
     const section = { created: [], changed: [], unchanged: 0 };
-    const calls = stub([mirrored], [status(mirrored, "mirror_changed")], () => jsonResponse({ executed: false, token: "t", items: section, documents: section, conflicts: [], skipped: [], resolved: [], deleted: [], deferred: [], kept: [] }));
+    const calls = stub([mirrored], [status(mirrored, "mirror_changed")], () => jsonResponse({ executed: false, token: "t", items: section, documents: section, topics: section, notes: section, note_documents: section, conflicts: [], skipped: [], resolved: [], deleted: [], deferred: [], kept: [] }));
     renderWithProviders(<ProjectsSection />);
 
     await userEvent.click(within(await screen.findByRole("group", { name: "Mirrored" })).getByRole("button", { name: "Sync…" }));

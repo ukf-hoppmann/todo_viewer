@@ -17,6 +17,9 @@ const answer = (over: Partial<Out> = {}): Out => ({
   token: "tok-1",
   items: section(),
   documents: section(),
+  topics: section(),
+  notes: section(),
+  note_documents: section(),
   conflicts: [],
   skipped: [],
   resolved: [],
@@ -129,6 +132,100 @@ describe("SyncDialog: syncing a database project", () => {
     await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
 
     expect(await screen.findByText("Der Ordner lässt sich nicht abgleichen; es wurde nichts geändert: Ordner nicht gefunden.")).toBeInTheDocument();
+  });
+});
+
+describe("SyncDialog: notes in the same sync", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const open = () => renderWithProviders(<SyncDialog source={sourceStatus()} mode="sync" onClose={vi.fn()} onSwitched={vi.fn()} />);
+  const withNotes = answer({
+    topics: section({ created: [entry("TOPIC-1", null, "database")], unchanged: 2 }),
+    notes: section({ created: [entry("new-idea", null, "markdown")], changed: [entry("NOTE-3", null, "database")], unchanged: 5 }),
+    note_documents: section({ created: [entry("NOTE-3", "NOTE-3_notes.md", "database")] }),
+  });
+
+  it("shows topics, notes, and documents of notes next to items and documents, each with its counts", async () => {
+    stubApi(server(withNotes));
+    open();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+
+    expect(await screen.findByRole("heading", { name: "Topics" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Notes" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Dokumente der Notes" })).toBeInTheDocument();
+    expect(screen.getByText("1 neu · 0 geändert · 2 unverändert")).toBeInTheDocument();
+    expect(screen.getByText("1 neu · 1 geändert · 5 unverändert")).toBeInTheDocument();
+    expect(screen.getByText("＋ new-idea — Title new-idea ←")).toBeInTheDocument();  // written in the files
+    expect(screen.getByText("＋ NOTE-3 / NOTE-3_notes.md →")).toBeInTheDocument();
+    expect(screen.queryByText("Beide Seiten sind gleich.")).not.toBeInTheDocument();
+  });
+
+  it("leaves out the sections of notes when a project has none, and counts notes as a change", async () => {
+    stubApi(server(answer({ items: section({ unchanged: 3 }) })));
+    open();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+
+    expect(await screen.findByText("Beide Seiten sind gleich.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Notes" })).not.toBeInTheDocument();
+  });
+
+  it("decides a note conflict and a topic conflict like any other, with the body as a text comparison", async () => {
+    const note = {
+      kind: "note" as const, label: "NOTE-7", title: "Prüfen", name: null, reason: "both_changed" as const,
+      database: { fields: [{ name: "summary", value: "Prüfen" }, { name: "body", value: "eins\nzwei" }], text: null },
+      markdown: { fields: [{ name: "summary", value: "Prüfen" }, { name: "body", value: "eins\nZWEI" }], text: null },
+    };
+    const topic = { ...conflict("TOPIC-2"), kind: "topic" as const, database: { fields: [{ name: "name", value: "A" }], text: null },
+      markdown: { fields: [{ name: "name", value: "B" }], text: null } };
+    const calls = stubApi(server(answer({ conflicts: [note, topic] })));
+    open();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+    await userEvent.click((await screen.findAllByRole("button", { name: "Vergleich anzeigen" }))[0]!);
+    expect(screen.getByText(/^− zwei/)).toHaveClass("diff-removed");
+    expect(screen.getByText(/^\+ ZWEI/)).toHaveClass("diff-added");
+    expect(screen.queryByText("summary")).not.toBeInTheDocument();  // equal fields are left out
+    await userEvent.click(within(screen.getByRole("radiogroup", { name: "Entscheidung für NOTE-7 — Prüfen" })).getByRole("radio", { name: "Datei gilt" }));
+    await userEvent.click(within(screen.getByRole("radiogroup", { name: "Entscheidung für TOPIC-2 — Title TOPIC-2" })).getByRole("radio", { name: "Datenbank gilt" }));
+    await userEvent.click(screen.getByRole("button", { name: "Ausführen" }));
+
+    await waitFor(() => expect(calls).toHaveLength(2));
+    expect(calls[1]!.body.resolutions).toEqual([
+      { kind: "note", label: "NOTE-7", name: null, choice: "markdown" },
+      { kind: "topic", label: "TOPIC-2", name: null, choice: "database" },
+    ]);
+  });
+
+  it("compares the text of a note document", async () => {
+    const doc = {
+      kind: "note_document" as const, label: "NOTE-7", title: "Prüfen", name: "NOTE-7_notes.md", reason: "both_changed" as const,
+      database: { fields: null, text: "a\nb" }, markdown: { fields: null, text: "a\nc" },
+    };
+    stubApi(server(answer({ conflicts: [doc] })));
+    open();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Vergleich anzeigen" }));
+
+    expect(screen.getByText(/^− b/)).toHaveClass("diff-removed");
+    expect(screen.getByText(/^\+ c/)).toHaveClass("diff-added");
+  });
+
+  it("translates the errors of the notes folder: a broken file with its line, a file changed meanwhile", async () => {
+    stubApi((_, body) => body.confirm
+      ? jsonResponse({ code: "mirror_conflict", message: "x", details: { file: "NOTE-1.md" } }, 409)
+      : jsonResponse(withNotes));
+    open();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Ausführen" }));
+    expect(await screen.findByText(/Eine Datei im Notes-Ordner hat sich während des Syncs geändert/)).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
+    stubApi(() => jsonResponse({ code: "sync_source_invalid", message: "Nothing was changed: NOTE-1.md, line 3: invalid Status: 'x'", details: { reason: "note_format" } }, 400));
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+    expect(await screen.findByText(/Eine Notes-Datei hält das Format nicht ein.*NOTE-1\.md, line 3/)).toBeInTheDocument();
   });
 });
 

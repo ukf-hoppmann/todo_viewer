@@ -92,3 +92,17 @@ def test_a_broken_notes_file_stops_the_sync_with_its_line(notes_api, workspace):
 
     assert resp.status_code == 400 and resp.body["code"] == "sync_source_invalid"
     assert resp.body["details"]["reason"] == "note_format" and "line 3" in resp.body["message"]
+
+
+def test_the_status_shows_a_notes_file_that_changed_outside(notes_api, workspace):
+    sid = _sources(notes_api, workspace)
+    notes_api.post(f"{BASE}/notes", {"summary": "an idea"})
+    _confirm(notes_api, sid)
+    status = f"/api/v2/sources/{sid}/sync-status"
+    assert notes_api.get(status).body["state"] == "in_sync"
+
+    file = workspace.root / "md" / "notes" / "NOTE-001.md"
+    file.write_text(file.read_text(encoding="utf-8").replace("Summary: an idea", "Summary: edited by an AI"),
+                    encoding="utf-8")
+
+    assert notes_api.get(status).body["state"] == "mirror_changed"

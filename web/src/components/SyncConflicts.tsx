@@ -58,7 +58,7 @@ function ConflictRow({ conflict, choice, onChoose }: { conflict: SyncConflict; c
 function ConflictDiff({ conflict }: { conflict: SyncConflict }) {
   const { t } = useI18n();
   const missing = <em>{t("sync.compare.missing")}</em>;
-  if (conflict.kind === "document") {
+  if (conflict.kind === "document" || conflict.kind === "note_document") {
     const lines = diffLines(conflict.database?.text ?? null, conflict.markdown?.text ?? null);
     return (
       <div className="sync-diff">

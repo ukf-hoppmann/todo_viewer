@@ -191,7 +191,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     `confirm` ist der Aufruf eine Vorschau und ändert nichts: `items` und
     `documents` mit `created` und `changed` (je Eintrag `origin`: `database` oder
     `markdown`, die Seite, deren Fassung übertragen wird) und `unchanged`
-    (Anzahl); `conflicts` mit je `kind` (`item`/`document`), `label`, `name`,
+    (Anzahl); `conflicts` mit je `kind` (`item`, `document`, `topic`, `note`, `note_document`), `label`, `name`,
     `reason` (`both_changed`: seit dem letzten Sync auf beiden Seiten geändert,
     `both_new`: auf beiden Seiten neu mit verschiedenem Inhalt,
     `database_deleted`/`markdown_deleted`: auf dieser Seite seit dem letzten Sync
@@ -300,7 +300,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 400 | `bad_request` (Validierung, auch unbekannte Felder), `sync_path_missing` (Projekt hat keinen `sync_path`), `sync_source_invalid` (Quelle oder Ziel des Syncs nicht lesbar), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `file_not_found`, `item_not_found` |
-| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `sync_required` (Backend per `PUT` umstellen, obwohl die Seiten sich unterscheiden), `backup_failed` (Backend per `PUT` umstellen, aber das Backup der bisherigen Primärquelle schlug fehl; `details.reason`, nichts geändert), `sync_same_backend` (Markdown-Projekt mit `to_md`: Markdown-Projekte lassen sich nur in die Datenbank lesen), `sync_stale` (Sync: eine Seite oder der gespeicherte Syncstand änderte sich seit der Vorschau), `auto_sync_needs_mirror` (400: Auto-Sync einschalten ohne Spiegel), `database_backup_failed` (die automatische Sicherung der Datenbank vor einem Sync oder einer Migration schlug fehl; `details.reason`, nichts geändert) |
+| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `sync_required` (Backend per `PUT` umstellen, obwohl die Seiten sich unterscheiden), `backup_failed` (Backend per `PUT` umstellen, aber das Backup der bisherigen Primärquelle schlug fehl; `details.reason`, nichts geändert), `sync_same_backend` (Markdown-Projekt mit `to_md`: Markdown-Projekte lassen sich nur in die Datenbank lesen), `sync_stale` (Sync: eine Seite oder der gespeicherte Syncstand änderte sich seit der Vorschau), `mirror_conflict` (Notes-Sync: eine Datei im Ordner `notes/` änderte sich zwischen Lesen und Schreiben), `auto_sync_needs_mirror` (400: Auto-Sync einschalten ohne Spiegel), `database_backup_failed` (die automatische Sicherung der Datenbank vor einem Sync oder einer Migration schlug fehl; `details.reason`, nichts geändert) |
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 
@@ -557,6 +557,75 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   (temporäre Datei + Umbenennen); Zeilenenden (LF/CRLF) bleiben erhalten.
 - Fehler: siehe `version_conflict`, `file_changed`, `duplicate_item`. Nicht lesbare Quellen erscheinen
   mit `problem` in `GET /backlog`.
+
+## Dateiformat: Notes-Ordner (Spiegel der Notes)
+
+Die Notes eines Projekts laufen im selben Sync wie der Backlog (`POST /sources/{id}/sync`, siehe oben): die
+Dateiseite ist der Ordner `notes/` im Markdown-Ordner des Projekts (`markdown_path`), die Datenbank hält die Wahrheit.
+Er enthält nur diese Dateien, andere werden nicht gelesen. Ein Eintrag je Zeile, damit Git sauber zusammenführt.
+Feldnamen sind englisch, Zeitpunkte UTC mit `Z` (Bruchteile von Sekunden nur, wo es welche gibt). Beschrieben in
+`backend/todo_viewer/domain/notes_markdown.py`, gepinnt durch die Golden-Files in `backend/tests/golden/notes/`.
+
+| Datei | Inhalt |
+|---|---|
+| `NOTE-001.md` | Eine Note: Kopf, Auslöser, Links, Langtext (siehe unten) |
+| `NOTE-001_notes.md`, `NOTE-001_spec.md`, `NOTE-001_spec_<topic>.md` | Die Dokumente der Note, als Text unverändert |
+| `new-<kurzname>.md` (+ `new-<kurzname>_notes.md` …) | Eine in den Dateien angelegte Note ohne Label (Claude in der Cloud); erste Zeile `# NEW` |
+| `topics.md` | Alle Topics als eingerückte Liste |
+| `counters.md` | Die höchste je vergebene Nummer je Typ |
+
+```
+# NOTE-001
+Summary: <eine Zeile>
+Status: waiting            # waiting, due, snoozed, done, dropped, promoted
+Topic: TOPIC-001           # Label; leer = keins; new:<Name> = Topic ohne Label aus topics.md
+Review: 2026-11-07T08:00:00Z
+Mode: any                  # any oder all
+Created: 2026-10-01T09:30:00Z
+Updated: 2026-10-12T08:00:00Z
+Archived: false
+Deleted:                   # Zeitpunkt, wenn im Papierkorb
+Triggers:
+- time 2026-10-12T08:00:00Z [fired 2026-10-12T08:00:00Z]
+- event Mein Projekt:STORY-003 Completed [fired 2026-10-12T08:00:00Z] [already_met]
+- topic_due
+Links:
+- reference Mein Projekt:STORY-004
+- reference topic:TOPIC-002
+- reference note:NOTE-007
+- origin Mein Projekt:STORY-009
+
+<Langtext, Markdown, unverändert>
+```
+
+`Triggers:` und `Links:` fehlen, wenn es keine gibt; der Langtext folgt nach einer Leerzeile und endet die Datei,
+wenn er leer ist. Links der Rolle `trigger` stehen nicht in `Links:`, sie ergeben sich aus den `event`-Auslösern.
+`Created`/`Updated` dürfen bei einer Note ohne Label fehlen (der Import setzt den Zeitpunkt). Ein Projektname mit
+`topic` oder `note` als ganzem Namen ist als Link-Ziel nicht von `topic:`/`note:` zu unterscheiden.
+Zeilenenden (`\n` oder `\r\n`) bleiben, wie sie in der Datei sind.
+
+`topics.md`: `- TOPIC-001 | <Name> | due=<Zeitpunkt> | created=<Zeitpunkt> | deleted=<Zeitpunkt>`, zwei Leerzeichen
+Einrückung je Ebene (Kinder unter ihrem Parent); in Namen stehen `|` als `\|`, `\` als `\\` und Zeilenumbruch als
+`\n`. Ein Topic ohne Label: `- NEW | <Name> | due=…`. `counters.md`: `NOTE: 15` und `TOPIC: 7`.
+
+Verhalten im Sync (TASK-026): Topics, Notes und Note-Dokumente sind Einträge der Arten `topic`, `note`, `note_document`
+im Stand je Eintrag, mit denselben Konflikten und Entscheidungen (`resolutions[].kind`). Eine Note im Papierkorb
+oder Archiv bleibt eine Datei (`Deleted:`/`Archived:`). Eine endgültig gelöschte Note hat keine Datei; fehlt eine
+Datei, die im Stand vorkommt, ist das ein Konflikt „im Ordner gelöscht“, gelöscht wird nur mit Entscheidung.
+Labels vergibt nur die Datenbank: beim Import bekommt eine Note oder ein Topic ohne Label das nächste freie Label
+des Projekts, Verweise darauf (`note:new-…`, `Topic: new:<Name>`) werden mit umgeschrieben, die Datei heißt danach
+`NOTE-xxx.md` (sie wird im selben Lauf umbenannt, dazu muss der Ordner beschreibbar sein: bei `direction: from_md`
+werden Einträge ohne Label nicht übernommen). Der Zähler der Datenbank ist danach mindestens das Maximum aus
+Datenbank, `counters.md` und dem höchsten vorkommenden Label; `counters.md` wird mit den Notes geschrieben, ist aber
+selbst kein Vergleichseintrag. Links auf unbekannte Projekte oder Labels bleiben erhalten. Topics tiefer als
+`notes.max_topic_depth` werden eingelesen. Ein Formatfehler (unbekannte Kopfzeile, ungültiger Status oder Zeitpunkt,
+Dateiname und Label verschieden) bricht den Sync vor jeder Änderung ab: 400 `sync_source_invalid`,
+`details.reason` = `note_format`, die Meldung nennt Datei und Zeile. Ändert sich eine Datei zwischen Lesen und
+Schreiben, antwortet der Sync mit 409 `mirror_conflict`; nichts wird überschrieben. Nicht gespiegelt:
+Änderungshinweise, Projektliste, UI-Zustand, Notes-Einstellungen. Der Gesamtstand (`state`, Fingerabdrücke) und
+`conflicts` umfassen die Notes; bestehende Stände von Projekten mit Notes gelten deshalb einmalig als geändert, bis
+zum nächsten Sync. Vor einem Sync, der Notes in die Datenbank schreibt, entsteht ein Backup. Der Auto-Sync deckt
+die Notes mit ab (dasselbe Verfahren).
 
 ## CLI: `todo.sh`
 

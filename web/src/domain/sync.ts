@@ -8,14 +8,35 @@ export type SyncState = Schemas["SyncStatusOut"]["state"];
 /** "sync" only copies; "switch" copies and then moves the project to the other backend. */
 export type SyncMode = "sync" | "switch";
 
-const sections = (p: SyncPreview) => [p.items, p.documents];
+/** The kinds of entries a sync compares, in the order the preview lists them. */
+export const SYNC_KINDS = ["items", "documents", "topics", "notes", "note_documents"] as const;
+export type SyncKind = (typeof SYNC_KINDS)[number];
 
-/** How many items and documents a sync would carry over: new on one side or changed on one side only. */
+const sections = (p: SyncPreview) => SYNC_KINDS.map((kind) => p[kind]);
+
+/** The kinds that have anything to show; items and documents are always shown. */
+export function visibleKinds(p: SyncPreview): SyncKind[] {
+  return SYNC_KINDS.filter((kind) => kind === "items" || kind === "documents" || sectionSize(p[kind]) > 0);
+}
+
+const sectionSize = (s: Schemas["SyncSectionOut"]) => s.created.length + s.changed.length + s.unchanged;
+
+/** Created, changed, and unchanged entries of each kind and in total (the numbers of a preview). */
+export function summarizePreview(p: SyncPreview): Record<SyncKind | "total", { created: number; changed: number; unchanged: number }> {
+  const count = (s: Schemas["SyncSectionOut"]) => ({ created: s.created.length, changed: s.changed.length, unchanged: s.unchanged });
+  const result = Object.fromEntries(SYNC_KINDS.map((kind) => [kind, count(p[kind])])) as Record<SyncKind, ReturnType<typeof count>>;
+  const total = SYNC_KINDS.reduce((sum, kind) => ({
+    created: sum.created + result[kind].created, changed: sum.changed + result[kind].changed, unchanged: sum.unchanged + result[kind].unchanged,
+  }), { created: 0, changed: 0, unchanged: 0 });
+  return { ...result, total };
+}
+
+/** How many entries (items, documents, topics, notes, note documents) a sync would carry over: new on one side or changed on one side only. */
 export function changeCount(p: SyncPreview): number {
   return sections(p).reduce((sum, s) => sum + s.created.length + s.changed.length, 0);
 }
 
-/** Entries that need a decision: nothing of them is touched until the owner decides. */
+/** Entries (of any kind, notes included) that need a decision: nothing of them is touched until the owner decides. */
 export function conflictCount(p: SyncPreview): number {
   return p.conflicts.length;
 }

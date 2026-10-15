@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { Schemas, SourceStatus } from "./api/client";
-import { useDueCount, useRemoveSource, useSyncStatuses } from "./api/queries";
+import { useDueCount, useReloadOnAutoSync, useRemoveSource, useSyncStatuses } from "./api/queries";
 import { CreateItemDialog } from "./components/CreateItemDialog";
 import { DetailPanel } from "./components/DetailPanel";
 import { DueModal } from "./components/DueModal";
@@ -51,7 +51,8 @@ export function App() {
       document.title = baseTitle;
     };
   }, [baseTitle, dueCount]);
-  const syncStatuses = useSyncStatuses();
+  const syncStatuses = useSyncStatuses(usePollingPaused());
+  useReloadOnAutoSync(syncStatuses.data);
   const syncConflicts = useMemo(() => new Map<string, number>(syncStatuses.data?.map((s) => [s.source_id, s.conflicts])), [syncStatuses.data]);
   const syncStates = useMemo(() => new Map<string, SyncState>(syncStatuses.data?.map((s) => [s.source_id, s.state])), [syncStatuses.data]);
   // Kept here, not in the detail panel: the panel is rebuilt when the selection moves to the new id.

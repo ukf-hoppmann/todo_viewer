@@ -1,5 +1,6 @@
 // TanStack Query hooks: the only place components talk to the API.
 import { keepPreviousData, type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { api, type ItemFields, type Schemas, unwrap } from "./client";
 
 export const POLL_INTERVAL_MS = 5000;
@@ -32,10 +33,28 @@ export function useSourceList() {
 
 /**
  * Which side of each project with a mirror changed since its last sync. Reading it makes the server read both sides,
- * so it is asked for on load, on window focus, by hand (`refetch`) and after a sync or change of a project, never on a timer.
+ * so it is asked for on load, on window focus, by hand (`refetch`) and after a sync or change of a project. The one timer:
+ * every minute while a project has the automatic sync on (and polling is not paused), so its runs show up.
  */
-export function useSyncStatuses() {
-  return useQuery({ queryKey: keys.syncStatus, queryFn: () => unwrap(api.GET("/api/v2/sync-status")) });
+export const SYNC_STATUS_INTERVAL_MS = 60_000;
+
+export function useSyncStatuses(paused = false) {
+  return useQuery({
+    queryKey: keys.syncStatus,
+    queryFn: () => unwrap(api.GET("/api/v2/sync-status")),
+    refetchInterval: (query) => (!paused && query.state.data?.some((s) => s.auto_sync) ? SYNC_STATUS_INTERVAL_MS : false),
+  });
+}
+
+/** Reads the projects and items again when the automatic sync has carried something over since the last look. */
+export function useReloadOnAutoSync(statuses: { auto_last_run_at: string | null }[] | undefined) {
+  const client = useQueryClient();
+  const last = (statuses ?? []).map((s) => s.auto_last_run_at ?? "").join("|");
+  const seen = useRef<string | null>(null);
+  useEffect(() => {
+    if (seen.current !== null && seen.current !== last) void client.invalidateQueries({ queryKey: keys.backlog });
+    seen.current = last;
+  }, [client, last]);
 }
 
 /** After anything that changes a project or its sides: the projects and their sync state are read again. */

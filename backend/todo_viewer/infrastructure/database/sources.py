@@ -50,6 +50,7 @@ def read_sources(conn: sa.Connection) -> list[Source]:
     rows = conn.execute(sa.select(projects).where(projects.c.name.is_not(None)).order_by(projects.c.position))
     return [Source(project=row.name, path=row.path or "", backend=row.backend, id=row.id, sync_path=row.sync_path,
                    mirror_database=bool(row.mirror_database), mirror_disabled=bool(row.mirror_disabled),
+                   auto_sync=bool(row.auto_sync),
                    baseline=_baseline(row),
                    extra=json.loads(row.extra) if row.extra else {}) for row in rows]
 
@@ -72,7 +73,8 @@ def write_sources(conn: sa.Connection, before: list[Source], after: list[Source]
     existing: set[str] = set(conn.execute(sa.select(projects.c.id)).scalars())
     for position, source in enumerate(after):
         values = dict(name=source.project, backend=source.backend, path=source.path, sync_path=source.sync_path,
-                      mirror_database=source.mirror_database, mirror_disabled=source.mirror_disabled, position=position,
+                      mirror_database=source.mirror_database, mirror_disabled=source.mirror_disabled, auto_sync=source.auto_sync,
+                      position=position,
                       **_baseline_values(source.baseline),
                       extra=json.dumps(source.extra, ensure_ascii=False) if source.extra else None)
         if source.id in existing:

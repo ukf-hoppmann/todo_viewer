@@ -10,7 +10,13 @@ from pathlib import Path
 import sqlalchemy as sa
 import structlog
 
-from todo_viewer.domain.database_backup import KEEP_AUTOMATIC, backup_file_name, backups_to_remove
+from todo_viewer.domain.database_backup import (
+    KEEP_AUTOMATIC,
+    REASON_AUTO,
+    backup_file_name,
+    backups_to_remove,
+    recent_backup,
+)
 from todo_viewer.domain.errors import DatabaseBackupFailedError
 
 log = structlog.get_logger(__name__)
@@ -40,6 +46,10 @@ class SqliteFileBackup:
         if not self._database.is_file() or self._database.stat().st_size == 0:
             return None
         try:
+            if reason == REASON_AUTO and self._folder.is_dir():  # an automatic run backs up at most once an hour
+                young = recent_backup((p.name for p in self._folder.iterdir()), self._clock())
+                if young:
+                    return str(self._folder / young)
             target = self._unused(reason)
             self._folder.mkdir(parents=True, exist_ok=True)
             partial = target.with_name(target.name + ".partial")
@@ -78,7 +88,7 @@ class SqliteFileBackup:
             source.close()
 
     def _prune(self) -> None:
-        for name in backups_to_remove(p.name for p in self._folder.iterdir()):
+        for name in backups_to_remove((p.name for p in self._folder.iterdir()), self._keep, self._clock()):
             with contextlib.suppress(OSError):
                 (self._folder / name).unlink()
 

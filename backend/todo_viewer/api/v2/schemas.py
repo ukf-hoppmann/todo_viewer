@@ -159,6 +159,7 @@ class SourceOut(BaseModel):
                     "database project; null if a database project has none")
     mirror: Literal["none", "markdown", "database"] = Field(
         description="The other side kept as a mirror; it is written by a sync only")
+    auto_sync: bool = Field(description="The owner's switch for the automatic sync; it acts only while there is a mirror")
 
     @classmethod
     def of(cls, source: Source) -> SourceOut:
@@ -167,7 +168,7 @@ class SourceOut(BaseModel):
                    sync_path=source.sync_path,
                    primary=source.backend,  # type: ignore[arg-type]
                    markdown_path=source.markdown_path,
-                   mirror=source.mirror)  # type: ignore[arg-type]
+                   mirror=source.mirror, auto_sync=source.auto_sync)  # type: ignore[arg-type]
 
 
 class SourceStatusOut(SourceOut):
@@ -283,6 +284,10 @@ class SourceIn(BaseModel):
                           "the database mirror of a markdown project off deletes the copy in the database; switching "
                           "the markdown mirror of a database project off keeps its sync_path (send it again), so "
                           "switching it on needs no new folder. Not read when the backend changes")
+    auto_sync: bool | None = Field(
+        None, description="The owner's switch for the automatic sync of this project (default off): the viewer then "
+                          "syncs it by itself, carrying only conflict-free changes and never deleting. Needs a mirror "
+                          "(400 auto_sync_needs_mirror); unset leaves it as it is")
 
 
 class BacklogCreateIn(BaseModel):

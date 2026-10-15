@@ -2426,6 +2426,18 @@
       },
       "SourceIn": {
         "properties": {
+          "auto_sync": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The owner's switch for the automatic sync of this project (default off): the viewer then syncs it by itself, carrying only conflict-free changes and never deleting. Needs a mirror (400 auto_sync_needs_mirror); unset leaves it as it is",
+            "title": "Auto Sync"
+          },
           "backend": {
             "anyOf": [
               {
@@ -2495,6 +2507,11 @@
       },
       "SourceOut": {
         "properties": {
+          "auto_sync": {
+            "description": "The owner's switch for the automatic sync; it acts only while there is a mirror",
+            "title": "Auto Sync",
+            "type": "boolean"
+          },
           "backend": {
             "enum": [
               "markdown",
@@ -2568,13 +2585,19 @@
           "sync_path",
           "primary",
           "markdown_path",
-          "mirror"
+          "mirror",
+          "auto_sync"
         ],
         "title": "SourceOut",
         "type": "object"
       },
       "SourceStatusOut": {
         "properties": {
+          "auto_sync": {
+            "description": "The owner's switch for the automatic sync; it acts only while there is a mirror",
+            "title": "Auto Sync",
+            "type": "boolean"
+          },
           "backend": {
             "enum": [
               "markdown",
@@ -2663,6 +2686,7 @@
           "primary",
           "markdown_path",
           "mirror",
+          "auto_sync",
           "item_count",
           "problem"
         ],

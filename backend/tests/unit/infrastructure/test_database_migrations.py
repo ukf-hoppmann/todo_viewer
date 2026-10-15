@@ -96,3 +96,19 @@ def test_a_database_from_before_the_sync_state_gets_its_table_and_keeps_its_data
 
     assert version == CURRENT_VERSION >= 8
     assert [tuple(r) for r in kept] == [("old", "p0", "m0")] and entries == 0
+
+
+def test_projects_from_before_the_automatic_sync_get_the_switch_off(tmp_path: Path):
+    db = _db(tmp_path)
+    with db.engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE schema_version (version INTEGER NOT NULL)"))
+        conn.execute(sa.text("INSERT INTO schema_version (version) VALUES (8)"))
+        for number in range(1, 9):
+            for statement in MIGRATIONS[number]:
+                conn.execute(sa.text(statement))
+        conn.execute(sa.text("INSERT INTO projects (id, name, backend, path, position) VALUES ('p', 'P', 'markdown', '/p', 0)"))
+
+    with db.begin() as conn:
+        switches = list(conn.execute(sa.text("SELECT auto_sync FROM projects")).scalars())
+
+    assert switches == [0] and CURRENT_VERSION >= 9

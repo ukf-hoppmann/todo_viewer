@@ -2,6 +2,7 @@
   "items": [],
   "sources": [
     {
+      "auto_sync": false,
       "backend": "markdown",
       "id": "<SOURCE0>",
       "item_count": 0,
@@ -17,6 +18,7 @@
       "sync_path": null
     },
     {
+      "auto_sync": false,
       "backend": "markdown",
       "id": "<SOURCE1>",
       "item_count": 0,
@@ -32,6 +34,7 @@
       "sync_path": null
     },
     {
+      "auto_sync": false,
       "backend": "markdown",
       "id": "<SOURCE2>",
       "item_count": 0,

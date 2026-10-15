@@ -148,3 +148,47 @@ def test_a_failed_backup_stops_the_migration_and_is_tried_again(tmp_path: Path):
 
     assert db.describe().schema_version == CURRENT_VERSION
     assert len(attempts) == 2
+
+
+# --- automatic runs (STORY-059) ---
+
+def test_an_automatic_run_makes_at_most_one_backup_an_hour(tmp_path: Path):
+    path = _database(tmp_path)
+    now = [AT]
+    backup = SqliteFileBackup(path, tmp_path / "backups", clock=lambda: now[0])
+
+    first = backup.create("auto")
+    now[0] = AT.replace(minute=50)
+    again = backup.create("auto")
+    now[0] = AT.replace(hour=16, minute=40)
+    later = backup.create("auto")
+
+    assert again == first and later != first
+    assert sorted(p.name for p in (tmp_path / "backups").iterdir()) == ["todo-20261014-152748-auto.db",
+                                                                         "todo-20261014-164048-auto.db"]
+
+
+def test_a_manual_sync_always_makes_its_backup_even_right_after_an_automatic_one(tmp_path: Path):
+    path = _database(tmp_path)
+    backup = _backup(tmp_path, path)
+
+    backup.create("auto")
+    backup.create("sync")
+
+    assert sorted(p.name for p in (tmp_path / "backups").iterdir()) == ["todo-20261014-152748-auto.db",
+                                                                         "todo-20261014-152748-sync.db"]
+
+
+def test_frequent_automatic_backups_do_not_push_out_the_one_of_an_earlier_day(tmp_path: Path):
+    path = _database(tmp_path)
+    folder = tmp_path / "backups"
+    folder.mkdir()
+    old = folder / backup_file_name(datetime(2026, 10, 10, 8, 0, 0), "auto")
+    old.write_bytes(b"old")
+    for hour in range(1, 12):
+        (folder / backup_file_name(datetime(2026, 10, 14, hour, 0, 0), "auto")).write_bytes(b"x")
+
+    _backup(tmp_path, path).create("sync")
+
+    assert old.exists()
+    assert len([p for p in folder.iterdir() if p.name.startswith("todo-20261014")]) == 10

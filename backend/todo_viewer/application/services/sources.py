@@ -6,6 +6,7 @@ from collections.abc import Callable
 from typing import Protocol
 
 from todo_viewer.domain.errors import (
+    AutoSyncNeedsMirrorError,
     DuplicateSourceError,
     InvalidSourceError,
     InvalidValueError,
@@ -59,7 +60,7 @@ class SourceService:
         return self._sources.all()
 
     def add(self, path: str, project: str | None, backend: str = "markdown", sync_path: str | None = None,
-            mirror: str | None = None) -> Source:
+            mirror: str | None = None, auto_sync: bool | None = None) -> Source:
         """A markdown project is registered by its folder; a database project needs a name only.
 
         `mirror` names the other side to keep: "database" for a markdown project, "markdown" (needs `sync_path`)
@@ -67,6 +68,7 @@ class SourceService:
         """
         source = self._mirrored(dataclasses.replace(self._validated(path, project, backend), id=self._new_id(),
                                                     sync_path=_optional_path(sync_path)), mirror)
+        source = self._auto_synced(source, auto_sync)
         with self._sources.edit() as sources:
             if self._taken(sources, source.path):
                 raise DuplicateSourceError()
@@ -85,7 +87,7 @@ class SourceService:
         return source
 
     def update(self, source_id: str, path: str, project: str | None, backend: str | None = None,
-               sync_path: str | None = None, mirror: str | None = None) -> Source:
+               sync_path: str | None = None, mirror: str | None = None, auto_sync: bool | None = None) -> Source:
         """Changes name, folder, sync folder, and mirror; with another `backend` the project is moved there instead.
 
         A move needs both sides in sync (SyncRequiredError otherwise): sync first, then switch. The project keeps
@@ -111,7 +113,7 @@ class SourceService:
                 raise DuplicateSourceError()
             changed = dataclasses.replace(current.updated(candidate.project, candidate.path),
                                           sync_path=_optional_path(sync_path))
-            changed = self._mirrored(changed, mirror)
+            changed = self._auto_synced(self._mirrored(changed, mirror), auto_sync)
             if (changed.markdown_path, changed.mirror) != (current.markdown_path, current.mirror):
                 changed = dataclasses.replace(changed, baseline=None)  # a side is another one: no last sync to compare
             sources[index] = changed
@@ -136,6 +138,15 @@ class SourceService:
             raise DuplicateSourceError()
         self._backup.create(current)
         return moved
+
+    @staticmethod
+    def _auto_synced(source: Source, auto_sync: bool | None) -> Source:
+        """`source` with the automatic sync switched on or off; None leaves it as it is. On needs a mirror."""
+        if auto_sync is None:
+            return source
+        if auto_sync and source.mirror == "none":
+            raise AutoSyncNeedsMirrorError()
+        return dataclasses.replace(source, auto_sync=auto_sync)
 
     @staticmethod
     def _mirrored(source: Source, mirror: str | None) -> Source:

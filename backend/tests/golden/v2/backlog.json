@@ -224,6 +224,7 @@
   ],
   "sources": [
     {
+      "auto_sync": false,
       "backend": "markdown",
       "id": "<SOURCE0>",
       "item_count": 7,
@@ -236,6 +237,7 @@
       "sync_path": null
     },
     {
+      "auto_sync": false,
       "backend": "markdown",
       "id": "<SOURCE1>",
       "item_count": 1,

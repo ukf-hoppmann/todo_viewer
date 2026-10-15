@@ -179,6 +179,10 @@ MIGRATIONS: dict[int, list[str]] = {
             PRIMARY KEY (project_id, folder, kind, label, name)
         )""",
     ],
+    # The owner's switch for the automatic sync of a project; existing projects keep it off.
+    9: [
+        "ALTER TABLE projects ADD COLUMN auto_sync BOOLEAN NOT NULL DEFAULT 0",
+    ],
 }
 
 CURRENT_VERSION = max(MIGRATIONS)

@@ -127,3 +127,20 @@ def test_an_emptied_folder_really_removes_it(api, workspace):
     gone = api.put(f"/api/v2/sources/{sid}", {"backend": "database", "project": "Central", "sync_path": ""}).body
 
     assert _view(gone) == ("database", None, "none")
+
+
+def test_the_automatic_sync_is_a_switch_per_project_that_needs_a_mirror(api, workspace):
+    sid = api.post("/api/v2/sources", {"backend": "database", "project": "Central"}).body["id"]
+    assert api.get("/api/v2/sources").body[0]["auto_sync"] is False
+
+    refused = api.put(f"/api/v2/sources/{sid}", {"backend": None, "project": "Central", "auto_sync": True})
+    assert (refused.status_code, refused.body["code"]) == (400, "auto_sync_needs_mirror")
+
+    on = api.put(f"/api/v2/sources/{sid}", {"project": "Central", "sync_path": str(workspace.root / "md"),
+                                            "mirror": "markdown", "auto_sync": True})
+    assert on.status_code == 200 and on.body["auto_sync"] is True
+    kept = api.put(f"/api/v2/sources/{sid}", {"project": "Central", "sync_path": str(workspace.root / "md")})
+    assert kept.body["auto_sync"] is True
+    off = api.put(f"/api/v2/sources/{sid}", {"project": "Central", "sync_path": str(workspace.root / "md"),
+                                             "auto_sync": False})
+    assert off.body["auto_sync"] is False

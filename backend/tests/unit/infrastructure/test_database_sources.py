@@ -237,3 +237,11 @@ def test_projects_of_a_v4_database_keep_their_mirror_folder_switched_on(tmp_path
 
     [old] = DatabaseSourceRepository(Database(str(engine.url))).all()
     assert (old.sync_path, old.mirror_disabled, old.mirror) == ("/md", False, "markdown")
+
+
+def test_the_switch_of_the_automatic_sync_is_stored_and_off_for_a_project_from_before(db: Database):
+    repo = DatabaseSourceRepository(db)
+    with repo.edit() as sources:
+        sources += [dataclasses.replace(CENTRAL, auto_sync=True), FILES]
+
+    assert [s.auto_sync for s in repo.all()] == [True, False]

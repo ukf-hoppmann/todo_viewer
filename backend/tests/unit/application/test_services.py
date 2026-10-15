@@ -14,6 +14,7 @@ from todo_viewer.domain.backlog import Backlog
 from todo_viewer.domain.creation import ItemFactory
 from todo_viewer.domain.editing import ChangeSet, EditPlanner
 from todo_viewer.domain.errors import (
+    AutoSyncNeedsMirrorError,
     BackupFailedError,
     ConfigMissingError,
     DocumentNotFoundError,
@@ -781,3 +782,42 @@ def test_retype_restores_the_folder_if_the_backlog_cannot_be_written():
         ("STORY-001", "TASK-003", {"STORY-001_notes.md": "TASK-003_notes.md"}),
         ("TASK-003", "STORY-001", {"TASK-003_notes.md": "STORY-001_notes.md"})]
     assert documents.files == {"STORY-001/STORY-001_notes.md": "# STORY-001\n"}
+
+
+# --- the switch of the automatic sync (STORY-059) ---
+
+def test_the_automatic_sync_is_off_by_default_and_switched_on_and_off_only_when_asked():
+    service, repo = _sources([Source("A", "/a", id="a", mirror_database=True)])
+
+    on = service.update("a", "/a", None, auto_sync=True)
+    kept = service.update("a", "/a", "Renamed")
+    off = service.update("a", "/a", None, auto_sync=False)
+
+    assert (on.auto_sync, kept.auto_sync, off.auto_sync) == (True, True, False)
+    assert Source("A", "/a").auto_sync is False and repo.sources == [off]
+
+
+def test_the_automatic_sync_needs_a_mirror():
+    service, repo = _sources([Source("A", "/a", id="a")])
+
+    with pytest.raises(AutoSyncNeedsMirrorError) as error:
+        service.update("a", "/a", None, auto_sync=True)
+
+    assert error.value.code == "auto_sync_needs_mirror" and repo.sources[0].auto_sync is False
+
+
+def test_the_automatic_sync_only_acts_while_there_is_a_mirror():
+    service, _ = _sources([Source("A", "/a", id="a", mirror_database=True)])
+
+    on = service.update("a", "/a", None, auto_sync=True)
+    no_mirror = service.update("a", "/a", None, mirror="none")
+
+    assert (on.auto_sync_active, no_mirror.auto_sync, no_mirror.auto_sync_active) == (True, True, False)
+
+
+def test_a_new_project_can_start_with_the_switch_on():
+    service, _ = _sources()
+
+    added = service.add("/repo/docs", "P", mirror="database", auto_sync=True)
+
+    assert added.auto_sync is True

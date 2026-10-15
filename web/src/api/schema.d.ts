@@ -2084,6 +2084,11 @@ export interface components {
         /** SourceIn */
         SourceIn: {
             /**
+             * Auto Sync
+             * @description The owner's switch for the automatic sync of this project (default off): the viewer then syncs it by itself, carrying only conflict-free changes and never deleting. Needs a mirror (400 auto_sync_needs_mirror); unset leaves it as it is
+             */
+            auto_sync?: boolean | null;
+            /**
              * Backend
              * @description Where the project is stored; on create default markdown. On update another value moves the project there (path and sync_path are then ignored): only when both sides are in sync, else 409 sync_required
              */
@@ -2112,6 +2117,11 @@ export interface components {
         };
         /** SourceOut */
         SourceOut: {
+            /**
+             * Auto Sync
+             * @description The owner's switch for the automatic sync; it acts only while there is a mirror
+             */
+            auto_sync: boolean;
             /**
              * Backend
              * @enum {string}
@@ -2151,6 +2161,11 @@ export interface components {
         };
         /** SourceStatusOut */
         SourceStatusOut: {
+            /**
+             * Auto Sync
+             * @description The owner's switch for the automatic sync; it acts only while there is a mirror
+             */
+            auto_sync: boolean;
             /**
              * Backend
              * @enum {string}

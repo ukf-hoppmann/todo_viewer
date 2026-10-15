@@ -165,6 +165,13 @@ class InvalidSourceError(DomainError):
 
 # --- sync ---
 
+class AutoSyncNeedsMirrorError(InvalidSourceError):
+    code = "auto_sync_needs_mirror"
+
+    def __init__(self) -> None:
+        super().__init__("The automatic sync needs a mirror to sync with. Set one first.")
+
+
 class SyncPathMissingError(InvalidSourceError):
     code = "sync_path_missing"
 

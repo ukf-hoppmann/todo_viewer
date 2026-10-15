@@ -62,7 +62,7 @@ Die Cloud-Sitzung füllt diese Datei je Block aus. Der Besitzer überträgt sie 
   - Die Version von Items wird auf beiden Seiten gleich berechnet (`Item.version`; vorhandener Test Export → Import → Export gleiche Versionen); die Stop-Bedingung trat nicht ein.
   - Item-Reihenfolge: eine Seite behält ihre Reihenfolge, übernommene Einträge ersetzen an Ort und Stelle, neue folgen ihrem Vorgänger der anderen Seite (`merged_items`).
 - Neue Routen/Felder: `GET /sources/{id}/sync-status` und `GET /sync-status` liefern zusätzlich `conflicts`; Migration 8.
-- Offene Fragen: `state` bleibt `in_sync`, solange nur aufgeschobene Konflikte offen sind (der Gesamtstand zählt das nicht als Änderung); die UI muss `conflicts` zusätzlich zeigen (STORY-058/059). Soll `state` stattdessen etwas wie `conflicts` melden?
+- Offene Fragen: `state` bleibt `in_sync`, solange nur aufgeschobene Konflikte offen sind (der Gesamtstand zählt das nicht als Änderung); die UI muss `conflicts` zusätzlich zeigen (STORY-058/059). Entschieden (Besitzer): `state` meldet bei offenen Konflikten `conflicts`; gebaut.
 - Nicht getestet: Migration 8 an der Kopie der echten Datenbank; Laufzeit bei sehr vielen Einträgen (der Stand wird beim ersten Lauf für jeden Eintrag geschrieben, beim Status wird er für jede Anfrage geladen).
 
 #### TASK-033 — Konflikte entscheiden
@@ -177,7 +177,7 @@ Die Cloud-Sitzung füllt diese Datei je Block aus. Der Besitzer überträgt sie 
   - Format-Fehler brechen den Sync vor jeder Änderung ab (`sync_source_invalid`, `reason=note_format`).
   - Die Notes laufen im selben Backup-Schritt: jeder Lauf, der in die Datenbank schreibt, sichert vorher (auch Notes).
 - Neue Routen, Fehlercodes, Konfiguration, Migrationen: Antwort von `POST /sources/{id}/sync` mit `topics`, `notes`, `note_documents`; `resolutions[].kind` und `conflicts[].kind` um `topic`, `note`, `note_document`; keine neue Migration (die Tabellen von Version 6 reichen); keine neue Einstellung.
-- Offene Fragen an den Besitzer: (1) Soll `counters.md` auch dann geschrieben werden, wenn sonst nichts zu übertragen ist? (2) Ein Projektname `topic` oder `note` ist als Link-Ziel mehrdeutig (Format-Grenze). (3) Auto-Sync mit Notes importiert Notes ohne Label und benennt Dateien um, ohne zu fragen; soll das nur manuell geschehen?
+- Entschieden (Besitzer): `counters.md` bleibt wie gebaut (nur mit anderen Änderungen geschrieben); Projektnamen `topic`/`note` bleiben eine dokumentierte Grenze; der Auto-Sync importiert Notes ohne Label und benennt die Dateien um; Todo-IDs bleiben ohne automatische Nummernvergabe (Kollisionen sind Konflikte). Offen: nichts mehr zu TASK-026.
 - Nicht getestet: ein echter Cloud-Lauf (claude.ai) mit Git; sehr viele Notes (Lesen beider Seiten bei jeder Prüfung, jeder Auto-Lauf liest alle Notes mit Links, Auslösern und Dokumenten); Gleichzeitigkeit zwischen Viewer und Datei-Editor während eines Laufs über den Test mit `mirror_conflict` hinaus.
 
 #### TASK-027 — Notes in der Oberfläche

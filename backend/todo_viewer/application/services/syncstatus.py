@@ -41,8 +41,10 @@ class SyncStatusService:
             return SyncStatus(SyncState.UNREADABLE, baseline.at if baseline else None)
         if sides is None:
             return SyncStatus(SyncState.NONE, None)
-        return SyncStatus(classify(sides.primary, sides.mirror, baseline), baseline.at or None if baseline else None,
-                          sides.conflicts)
+        state = classify(sides.primary, sides.mirror, baseline)
+        if sides.conflicts:  # what waits for a decision matters more than which side moved
+            state = SyncState.CONFLICTS
+        return SyncStatus(state, baseline.at or None if baseline else None, sides.conflicts)
 
     def run(self, source: Source, token: str | None, resolutions: Sequence[Resolution] = (),
             direction: SyncDirection | None = None, language: str = "en", auto: bool = False) -> SyncResult:

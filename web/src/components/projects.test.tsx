@@ -71,6 +71,7 @@ describe("ProjectsSection: one card per project", () => {
     ["both_changed", "Beide Seiten geändert"],
     ["unknown", "Noch nie synchronisiert, die Seiten unterscheiden sich"],
     ["unreadable", "Eine Seite ist nicht lesbar"],
+    ["conflicts", "Konflikte warten auf eine Entscheidung"],
   ] as const)("says what %s means", async (state, text) => {
     stub([central], [status(central, state)]);
     renderWithProviders(<ProjectsSection />);
@@ -335,7 +336,7 @@ describe("Sidebar: the badge for a changed mirror", () => {
       />,
     );
 
-  it.each(["mirror_changed", "both_changed", "unreadable"] as const)("marks a project whose state is %s", (state) => {
+  it.each(["mirror_changed", "both_changed", "unreadable", "conflicts"] as const)("marks a project whose state is %s", (state) => {
     show([["s1", state]]);
 
     expect(screen.getAllByRole("button", { name: /Central: .* Einstellungen/ })).toHaveLength(1);

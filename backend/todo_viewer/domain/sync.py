@@ -31,6 +31,7 @@ class SyncState(StrEnum):
     BOTH_CHANGED = "both_changed"
     UNKNOWN = "unknown"  # never synced, and the sides differ
     UNREADABLE = "unreadable"  # a side cannot be read
+    CONFLICTS = "conflicts"  # entries wait for a decision (changed on both sides, new on both, deleted on one)
 
 
 class Side(StrEnum):

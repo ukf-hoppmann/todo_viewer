@@ -75,7 +75,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   Dienst läuft (nicht beim Backup); Lesen schreibt nie. Berechnet wird der
   Status nur auf Anforderung (`/sync-status`), nicht mit den Projektlisten.
   Dazu meldet er die Zahl der offenen Konflikte (`conflicts`); `state` kann
-  `in_sync` sagen, solange ein aufgeschobener Konflikt offen ist.
+  `conflicts` als Zustand, solange ein Konflikt offen ist (auch ein aufgeschobener).
 - Abgleich Datenbank ⇄ Markdown pro Eintrag: auf Anforderung
   (`POST /sources/{id}/sync`); ein automatischer Start ist nur für Projekte mit
   eingeschaltetem Schalter vorgesehen (Architekturregel §1, Umsetzung STORY-059).

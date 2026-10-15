@@ -166,8 +166,8 @@ def test_what_a_sync_left_different_on_purpose_is_not_a_change(world: World):
     world.synced(project, TO_MD)  # ... and this push keeps the extra entry in the folder
 
     assert world.backlogs.get(mirror, "TASK-070")
-    assert world.state(project) is SyncState.IN_SYNC
-    assert world.status.status(world.stored(project)).conflicts == 1  # the deletion still waits for a decision
+    status = world.status.status(world.stored(project))
+    assert (status.conflicts, status.state) == (1, SyncState.CONFLICTS)  # the deletion still waits for a decision
 
 
 def test_a_side_that_cannot_be_read_is_reported_not_raised(world: World):
@@ -220,7 +220,7 @@ def test_the_status_counts_the_conflicts_and_nothing_else_does(world: World):
     world.retitle(_markdown_side(project), "TASK-002")  # one side only: no conflict
 
     assert world.status.status(world.stored(project)).conflicts == 1
-    assert world.state(project) is SyncState.BOTH_CHANGED
+    assert world.state(project) is SyncState.CONFLICTS  # whichever side moved
 
 
 def test_a_project_without_a_mirror_has_no_conflicts(world: World):

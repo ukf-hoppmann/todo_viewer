@@ -68,7 +68,7 @@ export function switchDirection(backend: "markdown" | "database"): SyncDirection
  * something is left to do.
  */
 export function needsAttention(state: SyncState, conflicts = 0): boolean {
-  return conflicts > 0 || state === "mirror_changed" || state === "both_changed" || state === "unreadable";
+  return conflicts > 0 || state === "conflicts" || state === "mirror_changed" || state === "both_changed" || state === "unreadable";
 }
 
 export type SyncConflict = Schemas["SyncConflictOut"];

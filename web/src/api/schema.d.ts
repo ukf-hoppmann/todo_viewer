@@ -2387,7 +2387,7 @@ export interface components {
             auto_sync: boolean;
             /**
              * Conflicts
-             * @description Entries that need a decision: changed on both sides, new on both with different content, or deleted on one side. `state` can say in_sync while this is not 0: what a sync left undecided does not count as a change
+             * @description Entries that need a decision: changed on both sides, new on both with different content, or deleted on one side. While it is not 0, `state` is `conflicts`
              */
             conflicts: number;
             /**
@@ -2399,10 +2399,10 @@ export interface components {
             source_id: string;
             /**
              * State
-             * @description none: no mirror; in_sync; mirror_changed / primary_changed / both_changed: which side changed since the last sync (a sync through this API); unknown: never synced and the sides differ; unreadable: a side cannot be read
+             * @description none: no mirror; in_sync; mirror_changed / primary_changed / both_changed: which side changed since the last sync (a sync through this API); unknown: never synced and the sides differ; unreadable: a side cannot be read; conflicts: entries wait for a decision (see `conflicts`), whichever side moved
              * @enum {string}
              */
-            state: "none" | "in_sync" | "mirror_changed" | "primary_changed" | "both_changed" | "unknown" | "unreadable";
+            state: "none" | "in_sync" | "mirror_changed" | "primary_changed" | "both_changed" | "unknown" | "unreadable" | "conflicts";
         };
         /**
          * TopicEditIn

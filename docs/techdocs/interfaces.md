@@ -253,8 +253,8 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     `auto_last_run_at` = wann er zuletzt etwas übertragen hat, `auto_paused` = Grund,
     warum die letzte Prüfung nicht laufen konnte; beide nur im Speicher seit dem Start). `conflicts` zählt die Einträge,
     die eine Entscheidung brauchen (beide Seiten geändert, auf beiden neu mit
-    verschiedenem Inhalt, auf einer Seite gelöscht); `state` kann dabei
-    `in_sync` sagen, weil ein aufgeschobener Konflikt keine Änderung ist. `state` sagt, welche
+    verschiedenem Inhalt, auf einer Seite gelöscht); `state` ist dann
+    `conflicts`, egal welche Seite sich bewegt hat. Sonst sagt `state`, welche
     Seite sich seit dem letzten Sync über diese API bewegt hat: `none` (kein
     Spiegel), `in_sync`, `mirror_changed` (z. B. eine KI hat die
     Markdown-Dateien bearbeitet), `primary_changed`, `both_changed`. Dazu

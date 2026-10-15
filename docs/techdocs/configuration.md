@@ -13,6 +13,7 @@
 | `FRONTEND_DIR` | Pfad | `<Projekt>/web/dist` | nein | Ordner mit dem gebauten Frontend |
 | `BROWSE_START` | Pfad | Home-Ordner | nein | Startordner des Ordner-Browsers beim Hinzufügen von Projekten; wird ignoriert, wenn er kein Ordner ist. In `docker-compose.yml` auf `/Users/hoppmann/Documents/GitHub` gesetzt |
 | `LOG_FILE` | Pfad | leer (Konsole) | nein | Logdatei; wird nach Größe rotiert (5 MB, 5 alte Dateien `.1`–`.5`). Ohne Wert wird auf stderr geloggt. In `docker-compose.yml` auf `/app/logs/todo-viewer.log` gesetzt (Host: `./logs/`) |
+| `AUTO_SYNC_INTERVAL` | Sekunden (Zahl) | `30` | nein | Abstand der Prüfungen des Auto-Syncs. `0` schaltet den Timer ganz ab. Der Timer läuft nur, solange mindestens ein Projekt den Schalter „Auto-Sync“ an hat; ohne Schalter kostet ein Viewer nichts. Wird beim Start gelesen |
 | `LOG_LEVEL` | `DEBUG`/`INFO`/`WARNING`/`ERROR` | `INFO` | nein | Mindestlevel des Logs. `DEBUG` zeigt zusätzlich Lesezugriffe, Speichern des UI-Zustands und Stacktraces nicht lesbarer Backlogs; ein unbekannter Wert bricht den Start ab |
 | `PYTHON_BIN` | Pfad | `.venv/bin` | nein | Nur `scripts/check.sh`: Ordner mit ruff, mypy, lint-imports, pytest |
 

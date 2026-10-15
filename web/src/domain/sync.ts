@@ -42,9 +42,12 @@ export function switchDirection(backend: "markdown" | "database"): SyncDirection
   return backend === "markdown" ? "from_md" : "to_md";
 }
 
-/** Whether the sidebar marks the project: the mirror changed or cannot be read, so something is left to do. */
-export function needsAttention(state: SyncState): boolean {
-  return state === "mirror_changed" || state === "both_changed" || state === "unreadable";
+/**
+ * Whether the sidebar marks the project: the mirror changed or cannot be read, or conflicts wait for a decision, so
+ * something is left to do.
+ */
+export function needsAttention(state: SyncState, conflicts = 0): boolean {
+  return conflicts > 0 || state === "mirror_changed" || state === "both_changed" || state === "unreadable";
 }
 
 export type SyncConflict = Schemas["SyncConflictOut"];

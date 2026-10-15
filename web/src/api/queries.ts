@@ -184,13 +184,15 @@ export interface SaveSourceRequest {
   syncPath?: string;
   /** The other side to keep as a mirror; unset leaves it as it is. */
   mirror?: Schemas["SourceIn"]["mirror"];
+  /** The owner's switch for the automatic sync; unset leaves it as it is. */
+  autoSync?: boolean;
 }
 
 export function useSaveSource() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, path, project, backend, syncPath, mirror }: SaveSourceRequest) => {
-      const body = { path, project, backend, sync_path: syncPath, mirror };
+    mutationFn: ({ id, path, project, backend, syncPath, mirror, autoSync }: SaveSourceRequest) => {
+      const body = { path, project, backend, sync_path: syncPath, mirror, auto_sync: autoSync };
       return id
         ? unwrap(api.PUT("/api/v2/sources/{source_id}", { params: { path: { source_id: id } }, body }))
         : unwrap(api.POST("/api/v2/sources", { body }));

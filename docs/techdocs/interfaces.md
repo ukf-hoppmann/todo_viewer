@@ -238,10 +238,20 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
     Angaben; ohne Spiegel läuft nur `from_md` (Ordner → Datenbank unter derselben
     `source_id`, das ist der Weg beim Umstellen), `to_md` ergibt 409
     `sync_same_backend`. Das Umstellen der Primärquelle ist `PUT /sources/{id}`
-    mit neuem `backend` nach dem Sync (siehe Projekte). Ein automatischer Sync
-    (STORY-059) ist noch nicht gebaut.
+    mit neuem `backend` nach dem Sync (siehe Projekte). Der automatische Sync
+    (STORY-059) startet diesen Abgleich selbst für Projekte, deren Besitzer
+    `auto_sync` eingeschaltet hat (`PUT /sources/{id}` mit `auto_sync: true`,
+    Standard aus, braucht einen Spiegel sonst 400 `auto_sync_needs_mirror`;
+    `GET /sources` meldet `auto_sync`): er überträgt nur Konfliktfreies, löscht
+    nie, liest keine Dateien mit Git-Merge-Markern (das Projekt pausiert mit
+    `auto_paused` = `merge_markers`) und keinen fehlenden Ordner und wartet ab, bis
+    sich der Stand zwischen zwei Prüfungen nicht mehr ändert (Abstand
+    `AUTO_SYNC_INTERVAL`, siehe [Konfiguration](configuration.md)).
   - Sync-Status (`GET /sources/{source_id}/sync-status`, für alle Projekte
-    `GET /sync-status`): `{source_id, state, last_sync_at, conflicts}`. `conflicts` zählt die Einträge,
+    `GET /sync-status`): `{source_id, state, last_sync_at, conflicts, auto_sync, auto_last_run_at, auto_paused}`
+    (die letzten drei beschreiben den Auto-Sync: `auto_sync` = er wirkt für dieses Projekt,
+    `auto_last_run_at` = wann er zuletzt etwas übertragen hat, `auto_paused` = Grund,
+    warum die letzte Prüfung nicht laufen konnte; beide nur im Speicher seit dem Start). `conflicts` zählt die Einträge,
     die eine Entscheidung brauchen (beide Seiten geändert, auf beiden neu mit
     verschiedenem Inhalt, auf einer Seite gelöscht); `state` kann dabei
     `in_sync` sagen, weil ein aufgeschobener Konflikt keine Änderung ist. `state` sagt, welche
@@ -290,7 +300,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 400 | `bad_request` (Validierung, auch unbekannte Felder), `sync_path_missing` (Projekt hat keinen `sync_path`), `sync_source_invalid` (Quelle oder Ziel des Syncs nicht lesbar), `invalid_value`, `value_required`, `not_editable`, `resolution_required`, `missing_path`, `not_found`, `not_a_dir`, `no_todo`, `unsupported_format` |
 | 403 | `forbidden` (Dokument außerhalb des Backlog-Ordners oder nicht `.md`/`.markdown`/`.txt`) |
 | 404 | `source_gone`, `file_not_found`, `item_not_found` |
-| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `sync_required` (Backend per `PUT` umstellen, obwohl die Seiten sich unterscheiden), `backup_failed` (Backend per `PUT` umstellen, aber das Backup der bisherigen Primärquelle schlug fehl; `details.reason`, nichts geändert), `sync_same_backend` (Markdown-Projekt mit `to_md`: Markdown-Projekte lassen sich nur in die Datenbank lesen), `sync_stale` (Sync: eine Seite oder der gespeicherte Syncstand änderte sich seit der Vorschau), `database_backup_failed` (die automatische Sicherung der Datenbank vor einem Sync oder einer Migration schlug fehl; `details.reason`, nichts geändert) |
+| 409 | `version_conflict` (Item seit dem Lesen geändert), `file_changed` (Datei zwischen Lesen und Schreiben extern geändert), `duplicate_item` (ID mehrfach im Backlog), `duplicate` (Quelle schon eingetragen), `backlog_exists` (Ordner hat schon eine `TODO.md`), `item_folder_exists` (Typwechsel: `items/<neue ID>/` existiert schon), `project_not_empty` (Datenbank-Projekt mit Items austragen; `details.project`), `sync_required` (Backend per `PUT` umstellen, obwohl die Seiten sich unterscheiden), `backup_failed` (Backend per `PUT` umstellen, aber das Backup der bisherigen Primärquelle schlug fehl; `details.reason`, nichts geändert), `sync_same_backend` (Markdown-Projekt mit `to_md`: Markdown-Projekte lassen sich nur in die Datenbank lesen), `sync_stale` (Sync: eine Seite oder der gespeicherte Syncstand änderte sich seit der Vorschau), `auto_sync_needs_mirror` (400: Auto-Sync einschalten ohne Spiegel), `database_backup_failed` (die automatische Sicherung der Datenbank vor einem Sync oder einer Migration schlug fehl; `details.reason`, nichts geändert) |
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 

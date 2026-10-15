@@ -20,7 +20,9 @@ const mirrored = sourceStatus({
   id: "s4", project: "Mirrored", backend: "markdown", path: "/repos/m/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/m/docs", mirror: "database",
 });
 
-const status = (source: SourceStatus, state: Status["state"], last: string | null = null): Status => ({ source_id: source.id, state, last_sync_at: last, conflicts: 0 });
+const status = (source: SourceStatus, state: Status["state"], last: string | null = null): Status => ({
+  source_id: source.id, state, last_sync_at: last, conflicts: 0, auto_sync: false, auto_last_run_at: null, auto_paused: null,
+});
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -102,6 +104,57 @@ describe("ProjectsSection: one card per project", () => {
     await screen.findByRole("group", { name: "Files" });
     expect(card("Files")).toHaveAttribute("aria-current", "true");
     expect(card("Central")).not.toHaveAttribute("aria-current");
+  });
+});
+
+describe("ProjectsSection: the automatic sync", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const auto = sourceStatus({ auto_sync: true });
+  const autoStatus = (over: Partial<Status> = {}): Status => ({ ...status(auto, "in_sync"), auto_sync: true, ...over });
+
+  it("is off by default and switched on by the owner, who is not asked anything else", async () => {
+    const calls = stub([central], [status(central, "in_sync")], (request) => (request.method === "PUT" ? jsonResponse({ ...central, auto_sync: true }) : jsonResponse({}, 404)));
+    renderWithProviders(<ProjectsSection />);
+
+    const box = await within(await screen.findByRole("group", { name: "Central" })).findByRole("checkbox", { name: /Automatisch abgleichen/ });
+    expect(box).not.toBeChecked();
+    await userEvent.click(box);
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    expect(calls.find((c) => c.method === "PUT")!.body).toMatchObject({ project: "Central", auto_sync: true });
+  });
+
+  it("cannot be switched on without a mirror", async () => {
+    stub([bare], [status(bare, "none")]);
+    renderWithProviders(<ProjectsSection />);
+
+    expect(await within(await screen.findByRole("group", { name: "Bare" })).findByRole("checkbox", { name: /Automatisch abgleichen/ })).toBeDisabled();
+  });
+
+  it("shows the last run when it is on, and the reason when it is paused", async () => {
+    stub([auto], [autoStatus({ auto_last_run_at: "2026-10-14T09:30:00+02:00" })]);
+    const { unmount } = renderWithProviders(<ProjectsSection />);
+    expect(await screen.findByText(/Auto-Sync: letzter Lauf .*2026/)).toBeInTheDocument();
+    unmount();
+
+    stub([auto], [autoStatus({ auto_paused: "merge_markers" })]);
+    renderWithProviders(<ProjectsSection />);
+    expect(await screen.findByText(/Auto-Sync pausiert: Git-Merge-Marker/)).toBeInTheDocument();
+  });
+
+  it("names the open conflicts, which wait for a decision in the sync dialog", async () => {
+    stub([auto], [autoStatus({ conflicts: 2 })]);
+    renderWithProviders(<ProjectsSection />);
+
+    expect(await screen.findByText("2 offene Konflikte: im Sync-Dialog entscheiden")).toBeInTheDocument();
+  });
+
+  it("shows nothing about it for a project that has it off", async () => {
+    stub([central], [status(central, "in_sync")]);
+    renderWithProviders(<ProjectsSection />);
+
+    await screen.findByText("In Sync");
+    expect(screen.queryByText(/Auto-Sync:/)).not.toBeInTheDocument();
   });
 });
 
@@ -287,6 +340,17 @@ describe("Sidebar: the badge for a changed mirror", () => {
 
     expect(screen.getAllByRole("button", { name: /Central: .* Einstellungen/ })).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /Files: .* Einstellungen/ })).not.toBeInTheDocument();
+  });
+
+  it("marks a project with open conflicts although its state says in sync, and names them", () => {
+    renderWithProviders(
+      <Sidebar
+        options={options} sources={[central, files]} syncStates={new Map([["s1", "in_sync" as SyncState]])} syncConflicts={new Map([["s1", 3]])}
+        onAddSource={vi.fn()} onEditSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={vi.fn()} onOpenSettings={vi.fn()} onOpenProject={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /Central: .* Einstellungen/ })).toHaveAttribute("title", "3 offene Konflikte");
   });
 
   it.each(["none", "in_sync", "primary_changed", "unknown"] as const)("does not mark a project whose state is %s", (state) => {

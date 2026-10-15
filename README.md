@@ -60,7 +60,15 @@ Vorschau liefert beide Fassungen, und du entscheidest je Konflikt über die API
 unberührt und wird wieder gemeldet). Dann **Ausführen**; die Richtung kann auf
 eine Seite eingeschränkt werden. Vor einem Sync in die Datenbank sichert der
 Dienst die Datenbank (`configs/backups/todo-<Zeit>-sync.db`, ebenso vor einer
-Schema-Migration; die letzten 10 bleiben). Beim **Wechsel der Primärquelle** (Einstellungsmenü →
+Schema-Migration; die letzten 10 bleiben).
+
+**Auto-Sync:** Pro Projekt mit Spiegel lässt sich in Einstellungen → Projekte
+„Automatisch abgleichen“ einschalten (Standard aus). Der Viewer gleicht dann alle
+`AUTO_SYNC_INTERVAL` Sekunden (Standard 30) von selbst ab, was nur eine Seite
+geändert hat, löscht nie und überträgt keine Konflikte; die bleiben offen (Zahl in
+der Projektkarte, ⚠ in der Sidebar), bis du sie im Sync-Dialog mit Vergleichsansicht
+entscheidest. Ein Pull wird abgewartet, Dateien mit Git-Merge-Markern oder ein
+fehlender Ordner pausieren das Projekt. Beim **Wechsel der Primärquelle** (Einstellungsmenü →
 Projekte) wird vorher synchronisiert und ein Backup der bisherigen
 Primärquelle angelegt; danach bleibt die bisherige Seite als Spiegel, die
 Item-IDs bleiben gleich. Dieselben Schritte gibt es über die API

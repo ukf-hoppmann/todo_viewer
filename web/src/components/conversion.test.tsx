@@ -96,7 +96,7 @@ describe("DemoteItemDialog", () => {
 });
 
 describe("demoting from the detail panel", () => {
-  const SOURCES = [{ id: "s", project: "P", path: "/p", backend: "markdown" as const, sync_path: null, primary: "markdown" as const, markdown_path: "/p", mirror: "none" as const, item_count: 1, problem: null }];
+  const SOURCES = [{ id: "s", project: "P", path: "/p", backend: "markdown" as const, sync_path: null, primary: "markdown" as const, markdown_path: "/p", mirror: "none" as const, auto_sync: false, item_count: 1, problem: null }];
   const panel = (status: string) => {
     const items = toItems([apiItem("TASK-4", { status })]);
     stubRoutes([

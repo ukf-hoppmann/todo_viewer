@@ -55,5 +55,5 @@ export function apiItem(id: string, overrides: Partial<ApiItem> = {}): ApiItem {
 }
 
 export function sourceStatus(over: Partial<SourceStatus> = {}): SourceStatus {
-  return { id: "s1", project: "Central", path: "", backend: "database", sync_path: "/repos/central", primary: "database", markdown_path: "/repos/central", mirror: "markdown", item_count: 3, problem: null, ...over };
+  return { id: "s1", project: "Central", path: "", backend: "database", sync_path: "/repos/central", primary: "database", markdown_path: "/repos/central", mirror: "markdown", auto_sync: false, item_count: 3, problem: null, ...over };
 }

@@ -61,7 +61,12 @@ describe("sync direction and state", () => {
   it("asks for attention where something has to be done, not where the primary source simply moved on", () => {
     const states: SyncState[] = ["none", "in_sync", "mirror_changed", "primary_changed", "both_changed", "unknown", "unreadable"];
 
-    expect(states.filter(needsAttention)).toEqual(["mirror_changed", "both_changed", "unreadable"]);
+    expect(states.filter((s) => needsAttention(s))).toEqual(["mirror_changed", "both_changed", "unreadable"]);
+  });
+
+  it("asks for attention for open conflicts even where the states says the sides are in sync", () => {
+    expect(needsAttention("in_sync", 2)).toBe(true);
+    expect(needsAttention("in_sync", 0)).toBe(false);
   });
 });
 

@@ -20,6 +20,8 @@ interface SidebarProps {
   onOpenSettings: () => void;
   /** The sync state of each project by source id; a project whose mirror needs attention gets a badge. */
   syncStates: ReadonlyMap<string, SyncState>;
+  /** Open sync conflicts per project (source id); missing = none. */
+  syncConflicts?: ReadonlyMap<string, number>;
   /** Opens the settings at this project. */
   onOpenProject: (source: SourceStatus) => void;
   /** Number of due notes (the red exclamation mark shows if above zero) and what a click on it does. */
@@ -28,7 +30,7 @@ interface SidebarProps {
 }
 
 /** Search and projects for every tab; below them the filter sections of the active tab (`sidebarSections`). */
-export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource, onOpenSettings, syncStates, onOpenProject, dueCount = 0, onOpenDue }: SidebarProps) {
+export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource, onOpenSettings, syncStates, syncConflicts, onOpenProject, dueCount = 0, onOpenDue }: SidebarProps) {
   const { t, vocab } = useI18n();
   const { state, dispatch } = useUiState();
 
@@ -72,6 +74,7 @@ export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveS
           projects={options.projects}
           sources={sources}
           syncStates={syncStates}
+          syncConflicts={syncConflicts}
           onEdit={onEditSource}
           onRemove={onRemoveSource}
           onSync={onSyncSource}
@@ -155,11 +158,13 @@ interface ProjectFiltersProps {
   onRemove: (source: SourceStatus) => void;
   onSync: (source: SourceStatus) => void;
   syncStates: ReadonlyMap<string, SyncState>;
+  /** Open sync conflicts per project (source id); missing = none. */
+  syncConflicts?: ReadonlyMap<string, number>;
   onOpenProject: (source: SourceStatus) => void;
 }
 
 /** One row per source; a project can consist of several sources. */
-function ProjectFilters({ projects, sources, syncStates, onEdit, onRemove, onSync, onOpenProject }: ProjectFiltersProps) {
+function ProjectFilters({ projects, sources, syncStates, syncConflicts, onEdit, onRemove, onSync, onOpenProject }: ProjectFiltersProps) {
   const { t, errorText } = useI18n();
   const { state, dispatch } = useUiState();
 
@@ -196,10 +201,10 @@ function ProjectFilters({ projects, sources, syncStates, onEdit, onRemove, onSyn
                     </span>
                   )}
                   {problem && <span className="warn">⚠</span>}
-                  {source && !problem && needsAttention(syncStates.get(source.id) ?? "none") && (
+                  {source && !problem && needsAttention(syncStates.get(source.id) ?? "none", syncConflicts?.get(source.id) ?? 0) && (
                     <button
                       className="sync-badge"
-                      title={t(`sync.state.${syncStates.get(source.id) ?? "none"}`)}
+                      title={(syncConflicts?.get(source.id) ?? 0) > 0 ? t("sync.badge.conflicts", { n: syncConflicts?.get(source.id) ?? 0 }) : t(`sync.state.${syncStates.get(source.id) ?? "none"}`)}
                       aria-label={t("projects.badge", { p: source.project })}
                       onClick={() => onOpenProject(source)}
                     >

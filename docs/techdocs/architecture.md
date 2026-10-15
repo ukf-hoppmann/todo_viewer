@@ -100,7 +100,21 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
   Einträge, die dann auf beiden Seiten gleich sind. Vor einem Lauf, der in die
   Datenbank schreibt, legt der Port `DatabaseBackup` ein Backup an. Geschrieben wird erst die Datenbank-,
   dann die Ordnerseite, je über `write_backlog` und die
-  Dokument-Ports. Die Markdown-Seite rendert dafür alle Felder
+  Dokument-Ports.
+- Auto-Sync (STORY-059): `AutoSyncService` (`application/services/autosync.py`)
+  prüft in `tick()` alle Projekte mit eingeschaltetem Schalter (`Source.auto_sync`,
+  wirksam nur mit Spiegel) über denselben `SyncService` und dieselbe Sperre je
+  Projekt wie ein manueller Sync, mit `auto=True`: ein fehlender Ordner und
+  Dateien mit Git-Merge-Markern (Port `MergeMarkerCheck`, Adapter
+  `MarkdownMergeMarkers`) pausieren das Projekt (`sync_source_invalid`), es
+  werden keine Entscheidungen übergeben, also nur Konfliktfreies übertragen und
+  nie gelöscht. Eine Änderung wird übernommen, wenn das Token der Vorschau bei
+  zwei Prüfungen in Folge gleich war (ein laufender Pull wird abgewartet). Vor
+  einem Schreiben in die Datenbank sichert er höchstens einmal pro Stunde (Grund
+  `auto`). Der Timer (ein Thread, `ensure_running`/`stop`, gestartet beim Start der App und wenn ein
+  Projekt den Schalter bekommt) läuft nur, solange mindestens ein Projekt den
+  Schalter an hat (Architekturregel §3); `AUTO_SYNC_INTERVAL=0` schaltet ihn ab.
+  Der letzte Lauf und der Grund einer Pause liegen nur im Speicher. Die Markdown-Seite rendert dafür alle Felder
   (`EntryRenderer.render_full`), den Text um die Einträge lässt sie stehen.
   Das Umstellen des Backends (`SourceService.update`) verlangt vorher einen
   Sync (`SyncService.in_sync`) und sichert die bisherige Primärquelle

@@ -42,6 +42,17 @@
   API standardmäßig `en`); Einträge und Dokumente sind inhaltlich gleich,
   Zeilenumbrüche und die Reihenfolge der Felder sind normalisiert. Ein
   bestehender Spiegel-Ordner behält seinen Kopftext.
+- Auto-Sync (pro Projekt in Einstellungen → Projekte, Standard aus): alle
+  `AUTO_SYNC_INTERVAL` Sekunden (Standard 30) prüft der Viewer jedes Projekt mit
+  Schalter und Spiegel und überträgt Konfliktfreies in beide Richtungen; Konflikte
+  und Löschungen bleiben offen (Zahl in der Projektkarte und als ⚠ in der Sidebar) bis
+  zur Entscheidung im Sync-Dialog. Eine Änderung wird erst übernommen, wenn sie bei zwei
+  Prüfungen gleich war. Der Lauf pausiert (Karte: „Auto-Sync pausiert“, Log
+  `auto_sync_paused`), wenn der Ordner fehlt oder nicht lesbar ist oder
+  Git-Merge-Marker enthält; die nächste gute Prüfung setzt fort. Das Log nennt
+  jeden Lauf (`auto_sync_run`). Backups: Grund `auto`, höchstens eines pro Stunde;
+  aufbewahrt werden die letzten 10 und je Tag der letzten 14 Tage das jüngste.
+  Ohne eingeschalteten Schalter läuft kein Timer.
 - Stand je Eintrag: Nach jedem Sync speichert die Datenbank die Version aller Items
   und Dokumente, die dann auf beiden Seiten gleich sind (`sync_entries`, Schlüssel
   Projekt, Markdown-Ordner, Art, Label, Name). Daran erkennt der nächste Sync, welche
@@ -81,8 +92,8 @@
   derselben Sekunde: Zusatz `-2`, …). Es ist die SQLite-Backup-Funktion, daher
   auch im laufenden Betrieb (WAL) vollständig; die Kopie wird auf
   `integrity_check` und gleiche Zeilenzahlen je Tabelle geprüft und liegt ohne
-  `-wal`/`-shm` da. Aufbewahrt werden die letzten 10 dieser Dateien, ältere
-  automatische werden entfernt; andere Dateien im Ordner (auch von Hand angelegte
+  `-wal`/`-shm` da. Aufbewahrt werden die letzten 10 dieser Dateien (zusätzlich das jüngste je Tag der letzten 14 Tage), ältere
+  automatische werden entfernt; der Grund `auto` gehört dem Auto-Sync; andere Dateien im Ordner (auch von Hand angelegte
   Kopien) bleiben unberührt. Scheitert die Sicherung, wird nichts migriert bzw.
   synchronisiert: der Sync antwortet 409 `database_backup_failed`
   (`details.reason`); die Migration läuft träge beim ersten Zugriff, die erste

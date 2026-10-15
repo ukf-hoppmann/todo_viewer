@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { SourceStatus } from "../../api/client";
+import type { Schemas, SourceStatus } from "../../api/client";
 import { useSaveSource, useSourceList, useSyncStatuses } from "../../api/queries";
 import type { SyncMode, SyncState } from "../../domain/sync";
 import { describeError, useI18n } from "../../i18n/i18n";
@@ -53,7 +53,7 @@ export function ProjectsSection({ focusId }: SectionProps) {
 
 interface ProjectCardProps {
   source: SourceStatus;
-  state: { state: SyncState; last_sync_at: string | null } | undefined;
+  state: Pick<Schemas["SyncStatusOut"], "state" | "last_sync_at" | "conflicts" | "auto_sync" | "auto_last_run_at" | "auto_paused"> & { state: SyncState } | undefined;
   checking: boolean;
   focused: boolean;
   onCheck: () => void;
@@ -128,7 +128,28 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
             </label>
           )}
         </dd>
+        <dt>{t("projects.auto")}</dt>
+        <dd>
+          <label>
+            <input
+              type="checkbox"
+              checked={source.auto_sync}
+              disabled={save.isPending || (source.mirror === "none" && !source.auto_sync)}
+              onChange={(e) => change({ id: source.id, project: source.project, path: source.path, syncPath: database ? (folder ?? "") : undefined, autoSync: e.target.checked })}
+            />
+            {t("projects.auto.label")}
+          </label>
+          {source.auto_sync && source.mirror === "none" && <span className="hint">{t("projects.auto.noMirror")}</span>}
+        </dd>
       </dl>
+      {state && state.conflicts > 0 && <div className="project-conflicts" role="status">{t("projects.conflicts", { n: state.conflicts })}</div>}
+      {state?.auto_sync && (
+        <div className="project-auto" role="status">
+          {state.auto_paused
+            ? t("projects.auto.paused", { r: i18n.errorText(state.auto_paused, state.auto_paused) })
+            : t("projects.auto.lastRun", { at: state.auto_last_run_at ? new Date(state.auto_last_run_at).toLocaleString(i18n.lang) : t("projects.lastSync.never") })}
+        </div>
+      )}
       {error && <div className="field-error" role="alert">{error}</div>}
       <footer className="project-footer">
         <span className="project-lastsync">{t("projects.lastSync", { at: lastSync })}</span>

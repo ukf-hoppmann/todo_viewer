@@ -52,6 +52,7 @@ export function App() {
     };
   }, [baseTitle, dueCount]);
   const syncStatuses = useSyncStatuses();
+  const syncConflicts = useMemo(() => new Map<string, number>(syncStatuses.data?.map((s) => [s.source_id, s.conflicts])), [syncStatuses.data]);
   const syncStates = useMemo(() => new Map<string, SyncState>(syncStatuses.data?.map((s) => [s.source_id, s.state])), [syncStatuses.data]);
   // Kept here, not in the detail panel: the panel is rebuilt when the selection moves to the new id.
   const [retyped, setRetyped] = useState<Schemas["RetypeOut"] | null>(null);
@@ -94,6 +95,7 @@ export function App() {
             onSyncSource={(source) => setSyncDialog({ source, mode: "sync" })}
             onOpenSettings={() => setSettings({})}
             syncStates={syncStates}
+            syncConflicts={syncConflicts}
             onOpenProject={(source) => setSettings({ focusId: source.id })}
             dueCount={dueCount}
             onOpenDue={() => setDueOpen(true)}

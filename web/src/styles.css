@@ -259,6 +259,17 @@ input.field-edit {
 .sync-list { list-style: none; margin: 4px 0 0; padding: 0; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
 .sync-list li { padding: 1px 0; overflow-wrap: anywhere; }
 .sync-equal { color: var(--status-done); }
+.sync-conflicts { border: 1px solid var(--status-progress); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.sync-conflicts h4 { color: var(--status-progress); margin: 0; }
+.sync-conflicts ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.sync-conflict { display: flex; flex-direction: column; gap: 4px; }
+.sync-conflict .backend-choice { display: flex; gap: 12px; flex-wrap: wrap; }
+.sync-diff { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sync-diff th, .sync-diff td { border: 1px solid var(--panel-border); padding: 2px 6px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.diff-lines { margin: 0; white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.diff-removed { background: color-mix(in srgb, var(--status-rejected) 18%, transparent); }
+.diff-added { background: color-mix(in srgb, var(--status-done) 18%, transparent); }
+.diff-lines .diff-removed, .diff-lines .diff-added { display: block; }
 .sync-missing { border: 1px solid var(--status-progress); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
 .sync-missing h4 { color: var(--status-progress); margin: 0; }
 .sync-missing label { display: flex; align-items: center; gap: 6px; cursor: pointer; }

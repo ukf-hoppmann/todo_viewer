@@ -46,3 +46,34 @@ export function switchDirection(backend: "markdown" | "database"): SyncDirection
 export function needsAttention(state: SyncState): boolean {
   return state === "mirror_changed" || state === "both_changed" || state === "unreadable";
 }
+
+export type SyncConflict = Schemas["SyncConflictOut"];
+export type ConflictChoice = Schemas["ResolutionIn"]["choice"];
+/** The decision per conflict, by `conflictKey`; a conflict without an entry is deferred. */
+export type ConflictChoices = Readonly<Record<string, ConflictChoice>>;
+
+export function conflictKey(c: Pick<SyncConflict, "kind" | "label" | "name">): string {
+  return `${c.kind}/${c.label}/${c.name ?? ""}`;
+}
+
+export function choiceOf(choices: ConflictChoices, c: SyncConflict): ConflictChoice {
+  return choices[conflictKey(c)] ?? "defer";
+}
+
+/** The `resolutions` of the request: only what was decided; everything else is deferred by the server. */
+export function buildResolutions(conflicts: readonly SyncConflict[], choices: ConflictChoices): Schemas["ResolutionIn"][] {
+  return conflicts.flatMap((c) => {
+    const choice = choiceOf(choices, c);
+    return choice === "defer" ? [] : [{ kind: c.kind, label: c.label, name: c.name, choice }];
+  });
+}
+
+/** The fields of an item conflict in which the two versions differ (all of them if a side is missing). */
+export function changedFields(c: SyncConflict): { name: string; database: string | null; markdown: string | null }[] {
+  const database = new Map((c.database?.fields ?? []).map((f) => [f.name, f.value]));
+  const markdown = new Map((c.markdown?.fields ?? []).map((f) => [f.name, f.value]));
+  const names = [...new Set([...database.keys(), ...markdown.keys()])];
+  return names
+    .map((name) => ({ name, database: database.get(name) ?? null, markdown: markdown.get(name) ?? null }))
+    .filter((f) => f.database !== f.markdown || !c.database || !c.markdown);
+}

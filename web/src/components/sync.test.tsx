@@ -68,7 +68,8 @@ describe("SyncDialog: syncing a database project", () => {
     expect(screen.getByText("1 neu · 0 geändert · 2 unverändert")).toBeInTheDocument();
     expect(calls).toEqual([{ method: "POST", path: "/api/v2/sources/s1/sync", body: { direction: null, confirm: false, resolutions: [], language: "de" } }]);
     const warning = screen.getByRole("group", { name: "Konflikte" });
-    expect(within(warning).getByText("TASK-9 — Title TASK-9 (in der Datenbank gelöscht)")).toBeInTheDocument();
+    expect(within(warning).getByText("TASK-9 — Title TASK-9")).toBeInTheDocument();
+    expect(within(warning).getByText("(in der Datenbank gelöscht)")).toBeInTheDocument();
     expect(screen.getByText("＋ TASK-1 — Title TASK-1 →")).toBeInTheDocument();  // comes from the database
     expect(screen.getByText("≠ TASK-2 — Title TASK-2 ←")).toBeInTheDocument();  // comes from the folder
     expect(screen.getByText(/items\/TASK-3\/x\.md/)).toBeInTheDocument();
@@ -128,6 +129,87 @@ describe("SyncDialog: syncing a database project", () => {
     await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
 
     expect(await screen.findByText("Der Ordner lässt sich nicht abgleichen; es wurde nichts geändert: Ordner nicht gefunden.")).toBeInTheDocument();
+  });
+});
+
+describe("SyncDialog: deciding conflicts", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const itemConflict = {
+    ...conflict("TASK-5"),
+    database: { fields: [{ name: "title", value: "In the database" }, { name: "goal", value: "same" }], text: null },
+    markdown: { fields: [{ name: "title", value: "In the file" }, { name: "goal", value: "same" }], text: null },
+  };
+  const docConflict = {
+    kind: "document" as const, label: "TASK-5", title: "Title TASK-5", name: "TASK-5_notes.md", reason: "both_changed" as const,
+    database: { fields: null, text: "one\ntwo\nthree" }, markdown: { fields: null, text: "one\nTWO\nthree" },
+  };
+  const withConflicts = answer({ conflicts: [itemConflict, docConflict, conflict("TASK-6", "markdown_deleted")] });
+  const open = () => renderWithProviders(<SyncDialog source={sourceStatus()} mode="sync" onClose={vi.fn()} onSwitched={vi.fn()} />);
+
+  it("preselects deferring for every conflict", async () => {
+    stubApi(server(withConflicts));
+    open();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+
+    for (const group of await screen.findAllByRole("radiogroup", { name: /Entscheidung für/ })) {
+      expect(within(group).getByRole("radio", { name: "Aufschieben" })).toBeChecked();
+    }
+  });
+
+  it("sends exactly the decisions made, each for its own conflict, and leaves the rest deferred", async () => {
+    const calls = stubApi(server(withConflicts, { deferred: [entry("TASK-6")] }));
+    open();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+    const item = await screen.findByRole("radiogroup", { name: "Entscheidung für TASK-5 — Title TASK-5" });
+    await userEvent.click(within(item).getByRole("radio", { name: "Datenbank gilt" }));
+    const doc = screen.getByRole("radiogroup", { name: "Entscheidung für TASK-5 / TASK-5_notes.md" });
+    await userEvent.click(within(doc).getByRole("radio", { name: "Datei gilt" }));
+    await userEvent.click(screen.getByRole("button", { name: "Ausführen" }));
+
+    await screen.findByText("Sync abgeschlossen.");
+    expect(calls[1]!.body.resolutions).toEqual([
+      { kind: "item", label: "TASK-5", name: null, choice: "database" },
+      { kind: "document", label: "TASK-5", name: "TASK-5_notes.md", choice: "markdown" },
+    ]);
+    expect(screen.getByText("Aufgeschobene Konflikte: 1")).toBeInTheDocument();
+  });
+
+  it("shows the differing fields side by side for an item", async () => {
+    stubApi(server(withConflicts));
+    open();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+    await userEvent.click((await screen.findAllByRole("button", { name: "Vergleich anzeigen" }))[0]!);
+
+    const table = screen.getByRole("table");
+    expect(within(table).getByText("In the database")).toBeInTheDocument();
+    expect(within(table).getByText("In the file")).toBeInTheDocument();
+    expect(within(table).queryByText("goal")).not.toBeInTheDocument();  // equal fields are left out
+  });
+
+  it("shows a text comparison for a document and says a side is missing for a deletion", async () => {
+    stubApi(server(withConflicts));
+    open();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+    const buttons = await screen.findAllByRole("button", { name: "Vergleich anzeigen" });
+    await userEvent.click(buttons[1]!);
+    expect(screen.getByText(/^− two/)).toHaveClass("diff-removed");
+    expect(screen.getByText(/^\+ TWO/)).toHaveClass("diff-added");
+    await userEvent.click(screen.getAllByRole("button", { name: "Vergleich anzeigen" })[1]!);  // TASK-6 (the others are open)
+    expect(screen.getByText("Auf dieser Seite fehlt der Eintrag: Datenbank")).toBeInTheDocument();
+  });
+
+  it("a switch sends no decisions and waits for the conflicts to be decided in a normal sync", async () => {
+    const calls = stubApi(server(withConflicts));
+    renderWithProviders(<SyncDialog source={sourceStatus()} mode="switch" onClose={vi.fn()} onSwitched={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
+
+    expect(await screen.findByRole("button", { name: "Übernehmen und umstellen" })).toBeDisabled();
+    expect(calls).toHaveLength(1);
   });
 });
 

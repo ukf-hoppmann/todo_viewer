@@ -1,5 +1,5 @@
 import type { Schemas } from "../api/client";
-import { canRun, changeCount, conflictCount, directionOf, isInSync, needsAttention, type SyncState, switchDirection } from "./sync";
+import { buildResolutions, canRun, changeCount, changedFields, choiceOf, conflictCount, conflictKey, directionOf, isInSync, needsAttention, type SyncState, switchDirection } from "./sync";
 
 type Section = Schemas["SyncSectionOut"];
 type Conflict = Schemas["SyncConflictOut"];
@@ -62,5 +62,42 @@ describe("sync direction and state", () => {
     const states: SyncState[] = ["none", "in_sync", "mirror_changed", "primary_changed", "both_changed", "unknown", "unreadable"];
 
     expect(states.filter(needsAttention)).toEqual(["mirror_changed", "both_changed", "unreadable"]);
+  });
+});
+
+describe("deciding conflicts", () => {
+  const item = (label: string, reason: Schemas["SyncConflictOut"]["reason"] = "both_changed"): Schemas["SyncConflictOut"] => ({
+    kind: "item", label, title: `T ${label}`, name: null, reason, database: null, markdown: null,
+  });
+  const doc: Schemas["SyncConflictOut"] = { ...item("A"), kind: "document", name: "a.md" };
+
+  it("keys a conflict by kind, label and document name", () => {
+    expect(conflictKey(item("A"))).toBe("item/A/");
+    expect(conflictKey(doc)).toBe("document/A/a.md");
+  });
+
+  it("sends only the decisions that are not 'defer'", () => {
+    const choices = { [conflictKey(item("A"))]: "database", [conflictKey(doc)]: "markdown", [conflictKey(item("B"))]: "defer" } as const;
+
+    expect(buildResolutions([item("A"), doc, item("B"), item("C")], choices)).toEqual([
+      { kind: "item", label: "A", name: null, choice: "database" },
+      { kind: "document", label: "A", name: "a.md", choice: "markdown" },
+    ]);
+  });
+
+  it("defers everything by default", () => {
+    expect(buildResolutions([item("A")], {})).toEqual([]);
+    expect(choiceOf({}, item("A"))).toBe("defer");
+  });
+
+  it("lists the item fields that differ between the two versions, in order", () => {
+    const c: Schemas["SyncConflictOut"] = {
+      ...item("A"),
+      database: { fields: [{ name: "id", value: "A" }, { name: "title", value: "x" }, { name: "goal", value: "g" }], text: null },
+      markdown: { fields: [{ name: "id", value: "A" }, { name: "title", value: "y" }, { name: "goal", value: "g" }], text: null },
+    };
+
+    expect(changedFields(c).map((f) => f.name)).toEqual(["title"]);
+    expect(changedFields({ ...c, database: null }).map((f) => f.name)).toEqual(["id", "title", "goal"]);
   });
 });

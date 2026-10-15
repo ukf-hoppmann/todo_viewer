@@ -22,7 +22,7 @@ Die Cloud-Sitzung füllt diese Datei je Block aus. Der Besitzer überträgt sie 
 
 ### Block A — Abgleich pro Eintrag (STORY-057: TASK-031, TASK-032, TASK-033)
 
-- Branch, Pull Request, letzter Commit: `cloud/block-a-abgleich-pro-eintrag` (ab `cloud/abgleich-bloecke`); Pull Request und letzter Commit stehen im Abschlussbericht der Sitzung (@@PR_A@@).
+- Branch, Pull Request, letzter Commit: `cloud/block-a-abgleich-pro-eintrag` (ab `cloud/abgleich-bloecke`); Pull Request und letzter Commit stehen im Abschlussbericht der Sitzung (PR #1).
 - `scripts/check.sh`: grün (ruff, mypy `--strict`, import-linter 4 Verträge, pytest 1028 bestanden / 1 übersprungen, tsc, eslint, vitest 300 bestanden). Basislauf vor der ersten Änderung: ebenfalls grün (952 + 1 übersprungen, 301).
 - Plan des Blocks (Abschnitte, einzeln testbar und integrierbar, Test zuerst; jeder Abschnitt hinterlässt einen grünen Stand):
   1. **TASK-031 Backup.** Schnittstellen: `domain/database_backup.py` (`backup_file_name(at, reason, attempt)`, `backups_to_remove(names, keep=10)`), Port `DatabaseBackup.create(reason) -> str | None`, Adapter `SqliteFileBackup` (`infrastructure/database/file_backup.py`), `Database(url, before_migration=…)` mit `migrations.has_pending`, `SyncService(..., db_backup=…)`, Fehler `DatabaseBackupFailedError` (`database_backup_failed`, 409).

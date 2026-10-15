@@ -1,10 +1,11 @@
 import { useState } from "react";
 import type { SourceStatus } from "../api/client";
 import { useSwitchBackend, useSyncSource } from "../api/queries";
-import { canRun, directionOf, isInSync, type SyncMode, type SyncPreview, type SyncScope, switchDirection } from "../domain/sync";
+import { buildResolutions, canRun, type ConflictChoice, type ConflictChoices, conflictKey, directionOf, isInSync, type SyncMode, type SyncPreview, type SyncScope, switchDirection } from "../domain/sync";
 import { ApiError } from "../api/client";
 import { describeError, type I18n, useI18n } from "../i18n/i18n";
 import { Modal } from "./Modal";
+import { SyncConflicts } from "./SyncConflicts";
 
 interface SyncDialogProps {
   /** A database project (sync, switch to markdown) or a markdown project (switch to the database). */
@@ -39,6 +40,7 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
   const folder = source.backend === "database" ? (source.sync_path ?? "") : source.path;
   const [chosen, setChosen] = useState<SyncScope>("both");
   const direction = switching ? switchDirection(source.backend) : directionOf(chosen);
+  const [choices, setChoices] = useState<ConflictChoices>({});
 
   const preview: SyncPreview | null = sync.data && !sync.data.executed ? sync.data : null;
   const result: SyncPreview | null = sync.data?.executed ? sync.data : null;
@@ -48,7 +50,7 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
 
   const run = () => {
     if (!preview) return;
-    const confirmed = { ...request, token: preview.token };
+    const confirmed = { ...request, token: preview.token, resolutions: switching ? [] : buildResolutions(preview.conflicts, choices) };
     if (switching) {
       move.mutate({ ...confirmed, backend: source.backend === "markdown" ? "database" : "markdown" }, { onSuccess: (saved) => onSwitched(saved.project) });
     } else {
@@ -80,6 +82,7 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
                   checked={chosen === d}
                   onChange={() => {
                     setChosen(d);
+                    setChoices({});
                     sync.reset();
                   }}
                 />
@@ -91,7 +94,7 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
         </>
       )}
 
-      {preview && <PreviewView preview={preview} switching={switching} />}
+      {preview && <PreviewView preview={preview} switching={switching} choices={choices} onChoose={(c, choice) => setChoices({ ...choices, [conflictKey(c)]: choice })} />}
       {result && <ResultView result={result} />}
       {error && (
         <div className="field-error" role="alert">
@@ -118,7 +121,12 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
   );
 }
 
-function PreviewView({ preview, switching }: { preview: SyncPreview; switching: boolean }) {
+function PreviewView({ preview, switching, choices, onChoose }: {
+  preview: SyncPreview;
+  switching: boolean;
+  choices: ConflictChoices;
+  onChoose: (conflict: SyncPreview["conflicts"][number], choice: ConflictChoice) => void;
+}) {
   const { t } = useI18n();
   return (
     <div className="sync-preview">
@@ -141,16 +149,10 @@ function PreviewView({ preview, switching }: { preview: SyncPreview; switching: 
         );
       })}
       {preview.conflicts.length > 0 && (
-        <div className="sync-missing" role="group" aria-label={t("sync.conflicts.title")}>
-          <h4>⚠ {t("sync.conflicts.title")}</h4>
-          <p>{t("sync.conflicts.hint")}</p>
-          <ul className="sync-list">
-            {preview.conflicts.map((c) => (
-              <li key={`c${c.kind}${c.label}${c.name ?? ""}`}>{`${entryText(c)} (${t(`sync.conflict.${c.reason}`)})`}</li>
-            ))}
-          </ul>
+        <>
+          <SyncConflicts conflicts={preview.conflicts} choices={choices} onChoose={onChoose} />
           {switching && <p className="field-error">{t("sync.conflicts.needed")}</p>}
-        </div>
+        </>
       )}
       {preview.skipped.length > 0 && (
         <div className="sync-skipped">

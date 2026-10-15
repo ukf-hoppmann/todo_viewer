@@ -271,6 +271,13 @@ class SyncStateStore(Protocol):
         """Stores `put` and forgets `remove` in one transaction."""
 
 
+class MergeMarkerCheck(Protocol):
+    """Finds files of a markdown backlog that hold Git merge markers, i.e. a merge or pull that is not finished."""
+
+    def files_with_markers(self, source: Source) -> list[str]:
+        """Relative paths of the backlog files of the markdown `source` that contain merge markers."""
+
+
 class DatabaseBackup(Protocol):
     """A consistent copy of the central database, made before something changes it that cannot be taken back."""
 
@@ -318,6 +325,7 @@ __all__ = [
     "FolderEntry",
     "FolderListing",
     "ItemStatusListener",
+    "MergeMarkerCheck",
     "NoteDocumentStore",
     "NoteRepository",
     "NotesSettingsStore",

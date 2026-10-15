@@ -2365,6 +2365,21 @@ export interface components {
         /** SyncStatusOut */
         SyncStatusOut: {
             /**
+             * Auto Last Run At
+             * @description When the automatic sync last carried something over (ISO 8601); null if it did not since the viewer started
+             */
+            auto_last_run_at: string | null;
+            /**
+             * Auto Paused
+             * @description Why the last check of the automatic sync could not run, e.g. merge_markers (a half-merged file in the folder), not_found, unsupported_format; null if it ran or has not run
+             */
+            auto_paused: string | null;
+            /**
+             * Auto Sync
+             * @description The automatic sync is on and acts for this project (the switch is on and there is a mirror)
+             */
+            auto_sync: boolean;
+            /**
              * Conflicts
              * @description Entries that need a decision: changed on both sides, new on both with different content, or deleted on one side. `state` can say in_sync while this is not 0: what a sync left undecided does not count as a change
              */

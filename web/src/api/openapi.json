@@ -3018,6 +3018,35 @@
       },
       "SyncStatusOut": {
         "properties": {
+          "auto_last_run_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the automatic sync last carried something over (ISO 8601); null if it did not since the viewer started",
+            "title": "Auto Last Run At"
+          },
+          "auto_paused": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why the last check of the automatic sync could not run, e.g. merge_markers (a half-merged file in the folder), not_found, unsupported_format; null if it ran or has not run",
+            "title": "Auto Paused"
+          },
+          "auto_sync": {
+            "description": "The automatic sync is on and acts for this project (the switch is on and there is a mirror)",
+            "title": "Auto Sync",
+            "type": "boolean"
+          },
           "conflicts": {
             "description": "Entries that need a decision: changed on both sides, new on both with different content, or deleted on one side. `state` can say in_sync while this is not 0: what a sync left undecided does not count as a change",
             "title": "Conflicts",
@@ -3058,7 +3087,10 @@
           "source_id",
           "state",
           "last_sync_at",
-          "conflicts"
+          "conflicts",
+          "auto_sync",
+          "auto_last_run_at",
+          "auto_paused"
         ],
         "title": "SyncStatusOut",
         "type": "object"

@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .services import (
+    AutoSyncService,
     BacklogOverviewService,
     ConversionService,
     DocumentService,
@@ -42,6 +43,7 @@ class Container:
     documents: DocumentService
     sync: SyncService
     sync_status: SyncStatusService
+    autosync: AutoSyncService
     folders: FolderBrowseService
     storage: StorageService
     ui_state: UiStateService

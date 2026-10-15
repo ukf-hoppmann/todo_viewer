@@ -629,3 +629,74 @@ def test_a_failed_backup_leaves_the_database_and_the_folder_unchanged(synced: Se
 
     assert synced.versions(synced.project) == versions_before
     assert synced.files(synced.tmp / "md") == files_before
+
+
+# --- the automatic mode (STORY-059): strict reading, merge markers, backup reason ---
+
+class Markers:
+    def __init__(self, files: list[str] | None = None) -> None:
+        self.files = files or []
+
+    def files_with_markers(self, source: Source) -> list[str]:
+        assert source.backend == "markdown"
+        return self.files
+
+
+def _auto(setup: Setup, backup: RecordingBackup | None = None, markers: Markers | None = None) -> SyncService:
+    return SyncService(setup.backlogs, setup.documents, db_backup=backup, states=setup.states,
+                       markers=markers or Markers())
+
+
+def test_an_automatic_run_does_not_create_a_missing_folder(setup: Setup):
+    service = _auto(setup)
+
+    with pytest.raises(SyncSourceInvalidError) as error:
+        service.preview(setup.project, auto=True)
+
+    assert error.value.details["reason"] == "not_found"
+    assert len(service.preview(setup.project).created) > 0  # a manual sync would create it
+
+
+def test_an_automatic_run_stops_at_files_with_merge_markers_and_changes_nothing(synced: Setup, md_project: Source):
+    edit_item(synced, md_project, "TASK-001", title="From the file")
+    service = _auto(synced, markers=Markers(["TODO.md"]))
+    versions = synced.versions(synced.project)
+
+    with pytest.raises(SyncSourceInvalidError) as error:
+        service.preview(synced.project, auto=True)
+    with pytest.raises(SyncSourceInvalidError):
+        service.run(synced.project, "x", auto=True)
+
+    assert error.value.details["reason"] == "merge_markers" and "TODO.md" in error.value.message
+    assert synced.versions(synced.project) == versions
+    assert len(service.preview(synced.project).changed) == 1  # a manual sync is not stopped by the check
+
+
+def test_an_automatic_run_carries_conflict_free_changes_only_and_never_deletes(synced: Setup, md_project: Source):
+    backup = RecordingBackup()
+    service = _auto(synced, backup)
+    edit_item(synced, md_project, "TASK-001", title="Free change from the file")
+    edit_item(synced, synced.project, "TASK-002", title="In the database")
+    edit_item(synced, md_project, "TASK-002", title="In the file")
+    gone = [i for i in synced.backlogs.load(md_project).items if i.id != "TASK-003"]
+    synced.backlogs.write_backlog(md_project, gone, "en")  # a deletion on the file side
+
+    preview = service.preview(synced.project, auto=True)
+    result = service.run(synced.project, preview.token, auto=True)
+
+    assert {e.label for e in result.resolved} == {"TASK-001"}
+    assert {e.label for e in result.deferred} == {"TASK-002", "TASK-003"} and result.deleted == ()
+    assert synced.backlogs.get(synced.project, "TASK-003")  # still in the database
+    assert synced.backlogs.get(synced.project, "TASK-001").title == "Free change from the file"
+    assert backup.reasons == ["auto"]
+
+
+def test_an_automatic_run_without_a_write_to_the_database_makes_no_backup(synced: Setup):
+    backup = RecordingBackup()
+    service = _auto(synced, backup)
+    edit_item(synced, synced.project, "TASK-001", title="Only in the database")
+
+    service.run(synced.project, service.preview(synced.project, auto=True).token, auto=True)
+
+    assert backup.reasons == []
+    assert "**Only in the database**" in (synced.tmp / "md" / "TODO.md").read_text(encoding="utf-8")

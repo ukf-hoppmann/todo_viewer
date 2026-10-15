@@ -1,3 +1,4 @@
+from .autosync import AutoSyncInfo, AutoSyncService
 from .backup import BackupService
 from .conversion import ConversionService, Demoted, Promoted
 from .documents import DocumentResult, DocumentService
@@ -15,6 +16,8 @@ from .topics import TopicService
 from .trash import TrashService
 
 __all__ = [
+    "AutoSyncInfo",
+    "AutoSyncService",
     "DecisionResult",
     "BackupService",
     "BacklogOverviewService",

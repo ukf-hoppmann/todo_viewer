@@ -37,7 +37,14 @@ from todo_viewer.domain.sync import (
     sync_pair,
 )
 
-from ..ports import BacklogRepository, DatabaseBackup, DocumentStore, ItemStatusListener, SyncStateStore
+from ..ports import (
+    BacklogRepository,
+    DatabaseBackup,
+    DocumentStore,
+    ItemStatusListener,
+    MergeMarkerCheck,
+    SyncStateStore,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -88,19 +95,24 @@ class SyncService:
 
     def __init__(self, backlogs: BacklogRepository, documents: DocumentStore,
                  listener: ItemStatusListener | None = None, db_backup: DatabaseBackup | None = None,
-                 states: SyncStateStore | None = None):
+                 states: SyncStateStore | None = None, markers: MergeMarkerCheck | None = None):
         self._backlogs = backlogs
         self._documents = documents
         self._listener = listener
         self._db_backup = db_backup
         self._states = states
+        self._markers = markers
         self._locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
         self._guard = threading.Lock()
 
-    def preview(self, source: Source, direction: SyncDirection | None = None) -> SyncPreview:
-        """What a sync would do; changes nothing. `direction` only decides whether a missing folder is an error."""
+    def preview(self, source: Source, direction: SyncDirection | None = None, auto: bool = False) -> SyncPreview:
+        """What a sync would do; changes nothing. `direction` only decides whether a missing folder is an error.
+
+        `auto` is the strict reading of an automatic run: a missing folder and files with Git merge markers are
+        errors (SyncSourceInvalidError), never something to work around.
+        """
         with self._lock(source):
-            return self._compare(source, direction).plan.preview
+            return self._compare(source, direction, auto).plan.preview
 
     def in_sync(self, source: Source, direction: SyncDirection | None = None) -> bool:
         """True if a sync would find nothing to carry over and no conflict."""
@@ -117,20 +129,22 @@ class SyncService:
             return self._fingerprints(source)
 
     def run(self, source: Source, token: str | None, resolutions: Sequence[Resolution] = (),
-            direction: SyncDirection | None = None, language: str = "en", remember: bool = True) -> SyncResult:
+            direction: SyncDirection | None = None, language: str = "en", remember: bool = True,
+            auto: bool = False) -> SyncResult:
         """Carries over every entry only one side changed, and the conflicts `resolutions` decide; the rest stays.
 
         `token` is the one of the preview the caller confirmed (SyncStaleError if either side changed since).
         `direction` restricts which side is written. With `remember` the state of the entries both sides now agree on
-        is stored for the next sync.
+        is stored for the next sync. `auto` marks a run of the automatic sync (read strictly like `preview(auto=True)`);
+        it is the caller's task to pass no decisions, so nothing is deleted.
         """
         with self._lock(source):
             direction = self._direction(source, direction)
-            found = self._compare(source, direction)
+            found = self._compare(source, direction, auto)
             check_token(token, found.plan.preview.token)
             decisions = decide(found.plan, resolutions, direction)
             if any(t.to is Side.DATABASE for t in decisions.transfers) and self._db_backup:
-                self._db_backup.create("sync")  # raises before anything is written if it fails
+                self._db_backup.create("auto" if auto else "sync")  # raises before anything is written if it fails
             primary_before = (found.database if source.backend == "database" else found.markdown).items
             done = self._apply(found, decisions, language)
             after = self._read_sides(source, direction)
@@ -261,20 +275,31 @@ class SyncService:
             return SyncDirection.FROM_MD
         return direction
 
-    def _compare(self, source: Source, direction: SyncDirection | None) -> _Compared:
+    def _compare(self, source: Source, direction: SyncDirection | None, auto: bool = False) -> _Compared:
         direction = self._direction(source, direction)
-        database, markdown = self._read_sides(source, direction)
+        if auto:
+            self._refuse_merge_markers(source)
+        database, markdown = self._read_sides(source, direction, strict=auto)
         states = self._states_of(source, markdown)
         plan = plan_sync(database.items, markdown.items, database.documents, markdown.documents, states,
                          [*database.skipped, *markdown.skipped])
         return _Compared(database, markdown, states, plan)
 
-    def _read_sides(self, source: Source, direction: SyncDirection | None,
-                    mirror_may_be_empty: bool = False) -> tuple[_Side, _Side]:
+    def _refuse_merge_markers(self, source: Source) -> None:
+        """An unfinished Git merge leaves half-merged text in the files; an automatic run must not read it."""
+        if self._markers is None:
+            return
+        _, markdown_source = sync_pair(source, SyncDirection.FROM_MD)
+        files = self._markers.files_with_markers(markdown_source)
+        if files:
+            raise SyncSourceInvalidError("merge_markers", f"Git merge markers in {', '.join(files)}.")
+
+    def _read_sides(self, source: Source, direction: SyncDirection | None, mirror_may_be_empty: bool = False,
+                    strict: bool = False) -> tuple[_Side, _Side]:
         """Both sides; an unusable backlog stops the sync before anything is written. A folder that does not exist
         yet is an empty side only where nothing is lost by it: when the folder is the target or the mirror."""
         database_source, markdown_source = sync_pair(source, direction or SyncDirection.FROM_MD)
-        markdown_may_be_empty = (direction is SyncDirection.TO_MD or
+        markdown_may_be_empty = not strict and (direction is SyncDirection.TO_MD or
                                  (direction is None and source.backend == "database") or
                                  (mirror_may_be_empty and source.backend == "database"))
         database_may_be_empty = mirror_may_be_empty and source.backend == "markdown"

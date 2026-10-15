@@ -9,6 +9,7 @@ from .documents import MarkdownDocumentStore
 from .editors import BacklogEntryEditor, EntryLocator, EntryMover, EntryRenderer
 from .field_mapper import BacklogFieldMapper, PriorityNormalizer
 from .layout import LayoutFactory, SourcePathResolver
+from .merge_markers import MarkdownMergeMarkers
 from .parsers import BacklogParser
 from .repository import MarkdownBacklogRepository
 from .templates import EmptyBacklogTemplates
@@ -35,5 +36,6 @@ def build_markdown_documents(base_dir: Path, locks: KeyedLocks) -> MarkdownDocum
     return MarkdownDocumentStore(LayoutFactory(SourcePathResolver(base_dir)), TextFileStore(), locks)
 
 
-__all__ = ["KeyedLocks", "MarkdownBacklogRepository", "MarkdownDocumentStore", "MarkdownRawBackup",
+__all__ = ["KeyedLocks", "MarkdownBacklogRepository", "MarkdownDocumentStore", "MarkdownMergeMarkers",
+           "MarkdownRawBackup",
            "build_markdown_documents", "build_markdown_repository"]

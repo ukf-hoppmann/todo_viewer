@@ -46,7 +46,8 @@ def test_a_project_without_a_mirror_has_no_sync_state(api, workspace):
     bare = api.post("/api/v2/sources", {"backend": "database", "project": "Bare"}).body["id"]
 
     assert [_state(api, plain), _state(api, bare)] == ["none", "none"]
-    assert _status(api, plain) == {"source_id": plain, "state": "none", "last_sync_at": None, "conflicts": 0}
+    assert _status(api, plain) == {"source_id": plain, "state": "none", "last_sync_at": None, "conflicts": 0,
+                         "auto_sync": False, "auto_last_run_at": None, "auto_paused": None}
 
 
 def test_a_mirror_that_was_never_synced_is_unknown_and_a_sync_puts_it_in_sync(api, workspace):
@@ -106,7 +107,8 @@ def test_moving_the_mirror_forgets_the_last_sync(api, workspace):
                                                "sync_path": str(workspace.root / "elsewhere")}).body
 
     assert moved["mirror"] == "markdown"
-    assert _status(api, sid) == {"source_id": sid, "state": "unknown", "last_sync_at": None, "conflicts": 0}
+    assert _status(api, sid) == {"source_id": sid, "state": "unknown", "last_sync_at": None, "conflicts": 0,
+                         "auto_sync": False, "auto_last_run_at": None, "auto_paused": None}
 
 
 def test_asking_for_the_state_changes_and_syncs_nothing(api, workspace):
@@ -141,3 +143,14 @@ def test_the_state_of_an_unknown_project_is_a_404(api, workspace):
     missing = api.get("/api/v2/sources/no-such-project/sync-status")
 
     assert (missing.status_code, missing.body["code"]) == (404, "source_gone")
+
+
+def test_the_status_tells_whether_the_automatic_sync_acts_and_what_it_did(api, workspace):
+    sid = _central(api, workspace)
+    assert _status(api, sid)["auto_sync"] is False
+
+    api.put(f"/api/v2/sources/{sid}", {"project": "Central", "sync_path": str(workspace.root / "md"),
+                                       "auto_sync": True})
+    status = _status(api, sid)
+
+    assert (status["auto_sync"], status["auto_last_run_at"], status["auto_paused"]) == (True, None, None)

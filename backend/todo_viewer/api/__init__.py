@@ -1,6 +1,8 @@
 """HTTP layer (FastAPI). Translates requests into service calls and results into JSON."""
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -16,7 +18,15 @@ from .request_log import RequestLogMiddleware
 
 
 def create_app(container: Container, frontend_dir: Path) -> FastAPI:
-    app = FastAPI(title="ToDo Viewer", version="2.0")
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        container.autosync.ensure_running()  # only if a project has the automatic sync on
+        try:
+            yield
+        finally:
+            container.autosync.stop()
+
+    app = FastAPI(title="ToDo Viewer", version="2.0", lifespan=lifespan)
     app.state.container = container
     install_error_handlers(app)
     app.add_middleware(RequestLogMiddleware)

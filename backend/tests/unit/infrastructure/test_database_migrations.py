@@ -106,7 +106,8 @@ def test_projects_from_before_the_automatic_sync_get_the_switch_off(tmp_path: Pa
         for number in range(1, 9):
             for statement in MIGRATIONS[number]:
                 conn.execute(sa.text(statement))
-        conn.execute(sa.text("INSERT INTO projects (id, name, backend, path, position) VALUES ('p', 'P', 'markdown', '/p', 0)"))
+        conn.execute(sa.text(
+            "INSERT INTO projects (id, name, backend, path, position) VALUES ('p', 'P', 'markdown', '/p', 0)"))
 
     with db.begin() as conn:
         switches = list(conn.execute(sa.text("SELECT auto_sync FROM projects")).scalars())

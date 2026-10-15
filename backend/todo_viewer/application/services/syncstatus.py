@@ -45,9 +45,9 @@ class SyncStatusService:
                           sides.conflicts)
 
     def run(self, source: Source, token: str | None, resolutions: Sequence[Resolution] = (),
-            direction: SyncDirection | None = None, language: str = "en") -> SyncResult:
+            direction: SyncDirection | None = None, language: str = "en", auto: bool = False) -> SyncResult:
         """`SyncService.run`, then the state of both sides is stored as the state of the last sync."""
-        result = self._sync.run(source, token, resolutions, direction, language)
+        result = self._sync.run(source, token, resolutions, direction, language, auto=auto)
         if result.fingerprints is not None:
             self._record(source, result.fingerprints)
         return result

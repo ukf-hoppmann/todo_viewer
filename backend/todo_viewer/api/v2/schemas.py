@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from todo_viewer.application.ports import FolderListing, StorageDescription
-from todo_viewer.application.services import DocumentResult, RetypeResult, SyncResult, SyncStatus
+from todo_viewer.application.services import AutoSyncInfo, DocumentResult, RetypeResult, SyncResult, SyncStatus
 from todo_viewer.domain.documents import DocumentRef, item_documents
 from todo_viewer.domain.item import Item, Location
 from todo_viewer.domain.source import Source, SourceProblem
@@ -131,10 +131,21 @@ class SyncStatusOut(BaseModel):
                     "deleted on one side. `state` can say in_sync while this is not 0: what a sync left undecided "
                     "does not count as a change")
 
+    auto_sync: bool = Field(description="The automatic sync is on and acts for this project (the switch is on and "
+                                        "there is a mirror)")
+    auto_last_run_at: str | None = Field(
+        description="When the automatic sync last carried something over (ISO 8601); null if it did not since the "
+                    "viewer started")
+    auto_paused: str | None = Field(
+        description="Why the last check of the automatic sync could not run, e.g. merge_markers (a half-merged file "
+                    "in the folder), not_found, unsupported_format; null if it ran or has not run")
+
     @classmethod
-    def of(cls, source: Source, status: SyncStatus) -> SyncStatusOut:
+    def of(cls, source: Source, status: SyncStatus, auto: AutoSyncInfo | None = None) -> SyncStatusOut:
+        auto = auto or AutoSyncInfo()
         return cls(source_id=source.id, state=status.state.value, last_sync_at=status.last_sync_at,
-                   conflicts=status.conflicts)
+                   conflicts=status.conflicts, auto_sync=source.auto_sync_active, auto_last_run_at=auto.last_run_at,
+                   auto_paused=auto.paused)
 
 
 class StorageOut(BaseModel):
@@ -159,7 +170,8 @@ class SourceOut(BaseModel):
                     "database project; null if a database project has none")
     mirror: Literal["none", "markdown", "database"] = Field(
         description="The other side kept as a mirror; it is written by a sync only")
-    auto_sync: bool = Field(description="The owner's switch for the automatic sync; it acts only while there is a mirror")
+    auto_sync: bool = Field(
+        description="The owner's switch for the automatic sync; it acts only while there is a mirror")
 
     @classmethod
     def of(cls, source: Source) -> SourceOut:

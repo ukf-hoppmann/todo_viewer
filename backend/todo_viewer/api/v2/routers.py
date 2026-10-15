@@ -9,6 +9,7 @@ from todo_viewer.domain.sync import Choice, Resolution, SyncDirection
 from todo_viewer.domain.trash import live
 
 from ..dependencies import (
+    AutoSync,
     Conversion,
     Documents,
     Folders,
@@ -226,11 +227,12 @@ def list_sources(sources: Sources) -> list[SourceOut]:
 
 
 @router.post("/sources", tags=["sources"])
-def add_source(body: SourceIn, sources: Sources, request: Request) -> SourceOut:
+def add_source(body: SourceIn, sources: Sources, autosync: AutoSync, request: Request) -> SourceOut:
     note(request, target=body.path)
     out = SourceOut.of(sources.add(body.path, body.project, body.backend or "markdown", body.sync_path, body.mirror,
                                     body.auto_sync))
     note(request, source=out.id)
+    autosync.ensure_running()
     return out
 
 
@@ -246,10 +248,13 @@ def create_backlog(body: BacklogCreateIn, sources: Sources, request: Request) ->
 
 
 @router.put("/sources/{source_id}", tags=["sources"])
-def update_source(source_id: str, body: SourceIn, sources: Sources, request: Request) -> SourceOut:
+def update_source(source_id: str, body: SourceIn, sources: Sources, autosync: AutoSync,
+                  request: Request) -> SourceOut:
     note(request, target=body.path)
-    return SourceOut.of(sources.update(source_id, body.path, body.project, body.backend, body.sync_path, body.mirror,
+    out = SourceOut.of(sources.update(source_id, body.path, body.project, body.backend, body.sync_path, body.mirror,
                                       body.auto_sync))
+    autosync.ensure_running()  # the timer starts when a project got the switch on
+    return out
 
 
 @router.delete("/sources/{source_id}", tags=["sources"])
@@ -284,21 +289,21 @@ def sync_source(source_id: str, body: SyncIn, sync: Sync, sync_status: SyncStatu
 
 
 @router.get("/sources/{source_id}/sync-status", tags=["sources"])
-def source_sync_status(source_id: str, lookup: Lookup, sync_status: SyncStatus) -> SyncStatusOut:
+def source_sync_status(source_id: str, lookup: Lookup, sync_status: SyncStatus, autosync: AutoSync) -> SyncStatusOut:
     """Which side of a project with a mirror changed since its last sync (a sync through this API).
 
     Computed when asked, not with the lists of projects: it reads both sides of the project. Changes nothing and
     syncs nothing. `unknown` means never synced while the sides differ, `unreadable` that a side cannot be read.
     """
     source = lookup.by_id(source_id)
-    return SyncStatusOut.of(source, sync_status.status(source))
+    return SyncStatusOut.of(source, sync_status.status(source), autosync.info(source.id))
 
 
 @router.get("/sync-status", tags=["sources"])
-def sync_statuses(sources: Sources, sync_status: SyncStatus) -> list[SyncStatusOut]:
+def sync_statuses(sources: Sources, sync_status: SyncStatus, autosync: AutoSync) -> list[SyncStatusOut]:
     """`GET /sources/{id}/sync-status` for every project, in the order of the projects."""
     try:
-        return [SyncStatusOut.of(s, sync_status.status(s)) for s in sources.all()]
+        return [SyncStatusOut.of(s, sync_status.status(s), autosync.info(s.id)) for s in sources.all()]
     except ConfigMissingError:
         return []
 

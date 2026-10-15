@@ -12,6 +12,7 @@ import structlog
 
 from todo_viewer.application.container import Container
 from todo_viewer.application.services import (
+    AutoSyncService,
     BacklogOverviewService,
     BackupService,
     ConversionService,
@@ -55,6 +56,7 @@ from todo_viewer.infrastructure.filesystem import GitProjectNameSuggester, Local
 from todo_viewer.infrastructure.log_setup import configure_logging
 from todo_viewer.infrastructure.markdown import (
     KeyedLocks,
+    MarkdownMergeMarkers,
     MarkdownRawBackup,
     build_markdown_documents,
     build_markdown_repository,
@@ -73,6 +75,8 @@ class Settings:
     browse_start: str | None
     log_file: Path | None = None
     log_level: str = "INFO"
+    # Seconds between two checks of the automatic sync; 0 = no timer. It runs only while a project has the switch on.
+    auto_sync_interval: float = 0.0
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -83,6 +87,7 @@ class Settings:
             browse_start=os.environ.get("BROWSE_START"),
             log_file=Path(os.environ["LOG_FILE"]) if os.environ.get("LOG_FILE") else None,
             log_level=os.environ.get("LOG_LEVEL", "INFO"),
+            auto_sync_interval=float(os.environ.get("AUTO_SYNC_INTERVAL", "30")),
         )
 
 
@@ -92,6 +97,7 @@ def start_logging(settings: Settings) -> None:
     structlog.get_logger(__name__).info(
         "startup", api="2", python=platform.python_version(), config_dir=str(settings.config_dir),
         frontend_dir=str(settings.frontend_dir), browse_start=settings.browse_start,
+        auto_sync_interval=settings.auto_sync_interval,
         log_file=str(settings.log_file) if settings.log_file else None, log_level=settings.log_level.upper())
 
 
@@ -116,7 +122,9 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     note_repo = DatabaseNoteRepository(database)
     note_settings = NotesSettingsService(JsonNotesSettingsStore(config))
     notes = NoteService(note_repo, source_repo, backlogs, note_settings.current)
-    sync = SyncService(backlogs, documents, notes, db_backup=file_backup, states=DatabaseSyncStateStore(database))
+    markers = MarkdownMergeMarkers(LayoutFactory(resolver))
+    sync = SyncService(backlogs, documents, notes, db_backup=file_backup, states=DatabaseSyncStateStore(database),
+                       markers=markers)
     raw_backup = RoutingRawBackup({"markdown": MarkdownRawBackup(LayoutFactory(resolver)),
                                    "database": DatabaseRawBackup()})
     backup = BackupService(raw_backup, sync, settings.config_dir / "backups")
@@ -124,6 +132,7 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
     item_documents = DocumentService(backlogs, documents, planner, rules, today)
     note_documents = NoteDocumentService(note_repo, DatabaseNoteDocumentStore(database), today)
 
+    sync_status = SyncStatusService(sync, source_repo)
     return Container(
         overview=BacklogOverviewService(source_repo, backlogs),
         items=items,
@@ -139,7 +148,8 @@ def build_container(settings: Settings, today: Callable[[], date] = date.today) 
         source_lookup=lookup,
         documents=item_documents,
         sync=sync,
-        sync_status=SyncStatusService(sync, source_repo),
+        sync_status=sync_status,
+        autosync=AutoSyncService(sync, sync_status, source_repo, settings.auto_sync_interval),
         folders=FolderBrowseService(LocalFolderBrowser(browse_start_from(settings.browse_start), resolver)),
         storage=StorageService(database),
         ui_state=UiStateService(DatabaseUiStateStore(database, legacy.ui_state)),

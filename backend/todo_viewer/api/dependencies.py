@@ -7,6 +7,7 @@ from fastapi import Depends, Request
 
 from todo_viewer.application.container import Container
 from todo_viewer.application.services import (
+    AutoSyncService,
     BacklogOverviewService,
     ConversionService,
     DocumentService,
@@ -96,6 +97,10 @@ def _sync_status(c: ContainerDep) -> SyncStatusService:
     return c.sync_status
 
 
+def _autosync(c: ContainerDep) -> AutoSyncService:
+    return c.autosync
+
+
 def _folders(c: ContainerDep) -> FolderBrowseService:
     return c.folders
 
@@ -123,6 +128,7 @@ Lookup = Annotated[SourceLookup, Depends(_source_lookup)]
 Documents = Annotated[DocumentService, Depends(_documents)]
 Sync = Annotated[SyncService, Depends(_sync)]
 SyncStatus = Annotated[SyncStatusService, Depends(_sync_status)]
+AutoSync = Annotated[AutoSyncService, Depends(_autosync)]
 Folders = Annotated[FolderBrowseService, Depends(_folders)]
 Storage = Annotated[StorageService, Depends(_storage)]
 UiState = Annotated[UiStateService, Depends(_ui_state)]

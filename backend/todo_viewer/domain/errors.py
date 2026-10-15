@@ -163,6 +163,19 @@ class InvalidSourceError(DomainError):
     """The backlog folder is unusable; `code` says why (missing_path, not_found, not_a_dir, no_todo)."""
 
 
+# --- notes as files ---
+
+class NoteFormatError(DomainError):
+    """A notes file (note, topics, counters) does not follow the format; `line` says where (1-based, 0 = whole file)."""
+
+    code = "note_format"
+
+    def __init__(self, message: str, line: int = 0, file: str | None = None):
+        where = f"{file}, " if file else ""
+        super().__init__(f"{where}line {line}: {message}" if line else f"{where}{message}", line=str(line),
+                         **({"file": file} if file else {}))
+
+
 # --- sync ---
 
 class AutoSyncNeedsMirrorError(InvalidSourceError):

@@ -88,7 +88,7 @@ Die Cloud-Sitzung füllt diese Datei je Block aus. Der Besitzer überträgt sie 
 
 ### Block B — Dialog und Auto-Sync (STORY-058, STORY-059)
 
-- Branch, Pull Request, letzter Commit: `cloud/block-b-dialog-auto-sync` (ab `cloud/block-a-abgleich-pro-eintrag`); Pull Request und letzter Commit im Abschlussbericht der Sitzung (@@PR_B@@).
+- Branch, Pull Request, letzter Commit: `cloud/block-b-dialog-auto-sync` (ab `cloud/block-a-abgleich-pro-eintrag`); Pull Request und letzter Commit im Abschlussbericht der Sitzung (PR #2).
 - `scripts/check.sh`: grün (ruff, mypy `--strict`, import-linter, pytest 1065 bestanden / 1 übersprungen, tsc, eslint, vitest 321 bestanden).
 - Plan des Blocks:
   1. **STORY-058 Diff und Entscheidungen.** Reine Funktionen `domain/diff.ts` (`diffLines`, Zeilenvergleich per längster gemeinsamer Teilfolge, keine neue Abhängigkeit) und in `domain/sync.ts` `conflictKey`, `choiceOf`, `buildResolutions`, `changedFields`; Komponente `SyncConflicts` (Entscheidung je Konflikt, Vorbelegung Aufschieben, Vergleich); `SyncDialog` schickt `resolutions` mit der Bestätigung.

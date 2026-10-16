@@ -57,6 +57,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/backlog/items/{ref}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Notizen und Specs eines Items (Name, Art, Version) */
+        get: operations["backlog_list_documents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/items/{ref}/documents/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ein Dokument eines Items mit Inhalt und Version */
+        get: operations["backlog_get_document"];
+        /** Ersetzt ein Dokument in `version` oder legt ein neues an (<LABEL>_notes.md, <LABEL>_spec[_<thema>].md) */
+        put: operations["backlog_put_document"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/backlog/items/{ref}/move": {
         parameters: {
             query?: never;
@@ -68,6 +103,23 @@ export interface paths {
         put?: never;
         /** Hängt ein Item unter einen anderen Parent (oder zur Wurzel) und setzt seine Stelle unter den Geschwistern */
         post: operations["backlog_move_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/items/{ref}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen; der erste legt sie an und braucht eine Kurzfassung des Items */
+        post: operations["backlog_append_note"];
         delete?: never;
         options?: never;
         head?: never;
@@ -451,6 +503,21 @@ export interface components {
             /** Areas */
             areas: string[];
         };
+        /** BacklogAppendNoteBody */
+        BacklogAppendNoteBody: {
+            /** Decided */
+            decided?: string[];
+            /** Discussed */
+            discussed?: string[];
+            /** Open */
+            open?: string[];
+            /** Project */
+            project?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Topic */
+            topic: string;
+        };
         /** BacklogCreateItemBody */
         BacklogCreateItemBody: {
             /** Fields */
@@ -475,6 +542,17 @@ export interface components {
             project?: string | null;
             /** Version */
             version: number;
+        };
+        /** BacklogPutDocumentBody */
+        BacklogPutDocumentBody: {
+            /** Content */
+            content: string;
+            /** Project */
+            project?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Version */
+            version?: number | null;
         };
         /** BacklogReopenAncestorsBody */
         BacklogReopenAncestorsBody: {
@@ -568,6 +646,36 @@ export interface components {
             deleted: number;
             /** Has Children */
             has_children: boolean;
+        };
+        /** DocumentInfo */
+        DocumentInfo: {
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+        };
+        /** DocumentOut */
+        DocumentOut: {
+            /** Content */
+            content: string;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
         };
         /** ElementOut */
         ElementOut: {
@@ -685,6 +793,8 @@ export interface components {
             goal: string | null;
             /** Label */
             label: string;
+            /** Notes */
+            notes: string[];
             parent: components["schemas"]["ItemSummary"] | null;
             /** Priority */
             priority: string;
@@ -695,6 +805,8 @@ export interface components {
             required_for_parent: boolean | null;
             /** Resolution */
             resolution: string | null;
+            /** Spec */
+            spec: string[];
             /** Status */
             status: string;
             /** Summary */
@@ -1189,6 +1301,109 @@ export interface operations {
             };
         };
     };
+    backlog_list_documents: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentInfo"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_get_document: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_put_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacklogPutDocumentBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     backlog_move_item: {
         parameters: {
             query?: never;
@@ -1211,6 +1426,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_append_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacklogAppendNoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
                 };
             };
             /** @description Client Error */

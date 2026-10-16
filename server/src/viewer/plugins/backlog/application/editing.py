@@ -8,7 +8,8 @@ from viewer.core.application.ports import Clock, Database, EventBus, Transaction
 from viewer.core.domain.errors import InvalidInput
 from viewer.core.domain.events import Event
 from viewer.plugins.backlog.application.items import ItemService
-from viewer.plugins.backlog.application.ports import ItemRepository
+from viewer.plugins.backlog.application.ports import DocumentRepository, ItemRepository
+from viewer.plugins.backlog.domain.documents import renamed_documents
 from viewer.plugins.backlog.domain.editing import (
     apply_update,
     build_new_item,
@@ -52,6 +53,7 @@ class EditService:
         self,
         items: ItemService,
         repository: ItemRepository,
+        documents: DocumentRepository,
         registry: Any,
         database: Database,
         clock: Clock,
@@ -59,6 +61,7 @@ class EditService:
     ) -> None:
         self._items = items
         self._repository = repository
+        self._documents = documents
         self._registry = registry
         self._database = database
         self._clock = clock
@@ -171,7 +174,17 @@ class EditService:
             if current.revision != version:
                 self._registry.bump_revision(tx, item.uid, version)  # wirft version_conflict
             element = self._registry.relabel(tx, item.uid, KIND_BY_TYPE[new_type])
-            retyped = replace(item, type=new_type, label=element.label, revision=element.revision)
+            renames = renamed_documents([*item.notes, *item.spec], item.label, element.label)
+            for old_name, new_name in renames.items():
+                self._documents.rename(tx, item.uid, old_name, new_name)
+            retyped = replace(
+                item,
+                type=new_type,
+                label=element.label,
+                revision=element.revision,
+                notes=tuple(renames.get(n, n) for n in item.notes),
+                spec=tuple(renames.get(n, n) for n in item.spec),
+            )
             before = self._repository.list_in(tx, [item.project_uid])
             after = [retyped if i.uid == item.uid else i for i in before]
             self._rules.check_change(before, after)

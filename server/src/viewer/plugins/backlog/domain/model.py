@@ -41,6 +41,9 @@ class Item:
     revision: int
     deleted_at: datetime | None = None
     dependencies: tuple[str, ...] = field(default_factory=tuple)
+    #: Namen der Notiz- und Spec-Dokumente (Namen folgen dem Label).
+    notes: tuple[str, ...] = field(default_factory=tuple)
+    spec: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)

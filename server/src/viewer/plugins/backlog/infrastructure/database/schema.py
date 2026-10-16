@@ -58,4 +58,19 @@ def _v1(connection: Any) -> None:
         connection.execute(text("INSERT INTO backlog_priorities(code, rank) VALUES (:c, :r)"), {"c": code, "r": rank})
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1),)
+def _v2(connection: Any) -> None:
+    """Notizen und Specs der Items."""
+    connection.exec_driver_sql(
+        """CREATE TABLE backlog_documents (
+            item_uid TEXT NOT NULL REFERENCES backlog_items(uid) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            kind TEXT NOT NULL CHECK (kind IN ('notes', 'spec')),
+            content TEXT NOT NULL,
+            revision INTEGER NOT NULL DEFAULT 1,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (item_uid, name)
+        )"""
+    )
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2))

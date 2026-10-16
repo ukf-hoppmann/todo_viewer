@@ -17,7 +17,7 @@ EPIC = "Epic"
 EPIC_NEEDS_REQUIRED_CHILD = frozenset({"In progress", "Awaiting confirmation", "Completed"})
 DONE_FOR_AWAITING = frozenset({"Awaiting confirmation", "Completed"})
 #: Regeln, die nur vom Item selbst abhängen, nicht von anderen Items.
-OWN_RULES = frozenset({"epic_with_parent", "required_for_parent_missing"})
+OWN_RULES = frozenset({"epic_with_parent", "required_for_parent_missing", "summary_required_with_notes"})
 
 MESSAGES = {
     "epic_without_required_child": "Epic {item} braucht mindestens ein Pflichtkind, bevor es 'Open' verlässt.",
@@ -29,6 +29,7 @@ MESSAGES = {
     "parent_cycle": "Die Parent-Verweise bilden einen Kreis: {items}.",
     "dependency_cycle": "Die Abhängigkeiten bilden einen Kreis: {items}.",
     "unknown_reference": "{item} verweist auf unbekannte Items: {items}.",
+    "summary_required_with_notes": "{item} hat Notizen und braucht deshalb eine Kurzfassung.",
 }
 
 
@@ -103,6 +104,8 @@ class LifecycleRules:
             yield Violation("epic_with_parent", item.uid)
         if item.parent_uid and item.required_for_parent is None:
             yield Violation("required_for_parent_missing", item.uid)
+        if item.notes and not item.summary:
+            yield Violation("summary_required_with_notes", item.uid)
         refs = ([item.parent_uid] if item.parent_uid else []) + list(item.dependencies)
         unknown = tuple(sorted({ref for ref in refs if ref not in known}))
         if unknown:

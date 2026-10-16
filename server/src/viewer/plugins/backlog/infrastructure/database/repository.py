@@ -176,6 +176,17 @@ class SqlItemRepository:
         dependencies: dict[str, list[str]] = {}
         for row in dependency_rows:
             dependencies.setdefault(row.item_uid, []).append(row.depends_on_uid)
+        document_rows = connection.execute(
+            text(
+                "SELECT item_uid, name, kind FROM backlog_documents WHERE item_uid IN ("
+                + ", ".join(f":{name}" for name in marks)
+                + ") ORDER BY item_uid, kind DESC, name"
+            ),
+            marks,
+        ).all()
+        documents: dict[tuple[str, str], list[str]] = {}
+        for row in document_rows:
+            documents.setdefault((row.item_uid, row.kind), []).append(row.name)
         return [
             Item(
                 uid=row.uid,
@@ -197,6 +208,8 @@ class SqlItemRepository:
                 revision=row.revision,
                 deleted_at=datetime.fromisoformat(row.deleted_at) if row.deleted_at else None,
                 dependencies=tuple(dependencies.get(row.uid, ())),
+                notes=tuple(documents.get((row.uid, "notes"), ())),
+                spec=tuple(documents.get((row.uid, "spec"), ())),
             )
             for row in rows
         ]

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import date
+from dataclasses import dataclass, field
+from datetime import date, datetime
 from typing import Any
 
 from viewer.core.domain.operations import HttpBinding, Operation
+from viewer.plugins.backlog.application.documents import DocumentService
 from viewer.plugins.backlog.application.editing import EditService
 from viewer.plugins.backlog.application.items import IndexEntry, ItemDetail, ItemService
+from viewer.plugins.backlog.application.ports import Document
 from viewer.plugins.backlog.domain.model import Item, Progress
 
 
@@ -83,6 +85,8 @@ class ItemOut:
     summary: str | None
     resolution: str | None
     created: date
+    notes: list[str]
+    spec: list[str]
     children: list[ItemSummary]
     dependencies: list[ItemSummary]
     progress: ProgressOut | None
@@ -168,13 +172,75 @@ class AreasOut:
     areas: list[str]
 
 
+@dataclass(frozen=True)
+class ListDocuments:
+    ref: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class DocumentInfo:
+    name: str
+    kind: str
+    version: int
+    updated_at: datetime
+
+
+@dataclass(frozen=True)
+class GetDocument:
+    ref: str
+    name: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class DocumentOut:
+    name: str
+    kind: str
+    content: str
+    version: int
+    updated_at: datetime
+
+
+@dataclass(frozen=True)
+class PutDocument:
+    ref: str
+    name: str
+    content: str
+    #: Die Version, die ersetzt wird; ohne Angabe wird ein neues Dokument angelegt.
+    version: int | None = None
+    #: Die Kurzfassung des Items; nötig, wenn das Item mit diesem Dokument zum ersten Mal Notizen bekommt.
+    summary: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class AppendNote:
+    ref: str
+    topic: str
+    discussed: list[str] = field(default_factory=list)
+    decided: list[str] = field(default_factory=list)
+    open: list[str] = field(default_factory=list)
+    summary: str | None = None
+    project: str | None = None
+
+
+def document_info(document: Document) -> DocumentInfo:
+    return DocumentInfo(document.name, document.kind, document.revision, document.updated_at)
+
+
+def document_out(document: Document) -> DocumentOut:
+    return DocumentOut(document.name, document.kind, document.content, document.revision, document.updated_at)
+
+
 class BacklogServices:
     """Die Dienste des Plugins; `repository` ist auch für Tests und für andere Teile des Backlogs offen."""
 
-    def __init__(self, items: ItemService, repository: Any, editing: EditService) -> None:
+    def __init__(self, items: ItemService, repository: Any, editing: EditService, documents: DocumentService) -> None:
         self.items = items
         self.repository = repository
         self.editing = editing
+        self.documents = documents
 
 
 def _split(value: str | None) -> list[str]:
@@ -223,6 +289,8 @@ def item_out(detail: ItemDetail) -> ItemOut:
         i.summary,
         i.resolution,
         i.created,
+        list(i.notes),
+        list(i.spec),
         [summary(child) for child in detail.children],
         [summary(dependency) for dependency in detail.dependencies],
         _progress(detail.progress),
@@ -327,5 +395,44 @@ OPERATIONS: tuple[Operation, ...] = (
         AreasOut,
         lambda s, d: AreasOut(s.editing.list_areas(d.project)),
         HttpBinding("GET", "/areas"),
+    ),
+    Operation(
+        "list_documents",
+        "Die Notizen und Specs eines Items (Name, Art, Version)",
+        "read",
+        ListDocuments,
+        list[DocumentInfo],
+        lambda s, d: [document_info(doc) for doc in s.documents.list_documents(d.ref, d.project)],
+        HttpBinding("GET", "/items/{ref}/documents"),
+    ),
+    Operation(
+        "get_document",
+        "Ein Dokument eines Items mit Inhalt und Version",
+        "read",
+        GetDocument,
+        DocumentOut,
+        lambda s, d: document_out(s.documents.get_document(d.ref, d.project, d.name)),
+        HttpBinding("GET", "/items/{ref}/documents/{name}"),
+    ),
+    Operation(
+        "put_document",
+        "Ersetzt ein Dokument in `version` oder legt ein neues an (<LABEL>_notes.md, <LABEL>_spec[_<thema>].md)",
+        "write",
+        PutDocument,
+        DocumentOut,
+        lambda s, d: document_out(s.documents.put_document(d.ref, d.project, d.name, d.content, d.version, d.summary)),
+        HttpBinding("PUT", "/items/{ref}/documents/{name}"),
+    ),
+    Operation(
+        "append_note",
+        "Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen; der erste legt sie an und "
+        "braucht eine Kurzfassung des Items",
+        "write",
+        AppendNote,
+        DocumentOut,
+        lambda s, d: document_out(
+            s.documents.append_note(d.ref, d.project, d.topic, d.discussed, d.decided, d.open, d.summary)
+        ),
+        HttpBinding("POST", "/items/{ref}/notes"),
     ),
 )

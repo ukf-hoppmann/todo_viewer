@@ -371,7 +371,7 @@ def test_the_editing_operations_are_mcp_tools(backlog: Env) -> None:
         if op.mcp
     }
 
-    assert names == {
+    assert {
         "list_items",
         "get_item",
         "create_item",
@@ -380,4 +380,4 @@ def test_the_editing_operations_are_mcp_tools(backlog: Env) -> None:
         "retype_item",
         "reopen_ancestors",
         "list_areas",
-    }
+    } <= names

@@ -1,0 +1,46 @@
+{
+	"search": {
+		"label": "Search",
+		"placeholder": "Search …",
+		"clear": "Clear search"
+	},
+	"projects": {
+		"title": "Projects",
+		"add": "Add project",
+		"visible": "Show {{name}}",
+		"edit": "Edit {{name}}"
+	},
+	"new": {
+		"button": "New",
+		"project": "Project"
+	},
+	"card": {
+		"create": "New project",
+		"edit": "Project “{{name}}”",
+		"name": "Name",
+		"folder": "Mirror folder",
+		"browse": "Choose …",
+		"mirrorEnabled": "Switch the mirror on",
+		"autoSync": "Sync automatically",
+		"direction": "Direction",
+		"directions": {
+			"both": "Both ways",
+			"to_files": "Into the files only",
+			"to_database": "Into the database only"
+		},
+		"save": "Save",
+		"cancel": "Cancel",
+		"remove": "Remove",
+		"removeTitle": "Remove the project?",
+		"removeMessage_one": "The project holds {{count}} element. It goes to the trash with the project.",
+		"removeMessage_other": "The project holds {{count}} elements. They go to the trash with the project.",
+		"failed": "That did not work."
+	},
+	"folders": {
+		"up": "Up one level",
+		"loading": "loading …",
+		"empty": "No sub-folders",
+		"hasMirror": "holds a mirror",
+		"choose": "Choose this folder"
+	}
+}

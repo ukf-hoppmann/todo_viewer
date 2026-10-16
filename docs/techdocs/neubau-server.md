@@ -172,6 +172,18 @@ sind Tool-Ergebnisse mit `isError` und dem JSON `{code, message, details}` — d
 ungültige Argumente haben `validation_error`, ein unbekanntes Tool `not_found`. Erlaubte Hosts: `127.0.0.1`,
 `localhost`, `[::1]` und `todo.localhost` (Schutz vor DNS-Rebinding).
 
+## Plugin `workspace` (Projekte und Element-Register)
+
+`viewer/plugins/workspace/` (Schichten `domain`, `application`, `infrastructure`; ein Import-Linter-Vertrag hält die Richtung). Es ist das erste Fach-Plugin und das Fundament aller anderen: Projekte, die gemeinsame Identität der Elemente und der Ordner-Browser.
+
+- **Tabellen** (Präfix `workspace_`): `projects` (`uid`, `name` eindeutig unter den nicht gelöschten, `mirror_folder`, `mirror_enabled`, `auto_sync`, `sync_direction`, `position`, `revision`, `deleted_at`), `element_kinds`, `elements` (`uid`, `project_uid`, `kind`, `label`, `revision`, `deleted_at`, `UNIQUE(project_uid, label)`), `label_counters`, `label_history`. Die Migration legt das Projekt „Allgemein“ an (ohne Ordner; weder umbenennbar noch entfernbar).
+- **Elementtypen.** Ein Plugin meldet sie in `PluginDefinition.element_kinds` an (`ElementKind(kind, label_prefix)`) und trägt dafür `workspace` in `requires` ein (sonst lehnt `validate_plugins` ab). Die Composition Root schreibt die Typen aller aktiven Plugins nach dem Bau in `workspace_element_kinds`.
+- **Register-Port** (`viewer.plugins.workspace.ElementRegistry`, über `context.required["workspace"].registry`): `register(tx, project_uid, kind)`, `relabel(tx, uid, new_kind)`, `get`, `find_by_label`, `bump_revision(tx, uid, expected)`, `mark_deleted`, `restore`, `purge`. Alle Methoden laufen in der Transaktion des Aufrufers, damit ein Plugin Element und eigene Zeilen atomar anlegt. Labels zählen je Projekt und Präfix vorwärts und werden nie wieder vergeben (auch nach Löschen, Entfernen und Typwechsel); jedes Label, das ein Element je hatte, bleibt in `label_history` und löst weiter auf (`find_by_label`, `GET …/labels/{label}`).
+- **Operationen** (`/api/workspace/…`): `list_projects` (GET `/projects`), `create_project` (POST), `update_project` (PUT `/projects/{uid}`, mit `version`), `move_project` (POST `/projects/{uid}/move`), `remove_project` (DELETE, mit `version`; ein Projekt mit Inhalt braucht `confirm=true`, dann geht es samt Inhalt in den Papierkorb, ein leeres wird gelöscht), `browse_folders` (GET `/folders?path=`; Unterordner ohne versteckte, `has_mirror` bei `TODO.md`), `resolve_label`. Als MCP-Tools gibt es nur `list_projects`, `browse_folders` und `resolve_label`; was Einstellungen ändert, ist keins.
+- **Ereignis** `workspace.project.changed` (öffentlich; `change`: `created`, `updated`, `moved`, `removed`).
+- **Sync-Anbindung.** `workspace` liefert dem `SyncService` Ordner und Auto-Sync je Projekt (`MirrorProjects`); bei `workspace.project.changed` setzt die Composition Root den Auto-Sync-Termin neu.
+- **Startordner des Browsers:** Einstellung `plugins.workspace.browse_start`, sonst Umgebung `BROWSE_START`, sonst der Home-Ordner.
+
 ## Konfiguration
 
 `configs/viewer.json` (optional) und Umgebungsvariablen; die Umgebung gewinnt.

@@ -36,3 +36,22 @@
 ### Open
 
 - Frage 22 in `STORY-060`.
+
+## 2026-10-16 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant. Server: `viewer/plugins/workspace/`, Core-Erweiterungen (`ElementKind`, `FileStore.list_folders`, `files` im `PluginContext`). Client: `client/src/plugins/workspace/`. Beschreibung in `docs/techdocs/neubau-server.md` und `neubau-client.md`.
+- Abweichungen: Frage 22 (`revision`, `deleted_at`, MCP-Umfang) und Frage 23 (Einträge von `workspace.create-types` ohne Symbol, Titel aus `create.<name>`).
+- Beim Bauen aufgefallen: Der Suchtext wird, wie die übrigen öffentlichen Werte, im UI-Zustand des Servers gehalten und auch dort gespeichert (die Spec verlangt Persistenz für alle drei).
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) Label-Vergabe nie wiederverwendet, auch nach Löschen, Entfernen und Typwechsel, alte Labels lösen auf (`test_registry.py`); (2) Register-Revision mit Konflikt, Wiederherstellen; (3) Projekt-Operationen über HTTP und als MCP-Tools (`test_projects.py`, 11 Tests, plus 7 Register- und Browser-Tests); (4) Seitenleiste, Projektkarte mit Ordner-Browser, Neu-Dialog und Zustand im UI-Zustand (UI-Tests unter `tests/implementation/unit/client/plugins/workspace/`).
+- `scripts/check-next.sh` grün (Server 293, Client 871 Tests), `scripts/check.sh` grün.
+- Status: `Awaiting confirmation`.
+
+### Open
+
+- Frage 22 und 23 in `STORY-060` (Annahmen gelten).
+- Nicht geprüft: Sync-Anzeigen in der Seitenleiste (kommen mit `STORY-076`); der Test der Anbindung `MirrorProjects` an den `SyncService` läuft erst mit einem Fach-Plugin im Spiegel (`STORY-075`).

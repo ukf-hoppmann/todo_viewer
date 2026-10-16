@@ -108,3 +108,13 @@ Aus `client/src/shared/index.ts`; keiner hält globalen Store-Zustand, Texte kom
 | `EntityPicker` | Auswahl von Elementen als „Label — Titel“ (einzeln oder mehrfach, mit gesperrten Einträgen) |
 
 Das Beispiel-Plugin hat die Seite „Bausteine“, die Baum, Detailpanel, Inline-Feld und Markdown-Editor zusammen benutzt.
+
+## Plugin `workspace`
+
+`client/src/plugins/workspace/`, benötigt `layout-header-sidebar`. Es hängt zwei Abschnitte in die Seitenleiste (Suche, Projekte) und den Knopf „＋ Neu“ in die Kopfzeile.
+
+- **API** (`workspace.api`, Tag `Projects`): Projekte lesen, anlegen, ändern, ordnen, entfernen und der Ordner-Browser. Das Ereignis `workspace.project.changed` und `core.reconnected` laden die Liste neu.
+- **Zustand** (öffentlich, im UI-Zustand des Servers unter dem Besitzer `workspace`): `useSearchText()` (Suchtext), `useProjectSelection()` (`projects`, `visible` = nicht ausgeblendete, `marked` = markiertes Projekt, `toggleVisible`, `mark`). Gespeichert werden `search`, `hidden` (ausgeblendete Projekte, damit ein neues Projekt sofort sichtbar ist) und `marked`.
+- **Projekte in der Seitenleiste:** Checkbox blendet ein oder aus, ein Klick markiert (ein zweiter hebt auf), ✎ öffnet die Projektkarte, die Reihenfolge ändert man durch Ziehen. Die Projektkarte (Name, Spiegel-Ordner mit Ordner-Browser, Spiegel an, Auto-Sync, Richtung) legt an, ändert und entfernt; ein Projekt mit Inhalt wird erst nach einer Rückfrage entfernt. Die Sync-Anzeigen (↻, ⚠) kommen mit dem Sync in der Oberfläche.
+- **Slot `workspace.create-types`:** Ein Plugin hängt eine Maske für „＋ Neu“ ein. `name` ist der Typ, `component` die Maske, der Titel der Text `create.<name>` im Namensraum des beitragenden Plugins. Die Maske ruft `useCreateDialog()` und bekommt `close()` und `projectUid` (das markierte Projekt, sonst „Allgemein“). „Projekt“ ist immer im Menü.
+- Test-IDs: `workspace.<element>` aus `workspaceTestIds`.

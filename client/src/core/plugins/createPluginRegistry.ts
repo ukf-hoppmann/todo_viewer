@@ -58,11 +58,28 @@ export async function createPluginRegistry({
 			id,
 			requires,
 			contributions,
-			registered: new Map(active.map((plugin) => [plugin.id, plugin.definition.contributions ?? []])),
+			slots: Object.keys(checked.definition.slots ?? {}),
+			registered: new Map(
+				active.map((plugin) => [
+					plugin.id,
+					{ contributions: plugin.definition.contributions ?? [], slots: Object.keys(plugin.definition.slots ?? {}) },
+				]),
+			),
 			core: coreContributions,
 		});
 		if (slotProblems.length > 0) {
 			statuses.set(id, { id, status: "failed", code: "contribution-invalid", message: `the contributions are invalid: ${slotProblems.join("; ")}` });
+			return;
+		}
+
+		const otherFrame = checked.definition.frame && active.find((plugin) => plugin.definition.frame);
+		if (otherFrame) {
+			statuses.set(id, {
+				id,
+				status: "failed",
+				code: "definition-invalid",
+				message: `the definition is invalid: \`frame\` is already provided by '${otherFrame.id}'`,
+			});
 			return;
 		}
 

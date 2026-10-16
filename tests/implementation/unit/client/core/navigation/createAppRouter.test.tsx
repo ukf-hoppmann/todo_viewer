@@ -108,11 +108,11 @@ describe("createAppRouter", () => {
 			expect(screen.getByTestId(coreTestIds.navTab("alpha", "overview")).getAttribute("aria-selected")).toBe("false");
 		});
 
-		it("shows the tabs of the core as well", async () => {
+		it("shows the tabs of the core as well, behind those of the plugins", async () => {
 			await renderRouter(registryOf([example]), "/core/patients", { coreContributions: [tab("patients")] });
 
 			expect(await screen.findByText("Seite patients")).toBeTruthy();
-			expect(screen.getAllByRole("tab")[0]?.getAttribute("data-testid")).toBe(coreTestIds.navTab("core", "patients"));
+			expect(screen.getAllByRole("tab").at(-1)?.getAttribute("data-testid")).toBe(coreTestIds.navTab("core", "patients"));
 		});
 
 		it("refuses a contribution of the core that uses a reserved name", () => {

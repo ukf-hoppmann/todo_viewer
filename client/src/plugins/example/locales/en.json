@@ -1,25 +1,17 @@
 {
-	"title": "Example plugin",
-	"tab": {
-		"overview": "Overview",
-		"hub": "Areas"
-	},
-	"entry": {
-		"start": "Start"
-	},
+	"tab": { "overview": "Example" },
 	"overview": {
-		"header": "Overview of the example plugin",
-		"text": "This plugin has no business logic.",
+		"header": "Example plugin",
+		"text": "A template for new plugins: own API, own state, events from the server.",
+		"health": "Server",
+		"loading": "loading …",
+		"failed": "not reachable",
 		"counter": "Counter",
 		"countUp": "Count up",
-		"backendVersion": {
-			"label": "Backend version",
-			"loading": "Loading …",
-			"failed": "The version could not be loaded."
-		}
+		"visits_one": "{{count}} click stored",
+		"visits_other": "{{count}} clicks stored"
 	},
-	"start": {
-		"header": "Start of the example plugin",
-		"text": "Own entry of the example plugin."
-	}
+	"header": { "events_one": "{{count}} event", "events_other": "{{count}} events" },
+	"sidebar": { "text": "Section of the sidebar, only on the example tab." },
+	"settings": { "text": "Section of the settings page." }
 }

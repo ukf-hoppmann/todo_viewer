@@ -1,18 +1,1 @@
-{
-	"title": "Layout-Beispiel: globaler Header, Subheader und Sidebar",
-	"tab": {
-		"main": "Header + Subheader + Sidebar"
-	},
-	"entry": {
-		"first": "Erster Eintrag",
-		"second": "Zweiter Eintrag"
-	},
-	"first": {
-		"header": "Subheader: globaler Header, Subheader und Sidebar (1)",
-		"text": "Eintrag 1: globaler Header, Subheader und Sidebar."
-	},
-	"second": {
-		"header": "Subheader: globaler Header, Subheader und Sidebar (2)",
-		"text": "Eintrag 2: globaler Header, Subheader und Sidebar."
-	}
-}
+{ "title": "Layout: Kopfzeile und Seitenleiste" }

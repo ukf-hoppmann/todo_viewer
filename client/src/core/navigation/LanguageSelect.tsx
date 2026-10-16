@@ -3,7 +3,6 @@ import type { HTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 import { supportedLanguages, type SupportedLanguage } from "../i18n/initI18n";
 import { languageNames } from "../i18n/languageNames";
-import { withoutLanguageParameter } from "../i18n/withoutLanguageParameter";
 import { coreTestIds } from "../testIds";
 
 function isSupported(language: string | undefined): language is SupportedLanguage {
@@ -12,8 +11,8 @@ function isSupported(language: string | undefined): language is SupportedLanguag
 
 /**
  * The language of the interface as a select in the app bar. It shows the language that is in effect (a
- * regional variant such as `de-DE` counts as `de`). The choice is remembered by the language detection of
- * i18next; an address that carries the language parameter loses it, so the choice also survives a reload.
+ * regional variant such as `de-DE` counts as `de`). The choice is remembered by `LanguageSync` in the UI state
+ * of the server.
  */
 export function LanguageSelect() {
 	const { t, i18n } = useTranslation("core");
@@ -21,9 +20,6 @@ export function LanguageSelect() {
 
 	const choose = (language: SupportedLanguage) => {
 		void i18n.changeLanguage(language);
-		const current = window.location.pathname + window.location.search + window.location.hash;
-		const next = withoutLanguageParameter(current);
-		if (next !== current) window.history.replaceState(window.history.state, "", next);
 	};
 
 	// Typed as a whole, because `data-*` attributes are not part of the type.

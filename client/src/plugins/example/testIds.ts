@@ -1,6 +1,9 @@
-/** Test ids of the example plugin (architecture rule 7). */
+/** Test ids of the example plugin (scope client 7). */
 export const exampleTestIds = {
+	healthStatus: "example.health-status",
+	eventCounter: "example.event-counter",
 	counterValue: "example.counter-value",
 	counterButton: "example.counter-button",
-	backendVersion: "example.backend-version",
+	sidebarText: "example.sidebar-text",
+	settingsText: "example.settings-text",
 } as const;

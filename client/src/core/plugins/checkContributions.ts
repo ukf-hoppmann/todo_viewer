@@ -25,6 +25,38 @@ export interface CheckContributionsOptions {
 	reservedNames?: readonly string[];
 }
 
+/** A widget: a component in a slot, with an optional order and the main routes it belongs to. */
+function checkWidget(
+	contribution: Record<string, unknown>,
+	label: string,
+	problems: string[],
+	seen: Set<string>,
+	reservedNames: readonly string[],
+): void {
+	const { slot, name, component, order, when, title, icon, page, layout } = contribution;
+	const problem = (message: string) => problems.push(`${label}: ${message}`);
+	if (!isSlot(slot)) problem(`the slot '${String(slot)}' is not of the form <owner id>.<name>`);
+	else if (slot === mainSlot) problem("a widget cannot hang into 'core.main'");
+	if (typeof name !== "string" || name === "") problem("`name` is missing");
+	else if (!kebabCase.test(name)) problem("`name` is not kebab-case");
+	else if (reservedNames.includes(name)) problem("the name is reserved");
+	if (!isComponent(component)) problem("`component` is no component");
+	if (order !== undefined && (typeof order !== "number" || !Number.isFinite(order))) problem("`order` is no number");
+	if (when !== undefined) {
+		if (!Array.isArray(when) || when.some((route) => typeof route !== "string" || !/^[a-z0-9-]+\/[a-z0-9-]+$/.test(route))) {
+			problem("`when` is no list of main routes (`<owner id>/<name>`)");
+		}
+	}
+	for (const [key, value] of Object.entries({ title, icon, page, layout })) {
+		if (value !== undefined) problem(`\`${key}\` is not allowed in a widget`);
+	}
+	if (typeof slot === "string" && typeof name === "string") {
+		const key = `${slot}/${name}`;
+		if (seen.has(key)) problem(`the name is used twice in '${slot}'`);
+		seen.add(key);
+	}
+}
+
 /**
  * Checks the contributions of a plugin definition (or of the core) at
  * runtime; the types of `definePlugin` do not reach a plugin that was built
@@ -44,9 +76,14 @@ export function checkContributions(contributions: unknown, { reservedNames = [] 
 			problems.push(`contribution #${index} is no object`);
 			return;
 		}
-		const { slot, name, title, icon, page, layout } = contribution;
+		const { slot, name, title, icon, page, layout, component } = contribution;
 		const label = typeof name === "string" && name !== "" ? `contribution '${name}'` : `contribution #${index}`;
 		const problem = (message: string) => problems.push(`${label}: ${message}`);
+
+		if (component !== undefined) {
+			checkWidget(contribution, label, problems, seen, reservedNames);
+			return;
+		}
 
 		const validSlot = isSlot(slot);
 		if (!validSlot) problem(`the slot '${String(slot)}' is not of the form <owner id>.<name>`);

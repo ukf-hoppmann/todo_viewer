@@ -66,5 +66,10 @@
 	},
 	"config": {
 		"invalid": "Die Anwendung ist falsch zusammengestellt. Bitte den Support kontaktieren."
+	},
+	"settings": {
+		"tab": "Einstellungen",
+		"title": "Einstellungen",
+		"empty": "Es gibt noch keine Einstellungen."
 	}
 }

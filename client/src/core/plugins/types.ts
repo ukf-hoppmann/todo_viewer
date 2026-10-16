@@ -1,5 +1,5 @@
-import type { Reducer } from "@reduxjs/toolkit";
-import type { ComponentType } from "react";
+import type { Reducer, UnknownAction } from "@reduxjs/toolkit";
+import type { ComponentType, ReactNode } from "react";
 import type { PluginApi } from "../api/types";
 import type { SupportedLanguage } from "../i18n/initI18n";
 import type { LogEntry } from "../logging/types";
@@ -67,8 +67,50 @@ export interface SidebarContribution extends ContributionBase {
 	layout?: undefined;
 }
 
+/**
+ * A component hung into a slot that an owner provides (`<owner id>.<name>`), for example a section of the
+ * settings page or a counter in the header. The owner of the slot decides where it is drawn.
+ */
+export interface WidgetContribution {
+	slot: string;
+	/** Kebab-case; unique per owner and slot; part of the test id the owner gives it. */
+	name: string;
+	component: ComponentType;
+	/** Position among the widgets of the slot; smaller first, 0 by default. */
+	order?: number;
+	/** Show the widget only on these main routes (`<owner id>/<name>`); on every route if missing. */
+	when?: readonly string[];
+	title?: undefined;
+	page?: undefined;
+}
+
 /** What a plugin or the core adds to a slot. */
-export type Contribution = MainContribution | SidebarContribution;
+export type Contribution = MainContribution | SidebarContribution | WidgetContribution;
+
+/** A slot a plugin provides. Only widget slots exist so far; the owner draws the components with `useSlot`. */
+export interface SlotDeclaration {
+	/** English, for developers: what belongs into the slot. */
+	description: string;
+}
+
+/** What the core hands to a handler of a server event. */
+export interface EventContext {
+	/** The store's `dispatch`, e.g. to invalidate tags of the plugin's own API. */
+	dispatch: (action: UnknownAction) => unknown;
+	/** The plugin's own API (`createPluginApi`), if it has one. */
+	api: (PluginApi & { util?: { invalidateTags: (tags: string[]) => UnknownAction } }) | undefined;
+}
+
+/** Reacts to one server event (`event: <topic>`, JSON payload). */
+export type EventHandler = (payload: unknown, context: EventContext) => void;
+
+/** What the frame component of the layout plugin gets. */
+export interface FrameProps {
+	/** The tabs of the main routes, ready to put into the app bar. */
+	tabs: ReactNode;
+	/** The route's page and the notice about failed plugins. */
+	children: ReactNode;
+}
 
 /**
  * What a plugin contributes, exported as `plugin` from its `index.ts`.
@@ -92,6 +134,12 @@ export interface PluginDefinition {
 	 * active; a key that is not exactly that makes the plugin `failed`.
 	 */
 	api?: PluginApi;
+	/** The slots this plugin provides, by name (kebab-case); contributions use `<plugin id>.<name>`. */
+	slots?: Record<string, SlotDeclaration>;
+	/** Reactions to server events, by topic (`<owner>.<name>`; `core.reconnected` after a reconnect). */
+	eventHandlers?: Record<string, EventHandler>;
+	/** The frame around the routes (app bar, sidebar); at most one active plugin provides it. */
+	frame?: ComponentType<FrameProps>;
 }
 
 /** One plugin as `src/app` finds it: the raw manifest and the loader of its `index.ts`. */

@@ -1,18 +1,1 @@
-{
-	"title": "Layout example: global header, sub header and sidebar",
-	"tab": {
-		"main": "Header + Subheader + Sidebar"
-	},
-	"entry": {
-		"first": "First entry",
-		"second": "Second entry"
-	},
-	"first": {
-		"header": "Sub header: global header, sub header and sidebar (1)",
-		"text": "Entry 1: global header, sub header and sidebar."
-	},
-	"second": {
-		"header": "Sub header: global header, sub header and sidebar (2)",
-		"text": "Entry 2: global header, sub header and sidebar."
-	}
-}
+{ "title": "Layout: header and sidebar" }

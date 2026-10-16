@@ -31,6 +31,8 @@ export async function initI18n(options: InitI18nOptions = {}): Promise<i18n> {
 				de: { core: de },
 				en: { core: en },
 			},
+			// The choice of the user is kept in the UI state of the server (`LanguageSync`), not in the storage of the browser.
+			detection: { order: ["navigator"], caches: [] },
 			supportedLngs: [...supportedLanguages],
 			fallbackLng: "de",
 			ns: ["core"],

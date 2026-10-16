@@ -66,5 +66,10 @@
 	},
 	"config": {
 		"invalid": "The application is misconfigured. Please contact support."
+	},
+	"settings": {
+		"tab": "Settings",
+		"title": "Settings",
+		"empty": "There are no settings yet."
 	}
 }

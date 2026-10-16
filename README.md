@@ -5,7 +5,7 @@ bzw. Claude_Harness-Backlog-Format. Jeder Eintrag braucht eine ID; einfache
 Markdown-Checklisten werden nicht unterstützt.
 
 > **Neubau (`EPIC-007`):** Der Viewer wird in `server/` und `client/` neu gebaut; der Stand steht in
-> [Neubau: Server](docs/techdocs/neubau-server.md). Dieses README beschreibt weiter den laufenden Viewer in `src_old/`.
+> [Neubau: Server](docs/techdocs/neubau-server.md) und [Neubau: Client](docs/techdocs/neubau-client.md). Dieses README beschreibt weiter den laufenden Viewer in `src_old/`.
 
 ## Quickstart (Docker)
 

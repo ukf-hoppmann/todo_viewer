@@ -1,0 +1,90 @@
+# Neubau: Client (`client/`)
+
+Stand des Neubaus (`EPIC-007`); der alte Viewer in `src_old/web/` ist davon unberührt. Verbindliche Regeln:
+[Architektur](../development/architecture.md) und Scope `client`. Vorlage des Core: `reference/ezf-ui/` (kopiert und
+angepasst, nichts wird von dort importiert).
+
+## Aufbau
+
+```
+client/src/
+  app/       Composition Root: feste Plugin-Liste, Start, Katalog, Kern-Beiträge
+  core/      Plugin-Registry, Slots, Store, Verbindung, Ereignisse, UI-Zustand, Fehler, Banner, Modals, Navigation
+  shared/    erzeugte API-Typen (`api/schema.d.ts`), später gemeinsame UI-Bausteine
+  plugins/<id>/   plugin.json, index.ts, Seiten, Zustand, API
+tests/implementation/unit/client/…   spiegelt client/src/ (Vitest, Testing Library)
+tests/helpers/client/                Fakes (Backend, EventSource, UI-Zustand)
+```
+
+Schichten und öffentliche API (nur über `index.ts`) prüft die ESLint-Regel `architecture/boundaries`
+(`client/configs/eslint/architectureBoundaries.ts`, mit eigenen Tests). Sie kennt auch `src_old/` und `reference/`
+(Regel 0: keine Importe von dort).
+
+## Befehle
+
+| Zweck | Befehl |
+|---|---|
+| Installation | `cd client && npm ci` (legt auch `tests/node_modules` als Verweis auf `client/node_modules` an) |
+| Entwicklung | `npm run dev` (Vite, Port 5173; `/api` und `/mcp` gehen an den Server auf 5412) |
+| Typen, Regeln, Lint | `npx tsc -b && npm run lint` |
+| Tests | `npx vitest run --config configs/vite/vitest.config.ts` |
+| Bauen | `npm run build` |
+| API-Typen erzeugen | `npm run gen:api` (ruft `scripts/gen-api.sh`: OpenAPI des Servers → `src/shared/api/schema.d.ts`) |
+
+Alles zusammen mit dem Server: `scripts/check-next.sh`. `tests/implementation/integration/server/test_openapi_types.py`
+prüft, dass `schema.d.ts` dem Schema des Servers entspricht.
+
+## Start
+
+`startApp` (ohne Login) in fester Reihenfolge: Logging einschalten → auf den Server warten (`GET /api/core/health`; bei
+Ausfall ein Banner und erneutes Prüfen, nie ein Abbruch) → Plugins laden (Auswahl aus `app/plugins/activePlugins.ts`, nur
+dort steht die feste Liste; `example` nur im Entwicklungsmodus) → Verbindung → Store → Router → Ereignisstrom. Fällt der Server
+später aus, startet die Verbindung denselben Test und zeigt das Banner, bis er wieder antwortet.
+
+## Plugin-Vertrag
+
+`plugin.json` (`requires`) und eine `PluginDefinition` aus `index.ts` mit `i18n` (DE, EN), und optional:
+
+| Feld | Bedeutung |
+|---|---|
+| `contributions` | Beiträge zu Slots: Hauptrouten/Tabs (`core.main`), Seitenleisten-Einträge, **Widgets** `{slot, name, component, order?, when?}` |
+| `slots` | die Slots, die das Plugin anbietet (`{ "<name>": { description } }`, Beiträge nutzen `<plugin-id>.<name>`) |
+| `reducer`, `api` | eigener Store-Teil unter der Plugin-ID, eigene RTK-Query-API (`createPluginApi`, Cache unter `<id>.api`) |
+| `eventHandlers` | `{ "<topic>": (payload, { dispatch, api }) => void }` für Server-Ereignisse; `core.reconnected` nach einem Neuverbinden |
+| `frame` | Rahmen um die Routen (Kopfzeile, Seitenleiste); höchstens ein aktives Plugin |
+
+Ein Widget braucht einen Slot, den der Besitzer anbietet und den das beitragende Plugin über `requires` erreicht; der Core
+bietet `core.settings-sections` an. `when` nennt die Hauptrouten (`<owner>/<name>`, z. B. `backlog/main`), auf denen das
+Widget erscheint; ohne `when` überall. Der Besitzer des Slots zeichnet die Widgets mit `useSlot(slot)` in der festen
+Reihenfolge `order`, Plugin-ID, Definition. Die Registry prüft Form, Slot und Besitzer zur Laufzeit; ein fehlerhaftes Plugin
+ist `failed`, die abhängigen sind `blocked`, die App läuft weiter.
+
+## Layout
+
+Das Plugin `layout-header-sidebar` liefert den Rahmen: Kopfzeile des Core (Name, Tabs der Hauptrouten, Sprachschalter) mit
+den Widgets von `layout-header-sidebar.header-actions` am rechten Ende und links eine Seitenleiste mit den Abschnitten von
+`layout-header-sidebar.sidebar-sections`, die zur offenen Hauptroute gehören (`when`); ohne Abschnitt keine Seitenleiste.
+Die Tabs stehen in der Reihenfolge der Plugin-IDs, der Tab `core/settings` (Einstellungen) zuletzt; seine Seite
+(`core.settings-sections`) zeigt eine Karte je Widget. Das Thema ist fest dunkel in den Farben des alten Viewers
+(`core/theme`).
+
+## Server-Ereignisse (SSE)
+
+`core/events`: `EventSource('/api/core/events')` hört auf die Topics, für die ein aktives Plugin einen Handler hat. Bei einem
+Fehler wird die Verbindung geschlossen und nach 1, 2, 4 … höchstens 30 Sekunden neu geöffnet; die erste erfolgreiche neue
+Verbindung löst `core.reconnected` aus, denn Ereignisse sind nicht garantiert und die Plugins laden neu (üblich:
+`dispatch(api.util.invalidateTags([...]))`). Ein Handler, der wirft, wird protokolliert und stoppt die anderen nicht.
+
+## UI-Zustand und Sprache
+
+Dauerhafter UI-Zustand liegt auf dem Server (`GET/PUT /api/core/ui-state/{owner}`, ein JSON-Dokument je Besitzer), nicht im
+Browser-Speicher. `usePersistentState(owner, key, default)` → `[Wert, setzen, geladen]`: der Wert gilt sofort überall (Cache
+der API `core.api`), das ganze Dokument geht nach 300 ms gesammelt zum Server; vorher wird es geladen, damit ein Schreiben nie
+das Dokument des Servers ersetzt. Die Sprache (DE/EN) steht unter `core` / `language`; `LanguageSync` wendet sie nach dem
+Laden an und speichert die Wahl des Nutzers. Der Sprachdetektor von i18next hat keinen Cache.
+
+## Fehler und Verbindung
+
+Antworten mit Status ab 500 und fehlende Antworten gelten als „nicht erreichbar“ (Banner, erneuter Test). Alle anderen Fehler
+liefert die Verbindung unverändert an den Aufrufer; der Server antwortet mit `{code, message, details}` (siehe
+[Neubau: Server](neubau-server.md)), das Frontend übersetzt den `code`. Es gibt keinen Login und keine Cookies.

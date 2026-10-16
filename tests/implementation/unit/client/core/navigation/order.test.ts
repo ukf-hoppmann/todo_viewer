@@ -20,10 +20,10 @@ function keys(entries: readonly NavEntry[]): string[] {
 }
 
 describe("collectMainEntries", () => {
-	it("puts the core first, then the plugins by id, each in the order of its definition", () => {
+	it("puts the plugins first by id, each in the order of its definition, then the core", () => {
 		const entries = collectMainEntries([plugin("zeta", "z2", "z1"), plugin("alpha", "a1")], [tab("patients")]);
 
-		expect(keys(entries)).toEqual(["core/patients", "alpha/a1", "zeta/z2", "zeta/z1"]);
+		expect(keys(entries)).toEqual(["alpha/a1", "zeta/z2", "zeta/z1", "core/patients"]);
 	});
 
 	it("skips plugins without contributions", () => {
@@ -53,24 +53,24 @@ describe("orderEntries", () => {
 	const entries = collectMainEntries([plugin("alpha", "a1", "a2"), plugin("beta", "b1")], [tab("patients")]);
 
 	it("keeps the fixed order without a list", () => {
-		expect(keys(orderEntries(entries, undefined).ordered)).toEqual(["core/patients", "alpha/a1", "alpha/a2", "beta/b1"]);
+		expect(keys(orderEntries(entries, undefined).ordered)).toEqual(["alpha/a1", "alpha/a2", "beta/b1", "core/patients"]);
 	});
 
 	it("puts the listed entries first in the order of the list, then the rest in the fixed order", () => {
 		const { ordered } = orderEntries(entries, ["beta/b1", "alpha/a2"]);
 
-		expect(keys(ordered)).toEqual(["beta/b1", "alpha/a2", "core/patients", "alpha/a1"]);
+		expect(keys(ordered)).toEqual(["beta/b1", "alpha/a2", "alpha/a1", "core/patients"]);
 	});
 
 	it("skips unknown or inactive entries of the list and reports them", () => {
 		const { ordered, skipped } = orderEntries(entries, ["ghost/view", "beta/b1"]);
 
-		expect(keys(ordered)).toEqual(["beta/b1", "core/patients", "alpha/a1", "alpha/a2"]);
+		expect(keys(ordered)).toEqual(["beta/b1", "alpha/a1", "alpha/a2", "core/patients"]);
 		expect(skipped).toEqual(["ghost/view"]);
 	});
 
 	it("lists an entry once even if the list names it twice", () => {
-		expect(keys(orderEntries(entries, ["beta/b1", "beta/b1"]).ordered)).toEqual(["beta/b1", "core/patients", "alpha/a1", "alpha/a2"]);
+		expect(keys(orderEntries(entries, ["beta/b1", "beta/b1"]).ordered)).toEqual(["beta/b1", "alpha/a1", "alpha/a2", "core/patients"]);
 	});
 
 	it("reports nothing when every entry of the list exists", () => {

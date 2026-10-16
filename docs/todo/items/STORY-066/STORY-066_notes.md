@@ -39,3 +39,22 @@
 ### Open
 
 - Frage 19 in `STORY-060`.
+
+## 2026-10-16 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant (Details in `docs/techdocs/neubau-client.md`). Abweichungen und Ergänzungen: Die Tabs stehen in der Reihenfolge der Plugin-IDs, der Tab `core/settings` zuletzt (sonst wäre die Einstellungsseite die Startseite); der Kopf zeigt den Namen „ToDo Viewer“ statt eines Logobilds, das es im Neubau nicht gibt; `tests/node_modules` ist ein Verweis auf `client/node_modules`, den `npm install` anlegt (Tests außerhalb von `client/` finden so ihre Pakete, `tsc` und Vitest brauchen keine Sonderregeln); `client/.npmrc` setzt `legacy-peer-deps=true`, weil `npm` 10.9 mit den Peer-Angaben der aktuellen ESLint-Pakete abstürzt (`edgesOut`).
+- Abhängigkeiten: die von `ezf-ui` übernommenen (React, React Router, Redux Toolkit, React Redux, i18next und `i18next-browser-languagedetector`, react-i18next, ajv, MUI mit Emotion und `@mui/icons-material`) plus Entwicklungswerkzeuge (Vite, `@vitejs/plugin-react`, TypeScript, ESLint mit `typescript-eslint` und den React-Plugins, Vitest, Testing Library, jsdom, `openapi-typescript`, Typpakete). Nicht übernommen: `ts-command-line-args`.
+- Aus dem Backend-Log-Ziel `BackendSink` wurde nichts übernommen (der Neubau hat keine Log-Schnittstelle); Logs gehen an die Konsole. Siehe Frage 20 in `STORY-060`.
+- Im Browser geprüft (Chromium, Server auf 5412 mit temporärer Datenbank, Vite-Proxy): Kopfzeile mit Tabs, Seitenleiste, Header-Widget, Beispielseite mit `ok` vom Server; die Sprachwahl landet als `{"language":"de"}` in `core_ui_state`.
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) `client/` baut (`npm run build`) und startet mit Vite-Proxy auf 5412 und zeigt Kopfzeile und Seitenleiste mit dem Beispiel-Plugin; (2) kein Login-Code im Core (`core/auth`, `core/config`, Login-Seite, Keycloak entfernt; Test `does not contain any login`); (3) ein Ereignis vom Server löst im Beispiel-Plugin ein Neuladen aus, ebenso `core.reconnected` nach einer Unterbrechung (`startApp.test.tsx`, `createEventStream.test.ts`); (4) DE/EN umschaltbar, im UI-Zustand des Servers gespeichert (`usePersistentState.test.tsx`, `startApp.test.tsx`, Browser-Lauf); (5) `architecture/boundaries`, `tsc` und Vitest (776 Tests) sind grün.
+- `scripts/check-next.sh` (Server und Client) grün; `scripts/check.sh` des alten Viewers grün. Die Typen in `client/src/shared/api/schema.d.ts` sind erzeugt und per `test_openapi_types.py` gegen das Schema geprüft.
+- Status: `Awaiting confirmation`.
+
+### Open
+
+- Fragen 19 und 20 in `STORY-060` (Annahmen gelten).

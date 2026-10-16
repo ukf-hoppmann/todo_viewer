@@ -69,6 +69,7 @@ export type {
 } from "./logging/types";
 export { useLogger } from "./logging/useLogger";
 export { PluginSelectionError, type PluginSelectionErrorDetail } from "./plugins/PluginSelectionError";
+export { useSlot, useActiveRoute, selectSlotEntries, type SlotEntry } from "./plugins/useSlot";
 export { createPluginRegistry } from "./plugins/createPluginRegistry";
 export { definePlugin } from "./plugins/definePlugin";
 export { PluginErrorNotice } from "./plugins/PluginErrorNotice";
@@ -76,6 +77,11 @@ export { PluginRegistryProvider } from "./plugins/PluginRegistryProvider";
 export type {
 	ActivePlugin,
 	Contribution,
+	EventContext,
+	EventHandler,
+	FrameProps,
+	SlotDeclaration,
+	WidgetContribution,
 	MainContribution,
 	PluginCatalogue,
 	PluginCatalogueEntry,
@@ -86,8 +92,16 @@ export type {
 	PluginStatusCode,
 } from "./plugins/types";
 export { usePluginRegistry } from "./plugins/usePluginRegistry";
+export { startEvents, type StartEventsOptions } from "./events/startEvents";
+export { createEventStream, type EventSourceLike, type EventStream, type EventStreamOptions } from "./events/createEventStream";
+export { createEventRouter, reconnectedTopic, type EventRouter } from "./events/createEventRouter";
+export { coreApi, useGetUiStateQuery, type UiState, type UiStateDocument } from "./ui-state/coreApi";
+export { usePersistentState, type PersistentSetter } from "./ui-state/usePersistentState";
+export { flushUiState, selectUiDocument, setUiStateValue, uiStateWriteDelayMs, type UiStateStore } from "./ui-state/uiState";
+export { LanguageSync } from "./ui-state/LanguageSync";
+export { settingsContribution } from "./settings/settingsContribution";
 export { createAppStore, type AppState, type AppStore } from "./store/createAppStore";
 export { useAppDispatch, useAppSelector } from "./store/hooks";
 export { StoreProvider } from "./store/StoreProvider";
 export { coreTestIds } from "./testIds";
-export { theme } from "./theme/theme";
+export { theme, viewerColors } from "./theme/theme";

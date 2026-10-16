@@ -5,16 +5,21 @@ import {
 	createAppRouter,
 	createAppStore,
 	createConnection,
+	coreApi,
 	createConnectionMonitor,
+	startEvents,
 	errors as defaultErrors,
 	logging as defaultLogging,
 	type AppRouterInstance,
 	type AppRouterOptions,
 	type AppStore,
 	type Banners,
+	type ConnectionMonitorOptions,
 	type ConnectionFetch,
 	type Contribution,
 	type DevRoute,
+	type EventStream,
+	type StartEventsOptions,
 	type Errors,
 	type Logging,
 	type NavigationConfig,
@@ -25,8 +30,8 @@ import {
 import { activePluginSelection } from "./plugins/activePlugins";
 import { startPlugins } from "./plugins/startPlugins";
 
-/** The server's API; the Vite dev server forwards it to the backend. */
-export const apiUrl = "/api";
+/** The server's API, same origin as the page; the Vite dev server forwards it to the backend. */
+export const apiPath = "/api";
 
 export interface StartAppOptions {
 	i18n: I18n;
@@ -42,13 +47,17 @@ export interface StartAppOptions {
 	banners?: Banners;
 	/** For tests: replaces the `fetch` of the connection that the plugin APIs and the connection test use. */
 	connection?: { fetch?: ConnectionFetch };
+	/** For tests: the timer and the settings of the connection test. */
+	monitor?: Pick<ConnectionMonitorOptions, "schedule" | "settings">;
+	/** For tests: a fake `EventSource`, timers and wait times of the event stream. */
+	events?: StartEventsOptions["stream"];
 	/** For tests: a router in memory. */
 	router?: Pick<AppRouterOptions, "initialEntries">;
 }
 
 export type StartResult =
 	/** The plugins are started; the store holds one compartment per plugin with a reducer. */
-	| { kind: "app"; registry: PluginRegistry; store: AppStore; router: AppRouterInstance }
+	| { kind: "app"; registry: PluginRegistry; store: AppStore; router: AppRouterInstance; events: EventStream }
 	/** Something is wrong and has been reported to the user: the application stays away. */
 	| { kind: "stopped" };
 
@@ -68,13 +77,17 @@ export async function startApp({
 	errors = defaultErrors,
 	banners = defaultBanners,
 	connection: connectionOptions,
+	monitor: monitorOptions,
+	events: eventOptions,
 	router: routerOptions,
 }: StartAppOptions): Promise<StartResult> {
 	logging.configure({});
+	const apiUrl = new URL(apiPath, globalThis.location.href).href;
 	const fetchFn: ConnectionFetch = connectionOptions?.fetch ?? ((request) => fetch(request));
 
 	// The one place that reacts when the backend does not answer; the connection reports to it.
 	const monitor = createConnectionMonitor({
+		...monitorOptions,
 		banners,
 		check: async ({ timeoutMs }) => {
 			try {
@@ -96,8 +109,11 @@ export async function startApp({
 	const connection = createConnection({ url: apiUrl, fetch: connectionOptions?.fetch, onFailure: (kind) => monitor.report(kind) });
 
 	// Once per start; the form of the store does not change afterwards.
-	const store = createAppStore({ registry, connection });
+	const store = createAppStore({ registry, connection, coreApis: [coreApi] });
 
 	const router = createAppRouter({ registry, coreContributions, navigation, devRoutes, ...routerOptions });
-	return { kind: "app", registry, store, router };
+
+	// The channel from the backend to the frontend; the plugins react to its events by reloading their data.
+	const events = startEvents({ active: registry.active(), dispatch: store.dispatch, logger: logging.forOrigin("core"), stream: eventOptions });
+	return { kind: "app", registry, store, router, events };
 }

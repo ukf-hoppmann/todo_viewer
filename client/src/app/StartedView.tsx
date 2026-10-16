@@ -1,4 +1,4 @@
-import { AppRouter, PluginRegistryProvider, RootLayout, StoreProvider } from "../core";
+import { AppRouter, LanguageSync, PluginRegistryProvider, RootLayout, StoreProvider } from "../core";
 import type { StartResult } from "./startApp";
 
 interface StartedViewProps {
@@ -10,7 +10,7 @@ interface StartedViewProps {
  * Shows what `startApp` made of the start, always inside the `RootLayout` so that the app bar is there in
  * every state: the application when it started (the router brings its own frame), and an empty main area
  * while the start is still running (the banner tells why it takes long) or when it has stopped (the reason
- * has been reported to the user as a dialog). The providers for language, theme, and dialogs sit above it,
+ * has been reported to the user as a dialog). The language is kept in the UI state of the server (`LanguageSync`). The providers for language, theme, and dialogs sit above it,
  * in `main.tsx`.
  */
 export function StartedView({ started }: StartedViewProps) {
@@ -19,6 +19,7 @@ export function StartedView({ started }: StartedViewProps) {
 	return (
 		<PluginRegistryProvider registry={started.registry}>
 			<StoreProvider store={started.store}>
+				<LanguageSync />
 				<AppRouter router={started.router} />
 			</StoreProvider>
 		</PluginRegistryProvider>

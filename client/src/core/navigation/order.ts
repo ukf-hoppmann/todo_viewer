@@ -8,12 +8,12 @@ function mainEntries(ownerId: string, contributions: readonly Contribution[] | u
 }
 
 /**
- * The tabs in the fixed order: the core first, then the plugins by id, each in
- * the order of its definition.
+ * The tabs in the fixed order: the plugins by id, each in the order of its definition, then the
+ * core (its settings tab belongs at the right end, behind the work of the plugins).
  */
 export function collectMainEntries(plugins: readonly ActivePlugin[], coreContributions: readonly Contribution[]): NavEntry[] {
 	const byId = [...plugins].sort((left, right) => left.id.localeCompare(right.id));
-	return [...mainEntries("core", coreContributions), ...byId.flatMap(({ id, definition }) => mainEntries(id, definition.contributions))];
+	return [...byId.flatMap(({ id, definition }) => mainEntries(id, definition.contributions)), ...mainEntries("core", coreContributions)];
 }
 
 function sidebarEntries(ownerId: string, contributions: readonly Contribution[] | undefined): SidebarEntry[] {

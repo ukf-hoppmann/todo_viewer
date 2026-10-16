@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from viewer.core.domain.errors import DomainError
+from viewer.core.domain.sync import MirrorFormatError
 
 log = structlog.get_logger(__name__)
 
@@ -21,6 +22,9 @@ STATUS_BY_CODE: dict[str, int] = {
     "version_conflict": 409,
     "mirror_conflict": 409,
     "mirror_blocked": 409,
+    "sync_preview_stale": 409,
+    "deletion_not_confirmed": 422,
+    "mirror_not_configured": 404,
     "invalid_input": 422,
     "validation_error": 422,
     "config_invalid": 500,
@@ -42,7 +46,8 @@ def error_response(status: int, code: str, message: str, details: dict[str, Any]
 def register_error_handlers(app: FastAPI) -> None:
     async def on_domain_error(request: Request, exc: Exception) -> JSONResponse:
         assert isinstance(exc, DomainError)
-        return error_response(STATUS_BY_CODE.get(exc.code, 400), exc.code, exc.message, exc.details)
+        status = 422 if isinstance(exc, MirrorFormatError) else STATUS_BY_CODE.get(exc.code, 400)
+        return error_response(status, exc.code, exc.message, exc.details)
 
     async def on_validation_error(request: Request, exc: Exception) -> JSONResponse:
         assert isinstance(exc, RequestValidationError)

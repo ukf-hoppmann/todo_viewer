@@ -68,7 +68,7 @@ def rig() -> Rig:
         database=transactions,
         backups=backups,
         events=events,
-        scheduler=scheduler,  # type: ignore[arg-type]
+        scheduler=scheduler,
         clock=clock,
         ids=SequentialIds(),
         auto_interval_seconds=30,
@@ -428,10 +428,12 @@ def test_timer_runs_only_while_a_project_has_auto_sync_on(rig: Rig) -> None:
     assert rig.scheduler.appointments["core.sync"] is None
     rig.projects.configs[P] = MirrorConfig(FOLDER, auto_sync=True)
     rig.service.refresh_auto()
-    at, callback = rig.scheduler.appointments["core.sync"]  # type: ignore[misc]
+    appointment = rig.scheduler.appointments["core.sync"]
+    assert appointment is not None
+    at, callback = appointment
     assert at == rig.clock.now() + timedelta(seconds=30)
     rig.db.add(U1, "task", "Eins")
-    callback()  # type: ignore[operator]
+    callback()
     assert "TASK-001" in rig.text()
     assert rig.scheduler.appointments["core.sync"] is not None  # neu gesetzt
     rig.projects.configs[P] = MirrorConfig(FOLDER, auto_sync=False)
@@ -444,8 +446,9 @@ def test_a_failing_project_does_not_stop_the_tick(rig: Rig) -> None:
     rig.projects.configs[P] = MirrorConfig(FOLDER, auto_sync=True)
     rig.db.add(U1, "task", "Eins")
     rig.service.refresh_auto()
-    _, callback = rig.scheduler.appointments["core.sync"]  # type: ignore[misc]
-    callback()  # type: ignore[operator]
+    appointment = rig.scheduler.appointments["core.sync"]
+    assert appointment is not None
+    appointment[1]()
     assert "TASK-001" in rig.text()
 
 

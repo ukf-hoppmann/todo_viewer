@@ -102,6 +102,67 @@ Menge von Textdateien und kennt keine Formate (die liefern die Codecs der Plugin
   `<<<<<<<`/`>>>>>>>` am Zeilenanfang). Liegt etwas anderes als `ok` vor, melden `read` und `write` `mirror_blocked`
   (HTTP 409) mit `details.state` und `details.files`, statt zu lesen bzw. zu schreiben.
 
+## Sync (Datenbank ⇄ Markdown-Spiegel)
+
+Der Sync-Dienst (`SyncService`) gleicht je Projekt die Datenbank (Wahrheit) mit dem Spiegel-Ordner ab. Er kennt weder
+SQL noch Dateiformate noch Fachlichkeit. Jedes spiegelnde Plugin setzt in `PluginDefinition.mirror` eine Funktion
+`services -> MirrorBinding(owner, codec, participant)`; der Dienst arbeitet mit allen Spiegeln eines Projekts zusammen.
+
+**Ports eines Plugins**
+
+- `MirrorCodec` (Dateien ⇄ Einträge): `patterns`, `decode(files)` (wirft `MirrorFormatError(code, message, file=…,
+  line=…)`), `encode(upserts, removed, current)` → Änderungen an den Dateien. Ein Eintrag in `upserts` mit `placeholder`
+  ersetzt den gleichnamigen neuen Eintrag in den Dateien.
+- `SyncParticipant` (Datenbank ⇄ Einträge): `load(project)`, `resolve_labels(project, labels)` (auch frühere Labels →
+  aktuelles Label), `assign_labels(project, entries, tx)` (Platzhalter → Label, in der Transaktion des Laufs),
+  `apply(project, SyncChanges(created, updated, deleted), tx)`.
+- `MirrorEntry(kind, label, fields, refs, uid, placeholder)`: `refs` hält alle Verweise (Feld → Labels), `fields` den
+  Rest. Der Hash (SHA-256 über Art, Felder, Verweise) schließt das Label aus: Labels vergibt nur die Datenbank.
+- `MirrorProjects` (liefert Ordner und Auto-Sync-Schalter je Projekt; erfüllt später `workspace`), `SyncStateStore`
+  (`core_sync_state`).
+
+**Vergleich** je `uid` mit dem Hash beim letzten Sync (Basis):
+
+| Datenbank | Dateien | Ergebnis |
+|---|---|---|
+| gleich | gleich | nur Basis nachziehen |
+| nur Dateien geändert | – | Dateien → Datenbank |
+| nur Datenbank geändert | – | Datenbank → Dateien |
+| beide geändert, oder beide neu mit verschiedenem Inhalt | – | Konflikt `both_changed` / `both_created` |
+| neu auf einer Seite | fehlt | anlegen auf der anderen Seite |
+| fehlt auf einer Seite, Basis vorhanden | – | Konflikt `deleted_in_files` / `deleted_in_database`, nie automatisch gelöscht |
+| auf beiden Seiten weg | – | Basis vergessen |
+
+Verweise in Dateien werden vor dem Vergleich über `resolve_labels` auf das aktuelle Label abgebildet (Label-Historie).
+Einträge aus den Dateien ohne `uid` (Platzhalter `NEW-<kurzname>`) sind neu; sie werden nur bei Richtung `both`
+übernommen, weil der Rückschrieb von `uid` und Label dazugehört.
+
+**Ablauf** (`status`, `preview`, `execute`, `auto`):
+
+1. `status(project)` ändert nichts und liefert `in_sync`, `primary_changed` (Datenbank hat Neues), `mirror_changed`
+   (Dateien haben Neues), `both_changed`, `conflicts` oder `paused` (Ordner fehlt/gesperrt/unlesbar, Merge-Marker,
+   Formatfehler, kein Ordner konfiguriert) mit `reason` und betroffenen Dateien.
+2. `preview(project, direction)` → `token`, `transfers`, `conflicts` (mit beiden Fassungen), `skipped`, `not_imported`.
+   `direction`: `both`, `to_database`, `to_files`. Das Token ist zustandslos (SHA-256 über den Plan).
+3. `execute(project, token, direction, decisions, delete_missing)`: weicht der Plan vom Token ab, `sync_preview_stale`.
+   Je Konflikt eine Entscheidung `database`, `files` oder `defer`; eine Entscheidung, die löscht, braucht
+   `delete_missing=true` (sonst `deletion_not_confirmed`). Reihenfolge: Backup der Datenbank (Grund `sync`) →
+   eine Transaktion für alle Teilnehmer (uid vergeben, Labels vergeben, Platzhalter in allen Verweisen ersetzen, Änderungen
+   anwenden) → Dateien schreiben (mit den beim Lesen erfassten Versionen, sonst `mirror_conflict`) → beide Seiten neu
+   lesen und die Basis für alle beidseitig gleichen Einträge nachziehen. Schlägt das Schreiben der Dateien nach dem Commit
+   fehl, bleibt die Datenbank richtig und der nächste Lauf holt auf.
+4. `auto(project)`: nur konfliktfreie Änderungen, löscht nie, sichert vorher die Datenbank, pausiert bei Problemen.
+   Der Takt ist ein einzelner Termin `core.sync` im `Scheduler`, alle `auto_sync_interval_seconds` (Standard 30), nur
+   solange mindestens ein Projekt Auto-Sync an hat (`refresh_auto()` setzt ihn neu).
+5. Ereignis `core.sync.state` (öffentlich, also per SSE) `{project, state, reason}` nach jedem manuellen Lauf und bei jeder
+   Zustandsänderung im Auto-Sync.
+
+**Operationen des Core** (HTTP und MCP): `sync_status` (`GET /api/core/sync/{project}/status`), `sync_preview`
+(`GET …/preview?direction=`), `sync_execute` (`POST …/execute`, Body `token`, `direction`, `decisions[{uid, choice}]`,
+`delete_missing`). Fehlercodes: `sync_preview_stale` 409, `deletion_not_confirmed` 422, `mirror_not_configured` 404,
+`mirror_blocked` 409, `mirror_conflict` 409, Formatfehler (Codes aus `docs/techdocs/interfaces.md`, Datei und Zeile in
+`details`) 422. Bis `workspace` die Projekte liefert, ist `NoMirrorProjects` verdrahtet (kein Projekt hat einen Ordner).
+
 ## MCP
 
 `/mcp` ist ein MCP-Server (Streamable HTTP, `mcp` 2.x) im selben Prozess. Jede Operation mit `mcp=True` ist ein Tool
@@ -123,6 +184,7 @@ ungültige Argumente haben `validation_error`, ein unbekanntes Tool `not_found`.
 | `db_path` | `VIEWER_DB` | Pfad | `configs/viewer.db` | SQLite-Datei des Neubaus |
 | `backup_dir` | `VIEWER_BACKUP_DIR` | Pfad | `configs/backups` | Ordner der Datenbank-Sicherungen |
 | `sse_keepalive_seconds` | – | Zahl | `15` | Abstand der Keep-alive-Zeilen |
+| `auto_sync_interval_seconds` | `AUTO_SYNC_INTERVAL` | Zahl | `30` | Takt des Auto-Sync in Sekunden |
 | `plugins.<id>` | – | Objekt | `{}` | Einstellungen eines Plugins (`context.settings`) |
 | – | `VIEWER_CONFIG` | Pfad | `configs/viewer.json` | andere Konfigurationsdatei |
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import itertools
 import uuid
-from collections.abc import Collection, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from datetime import datetime
@@ -16,6 +16,7 @@ from pathlib import Path
 
 from viewer.core.application.ports import Transaction
 from viewer.core.application.sync import MirrorConfig, SyncChanges
+from viewer.core.domain.events import Event
 from viewer.core.domain.files import Change, FileSet, WriteFile
 from viewer.core.domain.sync import MirrorEntry, MirrorFormatError
 
@@ -68,8 +69,8 @@ class LineCodec:
         text = current.files[FILE].text if FILE in current.files else "# Items\n\n"
         lines = text.splitlines()
         drop_uids = {e.uid for e in removed}
-        by_uid = {e.uid: e for e in upserts}
-        by_placeholder = {e.placeholder: e for e in upserts if e.placeholder}
+        by_uid: dict[str | None, MirrorEntry] = {e.uid: e for e in upserts}
+        by_placeholder: dict[str | None, MirrorEntry] = {e.placeholder: e for e in upserts if e.placeholder}
         written: set[str | None] = set()
         out: list[str] = []
         for number, line in enumerate(lines, start=1):
@@ -178,7 +179,7 @@ class TransactionRecorder:
 
     @contextmanager
     def transaction(self) -> Iterator[Transaction]:
-        yield object()  # type: ignore[misc]
+        yield object()
         self.committed += 1
 
 
@@ -193,18 +194,18 @@ class BackupRecorder:
 
 class ScheduleRecorder:
     def __init__(self) -> None:
-        self.appointments: dict[str, tuple[datetime, object] | None] = {}
+        self.appointments: dict[str, tuple[datetime, Callable[[], None]] | None] = {}
 
-    def schedule(self, owner: str, at: datetime | None, callback: object) -> None:  # type: ignore[override]
+    def schedule(self, owner: str, at: datetime | None, callback: Callable[[], None]) -> None:
         self.appointments[owner] = (at, callback) if at else None
 
 
 class EventRecorder:
     def __init__(self) -> None:
-        self.events: list = []  # type: ignore[type-arg]
+        self.events: list[Event] = []
 
-    def publish(self, event) -> None:  # type: ignore[no-untyped-def]
+    def publish(self, event: Event) -> None:
         self.events.append(event)
 
-    def subscribe(self, topic, handler):  # type: ignore[no-untyped-def]
+    def subscribe(self, topic: str, handler: Callable[[Event], None]) -> Callable[[], None]:
         return lambda: None

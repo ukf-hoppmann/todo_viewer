@@ -35,3 +35,22 @@
 ### Open
 
 - Keine.
+
+## 2026-10-16 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant, mit diesen Ergänzungen: Einträge, die einen Platzhalter ersetzen, tragen im `upserts` von `encode` ihren `placeholder` (damit der Codec Zeile, Ordner und Dokumente umbenennen kann); der `SyncService` bekommt die Spiegel über eine Funktion (die Plugin-Dienste entstehen erst nach ihm); die Operationen des Core hängen an einem `CoreServices`-Objekt (UI-Zustand + Sync). `PluginHost.mirrors` liefert die Spiegel in Ladereihenfolge.
+- `tests/helpers/server/mirror_plugin/` ist ein vollständiges Beispiel (Codec, Teilnehmer, Tabellen mit Label-Historie und -Zählern, Verweise über `uid`); die Plugin-Stories können es als Vorlage für ihre Teilnehmer nehmen. Fakes für Unit-Tests: `tests/helpers/server/sync_fakes.py`.
+- Im Auto-Sync läuft der Takt-Callback blockierend in der Ereignisschleife; ein Lauf dauert Millisekunden. Falls das bei großen Projekten stört, wandert er später in einen Thread (die Sperre je Projekt ist schon da).
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) Vorschau, Ausführen mit Entscheidungen, Richtungsbeschränkung und Konflikterkennung mit einem Test-Plugin (`test_sync_service.py` gegen Fakes, `test_sync_flow.py` mit echter SQLite-Datei, echtem Ordner und HTTP); (2) Einträge ohne `uid` bekommen `uid` und Label, Platzhalter in Verweisen werden umgeschrieben (auch in bestehenden Einträgen), die Dateien werden zurückgeschrieben; (3) Auto-Sync überträgt nur konfliktfreie Änderungen, löscht nie, pausiert bei Merge-Markern/Git-Lock/fehlendem Ordner/Formatfehlern, sichert vorher die Datenbank, läuft als einzelner Termin nur bei aktivem Projekt; (4) `status` ändert nichts (Test vergleicht Dateien, Basis und Datenbank vorher/nachher) und `core.sync.state` kommt als öffentliches Ereignis; (5) Formatfehler des Codecs stoppen den Sync mit Datei und Zeile (422).
+- Dazu: eine fehlschlagende Teilnehmer-Änderung rollt die gesamte Datenbank-Transaktion (auch die Label-Zähler) zurück und lässt die Dateien unberührt; ein veraltetes Token wird mit 409 abgewiesen.
+- `scripts/check-next.sh` grün (251 Tests); `scripts/check.sh` des alten Viewers grün.
+- Status: `Awaiting confirmation`.
+
+### Open
+
+- Fragen 17 und 18 in `STORY-060` (Annahmen gelten).

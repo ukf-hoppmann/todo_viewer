@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
+from viewer.core.application.core_plugin import build_core_definition
 from viewer.core.application.plugin import PluginDefinition
-from viewer.core.application.ui_state import build_core_definition
 from viewer.core.domain.plugin import Migration, load_order
 from viewer.core.infrastructure.database import SqliteDatabase
 from viewer.core.infrastructure.database.core_schema import CORE_MIGRATIONS
@@ -32,7 +32,7 @@ def plugin(plugin_id: str, requires: tuple[str, ...] = (), migrations: tuple[Mig
 
 
 def ordered(*defs: PluginDefinition) -> list[PluginDefinition]:
-    core = build_core_definition(NoStore(), CORE_MIGRATIONS)
+    core = build_core_definition(NoStore(), CORE_MIGRATIONS, cast(Any, None))
     all_defs = [core, *defs]
     by_id = {d.id: d for d in all_defs}
     return [by_id[i] for i in load_order(all_defs)]

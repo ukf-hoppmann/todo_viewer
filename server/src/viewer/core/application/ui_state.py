@@ -7,11 +7,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from viewer.core.application.plugin import PluginContext, PluginDefinition
 from viewer.core.application.ports import UiStateStore
 from viewer.core.domain.errors import InvalidInput
-from viewer.core.domain.operations import HttpBinding, Operation
-from viewer.core.domain.plugin import Migration
 
 MAX_DOCUMENT_BYTES = 256 * 1024
 _OWNER = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
@@ -57,41 +54,3 @@ class UiStateService:
 def _check_owner(owner: str) -> None:
     if not _OWNER.match(owner):
         raise InvalidInput(f"Ungültiger Besitzer '{owner}'", details={"owner": owner})
-
-
-def build_core_definition(store: UiStateStore, migrations: tuple[Migration, ...]) -> PluginDefinition:
-    """Der Core als Besitzer `core`: eigene Migrationen und die Operationen für den UI-Zustand.
-
-    Weder lesen noch schreiben ist ein MCP-Tool (Einstellungen dürfen nicht als Tool angeboten werden).
-    """
-
-    def build(context: PluginContext) -> UiStateService:
-        return UiStateService(store)
-
-    return PluginDefinition(
-        id="core",
-        build=build,
-        migrations=migrations,
-        operations=(
-            Operation(
-                "get_ui_state",
-                "UI-Zustand eines Besitzers lesen",
-                "read",
-                GetUiState,
-                UiState,
-                lambda services, data: services.get(data),
-                HttpBinding("GET", "/ui-state/{owner}"),
-                mcp=False,
-            ),
-            Operation(
-                "put_ui_state",
-                "UI-Zustand eines Besitzers ersetzen",
-                "write",
-                PutUiState,
-                UiState,
-                lambda services, data: services.put(data),
-                HttpBinding("PUT", "/ui-state/{owner}"),
-                mcp=False,
-            ),
-        ),
-    )

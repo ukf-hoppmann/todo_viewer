@@ -7,7 +7,6 @@ Verhält sich wie `LocalFileStore` (das beweist die Contract-Suite unter
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from fnmatch import fnmatchcase
 from pathlib import Path
 
 from viewer.core.domain.files import (
@@ -24,6 +23,7 @@ from viewer.core.domain.files import (
     decode_text,
     encode_text,
     file_version,
+    glob_match,
     has_merge_markers,
     is_temp_name,
 )
@@ -34,17 +34,6 @@ _MESSAGES = {
     "unreadable": "Der Spiegel-Ordner enthält unlesbare Dateien",
     "merge_markers": "Der Spiegel-Ordner enthält Git-Merge-Marker",
 }
-
-
-def glob_match(pattern: str, path: str) -> bool:
-    def match(p: list[str], s: list[str]) -> bool:
-        if not p:
-            return not s
-        if p[0] == "**":
-            return match(p[1:], s) or (bool(s) and match(p, s[1:]))
-        return bool(s) and fnmatchcase(s[0], p[0]) and match(p[1:], s[1:])
-
-    return match(pattern.split("/"), path.split("/"))
 
 
 class InMemoryFileStore:

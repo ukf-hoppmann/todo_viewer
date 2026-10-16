@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from fnmatch import fnmatchcase
 from pathlib import PurePosixPath
 from typing import Literal
 
@@ -129,3 +130,20 @@ def check_relative_path(path: str) -> str:
     ):
         raise InvalidInput(f"Ungültiger Pfad im Spiegel-Ordner: {path!r}", details={"path": path})
     return path
+
+
+def glob_match(pattern: str, path: str) -> bool:
+    """Muster relativ zum Ordner: `*` bleibt in einem Pfadteil, `**` steht für beliebig viele (auch keinen)."""
+
+    def match(p: list[str], s: list[str]) -> bool:
+        if not p:
+            return not s
+        if p[0] == "**":
+            return match(p[1:], s) or (bool(s) and match(p, s[1:]))
+        return bool(s) and fnmatchcase(s[0], p[0]) and match(p[1:], s[1:])
+
+    return match(pattern.split("/"), path.split("/"))
+
+
+def matches_any(patterns: Sequence[str], path: str) -> bool:
+    return any(glob_match(p, path) for p in patterns)

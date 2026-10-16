@@ -19,7 +19,15 @@ def test_tools_are_listed_with_description_and_schema(server: RunningServer) -> 
             return await client.list_tools()
 
     tools = {t.name: t for t in run(scenario()).tools}
-    assert set(tools) == {"example_greet", "example_list_items", "example_retitle", "example_ping"}
+    assert set(tools) == {
+        "example_greet",
+        "example_list_items",
+        "example_retitle",
+        "example_ping",
+        "core_sync_status",
+        "core_sync_preview",
+        "core_sync_execute",
+    }
     greet = tools["example_greet"]
     assert greet.description == "Grüßt jemanden"
     assert set(greet.input_schema["properties"]) == {"name", "shout"} and greet.input_schema["required"] == ["name"]

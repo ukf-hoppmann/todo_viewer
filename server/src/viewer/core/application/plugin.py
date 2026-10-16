@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from viewer.core.application.ports import BackupMaker, Clock, Database, EventBus, Scheduler
+from viewer.core.application.sync import MirrorBinding
 from viewer.core.domain.errors import NotFound, PluginSetupError
 from viewer.core.domain.operations import Operation
 from viewer.core.domain.plugin import Migration, Subscription, load_order, validate_plugins
@@ -39,7 +40,7 @@ class PluginDefinition:
     migrations: tuple[Migration, ...] = ()
     element_kinds: tuple[str, ...] = ()
     operations: tuple[Operation, ...] = ()
-    mirror: Any = None
+    mirror: Callable[[Any], MirrorBinding] | None = None
     subscriptions: tuple[Subscription, ...] = field(default=())
 
 
@@ -70,6 +71,7 @@ class PluginHost:
             raise PluginSetupError(problems)
         by_id = {d.id: d for d in all_definitions}
         self._loaded: dict[str, LoadedPlugin] = {}
+        self._mirrors: list[MirrorBinding] = []
         for pid in load_order(all_definitions):
             definition = by_id[pid]
             context = PluginContext(
@@ -84,8 +86,15 @@ class PluginHost:
             )
             loaded = LoadedPlugin(definition, definition.build(context))
             self._loaded[pid] = loaded
+            if definition.mirror is not None:
+                self._mirrors.append(definition.mirror(loaded.services))
             for sub in definition.subscriptions:
                 events.subscribe(sub.topic, _bind(sub, loaded.services))
+
+    @property
+    def mirrors(self) -> list[MirrorBinding]:
+        """Die Spiegel der Plugins in Ladereihenfolge (zuerst die verlangten Plugins)."""
+        return list(self._mirrors)
 
     @property
     def plugins(self) -> list[LoadedPlugin]:

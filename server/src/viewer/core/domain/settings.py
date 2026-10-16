@@ -15,6 +15,7 @@ class Settings:
     db_path: str = "configs/viewer.db"
     backup_dir: str = "configs/backups"
     sse_keepalive_seconds: float = 15.0
+    auto_sync_interval_seconds: float = 30.0
     plugins: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
 
     def for_plugin(self, plugin_id: str) -> Mapping[str, Any]:

@@ -25,7 +25,9 @@ class MirrorFormatError(DomainError):
     """Der Codec lehnt den Inhalt einer Datei ab; `code` ist der Formatfehler, `details` nennt Datei und Zeile."""
 
     def __init__(self, code: str, message: str, *, file: str, line: int | None = None) -> None:
-        super().__init__(f"{file}{f':{line}' if line else ''}: {message}", code=code, details={"file": file, "line": line})
+        super().__init__(
+            f"{file}{f':{line}' if line else ''}: {message}", code=code, details={"file": file, "line": line}
+        )
 
 
 class SyncPreviewStale(DomainError):
@@ -34,6 +36,10 @@ class SyncPreviewStale(DomainError):
 
 class DeletionNotConfirmed(DomainError):
     code = "deletion_not_confirmed"
+
+
+class MirrorNotConfigured(DomainError):
+    code = "mirror_not_configured"
 
 
 @dataclass(frozen=True)
@@ -174,7 +180,12 @@ def compute_plan(
 
 
 def _allowed_targets(direction: Direction) -> tuple[Side, ...]:
-    return {"both": ("database", "files"), "to_database": ("database",), "to_files": ("files",)}[direction]
+    targets: dict[Direction, tuple[Side, ...]] = {
+        "both": ("database", "files"),
+        "to_database": ("database",),
+        "to_files": ("files",),
+    }
+    return targets[direction]
 
 
 def resolve_conflicts(
@@ -198,7 +209,7 @@ def resolve_conflicts(
             continue
         if intent.is_deletion and not delete_missing:
             raise DeletionNotConfirmed(
-                f"Die Entscheidung für {conflict.label or conflict.key} löscht einen Eintrag und braucht delete_missing",
+                f"Die Entscheidung für {conflict.label or conflict.key} löscht und braucht delete_missing",
                 details={"key": conflict.key, "choice": choice},
             )
         intents.append(intent)

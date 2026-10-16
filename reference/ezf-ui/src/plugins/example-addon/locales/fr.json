@@ -1,0 +1,10 @@
+{
+	"title": "Plugin complémentaire",
+	"entry": {
+		"panel": "Panneau complémentaire"
+	},
+	"panel": {
+		"header": "Panneau complémentaire du plugin d'exemple",
+		"text": "Cette entrée provient d'un deuxième plugin."
+	}
+}

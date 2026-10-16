@@ -1,0 +1,25 @@
+{
+	"title": "Plugin d'exemple",
+	"tab": {
+		"overview": "Aperçu",
+		"hub": "Zones"
+	},
+	"entry": {
+		"start": "Début"
+	},
+	"overview": {
+		"header": "Aperçu du plugin d'exemple",
+		"text": "Ce plugin ne contient aucune logique métier.",
+		"counter": "Compteur",
+		"countUp": "Incrémenter",
+		"backendVersion": {
+			"label": "Version du backend",
+			"loading": "Chargement …",
+			"failed": "La version n'a pas pu être chargée."
+		}
+	},
+	"start": {
+		"header": "Début du plugin d'exemple",
+		"text": "Entrée propre du plugin d'exemple."
+	}
+}

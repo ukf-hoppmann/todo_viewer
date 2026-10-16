@@ -1,0 +1,63 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "core/appConfig.schema.json",
+	"title": "App config (config.json)",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["api"],
+	"properties": {
+		"api": {
+			"description": "The backend the application talks to.",
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["url"],
+			"properties": {
+				"url": {
+					"description": "Complete address of the backend without a slash at the end, e.g. https://backend.et.localhost or http://localhost:8081/ezfBackend. The address of an endpoint is <url>/<endpoint>.",
+					"type": "string",
+					"pattern": "^https?://[^\\s/?#]+(/[^\\s?#]*[^\\s/?#])?$"
+				},
+				"returnToMaxAgeMinutes": {
+					"description": "How long the address remembered before the login is valid, in minutes (default 10). A value above the validity of the status cookie of the backend login (10 minutes) brings nothing.",
+					"type": "integer",
+					"minimum": 1
+				},
+				"connection": {
+					"description": "What the application does when the backend does not answer. Every field is optional.",
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"failuresBeforeWarning": {
+							"description": "How many failed connection tests in a row until the warning appears (default 1).",
+							"type": "integer",
+							"minimum": 1
+						},
+						"retryIntervalSeconds": {
+							"description": "Seconds between the end of one connection test and the start of the next, and how long a test waits for an answer (default 5).",
+							"type": "integer",
+							"minimum": 1
+						},
+						"logoutAfterSeconds": {
+							"description": "Seconds without a successful connection test, counted from the first failed one, until the application logs out locally (default 300).",
+							"type": "integer",
+							"minimum": 1
+						}
+					}
+				}
+			}
+		},
+		"logging": { "$ref": "logging.schema.json" },
+		"banners": {
+			"description": "Settings for the banners that stand under the app bar.",
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"maxVisible": {
+					"description": "How many banners are visible at the same time (default 20); further ones wait until one closes.",
+					"type": "integer",
+					"minimum": 1
+				}
+			}
+		}
+	}
+}

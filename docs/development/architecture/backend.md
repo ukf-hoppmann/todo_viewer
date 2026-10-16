@@ -1,6 +1,6 @@
 # Scope: backend
 
-Applies to `backend/**` in addition to `../architecture.md`.
+Applies to `src_old/backend/**` in addition to `../architecture.md`.
 
 ## 1. Onion layers
 
@@ -31,7 +31,7 @@ Applies to `backend/**` in addition to `../architecture.md`.
 
 ## 4. Tests
 
-- Test data MUST be synthetic (`backend/tests/fixtures`), never copies of real
+- Test data MUST be synthetic (`src_old/backend/tests/fixtures`), never copies of real
   backlogs.
 - Services SHOULD be tested against in-memory fakes of their ports.
 
@@ -60,7 +60,7 @@ Applies to `backend/**` in addition to `../architecture.md`.
   `NoteRepository` and `NoteDocumentStore` in `application/ports.py`, separate
   from `BacklogRepository`. There is one implementation in
   `infrastructure/database/`; it needs no routing adapter. It MUST pass the
-  contract suite `backend/tests/contract/test_note_repository.py`.
+  contract suite `src_old/backend/tests/contract/test_note_repository.py`.
 - A link to a backlog item MUST store the project and the item's label, not a
   `uid`: markdown projects have no `uid`. The retype use case MUST update the
   links to the item in the same operation.

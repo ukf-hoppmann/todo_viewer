@@ -1,0 +1,87 @@
+{
+	"app": {
+		"title": "ET"
+	},
+	"layout": {
+		"main": "Hauptbereich",
+		"loading": "Wird geladen"
+	},
+	"appBar": {
+		"language": "Sprache",
+		"colorScheme": {
+			"label": "Farbschema",
+			"light": "Hell",
+			"dark": "Dunkel",
+			"system": "System"
+		}
+	},
+	"navigation": {
+		"home": "Zur Startseite",
+		"sidebar": "Seitenleiste",
+		"notFound": "Diese Seite gibt es nicht.",
+		"unavailable": "Diese Ansicht ist derzeit nicht verfügbar.",
+		"noViews": "Es sind keine Ansichten verfügbar.",
+		"noEntries": "In diesem Bereich sind keine Einträge verfügbar."
+	},
+	"auth": {
+		"title": "Bitte melden Sie sich an.",
+		"login": "Anmelden",
+		"logout": "Abmelden",
+		"loginFailed": "Die Anmeldung konnte nicht gestartet werden. Bitte versuchen Sie es später erneut.",
+		"logoutFailed": "Die Abmeldung ist fehlgeschlagen. Bitte versuchen Sie es später erneut."
+	},
+	"modals": {
+		"severity": {
+			"error": "Fehler",
+			"warning": "Warnung",
+			"info": "Information",
+			"success": "Erfolg"
+		},
+		"confirmationRequired": "Bestätigung erforderlich",
+		"confirm": "Bestätigen",
+		"cancel": "Abbrechen",
+		"close": "Schließen",
+		"technicalDetails": "Technische Details",
+		"copy": "Kopieren",
+		"copied": "Kopiert"
+	},
+	"reportError": {
+		"details": {
+			"time": "Zeitpunkt",
+			"errorId": "Fehler-ID",
+			"sessionId": "Sitzungs-ID",
+			"error": "Fehler",
+			"stack": "Stacktrace"
+		}
+	},
+	"config": {
+		"invalid": "Die Anwendung ist falsch konfiguriert. Bitte wenden Sie sich an den Support."
+	},
+	"errors": {
+		"unexpected": "Ein unerwarteter Fehler ist aufgetreten.",
+		"fallback": {
+			"area": "Dieser Bereich konnte nicht angezeigt werden.",
+			"app": "Die Anwendung konnte nicht angezeigt werden.",
+			"retry": "Erneut versuchen",
+			"reload": "Neu laden"
+		},
+		"crash": "Die Anwendung ist abgestürzt. Bitte laden Sie die Seite neu."
+	},
+	"plugins": {
+		"failed": "Einige Funktionen sind nicht verfügbar, weil Erweiterungen nicht geladen werden konnten. Bitte wenden Sie sich an den Support.\n\n{{list}}",
+		"failedWithAffected": "{{plugin}} (betroffen: {{affected}})",
+		"detailsPlugin": "Plugin {{plugin}}"
+	},
+	"banners": {
+		"close": "Schließen"
+	},
+	"connection": {
+		"title": "Keine Verbindung zum Server",
+		"messageMinutes_one": "Die Verbindung wird weiter geprüft. Fehlgeschlagene Versuche: {{attempts}}. Ohne Verbindung werden Sie nach {{count}} Minute abgemeldet.",
+		"messageMinutes_other": "Die Verbindung wird weiter geprüft. Fehlgeschlagene Versuche: {{attempts}}. Ohne Verbindung werden Sie nach {{count}} Minuten abgemeldet.",
+		"messageSeconds_one": "Die Verbindung wird weiter geprüft. Fehlgeschlagene Versuche: {{attempts}}. Ohne Verbindung werden Sie nach {{count}} Sekunde abgemeldet.",
+		"messageSeconds_other": "Die Verbindung wird weiter geprüft. Fehlgeschlagene Versuche: {{attempts}}. Ohne Verbindung werden Sie nach {{count}} Sekunden abgemeldet.",
+		"startMessage": "Die Verbindung wird weiter geprüft. Fehlgeschlagene Versuche: {{attempts}}. Die Anwendung startet, sobald der Server antwortet.",
+		"loggedOut": "Sie wurden abgemeldet, weil die Verbindung zum Server verloren ging. Bitte melden Sie sich erneut an."
+	}
+}

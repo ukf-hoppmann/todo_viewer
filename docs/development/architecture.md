@@ -11,8 +11,21 @@ tests/architecture/test_layers.py". -->
 The viewer is being rebuilt (`EPIC-007`, design in
 `docs/todo/items/EPIC-007/EPIC-007_spec.md`). The new code lives in
 `server/` and `client/`. Sections 1–5 apply to the new code. The old viewer
-in `backend/` and `web/` follows the scopes `legacy`, `backend`, and `web`
-until the cutover (`STORY-084`), which removes it together with those scopes.
+in `src_old/backend/` and `src_old/web/` follows the scopes `legacy`,
+`backend`, and `web` until it is removed after the owner has accepted the
+rebuild (`STORY-084`).
+
+### 0. Reference code
+
+- `src_old/` (the old viewer) and `reference/` (snapshots of other projects,
+  currently `reference/ezf-ui/`) are read-only references for the rebuild.
+  New code MUST NOT import from them; code is copied and adapted. Enforced
+  by: `server/pyproject.toml` (`[tool.importlinter]`) and the ESLint rule
+  `architecture/boundaries` (created with `STORY-061` and `STORY-066`).
+- `src_old/` MUST keep building and running the old viewer until the
+  cutover; it is changed only to keep it running.
+- `src_old/` and `reference/` MUST NOT be deleted before the project owner
+  has accepted the rebuild.
 
 ### 1. Core and plugins
 
@@ -128,9 +141,9 @@ part, `**` spans any number of parts. Example row:
 |---|---|---|
 | server | `server/**` | Layers per core and plugin, ports, operations, errors, migrations, tests, dependencies |
 | client | `client/**` | Layers, plugin contract, slots, state, domain logic, test ids, dependencies |
-| legacy | `backend/**`, `web/**` | Storage, HTTP contract, and notes rules of the old viewer until the cutover |
-| backend | `backend/**` | Old viewer: onion layers, dependency injection, error handling |
-| web | `web/**` | Old viewer: React frontend structure, domain logic, state |
+| legacy | `src_old/backend/**`, `src_old/web/**` | Storage, HTTP contract, and notes rules of the old viewer until the cutover |
+| backend | `src_old/backend/**` | Old viewer: onion layers, dependency injection, error handling |
+| web | `src_old/web/**` | Old viewer: React frontend structure, domain logic, state |
 
 ## Changing these rules
 

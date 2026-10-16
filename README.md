@@ -292,13 +292,13 @@ Onion-Architektur im Backend: Abhängigkeiten zeigen nur nach innen, geprüft
 per `import-linter`.
 
 ```
-backend/todo_viewer/
+src_old/backend/todo_viewer/
   domain/          Item, Source, Backlog, Status-/Archiv-Regeln (EditPlanner → ChangeSet), Fehler mit Codes
   application/     Ports (Protocols) + kleine Use-Case-Services, Container
   infrastructure/  Adapter: markdown/ (Parser, Editoren, atomares Schreiben), database/ (SQLite), config/ (JSON), filesystem/
   api/             FastAPI: v2-Router, Pydantic-Schemas, Fehler → HTTP ({code, message, details})
   bootstrap.py     Composition Root: setzt alles per Konstruktor-Injection zusammen
-web/               React + Vite + TypeScript, TanStack Query
+src_old/web/               React + Vite + TypeScript, TanStack Query
   src/api/         aus OpenAPI generierte Typen (schema.d.ts), Client, Query-Hooks
   src/domain/      Filter, Baum, Fortschritt, Edit-Regeln als reine Funktionen
   src/state/       UI-Zustand (Server = Datenbank über /api/v2/ui-state), Polling-Pause
@@ -308,19 +308,19 @@ web/               React + Vite + TypeScript, TanStack Query
 Die Primärquelle eines Projekts liegt entweder in Markdown-Dateien oder in der
 zentralen Datenbank (`infrastructure/database/`, SQLite); die andere Seite kann
 als Spiegel mitgeführt werden. Beide Adapter bestehen dieselbe Contract-Suite
-(`backend/tests/contract/`), als Primärquelle und als Spiegel. Datenbank-Projekte
+(`src_old/backend/tests/contract/`), als Primärquelle und als Spiegel. Datenbank-Projekte
 entstehen über `POST /api/v2/sources` mit `{"backend": "database", "project": "…"}`.
 
 ## Entwicklung
 
 ```bash
-python3.11 -m venv .venv && .venv/bin/pip install -r backend/requirements-dev.txt
-npm --prefix web install
+python3.11 -m venv .venv && .venv/bin/pip install -r src_old/backend/requirements-dev.txt
+npm --prefix src_old/web install
 ```
 
 ```bash
-.venv/bin/python backend/main.py        # API + gebautes Frontend auf :5411 (Auto-Reload)
-npm --prefix web run dev                # Vite auf :5173, proxyt /api auf :5411
+.venv/bin/python src_old/backend/main.py        # API + gebautes Frontend auf :5411 (Auto-Reload)
+npm --prefix src_old/web run dev                # Vite auf :5173, proxyt /api auf :5411
 scripts/check.sh                        # ruff, mypy --strict, import-linter, pytest, tsc, eslint, vitest
 ```
 
@@ -328,9 +328,9 @@ Nach Änderungen an der v2-API die TS-Typen neu erzeugen (ein Test schlägt
 sonst fehl):
 
 ```bash
-.venv/bin/python backend/scripts/export_openapi.py && npm --prefix web run gen:api
+.venv/bin/python src_old/backend/scripts/export_openapi.py && npm --prefix src_old/web run gen:api
 ```
 
-Die Characterization-Tests (`backend/tests/characterization`) prüfen die
+Die Characterization-Tests (`src_old/backend/tests/characterization`) prüfen die
 geschriebenen Markdown-Dateien bytegenau gegen Golden-Files; bewusste
 Änderungen mit `UPDATE_GOLDEN=1 .venv/bin/pytest` neu aufnehmen.

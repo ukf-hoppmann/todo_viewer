@@ -1,0 +1,87 @@
+{
+	"app": {
+		"title": "ET"
+	},
+	"layout": {
+		"main": "Contenu principal",
+		"loading": "Chargement"
+	},
+	"appBar": {
+		"language": "Langue",
+		"colorScheme": {
+			"label": "Thème",
+			"light": "Clair",
+			"dark": "Sombre",
+			"system": "Système"
+		}
+	},
+	"navigation": {
+		"home": "Retour à l'accueil",
+		"sidebar": "Barre latérale",
+		"notFound": "Cette page n'existe pas.",
+		"unavailable": "Cette vue n'est pas disponible pour le moment.",
+		"noViews": "Aucune vue n'est disponible.",
+		"noEntries": "Aucune entrée n'est disponible dans cette zone."
+	},
+	"auth": {
+		"title": "Veuillez vous connecter.",
+		"login": "Se connecter",
+		"logout": "Se déconnecter",
+		"loginFailed": "La connexion n'a pas pu être démarrée. Veuillez réessayer plus tard.",
+		"logoutFailed": "La déconnexion a échoué. Veuillez réessayer plus tard."
+	},
+	"modals": {
+		"severity": {
+			"error": "Erreur",
+			"warning": "Avertissement",
+			"info": "Information",
+			"success": "Succès"
+		},
+		"confirmationRequired": "Confirmation requise",
+		"confirm": "Confirmer",
+		"cancel": "Annuler",
+		"close": "Fermer",
+		"technicalDetails": "Détails techniques",
+		"copy": "Copier",
+		"copied": "Copié"
+	},
+	"reportError": {
+		"details": {
+			"time": "Heure",
+			"errorId": "ID de l'erreur",
+			"sessionId": "ID de session",
+			"error": "Erreur",
+			"stack": "Trace d'appels"
+		}
+	},
+	"config": {
+		"invalid": "L'application est mal configurée. Veuillez contacter le support."
+	},
+	"errors": {
+		"unexpected": "Une erreur inattendue s'est produite.",
+		"fallback": {
+			"area": "Cette zone n'a pas pu être affichée.",
+			"app": "L'application n'a pas pu être affichée.",
+			"retry": "Réessayer",
+			"reload": "Recharger"
+		},
+		"crash": "L'application a planté. Veuillez recharger la page."
+	},
+	"plugins": {
+		"failed": "Certaines fonctions ne sont pas disponibles, car des extensions n'ont pas pu être chargées. Veuillez contacter le support.\n\n{{list}}",
+		"failedWithAffected": "{{plugin}} (concernés : {{affected}})",
+		"detailsPlugin": "Plugin {{plugin}}"
+	},
+	"banners": {
+		"close": "Fermer"
+	},
+	"connection": {
+		"title": "Pas de connexion au serveur",
+		"messageMinutes_one": "La connexion continue d'être vérifiée. Tentatives échouées : {{attempts}}. Sans connexion, vous serez déconnecté dans {{count}} minute.",
+		"messageMinutes_other": "La connexion continue d'être vérifiée. Tentatives échouées : {{attempts}}. Sans connexion, vous serez déconnecté dans {{count}} minutes.",
+		"messageSeconds_one": "La connexion continue d'être vérifiée. Tentatives échouées : {{attempts}}. Sans connexion, vous serez déconnecté dans {{count}} seconde.",
+		"messageSeconds_other": "La connexion continue d'être vérifiée. Tentatives échouées : {{attempts}}. Sans connexion, vous serez déconnecté dans {{count}} secondes.",
+		"startMessage": "La connexion continue d'être vérifiée. Tentatives échouées : {{attempts}}. L'application démarre dès que le serveur répond.",
+		"loggedOut": "Vous avez été déconnecté, car la connexion au serveur a été perdue. Veuillez vous reconnecter."
+	}
+}

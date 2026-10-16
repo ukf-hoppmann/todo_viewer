@@ -1,0 +1,10 @@
+{
+	"title": "Zusatz-Plugin",
+	"entry": {
+		"panel": "Zusatzbereich"
+	},
+	"panel": {
+		"header": "Zusatzbereich des Beispiel-Plugins",
+		"text": "Dieser Eintrag stammt aus einem zweiten Plugin."
+	}
+}

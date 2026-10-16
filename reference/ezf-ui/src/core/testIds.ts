@@ -1,0 +1,52 @@
+/** Test ids of the core (architecture rule 7). */
+export const coreTestIds = {
+	rootLayout: "core.root-layout",
+	appBar: "core.app-bar",
+	main: "core.main",
+	modal: "core.modal",
+	modalTitle: "core.modal-title",
+	modalMessage: "core.modal-message",
+	modalBody: "core.modal-body",
+	modalDetailsToggle: "core.modal-details-toggle",
+	modalDetails: "core.modal-details",
+	modalDetailsCopy: "core.modal-details-copy",
+	modalClose: "core.modal-close",
+	modalConfirm: "core.modal-confirm",
+	modalCancel: "core.modal-cancel",
+	errorFallback: "core.error-fallback",
+	errorFallbackRetry: "core.error-fallback-retry",
+	errorFallbackReload: "core.error-fallback-reload",
+	crashMessage: "core.crash-message",
+	tabBar: "core.tab-bar",
+	pageHeader: "core.page-header",
+	content: "core.content",
+	loading: "core.loading",
+	noViews: "core.no-views",
+	notFound: "core.not-found",
+	unavailable: "core.unavailable",
+	homeButton: "core.home-button",
+	loginPage: "core.login-page",
+	loginButton: "core.login-button",
+	logoutButton: "core.logout-button",
+	languageSelect: "core.language-select",
+	colorSchemeButton: "core.color-scheme-button",
+	sidebar: "core.sidebar",
+	noEntries: "core.no-entries",
+	bannerHost: "core.banner-host",
+	banner: "core.banner",
+	bannerTitle: "core.banner-title",
+	bannerMessage: "core.banner-message",
+	bannerClose: "core.banner-close",
+	/** The button of a banner, counted from 0 in the order of its actions: `core.banner-action.<index>` (rule 7.2). */
+	bannerAction: (index: number) => `core.banner-action.${index}`,
+	/** The tab of a main route: `core.nav-tab.<owner id>.<name>` (rule 7.2). */
+	navTab: (ownerId: string, name: string) => `core.nav-tab.${ownerId}.${name}`,
+	/** The entry of one language in the language select: `core.language-option.<language>` (rule 7.2). */
+	languageOption: (language: string) => `core.language-option.${language}`,
+	/** The entry of one choice (`light`, `dark`, `system`) in the color scheme menu: `core.color-scheme-option.<mode>` (rule 7.2). */
+	colorSchemeOption: (mode: string) => `core.color-scheme-option.${mode}`,
+	/** The symbol in the color scheme button, one per choice: `core.color-scheme-icon.<mode>` (rule 7.2). */
+	colorSchemeIcon: (mode: string) => `core.color-scheme-icon.${mode}`,
+	/** An entry of a sidebar: `core.sidebar-item.<slot>.<owner id>.<name>` (rule 7.2). */
+	sidebarItem: (slot: string, ownerId: string, name: string) => `core.sidebar-item.${slot}.${ownerId}.${name}`,
+} as const;

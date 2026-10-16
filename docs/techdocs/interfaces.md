@@ -2,8 +2,8 @@
 
 <!-- Nur öffentliche Schnittstellen: API, CLI, Dateiformate, Hooks, Ereignisse. -->
 
-Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
-(erzeugt mit `backend/scripts/export_openapi.py`).
+Das vollständige Schema der HTTP-API liegt in `src_old/web/src/api/openapi.json`
+(erzeugt mit `src_old/backend/scripts/export_openapi.py`).
 
 ## HTTP-API v2
 
@@ -304,7 +304,7 @@ Das vollständige Schema der HTTP-API liegt in `web/src/api/openapi.json`
 | 409 | Regelverstöße des Backlog-Formats, `details.id` = betroffenes Item, `details.items` = auslösende Items: `epic_without_required_child`, `required_children_not_done`, `children_still_active`, `parent_closed`, `epic_with_parent`, `required_for_parent_missing`, `parent_cycle`, `dependency_cycle`, `unknown_reference`, `summary_required_with_notes`, `item_referenced`, `has_children`, `item_deleted`, `item_not_deleted`, `parent_deleted` |
 | 500 | `write_failed` (z. B. fehlende Schreibrechte) |
 
-Alle übrigen Pfade liefern das gebaute Frontend aus `web/dist`; fehlt der
+Alle übrigen Pfade liefern das gebaute Frontend aus `src_old/web/dist`; fehlt der
 Build, antwortet der Server mit 503 und einem Hinweis.
 
 ## HTTP-API v2: Topics, Notes und Links
@@ -564,7 +564,7 @@ Die Notes eines Projekts laufen im selben Sync wie der Backlog (`POST /sources/{
 Dateiseite ist der Ordner `notes/` im Markdown-Ordner des Projekts (`markdown_path`), die Datenbank hält die Wahrheit.
 Er enthält nur diese Dateien, andere werden nicht gelesen. Ein Eintrag je Zeile, damit Git sauber zusammenführt.
 Feldnamen sind englisch, Zeitpunkte UTC mit `Z` (Bruchteile von Sekunden nur, wo es welche gibt). Beschrieben in
-`backend/todo_viewer/domain/notes_markdown.py`, gepinnt durch die Golden-Files in `backend/tests/golden/notes/`.
+`src_old/backend/todo_viewer/domain/notes_markdown.py`, gepinnt durch die Golden-Files in `src_old/backend/tests/golden/notes/`.
 
 | Datei | Inhalt |
 |---|---|

@@ -4,7 +4,7 @@
 
 - Das `Dockerfile` baut in zwei Stages: zuerst das Frontend (`node:22-alpine`,
   `npm ci` + `npm run build`), dann das Backend-Image (`python:3.11-slim`), das
-  API und `web/dist` ausliefert.
+  API und `src_old/web/dist` ausliefert.
 - `docker-compose.yml` startet den Dienst `todo-viewer` mit
   `restart: unless-stopped` auf Port 5411, nur an `127.0.0.1` gebunden (die API
   kann Items ändern und löschen), und bindet ein:
@@ -113,7 +113,7 @@
   nach). Zurück zum alten Stand: älteres Image starten und `config.json.bak`
   sowie `ui_state.json.bak` zurückbenennen.
 - Nach einem Update mit neuen Python-Abhängigkeiten (z. B. SQLAlchemy) lokal
-  `.venv/bin/pip install -r backend/requirements-dev.txt`; das Image installiert
+  `.venv/bin/pip install -r src_old/backend/requirements-dev.txt`; das Image installiert
   sie beim Neubau selbst.
 - Prüfungen laufen lokal über `scripts/check.sh` (ruff, mypy --strict,
   import-linter, pytest, tsc, eslint, vitest); es gibt keine CI.
@@ -124,7 +124,7 @@
 - Status: `./todo.sh status`; Live-Log: `./todo.sh logs` (folgt `logs/todo-viewer.log`).
 - Erreichbarkeit: `GET /api/v2/health` antwortet mit `{"status": "ok", "api": "2"}`,
   ohne Backlog-Dateien zu lesen.
-- Das Frontend wird pro Anfrage gesucht: ein späteres `npm --prefix web run build`
+- Das Frontend wird pro Anfrage gesucht: ein späteres `npm --prefix src_old/web run build`
   wird ohne Neustart ausgeliefert.
 
 ## Notes im Betrieb
@@ -196,12 +196,12 @@ grep ' req=1a2b3c4d ' logs/todo-viewer.log                     # alles zu einem 
 
 | Symptom | Ursache | Behebung |
 |---|---|---|
-| Seite zeigt „Frontend not built“ (HTTP 503) | `web/dist/index.html` fehlt (lokaler Start ohne Build) | `npm --prefix web run build` |
+| Seite zeigt „Frontend not built“ (HTTP 503) | `src_old/web/dist/index.html` fehlt (lokaler Start ohne Build) | `npm --prefix src_old/web run build` |
 | Projekt in der Liste ausgegraut mit ⚠ | Backlog-Ordner fehlt, ist kein Ordner, enthält keine `TODO.md` oder ist im Container nicht eingebunden | Pfad in der UI korrigieren (⚙ → Projekte → „Ordner ändern…“); Ordner muss unter dem gemounteten Pfad liegen |
 | Speichern bricht mit Hinweis auf externe Änderung ab (`version_conflict`/`file_changed`) | Der Eintrag wurde seit dem Lesen geändert bzw. die Datei während des Schreibens, z. B. durch einen Agenten | Nach dem nächsten Polling erneut bearbeiten |
 | Projekt mit ⚠ „nicht im Backlog-Format“ (`unsupported_format`) | `TODO.md` ohne Format-Kennung, z. B. eine einfache Checkliste | Datei ins Backlog-Format überführen (Kennung und IDs) |
 | Speichern schlägt mit `write_failed` fehl | Keine Schreibrechte auf den Backlog-Ordner | Rechte bzw. Volume-Mount (beschreibbar) prüfen |
-| Ein Test meldet veraltete API-Typen | v2-API geändert, `openapi.json`/`schema.d.ts` nicht neu erzeugt | `.venv/bin/python backend/scripts/export_openapi.py && npm --prefix web run gen:api` |
+| Ein Test meldet veraltete API-Typen | v2-API geändert, `openapi.json`/`schema.d.ts` nicht neu erzeugt | `.venv/bin/python src_old/backend/scripts/export_openapi.py && npm --prefix src_old/web run gen:api` |
 | Sync bricht mit `sync_stale` ab | Seit der Vorschau hat sich die Datenbank oder der Ordner geändert (oder es fehlt das `token`) | Vorschau neu holen und bestätigen |
 | Sync bricht mit `sync_source_invalid` ab (`details.reason`) | Der Sync-Ordner fehlt (`not_found`), hat keine `TODO.md` (`no_todo`) oder ist kein Backlog (`unsupported_format`, `parse_error`); es wurde nichts geändert | Ordner bzw. Datei reparieren, Vorschau wiederholen |
 | Umstellen des Speicherorts mit `sync_required` abgelehnt | Beide Seiten sind nicht gleich (z. B. ein offener Konflikt oder ein Eintrag, den die Richtung ausschloss) | Sync mit Vorschau ausführen, Konflikte entscheiden, dann erneut umstellen |

@@ -45,6 +45,12 @@ function stub(sources: SourceStatus[], states: Status[], other: (request: Reques
 }
 
 const card = (name: string) => screen.getByRole("group", { name });
+/** The card of a project with its setup unfolded: the rarely needed settings are folded away until asked for. */
+async function setup(name: string) {
+  const group = await screen.findByRole("group", { name });
+  await userEvent.click(within(group).getByRole("button", { name: "Einrichtung" }));
+  return group;
+}
 
 describe("ProjectsSection: one card per project", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -54,15 +60,55 @@ describe("ProjectsSection: one card per project", () => {
     renderWithProviders(<ProjectsSection />);
 
     const db = await screen.findByRole("group", { name: "Central" });
-    expect(within(db).getByText("Datenbank", { selector: ".project-primary" })).toBeInTheDocument();
+    expect(within(db).getByText("Datenbank", { selector: ".project-backend" })).toBeInTheDocument();
+    expect(within(db).getByText("Markdown-Ordner", { selector: ".project-backend" })).toBeInTheDocument();  // the mirror
     expect(within(db).getByText("/repos/central")).toBeInTheDocument();
     expect(await within(db).findByText("In Sync")).toBeInTheDocument();
     expect(within(db).getByText(/Letzter Sync: .*2026/)).toBeInTheDocument();
 
     const md = card("Files");
-    expect(within(md).getByText("Markdown-Ordner", { selector: ".project-primary" })).toBeInTheDocument();
+    expect(within(md).getByText("Markdown-Ordner", { selector: ".project-backend" })).toBeInTheDocument();
     expect(within(md).getByText("/repos/a/docs")).toBeInTheDocument();
-    expect(await within(md).findByText("Kein Spiegel")).toBeInTheDocument();
+    expect(await within(md).findByText("Nicht gespiegelt")).toBeInTheDocument();
+  });
+
+  it("keeps the setup folded until it is asked for", async () => {
+    stub([central], [status(central, "in_sync")]);
+    renderWithProviders(<ProjectsSection />);
+
+    const group = await screen.findByRole("group", { name: "Central" });
+    const toggle = within(group).getByRole("button", { name: "Einrichtung" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(within(group).queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(within(group).queryByRole("button", { name: "Zu Markdown wechseln…" })).not.toBeInTheDocument();
+
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(within(group).getAllByRole("checkbox")).toHaveLength(2);  // mirror and auto-sync
+
+    await userEvent.click(toggle);
+    expect(within(group).queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it("puts the sync forward without color while all is well, and with color once something differs", async () => {
+    stub([central, files], [status(central, "mirror_changed"), status(files, "none")]);
+    const { unmount } = renderWithProviders(<ProjectsSection />);
+    expect(await within(await screen.findByRole("group", { name: "Central" })).findByRole("button", { name: "Sync starten…" })).toHaveClass("primary");
+    unmount();
+
+    stub([central], [status(central, "in_sync")]);
+    renderWithProviders(<ProjectsSection />);
+    expect(await within(await screen.findByRole("group", { name: "Central" })).findByRole("button", { name: "Sync starten…" })).not.toHaveClass("primary");
+  });
+
+  it("has nothing to check and nothing to sync for a project without a mirror", async () => {
+    stub([files], [status(files, "none")]);
+    renderWithProviders(<ProjectsSection />);
+
+    const group = await screen.findByRole("group", { name: "Files" });
+    expect(within(group).queryByRole("button", { name: "Sync starten…" })).not.toBeInTheDocument();
+    expect(within(group).queryByRole("button", { name: "Status prüfen" })).not.toBeInTheDocument();
+    expect(within(group).queryByText(/Letzter Sync/)).not.toBeInTheDocument();
   });
 
   it.each([
@@ -117,7 +163,7 @@ describe("ProjectsSection: the automatic sync", () => {
     const calls = stub([central], [status(central, "in_sync")], (request) => (request.method === "PUT" ? jsonResponse({ ...central, auto_sync: true }) : jsonResponse({}, 404)));
     renderWithProviders(<ProjectsSection />);
 
-    const box = await within(await screen.findByRole("group", { name: "Central" })).findByRole("checkbox", { name: /Automatisch abgleichen/ });
+    const box = within(await setup("Central")).getByRole("checkbox", { name: /Automatisch abgleichen/ });
     expect(box).not.toBeChecked();
     await userEvent.click(box);
 
@@ -129,7 +175,9 @@ describe("ProjectsSection: the automatic sync", () => {
     stub([bare], [status(bare, "none")]);
     renderWithProviders(<ProjectsSection />);
 
-    expect(await within(await screen.findByRole("group", { name: "Bare" })).findByRole("checkbox", { name: /Automatisch abgleichen/ })).toBeDisabled();
+    const group = await setup("Bare");
+    expect(within(group).getByRole("checkbox", { name: /Automatisch abgleichen/ })).toBeDisabled();
+    expect(within(group).getByText("Gibt es erst mit einem Spiegel.")).toBeInTheDocument();
   });
 
   it("shows the last run when it is on, and the reason when it is paused", async () => {
@@ -144,10 +192,25 @@ describe("ProjectsSection: the automatic sync", () => {
   });
 
   it("names the open conflicts, which wait for a decision in the sync dialog", async () => {
-    stub([auto], [autoStatus({ conflicts: 2 })]);
+    const section = { created: [], changed: [], unchanged: 0 };
+    stub([auto], [autoStatus({ conflicts: 2 })], () => jsonResponse({ executed: false, token: "t", items: section, documents: section, topics: section, notes: section, note_documents: section, conflicts: [], skipped: [], resolved: [], deleted: [], deferred: [], kept: [] }));
     renderWithProviders(<ProjectsSection />);
 
-    expect(await screen.findByText("2 offene Konflikte: im Sync-Dialog entscheiden")).toBeInTheDocument();
+    const group = await screen.findByRole("group", { name: "Central" });
+    expect(await within(group).findByText("2 offene Konflikte. Nichts wird überschrieben, bis du entscheidest.")).toBeInTheDocument();
+    expect(within(group).getByText("Konflikte warten auf eine Entscheidung")).toBeInTheDocument();
+    expect(within(group).queryByRole("button", { name: "Sync starten…" })).not.toBeInTheDocument();  // one way in, not two
+
+    await userEvent.click(within(group).getByRole("button", { name: "Konflikte klären…" }));
+    expect(screen.getByRole("dialog", { name: "Sync: Central" })).toBeInTheDocument();
+  });
+
+  it("names a project's conflicts although its state says in sync, and shows nothing of them otherwise", async () => {
+    stub([central, files], [{ ...status(central, "in_sync"), conflicts: 1 }, status(files, "none")]);
+    renderWithProviders(<ProjectsSection />);
+
+    expect(await within(await screen.findByRole("group", { name: "Central" })).findByText("Konflikte warten auf eine Entscheidung")).toBeInTheDocument();
+    expect(within(card("Files")).queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("shows nothing about it for a project that has it off", async () => {
@@ -166,7 +229,7 @@ describe("ProjectsSection: switching the primary source and syncing", () => {
     stub([files], [status(files, "none")]);
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Files" })).getByRole("button", { name: "Primärquelle wechseln…" }));
+    await userEvent.click(within(await setup("Files")).getByRole("button", { name: "Zur Datenbank wechseln…" }));
 
     expect(screen.getByRole("dialog", { name: "„Files“ in die Datenbank übernehmen" })).toBeInTheDocument();
     expect(screen.getByText(/legt der Dienst ein Backup/)).toBeInTheDocument();
@@ -176,7 +239,7 @@ describe("ProjectsSection: switching the primary source and syncing", () => {
     stub([central], [status(central, "in_sync")]);
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Central" })).getByRole("button", { name: "Primärquelle wechseln…" }));
+    await userEvent.click(within(await setup("Central")).getByRole("button", { name: "Zu Markdown wechseln…" }));
 
     expect(screen.getByRole("dialog", { name: "„Central“ als Markdown-Ordner ablegen" })).toBeInTheDocument();
   });
@@ -185,9 +248,10 @@ describe("ProjectsSection: switching the primary source and syncing", () => {
     stub([bare], [status(bare, "none")]);
     renderWithProviders(<ProjectsSection />);
 
-    const group = await screen.findByRole("group", { name: "Bare" });
-    expect(within(group).getByRole("button", { name: "Primärquelle wechseln…" })).toBeDisabled();
-    expect(within(group).getByRole("button", { name: "Sync…" })).toBeDisabled();
+    const group = await setup("Bare");
+    expect(within(group).getByRole("button", { name: "Zu Markdown wechseln…" })).toBeDisabled();
+    expect(within(group).getByText("Dafür zuerst einen Markdown-Ordner festlegen.")).toBeInTheDocument();
+    expect(within(group).queryByRole("button", { name: "Sync starten…" })).not.toBeInTheDocument();
   });
 
   it("syncs in both directions unless the run is restricted to one", async () => {
@@ -195,7 +259,7 @@ describe("ProjectsSection: switching the primary source and syncing", () => {
     const calls = stub([mirrored], [status(mirrored, "mirror_changed")], () => jsonResponse({ executed: false, token: "t", items: section, documents: section, topics: section, notes: section, note_documents: section, conflicts: [], skipped: [], resolved: [], deleted: [], deferred: [], kept: [] }));
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Mirrored" })).getByRole("button", { name: "Sync…" }));
+    await userEvent.click(within(await screen.findByRole("group", { name: "Mirrored" })).getByRole("button", { name: "Sync starten…" }));
     expect(screen.getByRole("radio", { name: /In beide Richtungen/ })).toBeChecked();
     await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
 
@@ -207,7 +271,7 @@ describe("ProjectsSection: switching the primary source and syncing", () => {
     stub([files], [status(files, "none")]);
     renderWithProviders(<SettingsDialog initialSection="projects" onClose={vi.fn()} />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Files" })).getByRole("button", { name: "Primärquelle wechseln…" }));
+    await userEvent.click(within(await setup("Files")).getByRole("button", { name: "Zur Datenbank wechseln…" }));
     await userEvent.keyboard("{Escape}");
 
     expect(screen.queryByRole("dialog", { name: "„Files“ in die Datenbank übernehmen" })).not.toBeInTheDocument();
@@ -222,26 +286,37 @@ describe("ProjectsSection: folders and mirrors", () => {
     stub([files], [status(files, "none")]);
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Files" })).getByRole("button", { name: "Ordner ändern…" }));
+    await userEvent.click(within(await setup("Files")).getByRole("button", { name: "Ordner ändern…" }));
 
     expect(screen.getByRole("dialog", { name: "Projektordner ändern" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Projektname")).not.toBeInTheDocument();
   });
 
-  it("sets up the mirror folder of a database project that has none", async () => {
+  it("sets up the mirror folder of a database project that has none, as the one thing the card offers", async () => {
     stub([bare], [status(bare, "none")]);
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Bare" })).getByRole("button", { name: "Spiegel-Ordner festlegen…" }));
+    const group = await screen.findByRole("group", { name: "Bare" });
+    await userEvent.click(within(group).getByRole("button", { name: "Spiegel-Ordner festlegen…" }));
 
     expect(screen.getByRole("dialog", { name: "Spiegel-Ordner ändern" })).toBeInTheDocument();
+  });
+
+  it("cannot keep a markdown mirror before there is a folder for it", async () => {
+    stub([bare], [status(bare, "none")]);
+    renderWithProviders(<ProjectsSection />);
+
+    const group = await setup("Bare");
+
+    expect(within(group).getByRole("checkbox", { name: "Markdown-Ordner als Spiegel führen" })).toBeDisabled();
+    expect(within(group).getByText("Zuerst einen Markdown-Ordner festlegen.")).toBeInTheDocument();
   });
 
   it("keeps a database mirror of a markdown project when asked, and sends the mirror only", async () => {
     const calls = stub([files], [status(files, "none")], () => jsonResponse({ ...files, mirror: "database" }));
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Files" })).getByRole("checkbox", { name: "Datenbank-Spiegel führen" }));
+    await userEvent.click(within(await setup("Files")).getByRole("checkbox", { name: "Datenbank-Spiegel führen" }));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
     const put = calls.find((c) => c.method === "PUT")!;
@@ -249,11 +324,21 @@ describe("ProjectsSection: folders and mirrors", () => {
     expect(put.body).toEqual({ path: "/repos/a/docs", project: "Files", mirror: "database" });
   });
 
+  it("starts the database mirror from the card itself, without opening the setup", async () => {
+    const calls = stub([files], [status(files, "none")], () => jsonResponse({ ...files, mirror: "database" }));
+    renderWithProviders(<ProjectsSection />);
+
+    await userEvent.click(within(await screen.findByRole("group", { name: "Files" })).getByRole("button", { name: "Datenbank-Spiegel einschalten" }));
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "/repos/a/docs", project: "Files", mirror: "database" });
+  });
+
   it("asks before dropping the database mirror, because that deletes the copy in the database", async () => {
     const calls = stub([mirrored], [status(mirrored, "in_sync")], () => jsonResponse({ ...mirrored, mirror: "none" }));
     const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
     renderWithProviders(<ProjectsSection />);
-    const box = within(await screen.findByRole("group", { name: "Mirrored" })).getByRole("checkbox", { name: "Datenbank-Spiegel führen" });
+    const box = within(await setup("Mirrored")).getByRole("checkbox", { name: "Datenbank-Spiegel führen" });
     expect(box).toBeChecked();
 
     await userEvent.click(box);
@@ -270,7 +355,7 @@ describe("ProjectsSection: folders and mirrors", () => {
     const calls = stub([central], [status(central, "in_sync")], () => jsonResponse({ ...central, mirror: "none" }));
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Central" })).getByRole("button", { name: "Spiegel ausschalten" }));
+    await userEvent.click(within(await setup("Central")).getByRole("checkbox", { name: "Markdown-Ordner als Spiegel führen" }));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
     expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Central", sync_path: "/repos/central", mirror: "none" });
@@ -282,9 +367,9 @@ describe("ProjectsSection: folders and mirrors", () => {
 
     const group = await screen.findByRole("group", { name: "Off" });
     expect(within(group).getByText("/repos/off")).toBeInTheDocument();  // the folder is still there
-    expect(within(group).getByText("Markdown-Spiegel aus")).toBeInTheDocument();
-    expect(within(group).getByRole("button", { name: "Sync…" })).toBeDisabled();
-    await userEvent.click(within(group).getByRole("button", { name: "Spiegel einschalten" }));
+    expect(within(group).getByText("Spiegel (aus)")).toBeInTheDocument();
+    expect(within(group).queryByRole("button", { name: "Sync starten…" })).not.toBeInTheDocument();
+    await userEvent.click(within(group).getByRole("button", { name: "Markdown-Spiegel einschalten" }));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -295,7 +380,7 @@ describe("ProjectsSection: folders and mirrors", () => {
     stub([files], [status(files, "none")], () => jsonResponse({ code: "duplicate", message: "x", details: {} }, 409));
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await screen.findByRole("group", { name: "Files" })).getByRole("checkbox", { name: "Datenbank-Spiegel führen" }));
+    await userEvent.click(within(await setup("Files")).getByRole("checkbox", { name: "Datenbank-Spiegel führen" }));
 
     expect(await screen.findByText("Dieser Ordner ist bereits eingetragen.")).toBeInTheDocument();
     expect(within(card("Files")).getByRole("checkbox", { name: "Datenbank-Spiegel führen" })).not.toBeChecked();

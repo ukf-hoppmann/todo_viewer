@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Schemas, SourceStatus } from "../../api/client";
 import { useSaveSource, useSourceList, useSyncStatuses } from "../../api/queries";
+import { describeProject } from "../../domain/projects";
 import type { SyncMode, SyncState } from "../../domain/sync";
 import { describeError, useI18n } from "../../i18n/i18n";
 import { useUiState } from "../../state/useUiStateStore";
@@ -10,7 +11,7 @@ import type { SectionProps } from "./sections";
 
 type Dialog = { kind: "sync"; source: SourceStatus } | { kind: "switch"; source: SourceStatus } | { kind: "folder"; source: SourceStatus };
 
-/** One card per project: where it lives, its mirror, whether the two still match, and what can be done about it. */
+/** One card per project: where it lives, whether its mirror still matches, and the one thing to do next. */
 export function ProjectsSection({ focusId }: SectionProps) {
   const { t } = useI18n();
   const { dispatch } = useUiState();
@@ -65,9 +66,12 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
   const { t } = i18n;
   const save = useSaveSource();
   const [error, setError] = useState("");
+  const [setupOpen, setSetupOpen] = useState(false);
+  const setupId = useId();
   const ref = useRef<HTMLElement>(null);
   const database = source.primary === "database";
   const folder = source.markdown_path;
+  const view = describeProject(source, state);
 
   useEffect(() => {
     if (focused) ref.current?.scrollIntoView?.({ block: "nearest" });
@@ -86,82 +90,129 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
   // The folder is sent again, so switching the mirror off and on keeps it; only an emptied folder removes it.
   const setMarkdownMirror = (on: boolean) =>
     change({ id: source.id, project: source.project, path: "", syncPath: folder ?? "", mirror: on ? "markdown" : "none" });
+  const setMirror = database ? setMarkdownMirror : toggleDatabaseMirror;
 
-  const lastSync = state?.last_sync_at ? new Date(state.last_sync_at).toLocaleString(i18n.lang) : t("projects.lastSync.never");
+  const when = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString(i18n.lang) : t("projects.lastSync.never"));
+  const otherName = t(`source.backend.${database ? "markdown" : "database"}`);
+
+  const stateText = view.status === "loading" ? t("projects.state.loading") : view.status === "none" ? t("projects.state.noMirror") : t(`sync.state.${view.status}`);
+  const emphasis = view.tone === "attention" || view.tone === "pending";
+  const mainAction = {
+    sync: { label: t("projects.sync"), run: () => onOpen("sync") },
+    enableMirror: { label: t(database ? "projects.action.enableMarkdown" : "projects.action.enableDatabase"), run: () => setMirror(true) },
+    setupMirror: { label: t("projects.folder.set"), run: () => onOpen("folder") },
+    resolve: null,
+  }[view.action];
 
   return (
-    <section ref={ref} className={`project-card${focused ? " focused" : ""}`} role="group" aria-label={source.project} aria-current={focused ? "true" : undefined}>
+    <section ref={ref} className={`project-card tone-${view.tone}${focused ? " focused" : ""}`} role="group" aria-label={source.project} aria-current={focused ? "true" : undefined}>
       <header>
         <h4>{source.project}</h4>
-        <span className={`project-state ${state?.state ?? ""}`}>{state ? t(`sync.state.${state.state}`) : t("projects.state.loading")}</span>
+        <span className={`project-state ${view.tone}`}>{stateText}</span>
       </header>
-      <dl className="settings-facts">
-        <dt>{t("projects.primary")}</dt>
-        <dd>
-          <span className="project-primary">{t(`source.backend.${source.primary}`)}</span>
-          <button className="btn link" disabled={database && !folder} onClick={() => onOpen("switch")}>
-            {t("projects.switch")}
-          </button>
-        </dd>
-        <dt>{t("projects.folder")}</dt>
-        <dd>
-          <span className="mono project-folder" title={folder ?? undefined}>{folder ?? t("projects.folder.none")}</span>
-          <button className="btn link" onClick={() => onOpen("folder")}>
-            {t(folder ? "projects.folder.change" : "projects.folder.set")}
-          </button>
-        </dd>
-        <dt>{t("projects.mirror")}</dt>
-        <dd>
-          {database ? (
-            <>
-              <span>{t(source.mirror !== "none" ? "projects.mirror.markdown" : folder ? "projects.mirror.off" : "projects.mirror.none")}</span>
-              {folder && (
-                <button className="btn link" disabled={save.isPending} onClick={() => setMarkdownMirror(source.mirror === "none")}>
-                  {t(source.mirror === "none" ? "projects.mirror.on" : "projects.mirror.remove")}
-                </button>
-              )}
-            </>
-          ) : (
-            <label>
-              <input type="checkbox" checked={source.mirror === "database"} disabled={save.isPending} onChange={(e) => toggleDatabaseMirror(e.target.checked)} />
-              {t("projects.mirror.database")}
-            </label>
-          )}
-        </dd>
-        <dt>{t("projects.auto")}</dt>
-        <dd>
-          <label>
-            <input
-              type="checkbox"
-              checked={source.auto_sync}
-              disabled={save.isPending || (source.mirror === "none" && !source.auto_sync)}
-              onChange={(e) => change({ id: source.id, project: source.project, path: source.path, syncPath: database ? (folder ?? "") : undefined, autoSync: e.target.checked })}
-            />
-            {t("projects.auto.label")}
-          </label>
-          {source.auto_sync && source.mirror === "none" && <span className="hint">{t("projects.auto.noMirror")}</span>}
-        </dd>
-      </dl>
-      {state && state.conflicts > 0 && <div className="project-conflicts" role="status">{t("projects.conflicts", { n: state.conflicts })}</div>}
-      {state?.auto_sync && (
-        <div className="project-auto" role="status">
-          {state.auto_paused
-            ? t("projects.auto.paused", { r: i18n.errorText(state.auto_paused, state.auto_paused) })
-            : t("projects.auto.lastRun", { at: state.auto_last_run_at ? new Date(state.auto_last_run_at).toLocaleString(i18n.lang) : t("projects.lastSync.never") })}
+
+      <div className="project-flow">
+        <div className="project-side">
+          <span className="project-role">{t("projects.primary")}</span>
+          <span className="project-backend">{t(`source.backend.${source.primary}`)}</span>
+          {!database && folder && <span className="mono project-folder" title={folder}>{folder}</span>}
+        </div>
+        {view.hasMirror && (
+          <>
+            <span className="project-arrow" aria-hidden="true">⇄</span>
+            <div className="project-side">
+              <span className="project-role">{t("projects.mirror")}</span>
+              <span className="project-backend">{otherName}</span>
+              {database && folder && <span className="mono project-folder" title={folder}>{folder}</span>}
+            </div>
+          </>
+        )}
+        {view.mirrorOff && folder && (
+          <div className="project-side off">
+            <span className="project-role">{t("projects.mirror.offRole")}</span>
+            <span className="project-backend">{otherName}</span>
+            <span className="mono project-folder" title={folder}>{folder}</span>
+          </div>
+        )}
+      </div>
+
+      {view.conflicts > 0 && (
+        <div className="project-conflicts" role="status">
+          <span>{t("projects.conflicts", { n: view.conflicts })}</span>
+          <button className="btn small primary" onClick={() => onOpen("sync")}>{t("projects.resolve")}</button>
         </div>
       )}
       {error && <div className="field-error" role="alert">{error}</div>}
+
       <footer className="project-footer">
-        <span className="project-lastsync">{t("projects.lastSync", { at: lastSync })}</span>
+        <div className="project-meta">
+          {view.hasMirror && <span className="project-lastsync">{t("projects.lastSync", { at: when(state?.last_sync_at) })}</span>}
+          {state?.auto_sync && (
+            <span className={`project-auto${state.auto_paused ? " warn" : ""}`} role="status">
+              {state.auto_paused
+                ? t("projects.auto.paused", { r: i18n.errorText(state.auto_paused, state.auto_paused) })
+                : t("projects.auto.lastRun", { at: when(state.auto_last_run_at) })}
+            </span>
+          )}
+        </div>
         <div className="project-actions">
-          <button className="btn small" disabled={source.mirror === "none"} onClick={() => onOpen("sync")}>
-            {t("projects.sync")}
-          </button>
-          <button className="btn small" disabled={checking} onClick={onCheck}>
-            {t("projects.state.check")}
-          </button>
+          {view.hasMirror && (
+            <button className="btn small ghost" disabled={checking} onClick={onCheck}>
+              {t("projects.state.check")}
+            </button>
+          )}
+          {mainAction && (
+            <button className={`btn small${emphasis ? " primary" : ""}`} disabled={save.isPending} onClick={mainAction.run}>
+              {mainAction.label}
+            </button>
+          )}
         </div>
       </footer>
+
+      <button className="project-setup-toggle" aria-expanded={setupOpen} aria-controls={setupId} onClick={() => setSetupOpen(!setupOpen)}>
+        {t("projects.setup")}
+      </button>
+      {setupOpen && (
+        <dl id={setupId} className="settings-facts project-setup">
+          <dt>{t("projects.folder")}</dt>
+          <dd>
+            <span className="mono project-folder" title={folder ?? undefined}>{folder ?? t("projects.folder.none")}</span>
+            <button className="btn link" onClick={() => onOpen("folder")}>
+              {t(folder ? "projects.folder.change" : "projects.folder.set")}
+            </button>
+          </dd>
+          <dt>{t("projects.mirror")}</dt>
+          <dd>
+            <label>
+              <input type="checkbox" checked={source.mirror !== "none"} disabled={save.isPending || (database && !folder)} onChange={(e) => setMirror(e.target.checked)} />
+              {t(database ? "projects.mirror.markdown" : "projects.mirror.database")}
+            </label>
+            {database && !folder && <span className="hint">{t("projects.mirror.needsFolder")}</span>}
+          </dd>
+          <dt>{t("projects.auto")}</dt>
+          <dd>
+            <label>
+              <input
+                type="checkbox"
+                checked={source.auto_sync}
+                disabled={save.isPending || !view.autoSwitchable}
+                onChange={(e) => change({ id: source.id, project: source.project, path: source.path, syncPath: database ? (folder ?? "") : undefined, autoSync: e.target.checked })}
+              />
+              {t("projects.auto.label")}
+            </label>
+            {view.autoIdle && <span className="hint">{t("projects.auto.noMirror")}</span>}
+            {!view.autoSwitchable && <span className="hint">{t("projects.auto.needsMirror")}</span>}
+          </dd>
+          <dt>{t("projects.primary")}</dt>
+          <dd>
+            <span>{t(`source.backend.${source.primary}`)}</span>
+            <button className="btn link" disabled={view.switchBlocked} onClick={() => onOpen("switch")}>
+              {t(database ? "projects.switch.toMarkdown" : "projects.switch.toDatabase")}
+            </button>
+            <span className="hint">{t(view.switchBlocked ? "projects.switch.blocked" : "projects.switch.hint")}</span>
+          </dd>
+        </dl>
+      )}
     </section>
   );
 }

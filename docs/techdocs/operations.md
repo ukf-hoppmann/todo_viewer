@@ -25,8 +25,8 @@
   Datenbank-Projekte mit Ordner behalten ihren Spiegel eingeschaltet; Version 6 legt die Tabellen für
   Topics, Notes, Links, Auslöser, Note-Dokumente und die Label-Zähler an; Version 7 die Tabelle `note_notices` für die Hinweise zwischen Notes und Items; Version 8 die Tabelle `sync_entries` mit der Version jedes Items und Dokuments auf beiden Seiten nach dem letzten Sync, je Projekt und Markdown-Ordner, nur Versionen). Vor einer Migration legt der Dienst ein Backup an (siehe unten). Sicherung: bei gestopptem Container alle drei Dateien kopieren,
   im laufenden Betrieb `sqlite3 configs/todo.db ".backup configs/todo-backup.db"`.
-- Primärquelle eines Projekts wechseln (UI: ⚙ → Projekte → „Primärquelle
-  wechseln…“; API: Sync, dann `PUT /sources/{id}` mit neuem `backend`): Der
+- Primärquelle eines Projekts wechseln (UI: ⚙ → Projekte → „Einrichtung“ →
+  „Zu Markdown wechseln…“ bzw. „Zur Datenbank wechseln…“; API: Sync, dann `PUT /sources/{id}` mit neuem `backend`): Der
   Dienst sichert die bisherige Primärquelle selbst (nächster Punkt); die
   Datenbankdatei zusätzlich zu sichern (siehe oben) schadet nicht. Der Wechsel
   löscht nichts. Die bisherige Seite bleibt als Spiegel: nach „Markdown →
@@ -34,7 +34,7 @@
   „Datenbank → Markdown“ bleibt die Kopie in der Datenbank (Datenbank-Spiegel
   eingeschaltet). Den Spiegel abschalten: bei einem Datenbank-Spiegel löscht das
   die Kopie in der Datenbank, bei einem Markdown-Spiegel schaltet es nur den Spiegel ab: der Ordner bleibt
-  gespeichert, „Spiegel einschalten“ braucht keinen neuen (den Ordner selbst löscht
+  gespeichert, „Markdown-Spiegel einschalten“ braucht keinen neuen (den Ordner selbst löscht
   „Ordner ändern…“ mit leerem Pfad; ⚙ → Projekte). Beim Austragen eines Markdown-Projekts verschwindet
   seine Kopie in der Datenbank mit, ein Datenbank-Projekt mit Items lässt sich
   nicht austragen. Der Export in einen neuen Ordner schreibt die Kopfzeilen von

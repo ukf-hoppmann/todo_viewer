@@ -24,6 +24,11 @@ export function mirrorSettings(mode: MirrorMode): { mirror: boolean; autoSync: b
   return { mirror: mode !== "off", autoSync: mode === "auto" };
 }
 
+/** Whether the viewer syncs the project by itself: the switch is on and there is a mirror for it to act on. */
+export function autoSyncOn(source: Pick<ProjectSource, "mirror" | "auto_sync">): boolean {
+  return source.mirror !== "none" && source.auto_sync;
+}
+
 export interface ProjectView {
   /** The state to name; "loading" while it is unknown. Open conflicts win over what the state says. */
   status: SyncState | "loading";
@@ -65,7 +70,7 @@ export function describeProject(source: ProjectSource, status: ProjectStatus | u
     mirrorOff: source.primary === "database" && !hasMirror && !!source.markdown_path,
     action: actionOf(hasMirror, conflicts, source),
     switchBlocked: source.primary === "database" && !source.markdown_path,
-    mirrorMode: !hasMirror ? "off" : source.auto_sync ? "auto" : "manual",
+    mirrorMode: !hasMirror ? "off" : autoSyncOn(source) ? "auto" : "manual",
     canMirror: source.primary === "markdown" || !!source.markdown_path,
   };
 }

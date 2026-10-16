@@ -171,7 +171,7 @@ describe("SourceDialog: an existing project", () => {
 });
 
 describe("Sidebar: projects in the database", () => {
-  const options = { projects: ["Central", "Files"], statuses: [], priorities: [] };
+  const options = { projects: ["Central", "Files", "Manual"], statuses: [], priorities: [] };
   const files = sourceStatus({ id: "s2", project: "Files", backend: "markdown", path: "/repos/a/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/a/docs", mirror: "none" });
   const show = (sources = [sourceStatus(), files], onSyncSource = vi.fn()) =>
     renderWithProviders(
@@ -187,6 +187,12 @@ describe("Sidebar: projects in the database", () => {
     await userEvent.click(screen.getByRole("button", { name: "Sync mit dem Markdown-Ordner" }));
 
     expect(onSyncSource).toHaveBeenCalledWith(sourceStatus());
+  });
+
+  it("shows a symbol for a project that syncs automatically, and for no other", () => {
+    show([sourceStatus({ auto_sync: true }), sourceStatus({ id: "s3", project: "Manual" }), files]);
+
+    expect(screen.getAllByRole("img", { name: "Sync automatisch" })).toHaveLength(1);
   });
 
   it("offers no sync for a database project without a sync folder", () => {

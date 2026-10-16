@@ -3,6 +3,7 @@ import type { SourceStatus } from "../api/client";
 import { noteStatusColor, priorityColor, statusColor } from "../domain/colors";
 import type { FilterOptions } from "../domain/model";
 import { NOTE_STATUSES } from "../domain/notes";
+import { autoSyncOn } from "../domain/projects";
 import { sidebarSections } from "../domain/sidebar";
 import { needsAttention, type SyncState } from "../domain/sync";
 import { useI18n } from "../i18n/i18n";
@@ -198,6 +199,11 @@ function ProjectFilters({ projects, sources, syncStates, syncConflicts, onEdit, 
                   {source?.backend === "database" && (
                     <span className="db-badge" title={t("source.badge.db.title")}>
                       {t("source.badge.db")}
+                    </span>
+                  )}
+                  {source && autoSyncOn(source) && (
+                    <span className="auto-sync-badge" role="img" title={t("source.badge.auto.title")} aria-label={t("source.badge.auto.title")}>
+                      ↻
                     </span>
                   )}
                   {problem && <span className="warn">⚠</span>}

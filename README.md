@@ -190,7 +190,8 @@ immer in beide Richtungen) und der Wechsel der Primärquelle
 („Zu Markdown wechseln…“ bzw. „Zur Datenbank wechseln…“: erst Sync, vorher ein
 Backup der bisherigen Primärquelle unter `configs/backups/`). Ein ⚠ hinter dem
 Projektnamen in der Sidebar heißt: der Spiegel wurde seit dem letzten Sync
-geändert (oder ist nicht lesbar); ein Klick öffnet die Karte dieses Projekts. Der
+geändert (oder ist nicht lesbar); ein Klick öffnet die Karte dieses Projekts. Ein ↻
+neben dem DB-Kennzeichen heißt: der Auto-Sync ist für dieses Projekt an. Der
 Stand wird beim Laden der Seite, bei Fensterfokus, beim Öffnen des Menüs, mit
 „Status prüfen“ und nach einem Sync geholt, nicht im Takt der Anzeige. Das
 Bearbeiten (✎) in der Sidebar ändert nur den Namen; Entfernen und die Reihenfolge

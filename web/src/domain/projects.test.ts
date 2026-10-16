@@ -1,4 +1,4 @@
-import { describeProject, mirrorSettings, type ProjectSource } from "./projects";
+import { autoSyncOn, describeProject, mirrorSettings, type ProjectSource } from "./projects";
 import type { SyncState } from "./sync";
 
 const database = (over: Partial<ProjectSource> = {}): ProjectSource => ({ primary: "database", mirror: "markdown", markdown_path: "/repos/central", auto_sync: false, ...over });
@@ -45,6 +45,20 @@ describe("describeProject: what the card says about a project", () => {
     expect(view.hasMirror).toBe(false);
     expect(view.status).toBe("none");
     expect(view.tone).toBe("idle");
+  });
+});
+
+describe("autoSyncOn: whether the viewer syncs the project by itself", () => {
+  it("is on with the switch and a mirror", () => {
+    expect(autoSyncOn(database({ auto_sync: true }))).toBe(true);
+  });
+
+  it("is off when the mirror is synced by hand", () => {
+    expect(autoSyncOn(database({ auto_sync: false }))).toBe(false);
+  });
+
+  it("is off without a mirror, even if the switch was left on", () => {
+    expect(autoSyncOn(database({ mirror: "none", auto_sync: true }))).toBe(false);
   });
 });
 

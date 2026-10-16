@@ -4,7 +4,7 @@ import type { ConnectionFetch } from "../../../client/src/core/api/types";
 import { createAppStore } from "../../../client/src/core/store/createAppStore";
 import { coreApi } from "../../../client/src/core/ui-state/coreApi";
 import type { PluginRegistry } from "../../../client/src/core/plugins/types";
-import { workspaceApi, type FolderListing, type Project } from "../../../client/src/plugins/workspace/api";
+import { workspaceApi, type ElementOut, type FolderListing, type LinkedElement, type Project } from "../../../client/src/plugins/workspace/api";
 
 const url = "https://backend.test/api";
 
@@ -35,9 +35,18 @@ export function fakeWorkspaceBackend(
 		documents?: Record<string, Record<string, unknown>>;
 		folders?: Record<string, FolderListing>;
 		elementsInProjects?: Record<string, number>;
+		/** Elements for the search and the links; a link is `[linkUid, fromUid, toUid, role]`. */
+		elements?: ElementOut[];
+		links?: Array<[string, string, string, LinkedElement["role"]]>;
 	} = {},
 ) {
 	let projects = options.projects ?? [project("p0", "Allgemein", 0, { builtin: true })];
+	const elements = options.elements ?? [];
+	let links = options.links ?? [];
+	const linked = (linkUid: string, uid: string, role: LinkedElement["role"]): LinkedElement => {
+		const e = elements.find((entry) => entry.uid === uid)!;
+		return { link_uid: linkUid, role, uid, project_uid: e.project_uid, kind: e.kind, label: e.label, title: e.title, deleted: e.deleted };
+	};
 	const documents = new Map(Object.entries(options.documents ?? {}));
 	const requests: Array<{ method: string; path: string; query: URLSearchParams; body?: unknown }> = [];
 	const fetch = vi.fn<ConnectionFetch>(async (request) => {
@@ -80,6 +89,32 @@ export function fakeWorkspaceBackend(
 			}
 			projects = projects.filter((entry) => entry.uid !== one[1]);
 			return Response.json({ trashed: count });
+		}
+		const ofElement = /^workspace\/elements\/([^/]+)\/links$/.exec(path);
+		if (ofElement) {
+			const uid = ofElement[1]!;
+			return Response.json({
+				outgoing: links.filter((l) => l[1] === uid).map((l) => linked(l[0], l[2], l[3])),
+				incoming: links.filter((l) => l[2] === uid).map((l) => linked(l[0], l[1], l[3])),
+			});
+		}
+		if (path === "workspace/links" && request.method === "POST") {
+			const b = body as { from_uid: string; to_uid: string; role: LinkedElement["role"] };
+			if (links.some((l) => l[1] === b.from_uid && l[2] === b.to_uid && l[3] === b.role)) {
+				return Response.json({ code: "link_exists", message: "Diese Verknüpfung gibt es schon", details: {} }, { status: 400 });
+			}
+			const created: [string, string, string, LinkedElement["role"]] = [`l${links.length + 1}`, b.from_uid, b.to_uid, b.role];
+			links = [...links, created];
+			return Response.json(linked(created[0], b.to_uid, b.role));
+		}
+		const oneLink = /^workspace\/links\/([^/]+)$/.exec(path);
+		if (oneLink && request.method === "DELETE") {
+			links = links.filter((l) => l[0] !== oneLink[1]);
+			return Response.json({ removed: true });
+		}
+		if (path === "workspace/elements") {
+			const q = (searchParams.get("query") ?? "").toLowerCase();
+			return Response.json(elements.filter((e) => !e.deleted && `${e.label} ${e.title}`.toLowerCase().includes(q)));
 		}
 		if (path === "workspace/folders") {
 			const listing = options.folders?.[searchParams.get("path") ?? ""];

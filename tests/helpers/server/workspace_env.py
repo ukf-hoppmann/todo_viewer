@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from fakes import FixedClock
 from kinds_plugin.plugin import KINDS_PLUGIN, KindsServices
@@ -30,6 +31,9 @@ class Env:
         services = self.app.state.plugin_host.services("kinds-test")
         assert isinstance(services, KindsServices)
         return services
+
+    def services_links(self) -> Any:
+        return self.workspace.links
 
     def projects(self) -> list[dict[str, object]]:
         return self.client.get("/api/workspace/projects").json()  # type: ignore[no-any-return]

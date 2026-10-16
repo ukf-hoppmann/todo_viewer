@@ -32,4 +32,15 @@ elements = Table(
     Column("created_at", String),
     Column("updated_at", String),
     Column("deleted_at", String),
+    Column("title", String),
+)
+
+links = Table(
+    "workspace_links",
+    metadata,
+    Column("uid", String, primary_key=True),
+    Column("from_uid", String),
+    Column("to_uid", String),
+    Column("role", String),
+    Column("created_at", String),
 )

@@ -13,11 +13,11 @@ from typing import Protocol
 
 from viewer.core.application.ports import Transaction
 from viewer.core.domain.plugin import ElementKind
-from viewer.plugins.workspace.domain.model import Element, Project
+from viewer.plugins.workspace.domain.model import Element, Link, LinkView, Project
 
 
 class ElementRegistry(Protocol):
-    def register(self, tx: Transaction, project_uid: str, kind: str) -> Element:
+    def register(self, tx: Transaction, project_uid: str, kind: str, title: str = "") -> Element:
         """Legt ein Element an: vergibt `uid` und das nächste freie Label des Typs im Projekt."""
         ...
 
@@ -42,6 +42,26 @@ class ElementRegistry(Protocol):
     def purge(self, tx: Transaction, uid: str) -> None:
         """Löscht das Element endgültig (mit seiner Label-Historie; das Label wird trotzdem nie wieder vergeben)."""
         ...
+
+    def set_title(self, tx: Transaction, uid: str, title: str) -> None:
+        """Setzt den Anzeigetitel (für Suche und Verknüpfungen); das Fach-Plugin ruft das bei jeder Titeländerung."""
+        ...
+
+    def search(self, tx: Transaction, query: str, limit: int = 50) -> list[Element]:
+        """Nicht gelöschte Elemente aller Projekte, deren Label oder Titel `query` enthält."""
+        ...
+
+
+class Links(Protocol):
+    """Verknüpfungen zwischen Elementen für andere Plugins (`notes` legt `trigger`-Verknüpfungen an)."""
+
+    def add(self, tx: Transaction, from_uid: str, to_uid: str, role: str) -> Link: ...
+
+    def remove(self, tx: Transaction, uid: str) -> Link: ...
+
+    def outgoing(self, tx: Transaction, uid: str) -> list[LinkView]: ...
+
+    def incoming(self, tx: Transaction, uid: str) -> list[LinkView]: ...
 
 
 class Projects(Protocol):
@@ -99,4 +119,22 @@ class ElementStore(Protocol):
 
     def set_deleted(self, tx: Transaction, uid: str, at: datetime | None, now: datetime) -> None: ...
 
+    def set_title(self, tx: Transaction, uid: str, title: str, now: datetime) -> None: ...
+
+    def search(self, tx: Transaction, query: str, limit: int) -> list[Element]: ...
+
     def delete(self, tx: Transaction, uid: str) -> None: ...
+
+
+class LinkStore(Protocol):
+    def insert(self, tx: Transaction, link: Link) -> None: ...
+
+    def get(self, tx: Transaction, uid: str) -> Link | None: ...
+
+    def find(self, tx: Transaction, from_uid: str, to_uid: str, role: str) -> Link | None: ...
+
+    def delete(self, tx: Transaction, uid: str) -> None: ...
+
+    def outgoing(self, tx: Transaction, uid: str) -> list[Link]: ...
+
+    def incoming(self, tx: Transaction, uid: str) -> list[Link]: ...

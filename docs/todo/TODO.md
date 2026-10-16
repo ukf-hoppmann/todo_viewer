@@ -433,7 +433,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -449,6 +449,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Elemente untereinander verknüpfen, zum Beispiel eine Note mit
     einem Item, und sehen, was worauf verweist.
   - Spec: `items/STORY-069/STORY-069_spec.md`.
+  - Notes: `items/STORY-069/STORY-069_notes.md`.
 
 - `STORY-070` **Papierkorb für alle Elementtypen**
   - Type: Story.

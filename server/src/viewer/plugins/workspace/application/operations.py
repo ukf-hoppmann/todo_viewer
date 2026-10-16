@@ -7,8 +7,9 @@ from datetime import datetime
 from typing import Any, Literal
 
 from viewer.core.domain.operations import HttpBinding, Operation
+from viewer.plugins.workspace.application.links import LinkService
 from viewer.plugins.workspace.application.projects import UNSET, ProjectService
-from viewer.plugins.workspace.domain.model import Project
+from viewer.plugins.workspace.domain.model import Element, LinkView, Project
 
 Direction = Literal["both", "to_files", "to_database"]
 
@@ -123,13 +124,92 @@ class ElementRef:
     deleted: bool
 
 
-class WorkspaceServices:
-    """Die Dienste des Plugins; `projects` für die Operationen, `registry` und `project_store` für andere Plugins."""
+LinkRoleName = Literal["reference", "origin", "trigger"]
 
-    def __init__(self, projects: ProjectService, registry: Any, project_store: Any) -> None:
+
+@dataclass(frozen=True)
+class AddLink:
+    from_uid: str
+    to_uid: str
+    role: LinkRoleName
+
+
+@dataclass(frozen=True)
+class RemoveLink:
+    uid: str
+
+
+@dataclass(frozen=True)
+class ListLinks:
+    uid: str
+
+
+@dataclass(frozen=True)
+class SearchElements:
+    query: str
+    limit: int = 50
+
+
+@dataclass(frozen=True)
+class LinkedElement:
+    """Das Element am anderen Ende einer Verknüpfung; `deleted`: es liegt im Papierkorb."""
+
+    link_uid: str
+    role: LinkRoleName
+    uid: str
+    project_uid: str
+    kind: str
+    label: str
+    title: str
+    deleted: bool
+
+
+@dataclass(frozen=True)
+class LinksOut:
+    outgoing: list[LinkedElement]
+    incoming: list[LinkedElement]
+
+
+@dataclass(frozen=True)
+class ElementOut:
+    uid: str
+    project_uid: str
+    kind: str
+    label: str
+    title: str
+    version: int
+    deleted: bool
+
+
+@dataclass(frozen=True)
+class Removed:
+    removed: bool = True
+
+
+def linked_element(view: LinkView) -> LinkedElement:
+    e = view.element
+    return LinkedElement(
+        view.link.uid, view.link.role, e.uid, e.project_uid, e.kind, e.label, e.title, e.deleted_at is not None
+    )
+
+
+def element_out(e: Element) -> ElementOut:
+    return ElementOut(e.uid, e.project_uid, e.kind, e.label, e.title, e.revision, e.deleted_at is not None)
+
+
+class WorkspaceServices:
+    """Die Dienste des Plugins; `projects` für die Operationen, `registry`, `links` und `project_store` für andere."""
+
+    def __init__(self, projects: ProjectService, registry: Any, project_store: Any, links: LinkService) -> None:
         self.projects = projects
         self.registry = registry
         self.project_store = project_store
+        self.links = links
+
+
+def _list_links(services: WorkspaceServices, data: ListLinks) -> LinksOut:
+    outgoing, incoming = services.links.list_links(data.uid)
+    return LinksOut([linked_element(v) for v in outgoing], [linked_element(v) for v in incoming])
 
 
 def _unset(value: Any) -> Any:
@@ -236,5 +316,41 @@ OPERATIONS: tuple[Operation, ...] = (
         ElementRef,
         _resolve,
         HttpBinding("GET", "/projects/{project_uid}/labels/{label}"),
+    ),
+    Operation(
+        "add_link",
+        "Verknüpft zwei Elemente (Rolle reference oder origin; 'trigger' legt nur ein Auslöser der Notes an)",
+        "write",
+        AddLink,
+        LinkedElement,
+        lambda s, d: linked_element(s.links.add_link(d.from_uid, d.to_uid, d.role)),
+        HttpBinding("POST", "/links"),
+    ),
+    Operation(
+        "remove_link",
+        "Entfernt eine Verknüpfung (nicht die Rolle 'trigger')",
+        "write",
+        RemoveLink,
+        Removed,
+        lambda s, d: (s.links.remove_link(d.uid), Removed())[1],
+        HttpBinding("DELETE", "/links/{uid}"),
+    ),
+    Operation(
+        "list_links",
+        "Ausgehende und eingehende Verknüpfungen eines Elements, gelöschte Gegenstücke markiert",
+        "read",
+        ListLinks,
+        LinksOut,
+        _list_links,
+        HttpBinding("GET", "/elements/{uid}/links"),
+    ),
+    Operation(
+        "search_elements",
+        "Sucht Elemente aller Projekte über Label und Titel (für die Auswahl eines Verknüpfungsziels)",
+        "read",
+        SearchElements,
+        list[ElementOut],
+        lambda s, d: [element_out(e) for e in s.links.search_elements(d.query, d.limit)],
+        HttpBinding("GET", "/elements"),
     ),
 )

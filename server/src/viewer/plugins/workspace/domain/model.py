@@ -13,6 +13,8 @@ from viewer.core.domain.errors import DomainError, InvalidInput
 BUILTIN_PROJECT = "Allgemein"
 SYNC_DIRECTIONS = ("both", "to_files", "to_database")
 SyncDirection = Literal["both", "to_files", "to_database"]
+LinkRole = Literal["reference", "origin", "trigger"]
+LINK_ROLES = ("reference", "origin", "trigger")
 
 _LABEL = re.compile(r"^([A-Z]+)-(\d+)$")
 
@@ -35,6 +37,18 @@ class UnknownElementKind(DomainError):
 
 class UnknownReference(DomainError):
     code = "unknown_reference"
+
+
+class InvalidLink(DomainError):
+    code = "invalid_link"
+
+
+class LinkExists(DomainError):
+    code = "link_exists"
+
+
+class TriggerLinkReserved(DomainError):
+    code = "trigger_link_reserved"
 
 
 @dataclass(frozen=True)
@@ -67,6 +81,8 @@ class Element:
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None
+    #: Anzeigetitel; das Fach-Plugin hält ihn über `ElementRegistry.set_title` aktuell (für Suche und Verknüpfungen).
+    title: str = ""
 
 
 def format_label(prefix: str, number: int) -> str:
@@ -109,3 +125,30 @@ def reorder(uids: Sequence[str], uid: str, position: int) -> list[str]:
     rest = [entry for entry in uids if entry != uid]
     index = max(0, min(position, len(rest)))
     return [*rest[:index], uid, *rest[index:]]
+
+
+@dataclass(frozen=True)
+class Link:
+    """Eine gerichtete Verknüpfung zwischen zwei Elementen; sie hängt an den `uid`s, nicht an Labels oder Typen."""
+
+    uid: str
+    from_uid: str
+    to_uid: str
+    role: LinkRole
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class LinkView:
+    """Eine Verknüpfung mit dem Element am anderen Ende (bei ausgehenden das Ziel, bei eingehenden die Quelle)."""
+
+    link: Link
+    element: Element
+
+
+def validate_link(from_uid: str, to_uid: str, role: str) -> LinkRole:
+    if role not in LINK_ROLES:
+        raise InvalidInput(f"Unbekannte Rolle '{role}'", details={"field": "role", "roles": list(LINK_ROLES)})
+    if from_uid == to_uid:
+        raise InvalidLink("Ein Element lässt sich nicht mit sich selbst verknüpfen", details={"uid": from_uid})
+    return role  # type: ignore[return-value]

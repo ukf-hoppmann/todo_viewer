@@ -9,8 +9,8 @@ from sqlalchemy import Connection, delete, func, insert, select, text, update
 from viewer.core.application.ports import Transaction
 from viewer.core.domain.plugin import ElementKind
 from viewer.core.infrastructure.database import SqlTransaction, update_with_revision
-from viewer.plugins.workspace.domain.model import Element, Project, SyncDirection
-from viewer.plugins.workspace.infrastructure.database.tables import elements, projects
+from viewer.plugins.workspace.domain.model import Element, Link, Project, SyncDirection
+from viewer.plugins.workspace.infrastructure.database.tables import elements, links, projects
 
 
 def conn(tx: Transaction) -> Connection:
@@ -47,7 +47,12 @@ def _element(row: Any) -> Element:
         created_at=datetime.fromisoformat(row.created_at),
         updated_at=datetime.fromisoformat(row.updated_at),
         deleted_at=_time(row.deleted_at),
+        title=row.title,
     )
+
+
+def _link(row: Any) -> Link:
+    return Link(row.uid, row.from_uid, row.to_uid, row.role, datetime.fromisoformat(row.created_at))
 
 
 class SqlProjectStore:
@@ -173,6 +178,7 @@ class SqlElementStore:
                 created_at=element.created_at.isoformat(),
                 updated_at=element.updated_at.isoformat(),
                 deleted_at=element.deleted_at.isoformat() if element.deleted_at else None,
+                title=element.title,
             )
         )
 
@@ -221,5 +227,56 @@ class SqlElementStore:
     def delete(self, tx: Transaction, uid: str) -> None:
         conn(tx).execute(delete(elements).where(elements.c.uid == uid))
 
+    def set_title(self, tx: Transaction, uid: str, title: str, now: datetime) -> None:
+        conn(tx).execute(update(elements).where(elements.c.uid == uid).values(title=title, updated_at=now.isoformat()))
 
-__all__ = ["SqlElementStore", "SqlProjectStore", "SyncDirection"]
+    def search(self, tx: Transaction, query: str, limit: int) -> list[Element]:
+        """Nicht gelöschte Elemente aller Projekte, deren Label oder Titel `query` enthält (ohne Groß/Klein)."""
+        pattern = "%" + query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        rows = conn(tx).execute(
+            select(elements)
+            .where(elements.c.deleted_at.is_(None))
+            .where(elements.c.label.ilike(pattern, escape="\\") | elements.c.title.ilike(pattern, escape="\\"))
+            .order_by(elements.c.label, elements.c.uid)
+            .limit(limit)
+        )
+        return [_element(row) for row in rows]
+
+
+class SqlLinkStore:
+    def insert(self, tx: Transaction, link: Link) -> None:
+        conn(tx).execute(
+            insert(links).values(
+                uid=link.uid,
+                from_uid=link.from_uid,
+                to_uid=link.to_uid,
+                role=link.role,
+                created_at=link.created_at.isoformat(),
+            )
+        )
+
+    def get(self, tx: Transaction, uid: str) -> Link | None:
+        row = conn(tx).execute(select(links).where(links.c.uid == uid)).first()
+        return _link(row) if row else None
+
+    def find(self, tx: Transaction, from_uid: str, to_uid: str, role: str) -> Link | None:
+        row = (
+            conn(tx)
+            .execute(select(links).where(links.c.from_uid == from_uid, links.c.to_uid == to_uid, links.c.role == role))
+            .first()
+        )
+        return _link(row) if row else None
+
+    def delete(self, tx: Transaction, uid: str) -> None:
+        conn(tx).execute(delete(links).where(links.c.uid == uid))
+
+    def outgoing(self, tx: Transaction, uid: str) -> list[Link]:
+        rows = conn(tx).execute(select(links).where(links.c.from_uid == uid).order_by(links.c.created_at, links.c.uid))
+        return [_link(row) for row in rows]
+
+    def incoming(self, tx: Transaction, uid: str) -> list[Link]:
+        rows = conn(tx).execute(select(links).where(links.c.to_uid == uid).order_by(links.c.created_at, links.c.uid))
+        return [_link(row) for row in rows]
+
+
+__all__ = ["SqlElementStore", "SqlLinkStore", "SqlProjectStore", "SyncDirection"]

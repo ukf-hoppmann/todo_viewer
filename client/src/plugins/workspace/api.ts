@@ -5,6 +5,10 @@ export type Project = components["schemas"]["ProjectOut"];
 export type FolderListing = components["schemas"]["FolderListingOut"];
 export type SyncDirection = Project["sync_direction"];
 export type CreateProjectBody = components["schemas"]["WorkspaceCreateProjectBody"];
+export type LinkRole = components["schemas"]["LinkedElement"]["role"];
+export type LinkedElement = components["schemas"]["LinkedElement"];
+export type LinksOut = components["schemas"]["LinksOut"];
+export type ElementOut = components["schemas"]["ElementOut"];
 export type UpdateProjectBody = components["schemas"]["WorkspaceUpdateProjectBody"];
 
 /**
@@ -38,11 +42,26 @@ export const workspaceApi = createPluginApi(
 			}),
 			invalidatesTags: ["Projects"],
 		}),
+		listLinks: build.query<LinksOut, string>({
+			query: (uid) => `workspace/elements/${uid}/links`,
+			providesTags: ["Links"],
+		}),
+		addLink: build.mutation<LinkedElement, { from_uid: string; to_uid: string; role: LinkRole }>({
+			query: (body) => ({ url: "workspace/links", method: "POST", body }),
+			invalidatesTags: ["Links"],
+		}),
+		removeLink: build.mutation<{ removed: boolean }, string>({
+			query: (uid) => ({ url: `workspace/links/${uid}`, method: "DELETE" }),
+			invalidatesTags: ["Links"],
+		}),
+		searchElements: build.query<ElementOut[], string>({
+			query: (query) => ({ url: "workspace/elements", params: { query } }),
+		}),
 		browseFolders: build.query<FolderListing, string | undefined>({
 			query: (path) => ({ url: "workspace/folders", params: path ? { path } : undefined }),
 		}),
 	}),
-	{ tagTypes: ["Projects"] },
+	{ tagTypes: ["Projects", "Links"] },
 );
 
 export const {
@@ -52,6 +71,10 @@ export const {
 	useMoveProjectMutation,
 	useRemoveProjectMutation,
 	useBrowseFoldersQuery,
+	useListLinksQuery,
+	useAddLinkMutation,
+	useRemoveLinkMutation,
+	useSearchElementsQuery,
 } = workspaceApi;
 
 /** The text the server gave for an error of a request, if it gave one. */

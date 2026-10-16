@@ -67,4 +67,22 @@ def _v1(connection: Any) -> None:
     )
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1),)
+def _v2(connection: Any) -> None:
+    """Anzeigetitel im Register (Suche, Verknüpfungen) und die Verknüpfungen."""
+    statements = (
+        "ALTER TABLE workspace_elements ADD COLUMN title TEXT NOT NULL DEFAULT ''",
+        """CREATE TABLE workspace_links (
+            uid TEXT PRIMARY KEY,
+            from_uid TEXT NOT NULL REFERENCES workspace_elements(uid) ON DELETE CASCADE,
+            to_uid TEXT NOT NULL REFERENCES workspace_elements(uid) ON DELETE CASCADE,
+            role TEXT NOT NULL CHECK (role IN ('reference', 'origin', 'trigger')),
+            created_at TEXT NOT NULL,
+            UNIQUE (from_uid, to_uid, role)
+        )""",
+        "CREATE INDEX workspace_links_to ON workspace_links(to_uid)",
+    )
+    for statement in statements:
+        connection.exec_driver_sql(statement)
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2))

@@ -168,4 +168,12 @@ def test_settings_changing_operations_are_not_mcp_tools_but_reading_ones_are(env
         if op.mcp
     }
 
-    assert names == {"workspace_list_projects", "workspace_browse_folders", "workspace_resolve_label"}
+    assert names == {
+        "workspace_list_projects",
+        "workspace_browse_folders",
+        "workspace_resolve_label",
+        "workspace_add_link",
+        "workspace_remove_link",
+        "workspace_list_links",
+        "workspace_search_elements",
+    }

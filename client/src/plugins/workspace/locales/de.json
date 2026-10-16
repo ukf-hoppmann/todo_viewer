@@ -42,5 +42,22 @@
 		"empty": "Keine Unterordner",
 		"hasMirror": "enthält einen Spiegel",
 		"choose": "Diesen Ordner wählen"
+	},
+	"links": {
+		"outgoing": "Verweist auf",
+		"incoming": "Verwiesen von",
+		"none": "keine",
+		"deleted": "gelöscht",
+		"remove": "Verknüpfung mit {{label}} entfernen",
+		"role": "Rolle",
+		"target": "Ziel suchen",
+		"noMatch": "Nichts gefunden",
+		"add": "Verknüpfen",
+		"failed": "Das Verknüpfen hat nicht geklappt.",
+		"roles": {
+			"reference": "Verweis",
+			"origin": "Herkunft",
+			"trigger": "Auslöser"
+		}
 	}
 }

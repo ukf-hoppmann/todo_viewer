@@ -29,12 +29,12 @@ class RegistryService:
     def register_kinds(self, tx: Transaction, owner: str, kinds: list[ElementKind]) -> None:
         self._elements.upsert_kinds(tx, owner, kinds)
 
-    def register(self, tx: Transaction, project_uid: str, kind: str) -> Element:
+    def register(self, tx: Transaction, project_uid: str, kind: str, title: str = "") -> Element:
         if self._projects.get(tx, project_uid) is None:
             raise NotFound(f"Projekt {project_uid} gibt es nicht", details={"project": project_uid})
         label = self._next_label(tx, project_uid, kind)
         now = self._clock.now()
-        element = Element(self._new_uid(), project_uid, kind, label, 1, now, now)
+        element = Element(self._new_uid(), project_uid, kind, label, 1, now, now, title=title.strip())
         self._elements.insert(tx, element)
         self._elements.add_history(tx, project_uid, label, element.uid)
         return element
@@ -68,6 +68,13 @@ class RegistryService:
         self._require(tx, uid)
         self._elements.set_deleted(tx, uid, None, self._clock.now())
         return self._require(tx, uid)
+
+    def set_title(self, tx: Transaction, uid: str, title: str) -> None:
+        self._require(tx, uid)
+        self._elements.set_title(tx, uid, title.strip(), self._clock.now())
+
+    def search(self, tx: Transaction, query: str, limit: int = 50) -> list[Element]:
+        return self._elements.search(tx, query, limit) if query.strip() else []
 
     def purge(self, tx: Transaction, uid: str) -> None:
         self._require(tx, uid)

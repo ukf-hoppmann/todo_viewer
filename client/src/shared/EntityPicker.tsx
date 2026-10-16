@@ -9,6 +9,8 @@ interface EntityPickerBase {
 	disabledIds?: readonly string[];
 	/** Text when nothing matches. */
 	noOptionsText?: string;
+	/** The text typed into the field; a caller whose options come from a search asks the server with it. */
+	onInputChange?: (text: string) => void;
 }
 
 type EntityPickerProps =
@@ -17,7 +19,7 @@ type EntityPickerProps =
 
 /** Chooses one element or several (parent, dependencies, links); the search matches label and title. */
 export function EntityPicker(props: EntityPickerProps) {
-	const { label, options, disabledIds = [], noOptionsText } = props;
+	const { label, options, disabledIds = [], noOptionsText, onInputChange } = props;
 	const byId = new Map(options.map((option) => [option.id, option]));
 	const shared = {
 		options: [...options],
@@ -25,6 +27,12 @@ export function EntityPicker(props: EntityPickerProps) {
 		getOptionDisabled: (option: Entity) => disabledIds.includes(option.id),
 		isOptionEqualToValue: (option: Entity, selected: Entity) => option.id === selected.id,
 		noOptionsText,
+		onInputChange: onInputChange
+			? (_event: unknown, text: string, reason: string) => {
+					// `reset` is MUI putting the chosen option's text into the field; only what the user types counts.
+					if (reason === "input" || reason === "clear") onInputChange(text);
+				}
+			: undefined,
 		size: "small" as const,
 		"data-testid": sharedTestIds.entityPicker,
 	};

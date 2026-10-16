@@ -17,12 +17,16 @@ describe("workspace plugin definition", () => {
 		]);
 	});
 
-	it.each(["workspace.project.changed", "core.reconnected"])("reloads the projects on %s", (topic) => {
+	it.each([
+		["workspace.project.changed", ["Projects"]],
+		["workspace.links.changed", ["Links"]],
+		["core.reconnected", ["Projects", "Links"]],
+	])("reloads what changed on %s", (topic, tags) => {
 		const dispatch = vi.fn();
 		const invalidateTags = vi.fn((tags: string[]) => ({ type: "invalidate", tags }));
 
 		plugin.eventHandlers![topic]!({}, { dispatch, api: { util: { invalidateTags } } as never });
 
-		expect(dispatch).toHaveBeenCalledWith({ type: "invalidate", tags: ["Projects"] });
+		expect(dispatch).toHaveBeenCalledWith({ type: "invalidate", tags });
 	});
 });

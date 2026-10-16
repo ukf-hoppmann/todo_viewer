@@ -18,11 +18,17 @@ class KindsServices:
     def __init__(self, context: PluginContext) -> None:
         self.database = context.database
         self.registry: Any = context.required["workspace"].registry
+        self.links: Any = context.required["workspace"].links
 
     def run(self, action: Any) -> Any:
         """Führt `action(registry, tx)` in einer Transaktion aus (wie ein Fach-Plugin)."""
         with self.database.transaction() as tx:
             return action(self.registry, tx)
+
+    def run_links(self, action: Any) -> Any:
+        """Führt `action(links, tx)` in einer Transaktion aus (Port `Links`)."""
+        with self.database.transaction() as tx:
+            return action(self.links, tx)
 
 
 def _build(context: PluginContext) -> KindsServices:

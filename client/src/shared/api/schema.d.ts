@@ -107,6 +107,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace/elements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sucht Elemente aller Projekte über Label und Titel (für die Auswahl eines Verknüpfungsziels) */
+        get: operations["workspace_search_elements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/elements/{uid}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ausgehende und eingehende Verknüpfungen eines Elements, gelöschte Gegenstücke markiert */
+        get: operations["workspace_list_links"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspace/folders": {
         parameters: {
             query?: never;
@@ -119,6 +153,40 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verknüpft zwei Elemente (Rolle reference oder origin; 'trigger' legt nur ein Auslöser der Notes an) */
+        post: operations["workspace_add_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/links/{uid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Entfernt eine Verknüpfung (nicht die Rolle 'trigger') */
+        delete: operations["workspace_remove_link"];
         options?: never;
         head?: never;
         patch?: never;
@@ -252,6 +320,23 @@ export interface components {
             /** Uid */
             uid: string;
         };
+        /** ElementOut */
+        ElementOut: {
+            /** Deleted */
+            deleted: boolean;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Project Uid */
+            project_uid: string;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
         /** ElementRef */
         ElementRef: {
             /** Deleted */
@@ -303,6 +388,38 @@ export interface components {
         Health: {
             /** Status */
             status: string;
+        };
+        /**
+         * LinkedElement
+         * @description Das Element am anderen Ende einer Verknüpfung; `deleted`: es liegt im Papierkorb.
+         */
+        LinkedElement: {
+            /** Deleted */
+            deleted: boolean;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Link Uid */
+            link_uid: string;
+            /** Project Uid */
+            project_uid: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "reference" | "origin" | "trigger";
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
+        };
+        /** LinksOut */
+        LinksOut: {
+            /** Incoming */
+            incoming: components["schemas"]["LinkedElement"][];
+            /** Outgoing */
+            outgoing: components["schemas"]["LinkedElement"][];
         };
         /** Preview */
         Preview: {
@@ -362,6 +479,14 @@ export interface components {
         RemoveResult: {
             /** Trashed */
             trashed: number;
+        };
+        /** Removed */
+        Removed: {
+            /**
+             * Removed
+             * @default true
+             */
+            removed: boolean;
         };
         /** SyncResult */
         SyncResult: {
@@ -437,6 +562,18 @@ export interface components {
             };
             /** Owner */
             owner: string;
+        };
+        /** WorkspaceAddLinkBody */
+        WorkspaceAddLinkBody: {
+            /** From Uid */
+            from_uid: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "reference" | "origin" | "trigger";
+            /** To Uid */
+            to_uid: string;
         };
         /** WorkspaceCreateProjectBody */
         WorkspaceCreateProjectBody: {
@@ -697,6 +834,69 @@ export interface operations {
             };
         };
     };
+    workspace_search_elements: {
+        parameters: {
+            query: {
+                query: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ElementOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_list_links: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinksOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     workspace_browse_folders: {
         parameters: {
             query?: {
@@ -715,6 +915,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FolderListingOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_add_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceAddLinkBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedElement"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_remove_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Removed"];
                 };
             };
             /** @description Client Error */

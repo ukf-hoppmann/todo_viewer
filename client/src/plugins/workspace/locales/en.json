@@ -42,5 +42,22 @@
 		"empty": "No sub-folders",
 		"hasMirror": "holds a mirror",
 		"choose": "Choose this folder"
+	},
+	"links": {
+		"outgoing": "Points to",
+		"incoming": "Pointed to by",
+		"none": "none",
+		"deleted": "deleted",
+		"remove": "Remove the link to {{label}}",
+		"role": "Role",
+		"target": "Search for a target",
+		"noMatch": "Nothing found",
+		"add": "Link",
+		"failed": "Linking did not work.",
+		"roles": {
+			"reference": "Reference",
+			"origin": "Origin",
+			"trigger": "Trigger"
+		}
 	}
 }

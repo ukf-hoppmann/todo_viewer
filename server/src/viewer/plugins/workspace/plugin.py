@@ -7,11 +7,12 @@ import uuid
 from pathlib import Path
 
 from viewer.core.application.plugin import PluginContext, PluginDefinition
+from viewer.plugins.workspace.application.links import LinkService
 from viewer.plugins.workspace.application.operations import OPERATIONS, WorkspaceServices
 from viewer.plugins.workspace.application.projects import ProjectService
 from viewer.plugins.workspace.application.registry import RegistryService
 from viewer.plugins.workspace.infrastructure.database.schema import MIGRATIONS
-from viewer.plugins.workspace.infrastructure.database.stores import SqlElementStore, SqlProjectStore
+from viewer.plugins.workspace.infrastructure.database.stores import SqlElementStore, SqlLinkStore, SqlProjectStore
 
 
 def _build(context: PluginContext) -> WorkspaceServices:
@@ -33,7 +34,10 @@ def _build(context: PluginContext) -> WorkspaceServices:
         browse_start,
     )
     registry = RegistryService(elements, projects, context.clock, lambda: str(uuid.uuid4()))
-    return WorkspaceServices(service, registry, projects)
+    links = LinkService(
+        SqlLinkStore(), elements, context.database, context.clock, context.events, lambda: str(uuid.uuid4())
+    )
+    return WorkspaceServices(service, registry, projects, links)
 
 
 plugin = PluginDefinition(id="workspace", build=_build, migrations=MIGRATIONS, operations=OPERATIONS)

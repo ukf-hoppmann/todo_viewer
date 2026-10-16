@@ -9,7 +9,7 @@ import { SearchSection } from "./SearchSection";
 /**
  * Projects, search and the "＋ New" dialog. Sections for the search and the projects hang in the sidebar of
  * the layout plugin, the button in its app bar. Other plugins read the public state through the hooks below and
- * hang their create forms into `workspace.create-types`. The state (search text, hidden and marked projects) is
+ * hang their create forms into `workspace.create-types` and build `LinksSection` into their detail panels. The state (search text, hidden and marked projects) is
  * kept in the UI state of the server.
  */
 export const plugin = definePlugin({
@@ -25,8 +25,11 @@ export const plugin = definePlugin({
 		"workspace.project.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Projects"]));
 		},
+		"workspace.links.changed": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Links"]));
+		},
 		"core.reconnected": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Projects"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Projects", "Links"]));
 		},
 	},
 	contributions: [
@@ -39,4 +42,5 @@ export const plugin = definePlugin({
 export { useCreateDialog, type CreateDialogContext } from "./createDialog";
 export { useProjectSelection, useSearchText } from "./state";
 export { useListProjectsQuery, type Project } from "./api";
+export { LinksSection } from "./LinksSection";
 export { workspaceTestIds } from "./testIds";

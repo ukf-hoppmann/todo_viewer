@@ -25,4 +25,12 @@ export const workspaceTestIds = {
 	folderUp: "workspace.folder-up",
 	folder: (name: string) => `workspace.folder.${name}`,
 	folderChoose: "workspace.folder-choose",
+	links: "workspace.links",
+	linksOutgoing: "workspace.links-outgoing",
+	linksIncoming: "workspace.links-incoming",
+	link: (uid: string) => `workspace.link.${uid}`,
+	linkRemove: (uid: string) => `workspace.link-remove.${uid}`,
+	linkRole: "workspace.link-role",
+	linkAdd: "workspace.link-add",
+	linkError: "workspace.link-error",
 } as const;

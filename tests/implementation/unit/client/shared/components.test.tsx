@@ -402,6 +402,15 @@ describe("EntityPicker", () => {
 		expect(onChange).not.toHaveBeenCalled();
 	});
 
+	it("reports the typed text, so that a caller can search on the server", () => {
+		const onInputChange = vi.fn();
+		render(<EntityPicker label="Ziel" options={options} value={null} onChange={() => {}} onInputChange={onInputChange} />);
+
+		fireEvent.change(screen.getByRole("combobox"), { target: { value: "zwe" } });
+
+		expect(onInputChange).toHaveBeenLastCalledWith("zwe");
+	});
+
 	it("clears the choice", () => {
 		const onChange = vi.fn();
 		render(<EntityPicker label="Parent" options={options} value="u1" onChange={onChange} />);

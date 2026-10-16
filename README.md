@@ -37,9 +37,11 @@ Eine Quelle ist ein **Backlog-Ordner**, der eine `TODO.md` enthält
 Projekte lassen sich direkt in der UI verwalten: **＋ Hinzufügen** neben
 „Projekte“ öffnet einen Ordner-Browser (Startordner über `BROWSE_START`, im
 Container `/Users/hoppmann/Documents/GitHub`); Ordner mit `TODO.md` sind
-markiert. Über ✎/✕ hinter einem Projekt wird der Name geändert bzw. der
-Eintrag entfernt (Ordner, Spiegel und Sync stehen im Einstellungsmenü, siehe
-unten). Ordner, die nicht (mehr) lesbar sind, bleiben ausgegraut mit
+markiert. Über ✎/✕ hinter einem Projekt wird es in den Einstellungen
+geöffnet bzw. der Eintrag entfernt; dort stehen Name (✎ neben dem Namen), Ordner,
+Spiegel und Sync (siehe unten). Ein „MD“ hinter dem Namen kennzeichnet ein Projekt,
+dessen Primärquelle Markdown-Dateien sind; Datenbank-Projekte, der Normalfall, tragen
+kein Kennzeichen. Ordner, die nicht (mehr) lesbar sind, bleiben ausgegraut mit
 ⚠ und Fehlermeldung in der Liste stehen. Ohne Projektname wird der Name des
 umgebenden Git-Repos verwendet.
 
@@ -191,11 +193,11 @@ immer in beide Richtungen) und der Wechsel der Primärquelle
 Backup der bisherigen Primärquelle unter `configs/backups/`). Ein ⚠ hinter dem
 Projektnamen in der Sidebar heißt: der Spiegel wurde seit dem letzten Sync
 geändert (oder ist nicht lesbar); ein Klick öffnet die Karte dieses Projekts. Ein ↻
-neben dem DB-Kennzeichen heißt: der Auto-Sync ist für dieses Projekt an. Der
+hinter dem Projektnamen heißt: der Auto-Sync ist für dieses Projekt an. Der
 Stand wird beim Laden der Seite, bei Fensterfokus, beim Öffnen des Menüs, mit
 „Status prüfen“ und nach einem Sync geholt, nicht im Takt der Anzeige. Das
-Bearbeiten (✎) in der Sidebar ändert nur den Namen; Entfernen und die Reihenfolge
-bleiben dort.
+Bearbeiten (✎) in der Sidebar führt zur Karte des Projekts, auf der auch der Name
+geändert wird; Entfernen und die Reihenfolge bleiben in der Sidebar.
 
 ## Sprache
 

@@ -122,7 +122,6 @@ describe("Sidebar: the gear", () => {
         options={{ projects: [], statuses: [], priorities: [] }}
         sources={[]}
         onAddSource={vi.fn()}
-        onEditSource={vi.fn()}
         onRemoveSource={vi.fn()}
         onSyncSource={vi.fn()}
         onOpenSettings={onOpenSettings} syncStates={new Map()} onOpenProject={vi.fn()}

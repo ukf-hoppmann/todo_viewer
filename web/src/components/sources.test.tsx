@@ -170,19 +170,21 @@ describe("SourceDialog: an existing project", () => {
   });
 });
 
-describe("Sidebar: projects in the database", () => {
+describe("Sidebar: projects", () => {
   const options = { projects: ["Central", "Files", "Manual"], statuses: [], priorities: [] };
   const files = sourceStatus({ id: "s2", project: "Files", backend: "markdown", path: "/repos/a/docs", sync_path: null, primary: "markdown", markdown_path: "/repos/a/docs", mirror: "none" });
   const show = (sources = [sourceStatus(), files], onSyncSource = vi.fn()) =>
     renderWithProviders(
-      <Sidebar options={options} sources={sources} onAddSource={vi.fn()} onEditSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={onSyncSource} onOpenSettings={vi.fn()} syncStates={new Map()} onOpenProject={vi.fn()} />,
+      <Sidebar options={options} sources={sources} onAddSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={onSyncSource} onOpenSettings={vi.fn()} syncStates={new Map()} onOpenProject={vi.fn()} />,
     );
 
-  it("marks database projects and syncs only those that have a sync folder", async () => {
+  it("marks only markdown projects, the database is the usual case, and syncs only those that have a sync folder", async () => {
     const onSyncSource = vi.fn();
     show([sourceStatus(), files], onSyncSource);
 
-    expect(screen.getAllByTitle("Gespeichert in der Datenbank")).toHaveLength(1);
+    expect(screen.getAllByTitle("Gespeichert als Markdown-Dateien")).toHaveLength(1);
+    expect(screen.getByTitle("Gespeichert als Markdown-Dateien")).toHaveTextContent("MD");
+    expect(screen.queryByText("DB")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Sync mit dem Markdown-Ordner" })).toHaveLength(1);
     await userEvent.click(screen.getByRole("button", { name: "Sync mit dem Markdown-Ordner" }));
 
@@ -193,6 +195,18 @@ describe("Sidebar: projects in the database", () => {
     show([sourceStatus({ auto_sync: true }), sourceStatus({ id: "s3", project: "Manual" }), files]);
 
     expect(screen.getAllByRole("img", { name: "Sync automatisch" })).toHaveLength(1);
+  });
+
+  it("opens the settings at the project from the edit button, which is not a rename any more", async () => {
+    const onOpenProject = vi.fn();
+    renderWithProviders(
+      <Sidebar options={options} sources={[sourceStatus(), files]} onAddSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={vi.fn()} onOpenSettings={vi.fn()} syncStates={new Map()} onOpenProject={onOpenProject} />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Projekt umbenennen" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getAllByRole("button", { name: "Projekt bearbeiten (Einstellungen)" })[1]!);
+
+    expect(onOpenProject).toHaveBeenCalledWith(files);
   });
 
   it("offers no sync for a database project without a sync folder", () => {

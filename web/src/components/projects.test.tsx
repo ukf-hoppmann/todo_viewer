@@ -157,6 +157,26 @@ describe("ProjectsSection: one card per project", () => {
   });
 });
 
+describe("ProjectsSection: the name", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("is changed from the card: the pencil next to it opens the rename dialog, which keeps the mirror folder", async () => {
+    const calls = stub([central], [status(central, "in_sync")], (request) => (request.method === "PUT" ? jsonResponse({ ...central, project: "Renamed" }) : jsonResponse({}, 404)));
+    renderWithProviders(<ProjectsSection />);
+
+    await userEvent.click(within(await screen.findByRole("group", { name: "Central" })).getByRole("button", { name: "Projekt umbenennen" }));
+    const name = await screen.findByLabelText("Projektname");
+    expect(name).toHaveValue("Central");
+    await userEvent.clear(name);
+    await userEvent.type(name, "Renamed");
+    await userEvent.click(screen.getByRole("button", { name: "OK" }));
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    expect(calls.find((c) => c.method === "PUT")).toMatchObject({ path: "/api/v2/sources/s1", body: { path: "", project: "Renamed", sync_path: "/repos/central" } });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Projekt umbenennen" })).not.toBeInTheDocument());
+  });
+});
+
 describe("ProjectsSection: the automatic sync", () => {
   afterEach(() => vi.unstubAllGlobals());
   const auto = sourceStatus({ auto_sync: true });
@@ -517,7 +537,6 @@ describe("Sidebar: the badge for a changed mirror", () => {
         sources={[central, files]}
         syncStates={new Map(states)}
         onAddSource={vi.fn()}
-        onEditSource={vi.fn()}
         onRemoveSource={vi.fn()}
         onSyncSource={vi.fn()}
         onOpenSettings={vi.fn()}
@@ -536,7 +555,7 @@ describe("Sidebar: the badge for a changed mirror", () => {
     renderWithProviders(
       <Sidebar
         options={options} sources={[central, files]} syncStates={new Map([["s1", "in_sync" as SyncState]])} syncConflicts={new Map([["s1", 3]])}
-        onAddSource={vi.fn()} onEditSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={vi.fn()} onOpenSettings={vi.fn()} onOpenProject={vi.fn()}
+        onAddSource={vi.fn()} onRemoveSource={vi.fn()} onSyncSource={vi.fn()} onOpenSettings={vi.fn()} onOpenProject={vi.fn()}
       />,
     );
 

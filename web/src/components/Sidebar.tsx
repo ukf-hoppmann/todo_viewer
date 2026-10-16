@@ -15,7 +15,6 @@ interface SidebarProps {
   options: FilterOptions;
   sources: SourceStatus[];
   onAddSource: () => void;
-  onEditSource: (source: SourceStatus) => void;
   onRemoveSource: (source: SourceStatus) => void;
   onSyncSource: (source: SourceStatus) => void;
   onOpenSettings: () => void;
@@ -23,7 +22,7 @@ interface SidebarProps {
   syncStates: ReadonlyMap<string, SyncState>;
   /** Open sync conflicts per project (source id); missing = none. */
   syncConflicts?: ReadonlyMap<string, number>;
-  /** Opens the settings at this project. */
+  /** Opens the settings at this project: from the badge, and from the edit button, which leads to all its settings. */
   onOpenProject: (source: SourceStatus) => void;
   /** Number of due notes (the red exclamation mark shows if above zero) and what a click on it does. */
   dueCount?: number;
@@ -31,7 +30,7 @@ interface SidebarProps {
 }
 
 /** Search and projects for every tab; below them the filter sections of the active tab (`sidebarSections`). */
-export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveSource, onSyncSource, onOpenSettings, syncStates, syncConflicts, onOpenProject, dueCount = 0, onOpenDue }: SidebarProps) {
+export function Sidebar({ options, sources, onAddSource, onRemoveSource, onSyncSource, onOpenSettings, syncStates, syncConflicts, onOpenProject, dueCount = 0, onOpenDue }: SidebarProps) {
   const { t, vocab } = useI18n();
   const { state, dispatch } = useUiState();
 
@@ -76,7 +75,6 @@ export function Sidebar({ options, sources, onAddSource, onEditSource, onRemoveS
           sources={sources}
           syncStates={syncStates}
           syncConflicts={syncConflicts}
-          onEdit={onEditSource}
           onRemove={onRemoveSource}
           onSync={onSyncSource}
           onOpenProject={onOpenProject}
@@ -155,7 +153,6 @@ function FilterGroup({ title, kind, values, color, label }: FilterGroupProps) {
 interface ProjectFiltersProps {
   projects: string[];
   sources: SourceStatus[];
-  onEdit: (source: SourceStatus) => void;
   onRemove: (source: SourceStatus) => void;
   onSync: (source: SourceStatus) => void;
   syncStates: ReadonlyMap<string, SyncState>;
@@ -165,7 +162,7 @@ interface ProjectFiltersProps {
 }
 
 /** One row per source; a project can consist of several sources. */
-function ProjectFilters({ projects, sources, syncStates, syncConflicts, onEdit, onRemove, onSync, onOpenProject }: ProjectFiltersProps) {
+function ProjectFilters({ projects, sources, syncStates, syncConflicts, onRemove, onSync, onOpenProject }: ProjectFiltersProps) {
   const { t, errorText } = useI18n();
   const { state, dispatch } = useUiState();
 
@@ -196,9 +193,9 @@ function ProjectFilters({ projects, sources, syncStates, syncConflicts, onEdit, 
                   >
                     {rows.length > 1 ? `${project} (${idx + 1})` : project}
                   </button>
-                  {source?.backend === "database" && (
-                    <span className="db-badge" title={t("source.badge.db.title")}>
-                      {t("source.badge.db")}
+                  {source?.backend === "markdown" && (
+                    <span className="md-badge" title={t("source.badge.md.title")}>
+                      {t("source.badge.md")}
                     </span>
                   )}
                   {source && autoSyncOn(source) && (
@@ -225,7 +222,7 @@ function ProjectFilters({ projects, sources, syncStates, syncConflicts, onEdit, 
                         ⇄
                       </button>
                     )}
-                    <button className="icon-btn" title={t("source.rename.title")} aria-label={t("source.rename.title")} onClick={() => onEdit(source)}>
+                    <button className="icon-btn" title={t("source.edit.open")} aria-label={t("source.edit.open")} onClick={() => onOpenProject(source)}>
                       ✎
                     </button>
                     <button className="icon-btn danger" title={t("source.remove.title")} aria-label={t("source.remove.title")} onClick={() => onRemove(source)}>

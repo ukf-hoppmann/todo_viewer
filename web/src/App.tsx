@@ -28,7 +28,6 @@ const GraphView = lazy(() => import("./views/GraphView").then((m) => ({ default:
 
 const TAB_LABELS: Record<View, MessageKey> = { tree: "tab.tree", graph: "tab.graph", kanban: "tab.kanban", notes: "tab.notes", trash: "tab.trash" };
 
-type SourceDialogState = { source: SourceStatus | null } | null;
 type SyncDialogState = { source: SourceStatus; mode: SyncMode } | null;
 
 export function App() {
@@ -37,7 +36,7 @@ export function App() {
   const uiContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
   const model = useBacklogModel(state);
   const removeSource = useRemoveSource();
-  const [sourceDialog, setSourceDialog] = useState<SourceDialogState>(null);
+  const [addingSource, setAddingSource] = useState(false);
   const [syncDialog, setSyncDialog] = useState<SyncDialogState>(null);
   const [creating, setCreating] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
@@ -90,8 +89,7 @@ export function App() {
           <Sidebar
             options={model.options}
             sources={model.sources}
-            onAddSource={() => setSourceDialog({ source: null })}
-            onEditSource={(source) => setSourceDialog({ source })}
+            onAddSource={() => setAddingSource(true)}
             onRemoveSource={onRemoveSource}
             onSyncSource={(source) => setSyncDialog({ source, mode: "sync" })}
             onOpenSettings={() => setSettings({})}
@@ -169,13 +167,13 @@ export function App() {
           />
         )}
         {retyped && <RetypeNotice result={retyped} onClose={() => setRetyped(null)} />}
-        {sourceDialog && (
+        {addingSource && (
           <SourceDialog
-            source={sourceDialog.source}
-            onClose={() => setSourceDialog(null)}
+            source={null}
+            onClose={() => setAddingSource(false)}
             onSaved={(project) => {
               dispatch({ type: "showProject", project });
-              setSourceDialog(null);
+              setAddingSource(false);
             }}
           />
         )}

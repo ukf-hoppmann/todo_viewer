@@ -10,7 +10,7 @@ import { SourceDialog } from "../SourceDialog";
 import { SyncDialog } from "../SyncDialog";
 import type { SectionProps } from "./sections";
 
-type Dialog = { kind: "sync" | "resolve" | "switch" | "folder"; source: SourceStatus };
+type Dialog = { kind: "sync" | "resolve" | "switch" | "folder" | "rename"; source: SourceStatus };
 
 /** One card per project: where it lives, whether its mirror still matches, and the one thing to do next. */
 export function ProjectsSection({ focusId }: SectionProps) {
@@ -38,6 +38,16 @@ export function ProjectsSection({ focusId }: SectionProps) {
       ))}
       {dialog && (dialog.kind === "folder" ? (
         <SourceDialog source={dialog.source} part="folder" onClose={() => setDialog(null)} onSaved={() => setDialog(null)} />
+      ) : dialog.kind === "rename" ? (
+        <SourceDialog
+          source={dialog.source}
+          part="name"
+          onClose={() => setDialog(null)}
+          onSaved={(project) => {
+            dispatch({ type: "showProject", project });
+            setDialog(null);
+          }}
+        />
       ) : (
         <SyncDialog
           source={dialog.source}
@@ -115,7 +125,12 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
   return (
     <section ref={ref} className={`project-card tone-${view.tone}${focused ? " focused" : ""}`} role="group" aria-label={source.project} aria-current={focused ? "true" : undefined}>
       <header>
-        <h4>{source.project}</h4>
+        <div className="project-title">
+          <h4>{source.project}</h4>
+          <button className="icon-btn" title={t("source.rename.title")} aria-label={t("source.rename.title")} onClick={() => onOpen("rename")}>
+            ✎
+          </button>
+        </div>
         <span className={`project-state ${view.tone}`}>{stateText}</span>
       </header>
 

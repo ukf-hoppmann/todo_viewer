@@ -76,7 +76,6 @@ describe("Sidebar project marking", () => {
         options={{ projects: ["P"], statuses: [], priorities: [] }}
         sources={[]}
         onAddSource={vi.fn()}
-        onEditSource={vi.fn()}
         onRemoveSource={vi.fn()}
         onSyncSource={vi.fn()}
         onOpenSettings={vi.fn()} syncStates={new Map()} onOpenProject={vi.fn()}
@@ -714,7 +713,6 @@ describe("Sidebar sections per tab", () => {
     options: { projects: ["P"], statuses: ["Open"], priorities: ["Normal"] },
     sources: [],
     onAddSource: vi.fn(),
-    onEditSource: vi.fn(),
     onRemoveSource: vi.fn(),
     onSyncSource: vi.fn(),
     onOpenSettings: vi.fn(),

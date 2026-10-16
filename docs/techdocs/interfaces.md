@@ -627,6 +627,199 @@ Schreiben, antwortet der Sync mit 409 `mirror_conflict`; nichts wird überschrie
 zum nächsten Sync. Vor einem Sync, der Notes in die Datenbank schreibt, entsteht ein Backup. Der Auto-Sync deckt
 die Notes mit ab (dasselbe Verfahren).
 
+## Dateiformat Version 2 (Neubau, Markdown-Spiegel)
+
+Gilt für den Neubau (`EPIC-007`). Der alte Viewer liest und schreibt
+weiter die Formate der beiden Abschnitte darüber. Grundsatz: so nah wie
+möglich an Version 1 und am heutigen Notes-Format, damit der Harness wenig
+ändern muss. Neu sind nur die `Uid`, die Platzhalter für neue Backlog-Einträge
+und die Wecker; `counters.md` und Zeit-Auslöser an Notes entfallen.
+
+### Ordner eines Projekts
+
+| Pfad | Inhalt |
+|---|---|
+| `TODO.md` | aktive Items (nicht abgeschlossen, nicht im Papierkorb) |
+| `archive.md` | Items mit `Completed`/`Rejected` und Items im Papierkorb |
+| `items/<LABEL>/` | `<LABEL>_notes.md`, `<LABEL>_spec.md`, `<LABEL>_spec_<thema>.md`, Text unverändert |
+| `notes/` | Notes, ihre Dokumente und `topics.md` wie heute, ohne `counters.md` |
+| `alarms.md` | alle Wecker |
+
+Andere Dateien werden nicht gelesen. Feldnamen und Werte sind englisch,
+Inhalte in der Sprache des Projekts. Zeitpunkte sind UTC mit `Z`, Tage
+`YYYY-MM-DD`. Zeilenenden bleiben, wie sie in der Datei sind.
+
+### Verweise
+
+Verweise (`Parent`, `Dependencies`, `Topic`, `Links`, `Target`) stehen in
+den Dateien immer als **Label**, nie als `Uid`. Die `Uid` steht nur am
+Eintrag selbst, dort ordnet der Sync ihn zu.
+
+- In der DB hängen alle Verweise an der `uid`. Der Codec schreibt immer das
+  aktuelle Label des Ziels; nach einem Typwechsel ziehen alle Verweise in
+  den Dateien beim nächsten Schreiben nach.
+- Labels werden nie wiederverwendet, und die DB merkt sich jedes Label, das
+  ein Element je hatte. Ein Verweis auf ein altes Label (z. B. `STORY-012`
+  nach dem Typwechsel zu `TASK-040`) findet deshalb weiter dasselbe Element;
+  der Codec schreibt danach das aktuelle Label zurück.
+- Ein Label, das es im Projekt nie gab, ist `unknown_reference`.
+
+### Kennung
+
+`TODO.md`, `archive.md` und `alarms.md` enthalten einen Absatz, der mit
+`Format:` beginnt und `backlog format version 2` enthält, z. B.
+
+```
+Format: Claude_Harness backlog format version 2. The rules are defined in
+`docs/techdocs/interfaces.md` of the ToDo Viewer.
+```
+
+Fehlt die Kennung oder nennt sie eine andere Version, bricht der Sync mit
+`format_version` ab. Version 1 wird nicht gelesen; die Datenübernahme
+(`STORY-082`) und der erste Sync nach dem Umstieg schreiben Version 2.
+
+### Backlog-Einträge
+
+Aufbau wie Version 1, eine Liste unter `## Work items`:
+
+```markdown
+- `STORY-012` **Kurzer Titel**
+  - Uid: 3f0c2a9e-6b1d-4c57-9a8e-2d4b7c1e5f60.
+  - Type: Story.
+  - Parent: `EPIC-003`.
+  - Required for parent: Yes.
+  - Status: Open.
+  - Created: 2026-10-16.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-004`, `STORY-010`.
+  - Goal: Ergebnis. Folgezeilen sind
+    vier Leerzeichen eingerückt.
+  - Completion criteria: Wie das Ergebnis geprüft wird.
+  - Summary: Kurzfassung für den Projektinhaber.
+```
+
+- **Felder und Reihenfolge** (fest; der Codec schreibt sie in dieser
+  Reihenfolge, liest sie in jeder): `Uid`, `Type`, `Parent`,
+  `Required for parent`, `Status`, `Created`, `Area`, `Priority`,
+  `Dependencies`, `Goal`, `Completion criteria`, `Summary`, `Resolution`,
+  `Deleted`. Andere Felder sind ein Fehler (`unknown_field`); `Notes` und
+  `Spec` aus Version 1 entfallen, die Dokumente findet der Codec über
+  `items/<LABEL>/`.
+- **Pflicht:** `Uid` (außer bei neuen Einträgen), `Type`, `Status`, `Area`,
+  `Priority`, `Dependencies`, `Goal`, `Completion criteria`; bei Story und
+  Task `Parent`, bei vorhandenem Parent `Required for parent`; bei
+  `Completed`/`Rejected` `Resolution`. `Created` darf bei neuen Einträgen
+  fehlen (der Import setzt den Tag).
+- **Werte:** `Type` `Epic`, `Story`, `Task`. `Status` `Open`,
+  `In progress`, `Awaiting confirmation`, `Completed`, `Rejected`.
+  `Priority` `Urgent`, `Important`, `Normal`, `Prospective`.
+  `Required for parent` `Yes`, `No`. Verweise in Backticks, mehrere mit
+  Komma, keiner als `None`.
+- **Lage:** Welche Datei ein Eintrag hat und an welcher Stelle er steht, ist
+  keine Information. Steht ein abgeschlossener Eintrag in `TODO.md`, liest
+  der Codec ihn trotzdem und verschiebt ihn beim nächsten Schreiben nach
+  `archive.md` (und umgekehrt). Neue Einträge hängt der Codec ans Ende.
+- **Regeln** des Backlog-Formats (Parent-Lebenszyklus, keine Zyklen) gelten
+  wie in der DB; ein Verstoß bricht den Sync ab (`rule_violation`, mit den
+  blockierenden Einträgen).
+
+### Neue Backlog-Einträge aus den Dateien
+
+Eine LLM ohne API legt einen Eintrag **ohne `Uid`** an und gibt ihm einen
+Platzhalter statt eines Labels:
+
+```markdown
+- `NEW-login-dialog` **Login-Dialog vereinfachen**
+  - Type: Task.
+  - Parent: `STORY-012`.
+  - …
+```
+
+- Platzhalter: `NEW-` und ein Kurzname aus `a-z`, `0-9`, `-`, im Projekt
+  eindeutig. Sonst `invalid_placeholder`.
+- `Parent`, `Dependencies` und Verweise anderer Einträge dürfen
+  Platzhalter nennen. Dokumente liegen in `items/NEW-<kurzname>/`
+  (`NEW-<kurzname>_notes.md` …).
+- Beim Sync vergibt die DB `Uid` und das nächste freie Label des Typs,
+  ersetzt den Platzhalter in allen Verweisen, benennt Ordner und Dokumente um
+  und schreibt den Eintrag mit beidem zurück. Bei einem Sync, der nur in die
+  DB schreiben darf, werden neue Einträge nicht übernommen (wie heute bei
+  Notes).
+- Eine LLM erzeugt nie selbst eine `Uid` und nie ein Label.
+
+### Notes und Topics
+
+Wie im Abschnitt „Dateiformat: Notes-Ordner“ oben, mit diesen Änderungen:
+
+- Im Kopf jeder Note steht nach der Überschrift `Uid: <uuid>`; eine neue
+  Note (`new-<kurzname>.md`, erste Zeile `# NEW`) hat keine.
+- `topics.md`: jede Zeile trägt `uid=<uuid>` nach dem Namen und
+  `archived=<Zeitpunkt>`, wenn das Topic archiviert ist:
+  `- TOPIC-001 | <Name> | uid=<uuid> | due=… | created=… | archived=… | deleted=…`.
+  Ein neues Topic bleibt `- NEW | <Name> | …` ohne `uid`.
+- `counters.md` entfällt; eine vorhandene Datei wird ignoriert und beim
+  nächsten Schreiben gelöscht.
+- Auslöser `time` entfallen (sie werden Wecker); eine `time`-Zeile ist ein
+  Fehler (`unknown_trigger`). Es bleiben `event` und `topic_due`.
+
+### Wecker
+
+`alarms.md` mit einer Liste unter `## Alarms`:
+
+```markdown
+# Alarms
+
+Format: Claude_Harness backlog format version 2.
+
+## Alarms
+
+- `ALARM-001` **Release vorbereiten**
+  - Uid: 9b2e4f7a-1c3d-4e5f-8a6b-7c8d9e0f1a2b.
+  - At: 2026-10-20T07:00:00Z.
+  - Target: `STORY-012`.
+  - Status: Pending.
+  - Created: 2026-10-16.
+```
+
+- Felder in dieser Reihenfolge: `Uid`, `At`, `Target`, `Status`,
+  `Snoozed until`, `Created`, `Deleted`. Der fett gesetzte Titel ist der
+  Text des Weckers.
+- `Target`: ein Label dieses Projekts, `<projekt>:<LABEL>` für ein anderes
+  Projekt, oder `None`. Die Art des Ziels ergibt sich aus dem Präfix
+  (`EPIC`, `STORY`, `TASK`, `NOTE`, `TOPIC`).
+- `Status`: `Pending`, `Due`, `Snoozed` (dann `Snoozed until`), `Done`.
+- Neue Wecker wie neue Backlog-Einträge: Platzhalter `NEW-<kurzname>`,
+  ohne `Uid`.
+
+### Fehler im Sync
+
+Ein Formatfehler bricht den Sync vor jeder Änderung ab; die Meldung nennt
+Datei und Zeile.
+
+| Code | Bedeutung |
+|---|---|
+| `format_version` | Kennung fehlt oder ist nicht Version 2 |
+| `unknown_field` | Feld, das das Format nicht kennt |
+| `missing_field` | Pflichtfeld fehlt |
+| `invalid_value` | unbekannter Typ, Status, Priorität oder Wecker-Status; ungültiger Tag, Zeitpunkt oder `Uid` |
+| `duplicate_uid` | dieselbe `Uid` zweimal |
+| `duplicate_label` | dasselbe Label oder derselbe Platzhalter zweimal |
+| `unknown_reference` | `Parent`, `Dependencies`, `Topic` oder `Target` nennt ein Label, das es im selben Projekt nie gab (auch nicht als früheres Label); Verweise in andere Projekte bleiben ungeprüft erhalten |
+| `invalid_placeholder` | Platzhalter mit ungültigem Namen |
+| `file_label_mismatch` | Datei- oder Ordnername passt nicht zum Label |
+| `unknown_trigger` | Auslöser-Art, die es nicht gibt (z. B. `time`) |
+| `rule_violation` | Verstoß gegen die Regeln des Backlog-Formats |
+| `merge_markers` | Datei mit Git-Merge-Markern |
+
+### Beispiele
+
+`tests/fixtures/mirror-v2/valid/` ist ein vollständiges Projekt mit allen
+Feldern, neuen Einträgen mit Platzhaltern, Notes, Topics und Weckern.
+`tests/fixtures/mirror-v2/invalid/<code>/` enthält je Fehlercode ein
+Beispiel. Die Beispiele sind die Golden-Files der Codecs (`STORY-075`,
+`STORY-079`, `STORY-080`).
+
 ## CLI: `todo.sh`
 
 - Zweck: Steuerung des Docker-Containers.

@@ -1,0 +1,6 @@
+{
+  "code": "duplicate_label",
+  "file": "archive.md",
+  "line": 25,
+  "reason": "`TASK-001` in `TODO.md` und `archive.md`"
+}

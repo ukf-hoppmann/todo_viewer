@@ -1,0 +1,6 @@
+{
+  "code": "invalid_value",
+  "file": "TODO.md",
+  "line": 33,
+  "reason": "Priorität `High` gibt es nicht mehr"
+}

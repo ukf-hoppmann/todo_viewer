@@ -1,0 +1,6 @@
+{
+  "code": "rule_violation",
+  "file": "TODO.md",
+  "line": 42,
+  "reason": "aktiver Task unter der abgeschlossenen `STORY-003`"
+}

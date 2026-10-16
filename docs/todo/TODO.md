@@ -455,7 +455,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -473,6 +473,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Ein Papierkorb für Items, Notes, Topics und Wecker gemeinsam,
     mit Wiederherstellen und endgültigem Löschen.
   - Spec: `items/STORY-070/STORY-070_spec.md`.
+  - Notes: `items/STORY-070/STORY-070_notes.md`.
 
 - `STORY-071` **Backlog anzeigen: Baum, Filter, Suche, Detail (Plugin backlog)**
   - Type: Story.

@@ -9,6 +9,8 @@ export type LinkRole = components["schemas"]["LinkedElement"]["role"];
 export type LinkedElement = components["schemas"]["LinkedElement"];
 export type LinksOut = components["schemas"]["LinksOut"];
 export type ElementOut = components["schemas"]["ElementOut"];
+export type TrashedElement = components["schemas"]["TrashedElement"];
+export type DeleteResult = components["schemas"]["DeleteResult"];
 export type UpdateProjectBody = components["schemas"]["WorkspaceUpdateProjectBody"];
 
 /**
@@ -57,11 +59,31 @@ export const workspaceApi = createPluginApi(
 		searchElements: build.query<ElementOut[], string>({
 			query: (query) => ({ url: "workspace/elements", params: { query } }),
 		}),
+		deleteElement: build.mutation<DeleteResult, { uid: string; version: number; cascade?: boolean }>({
+			query: ({ uid, version, cascade }) => ({
+				url: `workspace/elements/${uid}`,
+				method: "DELETE",
+				params: cascade ? { version, cascade } : { version },
+			}),
+			invalidatesTags: ["Trash", "Links"],
+		}),
+		listTrash: build.query<TrashedElement[], { projects: string[]; query: string }>({
+			query: ({ projects, query }) => ({ url: "workspace/trash", params: { projects: projects.join(","), query } }),
+			providesTags: ["Trash"],
+		}),
+		restoreElements: build.mutation<{ uids: string[] }, string[]>({
+			query: (uids) => ({ url: "workspace/trash/restore", method: "POST", body: { uids } }),
+			invalidatesTags: ["Trash", "Links"],
+		}),
+		purgeElements: build.mutation<{ uids: string[] }, string[]>({
+			query: (uids) => ({ url: "workspace/trash/purge", method: "POST", body: { uids } }),
+			invalidatesTags: ["Trash", "Links"],
+		}),
 		browseFolders: build.query<FolderListing, string | undefined>({
 			query: (path) => ({ url: "workspace/folders", params: path ? { path } : undefined }),
 		}),
 	}),
-	{ tagTypes: ["Projects", "Links"] },
+	{ tagTypes: ["Projects", "Links", "Trash"] },
 );
 
 export const {
@@ -75,6 +97,10 @@ export const {
 	useAddLinkMutation,
 	useRemoveLinkMutation,
 	useSearchElementsQuery,
+	useDeleteElementMutation,
+	useListTrashQuery,
+	useRestoreElementsMutation,
+	usePurgeElementsMutation,
 } = workspaceApi;
 
 /** The text the server gave for an error of a request, if it gave one. */

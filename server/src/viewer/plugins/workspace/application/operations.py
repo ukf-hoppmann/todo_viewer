@@ -9,6 +9,7 @@ from typing import Any, Literal
 from viewer.core.domain.operations import HttpBinding, Operation
 from viewer.plugins.workspace.application.links import LinkService
 from viewer.plugins.workspace.application.projects import UNSET, ProjectService
+from viewer.plugins.workspace.application.trash import TrashService
 from viewer.plugins.workspace.domain.model import Element, LinkView, Project
 
 Direction = Literal["both", "to_files", "to_database"]
@@ -182,6 +183,51 @@ class ElementOut:
 
 
 @dataclass(frozen=True)
+class DeleteElement:
+    uid: str
+    version: int
+    cascade: bool = False
+
+
+@dataclass(frozen=True)
+class DeleteResult:
+    """`has_children`: nichts gelöscht, weil es `children` Nachkommen gibt und `cascade` fehlte."""
+
+    has_children: bool
+    children: int
+    deleted: int
+
+
+@dataclass(frozen=True)
+class ListTrash:
+    #: Komma-getrennte Projekt-`uid`s; ohne Angabe alle Projekte.
+    projects: str | None = None
+    query: str = ""
+
+
+@dataclass(frozen=True)
+class TrashedElement:
+    uid: str
+    project_uid: str
+    kind: str
+    label: str
+    title: str
+    deleted_at: datetime | None
+
+
+@dataclass(frozen=True)
+class ElementUids:
+    uids: list[str]
+
+
+@dataclass(frozen=True)
+class Affected:
+    """Die `uid`s der Elemente, die wirklich geändert wurden (Nachkommen eingeschlossen)."""
+
+    uids: list[str]
+
+
+@dataclass(frozen=True)
 class Removed:
     removed: bool = True
 
@@ -200,11 +246,27 @@ def element_out(e: Element) -> ElementOut:
 class WorkspaceServices:
     """Die Dienste des Plugins; `projects` für die Operationen, `registry`, `links` und `project_store` für andere."""
 
-    def __init__(self, projects: ProjectService, registry: Any, project_store: Any, links: LinkService) -> None:
+    def __init__(
+        self, projects: ProjectService, registry: Any, project_store: Any, links: LinkService, trash: TrashService
+    ) -> None:
         self.projects = projects
         self.registry = registry
         self.project_store = project_store
         self.links = links
+        self.trash = trash
+
+
+def _delete(services: WorkspaceServices, data: DeleteElement) -> DeleteResult:
+    outcome = services.trash.delete_element(data.uid, data.version, data.cascade)
+    return DeleteResult(outcome.has_children, outcome.children, outcome.deleted)
+
+
+def _list_trash(services: WorkspaceServices, data: ListTrash) -> list[TrashedElement]:
+    projects = [uid for uid in (data.projects or "").split(",") if uid] if data.projects is not None else None
+    return [
+        TrashedElement(e.uid, e.project_uid, e.kind, e.label, e.title, e.deleted_at)
+        for e in services.trash.list_trash(projects, data.query)
+    ]
 
 
 def _list_links(services: WorkspaceServices, data: ListLinks) -> LinksOut:
@@ -352,5 +414,42 @@ OPERATIONS: tuple[Operation, ...] = (
         list[ElementOut],
         lambda s, d: [element_out(e) for e in s.links.search_elements(d.query, d.limit)],
         HttpBinding("GET", "/elements"),
+    ),
+    Operation(
+        "delete_element",
+        "Legt ein Element in den Papierkorb; hat es Kinder, nur mit cascade (sonst nennt die Antwort has_children)",
+        "write",
+        DeleteElement,
+        DeleteResult,
+        _delete,
+        HttpBinding("DELETE", "/elements/{uid}"),
+    ),
+    Operation(
+        "list_trash",
+        "Elemente im Papierkorb, neueste zuerst; optional nach Projekten (komma-getrennt) und Text gefiltert",
+        "read",
+        ListTrash,
+        list[TrashedElement],
+        _list_trash,
+        HttpBinding("GET", "/trash"),
+    ),
+    Operation(
+        "restore_elements",
+        "Holt Elemente samt ihren mit ihnen gelöschten Kindern aus dem Papierkorb; Regeln des Plugins gelten",
+        "write",
+        ElementUids,
+        Affected,
+        lambda s, d: Affected(s.trash.restore_elements(d.uids)),
+        HttpBinding("POST", "/trash/restore"),
+    ),
+    Operation(
+        "purge_elements",
+        "Löscht Elemente aus dem Papierkorb endgültig, samt Kindern, Plugin-Daten und Verknüpfungen",
+        "write",
+        ElementUids,
+        Affected,
+        lambda s, d: Affected(s.trash.purge_elements(d.uids)),
+        HttpBinding("POST", "/trash/purge"),
+        mcp=False,  # endgültiges Löschen nur durch den Projektinhaber, nicht über MCP
     ),
 )

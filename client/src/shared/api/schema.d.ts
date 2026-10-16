@@ -124,6 +124,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace/elements/{uid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Legt ein Element in den Papierkorb; hat es Kinder, nur mit cascade (sonst nennt die Antwort has_children) */
+        delete: operations["workspace_delete_element"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspace/elements/{uid}/links": {
         parameters: {
             query?: never;
@@ -262,10 +279,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Elemente im Papierkorb, neueste zuerst; optional nach Projekten (komma-getrennt) und Text gefiltert */
+        get: operations["workspace_list_trash"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/trash/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Löscht Elemente aus dem Papierkorb endgültig, samt Kindern, Plugin-Daten und Verknüpfungen */
+        post: operations["workspace_purge_elements"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/trash/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Holt Elemente samt ihren mit ihnen gelöschten Kindern aus dem Papierkorb; Regeln des Plugins gelten */
+        post: operations["workspace_restore_elements"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Affected
+         * @description Die `uid`s der Elemente, die wirklich geändert wurden (Nachkommen eingeschlossen).
+         */
+        Affected: {
+            /** Uids */
+            uids: string[];
+        };
         /** ConflictOut */
         ConflictOut: {
             /** Conflict */
@@ -319,6 +395,18 @@ export interface components {
             choice: "database" | "files" | "defer";
             /** Uid */
             uid: string;
+        };
+        /**
+         * DeleteResult
+         * @description `has_children`: nichts gelöscht, weil es `children` Nachkommen gibt und `cascade` fehlte.
+         */
+        DeleteResult: {
+            /** Children */
+            children: number;
+            /** Deleted */
+            deleted: number;
+            /** Has Children */
+            has_children: boolean;
         };
         /** ElementOut */
         ElementOut: {
@@ -554,6 +642,21 @@ export interface components {
              */
             target: "database" | "files";
         };
+        /** TrashedElement */
+        TrashedElement: {
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Project Uid */
+            project_uid: string;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
+        };
         /** UiState */
         UiState: {
             /** Document */
@@ -604,6 +707,16 @@ export interface components {
             position: number;
             /** Version */
             version: number;
+        };
+        /** WorkspacePurgeElementsBody */
+        WorkspacePurgeElementsBody: {
+            /** Uids */
+            uids: string[];
+        };
+        /** WorkspaceRestoreElementsBody */
+        WorkspaceRestoreElementsBody: {
+            /** Uids */
+            uids: string[];
         };
         /** WorkspaceUpdateProjectBody */
         WorkspaceUpdateProjectBody: {
@@ -853,6 +966,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ElementOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_delete_element: {
+        parameters: {
+            query: {
+                version: number;
+                cascade?: boolean;
+            };
+            header?: never;
+            path: {
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
                 };
             };
             /** @description Client Error */
@@ -1177,6 +1324,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_list_trash: {
+        parameters: {
+            query?: {
+                projects?: string | null;
+                query?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashedElement"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_purge_elements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspacePurgeElementsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Affected"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_restore_elements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceRestoreElementsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Affected"];
                 };
             };
             /** @description Client Error */

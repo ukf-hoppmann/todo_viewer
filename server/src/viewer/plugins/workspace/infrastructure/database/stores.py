@@ -242,6 +242,19 @@ class SqlElementStore:
         )
         return [_element(row) for row in rows]
 
+    def list_deleted(self, tx: Transaction, project_uids: Sequence[str] | None, query: str) -> list[Element]:
+        """Elemente im Papierkorb, neueste zuerst; optional nur aus diesen Projekten und mit `query` in Label/Titel."""
+        statement = select(elements).where(elements.c.deleted_at.is_not(None))
+        if project_uids is not None:
+            statement = statement.where(elements.c.project_uid.in_(list(project_uids)))
+        if query.strip():
+            pattern = "%" + query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+            statement = statement.where(
+                elements.c.label.ilike(pattern, escape="\\") | elements.c.title.ilike(pattern, escape="\\")
+            )
+        rows = conn(tx).execute(statement.order_by(elements.c.deleted_at.desc(), elements.c.label, elements.c.uid))
+        return [_element(row) for row in rows]
+
 
 class SqlLinkStore:
     def insert(self, tx: Transaction, link: Link) -> None:

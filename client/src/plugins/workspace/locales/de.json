@@ -59,5 +59,29 @@
 			"origin": "Herkunft",
 			"trigger": "Auslöser"
 		}
+	},
+	"tab": {
+		"trash": "Papierkorb"
+	},
+	"delete": {
+		"title": "Element löschen?",
+		"message_one": "Das Element hat {{count}} Kind. Es kommt mit ihm in den Papierkorb.",
+		"message_other": "Das Element hat {{count}} Kinder. Sie kommen mit ihm in den Papierkorb.",
+		"confirm": "In den Papierkorb"
+	},
+	"trash": {
+		"empty": "Der Papierkorb ist leer.",
+		"count_one": "{{count}} Element",
+		"count_other": "{{count}} Elemente",
+		"selectAll": "Alle auswählen",
+		"select": "{{label}} auswählen",
+		"restore": "Wiederherstellen",
+		"purge": "Endgültig löschen",
+		"restoreOne": "{{label}} wiederherstellen",
+		"purgeOne": "{{label}} endgültig löschen",
+		"purgeTitle": "Endgültig löschen?",
+		"purgeMessage_one": "{{count}} Element wird mit allen Kindern, Daten und Verknüpfungen endgültig gelöscht. Das lässt sich nicht rückgängig machen.",
+		"purgeMessage_other": "{{count}} Elemente werden mit allen Kindern, Daten und Verknüpfungen endgültig gelöscht. Das lässt sich nicht rückgängig machen.",
+		"failed": "Das hat nicht geklappt."
 	}
 }

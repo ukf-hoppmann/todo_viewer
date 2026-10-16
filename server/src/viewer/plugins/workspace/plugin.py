@@ -11,6 +11,7 @@ from viewer.plugins.workspace.application.links import LinkService
 from viewer.plugins.workspace.application.operations import OPERATIONS, WorkspaceServices
 from viewer.plugins.workspace.application.projects import ProjectService
 from viewer.plugins.workspace.application.registry import RegistryService
+from viewer.plugins.workspace.application.trash import TrashService
 from viewer.plugins.workspace.infrastructure.database.schema import MIGRATIONS
 from viewer.plugins.workspace.infrastructure.database.stores import SqlElementStore, SqlLinkStore, SqlProjectStore
 
@@ -37,7 +38,8 @@ def _build(context: PluginContext) -> WorkspaceServices:
     links = LinkService(
         SqlLinkStore(), elements, context.database, context.clock, context.events, lambda: str(uuid.uuid4())
     )
-    return WorkspaceServices(service, registry, projects, links)
+    trash = TrashService(elements, projects, context.database, context.clock, context.events)
+    return WorkspaceServices(service, registry, projects, links, trash)
 
 
 plugin = PluginDefinition(id="workspace", build=_build, migrations=MIGRATIONS, operations=OPERATIONS)

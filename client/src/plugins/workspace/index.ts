@@ -1,3 +1,4 @@
+import DeleteIcon from "@mui/icons-material/Delete";
 import { definePlugin } from "../../core";
 import { workspaceApi } from "./api";
 import de from "./locales/de.json";
@@ -9,7 +10,7 @@ import { SearchSection } from "./SearchSection";
 /**
  * Projects, search and the "＋ New" dialog. Sections for the search and the projects hang in the sidebar of
  * the layout plugin, the button in its app bar. Other plugins read the public state through the hooks below and
- * hang their create forms into `workspace.create-types` and build `LinksSection` into their detail panels. The state (search text, hidden and marked projects) is
+ * hang their create forms into `workspace.create-types` build `LinksSection` into their detail panels and delete elements with `useDeleteElement`. The main route `trash` shows the deleted elements of all plugins. The state (search text, hidden and marked projects) is
  * kept in the UI state of the server.
  */
 export const plugin = definePlugin({
@@ -25,14 +26,18 @@ export const plugin = definePlugin({
 		"workspace.project.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Projects"]));
 		},
+		"workspace.element.changed": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Trash", "Links"]));
+		},
 		"workspace.links.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Links"]));
 		},
 		"core.reconnected": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Projects", "Links"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Projects", "Links", "Trash"]));
 		},
 	},
 	contributions: [
+		{ slot: "core.main", name: "trash", title: "tab.trash", icon: DeleteIcon, page: () => import("./pages/TrashPage") },
 		{ slot: "layout-header-sidebar.sidebar-sections", name: "search", component: SearchSection, order: 0 },
 		{ slot: "layout-header-sidebar.sidebar-sections", name: "projects", component: ProjectsSection, order: 10 },
 		{ slot: "layout-header-sidebar.header-actions", name: "new", component: NewButton, order: -10 },
@@ -43,4 +48,5 @@ export { useCreateDialog, type CreateDialogContext } from "./createDialog";
 export { useProjectSelection, useSearchText } from "./state";
 export { useListProjectsQuery, type Project } from "./api";
 export { LinksSection } from "./LinksSection";
+export { useDeleteElement } from "./useDeleteElement";
 export { workspaceTestIds } from "./testIds";

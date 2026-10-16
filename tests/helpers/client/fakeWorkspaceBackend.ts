@@ -4,7 +4,7 @@ import type { ConnectionFetch } from "../../../client/src/core/api/types";
 import { createAppStore } from "../../../client/src/core/store/createAppStore";
 import { coreApi } from "../../../client/src/core/ui-state/coreApi";
 import type { PluginRegistry } from "../../../client/src/core/plugins/types";
-import { workspaceApi, type ElementOut, type FolderListing, type LinkedElement, type Project } from "../../../client/src/plugins/workspace/api";
+import { workspaceApi, type ElementOut, type FolderListing, type LinkedElement, type Project, type TrashedElement } from "../../../client/src/plugins/workspace/api";
 
 const url = "https://backend.test/api";
 
@@ -38,11 +38,18 @@ export function fakeWorkspaceBackend(
 		/** Elements for the search and the links; a link is `[linkUid, fromUid, toUid, role]`. */
 		elements?: ElementOut[];
 		links?: Array<[string, string, string, LinkedElement["role"]]>;
+		/** The elements in the trash. */
+		trash?: TrashedElement[];
+		/** Number of children by element `uid`: deleting such an element needs `cascade`. */
+		children?: Record<string, number>;
+		/** Elements whose restore the plugin refuses, with the message. */
+		restoreRefused?: Record<string, string>;
 	} = {},
 ) {
 	let projects = options.projects ?? [project("p0", "Allgemein", 0, { builtin: true })];
 	const elements = options.elements ?? [];
 	let links = options.links ?? [];
+	let trash = options.trash ?? [];
 	const linked = (linkUid: string, uid: string, role: LinkedElement["role"]): LinkedElement => {
 		const e = elements.find((entry) => entry.uid === uid)!;
 		return { link_uid: linkUid, role, uid, project_uid: e.project_uid, kind: e.kind, label: e.label, title: e.title, deleted: e.deleted };
@@ -115,6 +122,36 @@ export function fakeWorkspaceBackend(
 		if (path === "workspace/elements") {
 			const q = (searchParams.get("query") ?? "").toLowerCase();
 			return Response.json(elements.filter((e) => !e.deleted && `${e.label} ${e.title}`.toLowerCase().includes(q)));
+		}
+		const deleteElement = /^workspace\/elements\/([^/]+)$/.exec(path);
+		if (deleteElement && request.method === "DELETE") {
+			const uid = deleteElement[1]!;
+			const count = options.children?.[uid] ?? 0;
+			if (count > 0 && searchParams.get("cascade") !== "true") return Response.json({ has_children: true, children: count, deleted: 0 });
+			const e = elements.find((entry) => entry.uid === uid);
+			if (!e) return Response.json({ code: "not_found", message: "Element gibt es nicht", details: {} }, { status: 404 });
+			trash = [{ uid, project_uid: e.project_uid, kind: e.kind, label: e.label, title: e.title, deleted_at: "2026-10-16T12:00:00Z" }, ...trash];
+			return Response.json({ has_children: false, children: count, deleted: 1 + count });
+		}
+		if (path === "workspace/trash" && request.method === "GET") {
+			const projectsParam = searchParams.get("projects");
+			const q = (searchParams.get("query") ?? "").toLowerCase();
+			return Response.json(
+				trash.filter(
+					(e) =>
+						(projectsParam === null || projectsParam.split(",").includes(e.project_uid)) &&
+						`${e.label} ${e.title}`.toLowerCase().includes(q),
+				),
+			);
+		}
+		if ((path === "workspace/trash/restore" || path === "workspace/trash/purge") && request.method === "POST") {
+			const uids = (body as { uids: string[] }).uids;
+			const refused = uids.find((uid) => options.restoreRefused?.[uid]);
+			if (path.endsWith("restore") && refused) {
+				return Response.json({ code: "parent_in_trash", message: options.restoreRefused![refused], details: {} }, { status: 400 });
+			}
+			trash = trash.filter((e) => !uids.includes(e.uid));
+			return Response.json({ uids });
 		}
 		if (path === "workspace/folders") {
 			const listing = options.folders?.[searchParams.get("path") ?? ""];

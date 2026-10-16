@@ -7,7 +7,7 @@ des Aufrufers, damit ein Plugin sein Element und seine eigenen Zeilen atomar anl
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from typing import Protocol
 
@@ -50,6 +50,27 @@ class ElementRegistry(Protocol):
     def search(self, tx: Transaction, query: str, limit: int = 50) -> list[Element]:
         """Nicht gelöschte Elemente aller Projekte, deren Label oder Titel `query` enthält."""
         ...
+
+
+#: `ChildrenProvider`: die `uid`s aller direkten Kinder eines Elements, gelöschte eingeschlossen.
+ChildrenProvider = Callable[[Transaction, str], list[str]]
+#: `RestoreGuard`: wirft einen `DomainError`, wenn das Wiederherstellen gegen eine Regel des Plugins verstößt.
+RestoreGuard = Callable[[Transaction, Element], None]
+#: `Purger`: entfernt die Plugin-Daten (und Dokumente) eines Elements vor dem endgültigen Löschen.
+Purger = Callable[[Transaction, str], None]
+
+
+class TrashRegistry(Protocol):
+    """Hier melden die Plugins beim Bau an, wie der Papierkorb mit ihren Elementtypen umgehen soll."""
+
+    def register(
+        self,
+        kind: str,
+        *,
+        children: ChildrenProvider | None = None,
+        restore_guard: RestoreGuard | None = None,
+        purger: Purger | None = None,
+    ) -> None: ...
 
 
 class Links(Protocol):
@@ -122,6 +143,8 @@ class ElementStore(Protocol):
     def set_title(self, tx: Transaction, uid: str, title: str, now: datetime) -> None: ...
 
     def search(self, tx: Transaction, query: str, limit: int) -> list[Element]: ...
+
+    def list_deleted(self, tx: Transaction, project_uids: Sequence[str] | None, query: str) -> list[Element]: ...
 
     def delete(self, tx: Transaction, uid: str) -> None: ...
 

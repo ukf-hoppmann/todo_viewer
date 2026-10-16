@@ -39,6 +39,14 @@ class UnknownReference(DomainError):
     code = "unknown_reference"
 
 
+class NotDeleted(DomainError):
+    code = "not_deleted"
+
+
+class ProjectInTrash(DomainError):
+    code = "project_in_trash"
+
+
 class InvalidLink(DomainError):
     code = "invalid_link"
 

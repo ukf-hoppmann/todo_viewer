@@ -33,4 +33,13 @@ export const workspaceTestIds = {
 	linkRole: "workspace.link-role",
 	linkAdd: "workspace.link-add",
 	linkError: "workspace.link-error",
+	trash: "workspace.trash",
+	trashSelectAll: "workspace.trash-select-all",
+	trashRestoreSelected: "workspace.trash-restore-selected",
+	trashPurgeSelected: "workspace.trash-purge-selected",
+	trashError: "workspace.trash-error",
+	trashRow: (uid: string) => `workspace.trash-row.${uid}`,
+	trashSelect: (uid: string) => `workspace.trash-select.${uid}`,
+	trashRestore: (uid: string) => `workspace.trash-restore.${uid}`,
+	trashPurge: (uid: string) => `workspace.trash-purge.${uid}`,
 } as const;

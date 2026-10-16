@@ -11,6 +11,7 @@ describe("workspace plugin definition", () => {
 		expect(manifest.requires).toEqual(["layout-header-sidebar"]);
 		expect(Object.keys(plugin.slots ?? {})).toEqual(["create-types"]);
 		expect(plugin.contributions?.map((entry) => entry.slot)).toEqual([
+			"core.main",
 			"layout-header-sidebar.sidebar-sections",
 			"layout-header-sidebar.sidebar-sections",
 			"layout-header-sidebar.header-actions",
@@ -20,7 +21,8 @@ describe("workspace plugin definition", () => {
 	it.each([
 		["workspace.project.changed", ["Projects"]],
 		["workspace.links.changed", ["Links"]],
-		["core.reconnected", ["Projects", "Links"]],
+		["workspace.element.changed", ["Trash", "Links"]],
+		["core.reconnected", ["Projects", "Links", "Trash"]],
 	])("reloads what changed on %s", (topic, tags) => {
 		const dispatch = vi.fn();
 		const invalidateTags = vi.fn((tags: string[]) => ({ type: "invalidate", tags }));

@@ -38,3 +38,19 @@
 ### Decided
 
 - Variante (a): Konflikte liegen zur Entscheidung bereit (Datenbank, Datei, aufschieben; Diff-Ansicht in STORY-058). Kein automatischer Merge; gespeichert wird die Version (Hash) je Eintrag. Ein automatischer Merge wäre eine spätere eigene Story.
+
+## 2026-10-16 — Umsetzung in der Cloud (Block A bis C) und lokale Abnahme
+
+### Discussed
+
+- Lokale Abnahme am 2026-10-16: scripts/check.sh grün (ruff, mypy strict, import-linter, pytest 1174, tsc, eslint, vitest 334); v0.8.8, Viewer ausgerollt, Schema 9.
+- Nach dem Update zeigen `ezf-ui` (15) und `image_refiner` (25) offene Konflikte: Ohne gespeicherten Stand gilt „auf beiden Seiten vorhanden und verschieden“ als Konflikt. Nichts wurde verändert.
+
+### Decided
+
+- Beidseitiger Abgleich pro Eintrag (Variante A); `direction` schränkt nur ein. Konflikte werden nie überschrieben oder gelöscht; Löschungen sind Konflikte. Kein automatischer Merge innerhalb eines Eintrags, gespeichert wird nur die Version.
+- Backup vor jeder Migration und vor jedem Sync, der in die Datenbank schreibt (TASK-031). Release v0.8.8; der Wegfall von `delete_missing` und die geänderte Antwort von `POST /sources/{id}/sync` sind für API-Aufrufer ein Bruch.
+
+### Open
+
+- `ezf-ui` und `image_refiner`: die offenen Konflikte im Sync-Dialog entscheiden (Besitzer).

@@ -64,7 +64,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-005`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-06.
   - Area: Backend-API.
   - Priority: Normal.
@@ -123,7 +123,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Task.
   - Parent: `STORY-047`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-08.
   - Area: Backend-API.
   - Priority: Normal.
@@ -149,7 +149,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Task.
   - Parent: `STORY-047`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-08.
   - Area: Backend-API.
   - Priority: Normal.
@@ -175,7 +175,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Task.
   - Parent: `STORY-047`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-08.
   - Area: Backend-API.
   - Priority: Normal.
@@ -208,7 +208,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Task.
   - Parent: `STORY-047`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-08.
   - Area: Web-UI.
   - Priority: Normal.
@@ -362,7 +362,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-006`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-14.
   - Area: Backend-API.
   - Priority: Normal.
@@ -403,7 +403,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-006`.
   - Required for parent: No.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-14.
   - Area: Web-UI.
   - Priority: Normal.
@@ -434,7 +434,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Task.
   - Parent: `STORY-057`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-14.
   - Area: Backend-API.
   - Priority: Normal.
@@ -456,13 +456,14 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Vor jeder Migration und vor jedem Sync, der die Datenbank
     ändert, legt der Viewer selbst eine geprüfte Sicherung an; bei einem
     Fehler geht so nichts verloren.
+  - Notes: `items/TASK-031/TASK-031_notes.md`.
   - Spec: `items/TASK-031/TASK-031_spec.md`.
 
 - `TASK-032` **Stand je Eintrag speichern und Änderungsseite erkennen**
   - Type: Task.
   - Parent: `STORY-057`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-14.
   - Area: Backend-API.
   - Priority: Normal.
@@ -488,13 +489,14 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Der Sync merkt sich pro Eintrag den Stand des letzten Abgleichs
     und zeigt in der Vorschau, welche Seite was geändert hat und wo echte
     Konflikte liegen.
+  - Notes: `items/TASK-032/TASK-032_notes.md`.
   - Spec: `items/TASK-032/TASK-032_spec.md`.
 
 - `TASK-033` **Konflikte beim Sync entscheiden: Datenbank, Datei oder aufschieben**
   - Type: Task.
   - Parent: `STORY-057`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-14.
   - Area: Backend-API.
   - Priority: Normal.
@@ -521,13 +523,14 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Beim Ausführen des Syncs wählst du pro Konflikt Datenbank,
     Datei oder Aufschieben; Aufgeschobenes bleibt unberührt und wird beim
     nächsten Abgleich wieder gemeldet.
+  - Notes: `items/TASK-033/TASK-033_notes.md`.
   - Spec: `items/TASK-033/TASK-033_spec.md`.
 
 - `STORY-059` **Auto-Sync für Projekte mit Spiegel (abschaltbar)**
   - Type: Story.
   - Parent: `EPIC-006`.
   - Required for parent: No.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-14.
   - Area: Backend-API.
   - Priority: Normal.

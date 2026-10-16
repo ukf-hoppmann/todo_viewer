@@ -37,3 +37,20 @@
 
 - Richtung im Abgleich pro Eintrag (siehe STORY-057).
 - Die Fingerabdrücke von Source.baseline umfassen künftig Backlog und Notes; bestehende Baselines gelten einmalig als geändert (im Plan von TASK-026 prüfen).
+
+## 2026-10-16 — Umsetzung in der Cloud (Block A bis C) und lokale Abnahme
+
+### Discussed
+
+- Lokale Abnahme am 2026-10-16: scripts/check.sh grün (ruff, mypy strict, import-linter, pytest 1174, tsc, eslint, vitest 334); v0.8.8, Viewer ausgerollt, Schema 9.
+- Round-Trip Datenbank → Dateien → leere Datenbank an einer Kopie der echten Datenbank für `ToDo_viewer` und `ezf-ui` ohne Abweichung (siehe TASK-026).
+
+### Decided
+
+- Notes laufen im selben Sync wie der Backlog (eine Vorschau, ein Status, ein Konflikt-Dialog). Neu in der Cloud angelegte Notes haben kein Label (`new-<kurzname>.md`), die Datenbank vergibt es beim Import. Papierkorb- und Archivstand, `fired_at`, `already_met`, `Created`/`Updated` und die Zähler wandern mit, Änderungshinweise (`note_notices`) nicht.
+- Der Datei-Adapter liegt in `infrastructure/notes_files/`, nicht in `infrastructure/markdown/` (Import-Linter). Der Auto-Sync importiert Notes ohne Label und benennt die Dateien um (Besitzer).
+
+### Open
+
+- Der Harness (Dateimodus) wurde noch nicht gegen das Format in `docs/techdocs/interfaces.md` geprüft.
+- Ein echter Cloud-Lauf (claude.ai) mit Git steht aus.

@@ -233,6 +233,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Sammelstelle für offene Fragen zum Neubau. Jede Frage hat eine
     Annahme, mit der die Umsetzung weiterlaufen kann, bis du anders
     entscheidest.
+  - Notes: `items/STORY-060/STORY-060_notes.md`.
   - Spec: `items/STORY-060/STORY-060_spec.md`.
 
 - `STORY-061` **Server-Grundgerüst: Core mit Plugin-Host, HTTP, Ereignissen und SSE**

@@ -45,6 +45,8 @@ function stub(sources: SourceStatus[], states: Status[], other: (request: Reques
 }
 
 const card = (name: string) => screen.getByRole("group", { name });
+/** The radio group of the mirror in a card whose setup is unfolded. */
+const mirrorModes = (group: HTMLElement) => within(within(group).getByRole("radiogroup", { name: "Spiegel" }));
 /** The card of a project with its setup unfolded: the rarely needed settings are folded away until asked for. */
 async function setup(name: string) {
   const group = await screen.findByRole("group", { name });
@@ -79,15 +81,16 @@ describe("ProjectsSection: one card per project", () => {
     const group = await screen.findByRole("group", { name: "Central" });
     const toggle = within(group).getByRole("button", { name: "Einrichtung" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(within(group).queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(within(group).queryByRole("radiogroup", { name: "Spiegel" })).not.toBeInTheDocument();
     expect(within(group).queryByRole("button", { name: "Zu Markdown wechseln…" })).not.toBeInTheDocument();
 
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(within(group).getAllByRole("checkbox")).toHaveLength(2);  // mirror and auto-sync
+    expect(within(group).getByRole("radiogroup", { name: "Spiegel" })).toBeInTheDocument();
+    expect(within(group).queryByRole("checkbox")).not.toBeInTheDocument();  // mirror and auto-sync are one choice
 
     await userEvent.click(toggle);
-    expect(within(group).queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(within(group).queryByRole("radiogroup", { name: "Spiegel" })).not.toBeInTheDocument();
   });
 
   it("puts the sync forward without color while all is well, and with color once something differs", async () => {
@@ -159,25 +162,58 @@ describe("ProjectsSection: the automatic sync", () => {
   const auto = sourceStatus({ auto_sync: true });
   const autoStatus = (over: Partial<Status> = {}): Status => ({ ...status(auto, "in_sync"), auto_sync: true, ...over });
 
-  it("is off by default and switched on by the owner, who is not asked anything else", async () => {
+  it("is off by default (the mirror is synced by hand) and switched on by the owner in one request, who is not asked anything else", async () => {
     const calls = stub([central], [status(central, "in_sync")], (request) => (request.method === "PUT" ? jsonResponse({ ...central, auto_sync: true }) : jsonResponse({}, 404)));
     renderWithProviders(<ProjectsSection />);
 
-    const box = within(await setup("Central")).getByRole("checkbox", { name: /Automatisch abgleichen/ });
-    expect(box).not.toBeChecked();
-    await userEvent.click(box);
+    const modes = mirrorModes(await setup("Central"));
+    expect(modes.getByRole("radio", { name: "Ein, Sync von Hand" })).toBeChecked();
+    expect(modes.getByRole("radio", { name: /Ein, Sync automatisch/ })).not.toBeChecked();
+    await userEvent.click(modes.getByRole("radio", { name: /Ein, Sync automatisch/ }));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
-    expect(calls.find((c) => c.method === "PUT")!.body).toMatchObject({ project: "Central", auto_sync: true });
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Central", sync_path: "/repos/central", mirror: "markdown", auto_sync: true });
   });
 
-  it("cannot be switched on without a mirror", async () => {
+  it("shows a project with the switch on as automatic, and goes back to by hand without touching the mirror", async () => {
+    const calls = stub([auto], [status(auto, "in_sync")], (request) => (request.method === "PUT" ? jsonResponse({ ...auto, auto_sync: false }) : jsonResponse({}, 404)));
+    renderWithProviders(<ProjectsSection />);
+
+    const modes = mirrorModes(await setup("Central"));
+    expect(modes.getByRole("radio", { name: /Ein, Sync automatisch/ })).toBeChecked();
+    await userEvent.click(modes.getByRole("radio", { name: "Ein, Sync von Hand" }));
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Central", sync_path: "/repos/central", mirror: "markdown", auto_sync: false });
+  });
+
+  it("switches the automatic sync off together with the mirror, so it does not start again by itself", async () => {
+    const calls = stub([auto], [status(auto, "in_sync")], (request) => (request.method === "PUT" ? jsonResponse({ ...auto, mirror: "none", auto_sync: false }) : jsonResponse({}, 404)));
+    renderWithProviders(<ProjectsSection />);
+
+    await userEvent.click(mirrorModes(await setup("Central")).getByRole("radio", { name: "Aus (kein Spiegel)" }));
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Central", sync_path: "/repos/central", mirror: "none", auto_sync: false });
+  });
+
+  it("sends nothing when the mode that is already chosen is chosen again", async () => {
+    const calls = stub([central], [status(central, "in_sync")]);
+    renderWithProviders(<ProjectsSection />);
+
+    await userEvent.click(mirrorModes(await setup("Central")).getByRole("radio", { name: "Ein, Sync von Hand" }));
+
+    expect(calls.some((c) => c.method === "PUT")).toBe(false);
+  });
+
+  it("cannot be switched on without a mirror: the choices that need one are locked", async () => {
     stub([bare], [status(bare, "none")]);
     renderWithProviders(<ProjectsSection />);
 
-    const group = await setup("Bare");
-    expect(within(group).getByRole("checkbox", { name: /Automatisch abgleichen/ })).toBeDisabled();
-    expect(within(group).getByText("Gibt es erst mit einem Spiegel.")).toBeInTheDocument();
+    const modes = mirrorModes(await setup("Bare"));
+    expect(modes.getByRole("radio", { name: "Aus (kein Spiegel)" })).toBeChecked();
+    expect(modes.getByRole("radio", { name: "Ein, Sync von Hand" })).toBeDisabled();
+    expect(modes.getByRole("radio", { name: /Ein, Sync automatisch/ })).toBeDisabled();
   });
 
   it("shows the last run when it is on, and the reason when it is paused", async () => {
@@ -308,20 +344,20 @@ describe("ProjectsSection: folders and mirrors", () => {
 
     const group = await setup("Bare");
 
-    expect(within(group).getByRole("checkbox", { name: "Markdown-Ordner als Spiegel führen" })).toBeDisabled();
+    expect(mirrorModes(group).getByRole("radio", { name: "Ein, Sync von Hand" })).toBeDisabled();
     expect(within(group).getByText("Zuerst einen Markdown-Ordner festlegen.")).toBeInTheDocument();
   });
 
-  it("keeps a database mirror of a markdown project when asked, and sends the mirror only", async () => {
+  it("keeps a database mirror of a markdown project when asked, synced by hand, and sends nothing else", async () => {
     const calls = stub([files], [status(files, "none")], () => jsonResponse({ ...files, mirror: "database" }));
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await setup("Files")).getByRole("checkbox", { name: "Datenbank-Spiegel führen" }));
+    await userEvent.click(mirrorModes(await setup("Files")).getByRole("radio", { name: "Ein, Sync von Hand" }));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
     const put = calls.find((c) => c.method === "PUT")!;
     expect(put.path).toBe("/api/v2/sources/s2");
-    expect(put.body).toEqual({ path: "/repos/a/docs", project: "Files", mirror: "database" });
+    expect(put.body).toEqual({ path: "/repos/a/docs", project: "Files", mirror: "database", auto_sync: false });
   });
 
   it("starts the database mirror from the card itself, without opening the setup", async () => {
@@ -331,22 +367,23 @@ describe("ProjectsSection: folders and mirrors", () => {
     await userEvent.click(within(await screen.findByRole("group", { name: "Files" })).getByRole("button", { name: "Datenbank-Spiegel einschalten" }));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
-    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "/repos/a/docs", project: "Files", mirror: "database" });
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "/repos/a/docs", project: "Files", mirror: "database", auto_sync: false });
   });
 
   it("asks before dropping the database mirror, because that deletes the copy in the database", async () => {
     const calls = stub([mirrored], [status(mirrored, "in_sync")], () => jsonResponse({ ...mirrored, mirror: "none" }));
     const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
     renderWithProviders(<ProjectsSection />);
-    const box = within(await setup("Mirrored")).getByRole("checkbox", { name: "Datenbank-Spiegel führen" });
-    expect(box).toBeChecked();
+    const modes = mirrorModes(await setup("Mirrored"));
+    expect(modes.getByRole("radio", { name: "Ein, Sync von Hand" })).toBeChecked();
+    expect(screen.getByText(/Ausschalten löscht die Kopie in der Datenbank/)).toBeInTheDocument();
 
-    await userEvent.click(box);
+    await userEvent.click(modes.getByRole("radio", { name: "Aus (kein Spiegel)" }));
     expect(calls.some((c) => c.method === "PUT")).toBe(false);  // declined
-    await userEvent.click(box);
+    await userEvent.click(modes.getByRole("radio", { name: "Aus (kein Spiegel)" }));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
-    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "/repos/m/docs", project: "Mirrored", mirror: "none" });
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "/repos/m/docs", project: "Mirrored", mirror: "none", auto_sync: false });
     expect(confirm.mock.calls[0]![0]).toMatch(/Kopie in der Datenbank/);
     confirm.mockRestore();
   });
@@ -355,10 +392,10 @@ describe("ProjectsSection: folders and mirrors", () => {
     const calls = stub([central], [status(central, "in_sync")], () => jsonResponse({ ...central, mirror: "none" }));
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await setup("Central")).getByRole("checkbox", { name: "Markdown-Ordner als Spiegel führen" }));
+    await userEvent.click(mirrorModes(await setup("Central")).getByRole("radio", { name: "Aus (kein Spiegel)" }));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
-    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Central", sync_path: "/repos/central", mirror: "none" });
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Central", sync_path: "/repos/central", mirror: "none", auto_sync: false });
   });
 
   it("switches it on again without asking for a folder", async () => {
@@ -373,17 +410,28 @@ describe("ProjectsSection: folders and mirrors", () => {
 
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Off", sync_path: "/repos/off", mirror: "markdown" });
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ path: "", project: "Off", sync_path: "/repos/off", mirror: "markdown", auto_sync: false });
+  });
+
+  it("does not bring a forgotten automatic sync back when the mirror is switched on again", async () => {
+    const forgotten = sourceStatus({ id: "s6", project: "Forgotten", sync_path: "/repos/f", markdown_path: "/repos/f", mirror: "none", auto_sync: true });
+    const calls = stub([forgotten], [status(forgotten, "none")], () => jsonResponse({ ...forgotten, mirror: "markdown", auto_sync: false }));
+    renderWithProviders(<ProjectsSection />);
+
+    await userEvent.click(within(await screen.findByRole("group", { name: "Forgotten" })).getByRole("button", { name: "Markdown-Spiegel einschalten" }));
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    expect(calls.find((c) => c.method === "PUT")!.body).toMatchObject({ mirror: "markdown", auto_sync: false });
   });
 
   it("shows a translated error of the server and changes nothing on screen", async () => {
     stub([files], [status(files, "none")], () => jsonResponse({ code: "duplicate", message: "x", details: {} }, 409));
     renderWithProviders(<ProjectsSection />);
 
-    await userEvent.click(within(await setup("Files")).getByRole("checkbox", { name: "Datenbank-Spiegel führen" }));
+    await userEvent.click(mirrorModes(await setup("Files")).getByRole("radio", { name: "Ein, Sync von Hand" }));
 
     expect(await screen.findByText("Dieser Ordner ist bereits eingetragen.")).toBeInTheDocument();
-    expect(within(card("Files")).getByRole("checkbox", { name: "Datenbank-Spiegel führen" })).not.toBeChecked();
+    expect(mirrorModes(card("Files")).getByRole("radio", { name: "Aus (kein Spiegel)" })).toBeChecked();
   });
 });
 

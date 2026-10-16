@@ -74,8 +74,9 @@ selben Sync wie der Backlog (Vorschau, Konflikte, Entscheidungen im selben Dialo
 zwischen Rechnern und in die Cloud (claude.ai) mitnehmen. Eine in den Dateien angelegte Note ohne Label
 (`new-<kurzname>.md`) bekommt beim Import ihr Label.
 
-**Auto-Sync:** Pro Projekt mit Spiegel lässt sich in Einstellungen → Projekte
-„Automatisch abgleichen“ einschalten (Standard aus). Der Viewer gleicht dann alle
+**Auto-Sync:** Pro Projekt mit Spiegel lässt sich in Einstellungen → Projekte →
+Einrichtung beim Spiegel „Ein, Sync automatisch“ wählen (Standard: „Ein, Sync von
+Hand“). Der Viewer gleicht dann alle
 `AUTO_SYNC_INTERVAL` Sekunden (Standard 30) von selbst ab, was nur eine Seite
 geändert hat, löscht nie und überträgt keine Konflikte; die bleiben offen (Zahl in
 der Projektkarte, ⚠ in der Sidebar), bis du sie im Sync-Dialog mit Vergleichsansicht
@@ -179,8 +180,10 @@ den Sync-Dialog mit den Konflikten an erster Stelle), oder
 „Datenbank-Spiegel einschalten“ bzw. „Markdown-Spiegel einschalten“ bei einem
 Projekt ohne Spiegel (fehlt der Markdown-Ordner, „Spiegel-Ordner festlegen…“). Die
 selteneren Einstellungen stehen unter „Einrichtung“ (eingeklappt): Markdown-Ordner,
-Spiegel ein/aus (ein Markdown-Ordner bleibt beim Ausschalten gespeichert und lässt
-sich ohne neue Wahl wieder einschalten), Auto-Sync, die Sync-Richtung (beide
+der Spiegel als eine Auswahl („Aus“, „Ein, Sync von Hand“, „Ein, Sync automatisch“;
+die Wahl setzt Spiegel und Auto-Sync in einer Änderung, „Aus“ schaltet auch den
+Auto-Sync ab; ein Markdown-Ordner bleibt beim Ausschalten gespeichert und lässt
+sich ohne neue Wahl wieder einschalten), die Sync-Richtung (beide
 Richtungen, nur Datenbank → Ordner oder nur Ordner → Datenbank; gilt für Syncs aus
 der Oberfläche und wird wie die Filter im UI-Zustand gespeichert, der Auto-Sync läuft
 immer in beide Richtungen) und der Wechsel der Primärquelle

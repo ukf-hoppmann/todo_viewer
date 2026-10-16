@@ -262,7 +262,7 @@ input.field-edit {
 .project-card dd .project-folder { flex: 1 1 0; min-width: 0; }
 .project-card dd .hint { flex-basis: 100%; font-size: 12px; color: var(--text-dim); }
 .project-card dd label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-.project-card dd.project-direction { flex-direction: column; align-items: flex-start; gap: 4px; }
+.project-card dd.project-direction, .project-card dd.project-mode { flex-direction: column; align-items: flex-start; gap: 4px; }
 .project-card .btn.link { background: transparent; border: none; padding: 0; font-size: 12px; color: var(--accent); cursor: pointer; }
 .project-card .btn.link:hover { text-decoration: underline; }
 .project-card .btn.link:disabled { color: var(--text-dim); text-decoration: none; cursor: default; }

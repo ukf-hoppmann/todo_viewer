@@ -38,7 +38,7 @@ GOLDEN = Path(__file__).parents[2] / "golden" / "notes"
 
 
 def golden(name: str) -> str:
-    return (GOLDEN / name).read_text(encoding="utf-8", newline="")
+    return (GOLDEN / name).read_bytes().decode("utf-8")
 
 
 @pytest.mark.parametrize("name", ["note_full.md", "note_minimal.md", "note_new.md", "note_trashed_archived.md"])

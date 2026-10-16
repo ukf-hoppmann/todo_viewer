@@ -23,7 +23,7 @@ def source(tmp_path: Path) -> Source:
 
 def files(source: Source) -> dict[str, str]:
     folder = Path(source.path) / "notes"
-    return {p.name: p.read_text(encoding="utf-8", newline="") for p in sorted(folder.glob("*")) if p.is_file()}
+    return {p.name: p.read_bytes().decode("utf-8") for p in sorted(folder.glob("*")) if p.is_file()}
 
 
 def test_a_missing_folder_reads_as_empty(mirror: FilesNotesMirror, source: Source):

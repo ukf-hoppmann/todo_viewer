@@ -58,7 +58,7 @@ class World:
     def files(self) -> dict[str, str]:
         if not self.notes_dir.is_dir():
             return {}
-        return {p.name: p.read_text(encoding="utf-8", newline="")
+        return {p.name: p.read_bytes().decode("utf-8")
                 for p in sorted(self.notes_dir.iterdir()) if p.is_file()}
 
     def put(self, name: str, text: str) -> None:

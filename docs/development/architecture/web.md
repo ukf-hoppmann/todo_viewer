@@ -1,6 +1,6 @@
 # Scope: web
 
-Applies to `web/**` in addition to `../architecture.md`.
+Applies to `src_old/web/**` in addition to `../architecture.md`.
 
 ## 1. Structure
 

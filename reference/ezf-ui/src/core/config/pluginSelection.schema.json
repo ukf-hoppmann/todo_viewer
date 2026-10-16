@@ -1,0 +1,48 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "core/pluginSelection.schema.json",
+	"title": "Plugin selection (plugins.json)",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["plugins"],
+	"properties": {
+		"navigation": {
+			"description": "Start view and order of the entries per slot. A view is written <owner id>/<name>, without a leading slash.",
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"start": {
+					"description": "The view `/` leads to; a sidebar entry is written <host id>/<host name>/<owner id>/<name>.",
+					"type": "string",
+					"pattern": "^[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*)?$"
+				}
+			},
+			"patternProperties": {
+				"^[a-z0-9]+(-[a-z0-9]+)*\\.[a-z0-9]+(-[a-z0-9]+)*$": {
+					"description": "Order of the entries of the slot <owner id>.<name>: first the listed ones, then the rest by the fixed rule.",
+					"type": "array",
+					"uniqueItems": true,
+					"items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*$" }
+				}
+			}
+		},
+		"plugins": {
+			"description": "Switch per plugin; the keys are plugin ids (kebab-case). A plugin that is not listed is switched off.",
+			"type": "object",
+			"additionalProperties": false,
+			"patternProperties": {
+				"^[a-z0-9]+(-[a-z0-9]+)*$": { "$ref": "#/definitions/plugin" }
+			}
+		}
+	},
+	"definitions": {
+		"plugin": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["enabled"],
+			"properties": {
+				"enabled": { "type": "boolean" }
+			}
+		}
+	}
+}

@@ -4,10 +4,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 PY=${PYTHON_BIN:-.venv/bin}
 
-"$PY/ruff" check backend
-"$PY/mypy" --strict backend/todo_viewer
-(cd backend && "../$PY/lint-imports" --config ../pyproject.toml)
+"$PY/ruff" check src_old/backend
+"$PY/mypy" --strict src_old/backend/todo_viewer
+(cd src_old/backend && "../../$PY/lint-imports" --config ../../pyproject.toml)
 "$PY/pytest"
 
 # Frontend: Typen, Lint, Tests
-(cd web && npx tsc -b && npx eslint . && npx vitest run)
+(cd src_old/web && npx tsc -b && npx eslint . && npx vitest run)

@@ -1,0 +1,18 @@
+{
+	"title": "Exemple de mise en page: en-tête global, sous-en-tête et barre latérale",
+	"tab": {
+		"main": "Header + Subheader + Sidebar"
+	},
+	"entry": {
+		"first": "Première entrée",
+		"second": "Deuxième entrée"
+	},
+	"first": {
+		"header": "Sous-en-tête : en-tête global, sous-en-tête et barre latérale (1)",
+		"text": "Entrée 1 : en-tête global, sous-en-tête et barre latérale."
+	},
+	"second": {
+		"header": "Sous-en-tête : en-tête global, sous-en-tête et barre latérale (2)",
+		"text": "Entrée 2 : en-tête global, sous-en-tête et barre latérale."
+	}
+}

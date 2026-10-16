@@ -10,7 +10,7 @@
 | `PORT` | Integer | `5411` | nein | HTTP-Port |
 | `DEV_RELOAD` | `0`/`1` | `1` (im Docker-Image `0`) | nein | Auto-Reload von uvicorn bei Code-Änderungen |
 | `CONFIG_DIR` | Pfad | `<Projekt>/configs` | nein | Ordner mit `config.json` und (Standard) der Datenbank `todo.db` |
-| `FRONTEND_DIR` | Pfad | `<Projekt>/web/dist` | nein | Ordner mit dem gebauten Frontend |
+| `FRONTEND_DIR` | Pfad | `<Projekt>/src_old/web/dist` | nein | Ordner mit dem gebauten Frontend |
 | `BROWSE_START` | Pfad | Home-Ordner | nein | Startordner des Ordner-Browsers beim Hinzufügen von Projekten; wird ignoriert, wenn er kein Ordner ist. In `docker-compose.yml` auf `/Users/hoppmann/Documents/GitHub` gesetzt |
 | `LOG_FILE` | Pfad | leer (Konsole) | nein | Logdatei; wird nach Größe rotiert (5 MB, 5 alte Dateien `.1`–`.5`). Ohne Wert wird auf stderr geloggt. In `docker-compose.yml` auf `/app/logs/todo-viewer.log` gesetzt (Host: `./logs/`) |
 | `AUTO_SYNC_INTERVAL` | Sekunden (Zahl) | `30` | nein | Abstand der Prüfungen des Auto-Syncs. `0` schaltet den Timer ganz ab. Der Timer läuft nur, solange mindestens ein Projekt den Schalter „Auto-Sync“ an hat; ohne Schalter kostet ein Viewer nichts. Wird beim Start gelesen |

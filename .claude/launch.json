@@ -5,7 +5,7 @@
       "name": "todo-viewer",
       "runtimeExecutable": ".venv/bin/python",
       "runtimeArgs": [
-        "backend/main.py"
+        "src_old/backend/main.py"
       ],
       "port": 5411,
       "autoPort": true
@@ -15,7 +15,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "web",
+        "src_old/web",
         "run",
         "dev",
         "--",

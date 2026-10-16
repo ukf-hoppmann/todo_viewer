@@ -1,0 +1,20 @@
+{
+  "api": {
+    "url": "https://backend.et.localhost",
+    "returnToMaxAgeMinutes": 10,
+    "connection": {
+      "failuresBeforeWarning": 1,
+      "retryIntervalSeconds": 5,
+      "logoutAfterSeconds": 300
+    }
+  },
+  "logging": {
+    "outputs": {
+      "console": { "level": "warn", "origins": { "example": "debug" } }
+    },
+    "limits": { "depth": 10, "entries": 1000, "stringLength": 10000 }
+  },
+  "banners": {
+    "maxVisible": 20
+  }
+}

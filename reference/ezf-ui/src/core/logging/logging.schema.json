@@ -1,0 +1,43 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "core/logging.schema.json",
+	"title": "Section \"logging\" of the app config",
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"outputs": {
+			"description": "Levels per output; the keys are the names of the outputs, e.g. console or backend.",
+			"type": "object",
+			"additionalProperties": { "$ref": "#/definitions/output" }
+		},
+		"limits": {
+			"description": "Limits for the conversion of data and error before writing.",
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"depth": { "type": "integer", "minimum": 1 },
+				"entries": { "type": "integer", "minimum": 1 },
+				"stringLength": { "type": "integer", "minimum": 1 }
+			}
+		}
+	},
+	"definitions": {
+		"level": { "enum": ["debug", "info", "warn", "error"] },
+		"output": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["level"],
+			"properties": {
+				"level": { "$ref": "#/definitions/level" },
+				"origins": {
+					"description": "Level per origin (core or plugin id) that replaces the level of the output.",
+					"type": "object",
+					"additionalProperties": false,
+					"patternProperties": {
+						"^[a-z0-9]+(-[a-z0-9]+)*$": { "$ref": "#/definitions/level" }
+					}
+				}
+			}
+		}
+	}
+}

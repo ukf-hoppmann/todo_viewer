@@ -1,0 +1,10 @@
+{
+	"title": "Add-on plugin",
+	"entry": {
+		"panel": "Add-on panel"
+	},
+	"panel": {
+		"header": "Add-on panel of the example plugin",
+		"text": "This entry comes from a second plugin."
+	}
+}

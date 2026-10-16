@@ -1,0 +1,10 @@
+{
+  "plugins": {
+    "example": { "enabled": false }
+  },
+  "navigation": {
+    "start": "example/overview",
+    "core.main": ["example/overview", "example/hub"],
+    "example.hub": ["example-addon/panel", "example/start"]
+  }
+}

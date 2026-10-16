@@ -1,23 +1,23 @@
 # Stage 1: React-Frontend bauen
 FROM node:22-alpine AS web
 WORKDIR /web
-COPY web/package.json web/package-lock.json ./
+COPY src_old/web/package.json src_old/web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
-COPY web/ ./
+COPY src_old/web/ ./
 RUN npm run build
 
 # Stage 2: Backend, liefert API und das gebaute Frontend aus
 FROM python:3.11-slim
 WORKDIR /app
 
-COPY backend/requirements.txt backend/requirements.txt
+COPY src_old/backend/requirements.txt src_old/backend/requirements.txt
 # pip 24.0 aus dem Basis-Image hängt zeitweise beim Index von watchfiles; aktuelles pip nicht
 RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir -r backend/requirements.txt
+ && pip install --no-cache-dir -r src_old/backend/requirements.txt
 
-COPY backend backend
+COPY src_old/backend src_old/backend
 COPY configs configs
-COPY --from=web /web/dist web/dist
+COPY --from=web /web/dist src_old/web/dist
 
 ENV HOST=0.0.0.0 \
     PORT=5411 \
@@ -25,4 +25,4 @@ ENV HOST=0.0.0.0 \
 
 EXPOSE 5411
 
-CMD ["python3", "backend/main.py"]
+CMD ["python3", "src_old/backend/main.py"]

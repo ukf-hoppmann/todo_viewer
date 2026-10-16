@@ -1,9 +1,10 @@
 # Scope: legacy
 
-Applies to `backend/**` and `web/**` in addition to `../architecture.md`
+Applies to `src_old/backend/**` and `src_old/web/**` in addition to `../architecture.md`
 (whose sections apply to the new code only) and to the scopes `backend` and
 `web`. These are the project-wide rules of the old viewer, unchanged. The
-scope is removed at the cutover (`STORY-084`) together with the old code.
+scope is removed together with the old code after the owner has accepted the
+rebuild (`STORY-084`).
 
 ## 1. Storage backends behind ports
 
@@ -17,7 +18,7 @@ scope is removed at the cutover (`STORY-084`) together with the old code.
   project's data.
 - All backends MUST implement the same storage ports and pass the same
   contract suite, as primary source and as mirror. Enforced by:
-  `backend/tests/contract/`.
+  `src_old/backend/tests/contract/`.
 - The primary source MAY be switched per project. A switch MUST run a sync
   first so the new primary source is up to date, and MUST create a backup of
   the previous primary source; if either fails, nothing is switched.
@@ -25,7 +26,7 @@ scope is removed at the cutover (`STORY-084`) together with the old code.
   line endings, and MUST abort with a conflict error instead of overwriting a
   file that changed since it was read. Edits MUST change only the affected
   field or move the affected entry; byte-exact output is pinned by golden
-  files. Enforced by: `backend/tests/characterization/test_edit.py`.
+  files. Enforced by: `src_old/backend/tests/characterization/test_edit.py`.
 - Database backend: writes MUST be transactional and MUST abort with a
   conflict error instead of overwriting an item that changed since it was
   read. The schema MUST change only through versioned migrations.
@@ -52,7 +53,7 @@ scope is removed at the cutover (`STORY-084`) together with the old code.
 - The frontend MUST talk to the backend only through API v2 (`/api/v2`).
 - The TypeScript API types MUST be generated from the backend's OpenAPI
   schema, never written by hand. Enforced by:
-  `backend/tests/api_v2/test_openapi.py`.
+  `src_old/backend/tests/api_v2/test_openapi.py`.
 - Errors MUST be returned as `{code, message, details}` with a stable `code`;
   the frontend translates codes, not messages.
 

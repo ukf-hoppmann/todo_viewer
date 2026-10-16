@@ -69,8 +69,8 @@ forbidden_modules = ["todo_viewer", "ezf_ui"]
 name = "Plugins: Zwiebel, Abhängigkeiten zeigen nach innen"
 type = "layers"
 layers = [
-    "infrastructure | api",
+    "infrastructure | (api)",
     "application",
     "domain",
 ]
-containers = ["viewer.plugins.workspace"]
+containers = ["viewer.plugins.workspace", "viewer.plugins.backlog"]

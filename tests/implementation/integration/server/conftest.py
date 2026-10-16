@@ -15,7 +15,7 @@ from running_server import RunningServer
 from viewer.app.composition import create_app
 from viewer.core.domain.settings import Settings
 from viewer.core.infrastructure.database import MigrationRunner, SqliteBackupMaker, SqliteDatabase
-from workspace_env import Env
+from workspace_env import Env, backlog_env
 
 
 @pytest.fixture
@@ -79,5 +79,12 @@ def runner(database: SqliteDatabase, backups: SqliteBackupMaker) -> MigrationRun
 @pytest.fixture
 def env(tmp_path: Path, settings: Settings) -> Iterator[Env]:
     environment = Env(tmp_path, settings)
+    with environment.client:
+        yield environment
+
+
+@pytest.fixture
+def backlog(tmp_path: Path, settings: Settings) -> Iterator[Env]:
+    environment = backlog_env(tmp_path, settings)
     with environment.client:
         yield environment

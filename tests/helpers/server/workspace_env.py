@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -8,16 +9,20 @@ from kinds_plugin.plugin import KINDS_PLUGIN, KindsServices
 from mirror_plugin.plugin import MIRROR_PLUGIN
 from starlette.testclient import TestClient
 from viewer.app.composition import create_app
+from viewer.core.application.plugin import PluginDefinition
 from viewer.core.domain.settings import Settings
+from viewer.plugins.backlog.application.operations import BacklogServices
+from viewer.plugins.backlog.plugin import plugin as backlog_plugin
 from viewer.plugins.workspace.application.operations import WorkspaceServices
 from viewer.plugins.workspace.plugin import plugin as workspace_plugin
 
 
 class Env:
-    def __init__(self, tmp_path: Path, settings: Settings) -> None:
+    def __init__(self, tmp_path: Path, settings: Settings, plugins: Sequence[PluginDefinition] | None = None) -> None:
         self.tmp_path = tmp_path
         self.clock = FixedClock()
-        self.app = create_app(settings, plugins=[workspace_plugin, KINDS_PLUGIN, MIRROR_PLUGIN], clock=self.clock)
+        chosen = plugins or [workspace_plugin, KINDS_PLUGIN, MIRROR_PLUGIN]
+        self.app = create_app(settings, plugins=chosen, clock=self.clock)
         self.client = TestClient(self.app)
 
     @property
@@ -30,6 +35,12 @@ class Env:
     def kinds(self) -> KindsServices:
         services = self.app.state.plugin_host.services("kinds-test")
         assert isinstance(services, KindsServices)
+        return services
+
+    @property
+    def backlog(self) -> BacklogServices:
+        services = self.app.state.plugin_host.services("backlog")
+        assert isinstance(services, BacklogServices)
         return services
 
     def services_links(self) -> Any:
@@ -45,3 +56,8 @@ class Env:
 
     def general(self) -> dict[str, object]:
         return next(p for p in self.projects() if p["builtin"])
+
+
+def backlog_env(tmp_path: Path, settings: Settings) -> Env:
+    """Eine Umgebung mit dem echten Plugin `backlog` (und `workspace`)."""
+    return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin])

@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/api/backlog/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Items der Projekte als flache Liste mit Fortschritt; Filter nach Status, Priorität und Text (Projekte, Status und Prioritäten komma-getrennt) */
+        get: operations["backlog_list_items"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/items/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ein Item mit allen Feldern, Kindern (auch gelöschten) und Abhängigkeiten; `ref` ist die uid oder ein Label (mit `project`) */
+        get: operations["backlog_get_item"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/core/events": {
         parameters: {
             query?: never;
@@ -477,6 +511,93 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** IndexItem */
+        IndexItem: {
+            /** Area */
+            area: string | null;
+            /** Label */
+            label: string;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Priority */
+            priority: string;
+            progress: components["schemas"]["ProgressOut"] | null;
+            /** Project Uid */
+            project_uid: string;
+            /** Required For Parent */
+            required_for_parent: boolean | null;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+            /** Type */
+            type: string;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
+        /** ItemOut */
+        ItemOut: {
+            /** Area */
+            area: string | null;
+            /** Children */
+            children: components["schemas"]["ItemSummary"][];
+            /** Completion Criteria */
+            completion_criteria: string | null;
+            /**
+             * Created
+             * Format: date
+             */
+            created: string;
+            /** Deleted */
+            deleted: boolean;
+            /** Dependencies */
+            dependencies: components["schemas"]["ItemSummary"][];
+            /** Goal */
+            goal: string | null;
+            /** Label */
+            label: string;
+            parent: components["schemas"]["ItemSummary"] | null;
+            /** Priority */
+            priority: string;
+            progress: components["schemas"]["ProgressOut"] | null;
+            /** Project Uid */
+            project_uid: string;
+            /** Required For Parent */
+            required_for_parent: boolean | null;
+            /** Resolution */
+            resolution: string | null;
+            /** Status */
+            status: string;
+            /** Summary */
+            summary: string | null;
+            /** Title */
+            title: string;
+            /** Type */
+            type: string;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
+        /** ItemSummary */
+        ItemSummary: {
+            /** Deleted */
+            deleted: boolean;
+            /** Label */
+            label: string;
+            /** Required For Parent */
+            required_for_parent: boolean | null;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+            /** Type */
+            type: string;
+            /** Uid */
+            uid: string;
+        };
         /**
          * LinkedElement
          * @description Das Element am anderen Ende einer Verknüpfung; `deleted`: es liegt im Papierkorb.
@@ -533,6 +654,13 @@ export interface components {
             token: string;
             /** Transfers */
             transfers: components["schemas"]["TransferOut"][];
+        };
+        /** ProgressOut */
+        ProgressOut: {
+            /** Done */
+            done: number;
+            /** Total */
+            total: number;
         };
         /** ProjectOut */
         ProjectOut: {
@@ -742,6 +870,73 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    backlog_list_items: {
+        parameters: {
+            query?: {
+                projects?: string | null;
+                statuses?: string | null;
+                priorities?: string | null;
+                query?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexItem"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_get_item: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     core_events: {
         parameters: {
             query?: never;

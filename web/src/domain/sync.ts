@@ -92,6 +92,44 @@ export function buildResolutions(conflicts: readonly SyncConflict[], choices: Co
   });
 }
 
+/** How many conflicts of the list have a decision other than deferring (decisions for other conflicts do not count). */
+export function decidedCount(conflicts: readonly SyncConflict[], choices: ConflictChoices): number {
+  return conflicts.filter((c) => choiceOf(choices, c) !== "defer").length;
+}
+
+/**
+ * Whether a decision for all conflicts at once may cover the conflict: only what changed or is new on both sides. A
+ * deletion is left out, because either choice may delete the entry on one side, so it needs its own decision.
+ */
+export function isBulkDecidable(c: Pick<SyncConflict, "reason">): boolean {
+  return c.reason === "both_changed" || c.reason === "both_new";
+}
+
+/** The decisions after one decision for every conflict the bulk decision covers; the other decisions stay. */
+export function decideMany(conflicts: readonly SyncConflict[], choices: ConflictChoices, choice: ConflictChoice): ConflictChoices {
+  const next: Record<string, ConflictChoice> = { ...choices };
+  for (const c of conflicts.filter(isBulkDecidable)) {
+    if (choice === "defer") delete next[conflictKey(c)];
+    else next[conflictKey(c)] = choice;
+  }
+  return next;
+}
+
+/** What a conflict row says in one line: the fields that differ, that a text differs, or which side lacks the entry. */
+export type ConflictSummary =
+  | { kind: "fields"; fields: { name: string; database: string | null; markdown: string | null }[]; more: number }
+  | { kind: "text" }
+  | { kind: "missing"; side: "database" | "markdown" };
+
+/** The conflict at a glance: up to `limit` differing fields (the rest is counted), or the missing side, or a text difference. */
+export function conflictSummary(c: SyncConflict, limit = 3): ConflictSummary {
+  if (!c.database) return { kind: "missing", side: "database" };
+  if (!c.markdown) return { kind: "missing", side: "markdown" };
+  const fields = c.kind === "document" || c.kind === "note_document" ? [] : changedFields(c);
+  if (fields.length === 0) return { kind: "text" };
+  return { kind: "fields", fields: fields.slice(0, limit), more: Math.max(0, fields.length - limit) };
+}
+
 /** The fields of an item conflict in which the two versions differ (all of them if a side is missing). */
 export function changedFields(c: SyncConflict): { name: string; database: string | null; markdown: string | null }[] {
   const database = new Map((c.database?.fields ?? []).map((f) => [f.name, f.value]));

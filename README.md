@@ -55,10 +55,16 @@ der Datenbank geändert oder neu ist, geht in den Ordner, was nur im Ordner
 geändert oder neu ist, in die Datenbank (neu, geändert, unverändert). Ein
 Eintrag, der auf beiden Seiten geändert, auf beiden neu oder auf einer Seite
 gelöscht wurde, ist ein **Konflikt**: er wird nie überschrieben oder gelöscht, die
-Vorschau liefert beide Fassungen, und du entscheidest je Konflikt über die API
-(`database`, `markdown` oder aufschieben; ohne Entscheidung bleibt er
-unberührt und wird wieder gemeldet). Dann **Ausführen**; die Richtung kann auf
-eine Seite eingeschränkt werden. Vor einem Sync in die Datenbank sichert der
+Vorschau liefert beide Fassungen, und du entscheidest je Konflikt (Datenbank gilt,
+Datei gilt oder aufschieben; ohne Entscheidung bleibt er unberührt und wird wieder
+gemeldet). Der Sync-Dialog lädt die Vorschau beim Öffnen von selbst, zeigt die
+Konflikte zuerst (je Zeile die unterschiedlichen Felder in einer Zeile, der volle
+Vergleich per Klick) und die übrigen Änderungen als eine Zeile mit „Details“. Eine
+Entscheidung lässt sich für jeden Konflikt einzeln treffen oder für alle
+Änderungen auf beiden Seiten auf einmal; Löschungen nehmen die Sammel-Knöpfe aus
+und brauchen eine eigene Entscheidung. Dann **Entscheidungen übernehmen** bzw.
+**Ausführen**. Die Richtung kann auf eine Seite eingeschränkt werden (Einstellungen
+→ Projekte → Einrichtung). Vor einem Sync in die Datenbank sichert der
 Dienst die Datenbank (`configs/backups/todo-<Zeit>-sync.db`, ebenso vor einer
 Schema-Migration; die letzten 10 bleiben).
 
@@ -167,14 +173,17 @@ Anzeige; der Ort steht in `configs/config.json`) und der Speicherort, mit dem
 Im Abschnitt „Projekte“ steht pro Projekt eine Karte. Oben der Name mit dem Stand
 des Spiegels (grün: in Sync, gelb: braucht dich, grau: nicht gespiegelt), darunter
 Primärquelle und Spiegel nebeneinander (Datenbank oder Markdown-Ordner mit Pfad)
-und der letzte Sync. Die Karte stellt genau eine Aktion nach vorn: „Sync starten…“
-(mit wählbarer Einschränkung der Richtung, Standard: beide Richtungen),
-„Konflikte klären…“ in einem gelben Hinweis, solange Konflikte offen sind, oder
+und der letzte Sync. Die Karte stellt genau eine Aktion nach vorn: „Sync starten…“,
+„Konflikte klären…“ in einem gelben Hinweis, solange Konflikte offen sind (öffnet
+den Sync-Dialog mit den Konflikten an erster Stelle), oder
 „Datenbank-Spiegel einschalten“ bzw. „Markdown-Spiegel einschalten“ bei einem
 Projekt ohne Spiegel (fehlt der Markdown-Ordner, „Spiegel-Ordner festlegen…“). Die
 selteneren Einstellungen stehen unter „Einrichtung“ (eingeklappt): Markdown-Ordner,
 Spiegel ein/aus (ein Markdown-Ordner bleibt beim Ausschalten gespeichert und lässt
-sich ohne neue Wahl wieder einschalten), Auto-Sync und der Wechsel der Primärquelle
+sich ohne neue Wahl wieder einschalten), Auto-Sync, die Sync-Richtung (beide
+Richtungen, nur Datenbank → Ordner oder nur Ordner → Datenbank; gilt für Syncs aus
+der Oberfläche und wird wie die Filter im UI-Zustand gespeichert, der Auto-Sync läuft
+immer in beide Richtungen) und der Wechsel der Primärquelle
 („Zu Markdown wechseln…“ bzw. „Zur Datenbank wechseln…“: erst Sync, vorher ein
 Backup der bisherigen Primärquelle unter `configs/backups/`). Ein ⚠ hinter dem
 Projektnamen in der Sidebar heißt: der Spiegel wurde seit dem letzten Sync

@@ -1,5 +1,5 @@
 import type { Schemas } from "../api/client";
-import { buildResolutions, canRun, summarizePreview, visibleKinds, changeCount, changedFields, choiceOf, conflictCount, conflictKey, directionOf, isInSync, needsAttention, type SyncState, switchDirection } from "./sync";
+import { buildResolutions, canRun, summarizePreview, visibleKinds, changeCount, changedFields, choiceOf, conflictCount, conflictKey, conflictSummary, decidedCount, decideMany, directionOf, isBulkDecidable, isInSync, needsAttention, type SyncState, switchDirection } from "./sync";
 
 type Section = Schemas["SyncSectionOut"];
 type Conflict = Schemas["SyncConflictOut"];
@@ -107,6 +107,83 @@ describe("deciding conflicts", () => {
 
     expect(changedFields(c).map((f) => f.name)).toEqual(["title"]);
     expect(changedFields({ ...c, database: null }).map((f) => f.name)).toEqual(["id", "title", "goal"]);
+  });
+});
+
+describe("reading a conflict at a glance", () => {
+  const side = (fields: [string, string][]) => ({ fields: fields.map(([name, value]) => ({ name, value })), text: null });
+  const item = (db: [string, string][] | null, md: [string, string][] | null, reason: Conflict["reason"] = "both_changed"): Conflict => ({
+    kind: "item", label: "A", title: "T A", name: null, reason, database: db && side(db), markdown: md && side(md),
+  });
+
+  it("names the fields that differ, each with the value of both sides", () => {
+    const c = item([["id", "A"], ["status", "Open"], ["priority", "High"]], [["id", "A"], ["status", "Completed"], ["priority", "High"]]);
+
+    expect(conflictSummary(c)).toEqual({ kind: "fields", fields: [{ name: "status", database: "Open", markdown: "Completed" }], more: 0 });
+  });
+
+  it("shows the first three differing fields and counts the rest", () => {
+    const names = ["a", "b", "c", "d", "e"];
+    const c = item(names.map((n) => [n, "db"]), names.map((n) => [n, "file"]));
+
+    const summary = conflictSummary(c);
+
+    expect(summary).toMatchObject({ kind: "fields", more: 2 });
+    expect(summary.kind === "fields" && summary.fields.map((f) => f.name)).toEqual(["a", "b", "c"]);
+    expect(conflictSummary(c, 5)).toMatchObject({ kind: "fields", more: 0 });
+  });
+
+  it("says which side is missing for a deletion, instead of listing every field", () => {
+    expect(conflictSummary(item(null, [["id", "A"]], "database_deleted"))).toEqual({ kind: "missing", side: "database" });
+    expect(conflictSummary(item([["id", "A"]], null, "markdown_deleted"))).toEqual({ kind: "missing", side: "markdown" });
+  });
+
+  it("calls a conflict of two texts a text difference, and so an item whose listed fields do not differ", () => {
+    const doc: Conflict = { ...item(null, null), kind: "document", name: "a.md", database: { fields: null, text: "x" }, markdown: { fields: null, text: "y" } };
+
+    expect(conflictSummary(doc)).toEqual({ kind: "text" });
+    expect(conflictSummary(item([["id", "A"]], [["id", "A"]]))).toEqual({ kind: "text" });
+  });
+});
+
+describe("deciding many conflicts at once", () => {
+  const conflict = (label: string, reason: Conflict["reason"]): Conflict => ({ kind: "item", label, title: `T ${label}`, name: null, reason, database: null, markdown: null });
+  const a = conflict("A", "both_changed");
+  const b = conflict("B", "both_new");
+  const c = conflict("C", "database_deleted");
+  const d = conflict("D", "markdown_deleted");
+
+  it("covers what changed or is new on both sides, never a deletion", () => {
+    expect([a, b, c, d].map(isBulkDecidable)).toEqual([true, true, false, false]);
+  });
+
+  it("sets the decision for every covered conflict and leaves the deletions as they are", () => {
+    const before = { [conflictKey(c)]: "markdown" } as const;
+
+    const after = decideMany([a, b, c, d], before, "database");
+
+    expect(after).toEqual({ [conflictKey(c)]: "markdown", [conflictKey(a)]: "database", [conflictKey(b)]: "database" });
+  });
+
+  it("deferring all drops the decisions instead of storing 'defer', and keeps a decided deletion", () => {
+    const decided = decideMany([a, b, c, d], { [conflictKey(d)]: "database" }, "markdown");
+
+    expect(decideMany([a, b, c, d], decided, "defer")).toEqual({ [conflictKey(d)]: "database" });
+  });
+
+  it("leaves a single decision made afterwards in place, and a bulk decision overrides earlier single ones", () => {
+    const all = decideMany([a, b], {}, "database");
+    const own = { ...all, [conflictKey(b)]: "markdown" } as const;
+
+    expect([choiceOf(own, a), choiceOf(own, b)]).toEqual(["database", "markdown"]);
+    expect([choiceOf(decideMany([a, b], own, "database"), b)]).toEqual(["database"]);
+  });
+
+  it("counts the decided conflicts of this list, and a deferred or foreign decision does not count", () => {
+    const choices = { [conflictKey(a)]: "database", [conflictKey(b)]: "defer", [conflictKey(c)]: "markdown", "item/Z/": "database" } as const;
+
+    expect(decidedCount([a, b, c, d], choices)).toBe(2);
+    expect(decidedCount([a, b, c, d], {})).toBe(0);
   });
 });
 

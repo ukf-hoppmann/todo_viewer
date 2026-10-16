@@ -202,7 +202,8 @@ describe("ProjectsSection: the automatic sync", () => {
     expect(within(group).queryByRole("button", { name: "Sync starten…" })).not.toBeInTheDocument();  // one way in, not two
 
     await userEvent.click(within(group).getByRole("button", { name: "Konflikte klären…" }));
-    expect(screen.getByRole("dialog", { name: "Sync: Central" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Konflikte klären: Central" })).toBeInTheDocument();
+    expect(await screen.findByText("Beide Seiten sind gleich.")).toBeInTheDocument();  // the comparison loads by itself
   });
 
   it("names a project's conflicts although its state says in sync, and shows nothing of them otherwise", async () => {
@@ -254,17 +255,16 @@ describe("ProjectsSection: switching the primary source and syncing", () => {
     expect(within(group).queryByRole("button", { name: "Sync starten…" })).not.toBeInTheDocument();
   });
 
-  it("syncs in both directions unless the run is restricted to one", async () => {
+  it("syncs in both directions unless the project's setting restricts the run, and asks for no preview", async () => {
     const section = { created: [], changed: [], unchanged: 0 };
     const calls = stub([mirrored], [status(mirrored, "mirror_changed")], () => jsonResponse({ executed: false, token: "t", items: section, documents: section, topics: section, notes: section, note_documents: section, conflicts: [], skipped: [], resolved: [], deleted: [], deferred: [], kept: [] }));
     renderWithProviders(<ProjectsSection />);
 
     await userEvent.click(within(await screen.findByRole("group", { name: "Mirrored" })).getByRole("button", { name: "Sync starten…" }));
-    expect(screen.getByRole("radio", { name: /In beide Richtungen/ })).toBeChecked();
-    await userEvent.click(screen.getByRole("button", { name: "Vorschau" }));
 
     await waitFor(() => expect(calls.some((c) => c.path === "/api/v2/sources/s4/sync")).toBe(true));
     expect(calls.find((c) => c.path === "/api/v2/sources/s4/sync")!.body.direction).toBeNull();
+    expect(screen.queryByRole("button", { name: "Vorschau" })).not.toBeInTheDocument();
   });
 
   it("closes only the dialog on top when Escape is pressed", async () => {
@@ -384,6 +384,62 @@ describe("ProjectsSection: folders and mirrors", () => {
 
     expect(await screen.findByText("Dieser Ordner ist bereits eingetragen.")).toBeInTheDocument();
     expect(within(card("Files")).getByRole("checkbox", { name: "Datenbank-Spiegel führen" })).not.toBeChecked();
+  });
+});
+
+describe("ProjectsSection: the sync direction", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const emptySection = { created: [], changed: [], unchanged: 0 };
+  const preview = () => jsonResponse({ executed: false, token: "t", items: emptySection, documents: emptySection, topics: emptySection, notes: emptySection, note_documents: emptySection, conflicts: [], skipped: [], resolved: [], deleted: [], deferred: [], kept: [] });
+  const direction = (group: HTMLElement) => within(within(group).getByRole("radiogroup", { name: "Sync-Richtung" }));
+
+  it("is chosen in the setup of a project with a mirror, both ways preselected", async () => {
+    stub([central], [status(central, "in_sync")]);
+    renderWithProviders(<ProjectsSection />);
+
+    const radios = direction(await setup("Central"));
+
+    expect(radios.getByRole("radio", { name: /In beide Richtungen.*\(Standard\)/ })).toBeChecked();
+    expect(radios.getByRole("radio", { name: "Nur Datenbank → Ordner" })).not.toBeChecked();
+    expect(radios.getByRole("radio", { name: "Nur Ordner → Datenbank" })).not.toBeChecked();
+    expect(screen.getByText(/Der Auto-Sync gleicht immer in beide Richtungen ab/)).toBeInTheDocument();
+  });
+
+  it("is kept per project, and the next sync of that project runs that way", async () => {
+    const calls = stub([central, mirrored], [status(central, "in_sync"), status(mirrored, "in_sync")], preview);
+    renderWithProviders(<ProjectsSection />);
+
+    const own = await setup("Mirrored");
+    await userEvent.click(direction(own).getByRole("radio", { name: "Nur Ordner → Datenbank" }));
+    const other = await setup("Central");
+    expect(direction(other).getByRole("radio", { name: /In beide Richtungen/ })).toBeChecked();  // not touched
+    await userEvent.click(within(own).getByRole("button", { name: "Sync starten…" }));
+
+    await waitFor(() => expect(calls.some((c) => c.path === "/api/v2/sources/s4/sync")).toBe(true));
+    expect(calls.find((c) => c.path === "/api/v2/sources/s4/sync")!.body.direction).toBe("from_md");
+    expect(screen.getByText("Richtung eingeschränkt (Einstellung des Projekts): Nur Ordner → Datenbank")).toBeInTheDocument();
+  });
+
+  it("is back to both ways when chosen again", async () => {
+    const calls = stub([central], [status(central, "in_sync")], preview);
+    renderWithProviders(<ProjectsSection />);
+
+    const group = await setup("Central");
+    await userEvent.click(direction(group).getByRole("radio", { name: "Nur Datenbank → Ordner" }));
+    await userEvent.click(direction(group).getByRole("radio", { name: /In beide Richtungen/ }));
+    await userEvent.click(within(group).getByRole("button", { name: "Sync starten…" }));
+
+    await waitFor(() => expect(calls.some((c) => c.path === "/api/v2/sources/s1/sync")).toBe(true));
+    expect(calls.find((c) => c.path === "/api/v2/sources/s1/sync")!.body.direction).toBeNull();
+  });
+
+  it("has nothing to choose for a project without a mirror", async () => {
+    stub([bare], [status(bare, "none")]);
+    renderWithProviders(<ProjectsSection />);
+
+    const group = await setup("Bare");
+
+    expect(within(group).queryByRole("radiogroup", { name: "Sync-Richtung" })).not.toBeInTheDocument();
   });
 });
 

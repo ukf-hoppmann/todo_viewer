@@ -1,4 +1,4 @@
-import { INITIAL_UI_STATE, mergeStored, snapshot, uiReducer } from "./uiState";
+import { INITIAL_UI_STATE, mergeStored, scopeOf, snapshot, uiReducer } from "./uiState";
 
 describe("uiState", () => {
   it("reads the old frontend's stored format and ignores garbage", () => {
@@ -26,6 +26,7 @@ describe("uiState", () => {
       defaultBackend: "markdown",
       selectedNote: null,
       notesHighlight: true,
+      syncScopes: {},
     });
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "nope", lang: "fr" })).toEqual(INITIAL_UI_STATE);
     expect(mergeStored(INITIAL_UI_STATE, { currentView: "trash" }).currentView).toBe("trash");
@@ -78,6 +79,26 @@ describe("uiState", () => {
     const chosen = uiReducer(INITIAL_UI_STATE, { type: "defaultBackend", backend: "database" });
     expect(chosen.defaultBackend).toBe("database");
     expect(snapshot(chosen).defaultBackend).toBe("database");
+  });
+
+  it("remembers the sync direction per project, both ways being the default", () => {
+    expect(INITIAL_UI_STATE.syncScopes).toEqual({});
+    expect(scopeOf(INITIAL_UI_STATE, "s1")).toBe("both");
+
+    const one = uiReducer(INITIAL_UI_STATE, { type: "syncScope", sourceId: "s1", scope: "to_md" });
+    expect(scopeOf(one, "s1")).toBe("to_md");
+    expect(scopeOf(one, "s2")).toBe("both");  // other projects are not touched
+    expect(snapshot(one).syncScopes).toEqual({ s1: "to_md" });
+    expect(scopeOf(mergeStored(INITIAL_UI_STATE, snapshot(one)), "s1")).toBe("to_md");
+
+    // Going back to the default drops the entry instead of storing it.
+    expect(uiReducer(one, { type: "syncScope", sourceId: "s1", scope: "both" }).syncScopes).toEqual({});
+  });
+
+  it("ignores a stored sync direction that is not one of the three", () => {
+    expect(mergeStored(INITIAL_UI_STATE, { syncScopes: { a: "sideways", b: "from_md", c: 3 } }).syncScopes).toEqual({ b: "from_md" });
+    expect(mergeStored(INITIAL_UI_STATE, { syncScopes: "x" }).syncScopes).toEqual({});
+    expect(mergeStored({ ...INITIAL_UI_STATE, syncScopes: { a: "to_md" } }, { syncScopes: null }).syncScopes).toEqual({ a: "to_md" });
   });
 
   it("remembers the Notes area and jumps to a note", () => {

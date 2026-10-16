@@ -262,6 +262,7 @@ input.field-edit {
 .project-card dd .project-folder { flex: 1 1 0; min-width: 0; }
 .project-card dd .hint { flex-basis: 100%; font-size: 12px; color: var(--text-dim); }
 .project-card dd label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.project-card dd.project-direction { flex-direction: column; align-items: flex-start; gap: 4px; }
 .project-card .btn.link { background: transparent; border: none; padding: 0; font-size: 12px; color: var(--accent); cursor: pointer; }
 .project-card .btn.link:hover { text-decoration: underline; }
 .project-card .btn.link:disabled { color: var(--text-dim); text-decoration: none; cursor: default; }
@@ -272,20 +273,37 @@ input.field-edit {
 .modal .backend-fixed { font-size: 12px; color: var(--text-dim); }
 .modal .source-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .db-badge { font-size: 9.5px; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
-.sync-dialog { width: min(640px, 92vw); }
+.sync-dialog { width: min(760px, 94vw); }
 .sync-dialog p { margin: 0; font-size: 13px; }
-.sync-preview { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; }
+.sync-preview { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; }
+.sync-changes { display: flex; flex-direction: column; gap: 8px; }
+.sync-changes-line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
+.sync-changes .btn.link { background: transparent; border: none; padding: 0; font-size: 12px; color: var(--accent); cursor: pointer; }
+.sync-changes .btn.link:hover { text-decoration: underline; }
 .sync-preview h4 { margin: 0 0 2px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
 .sync-list { list-style: none; margin: 4px 0 0; padding: 0; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
 .sync-list li { padding: 1px 0; overflow-wrap: anywhere; }
 .sync-equal { color: var(--status-done); }
-.sync-conflicts { border: 1px solid var(--status-progress); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.sync-conflicts { border: 1px solid var(--status-progress); border-radius: 6px; padding: 0 10px; display: flex; flex-direction: column; }
+.sync-conflicts-head { position: sticky; top: 0; z-index: 1; background: var(--panel); display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--panel-border); }
 .sync-conflicts h4 { color: var(--status-progress); margin: 0; }
-.sync-conflicts ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.sync-conflict { display: flex; flex-direction: column; gap: 4px; }
-.sync-conflict .backend-choice { display: flex; gap: 12px; flex-wrap: wrap; }
+.sync-conflicts-count { margin-left: 6px; color: var(--text-dim); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.sync-conflicts .hint { margin: 0; font-size: 12px; color: var(--text-dim); }
+.sync-bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
+.sync-conflicts ul { list-style: none; margin: 0; padding: 0; }
+.sync-conflict { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: start; padding: 8px 0; border-bottom: 1px solid var(--panel-border); }
+.sync-conflict:last-child { border-bottom: none; }
+.sync-conflict-main { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+.sync-conflicts .sync-conflict .sync-choice { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.sync-conflict > .sync-diff { grid-column: 1 / -1; }
+.sync-summary { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--text-dim); }
+.sync-field b { font-weight: 600; color: var(--text); }
+.sync-field .diff-removed, .sync-field .diff-added { display: inline-block; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; padding: 0 4px; border-radius: 3px; }
+.sync-conflict .btn.link { background: transparent; border: none; padding: 0; font-size: 12px; color: var(--accent); cursor: pointer; }
+.sync-conflict .btn.link:hover { text-decoration: underline; }
 .sync-diff { width: 100%; border-collapse: collapse; font-size: 12px; }
 .sync-diff th, .sync-diff td { border: 1px solid var(--panel-border); padding: 2px 6px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.sync-diff th[scope="row"] { overflow-wrap: normal; white-space: nowrap; }
 .diff-lines { margin: 0; white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
 .diff-removed { background: color-mix(in srgb, var(--status-rejected) 18%, transparent); }
 .diff-added { background: color-mix(in srgb, var(--status-done) 18%, transparent); }

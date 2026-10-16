@@ -30,6 +30,18 @@ class InvalidInput(DomainError):
     code = "invalid_input"
 
 
+class MigrationFailed(DomainError):
+    code = "migration_failed"
+
+
+class SchemaViolation(MigrationFailed):
+    code = "schema_violation"
+
+
+class DatabaseTooNew(DomainError):
+    code = "database_too_new"
+
+
 class PluginSetupError(Exception):
     """Die feste Plugin-Liste ist fehlerhaft; der Start wird verhindert."""
 

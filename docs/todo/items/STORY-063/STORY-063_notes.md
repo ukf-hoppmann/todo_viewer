@@ -12,10 +12,10 @@
 ### Discussed
 
 - Der Core bekommt wie ein Plugin eine `PluginDefinition` (Besitzer `core`) mit eigenen Migrationen und den beiden Operationen für den UI-Zustand; so entstehen deren Routen aus denselben Operationen wie alle anderen.
-- Sync-Operationen (`sync`) sichern die Datenbank später über denselben Port `BackupMaker` (`STORY-065`); hier entsteht nur der Grund `migration`.
+- Der Sync sichert die Datenbank später über denselben Port `BackupMaker` (`STORY-065`); hier entsteht nur der Grund `migration`.
 - SQLite führt DDL in pysqlite ohne `BEGIN` aus; damit jede Migration atomar ist, schaltet die Engine nach dem SQLAlchemy-Rezept auf eigenes `BEGIN` um.
 - Auslegung „vor jeder Migration ein Backup“: ein Backup je Start, bevor die erste ausstehende Migration läuft (deckt alle ab). Eine leere Datenbank ohne Tabellen wird nicht gesichert, sonst würden die letzten 10 Sicherungen beim Erstanlauf mit leeren Dateien verdrängt. Siehe Frage 14 in `STORY-060`.
-- Sync-Handler (sync) von Operationen laufen jetzt in einem Thread (`asyncio.to_thread`), damit blockierender Datenbankzugriff die Ereignisschleife (SSE, Scheduler) nicht anhält.
+- Synchrone Handler von Operationen laufen jetzt in einem Thread (`asyncio.to_thread`), damit blockierender Datenbankzugriff die Ereignisschleife (SSE, Scheduler) nicht anhält.
 
 ### Decided
 
@@ -30,3 +30,22 @@
 ### Open
 
 - Keine.
+
+## 2026-10-16 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant. Der Core ist Besitzer `core` mit eigener `PluginDefinition` (Migrationen und UI-Zustand-Operationen); der `PluginHost` nimmt sie als `core=` und baut sie zuerst. `create_app` prüft die Plugin-Liste vor jedem Zugriff auf Datei oder Datenbank und führt die Migrationen vor dem Bauen der Plugin-Dienste aus.
+- `PluginContext` trägt jetzt `database` und `backups`; Adapter der Plugins holen die Verbindung über `SqlTransaction.connection`.
+- Neue Einstellungen `db_path`, `backup_dir` (Umgebung `VIEWER_DB`, `VIEWER_BACKUP_DIR`); `configs/viewer.db*` steht in `.gitignore`. Die Tests schreiben nur in temporäre Ordner.
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) Migrationen von Core und Plugins laufen in Abhängigkeitsreihenfolge, Stand in `core_migrations` (`test_migrations.py`); (2) Backup vor den ausstehenden Migrationen unter dem Backup-Ordner, die letzten 10 je Grund bleiben (`test_backups.py`); (3) leere Datenbank → aktueller Stand, zweiter Lauf ändert nichts; (4) Fremdschlüssel sind an, ein Fremdschlüssel auf ein Plugin außerhalb von `requires` scheitert (auch per `ALTER TABLE`) und wird zurückgerollt; (5) der UI-Zustand liegt in `core_ui_state` und übersteht einen Neustart (`test_ui_state.py`).
+- Dazu: fehlgeschlagene Migration atomar zurückgerollt, Datenbank neuer als Code abgelehnt, Revision-Konflikt ohne Änderung.
+- `scripts/check-next.sh` grün (91 Tests); `scripts/check.sh` des alten Viewers grün.
+- Status: `Awaiting confirmation`.
+
+### Open
+
+- Fragen 14 und 15 in `STORY-060` (Annahmen gelten).

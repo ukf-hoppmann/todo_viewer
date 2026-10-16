@@ -13,6 +13,7 @@ import pytest
 from viewer.app.composition import PLUGINS, create_app
 from viewer.core.application.plugin import PluginDefinition
 from viewer.core.domain.errors import PluginSetupError
+from viewer.core.domain.settings import Settings
 
 SERVER_DIR = Path(__file__).resolve().parents[5] / "server"
 
@@ -29,8 +30,8 @@ def test_faulty_plugin_list_prevents_start_with_clear_message() -> None:
     assert "Plugin 'b' verlangt unbekanntes Plugin 'fehlt'" in message
 
 
-def test_production_plugin_list_is_valid_and_the_core_stays_empty() -> None:
-    create_app(plugins=PLUGINS)
+def test_production_plugin_list_is_valid(settings: Settings) -> None:
+    create_app(settings, plugins=PLUGINS)
 
 
 def test_server_process_starts_and_answers_health(tmp_path: Path) -> None:
@@ -42,6 +43,8 @@ def test_server_process_starts_and_answers_health(tmp_path: Path) -> None:
         "PYTHONPATH": str(SERVER_DIR / "src"),
         "VIEWER_PORT": str(port),
         "VIEWER_LOG_DIR": str(tmp_path / "logs"),
+        "VIEWER_DB": str(tmp_path / "viewer.db"),
+        "VIEWER_BACKUP_DIR": str(tmp_path / "backups"),
         "VIEWER_CONFIG": str(tmp_path / "none.json"),
     }
     proc = subprocess.Popen(

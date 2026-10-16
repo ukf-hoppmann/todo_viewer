@@ -56,6 +56,30 @@ Beim Verbinden kommen `retry: 3000` und `: connected`, danach alle `sse_keepaliv
 Es gibt keine Zustellgarantie; der Client lädt nach einem Neuverbinden neu. Beim Herunterfahren schließt der Server alle
 Verbindungen.
 
+## Datenbank
+
+SQLite über SQLAlchemy Core, Datei `configs/viewer.db`. Fremdschlüssel sind an; jede Transaktion beginnt mit einem
+eigenen `BEGIN`, damit auch DDL zurückgerollt wird. Adapter holen die Verbindung mit
+`with database.transaction() as tx: tx.connection`; Operationen mit blockierendem Handler laufen in einem Thread.
+
+- **Migrationen** je Besitzer (`core` und jedes Plugin): `Migration(version, apply(connection))`, Versionen lückenlos ab 1.
+  Beim Start (`create_app`) laufen die ausstehenden Migrationen in Abhängigkeitsreihenfolge (Core zuerst, dann nach
+  `requires`), jede in einer eigenen Transaktion; der Stand steht in `core_migrations(owner, version)`. Ist die
+  Datenbank neuer als der Code, bricht der Start mit `database_too_new` ab, eine fehlgeschlagene Migration mit
+  `migration_failed` (nichts davon bleibt übrig).
+- **Schemaprüfung** nach jeder Migration: Tabellen des Besitzers tragen das Präfix `<id>_` (Bindestriche als `_`),
+  Fremdschlüssel zeigen nur auf eigene Tabellen, `core_*` und Tabellen der Plugins aus `requires`; sonst
+  `schema_violation`. Präfixe zweier Plugins dürfen einander nicht überlappen (`a` und `a-b` gehen nicht zusammen).
+- **Backups** (`BackupMaker`): vor der ersten ausstehenden Migration eines Starts nach
+  `configs/backups/viewer-<UTC-Zeit>-<grund>.db`, nicht bei einer Datenbank ohne Tabellen; je Grund bleiben die
+  letzten 10. Der Sync nutzt später den Grund `sync`.
+- **Optimistische Sperre**: `update_with_revision(connection, table, where, expected_revision, values)` ändert die Zeile
+  nur bei unveränderter `revision` und erhöht sie; sonst `version_conflict` oder `not_found`.
+- **Core-Tabellen**: `core_migrations`, `core_ui_state(owner, document, updated_at)`,
+  `core_sync_state(project_uid, uid, hash, synced_at)`.
+- **UI-Zustand**: `GET/PUT /api/core/ui-state/{owner}` (Besitzer `[a-z][a-z0-9-]{0,63}`, Dokument ein JSON-Objekt bis
+  256 KiB). `PUT` ersetzt das Dokument ohne Versions-Token; es gibt keine MCP-Tools dafür.
+
 ## MCP
 
 `/mcp` ist ein MCP-Server (Streamable HTTP, `mcp` 2.x) im selben Prozess. Jede Operation mit `mcp=True` ist ein Tool
@@ -74,6 +98,8 @@ ungültige Argumente haben `validation_error`, ein unbekanntes Tool `not_found`.
 | `host` | `VIEWER_HOST` | String | `127.0.0.1` | Bind-Adresse (nur lokal laut Architektur) |
 | `port` | `VIEWER_PORT` | Integer | `5412` | HTTP-Port des Neubaus |
 | `log_dir` | `VIEWER_LOG_DIR` | Pfad | `logs` | Ordner mit `viewer.log` (JSON-Zeilen) |
+| `db_path` | `VIEWER_DB` | Pfad | `configs/viewer.db` | SQLite-Datei des Neubaus |
+| `backup_dir` | `VIEWER_BACKUP_DIR` | Pfad | `configs/backups` | Ordner der Datenbank-Sicherungen |
 | `sse_keepalive_seconds` | – | Zahl | `15` | Abstand der Keep-alive-Zeilen |
 | `plugins.<id>` | – | Objekt | `{}` | Einstellungen eines Plugins (`context.settings`) |
 | – | `VIEWER_CONFIG` | Pfad | `configs/viewer.json` | andere Konfigurationsdatei |

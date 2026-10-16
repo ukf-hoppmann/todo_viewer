@@ -12,6 +12,8 @@ class Settings:
     host: str = "127.0.0.1"
     port: int = 5412
     log_dir: str = "logs"
+    db_path: str = "configs/viewer.db"
+    backup_dir: str = "configs/backups"
     sse_keepalive_seconds: float = 15.0
     plugins: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
 

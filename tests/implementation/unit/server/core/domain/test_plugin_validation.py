@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from viewer.core.domain.operations import HttpBinding, Operation
-from viewer.core.domain.plugin import load_order, validate_plugins
+from viewer.core.domain.plugin import Migration, load_order, schema_problems, validate_plugins
 
 
 @dataclass
@@ -14,6 +14,7 @@ class FakePlugin:
     id: str
     requires: tuple[str, ...] = ()
     operations: tuple[Operation, ...] = ()
+    migrations: tuple[Migration, ...] = ()
 
 
 def op(name: str, http: HttpBinding | None = None, mcp: bool = True) -> Operation:
@@ -90,3 +91,32 @@ def test_operation_name_must_be_snake_case() -> None:
 def test_load_order_puts_required_plugins_first() -> None:
     plugins = [FakePlugin("c", ("b",)), FakePlugin("b", ("a",)), FakePlugin("a")]
     assert load_order(plugins) == ["a", "b", "c"]
+
+
+def test_migration_versions_must_start_at_one_and_have_no_gaps() -> None:
+    def mig(*versions: int) -> tuple[Migration, ...]:
+        return tuple(Migration(v, lambda c: None) for v in versions)
+
+    assert validate_plugins([FakePlugin("a", migrations=mig(1, 2, 3))]) == []
+    for bad in [(2,), (1, 3), (1, 1), (2, 1)]:
+        problems = validate_plugins([FakePlugin("a", migrations=mig(*bad))])
+        assert len(problems) == 1 and problems[0].startswith("Migrationen von 'a' müssen lückenlos")
+
+
+def test_overlapping_table_prefixes_are_reported() -> None:
+    problems = validate_plugins([FakePlugin("a"), FakePlugin("a-b")])
+    assert problems == ["Tabellen-Präfix 'a_' von 'a' überlappt 'a_b_' von 'a-b'"]
+
+
+def test_schema_problems_checks_prefix_and_foreign_keys() -> None:
+    ok = schema_problems(
+        "backlog",
+        {"backlog_items"},
+        {"backlog_items": {"workspace_elements", "core_x", "backlog_areas"}},
+        {"backlog", "core", "workspace"},
+    )
+    assert ok == []
+    problems = schema_problems("notes", {"notes_x", "other_y"}, {"notes_x": {"backlog_items"}}, {"notes", "core"})
+    assert problems[0] == "Tabelle 'other_y' von 'notes' trägt nicht das Präfix 'notes_'"
+    assert problems[1].startswith("Fremdschlüssel von 'notes_x' auf 'backlog_items'")
+    assert len(problems) == 2

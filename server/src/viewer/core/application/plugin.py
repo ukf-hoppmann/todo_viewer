@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from viewer.core.application.ports import Clock, EventBus, Scheduler
+from viewer.core.application.ports import BackupMaker, Clock, Database, EventBus, Scheduler
 from viewer.core.domain.errors import NotFound, PluginSetupError
 from viewer.core.domain.operations import Operation
 from viewer.core.domain.plugin import Migration, Subscription, load_order, validate_plugins
@@ -22,6 +23,8 @@ class PluginContext:
     clock: Clock
     events: EventBus
     scheduler: Scheduler
+    database: Database
+    backups: BackupMaker
     settings: Mapping[str, Any]
     required: Mapping[str, Any]  # Dienste der Plugins aus `requires`, nach ID
 
@@ -56,20 +59,26 @@ class PluginHost:
         clock: Clock,
         events: EventBus,
         scheduler: Scheduler,
+        database: Database,
+        backups: BackupMaker,
         settings: Settings,
+        core: PluginDefinition | None = None,
     ) -> None:
-        problems = validate_plugins(definitions)
+        all_definitions = [*([core] if core else []), *definitions]
+        problems = validate_plugins(all_definitions, reserved_owners=() if core else ("core",))
         if problems:
             raise PluginSetupError(problems)
-        by_id = {d.id: d for d in definitions}
+        by_id = {d.id: d for d in all_definitions}
         self._loaded: dict[str, LoadedPlugin] = {}
-        for pid in load_order(definitions):
+        for pid in load_order(all_definitions):
             definition = by_id[pid]
             context = PluginContext(
                 plugin_id=pid,
                 clock=clock,
                 events=events,
                 scheduler=scheduler,
+                database=database,
+                backups=backups,
                 settings=settings.for_plugin(pid),
                 required={r: self._loaded[r].services for r in definition.requires},
             )
@@ -95,7 +104,12 @@ class PluginHost:
     async def call(self, owner: str, name: str, payload: Any) -> Any:
         """Führt eine Operation aus (sync oder async); gemeinsamer Weg für HTTP und MCP."""
         op = self.operation(owner, name)
-        result = op.handler(self._loaded[owner].services, payload)
+        handler = op.handler
+        services = self._loaded[owner].services
+        if inspect.iscoroutinefunction(handler):
+            result = await handler(services, payload)
+        else:  # blockierende Handler (Datenbank) dürfen die Ereignisschleife nicht anhalten
+            result = await asyncio.to_thread(handler, services, payload)
         if inspect.isawaitable(result):
             result = await result
         return result

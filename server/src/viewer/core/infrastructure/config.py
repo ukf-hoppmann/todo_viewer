@@ -31,6 +31,8 @@ def load_settings(path: Path | None = None, env: Mapping[str, str] | None = None
             host=str(env.get("VIEWER_HOST", data.get("host", defaults.host))),
             port=int(env.get("VIEWER_PORT", data.get("port", defaults.port))),
             log_dir=str(env.get("VIEWER_LOG_DIR", data.get("log_dir", defaults.log_dir))),
+            db_path=str(env.get("VIEWER_DB", data.get("db_path", defaults.db_path))),
+            backup_dir=str(env.get("VIEWER_BACKUP_DIR", data.get("backup_dir", defaults.backup_dir))),
             sse_keepalive_seconds=float(data.get("sse_keepalive_seconds", defaults.sse_keepalive_seconds)),
             plugins=plugins,
         )

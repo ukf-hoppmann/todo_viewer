@@ -13,8 +13,14 @@ from viewer.core.api.mcp import create_mcp_host
 from viewer.core.api.sse import SseHub
 from viewer.core.application.plugin import PluginDefinition, PluginHost
 from viewer.core.application.ports import Clock
+from viewer.core.application.ui_state import build_core_definition
+from viewer.core.domain.errors import PluginSetupError
+from viewer.core.domain.plugin import load_order, validate_plugins
 from viewer.core.domain.settings import Settings
 from viewer.core.infrastructure.clock import SystemClock
+from viewer.core.infrastructure.database import MigrationRunner, SqliteBackupMaker, SqliteDatabase
+from viewer.core.infrastructure.database.core_schema import CORE_MIGRATIONS
+from viewer.core.infrastructure.database.ui_state import SqlUiStateStore
 from viewer.core.infrastructure.event_bus import InProcessEventBus
 from viewer.core.infrastructure.scheduler import AsyncioScheduler
 
@@ -29,12 +35,29 @@ def create_app(
     clock: Clock | None = None,
 ) -> FastAPI:
     """Baut die Anwendung. Eine fehlerhafte Plugin-Liste wirft `PluginSetupError` (Start abgebrochen)."""
+    problems = validate_plugins(plugins)  # vor jedem Zugriff auf Datenbank oder Dateien
+    if problems:
+        raise PluginSetupError(problems)
     settings = settings or Settings()
     clock = clock or SystemClock()
     events = InProcessEventBus()
     scheduler = AsyncioScheduler(clock)
     hub = SseHub(events, settings.sse_keepalive_seconds)
-    host = PluginHost(plugins, clock=clock, events=events, scheduler=scheduler, settings=settings)
+    database = SqliteDatabase(settings.db_path)
+    backups = SqliteBackupMaker(database, settings.backup_dir, clock)
+    core = build_core_definition(SqlUiStateStore(database, clock), CORE_MIGRATIONS)
+    definitions = [core, *plugins]
+    MigrationRunner(database, backups).run([{d.id: d for d in definitions}[pid] for pid in load_order(definitions)])
+    host = PluginHost(
+        plugins,
+        clock=clock,
+        events=events,
+        scheduler=scheduler,
+        database=database,
+        backups=backups,
+        settings=settings,
+        core=core,
+    )
 
     mcp = create_mcp_host(host)
 
@@ -47,6 +70,7 @@ def create_app(
         finally:
             hub.close()
             scheduler.stop()
+            database.dispose()
 
     app = create_http_app(host, hub, lifespan=lifespan, mcp=mcp)
     app.state.settings = settings
@@ -54,4 +78,5 @@ def create_app(
     app.state.events = events
     app.state.scheduler = scheduler
     app.state.hub = hub
+    app.state.database = database
     return app

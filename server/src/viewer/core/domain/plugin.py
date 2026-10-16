@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -17,10 +17,10 @@ _PATH_PARAM = re.compile(r"\{[^}]*\}")
 
 @dataclass(frozen=True)
 class Migration:
-    """Eine vorwärts gerichtete Migration der eigenen Tabellen (Inhalt: `STORY-063`)."""
+    """Eine vorwärts gerichtete Migration der eigenen Tabellen; `apply` bekommt die SQLAlchemy-Verbindung."""
 
     version: int
-    statements: tuple[str, ...]
+    apply: Callable[[Any], None]
 
 
 @dataclass(frozen=True)
@@ -40,6 +40,8 @@ class PluginShape(Protocol):
     def requires(self) -> Sequence[str]: ...
     @property
     def operations(self) -> Sequence[Operation]: ...
+    @property
+    def migrations(self) -> Sequence[Migration]: ...
 
 
 def table_prefix(plugin_id: str) -> str:
@@ -69,6 +71,15 @@ def validate_plugins(plugins: Sequence[PluginShape], reserved_owners: Sequence[s
         if prefix in prefixes and prefixes[prefix] != plugin.id:
             problems.append(f"Plugins '{prefixes[prefix]}' und '{plugin.id}' teilen das Tabellen-Präfix '{prefix}'")
         prefixes.setdefault(prefix, plugin.id)
+    for prefix, owner in prefixes.items():
+        for other_prefix, other in prefixes.items():
+            if owner != other and other_prefix.startswith(prefix):
+                problems.append(f"Tabellen-Präfix '{prefix}' von '{owner}' überlappt '{other_prefix}' von '{other}'")
+
+    for plugin in plugins:
+        versions = [m.version for m in plugin.migrations]
+        if versions != list(range(1, len(versions) + 1)):
+            problems.append(f"Migrationen von '{plugin.id}' müssen lückenlos bei 1 beginnen und aufsteigen: {versions}")
 
     for plugin in plugins:
         for req in plugin.requires:
@@ -142,3 +153,30 @@ def load_order(plugins: Sequence[PluginShape]) -> list[str]:
     for plugin in plugins:
         visit(plugin.id)
     return order
+
+
+def schema_problems(
+    owner: str,
+    owned_tables: Collection[str],
+    references: Mapping[str, Collection[str]],
+    allowed_owners: Collection[str],
+) -> list[str]:
+    """Prüft nach einer Migration: eigene Tabellen tragen das Präfix, Fremdschlüssel zeigen nur auf erlaubte Besitzer.
+
+    `references` bildet eine Tabelle auf die von ihren Fremdschlüsseln referenzierten Tabellen ab;
+    `allowed_owners` sind der Besitzer selbst, der Core und die Plugins aus `requires`.
+    """
+    problems: list[str] = []
+    own_prefix = table_prefix(owner)
+    for table in sorted(owned_tables):
+        if not table.startswith(own_prefix):
+            problems.append(f"Tabelle '{table}' von '{owner}' trägt nicht das Präfix '{own_prefix}'")
+    prefixes = [table_prefix(o) for o in allowed_owners]
+    for table in sorted(references):
+        for target in sorted(references[table]):
+            if not any(target.startswith(p) for p in prefixes):
+                problems.append(
+                    f"Fremdschlüssel von '{table}' auf '{target}': '{owner}' darf nur auf eigene Tabellen, "
+                    "die des Core und die von Plugins aus requires zeigen"
+                )
+    return problems

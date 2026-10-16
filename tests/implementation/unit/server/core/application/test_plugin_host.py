@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from fakes import FixedClock
+from fakes import FixedClock, NullBackups, NullDatabase, NullScheduler
 from viewer.core.application.plugin import PluginContext, PluginDefinition, PluginHost
 from viewer.core.domain.errors import NotFound, PluginSetupError
 from viewer.core.domain.events import Event
@@ -18,15 +18,16 @@ class Nothing:
     pass
 
 
-class NullScheduler:
-    def schedule(self, owner: str, at: Any, callback: Any) -> None:
-        pass
-
-
 def host(defs: list[PluginDefinition], settings: Settings | None = None) -> tuple[PluginHost, InProcessEventBus]:
     bus = InProcessEventBus()
     return PluginHost(
-        defs, clock=FixedClock(), events=bus, scheduler=NullScheduler(), settings=settings or Settings()
+        defs,
+        clock=FixedClock(),
+        events=bus,
+        scheduler=NullScheduler(),
+        database=NullDatabase(),
+        backups=NullBackups(),
+        settings=settings or Settings(),
     ), bus
 
 

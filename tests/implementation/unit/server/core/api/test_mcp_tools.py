@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
-from fakes import FixedClock
+from fakes import FixedClock, NullBackups, NullDatabase, NullScheduler
 from viewer.core.api.mcp import build_tools
 from viewer.core.application.plugin import PluginDefinition, PluginHost
 from viewer.core.domain.operations import Operation
@@ -22,17 +21,14 @@ class Out:
     text: str
 
 
-class NullScheduler:
-    def schedule(self, owner: str, at: Any, callback: Any) -> None:
-        pass
-
-
 def host(*operations: Operation, plugin_id: str = "my-plugin") -> PluginHost:
     return PluginHost(
         [PluginDefinition(plugin_id, lambda c: None, operations=operations)],
         clock=FixedClock(),
         events=InProcessEventBus(),
         scheduler=NullScheduler(),
+        database=NullDatabase(),
+        backups=NullBackups(),
         settings=Settings(),
     )
 

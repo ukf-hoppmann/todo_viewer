@@ -42,7 +42,8 @@
   API standardmäßig `en`); Einträge und Dokumente sind inhaltlich gleich,
   Zeilenumbrüche und die Reihenfolge der Felder sind normalisiert. Ein
   bestehender Spiegel-Ordner behält seinen Kopftext.
-- Auto-Sync (pro Projekt in Einstellungen → Projekte, Standard aus): alle
+- Auto-Sync (pro Projekt in Einstellungen → Projekte → Einrichtung, beim Spiegel
+  „Ein, Sync automatisch“; Standard: „Ein, Sync von Hand“): alle
   `AUTO_SYNC_INTERVAL` Sekunden (Standard 30) prüft der Viewer jedes Projekt mit
   Schalter und Spiegel und überträgt Konfliktfreies in beide Richtungen; Konflikte
   und Löschungen bleiben offen (Zahl in der Projektkarte und als ⚠ in der Sidebar) bis

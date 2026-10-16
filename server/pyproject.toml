@@ -64,3 +64,13 @@ name = "Regel 0: kein Import aus dem Altcode oder der Vorlage"
 type = "forbidden"
 source_modules = ["viewer"]
 forbidden_modules = ["todo_viewer", "ezf_ui"]
+
+[[tool.importlinter.contracts]]
+name = "Plugins: Zwiebel, Abhängigkeiten zeigen nach innen"
+type = "layers"
+layers = [
+    "infrastructure | api",
+    "application",
+    "domain",
+]
+containers = ["viewer.plugins.workspace"]

@@ -107,6 +107,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace/folders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Unterordner eines Ordners für den Ordner-Browser (ohne Pfad: der Startordner) */
+        get: operations["workspace_browse_folders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alle Projekte in ihrer Reihenfolge */
+        get: operations["workspace_list_projects"];
+        put?: never;
+        /** Legt ein Projekt an (optional mit Spiegel-Ordner) */
+        post: operations["workspace_create_project"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/projects/{project_uid}/labels/{label}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Findet ein Element über sein Label, auch ein früheres, und nennt sein aktuelles Label */
+        get: operations["workspace_resolve_label"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/projects/{uid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Ändert Name, Spiegel-Ordner und Sync-Einstellungen eines Projekts */
+        put: operations["workspace_update_project"];
+        post?: never;
+        /** Entfernt ein Projekt; mit Inhalt nur mit confirm, dann geht der Inhalt in den Papierkorb */
+        delete: operations["workspace_remove_project"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/projects/{uid}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rückt ein Projekt an eine Stelle der Reihenfolge (ab 0) */
+        post: operations["workspace_move_project"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -165,6 +252,19 @@ export interface components {
             /** Uid */
             uid: string;
         };
+        /** ElementRef */
+        ElementRef: {
+            /** Deleted */
+            deleted: boolean;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -178,6 +278,26 @@ export interface components {
             };
             /** Message */
             message: string;
+        };
+        /** FolderEntryOut */
+        FolderEntryOut: {
+            /** Has Mirror */
+            has_mirror: boolean;
+            /** Name */
+            name: string;
+        };
+        /** FolderListingOut */
+        FolderListingOut: {
+            /** Error */
+            error?: string | null;
+            /** Folders */
+            folders?: components["schemas"]["FolderEntryOut"][];
+            /** Has Mirror */
+            has_mirror: boolean;
+            /** Parent */
+            parent: string | null;
+            /** Path */
+            path: string;
         };
         /** Health */
         Health: {
@@ -208,6 +328,40 @@ export interface components {
             token: string;
             /** Transfers */
             transfers: components["schemas"]["TransferOut"][];
+        };
+        /** ProjectOut */
+        ProjectOut: {
+            /** Auto Sync */
+            auto_sync: boolean;
+            /** Builtin */
+            builtin: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Mirror Enabled */
+            mirror_enabled: boolean;
+            /** Mirror Folder */
+            mirror_folder: string | null;
+            /** Name */
+            name: string;
+            /** Position */
+            position: number;
+            /**
+             * Sync Direction
+             * @enum {string}
+             */
+            sync_direction: "both" | "to_files" | "to_database";
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
+        /** RemoveResult */
+        RemoveResult: {
+            /** Trashed */
+            trashed: number;
         };
         /** SyncResult */
         SyncResult: {
@@ -283,6 +437,51 @@ export interface components {
             };
             /** Owner */
             owner: string;
+        };
+        /** WorkspaceCreateProjectBody */
+        WorkspaceCreateProjectBody: {
+            /**
+             * Auto Sync
+             * @default false
+             */
+            auto_sync: boolean;
+            /**
+             * Mirror Enabled
+             * @default false
+             */
+            mirror_enabled: boolean;
+            /** Mirror Folder */
+            mirror_folder?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Sync Direction
+             * @default both
+             * @enum {string}
+             */
+            sync_direction: "both" | "to_files" | "to_database";
+        };
+        /** WorkspaceMoveProjectBody */
+        WorkspaceMoveProjectBody: {
+            /** Position */
+            position: number;
+            /** Version */
+            version: number;
+        };
+        /** WorkspaceUpdateProjectBody */
+        WorkspaceUpdateProjectBody: {
+            /** Auto Sync */
+            auto_sync?: boolean | null;
+            /** Mirror Enabled */
+            mirror_enabled?: boolean | null;
+            /** Mirror Folder */
+            mirror_folder?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Sync Direction */
+            sync_direction?: ("both" | "to_files" | "to_database") | null;
+            /** Version */
+            version: number;
         };
     };
     responses: never;
@@ -485,6 +684,235 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UiState"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_browse_folders: {
+        parameters: {
+            query?: {
+                path?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderListingOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_list_projects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_create_project: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceCreateProjectBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_resolve_label: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uid: string;
+                label: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ElementRef"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_update_project: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceUpdateProjectBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_remove_project: {
+        parameters: {
+            query: {
+                version: number;
+                confirm?: boolean;
+            };
+            header?: never;
+            path: {
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemoveResult"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    workspace_move_project: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceMoveProjectBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"][];
                 };
             };
             /** @description Client Error */

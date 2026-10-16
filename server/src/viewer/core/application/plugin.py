@@ -107,6 +107,9 @@ class PluginHost:
     def plugins(self) -> list[LoadedPlugin]:
         return list(self._loaded.values())
 
+    def has(self, plugin_id: str) -> bool:
+        return plugin_id in self._loaded
+
     def services(self, plugin_id: str) -> Any:
         return self._loaded[plugin_id].services
 

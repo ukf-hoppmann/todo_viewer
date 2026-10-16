@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Callable, Sequence
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 
@@ -16,7 +17,7 @@ from viewer.core.application.plugin import PluginDefinition, PluginHost
 from viewer.core.application.ports import Clock
 from viewer.core.application.sync import MirrorConfig, MirrorProjects, SyncService
 from viewer.core.domain.errors import PluginSetupError
-from viewer.core.domain.plugin import load_order, validate_plugins
+from viewer.core.domain.plugin import ElementKind, load_order, validate_plugins
 from viewer.core.domain.settings import Settings
 from viewer.core.infrastructure.clock import SystemClock
 from viewer.core.infrastructure.database import MigrationRunner, SqliteBackupMaker, SqliteDatabase
@@ -27,20 +28,30 @@ from viewer.core.infrastructure.event_bus import InProcessEventBus
 from viewer.core.infrastructure.files import LocalFileStore
 from viewer.core.infrastructure.ids import UuidIds
 from viewer.core.infrastructure.scheduler import AsyncioScheduler
+from viewer.plugins.workspace.plugin import plugin as workspace_plugin
 
-# Die aktiven Plugins: eine feste Liste im Code (Architektur §1). Die fachlichen Plugins
-# (workspace, backlog, notes, alarms) kommen mit ihren Stories hierher.
-PLUGINS: tuple[PluginDefinition, ...] = ()
+# Die aktiven Plugins: eine feste Liste im Code (Architektur §1). Die übrigen fachlichen Plugins
+# (backlog, notes, alarms) kommen mit ihren Stories hierher.
+PLUGINS: tuple[PluginDefinition, ...] = (workspace_plugin,)
 
 
-class NoMirrorProjects:
-    """Platzhalter, bis das Plugin `workspace` (`STORY-068`) die Projekte mit Spiegel-Ordner liefert."""
+class WorkspaceMirrorProjects:
+    """Die Projekte mit Spiegel-Ordner kommen vom Plugin `workspace`; ohne es hat kein Projekt einen Ordner."""
+
+    def __init__(self, host: Callable[[], PluginHost]) -> None:
+        self._host = host
+
+    def _workspace(self) -> Any:
+        host = self._host()
+        return host.services("workspace").projects if host.has("workspace") else None
 
     def config(self, project: str) -> MirrorConfig | None:
-        return None
+        workspace = self._workspace()
+        return workspace.mirror_config(project) if workspace else None
 
     def auto_sync_projects(self) -> list[str]:
-        return []
+        workspace = self._workspace()
+        return workspace.auto_sync_projects() if workspace else []
 
 
 def create_app(
@@ -63,7 +74,7 @@ def create_app(
     files = LocalFileStore()
     sync = SyncService(
         lambda: host.mirrors,
-        projects=mirror_projects or NoMirrorProjects(),
+        projects=mirror_projects or WorkspaceMirrorProjects(lambda: host),
         files=files,
         state=SqlSyncStateStore(database),
         database=database,
@@ -89,6 +100,10 @@ def create_app(
         core=core,
     )
 
+    _register_element_kinds(host, database)
+    # Ändert sich ein Projekt (Spiegel, Auto-Sync), setzt der Sync seinen Termin neu.
+    events.subscribe("workspace.project.changed", lambda event: sync.refresh_auto())
+
     mcp = create_mcp_host(host)
 
     @asynccontextmanager
@@ -112,3 +127,15 @@ def create_app(
     app.state.sync = sync
     app.state.database = database
     return app
+
+
+def _register_element_kinds(host: PluginHost, database: SqliteDatabase) -> None:
+    """Trägt die Elementtypen aller aktiven Plugins ins Element-Register von `workspace` ein."""
+    if not host.has("workspace"):
+        return
+    by_owner: dict[str, list[ElementKind]] = {}
+    for owner, kind in host.element_kinds():
+        by_owner.setdefault(owner, []).append(kind)
+    with database.transaction() as tx:
+        for owner, kinds in by_owner.items():
+            host.services("workspace").registry.register_kinds(tx, owner, kinds)

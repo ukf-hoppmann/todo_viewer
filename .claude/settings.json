@@ -4,5 +4,84 @@
   },
   "worktree": {
     "baseRef": "head"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/session_start.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_architecture.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/mark_backlog_dirty.py\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/mark_techdocs.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/mark_architecture_read.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_backlog.py\"",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_daily.py\"",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_techdocs.py\"",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_semver.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }

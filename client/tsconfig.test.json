@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+    // The tests live in ../tests; `npm install` links ../tests/node_modules to this folder's node_modules.
+    "types": ["vite/client", "node"]
+  },
+  "include": ["../tests/implementation/unit/client", "../tests/helpers/client", "src/shared/api/schema.d.ts"]
+}

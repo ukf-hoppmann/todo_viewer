@@ -1,0 +1,70 @@
+{
+	"app": {
+		"title": "ToDo Viewer"
+	},
+	"layout": {
+		"main": "Main content",
+		"loading": "Loading"
+	},
+	"appBar": {
+		"language": "Language"
+	},
+	"navigation": {
+		"home": "Go to start page",
+		"sidebar": "Sidebar",
+		"notFound": "This page does not exist.",
+		"unavailable": "This view is currently not available.",
+		"noViews": "No views are available.",
+		"noEntries": "No entries are available in this area."
+	},
+	"modals": {
+		"severity": {
+			"error": "Error",
+			"warning": "Warning",
+			"info": "Information",
+			"success": "Success"
+		},
+		"confirmationRequired": "Confirmation required",
+		"confirm": "Confirm",
+		"cancel": "Cancel",
+		"close": "Close",
+		"technicalDetails": "Technical details",
+		"copy": "Copy",
+		"copied": "Copied"
+	},
+	"reportError": {
+		"details": {
+			"time": "Time",
+			"errorId": "Error ID",
+			"sessionId": "Session ID",
+			"error": "Error",
+			"stack": "Stack trace"
+		}
+	},
+	"errors": {
+		"unexpected": "An unexpected error occurred.",
+		"fallback": {
+			"area": "This area could not be displayed.",
+			"app": "The application could not be displayed.",
+			"retry": "Try again",
+			"reload": "Reload"
+		},
+		"crash": "The application has crashed. Please reload the page."
+	},
+	"plugins": {
+		"failed": "Some features are not available because extensions could not be loaded. Please contact support.\n\n{{list}}",
+		"failedWithAffected": "{{plugin}} (affected: {{affected}})",
+		"detailsPlugin": "Plugin {{plugin}}"
+	},
+	"banners": {
+		"close": "Close"
+	},
+	"connection": {
+		"title": "No connection to the server",
+		"message": "The connection is being checked again. Failed attempts: {{attempts}}.",
+		"startMessage": "The connection is being checked again. Failed attempts: {{attempts}}. The application starts as soon as the server answers."
+	},
+	"config": {
+		"invalid": "The application is misconfigured. Please contact support."
+	}
+}

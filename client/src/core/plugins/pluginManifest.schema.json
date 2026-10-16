@@ -1,0 +1,16 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "core/pluginManifest.schema.json",
+	"title": "Plugin manifest (plugin.json)",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["requires"],
+	"properties": {
+		"requires": {
+			"description": "Ids of the plugins this plugin needs (kebab-case); it is active only if all of them are.",
+			"type": "array",
+			"uniqueItems": true,
+			"items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+		}
+	}
+}

@@ -10,3 +10,9 @@ configs/todo.db*
 configs/viewer.db*
 configs/*.bak
 configs/backups/
+
+# Neubau-Client
+client/node_modules/
+client/dist/
+client/.openapi.json
+tests/node_modules

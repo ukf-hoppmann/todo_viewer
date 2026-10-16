@@ -14,3 +14,11 @@ done
 "$PY/mypy" "${TYPED[@]}"
 (cd src && "$PY/lint-imports" --config ../pyproject.toml)
 "$PY/pytest"
+
+# Client: Typen, Architekturregeln und Lint, Tests
+cd ../client
+[ -d node_modules ] || npm ci --no-audit --no-fund
+node configs/linkTestModules.mjs
+npx tsc -b
+npm run lint --silent
+npx vitest run --config configs/vite/vitest.config.ts

@@ -1,0 +1,70 @@
+{
+	"app": {
+		"title": "ToDo Viewer"
+	},
+	"layout": {
+		"main": "Hauptbereich",
+		"loading": "Wird geladen"
+	},
+	"appBar": {
+		"language": "Sprache"
+	},
+	"navigation": {
+		"home": "Zur Startseite",
+		"sidebar": "Seitenleiste",
+		"notFound": "Diese Seite gibt es nicht.",
+		"unavailable": "Diese Ansicht ist derzeit nicht verfügbar.",
+		"noViews": "Es sind keine Ansichten verfügbar.",
+		"noEntries": "In diesem Bereich sind keine Einträge verfügbar."
+	},
+	"modals": {
+		"severity": {
+			"error": "Fehler",
+			"warning": "Warnung",
+			"info": "Information",
+			"success": "Erfolg"
+		},
+		"confirmationRequired": "Bestätigung erforderlich",
+		"confirm": "Bestätigen",
+		"cancel": "Abbrechen",
+		"close": "Schließen",
+		"technicalDetails": "Technische Details",
+		"copy": "Kopieren",
+		"copied": "Kopiert"
+	},
+	"reportError": {
+		"details": {
+			"time": "Zeitpunkt",
+			"errorId": "Fehler-ID",
+			"sessionId": "Sitzungs-ID",
+			"error": "Fehler",
+			"stack": "Stacktrace"
+		}
+	},
+	"errors": {
+		"unexpected": "Ein unerwarteter Fehler ist aufgetreten.",
+		"fallback": {
+			"area": "Dieser Bereich konnte nicht angezeigt werden.",
+			"app": "Die Anwendung konnte nicht angezeigt werden.",
+			"retry": "Erneut versuchen",
+			"reload": "Neu laden"
+		},
+		"crash": "Die Anwendung ist abgestürzt. Bitte laden Sie die Seite neu."
+	},
+	"plugins": {
+		"failed": "Einige Funktionen sind nicht verfügbar, weil Erweiterungen nicht geladen werden konnten. Bitte wenden Sie sich an den Support.\n\n{{list}}",
+		"failedWithAffected": "{{plugin}} (betroffen: {{affected}})",
+		"detailsPlugin": "Plugin {{plugin}}"
+	},
+	"banners": {
+		"close": "Schließen"
+	},
+	"connection": {
+		"title": "Keine Verbindung zum Server",
+		"message": "Die Verbindung wird erneut geprüft. Fehlgeschlagene Versuche: {{attempts}}.",
+		"startMessage": "Die Verbindung wird erneut geprüft. Fehlgeschlagene Versuche: {{attempts}}. Die Anwendung startet, sobald der Server antwortet."
+	},
+	"config": {
+		"invalid": "Die Anwendung ist falsch zusammengestellt. Bitte den Support kontaktieren."
+	}
+}

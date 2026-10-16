@@ -1,0 +1,25 @@
+{
+	"title": "Beispiel-Plugin",
+	"tab": {
+		"overview": "Übersicht",
+		"hub": "Bereiche"
+	},
+	"entry": {
+		"start": "Anfang"
+	},
+	"overview": {
+		"header": "Übersicht des Beispiel-Plugins",
+		"text": "Dieses Plugin enthält keine Fachlogik.",
+		"counter": "Zähler",
+		"countUp": "Hochzählen",
+		"backendVersion": {
+			"label": "Version des Backends",
+			"loading": "Wird geladen …",
+			"failed": "Die Version konnte nicht geladen werden."
+		}
+	},
+	"start": {
+		"header": "Anfang des Beispiel-Plugins",
+		"text": "Eigener Eintrag des Beispiel-Plugins."
+	}
+}

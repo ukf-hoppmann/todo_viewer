@@ -80,6 +80,28 @@ eigenen `BEGIN`, damit auch DDL zurückgerollt wird. Adapter holen die Verbindun
 - **UI-Zustand**: `GET/PUT /api/core/ui-state/{owner}` (Besitzer `[a-z][a-z0-9-]{0,63}`, Dokument ein JSON-Objekt bis
   256 KiB). `PUT` ersetzt das Dokument ohne Versions-Token; es gibt keine MCP-Tools dafür.
 
+## Dateien (Spiegel-Ordner)
+
+Der Port `FileStore` (`LocalFileStore` im Betrieb, `InMemoryFileStore` in Tests) liest und schreibt einen Ordner als
+Menge von Textdateien und kennt keine Formate (die liefern die Codecs der Plugins). Pfade sind relativ und POSIX, ohne
+`..` und nicht in `.git`.
+
+- `read(folder, patterns)` → `FileSet` aus `FileEntry(path, text, version, newline)`. Muster relativ zum Ordner, `**`
+  erlaubt. Der Text hat LF; `version` ist der SHA-256 der Bytes; `newline` ist das Zeilenende der Datei. Temporäre
+  Dateien des Schreibens (`.<name>.<zufall>.tmp`) und `.git/` gehören nicht dazu.
+- `write(folder, changes, expected, create_folder=False)`: Änderungen `WriteFile`, `RenameFile`, `DeleteFile`. Jeder
+  berührte Pfad steht in `expected` (Version der Datei beim Lesen, `None` = darf nicht existieren). Weicht eine Version
+  ab, folgt `mirror_conflict` mit den Pfaden in `details.paths`, bevor etwas geändert wurde. Geschrieben wird atomar
+  (temporäre Datei, `fsync`, `os.replace`); bestehende Dateien behalten Zeilenende (CRLF/LF, die Mehrheit zählt) und
+  Dateirechte, neue Dateien bekommen LF. Schlägt etwas mitten im Lauf fehl, werden alle berührten Dateien
+  zurückgesetzt. Schreibende Zugriffe auf einen Ordner sind im Prozess serialisiert. Rückgabe: neue Versionen
+  (`None` = gelöscht).
+- `inspect(folder, patterns=("**/*.md",))` → `FolderState(status, files)` ohne Datenänderung. `status`:
+  `ok`, `missing` (Ordner fehlt), `git_operation` (`.git/*.lock` im Repository oberhalb des Ordners, auch bei
+  Worktree-`.git`-Dateien), `unreadable` (nicht UTF-8 oder nicht lesbar), `merge_markers` (Anfangs- und Endmarker
+  `<<<<<<<`/`>>>>>>>` am Zeilenanfang). Liegt etwas anderes als `ok` vor, melden `read` und `write` `mirror_blocked`
+  (HTTP 409) mit `details.state` und `details.files`, statt zu lesen bzw. zu schreiben.
+
 ## MCP
 
 `/mcp` ist ein MCP-Server (Streamable HTTP, `mcp` 2.x) im selben Prozess. Jede Operation mit `mcp=True` ist ein Tool

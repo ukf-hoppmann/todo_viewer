@@ -20,3 +20,21 @@
 ### Open
 
 - Keine.
+
+## 2026-10-16 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant. Das Verhalten ist durch die Contract-Suite `tests/implementation/integration/server/contract/test_file_store.py` festgelegt, die gegen `LocalFileStore` (echte temporäre Ordner) und gegen den Fake `InMemoryFileStore` läuft; `test_local_file_store.py` prüft nur Dateisystem-Eigenschaften (Dateirechte, Worktree-`.git`, Git-Lock im übergeordneten Repository, parallele Schreiber).
+- `write` verlangt für jeden berührten Pfad eine erwartete Version (sonst `ValueError`, ein Programmierfehler) und macht bei einem Fehler mitten im Lauf alle berührten Dateien rückgängig. Das ist mehr als „soweit das Dateisystem es zulässt“ und kostet nur einen Lesevorgang vorab.
+- Zeilenenden: gemischte Dateien gelten als CRLF, wenn es mehr CRLF- als LF-Zeilen gibt.
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) Ordner als Menge von Dateien mit Inhalt und SHA-256-Version gelesen; (2) Schreiben atomar (keine temporären Dateien übrig, Rollback bei Fehler) und LF/CRLF erhalten; (3) geänderte, neu entstandene oder verschwundene Dateien führen zu `mirror_conflict`, ohne etwas zu ändern; (4) Merge-Marker, `.git/*.lock` (auch Worktree und übergeordnetes Repository), unlesbare Dateien und fehlender Ordner werden als `mirror_blocked` gemeldet, statt zu lesen; (5) Contract-Tests gegen echte temporäre Ordner grün.
+- `scripts/check-next.sh` grün (176 Tests); `scripts/check.sh` des alten Viewers grün.
+- Status: `Awaiting confirmation`.
+
+### Open
+
+- Frage 16 in `STORY-060` (Annahme gilt).

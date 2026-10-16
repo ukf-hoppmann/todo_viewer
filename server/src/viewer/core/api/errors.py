@@ -20,6 +20,7 @@ STATUS_BY_CODE: dict[str, int] = {
     "not_found": 404,
     "version_conflict": 409,
     "mirror_conflict": 409,
+    "mirror_blocked": 409,
     "invalid_input": 422,
     "validation_error": 422,
     "config_invalid": 500,

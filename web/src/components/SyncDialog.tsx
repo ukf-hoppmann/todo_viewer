@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SourceStatus } from "../api/client";
 import { useSwitchBackend, useSyncSource } from "../api/queries";
-import { buildResolutions, canRun, visibleKinds, type ConflictChoice, type ConflictChoices, conflictKey, directionOf, isInSync, type SyncMode, type SyncPreview, type SyncScope, switchDirection } from "../domain/sync";
+import { buildResolutions, canRun, changeCount, visibleKinds, type ConflictChoice, type ConflictChoices, conflictKey, decideMany, directionOf, isInSync, summarizePreview, type SyncMode, type SyncPreview, switchDirection } from "../domain/sync";
 import { ApiError } from "../api/client";
 import { describeError, type I18n, useI18n } from "../i18n/i18n";
+import { scopeOf } from "../state/uiState";
+import { useUiState } from "../state/useUiStateStore";
 import { Modal } from "./Modal";
 import { SyncConflicts } from "./SyncConflicts";
 
@@ -11,6 +13,8 @@ interface SyncDialogProps {
   /** A database project (sync, switch to markdown) or a markdown project (switch to the database). */
   source: SourceStatus;
   mode: SyncMode;
+  /** "resolve" opens the same dialog from the conflicts of a project; only the title differs. */
+  intent?: "sync" | "resolve";
   onClose: () => void;
   /** The project now lives on the other backend. */
   onSwitched: (project: string) => void;
@@ -33,16 +37,21 @@ function syncError(i18n: I18n, error: unknown): string {
   return describeError(i18n, error);
 }
 
-/** Preview, then confirm: copies a database project to or from its markdown folder, or moves the project. */
-export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProps) {
+/**
+ * A sync of a database project with its markdown folder, or the move of a project to the other backend. A sync opens
+ * with its preview already loaded (it only reads), conflicts first; switching keeps its own preview step. The direction
+ * of a sync is the project's setting (Settings → Projects).
+ */
+export function SyncDialog({ source, mode, intent = "sync", onClose, onSwitched }: SyncDialogProps) {
   const i18n = useI18n();
   const { t } = i18n;
+  const ui = useUiState();
   const sync = useSyncSource();
   const move = useSwitchBackend();
   const switching = mode === "switch";
   const folder = source.backend === "database" ? (source.sync_path ?? "") : source.path;
-  const [chosen, setChosen] = useState<SyncScope>("both");
-  const direction = switching ? switchDirection(source.backend) : directionOf(chosen);
+  const scope = scopeOf(ui.state, source.id);
+  const direction = switching ? switchDirection(source.backend) : directionOf(scope);
   const [choices, setChoices] = useState<ConflictChoices>({});
 
   const preview: SyncPreview | null = sync.data && !sync.data.executed ? sync.data : null;
@@ -50,6 +59,16 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
   const busy = sync.isPending || move.isPending;
   const error = sync.error ?? move.error;
   const request = { sourceId: source.id, direction, language: i18n.lang };
+  const loadPreview = () => sync.mutate({ ...request, confirm: false });
+
+  // The preview only reads both sides, so a sync shows it as soon as the dialog opens, once.
+  const started = useRef(false);
+  useEffect(() => {
+    if (switching || started.current) return;
+    started.current = true;
+    sync.mutate({ sourceId: source.id, direction: directionOf(scope), language: i18n.lang, confirm: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const run = () => {
     if (!preview) return;
@@ -63,7 +82,8 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
 
   const title = switching
     ? t(source.backend === "markdown" ? "sync.switch.toDb.title" : "sync.switch.toMd.title", { p: source.project })
-    : t("sync.title", { p: source.project });
+    : t(intent === "resolve" ? "sync.resolve.title" : "sync.title", { p: source.project });
+  const runLabel = switching ? "sync.runSwitch" : preview && preview.conflicts.length > 0 ? "sync.runDecisions" : "sync.run";
 
   return (
     <Modal labelledBy="sync-title" onDismiss={onClose} className="sync-dialog">
@@ -76,28 +96,20 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
       ) : (
         <>
           <p>{t("sync.folder", { f: folder })}</p>
-          <div className="backend-choice" role="radiogroup" aria-label={t("sync.direction")}>
-            {(["both", "to_md", "from_md"] as const).map((d) => (
-              <label key={d}>
-                <input
-                  type="radio"
-                  name="direction"
-                  checked={chosen === d}
-                  onChange={() => {
-                    setChosen(d);
-                    setChoices({});
-                    sync.reset();
-                  }}
-                />
-                {t(`sync.dir.${d}`)}
-                {d === "both" && ` ${t("sync.dir.default")}`}
-              </label>
-            ))}
-          </div>
+          {scope !== "both" && <p className="hint">{t("sync.direction.restricted", { d: t(`sync.dir.${scope}`) })}</p>}
         </>
       )}
 
-      {preview && <PreviewView preview={preview} switching={switching} choices={choices} onChoose={(c, choice) => setChoices({ ...choices, [conflictKey(c)]: choice })} />}
+      {!switching && busy && !preview && !result && <p className="hint" role="status">{t("sync.loading")}</p>}
+      {preview && (
+        <PreviewView
+          preview={preview}
+          switching={switching}
+          choices={choices}
+          onChoose={(c, choice) => setChoices({ ...choices, [conflictKey(c)]: choice })}
+          onChooseAll={(choice) => setChoices(decideMany(preview.conflicts, choices, choice))}
+        />
+      )}
       {result && <ResultView result={result} />}
       {error && (
         <div className="field-error" role="alert">
@@ -110,13 +122,13 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
           {result ? t("close") : t("cancel")}
         </button>
         {!result && (
-          <button className="btn" disabled={busy} onClick={() => sync.mutate({ ...request, confirm: false })}>
-            {t("sync.preview")}
+          <button className="btn" disabled={busy} onClick={loadPreview}>
+            {t(switching ? "sync.preview" : "sync.reload")}
           </button>
         )}
         {preview && (
           <button className="btn primary" disabled={busy || !canRun(preview, mode)} onClick={run}>
-            {t(switching ? "sync.runSwitch" : "sync.run")}
+            {t(runLabel)}
           </button>
         )}
       </div>
@@ -124,39 +136,59 @@ export function SyncDialog({ source, mode, onClose, onSwitched }: SyncDialogProp
   );
 }
 
-function PreviewView({ preview, switching, choices, onChoose }: {
+interface PreviewViewProps {
   preview: SyncPreview;
   switching: boolean;
   choices: ConflictChoices;
   onChoose: (conflict: SyncPreview["conflicts"][number], choice: ConflictChoice) => void;
-}) {
+  onChooseAll: (choice: ConflictChoice) => void;
+}
+
+/** The conflicts first, then what else a run would carry over as one line (the lists behind "details"). */
+function PreviewView({ preview, switching, choices, onChoose, onChooseAll }: PreviewViewProps) {
   const { t } = useI18n();
+  const [details, setDetails] = useState(false);
+  const changes = changeCount(preview);
+  const { total } = summarizePreview(preview);
+  const conflicts = preview.conflicts.length;
   return (
     <div className="sync-preview">
-      {isInSync(preview) && <div className="sync-equal">{t("sync.inSync")}</div>}
-      {visibleKinds(preview).map((kind) => {
-        const s = preview[kind];
-        return (
-          <section key={kind}>
-            <h4>{t(`sync.${kind}`)}</h4>
-            <div>{t("sync.count", { n: s.created.length, c: s.changed.length, u: s.unchanged })}</div>
-            <ul className="sync-list">
-              {s.created.map((e) => (
-                <li key={`+${e.label}${e.name ?? ""}`}>{`＋ ${entryText(e)}${origin(e)}`}</li>
-              ))}
-              {s.changed.map((e) => (
-                <li key={`~${e.label}${e.name ?? ""}`} title={t("sync.changedHint")}>{`≠ ${entryText(e)}${origin(e)}`}</li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
-      {preview.conflicts.length > 0 && (
+      {conflicts > 0 && (
         <>
-          <SyncConflicts conflicts={preview.conflicts} choices={choices} onChoose={onChoose} />
+          <SyncConflicts conflicts={preview.conflicts} choices={choices} onChoose={onChoose} onChooseAll={onChooseAll} />
           {switching && <p className="field-error">{t("sync.conflicts.needed")}</p>}
         </>
       )}
+      <section className="sync-changes">
+        {isInSync(preview) && <div className="sync-equal">{t("sync.inSync")}</div>}
+        {!isInSync(preview) && changes === 0 && <div className="hint">{t("sync.changes.none")}</div>}
+        {changes > 0 && (
+          <div className="sync-changes-line">
+            <span>{t(conflicts > 0 ? "sync.changes.also" : "sync.changes", { n: changes, c: total.created, m: total.changed })}</span>
+            <button type="button" className="btn link" aria-expanded={details} onClick={() => setDetails(!details)}>
+              {t(details ? "sync.details.hide" : "sync.details.show")}
+            </button>
+          </div>
+        )}
+        {details &&
+          visibleKinds(preview).map((kind) => {
+            const s = preview[kind];
+            return (
+              <section key={kind}>
+                <h4>{t(`sync.${kind}`)}</h4>
+                <div>{t("sync.count", { n: s.created.length, c: s.changed.length, u: s.unchanged })}</div>
+                <ul className="sync-list">
+                  {s.created.map((e) => (
+                    <li key={`+${e.label}${e.name ?? ""}`}>{`＋ ${entryText(e)}${origin(e)}`}</li>
+                  ))}
+                  {s.changed.map((e) => (
+                    <li key={`~${e.label}${e.name ?? ""}`} title={t("sync.changedHint")}>{`≠ ${entryText(e)}${origin(e)}`}</li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
+      </section>
       {preview.skipped.length > 0 && (
         <div className="sync-skipped">
           <h4>{t("sync.skipped.title")}</h4>

@@ -2,14 +2,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { Schemas, SourceStatus } from "../../api/client";
 import { useSaveSource, useSourceList, useSyncStatuses } from "../../api/queries";
 import { describeProject } from "../../domain/projects";
-import type { SyncMode, SyncState } from "../../domain/sync";
+import type { SyncScope, SyncState } from "../../domain/sync";
 import { describeError, useI18n } from "../../i18n/i18n";
+import { scopeOf } from "../../state/uiState";
 import { useUiState } from "../../state/useUiStateStore";
 import { SourceDialog } from "../SourceDialog";
 import { SyncDialog } from "../SyncDialog";
 import type { SectionProps } from "./sections";
 
-type Dialog = { kind: "sync"; source: SourceStatus } | { kind: "switch"; source: SourceStatus } | { kind: "folder"; source: SourceStatus };
+type Dialog = { kind: "sync" | "resolve" | "switch" | "folder"; source: SourceStatus };
 
 /** One card per project: where it lives, whether its mirror still matches, and the one thing to do next. */
 export function ProjectsSection({ focusId }: SectionProps) {
@@ -40,7 +41,8 @@ export function ProjectsSection({ focusId }: SectionProps) {
       ) : (
         <SyncDialog
           source={dialog.source}
-          mode={dialog.kind as SyncMode}
+          mode={dialog.kind === "switch" ? "switch" : "sync"}
+          intent={dialog.kind === "resolve" ? "resolve" : "sync"}
           onClose={() => setDialog(null)}
           onSwitched={(project) => {
             dispatch({ type: "showProject", project });
@@ -68,6 +70,8 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
   const [error, setError] = useState("");
   const [setupOpen, setSetupOpen] = useState(false);
   const setupId = useId();
+  const ui = useUiState();
+  const scope = scopeOf(ui.state, source.id);
   const ref = useRef<HTMLElement>(null);
   const database = source.primary === "database";
   const folder = source.markdown_path;
@@ -99,9 +103,9 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
   const emphasis = view.tone === "attention" || view.tone === "pending";
   const mainAction = {
     sync: { label: t("projects.sync"), run: () => onOpen("sync") },
+    resolve: { label: t("projects.resolve"), run: () => onOpen("resolve") },
     enableMirror: { label: t(database ? "projects.action.enableMarkdown" : "projects.action.enableDatabase"), run: () => setMirror(true) },
     setupMirror: { label: t("projects.folder.set"), run: () => onOpen("folder") },
-    resolve: null,
   }[view.action];
 
   return (
@@ -136,10 +140,10 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
         )}
       </div>
 
-      {view.conflicts > 0 && (
+      {view.action === "resolve" && (
         <div className="project-conflicts" role="status">
           <span>{t("projects.conflicts", { n: view.conflicts })}</span>
-          <button className="btn small primary" onClick={() => onOpen("sync")}>{t("projects.resolve")}</button>
+          <button className="btn small primary" onClick={mainAction.run}>{mainAction.label}</button>
         </div>
       )}
       {error && <div className="field-error" role="alert">{error}</div>}
@@ -161,7 +165,7 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
               {t("projects.state.check")}
             </button>
           )}
-          {mainAction && (
+          {view.action !== "resolve" && (
             <button className={`btn small${emphasis ? " primary" : ""}`} disabled={save.isPending} onClick={mainAction.run}>
               {mainAction.label}
             </button>
@@ -203,6 +207,21 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
             {view.autoIdle && <span className="hint">{t("projects.auto.noMirror")}</span>}
             {!view.autoSwitchable && <span className="hint">{t("projects.auto.needsMirror")}</span>}
           </dd>
+          {view.hasMirror && (
+            <>
+              <dt>{t("projects.direction")}</dt>
+              <dd className="project-direction" role="radiogroup" aria-label={t("projects.direction")}>
+                {(["both", "to_md", "from_md"] as const satisfies readonly SyncScope[]).map((d) => (
+                  <label key={d}>
+                    <input type="radio" name={`direction-${source.id}`} checked={scope === d} onChange={() => ui.dispatch({ type: "syncScope", sourceId: source.id, scope: d })} />
+                    {t(`sync.dir.${d}`)}
+                    {d === "both" && ` ${t("sync.dir.default")}`}
+                  </label>
+                ))}
+                <span className="hint">{t("projects.direction.hint")}</span>
+              </dd>
+            </>
+          )}
           <dt>{t("projects.primary")}</dt>
           <dd>
             <span>{t(`source.backend.${source.primary}`)}</span>

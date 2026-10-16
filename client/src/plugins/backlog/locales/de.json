@@ -1,0 +1,58 @@
+{
+	"tab": {
+		"backlog": "Backlog"
+	},
+	"filter": {
+		"status": "Status",
+		"priority": "Priorität"
+	},
+	"status": {
+		"Open": "Offen",
+		"In progress": "In Arbeit",
+		"Awaiting confirmation": "Wartet auf Bestätigung",
+		"Completed": "Abgeschlossen",
+		"Rejected": "Abgelehnt"
+	},
+	"priority": {
+		"Urgent": "Dringend",
+		"Important": "Wichtig",
+		"Normal": "Normal",
+		"Prospective": "Perspektivisch"
+	},
+	"type": {
+		"Epic": "Epic",
+		"Story": "Story",
+		"Task": "Task"
+	},
+	"empty": "Keine Items in den gewählten Projekten und Filtern.",
+	"collapse": {
+		"collapseEpic": "Epics zuklappen",
+		"expandEpic": "Epics aufklappen",
+		"collapseStory": "Stories zuklappen",
+		"expandStory": "Stories aufklappen",
+		"scope": "Nur Projekt {{project}}",
+		"scopeAll": "Alle gezeigten Projekte"
+	},
+	"field": {
+		"status": "Status",
+		"priority": "Priorität",
+		"area": "Bereich",
+		"created": "Erstellt",
+		"parent": "Parent",
+		"goal": "Ziel",
+		"completionCriteria": "Fertigstellungskriterien",
+		"summary": "Kurzfassung",
+		"resolution": "Entscheidung",
+		"progress": "Fortschritt",
+		"dependencies": "Abhängigkeiten",
+		"children": "Kinder",
+		"links": "Verknüpfungen"
+	},
+	"detail": {
+		"choose": "Ein Item im Baum wählen.",
+		"failed": "Das Item lässt sich nicht laden.",
+		"deleted": "im Papierkorb",
+		"deletedShort": "gelöscht",
+		"optional": "optional"
+	}
+}

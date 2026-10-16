@@ -123,6 +123,7 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 							else refs.current.delete(node.id);
 						}}
 						data-testid={sharedTestIds.treeNode(node.id)}
+						data-dashed={node.dashed ? "true" : undefined}
 						draggable={dragEnabled}
 						onClick={() => onSelect(node.id)}
 						onFocus={() => setFocusId(node.id)}
@@ -167,7 +168,9 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 							cursor: "pointer",
 							outline: "none",
 							bgcolor: selected ? "action.selected" : "transparent",
-							opacity: dragId === node.id ? 0.5 : 1,
+							opacity: dragId === node.id ? 0.5 : node.dashed ? 0.7 : 1,
+							border: node.dashed ? "1px dashed" : "1px solid transparent",
+							borderColor: node.dashed ? "text.disabled" : "transparent",
 							boxShadow: marker === "inside" ? (theme) => `inset 0 0 0 2px ${theme.palette.primary.main}` : "none",
 							"&:hover, &:focus-visible": { bgcolor: selected ? "action.selected" : "action.hover" },
 							"&:focus-visible": { outline: (theme) => `1px solid ${theme.palette.primary.main}` },

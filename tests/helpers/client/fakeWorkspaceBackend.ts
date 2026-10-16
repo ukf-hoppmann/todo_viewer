@@ -4,6 +4,7 @@ import type { ConnectionFetch } from "../../../client/src/core/api/types";
 import { createAppStore } from "../../../client/src/core/store/createAppStore";
 import { coreApi } from "../../../client/src/core/ui-state/coreApi";
 import type { PluginRegistry } from "../../../client/src/core/plugins/types";
+import { backlogApi, type IndexItem, type ItemOut } from "../../../client/src/plugins/backlog/api";
 import { workspaceApi, type ElementOut, type FolderListing, type LinkedElement, type Project, type TrashedElement } from "../../../client/src/plugins/workspace/api";
 
 const url = "https://backend.test/api";
@@ -38,6 +39,9 @@ export function fakeWorkspaceBackend(
 		/** Elements for the search and the links; a link is `[linkUid, fromUid, toUid, role]`. */
 		elements?: ElementOut[];
 		links?: Array<[string, string, string, LinkedElement["role"]]>;
+		/** Items of the backlog (`GET backlog/items` filters them by project) and the detail by `uid`. */
+		backlog?: IndexItem[];
+		details?: Record<string, ItemOut>;
 		/** The elements in the trash. */
 		trash?: TrashedElement[];
 		/** Number of children by element `uid`: deleting such an element needs `cascade`. */
@@ -96,6 +100,15 @@ export function fakeWorkspaceBackend(
 			}
 			projects = projects.filter((entry) => entry.uid !== one[1]);
 			return Response.json({ trashed: count });
+		}
+		if (path === "backlog/items" && request.method === "GET") {
+			const wanted = (searchParams.get("projects") ?? "").split(",").filter(Boolean);
+			return Response.json((options.backlog ?? []).filter((item) => wanted.includes(item.project_uid)));
+		}
+		const oneItem = /^backlog\/items\/([^/]+)$/.exec(path);
+		if (oneItem) {
+			const detail = options.details?.[oneItem[1]!];
+			return detail ? Response.json(detail) : Response.json({ code: "not_found", message: "Item gibt es nicht", details: {} }, { status: 404 });
 		}
 		const ofElement = /^workspace\/elements\/([^/]+)\/links$/.exec(path);
 		if (ofElement) {
@@ -161,7 +174,10 @@ export function fakeWorkspaceBackend(
 	});
 	const connection = createConnection({ url, fetch, onFailure: () => {} });
 	const registry: PluginRegistry = {
-		active: () => [{ id: "workspace", definition: { i18n: { de: {}, en: {} }, api: workspaceApi } }],
+		active: () => [
+			{ id: "workspace", definition: { i18n: { de: {}, en: {} }, api: workspaceApi } },
+			{ id: "backlog", definition: { i18n: { de: {}, en: {} }, api: backlogApi } },
+		],
 		statuses: () => [],
 	} as unknown as PluginRegistry;
 	const store = createAppStore({ registry, connection, coreApis: [coreApi] });

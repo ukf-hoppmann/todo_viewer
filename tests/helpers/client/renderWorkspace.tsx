@@ -4,6 +4,8 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { initI18n, PluginRegistryProvider, StoreProvider } from "../../../client/src/core";
 import type { ActivePlugin, PluginRegistry, WidgetContribution } from "../../../client/src/core/plugins/types";
+import backlogDe from "../../../client/src/plugins/backlog/locales/de.json";
+import backlogEn from "../../../client/src/plugins/backlog/locales/en.json";
 import de from "../../../client/src/plugins/workspace/locales/de.json";
 import en from "../../../client/src/plugins/workspace/locales/en.json";
 import { fakeWorkspaceBackend } from "./fakeWorkspaceBackend";
@@ -22,6 +24,8 @@ export async function renderWorkspace(ui: ReactElement, options: { backend?: Ret
 	const i18n = await initI18n({ lng: "de" });
 	i18n.addResourceBundle("de", "workspace", de);
 	i18n.addResourceBundle("en", "workspace", en);
+	i18n.addResourceBundle("de", "backlog", backlogDe);
+	i18n.addResourceBundle("en", "backlog", backlogEn);
 	const active: ActivePlugin[] = [];
 	for (const type of options.createTypes ?? []) {
 		i18n.addResourceBundle("de", type.ownerId, { create: { [type.name]: type.title } });

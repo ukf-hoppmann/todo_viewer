@@ -29,3 +29,21 @@
 ### Open
 
 - Frage 27 in `STORY-060`.
+
+## 2026-10-16 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant: Server `viewer/plugins/backlog/`, Client `client/src/plugins/backlog/`. Beschreibung in `docs/techdocs/neubau-server.md` und `neubau-client.md`. Abweichungen: Frage 27 (Standard der Filter; eine Seite statt Hauptroute mit Unterseite).
+- Der gemeinsame Baum kann jetzt Knoten gestrichelt zeichnen (`TreeNode.dashed`, Test in `TreeView.test.tsx`).
+- Die Filter wirken im Browser (nicht über die Parameter von `list_items`), damit Fortschritt und Zuklappen unabhängig von ihnen bleiben; die Parameter der Operation bleiben für API und MCP.
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) feste Tabellen für Typen, Status, Prioritäten (`Urgent`, `Important`, `Normal`, `Prospective`) und Bereiche; ein erfundener Wert scheitert an der Datenbank (`test_the_value_lists_are_enforced_by_the_database`); (2) Baum je Projekt mit Fortschrittsring, optionale Kinder gestrichelt, abgelehnte zählen nicht (`test_model.py`, `test_items.py`, `BacklogPage.test.tsx`); (3) Filter Status und Priorität in der Seitenleiste, Suche und Projekte aus `workspace` (`BacklogPage.test.tsx`); (4) Detailpanel mit allen Feldern und Kindern, gelöschte markiert (`ItemDetail.test.tsx`); (5) `list_items` und `get_item` über API und MCP; (6) Tests grün.
+- `scripts/check-next.sh` und `scripts/check.sh` grün. Status: `Awaiting confirmation`.
+
+### Open
+
+- Frage 27 in `STORY-060` (Annahme gilt).
+- Nicht geprüft: das Anzeigen im echten Browser mit Daten aus dem Spiegel (kommt mit `STORY-075`); Anlegen und Bearbeiten von Items (`STORY-072`).

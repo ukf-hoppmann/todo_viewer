@@ -1,0 +1,58 @@
+{
+	"tab": {
+		"backlog": "Backlog"
+	},
+	"filter": {
+		"status": "Status",
+		"priority": "Priority"
+	},
+	"status": {
+		"Open": "Open",
+		"In progress": "In progress",
+		"Awaiting confirmation": "Awaiting confirmation",
+		"Completed": "Completed",
+		"Rejected": "Rejected"
+	},
+	"priority": {
+		"Urgent": "Urgent",
+		"Important": "Important",
+		"Normal": "Normal",
+		"Prospective": "Prospective"
+	},
+	"type": {
+		"Epic": "Epic",
+		"Story": "Story",
+		"Task": "Task"
+	},
+	"empty": "No items in the chosen projects and filters.",
+	"collapse": {
+		"collapseEpic": "Collapse epics",
+		"expandEpic": "Expand epics",
+		"collapseStory": "Collapse stories",
+		"expandStory": "Expand stories",
+		"scope": "Project {{project}} only",
+		"scopeAll": "All shown projects"
+	},
+	"field": {
+		"status": "Status",
+		"priority": "Priority",
+		"area": "Area",
+		"created": "Created",
+		"parent": "Parent",
+		"goal": "Goal",
+		"completionCriteria": "Completion criteria",
+		"summary": "Summary",
+		"resolution": "Resolution",
+		"progress": "Progress",
+		"dependencies": "Dependencies",
+		"children": "Children",
+		"links": "Links"
+	},
+	"detail": {
+		"choose": "Choose an item in the tree.",
+		"failed": "The item cannot be loaded.",
+		"deleted": "in the trash",
+		"deletedShort": "deleted",
+		"optional": "optional"
+	}
+}

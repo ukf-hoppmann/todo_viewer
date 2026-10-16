@@ -7,6 +7,8 @@ export interface TreeNode {
 	badge?: string;
 	/** A color for the status dot (any CSS color). */
 	statusColor?: string;
+	/** Drawn dashed and dimmed, e.g. an item that is not required for its parent. */
+	dashed?: boolean;
 	/** Done and total of the children, drawn as a `ProgressRing`. */
 	progress?: { done: number; total: number };
 	children: TreeNode[];

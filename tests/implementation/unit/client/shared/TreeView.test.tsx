@@ -71,6 +71,18 @@ describe("TreeView: structure", () => {
 		expect(screen.getByTestId(sharedTestIds.progressRing).getAttribute("aria-label")).toBe("1/2");
 	});
 
+	it("draws a dashed node as dashed", () => {
+		flat.push({ id: "opt", parentId: "e2", label: "Optional", dashed: true } as (typeof flat)[number]);
+		try {
+			render(<Harness expanded={["e2"]} />);
+
+			expect(node("opt").getAttribute("data-dashed")).toBe("true");
+			expect(node("e2").getAttribute("data-dashed")).toBeNull();
+		} finally {
+			flat.pop();
+		}
+	});
+
 	it("opens and closes with the arrow button without selecting", () => {
 		const onSelect = vi.fn();
 		render(<Harness onSelect={onSelect} />);

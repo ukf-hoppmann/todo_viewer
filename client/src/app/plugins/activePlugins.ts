@@ -8,6 +8,7 @@ import type { PluginSelection } from "../../core";
 export const activePluginIds: readonly string[] = [
 	"layout-header-sidebar",
 	"workspace",
+	"backlog",
 	...(import.meta.env.DEV ? ["example"] : []),
 ];
 

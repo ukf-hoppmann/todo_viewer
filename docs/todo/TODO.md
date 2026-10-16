@@ -311,7 +311,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -326,6 +326,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     zu lesen. 5. Contract-Tests gegen echte temporäre Ordner sind grün.
   - Summary: Die Dateien-Grundlage für den Markdown-Spiegel: nichts geht
     beim Schreiben kaputt, und fremde Änderungen werden nicht überschrieben.
+  - Notes: `items/STORY-064/STORY-064_notes.md`.
   - Spec: `items/STORY-064/STORY-064_spec.md`.
 
 - `STORY-065` **Generischer Sync-Dienst über Datenbank und Dateien**

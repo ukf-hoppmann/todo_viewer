@@ -15,3 +15,4 @@
 
 - Frage 14 (betrifft STORY-063): „Vor jeder Migration ein Backup“ (Architektur §2): ein Backup je Start oder je einzelner Migration? Annahme: ein Backup je Start, bevor die erste ausstehende Migration läuft; nicht bei einer Datenbank ohne Tabellen. Die letzten 10 je Grund bleiben.
 - Frage 15 (betrifft STORY-063): Muss `PUT /api/core/ui-state/{owner}` ein Versions-Token nehmen (Architektur §3: schreibende Operationen nehmen eins)? Annahme: nein, der UI-Zustand ist ein Dokument je Besitzer ohne Konfliktprüfung (letzter Schreiber gewinnt); das UI hält je Besitzer genau eine Sitzung.
+- Frage 16 (betrifft STORY-064): Die Spec nennt `inspect(folder)`; das Prüfen auf Merge-Marker braucht aber die Dateimuster des Spiegels. Annahme: `inspect(folder, patterns=("**/*.md",))`, und `read` und `write` prüfen mit denselben Mustern bzw. den betroffenen Dateien.

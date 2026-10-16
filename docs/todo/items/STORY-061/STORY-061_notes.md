@@ -31,3 +31,21 @@
 ### Open
 
 - Keine.
+
+## 2026-10-16 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Alle acht Plan-Abschnitte sind umgesetzt, je einer als Commit auf `neubau/epic-007`.
+- Abweichungen von der Spec: `PluginDefinition` und `PluginContext` liegen in `core/application` (Frage 13 in `STORY-060`); das Beispiel-Plugin ist nur in den Tests, die Produktionsliste `PLUGINS` ist leer, bis die Plugin-Stories sie füllen. `GET/PUT /api/core/ui-state/{owner}` ist wie in der Spec nicht verdrahtet (kommt mit `STORY-063`).
+- Fehler im OpenAPI-Schema: `ErrorBody` als Antwort `4XX` statt FastAPIs `HTTPValidationError`.
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) `python -m viewer.app.main` startet und `GET /api/core/health` antwortet (Test `test_server_process_starts_and_answers_health`, Standardport 5412); (2) Operationen des Beispiel-Plugins sind als Routen erreichbar und im OpenAPI-Schema (`test_http_operations.py`); (3) ein öffentliches Ereignis kommt bei einem SSE-Client an, ein nicht öffentliches nicht (`test_sse.py`, echter uvicorn-Server); (4) unbekanntes `requires`, Zyklus und doppelte Route verhindern den Start (`test_plugin_validation.py`, `test_startup.py`); (5) vier import-linter-Verträge laufen grün.
+- `scripts/check-next.sh` grün (ruff, mypy strict, import-linter, 52 Tests); `scripts/check.sh` des alten Viewers grün (1173 Backend-, 404 Frontend-Tests).
+- Status: `Awaiting confirmation`.
+
+### Open
+
+- Keine.

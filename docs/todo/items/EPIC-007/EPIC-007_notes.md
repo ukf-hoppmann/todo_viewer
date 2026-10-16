@@ -81,3 +81,17 @@
 ### Open
 
 - Freigabe der Architekturregeln (TASK-034) vor dem ersten Code.
+
+## 2026-10-16 — Freigaben für die Umsetzung in der Cloud
+
+### Discussed
+
+- Der Projektinhaber lässt den Neubau über Nacht in einer Cloud-Sitzung umsetzen, ohne eingreifen zu können.
+
+### Decided
+
+- Umsetzungspläne brauchen keine Vorlage: Vor jedem Item steht der Plan in dessen Notizen, dann wird er umgesetzt. Abweichungen von der Spec kommen als Frage mit Annahme in STORY-060.
+- Keine Releases, Versionen oder Tags bis zum Umstieg (1.0.0 mit STORY-084).
+- Die Freigaben gelten auch für die Cloud-Sitzung; sie stehen in docs/handover/neubau-cloud.md.
+- Der Altcode liegt in src_old/, die Vorlage des ezf-ui-Core in reference/ezf-ui/; beides ist nur Vorlage und wird erst nach Abnahme des Neubaus durch den Projektinhaber entfernt (neue Regel 0).
+- Nicht in der Nacht: STORY-084 (Umstieg) und jeder Lauf gegen echte Daten (configs/todo.db); STORY-082 nur mit synthetischen Daten.

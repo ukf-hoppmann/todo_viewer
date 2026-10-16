@@ -12,7 +12,7 @@ Primärquelle.
 - Nutzt die Core-Operationen `sync_status`, `sync_preview`, `sync_execute`
   (`STORY-065`) und `update_project` (`STORY-068`) für Spiegel-Einstellungen.
 - SSE-Topic `core.sync.state` → Status neu laden.
-- Vorlage: `web/src/components` (Sync-Dialog, Projektkarte).
+- Vorlage: `src_old/web/src/components` (Sync-Dialog, Projektkarte).
 
 ## Tests
 

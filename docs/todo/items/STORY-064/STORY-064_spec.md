@@ -14,7 +14,7 @@ Grundlage: `EPIC-007_spec.md`, Abschnitt 7.2.
 - Adapter `viewer.core.infrastructure.files`: atomares Schreiben (temporäre
   Datei im selben Ordner + `os.replace`), Zeilenenden der bestehenden Datei
   übernehmen, neue Dateien mit LF.
-- Vorlagen aus dem Altcode (`backend/todo_viewer/infrastructure/markdown/text_file.py`,
+- Vorlagen aus dem Altcode (`src_old/backend/todo_viewer/infrastructure/markdown/text_file.py`,
   `merge_markers.py`, `notes_files/mirror.py`) dürfen als Vorlage gelesen und
   angepasst kopiert werden; kein Import aus dem Altcode.
 

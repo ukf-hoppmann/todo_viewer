@@ -17,7 +17,7 @@ Grundlage: `EPIC-007_spec.md`, Abschnitte 1, 8, 9.
 | `EntityPicker` | Auswahl von Elementen (Label — Titel) für Parent, Abhängigkeiten, Verknüpfungen |
 | `LargeView` | fast vollbildschirmgroße Ansicht mit Inhaltsverzeichnis aus Überschriften |
 
-Vorlagen aus `web/src/components` und `web/src/views` dürfen gelesen und
+Vorlagen aus `src_old/web/src/components` und `src_old/web/src/views` dürfen gelesen und
 angepasst kopiert werden.
 
 ## Nicht im Umfang

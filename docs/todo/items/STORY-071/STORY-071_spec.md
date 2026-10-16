@@ -16,7 +16,7 @@ Grundlage: `EPIC-007_spec.md`, Abschnitt 9 (`backlog`).
   position INT)`.
 - `backlog_dependencies(item_uid, depends_on_uid)`.
 
-## Domäne (reine Funktionen, Vorlage `backend/todo_viewer/domain`)
+## Domäne (reine Funktionen, Vorlage `src_old/backend/todo_viewer/domain`)
 
 Baum, Fortschritt (erledigt/gesamt über Nachkommen, optional und abgelehnt
 zählen nicht), Filter.

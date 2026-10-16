@@ -5,7 +5,7 @@ Grundlage: `EPIC-007_spec.md`, Abschnitte 7.3, 10; Format: `docs/techdocs/interf
 ## Umfang
 
 - `MirrorCodec` für `notes/**` (Notes, Dokumente, `topics.md`); Vorlage
-  `backend/todo_viewer/domain/notes_markdown.py` und
+  `src_old/backend/todo_viewer/domain/notes_markdown.py` und
   `application/services/notes_sync.py`, angepasst an `Uid` und ohne
   `counters.md`.
 - Verknüpfungen der Note stehen in ihrem Kopf (`Links`) als

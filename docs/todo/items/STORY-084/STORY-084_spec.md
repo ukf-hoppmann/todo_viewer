@@ -12,7 +12,9 @@ Grundlage: `EPIC-007_spec.md`, Abschnitte 3, 11, 12.
   `todo-viewer-next` entfällt; `todo.sh` ohne `next`.
 - Erster Sync je Projekt Richtung Dateien (Format Version 2, `Uid`-Zeilen);
   der Inhaber committet die Spiegel in den betroffenen Repositories.
-- Altcode entfernen: `backend/`, `web/`, alte Skripte, Scope `legacy`,
+- Altcode entfernen, **erst nach ausdrücklicher Abnahme des Neubaus durch den
+  Projektinhaber** (Regel 0): `src_old/`, `reference/`, alte Skripte, Scopes
+  `legacy`, `backend`, `web`,
   alte `pyproject.toml`-Abschnitte.
 - Doku: README, `docs/techdocs/*` auf den Neubau umschreiben.
 - Übergabe an den Inhaber: Format Version 2 und MCP-Tool-Liste für die

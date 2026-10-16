@@ -6,7 +6,7 @@ Grundlage: `EPIC-007_spec.md`, Abschnitte 7, 12.
 
 - Befehl `viewer.app.import_legacy --legacy-db configs/todo.db --target
   configs/viewer.db [--dry-run]`; liest die alte DB nur lesend (SQLAlchemy,
-  Schema aus `backend/todo_viewer/infrastructure/database/schema.py` als
+  Schema aus `src_old/backend/todo_viewer/infrastructure/database/schema.py` als
   Vorlage), kein Import aus dem Altcode.
 - Markdown-primäre Projekte: vorher mit dem alten Viewer in seine DB
   spiegeln, dann übernehmen (`STORY-060` Frage 1); der Befehl bricht ab, wenn ein

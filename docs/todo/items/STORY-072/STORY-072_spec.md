@@ -6,7 +6,7 @@ Harness, Abschnitte Parent lifecycle, Status model, Archive).
 ## Umfang
 
 - Domäne: Lebenszyklus- und Parent-Regeln (Vorlage
-  `backend/todo_viewer/domain/lifecycle.py`, `editing.py`, `creation.py`,
+  `src_old/backend/todo_viewer/domain/lifecycle.py`, `editing.py`, `creation.py`,
   `retype.py`), angepasst an `uid`.
 - Operationen: `create_item`, `update_item(uid|label, version, fields,
   resolution?)`, `retype_item`, `move_item(uid, version, parent, position)`,

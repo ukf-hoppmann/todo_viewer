@@ -36,7 +36,8 @@ Fachlichkeit.
 ## 3. Ordner
 
 Der Neubau entsteht neben dem alten Code im selben Repository. Der alte
-Viewer (`backend/`, `web/`) läuft bis zum Umstieg unverändert weiter.
+Viewer liegt in `src_old/backend/` und `src_old/web/` und läuft bis zum Umstieg unverändert
+weiter; zusammen mit `reference/ezf-ui/` dient er als Vorlage (Regel 0).
 
 ```
 server/                         Backend (Python-Paket `viewer`)
@@ -68,7 +69,8 @@ tests/                          alle Tests des Neubaus (Skill claude-harness:tes
 Der Entwicklungs-Server des Neubaus läuft auf Port **5412**, damit der alte
 Viewer auf 5411 (und damit die Backlog-API des Harness) weiterläuft. Die neue
 Datenbank ist `configs/viewer.db`, getrennt von der alten `configs/todo.db`.
-Nach dem Umstieg läuft der Neubau auf 5411, die alten Ordner werden entfernt.
+Nach dem Umstieg läuft der Neubau auf 5411. `src_old/` und `reference/` werden erst
+entfernt, wenn der Projektinhaber den Neubau abgenommen hat.
 
 ## 4. Schichten und Abhängigkeiten (Backend)
 

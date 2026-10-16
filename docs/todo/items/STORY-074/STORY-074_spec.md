@@ -6,7 +6,7 @@ Grundlage: `EPIC-007_spec.md`, Abschnitt 9. Verhalten wie im README des alten Vi
 ## Umfang
 
 - Domäne: Graph aus `backlog_dependencies` (reine Funktion, Vorlage
-  `web/src/domain`), Komponenten-Erkennung, linke Spalte für Knoten ohne
+  `src_old/web/src/domain`), Komponenten-Erkennung, linke Spalte für Knoten ohne
   Abhängigkeiten.
 - Ansicht mit `@xyflow/react` und `elkjs`, per Lazy-Import geladen; Knoten
   mit Fortschrittsring.

@@ -6,7 +6,7 @@ Grundlage: `EPIC-007_spec.md`, Abschnitte 2, 3, 4, 8.
 
 - `client/` mit `package.json`, Vite, TypeScript, ESLint, Vitest
   (Tests unter `tests/implementation/unit/client/`); Abhängigkeiten nach §2.
-- Kopie aus `../ezf-ui/src/core` nach `client/src/core` und von
+- Kopie aus `reference/ezf-ui/src/core` nach `client/src/core` und von
   `src/plugins/layout-header-sidebar`; ESLint-Regel
   `configs/eslint/architectureBoundaries.ts` aus ezf-ui mit ihren Tests.
 - Entfernen: `core/auth`, `LoginPage`, Auth-Schritte in `startApp`,
@@ -23,7 +23,7 @@ Grundlage: `EPIC-007_spec.md`, Abschnitte 2, 3, 4, 8.
 - Layout: Slots `layout.header-actions`, `layout.sidebar-sections`
   (Abschnitte mit `when: route[]`); Hauptroute `core/settings` mit Slot
   `core.settings-sections`. Dunkles MUI-Thema mit den Farben des heutigen
-  Viewers (`web/src/styles` als Vorlage).
+  Viewers (`src_old/web/src/styles` als Vorlage).
 - Erzeugte API-Typen: `client/src/shared/api/schema.d.ts` aus
   `server`-OpenAPI (`npm run gen:api`).
 

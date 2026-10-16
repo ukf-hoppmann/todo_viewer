@@ -786,9 +786,10 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Completion criteria: 1. Backup der alten DB und aller Spiegel-Ordner
     liegt vor. 2. Übernahme ausgeführt, Bericht ohne ungeklärte Abweichung.
     3. Neubau auf 5411, alter Container entfernt. 4. Spiegel aller Projekte
-    neu geschrieben und in den Repositories committet (vom Inhaber). 5.
-    `backend/`, `web/` und der Scope `legacy` entfernt; README und
-    `docs/techdocs/` beschreiben den Neubau. 6. Formatbeschreibung und
+    neu geschrieben und in den Repositories committet (vom Inhaber). 5. Nach
+    ausdrücklicher Abnahme des Neubaus durch den Projektinhaber: `src_old/`,
+    `reference/` und die Scopes `legacy`, `backend`, `web` entfernt; README
+    und `docs/techdocs/` beschreiben den Neubau. 6. Formatbeschreibung und
     Tool-Liste an den Projektinhaber für den Harness übergeben. 7. Version
     1.0.0. 8. Offene Altitems nach Entscheidung des Inhabers geschlossen.
   - Summary: Der Tag des Umstiegs: Daten übernehmen, den neuen Viewer auf

@@ -9,6 +9,7 @@ import { DetailField, DetailPanel, DetailSection, InlineField, MarkdownView, typ
 import { LinksSection, useDeleteElement } from "../workspace";
 import { useGetItemQuery, useListAreasQuery, useListItemsQuery, type ItemOut, type ItemSummary } from "./api";
 import { PRIORITIES, STATUSES, defaultResolution, statusColor } from "./constants";
+import { DocumentsSection } from "./DocumentsSection";
 import { ItemFormDialog, RetypeDialog, RetypeNotice, type RetypeResult } from "./ItemDialogs";
 import { TextPromptDialog } from "./TextPromptDialog";
 import { backlogTestIds } from "./testIds";
@@ -157,6 +158,9 @@ function Loaded({ item, onSelect }: { item: ItemOut; onSelect: (uid: string) => 
 						))}
 					</DetailSection>
 				)}
+				<DetailSection id="documents" title={t("field.documents")}>
+					<DocumentsSection item={item} />
+				</DetailSection>
 				<DetailSection id="links" title={t("field.links")} defaultOpen={false}>
 					<LinksSection elementUid={item.uid} />
 				</DetailSection>

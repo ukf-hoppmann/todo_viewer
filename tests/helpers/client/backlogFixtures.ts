@@ -1,4 +1,4 @@
-import type { IndexItem, ItemOut } from "../../../client/src/plugins/backlog/api";
+import type { DocumentOut, IndexItem, ItemOut } from "../../../client/src/plugins/backlog/api";
 
 /** An item of the index with plain defaults (project `p1`, type Task, status Open, priority Normal). */
 export function item(uid: string, extra: Partial<IndexItem> = {}): IndexItem {
@@ -37,6 +37,8 @@ export function detail(uid: string, extra: Partial<ItemOut> = {}): ItemOut {
 		summary: null,
 		resolution: null,
 		created: "2026-10-16",
+		notes: [],
+		spec: [],
 		children: [],
 		dependencies: [],
 		progress: null,
@@ -44,4 +46,9 @@ export function detail(uid: string, extra: Partial<ItemOut> = {}): ItemOut {
 		deleted: false,
 		...extra,
 	};
+}
+
+/** A document with plain defaults (notes, version 1). */
+export function document(name: string, content: string, extra: Partial<DocumentOut> = {}): DocumentOut {
+	return { name, kind: name.includes("_notes") ? "notes" : "spec", content, version: 1, updated_at: "2026-10-16T12:00:00Z", ...extra };
 }

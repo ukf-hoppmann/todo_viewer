@@ -48,7 +48,8 @@
 		"children": "Kinder",
 		"links": "Verknüpfungen",
 		"title": "Titel",
-		"requiredForParent": "Pflicht für Parent"
+		"requiredForParent": "Pflicht für Parent",
+		"documents": "Dokumente"
 	},
 	"detail": {
 		"choose": "Ein Item im Baum wählen.",
@@ -100,5 +101,23 @@
 	},
 	"area": {
 		"newTitle": "Neuer Bereich"
+	},
+	"documents": {
+		"none": "Noch keine Notizen oder Specs.",
+		"addNote": "＋ Notiz-Eintrag",
+		"addSpec": "＋ Spec anlegen",
+		"topic": "Thema",
+		"discussed": "Besprochen",
+		"decided": "Entschieden",
+		"open": "Offen",
+		"onePerLine": "Ein Stichpunkt pro Zeile",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md oder {{label}}_spec_<thema>.md",
+		"large": "Großansicht",
+		"conflict": "Das Dokument wurde inzwischen geändert.",
+		"showCurrent": "Aktuellen Stand zeigen",
+		"saveAnyway": "Trotzdem speichern",
+		"currentState": "aktueller Stand",
+		"toc": "Inhaltsverzeichnis"
 	}
 }

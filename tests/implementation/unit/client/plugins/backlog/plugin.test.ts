@@ -16,12 +16,17 @@ describe("backlog plugin definition", () => {
 		expect(widgets.filter((entry) => entry.slot === "workspace.create-types").map((entry) => entry.name)).toEqual(["epic", "story", "task"]);
 	});
 
-	it.each(["workspace.element.changed", "core.reconnected"])("reloads the items on %s", (topic) => {
+	it.each([
+		["workspace.element.changed", ["Items"]],
+		["backlog.item.changed", ["Items"]],
+		["backlog.document.changed", ["Items", "Documents"]],
+		["core.reconnected", ["Items", "Documents"]],
+	])("reloads what changed on %s", (topic, tags) => {
 		const dispatch = vi.fn();
 		const invalidateTags = vi.fn((tags: string[]) => ({ type: "invalidate", tags }));
 
 		plugin.eventHandlers![topic]!({}, { dispatch, api: { util: { invalidateTags } } as never });
 
-		expect(dispatch).toHaveBeenCalledWith({ type: "invalidate", tags: ["Items"] });
+		expect(dispatch).toHaveBeenCalledWith({ type: "invalidate", tags });
 	});
 });

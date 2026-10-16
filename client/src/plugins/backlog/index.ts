@@ -17,11 +17,17 @@ export const plugin = definePlugin({
 	i18n: { de, en },
 	api: backlogApi,
 	eventHandlers: {
+		"backlog.item.changed": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Items"]));
+		},
+		"backlog.document.changed": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Items", "Documents"]));
+		},
 		"workspace.element.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Items"]));
 		},
 		"core.reconnected": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Items"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Items", "Documents"]));
 		},
 	},
 	contributions: [

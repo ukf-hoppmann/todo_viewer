@@ -23,3 +23,20 @@
 ### Open
 
 - Keine neuen Fragen.
+
+## 2026-10-16 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant: Server `domain/documents.py`, `application/documents.py`, `infrastructure/database/documents.py` (Migration v2), Client `DocumentsSection.tsx`. Beschreibung in `docs/techdocs/neubau-server.md` und `neubau-client.md`.
+- Die Regel `summary_required_with_notes` (aus `STORY-072` ausgespart) ist jetzt Teil der Lebenszyklusregeln; das Item im Detail nennt die Namen seiner Dokumente.
+- Mit der DB als Speicher entfallen die Schreibzugriffe auf Dateien und der Konflikt „Datei extern geändert“ des alten Viewers; die Version ist eine Revision je Dokument. Der Spiegel (`STORY-075`) schreibt die Dokumente später in die Ordner der Items.
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) Dokumente `<LABEL>_notes.md`, `<LABEL>_spec.md`, `<LABEL>_spec_<thema>.md` je Item in der DB (`test_item_documents.py`, `test_documents.py`); (2) Notiz-Eintrag mit Thema, Besprochen, Entschieden, Offen und Datum vom Server (Format im Tabellentest und in der Integration); (3) ganzes Dokument bearbeiten mit Vorschau und Konflikterkennung (`DocumentsSection.test.tsx`, Server: `version_conflict`); (4) die erste Notiz verlangt eine Kurzfassung (Server-Regel und Feld im Dialog); (5) Tests grün.
+- `scripts/check-next.sh` und `scripts/check.sh` grün. Status: `Awaiting confirmation`.
+
+### Open
+
+- Nicht geprüft: das Schreiben der Dokumente in die Ordner (`STORY-075`); die Übernahme vorhandener Dokumente (`STORY-082`).

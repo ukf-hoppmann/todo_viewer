@@ -4,7 +4,7 @@ import type { ConnectionFetch } from "../../../client/src/core/api/types";
 import { createAppStore } from "../../../client/src/core/store/createAppStore";
 import { coreApi } from "../../../client/src/core/ui-state/coreApi";
 import type { PluginRegistry } from "../../../client/src/core/plugins/types";
-import { backlogApi, type IndexItem, type ItemOut } from "../../../client/src/plugins/backlog/api";
+import { backlogApi, type DocumentOut, type IndexItem, type ItemOut } from "../../../client/src/plugins/backlog/api";
 import { workspaceApi, type ElementOut, type FolderListing, type LinkedElement, type Project, type TrashedElement } from "../../../client/src/plugins/workspace/api";
 
 const url = "https://backend.test/api";
@@ -42,6 +42,8 @@ export function fakeWorkspaceBackend(
 		/** Items of the backlog (`GET backlog/items` filters them by project) and the detail by `uid`. */
 		backlog?: IndexItem[];
 		details?: Record<string, ItemOut>;
+		/** The documents of the items by name (`GET backlog/items/{uid}/documents/{name}`). */
+		itemDocuments?: Record<string, DocumentOut>;
 		/** The areas by project, for `GET backlog/areas`. */
 		areas?: Record<string, string[]>;
 		/** Answers a request itself (return `undefined` to let the fake answer): for errors and special cases. */
@@ -72,6 +74,11 @@ export function fakeWorkspaceBackend(
 
 		const custom = options.respond?.({ method: request.method, path, body });
 		if (custom) return custom;
+		const oneDocument = /^backlog\/items\/([^/]+)\/documents\/([^/]+)$/.exec(path);
+		if (oneDocument && request.method === "GET") {
+			const found = options.itemDocuments?.[oneDocument[2]!];
+			return found ? Response.json(found) : Response.json({ code: "document_not_found", message: "Dokument gibt es nicht", details: {} }, { status: 400 });
+		}
 		if (path === "backlog/areas") return Response.json({ areas: options.areas?.[searchParams.get("project") ?? ""] ?? [] });
 		if (path.startsWith("backlog/items") && request.method !== "GET") {
 			const uid = path.split("/")[2];

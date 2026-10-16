@@ -48,7 +48,8 @@
 		"children": "Children",
 		"links": "Links",
 		"title": "Title",
-		"requiredForParent": "Required for parent"
+		"requiredForParent": "Required for parent",
+		"documents": "Documents"
 	},
 	"detail": {
 		"choose": "Choose an item in the tree.",
@@ -100,5 +101,23 @@
 	},
 	"area": {
 		"newTitle": "New area"
+	},
+	"documents": {
+		"none": "No notes or specs yet.",
+		"addNote": "＋ Notes entry",
+		"addSpec": "＋ Create spec",
+		"topic": "Topic",
+		"discussed": "Discussed",
+		"decided": "Decided",
+		"open": "Open",
+		"onePerLine": "One bullet per line",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md or {{label}}_spec_<topic>.md",
+		"large": "Large view",
+		"conflict": "The document was changed in the meantime.",
+		"showCurrent": "Show current state",
+		"saveAnyway": "Save anyway",
+		"currentState": "current state",
+		"toc": "Table of contents"
 	}
 }

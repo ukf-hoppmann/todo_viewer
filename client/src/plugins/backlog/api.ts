@@ -5,6 +5,7 @@ export type IndexItem = components["schemas"]["IndexItem"];
 export type ItemOut = components["schemas"]["ItemOut"];
 export type ItemSummary = components["schemas"]["ItemSummary"];
 export type RetypeOut = components["schemas"]["RetypeOut"];
+export type DocumentOut = components["schemas"]["DocumentOut"];
 export type ReopenOut = components["schemas"]["ReopenOut"];
 
 /** The error of a write: the code and details the server gave, as an `Error` the forms can show. */
@@ -61,12 +62,27 @@ export const backlogApi = createPluginApi(
 			query: (uid) => ({ url: `backlog/items/${uid}/reopen`, method: "POST", body: {} }),
 			invalidatesTags: ["Items"],
 		}),
+		getDocument: build.query<DocumentOut, { uid: string; name: string }>({
+			query: ({ uid, name }) => `backlog/items/${uid}/documents/${name}`,
+			providesTags: ["Documents"],
+		}),
+		putDocument: build.mutation<DocumentOut, { uid: string; name: string; content: string; version?: number; summary?: string }>({
+			query: ({ uid, name, ...body }) => ({ url: `backlog/items/${uid}/documents/${name}`, method: "PUT", body }),
+			invalidatesTags: ["Items", "Documents"],
+		}),
+		appendNote: build.mutation<
+			DocumentOut,
+			{ uid: string; topic: string; discussed: string[]; decided: string[]; open: string[]; summary?: string }
+		>({
+			query: ({ uid, ...body }) => ({ url: `backlog/items/${uid}/notes`, method: "POST", body }),
+			invalidatesTags: ["Items", "Documents"],
+		}),
 		getItem: build.query<ItemOut, string>({
 			query: (uid) => `backlog/items/${uid}`,
 			providesTags: ["Items"],
 		}),
 	}),
-	{ tagTypes: ["Items"] },
+	{ tagTypes: ["Items", "Documents"] },
 );
 
 export const {
@@ -78,4 +94,7 @@ export const {
 	useMoveItemMutation,
 	useRetypeItemMutation,
 	useReopenAncestorsMutation,
+	useGetDocumentQuery,
+	usePutDocumentMutation,
+	useAppendNoteMutation,
 } = backlogApi;

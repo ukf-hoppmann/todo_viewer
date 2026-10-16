@@ -1,6 +1,7 @@
 # `STORY-080` — Wecker
 
 Grundlage: `EPIC-007_spec.md`, Abschnitte 5 (Zeitgeber), 9 (`alarms`), 10. Ersetzt `STORY-056`.
+Format: `docs/techdocs/interfaces.md`, Abschnitt „Dateiformat Version 2“; Beispiele unter `tests/fixtures/mirror-v2/`.
 
 ## Abgrenzung
 

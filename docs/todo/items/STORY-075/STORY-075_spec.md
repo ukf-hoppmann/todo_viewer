@@ -1,6 +1,6 @@
 # `STORY-075` — Backlog im Markdown-Spiegel
 
-Grundlage: `EPIC-007_spec.md`, Abschnitte 7.3, 10; Format aus `TASK-035`.
+Grundlage: `EPIC-007_spec.md`, Abschnitte 7.3, 10; Format: `docs/techdocs/interfaces.md`, Abschnitt „Dateiformat Version 2“; Beispiele unter `tests/fixtures/mirror-v2/`.
 
 ## Umfang
 
@@ -14,7 +14,7 @@ Grundlage: `EPIC-007_spec.md`, Abschnitte 7.3, 10; Format aus `TASK-035`.
 - `SyncParticipant`: lädt und schreibt Items, Abhängigkeiten, Bereiche
   (fehlender Bereich wird angelegt), Dokumente; neue Items über
   `ElementRegistry.register`.
-- Prüfungen nach Format Version 2 mit Fehlercodes aus `TASK-035`.
+- Prüfungen nach Format Version 2 mit den Fehlercodes aus `docs/techdocs/interfaces.md`.
 
 ## Tests
 

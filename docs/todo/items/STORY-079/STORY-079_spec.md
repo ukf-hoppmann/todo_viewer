@@ -1,6 +1,6 @@
 # `STORY-079` — Notes im Markdown-Spiegel
 
-Grundlage: `EPIC-007_spec.md`, Abschnitte 7.3, 10; Format aus `TASK-035`.
+Grundlage: `EPIC-007_spec.md`, Abschnitte 7.3, 10; Format: `docs/techdocs/interfaces.md`, Abschnitt „Dateiformat Version 2“; Beispiele unter `tests/fixtures/mirror-v2/`.
 
 ## Umfang
 

@@ -248,19 +248,24 @@ melden ihre Elementtypen im Slot `workspace.create-types` an.
 
 ## 10. Markdown-Format
 
-Das Format („backlog format version 2“) wird in diesem Projekt festgelegt
-(`TASK` Format v2) und in `docs/techdocs/interfaces.md` beschrieben. Kernpunkte:
+Maßgeblich ist der Abschnitt „Dateiformat Version 2“ in
+`docs/techdocs/interfaces.md` (freigegeben 2026-10-16 mit `TASK-035`), mit
+Beispielen unter `tests/fixtures/mirror-v2/`. Er gilt als lebende
+Dokumentation und wird bei Formatänderungen dort angepasst, nicht hier.
+Kurzfassung:
 
-- Aufbau wie Version 1: `TODO.md`, `archive.md`, `items/<ID>/`; dazu
-  `notes/` (eine Datei je Note, `topics.md`) und `alarms.md`.
-- Jeder Eintrag trägt eine Zeile `Uid: <uuid>.` Die vergibt die DB; eine
-  LLM legt neue Einträge ohne `Uid` an.
-- Neue Einträge ohne Label tragen einen Platzhalter `NEW-<kurzname>`
-  (Backlog) bzw. stehen in `notes/new-<kurzname>.md` (Notes); der Import
-  vergibt Label und `Uid` und schreibt Verweise um.
-- `counters.md` entfällt; Labels vergibt nur die DB.
-- Prioritäten nur `Urgent`, `Important`, `Normal`, `Prospective`; alles
-  andere weist der Sync mit Datei und Zeile ab.
+- Aufbau wie Version 1: `TODO.md`, `archive.md`, `items/<LABEL>/`; dazu
+  `notes/` (wie heute, ohne `counters.md`) und `alarms.md`.
+- Jeder Eintrag trägt seine `Uid`; die vergibt nur die DB.
+- Verweise stehen in den Dateien als Label, nie als `Uid`. Die DB verweist
+  über `uid` und merkt sich jedes frühere Label (Label-Historie, `STORY-068`),
+  sodass auch ein altes Label noch auflöst.
+- Neue Backlog-Einträge und Wecker tragen einen Platzhalter
+  `NEW-<kurzname>`, neue Notes und Topics die heutige Schreibweise
+  (`notes/new-<kurzname>.md`, `- NEW | <Name>`); der Sync vergibt Label und
+  `Uid` und schreibt Verweise um.
+- Prioritäten nur `Urgent`, `Important`, `Normal`, `Prospective`; Formatfehler
+  brechen den Sync mit Code, Datei und Zeile ab.
 
 ## 11. Agenten-Schnittstelle
 

@@ -1,4 +1,4 @@
-import { describeProject, type ProjectSource } from "./projects";
+import { describeProject, mirrorSettings, type ProjectSource } from "./projects";
 import type { SyncState } from "./sync";
 
 const database = (over: Partial<ProjectSource> = {}): ProjectSource => ({ primary: "database", mirror: "markdown", markdown_path: "/repos/central", auto_sync: false, ...over });
@@ -94,16 +94,32 @@ describe("describeProject: switching the primary source", () => {
   });
 });
 
-describe("describeProject: the automatic sync", () => {
-  it("can be switched on only with a mirror, and stays switchable once it is on", () => {
-    expect(describeProject(database(), status("in_sync")).autoSwitchable).toBe(true);
-    expect(describeProject(markdown(), status("none")).autoSwitchable).toBe(false);
-    expect(describeProject(markdown({ auto_sync: true }), status("none")).autoSwitchable).toBe(true);
+describe("describeProject: the mirror as one choice", () => {
+  it("is off without a mirror, by hand with one, and automatic once the switch is on", () => {
+    expect(describeProject(markdown(), status("none")).mirrorMode).toBe("off");
+    expect(describeProject(database(), status("in_sync")).mirrorMode).toBe("manual");
+    expect(describeProject(database({ auto_sync: true }), status("in_sync")).mirrorMode).toBe("auto");
+    expect(describeProject(markdown({ mirror: "database", auto_sync: true }), status("in_sync")).mirrorMode).toBe("auto");
   });
 
-  it("is on without effect when the mirror is gone", () => {
-    expect(describeProject(markdown({ auto_sync: true }), status("none")).autoIdle).toBe(true);
-    expect(describeProject(database({ auto_sync: true }), status("in_sync")).autoIdle).toBe(false);
-    expect(describeProject(markdown(), status("none")).autoIdle).toBe(false);
+  it("counts a switch left on without a mirror as off, because it does nothing", () => {
+    expect(describeProject(markdown({ auto_sync: true }), status("none")).mirrorMode).toBe("off");
+    expect(describeProject(database({ mirror: "none", auto_sync: true }), status("none")).mirrorMode).toBe("off");
+  });
+
+  it("is known while the state is still loading, since it comes from the project itself", () => {
+    expect(describeProject(database({ auto_sync: true }), undefined).mirrorMode).toBe("auto");
+  });
+
+  it("asks for the mirror and the automatic sync together, so one change is enough", () => {
+    expect(mirrorSettings("off")).toEqual({ mirror: false, autoSync: false });
+    expect(mirrorSettings("manual")).toEqual({ mirror: true, autoSync: false });
+    expect(mirrorSettings("auto")).toEqual({ mirror: true, autoSync: true });
+  });
+
+  it("can be switched on for a markdown project, and for a database project only with a markdown folder", () => {
+    expect(describeProject(markdown(), status("none")).canMirror).toBe(true);
+    expect(describeProject(database({ mirror: "none" }), status("none")).canMirror).toBe(true);  // the folder is kept
+    expect(describeProject(database({ mirror: "none", markdown_path: null }), status("none")).canMirror).toBe(false);
   });
 });

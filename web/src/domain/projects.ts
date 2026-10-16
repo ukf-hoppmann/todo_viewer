@@ -15,6 +15,15 @@ export type ProjectTone = "loading" | "idle" | "ok" | "pending" | "attention";
  */
 export type ProjectAction = "sync" | "resolve" | "enableMirror" | "setupMirror";
 
+/** The three states of a mirror: none, one that is synced by hand, one the viewer syncs by itself. */
+export type MirrorMode = "off" | "manual" | "auto";
+export const MIRROR_MODES: readonly MirrorMode[] = ["off", "manual", "auto"];
+
+/** What a change to `mode` sets: whether a mirror is kept and the automatic sync with it; both go in one request. */
+export function mirrorSettings(mode: MirrorMode): { mirror: boolean; autoSync: boolean } {
+  return { mirror: mode !== "off", autoSync: mode === "auto" };
+}
+
 export interface ProjectView {
   /** The state to name; "loading" while it is unknown. Open conflicts win over what the state says. */
   status: SyncState | "loading";
@@ -26,10 +35,10 @@ export interface ProjectView {
   action: ProjectAction;
   /** A database project without a markdown folder has nowhere to go to. */
   switchBlocked: boolean;
-  /** The auto-sync switch can be changed: needs a mirror, but an active switch can always be turned off. */
-  autoSwitchable: boolean;
-  /** The auto-sync switch is on although there is no mirror, so it does nothing. */
-  autoIdle: boolean;
+  /** The mirror's state from the project itself; a switch left on without a mirror counts as off, it does nothing. */
+  mirrorMode: MirrorMode;
+  /** A mirror can be switched on: a database project needs a markdown folder for it. */
+  canMirror: boolean;
 }
 
 const toneOf = (state: SyncState, conflicts: number): ProjectTone => {
@@ -56,7 +65,7 @@ export function describeProject(source: ProjectSource, status: ProjectStatus | u
     mirrorOff: source.primary === "database" && !hasMirror && !!source.markdown_path,
     action: actionOf(hasMirror, conflicts, source),
     switchBlocked: source.primary === "database" && !source.markdown_path,
-    autoSwitchable: hasMirror || source.auto_sync,
-    autoIdle: source.auto_sync && !hasMirror,
+    mirrorMode: !hasMirror ? "off" : source.auto_sync ? "auto" : "manual",
+    canMirror: source.primary === "markdown" || !!source.markdown_path,
   };
 }

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { Schemas, SourceStatus } from "../../api/client";
 import { useSaveSource, useSourceList, useSyncStatuses } from "../../api/queries";
-import { describeProject } from "../../domain/projects";
+import { describeProject, MIRROR_MODES, type MirrorMode, mirrorSettings } from "../../domain/projects";
 import type { SyncScope, SyncState } from "../../domain/sync";
 import { describeError, useI18n } from "../../i18n/i18n";
 import { scopeOf } from "../../state/uiState";
@@ -86,15 +86,19 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
     save.mutate(request, { onSuccess: then, onError: (e) => setError(describeError(i18n, e)) });
   };
 
-  const toggleDatabaseMirror = (on: boolean) => {
-    if (!on && !window.confirm(t("projects.mirror.offConfirm", { p: source.project }))) return;
-    change({ id: source.id, project: source.project, path: source.path, mirror: on ? "database" : "none" });
+  // One request sets the mirror and the automatic sync together. A database project sends its folder again, so
+  // switching the mirror off and on keeps it; only an emptied folder removes it.
+  const chooseMode = (mode: MirrorMode) => {
+    if (mode === view.mirrorMode) return;
+    const { mirror, autoSync } = mirrorSettings(mode);
+    if (database) {
+      change({ id: source.id, project: source.project, path: "", syncPath: folder ?? "", mirror: mirror ? "markdown" : "none", autoSync });
+      return;
+    }
+    // The database mirror is a copy in the database: dropping it deletes that copy.
+    if (!mirror && !window.confirm(t("projects.mirror.offConfirm", { p: source.project }))) return;
+    change({ id: source.id, project: source.project, path: source.path, mirror: mirror ? "database" : "none", autoSync });
   };
-
-  // The folder is sent again, so switching the mirror off and on keeps it; only an emptied folder removes it.
-  const setMarkdownMirror = (on: boolean) =>
-    change({ id: source.id, project: source.project, path: "", syncPath: folder ?? "", mirror: on ? "markdown" : "none" });
-  const setMirror = database ? setMarkdownMirror : toggleDatabaseMirror;
 
   const when = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString(i18n.lang) : t("projects.lastSync.never"));
   const otherName = t(`source.backend.${database ? "markdown" : "database"}`);
@@ -104,7 +108,7 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
   const mainAction = {
     sync: { label: t("projects.sync"), run: () => onOpen("sync") },
     resolve: { label: t("projects.resolve"), run: () => onOpen("resolve") },
-    enableMirror: { label: t(database ? "projects.action.enableMarkdown" : "projects.action.enableDatabase"), run: () => setMirror(true) },
+    enableMirror: { label: t(database ? "projects.action.enableMarkdown" : "projects.action.enableDatabase"), run: () => chooseMode("manual") },
     setupMirror: { label: t("projects.folder.set"), run: () => onOpen("folder") },
   }[view.action];
 
@@ -186,26 +190,21 @@ function ProjectCard({ source, state, checking, focused, onCheck, onOpen }: Proj
             </button>
           </dd>
           <dt>{t("projects.mirror")}</dt>
-          <dd>
-            <label>
-              <input type="checkbox" checked={source.mirror !== "none"} disabled={save.isPending || (database && !folder)} onChange={(e) => setMirror(e.target.checked)} />
-              {t(database ? "projects.mirror.markdown" : "projects.mirror.database")}
-            </label>
-            {database && !folder && <span className="hint">{t("projects.mirror.needsFolder")}</span>}
-          </dd>
-          <dt>{t("projects.auto")}</dt>
-          <dd>
-            <label>
-              <input
-                type="checkbox"
-                checked={source.auto_sync}
-                disabled={save.isPending || !view.autoSwitchable}
-                onChange={(e) => change({ id: source.id, project: source.project, path: source.path, syncPath: database ? (folder ?? "") : undefined, autoSync: e.target.checked })}
-              />
-              {t("projects.auto.label")}
-            </label>
-            {view.autoIdle && <span className="hint">{t("projects.auto.noMirror")}</span>}
-            {!view.autoSwitchable && <span className="hint">{t("projects.auto.needsMirror")}</span>}
+          <dd className="project-mode" role="radiogroup" aria-label={t("projects.mirror")}>
+            {MIRROR_MODES.map((mode) => (
+              <label key={mode}>
+                <input
+                  type="radio"
+                  name={`mirror-${source.id}`}
+                  checked={view.mirrorMode === mode}
+                  disabled={save.isPending || (mode !== "off" && !view.canMirror)}
+                  onChange={() => chooseMode(mode)}
+                />
+                {t(`projects.mode.${mode}`)}
+              </label>
+            ))}
+            {!view.canMirror && <span className="hint">{t("projects.mirror.needsFolder")}</span>}
+            {!database && view.hasMirror && <span className="hint">{t("projects.mode.offDeletes")}</span>}
           </dd>
           {view.hasMirror && (
             <>

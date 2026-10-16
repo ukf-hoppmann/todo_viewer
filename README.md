@@ -164,12 +164,19 @@ Das Zahnrad oben in der Sidebar öffnet das Einstellungsmenü. Im Abschnitt
 Anzeige; der Ort steht in `configs/config.json`) und der Speicherort, mit dem
 „Projekt hinzufügen“ vorbelegt ist (Markdown-Ordner oder Datenbank).
 
-Im Abschnitt „Projekte“ steht pro Projekt eine Karte: Primärquelle
-(Markdown-Ordner oder Datenbank) mit „Primärquelle wechseln…“ (erst Sync, vorher
-ein Backup der bisherigen Primärquelle unter `configs/backups/`), der
-Markdown-Ordner, der Spiegel (Datenbank-Spiegel ein/aus bzw. Markdown-Ordner als
-Spiegel, der sich aus- und wieder einschalten lässt, ohne den Ordner neu zu wählen), der Stand des Spiegels mit dem letzten Sync und „Sync…“ mit wählbarer
-Einschränkung der Richtung (Standard: beide Richtungen). Ein ⚠ hinter dem
+Im Abschnitt „Projekte“ steht pro Projekt eine Karte. Oben der Name mit dem Stand
+des Spiegels (grün: in Sync, gelb: braucht dich, grau: nicht gespiegelt), darunter
+Primärquelle und Spiegel nebeneinander (Datenbank oder Markdown-Ordner mit Pfad)
+und der letzte Sync. Die Karte stellt genau eine Aktion nach vorn: „Sync starten…“
+(mit wählbarer Einschränkung der Richtung, Standard: beide Richtungen),
+„Konflikte klären…“ in einem gelben Hinweis, solange Konflikte offen sind, oder
+„Datenbank-Spiegel einschalten“ bzw. „Markdown-Spiegel einschalten“ bei einem
+Projekt ohne Spiegel (fehlt der Markdown-Ordner, „Spiegel-Ordner festlegen…“). Die
+selteneren Einstellungen stehen unter „Einrichtung“ (eingeklappt): Markdown-Ordner,
+Spiegel ein/aus (ein Markdown-Ordner bleibt beim Ausschalten gespeichert und lässt
+sich ohne neue Wahl wieder einschalten), Auto-Sync und der Wechsel der Primärquelle
+(„Zu Markdown wechseln…“ bzw. „Zur Datenbank wechseln…“: erst Sync, vorher ein
+Backup der bisherigen Primärquelle unter `configs/backups/`). Ein ⚠ hinter dem
 Projektnamen in der Sidebar heißt: der Spiegel wurde seit dem letzten Sync
 geändert (oder ist nicht lesbar); ein Klick öffnet die Karte dieses Projekts. Der
 Stand wird beim Laden der Seite, bei Fensterfokus, beim Öffnen des Menüs, mit

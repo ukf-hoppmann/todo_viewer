@@ -257,7 +257,7 @@ input.field-edit {
 .project-setup-toggle::before { content: "▸"; font-size: 10px; }
 .project-setup-toggle[aria-expanded="true"]::before { content: "▾"; }
 .project-setup-toggle:hover { color: var(--text); }
-.project-card .project-setup { padding-top: 10px; border-top: 1px solid var(--panel-border); grid-template-columns: 7em minmax(0, 1fr); gap: 8px 12px; align-items: baseline; }
+.project-card .project-setup { padding-top: 10px; border-top: 1px solid var(--panel-border); grid-template-columns: 9em minmax(0, 1fr); gap: 8px 12px; align-items: baseline; }
 .project-card dd { display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
 .project-card dd .project-folder { flex: 1 1 0; min-width: 0; }
 .project-card dd .hint { flex-basis: 100%; font-size: 12px; color: var(--text-dim); }

@@ -1,0 +1,62 @@
+// What the card of a project says and offers: pure functions, no React or network.
+import type { Schemas } from "../api/client";
+import { needsAttention, type SyncState } from "./sync";
+
+/** The fields of a project that decide what its card shows. */
+export type ProjectSource = Pick<Schemas["SourceStatusOut"], "primary" | "mirror" | "markdown_path" | "auto_sync">;
+/** The last known sync state of a project, if it has been asked for yet. */
+export type ProjectStatus = { state: SyncState; conflicts: number };
+
+/** How loud the status is: "attention" wants the owner, "pending" is a difference that is not a problem. */
+export type ProjectTone = "loading" | "idle" | "ok" | "pending" | "attention";
+/**
+ * The one thing the card puts forward. "resolve" and "sync" open the sync dialog; "enableMirror" switches an existing
+ * mirror setup on; "setupMirror" asks for the markdown folder the mirror needs first.
+ */
+export type ProjectAction = "sync" | "resolve" | "enableMirror" | "setupMirror";
+
+export interface ProjectView {
+  /** The state to name; "loading" while it is unknown. Open conflicts win over what the state says. */
+  status: SyncState | "loading";
+  tone: ProjectTone;
+  conflicts: number;
+  hasMirror: boolean;
+  /** A database project whose markdown folder is kept although the mirror is off. */
+  mirrorOff: boolean;
+  action: ProjectAction;
+  /** A database project without a markdown folder has nowhere to go to. */
+  switchBlocked: boolean;
+  /** The auto-sync switch can be changed: needs a mirror, but an active switch can always be turned off. */
+  autoSwitchable: boolean;
+  /** The auto-sync switch is on although there is no mirror, so it does nothing. */
+  autoIdle: boolean;
+}
+
+const toneOf = (state: SyncState, conflicts: number): ProjectTone => {
+  if (needsAttention(state, conflicts)) return "attention";
+  if (state === "in_sync") return "ok";
+  if (state === "none") return "idle";
+  return "pending";
+};
+
+function actionOf(hasMirror: boolean, conflicts: number, source: ProjectSource): ProjectAction {
+  if (!hasMirror) return source.primary === "database" && !source.markdown_path ? "setupMirror" : "enableMirror";
+  return conflicts > 0 ? "resolve" : "sync";
+}
+
+export function describeProject(source: ProjectSource, status: ProjectStatus | undefined): ProjectView {
+  const hasMirror = source.mirror !== "none";
+  const conflicts = status?.conflicts ?? 0;
+  const known = status ? (conflicts > 0 ? "conflicts" : status.state) : "loading";
+  return {
+    status: known,
+    tone: status ? toneOf(status.state, conflicts) : "loading",
+    conflicts,
+    hasMirror,
+    mirrorOff: source.primary === "database" && !hasMirror && !!source.markdown_path,
+    action: actionOf(hasMirror, conflicts, source),
+    switchBlocked: source.primary === "database" && !source.markdown_path,
+    autoSwitchable: hasMirror || source.auto_sync,
+    autoIdle: source.auto_sync && !hasMirror,
+  };
+}

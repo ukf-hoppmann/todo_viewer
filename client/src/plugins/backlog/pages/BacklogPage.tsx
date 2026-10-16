@@ -1,13 +1,14 @@
-import { Box, Button, LinearProgress, Typography } from "@mui/material";
-import { useMemo } from "react";
+import { Alert, Box, Button, LinearProgress, Typography } from "@mui/material";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { buildTree, TreeView } from "../../../shared";
 import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListItemsQuery } from "../api";
 import { ItemDetail } from "../ItemDetail";
-import { collapsibleIds, filterItems, groupByProject, projectProgress, toFlatNodes } from "../model";
+import { collapsibleIds, filterItems, groupByProject, placementOf, projectProgress, toFlatNodes } from "../model";
 import { useBacklogState } from "../state";
 import { backlogTestIds } from "../testIds";
+import { useItemWrite } from "../useItemWrite";
 
 /**
  * The backlog: per project the tree Epic → Story → Task with the progress of every item, filtered by status,
@@ -19,6 +20,8 @@ export default function BacklogPage() {
 	const { visible, marked } = useProjectSelection();
 	const [search] = useSearchText();
 	const state = useBacklogState();
+	const write = useItemWrite();
+	const [error, setError] = useState<string>();
 	const projectUids = useMemo(() => visible.map((project) => project.uid), [visible]);
 	const { data: items = [] } = useListItemsQuery(projectUids, { skip: projectUids.length === 0 });
 
@@ -51,6 +54,11 @@ export default function BacklogPage() {
 						);
 					})}
 				</Box>
+				{error && (
+					<Alert severity="error" onClose={() => setError(undefined)} data-testid={backlogTestIds.error} sx={{ mb: 1 }}>
+						{error}
+					</Alert>
+				)}
 				{groups.length === 0 && (
 					<Typography color="text.secondary" data-testid={backlogTestIds.empty}>
 						{t("empty")}
@@ -66,6 +74,14 @@ export default function BacklogPage() {
 							<LinearProgress variant="determinate" value={progress.total ? (progress.done / progress.total) * 100 : 0} sx={{ mb: 0.5 }} />
 							<TreeView
 								ariaLabel={project.name}
+								canDrop={(source, target, position) => placementOf(items, source.id, target.id, position) !== null}
+								onDrop={({ sourceId, targetId, position }) => {
+									const placement = placementOf(items, sourceId, targetId, position);
+									const source = items.find((item) => item.uid === sourceId);
+									if (!placement || !source) return;
+									setError(undefined);
+									write.moveItem(source, placement.parent, placement.position).catch((failure: Error) => setError(failure.message));
+								}}
 								nodes={buildTree(toFlatNodes(projectItems))}
 								expanded={new Set(projectItems.filter((item) => state.expanded(item.uid)).map((item) => item.uid))}
 								onToggle={state.toggleCollapsed}
@@ -85,6 +101,7 @@ export default function BacklogPage() {
 					</Typography>
 				)}
 			</Box>
+			{write.dialog}
 		</Box>
 	);
 }

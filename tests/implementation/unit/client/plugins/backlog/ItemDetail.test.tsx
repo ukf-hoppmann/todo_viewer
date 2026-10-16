@@ -43,9 +43,9 @@ describe("ItemDetail", () => {
 		});
 
 		expect(screen.getByTestId(sharedTestIds.detailTitle).textContent).toBe("T1 — Titel t1");
-		expect(screen.getByTestId(ids.field("status")).textContent).toBe("Wartet auf Bestätigung");
-		expect(screen.getByTestId(ids.field("priority")).textContent).toBe("Wichtig");
-		expect(screen.getByTestId(ids.field("area")).textContent).toBe("Server");
+		expect(screen.getByTestId(sharedTestIds.inlineFieldInput("status")).textContent).toBe("Wartet auf Bestätigung");
+		expect(screen.getByTestId(sharedTestIds.inlineFieldInput("priority")).textContent).toBe("Wichtig");
+		expect(screen.getByTestId(sharedTestIds.inlineFieldInput("area")).textContent).toBe("Server");
 		expect(screen.getByTestId(ids.field("created")).textContent).toBe("2026-10-16");
 		expect(screen.getByTestId(ids.field("goal")).querySelector("strong")?.textContent).toBe("Ziel");
 		expect(screen.getByTestId(ids.field("completion_criteria")).textContent).toContain("Eins");
@@ -59,7 +59,7 @@ describe("ItemDetail", () => {
 
 		expect(screen.queryByTestId(ids.field("goal"))).toBeNull();
 		expect(screen.queryByTestId(ids.field("progress"))).toBeNull();
-		expect(screen.getByTestId(ids.field("area")).textContent).toBe("—");
+		expect(screen.getByTestId(sharedTestIds.inlineFieldInput("area")).textContent?.replace(/\u200b/g, "")).toBe("");
 	});
 
 	it("lists children with the ones in the trash struck through, and selects one on click", async () => {
@@ -89,10 +89,12 @@ describe("ItemDetail", () => {
 		expect(onSelect.mock.calls).toEqual([["s1"], ["t0"]]);
 	});
 
-	it("marks an item in the trash", async () => {
+	it("marks an item in the trash and offers no editing for it", async () => {
 		await renderDetail("t1", { t1: detail("t1", { deleted: true }) });
 
 		expect(screen.getByTestId(ids.detail).textContent).toContain("im Papierkorb");
+		expect(screen.queryByTestId(sharedTestIds.inlineField("status"))).toBeNull();
+		expect(screen.queryByTestId(sharedTestIds.detailAction("edit"))).toBeNull();
 	});
 
 	it("says so when the item cannot be loaded", async () => {

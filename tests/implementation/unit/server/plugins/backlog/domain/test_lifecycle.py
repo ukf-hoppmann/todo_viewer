@@ -5,19 +5,20 @@ from dataclasses import replace
 import pytest
 from backlog_fixtures import item
 from viewer.plugins.backlog.domain.lifecycle import LifecycleRules, LifecycleViolation, closed_ancestors
+from viewer.plugins.backlog.domain.model import Item
 
 rules = LifecycleRules()
 
 
-def epic(uid: str = "e", status: str = "Open") -> object:
+def epic(uid: str = "e", status: str = "Open") -> Item:
     return replace(item(uid, status=status), type="Epic")
 
 
-def child(uid: str, parent: str, status: str = "Open", required: bool | None = True) -> object:
+def child(uid: str, parent: str, status: str = "Open", required: bool | None = True) -> Item:
     return replace(item(uid, parent=parent, status=status, required=required))
 
 
-def check(before: list, after: list, returning: list | None = None) -> str:  # type: ignore[type-arg]
+def check(before: list[Item], after: list[Item], returning: list[Item] | None = None) -> str:
     try:
         rules.check_change(before, after, returning or [])
     except LifecycleViolation as error:

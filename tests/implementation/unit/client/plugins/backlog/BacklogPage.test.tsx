@@ -141,3 +141,49 @@ describe("BacklogPage: selection", () => {
 		});
 	});
 });
+
+describe("BacklogPage: drag and drop", () => {
+	const dragEvent = (type: "dragOver" | "drop", target: HTMLElement, offsetY: number) => {
+		// jsdom has no DragEvent: build the event by hand so that it carries the pointer position.
+		const event = new Event(type.toLowerCase(), { bubbles: true, cancelable: true });
+		Object.defineProperty(event, "clientY", { value: offsetY });
+		Object.defineProperty(event, "dataTransfer", { value: { setData: () => {}, effectAllowed: "", dropEffect: "" } });
+		target.getBoundingClientRect = () => ({ top: 0, height: 40, bottom: 40, left: 0, right: 100, width: 100, x: 0, y: 0, toJSON: () => ({}) });
+		fireEvent(target, event);
+	};
+
+	it("moves an item below another one and asks the server for parent and place", async () => {
+		const backend = await renderPage({ documents: { backlog: { hiddenStatuses: [] } } });
+		await screen.findByTestId(sharedTestIds.treeNode("t1"));
+
+		fireEvent.dragStart(node("t1"), { dataTransfer: { setData: () => {}, effectAllowed: "" } });
+		dragEvent("drop", node("e1"), 20);
+
+		await waitFor(() => expect(backend.calls("POST", "backlog/items/t1/move")).toHaveLength(1));
+		expect(backend.calls("POST", "backlog/items/t1/move")[0]!.body).toEqual({ version: 1, parent: "e1", position: 4 });
+	});
+
+	it("does not accept a drop that the structure forbids", async () => {
+		const backend = await renderPage({ documents: { backlog: { hiddenStatuses: [] } } });
+		await screen.findByTestId(sharedTestIds.treeNode("t1"));
+
+		fireEvent.dragStart(node("e1"), { dataTransfer: { setData: () => {}, effectAllowed: "" } });
+		dragEvent("drop", node("s2"), 20);
+
+		expect(backend.calls("POST", "move")).toHaveLength(0);
+	});
+
+	it("shows the message of the server when a move is refused", async () => {
+		await renderPage({
+			documents: { backlog: { hiddenStatuses: [] } },
+			respond: ({ method, path }) =>
+				method === "POST" && path.endsWith("/move") ? Response.json({ code: "parent_cycle", message: "Kreis in den Parent-Verweisen", details: {} }, { status: 400 }) : undefined,
+		});
+		await screen.findByTestId(sharedTestIds.treeNode("t1"));
+
+		fireEvent.dragStart(node("t1"), { dataTransfer: { setData: () => {}, effectAllowed: "" } });
+		dragEvent("drop", node("e1"), 20);
+
+		await waitFor(() => expect(screen.getByTestId(ids.error).textContent).toContain("Kreis in den Parent-Verweisen"));
+	});
+});

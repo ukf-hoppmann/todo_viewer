@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { item } from "../../../../../helpers/client/backlogFixtures";
-import { collapsibleIds, filterItems, groupByProject, projectProgress, toFlatNodes } from "../../../../../../client/src/plugins/backlog/model";
+import { collapsibleIds, filterItems, groupByProject, placementOf, projectProgress, toFlatNodes } from "../../../../../../client/src/plugins/backlog/model";
 
 const none = { hiddenStatuses: new Set<string>(), hiddenPriorities: new Set<string>(), search: "" };
 
@@ -72,5 +72,46 @@ describe("collapsibleIds", () => {
 		expect(collapsibleIds(items, "Epic", new Set())).toEqual(["e1", "e2"]);
 		expect(collapsibleIds(items, "Epic", new Set(["p2"]))).toEqual(["e2"]);
 		expect(collapsibleIds(items, "Story", new Set())).toEqual([]);
+	});
+});
+
+describe("placementOf", () => {
+	const items = [
+		item("e1", { type: "Epic" }),
+		item("e2", { type: "Epic" }),
+		item("s1", { type: "Story", parent_uid: "e1" }),
+		item("s2", { type: "Story", parent_uid: "e1" }),
+		item("s3", { type: "Story", parent_uid: "e1" }),
+		item("t1", { parent_uid: "s1" }),
+		item("loose"),
+		item("other", { project_uid: "p2" }),
+	];
+
+	it("drops into an item at the end of its children", () => {
+		expect(placementOf(items, "loose", "e1", "inside")).toEqual({ parent: "e1", position: 3 });
+		expect(placementOf(items, "t1", "s2", "inside")).toEqual({ parent: "s2", position: 0 });
+	});
+
+	it("drops before and after a sibling, counted without the dragged item", () => {
+		expect(placementOf(items, "s3", "s1", "before")).toEqual({ parent: "e1", position: 0 });
+		expect(placementOf(items, "s3", "s1", "after")).toEqual({ parent: "e1", position: 1 });
+		expect(placementOf(items, "s1", "s3", "after")).toEqual({ parent: "e1", position: 2 });
+		expect(placementOf(items, "s1", "s2", "before")).toEqual({ parent: "e1", position: 0 });
+	});
+
+	it("drops next to a root and makes the item a root", () => {
+		expect(placementOf(items, "s1", "loose", "after")).toEqual({ parent: null, position: 3 });
+	});
+
+	it("refuses an epic below another item, a child below a task, and a drop on itself", () => {
+		expect(placementOf(items, "e2", "e1", "inside")).toBeNull();
+		expect(placementOf(items, "e2", "s1", "before")).toBeNull();
+		expect(placementOf(items, "loose", "t1", "inside")).toBeNull();
+		expect(placementOf(items, "e1", "e1", "inside")).toBeNull();
+		expect(placementOf(items, "ghost", "e1", "inside")).toBeNull();
+	});
+
+	it("lets an epic move among the roots", () => {
+		expect(placementOf(items, "e2", "e1", "before")).toEqual({ parent: null, position: 0 });
 	});
 });

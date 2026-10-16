@@ -42,6 +42,10 @@ export function fakeWorkspaceBackend(
 		/** Items of the backlog (`GET backlog/items` filters them by project) and the detail by `uid`. */
 		backlog?: IndexItem[];
 		details?: Record<string, ItemOut>;
+		/** The areas by project, for `GET backlog/areas`. */
+		areas?: Record<string, string[]>;
+		/** Answers a request itself (return `undefined` to let the fake answer): for errors and special cases. */
+		respond?: (request: { method: string; path: string; body?: unknown }) => Response | undefined;
 		/** The elements in the trash. */
 		trash?: TrashedElement[];
 		/** Number of children by element `uid`: deleting such an element needs `cascade`. */
@@ -66,6 +70,14 @@ export function fakeWorkspaceBackend(
 		const body = request.method === "GET" || request.method === "DELETE" ? undefined : ((await request.json()) as Record<string, unknown>);
 		requests.push({ method: request.method, path, query: searchParams, body });
 
+		const custom = options.respond?.({ method: request.method, path, body });
+		if (custom) return custom;
+		if (path === "backlog/areas") return Response.json({ areas: options.areas?.[searchParams.get("project") ?? ""] ?? [] });
+		if (path.startsWith("backlog/items") && request.method !== "GET") {
+			const uid = path.split("/")[2];
+			const detail = uid ? options.details?.[uid] : undefined;
+			return Response.json(detail ?? { ...(body as object), uid: uid ?? "new", version: 1 });
+		}
 		if (path.startsWith("core/ui-state/")) {
 			const owner = path.split("/").at(-1)!;
 			if (body) documents.set(owner, (body as { document: Record<string, unknown> }).document);

@@ -46,13 +46,59 @@
 		"progress": "Fortschritt",
 		"dependencies": "Abhängigkeiten",
 		"children": "Kinder",
-		"links": "Verknüpfungen"
+		"links": "Verknüpfungen",
+		"title": "Titel",
+		"requiredForParent": "Pflicht für Parent"
 	},
 	"detail": {
 		"choose": "Ein Item im Baum wählen.",
 		"failed": "Das Item lässt sich nicht laden.",
 		"deleted": "im Papierkorb",
 		"deletedShort": "gelöscht",
-		"optional": "optional"
+		"optional": "optional",
+		"yes": "Ja",
+		"no": "Nein"
+	},
+	"create": {
+		"epic": "Neues Epic",
+		"story": "Neue Story",
+		"task": "Neuer Task"
+	},
+	"action": {
+		"edit": "Bearbeiten",
+		"addChild": "Kind anlegen",
+		"retype": "Typ ändern",
+		"delete": "In den Papierkorb",
+		"newArea": "＋ Neuer Bereich …"
+	},
+	"form": {
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"close": "Schließen",
+		"reload": "Aktuellen Stand laden",
+		"conflict": "Das Item wurde inzwischen geändert.",
+		"areaHint": "Einen vorhandenen Bereich wählen oder einen neuen eintippen.",
+		"editTitle": "{{label}} bearbeiten",
+		"createTitle": "{{type}} anlegen"
+	},
+	"reopen": {
+		"title": "Geschlossene Vorfahren öffnen?",
+		"message": "{{items}} ist geschlossen. Soll es wieder geöffnet (Status In Arbeit) und das Item darunter angelegt werden?",
+		"confirm": "Öffnen und weitermachen"
+	},
+	"retype": {
+		"title": "Typ von {{label}} ändern",
+		"message": "Das Item bekommt ein neues Label; die alte Nummer löst weiter auf.",
+		"done": "{{old}} heißt jetzt {{new}}",
+		"failed": "Der Typ ließ sich nicht ändern",
+		"notice": {
+			"external_references_may_remain": "Verweise auf {{old}} außerhalb des Backlogs (Technikdoku, Tagesberichte, Code, Commit-Nachrichten) werden nicht angepasst. Nach {{old}} suchen und dort {{new}} eintragen."
+		}
+	},
+	"resolution": {
+		"title": "{{label}} → {{status}}"
+	},
+	"area": {
+		"newTitle": "Neuer Bereich"
 	}
 }

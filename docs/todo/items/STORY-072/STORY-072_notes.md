@@ -26,3 +26,20 @@
 ### Open
 
 - Keine neuen Fragen; die Dokument-Regel (`summary_required_with_notes`) kommt mit `STORY-073`.
+
+## 2026-10-16 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant. Server: `viewer/plugins/backlog/domain/{lifecycle,editing}.py`, `application/editing.py`, Operationen in `application/operations.py`; Client: `ItemDetail.tsx` (Inline-Felder, Aktionen), `ItemForm.tsx`, `ItemDialogs.tsx`, `useItemWrite.tsx`, `CreateForms.tsx`, Drag & Drop in `BacklogPage.tsx`. Beschreibung in `docs/techdocs/neubau-server.md` und `neubau-client.md`.
+- Abweichungen von der alten Fassung: Die Sperre „Item wird noch referenziert“ beim Löschen entfällt (der Papierkorb verliert nichts); die Regel `summary_required_with_notes` fehlt bis `STORY-073`. Fehlermeldungen des Servers sind deutsch; der Client zeigt sie unübersetzt an der Stelle des Fehlers (die Codes sind stabil, eine Übersetzung nach Code ist ein späterer Schritt).
+- Der Datei-Spiegel schreibt geschlossene Items später in `archive.md` (`STORY-075`); hier ist „Archiv“ ein Status und die Standardfilter blenden ihn aus.
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) Inline-Felder und Formular speichern mit Versionsprüfung (`ItemEditing.test.tsx`, `test_item_editing.py`); (2) Anlegen über den Neu-Dialog (`CreateEpic`/`CreateStory`/`CreateTask` im Slot) und „Kind anlegen“, das Label vergibt der Server; (3) Parent- und Lebenszyklusregeln (`test_lifecycle.py`, Tabellentests), Entscheidung bei `Completed`/`Rejected`, Wiedereröffnen-Dialog bei `parent_closed`; (4) Typwechsel ändert das Label, die `uid` bleibt, Verweise im Text folgen; (5) Drag & Drop ändert Parent und Reihenfolge mit Regelprüfung (`placementOf`, `BacklogPage.test.tsx`); (6) `backlog.item.status_changed` bei jedem Statuswechsel (auch beim Wiederöffnen); (7) Tests grün.
+- `scripts/check-next.sh` und `scripts/check.sh` grün. Status: `Awaiting confirmation`.
+
+### Open
+
+- Nicht geprüft: Dokumente der Items (`STORY-073`); das Zusammenspiel mit `notes` über `backlog.item.status_changed` (`STORY-078`); das Bearbeiten im echten Browser gegen laufenden Server.

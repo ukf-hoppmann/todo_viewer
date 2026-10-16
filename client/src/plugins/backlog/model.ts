@@ -1,4 +1,4 @@
-import type { FlatNode } from "../../shared";
+import type { DropPosition, FlatNode } from "../../shared";
 import { priorityColor, statusColor } from "./constants";
 import type { IndexItem } from "./api";
 
@@ -60,3 +60,26 @@ export function collapsibleIds(items: readonly IndexItem[], type: string, projec
 }
 
 export { priorityColor, statusColor };
+
+export interface Placement {
+	parent: string | null;
+	position: number;
+}
+
+/**
+ * Where a dragged item lands: below the target (`inside`, at the end) or next to it (`before`, `after`, under the
+ * target's parent). The position counts among the siblings without the dragged item, as the server does. `null`
+ * if the structure forbids it: an epic stays a root, a task has no children.
+ */
+export function placementOf(items: readonly IndexItem[], sourceUid: string, targetUid: string, position: DropPosition): Placement | null {
+	const source = items.find((item) => item.uid === sourceUid);
+	const target = items.find((item) => item.uid === targetUid);
+	if (!source || !target || source.uid === target.uid) return null;
+	const parent = position === "inside" ? target.uid : target.parent_uid;
+	if (position === "inside" && target.type === "Task") return null;
+	if (parent !== null && source.type === "Epic") return null;
+	const siblings = items.filter((item) => item.project_uid === target.project_uid && item.parent_uid === parent && item.uid !== source.uid);
+	if (position === "inside") return { parent, position: siblings.length };
+	const index = siblings.findIndex((item) => item.uid === target.uid);
+	return { parent, position: position === "before" ? index : index + 1 };
+}

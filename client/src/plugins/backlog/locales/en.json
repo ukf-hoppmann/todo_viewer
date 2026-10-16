@@ -46,13 +46,59 @@
 		"progress": "Progress",
 		"dependencies": "Dependencies",
 		"children": "Children",
-		"links": "Links"
+		"links": "Links",
+		"title": "Title",
+		"requiredForParent": "Required for parent"
 	},
 	"detail": {
 		"choose": "Choose an item in the tree.",
 		"failed": "The item cannot be loaded.",
 		"deleted": "in the trash",
 		"deletedShort": "deleted",
-		"optional": "optional"
+		"optional": "optional",
+		"yes": "Yes",
+		"no": "No"
+	},
+	"create": {
+		"epic": "New epic",
+		"story": "New story",
+		"task": "New task"
+	},
+	"action": {
+		"edit": "Edit",
+		"addChild": "Add child",
+		"retype": "Change type",
+		"delete": "Move to trash",
+		"newArea": "＋ New area …"
+	},
+	"form": {
+		"save": "Save",
+		"cancel": "Cancel",
+		"close": "Close",
+		"reload": "Load current state",
+		"conflict": "The item was changed in the meantime.",
+		"areaHint": "Choose an existing area or type a new one.",
+		"editTitle": "Edit {{label}}",
+		"createTitle": "Create {{type}}"
+	},
+	"reopen": {
+		"title": "Reopen closed ancestors?",
+		"message": "{{items}} is closed. Reopen it (status In progress) and create the item below it?",
+		"confirm": "Reopen and continue"
+	},
+	"retype": {
+		"title": "Change the type of {{label}}",
+		"message": "The item gets a new label; the old number still resolves.",
+		"done": "{{old}} is now {{new}}",
+		"failed": "The type could not be changed",
+		"notice": {
+			"external_references_may_remain": "References to {{old}} outside the backlog (technical docs, daily reports, code, commit messages) are not updated. Search for {{old}} and adapt where it is now {{new}}."
+		}
+	},
+	"resolution": {
+		"title": "{{label}} → {{status}}"
+	},
+	"area": {
+		"newTitle": "New area"
 	}
 }

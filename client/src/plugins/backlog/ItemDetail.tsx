@@ -1,24 +1,50 @@
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { Box, Chip, Typography } from "@mui/material";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DetailField, DetailPanel, DetailSection, MarkdownView } from "../../shared";
-import { LinksSection } from "../workspace";
-import { useGetItemQuery, type ItemSummary } from "./api";
-import { priorityColor, statusColor } from "./constants";
+import { DetailField, DetailPanel, DetailSection, InlineField, MarkdownView, type DetailAction } from "../../shared";
+import { LinksSection, useDeleteElement } from "../workspace";
+import { useGetItemQuery, useListAreasQuery, useListItemsQuery, type ItemOut, type ItemSummary } from "./api";
+import { PRIORITIES, STATUSES, defaultResolution, statusColor } from "./constants";
+import { ItemFormDialog, RetypeDialog, RetypeNotice, type RetypeResult } from "./ItemDialogs";
+import { TextPromptDialog } from "./TextPromptDialog";
 import { backlogTestIds } from "./testIds";
+import { useItemWrite } from "./useItemWrite";
 
 interface Props {
 	uid: string;
 	onSelect: (uid: string) => void;
 }
 
-/** The detail panel of an item: all fields, its parent, children (also those in the trash) and dependencies. */
+/**
+ * The detail panel of an item: all fields, its parent, children (also those in the trash) and dependencies.
+ * Status, priority, area, "required for parent" and dependencies change at once; the form edits everything
+ * else; the buttons create a child, change the type and move the item to the trash.
+ */
 export function ItemDetail({ uid, onSelect }: Props) {
 	const { t } = useTranslation("backlog");
 	const { data: item, isError } = useGetItemQuery(uid);
 
 	if (isError) return <Typography color="error" sx={{ p: 2 }}>{t("detail.failed")}</Typography>;
 	if (!item) return null;
+	return <Loaded item={item} onSelect={onSelect} />;
+}
 
+function Loaded({ item, onSelect }: { item: ItemOut; onSelect: (uid: string) => void }) {
+	const { t } = useTranslation("backlog");
+	const write = useItemWrite();
+	const trash = useDeleteElement();
+	const { data: areas } = useListAreasQuery(item.project_uid);
+	const { data: siblings = [] } = useListItemsQuery([item.project_uid]);
+	const [dialog, setDialog] = useState<"edit" | "child" | "retype" | undefined>();
+	const [notice, setNotice] = useState<RetypeResult>();
+	const [prompt, setPrompt] = useState<"resolution" | "area">();
+	const [pendingStatus, setPendingStatus] = useState<string>();
+
+	const save = (fields: Record<string, unknown>, resolution?: string) => write.updateItem(item, fields, resolution).then(() => undefined);
 	const text = (name: string, label: string, value: string | null | undefined) =>
 		value ? (
 			<DetailField id={name} label={label}>
@@ -28,28 +54,75 @@ export function ItemDetail({ uid, onSelect }: Props) {
 			</DetailField>
 		) : null;
 
+	const actions: DetailAction[] = item.deleted
+		? []
+		: [
+				{ id: "edit", label: t("action.edit"), icon: EditIcon, onClick: () => setDialog("edit") },
+				{ id: "child", label: t("action.addChild"), icon: AddIcon, onClick: () => setDialog("child"), disabled: item.type === "Task" },
+				{ id: "retype", label: t("action.retype"), icon: SwapHorizIcon, onClick: () => setDialog("retype") },
+				{ id: "delete", label: t("action.delete"), icon: DeleteIcon, onClick: () => void trash.requestDelete(item.uid, item.version) },
+			];
+	const options = (values: readonly string[], prefix: string) => values.map((value) => ({ value, label: t(`${prefix}.${value}`) }));
+	const areaNames = [...new Set([...(areas?.areas ?? []), ...(item.area ? [item.area] : [])])];
+	const NEW_AREA = "\u0000new";
+
 	return (
 		<Box data-testid={backlogTestIds.detail}>
-			<DetailPanel title={`${item.label} — ${item.title}`} subtitle={item.deleted ? t("detail.deleted") : t(`type.${item.type}`)}>
-				<DetailField id="status" label={t("field.status")}>
-					<Chip
-						size="small"
-						label={t(`status.${item.status}`)}
-						sx={{ bgcolor: statusColor(item.status), color: "common.white" }}
-						data-testid={backlogTestIds.field("status")}
-					/>
-				</DetailField>
-				<DetailField id="priority" label={t("field.priority")}>
-					<Chip
-						size="small"
-						label={t(`priority.${item.priority}`)}
-						sx={{ bgcolor: priorityColor(item.priority), color: "common.white" }}
-						data-testid={backlogTestIds.field("priority")}
-					/>
-				</DetailField>
-				<DetailField id="area" label={t("field.area")}>
-					<span data-testid={backlogTestIds.field("area")}>{item.area ?? "—"}</span>
-				</DetailField>
+			<DetailPanel title={`${item.label} — ${item.title}`} subtitle={item.deleted ? t("detail.deleted") : t(`type.${item.type}`)} actions={actions}>
+				{trash.failed && <Typography color="error" variant="body2">{trash.failed}</Typography>}
+				{item.deleted ? (
+					<DetailField id="status" label={t("field.status")}>
+						<Chip size="small" label={t(`status.${item.status}`)} sx={{ bgcolor: statusColor(item.status), color: "common.white" }} data-testid={backlogTestIds.field("status")} />
+					</DetailField>
+				) : (
+					<>
+						<InlineField
+							id="status"
+							kind="select"
+							label={t("field.status")}
+							value={item.status}
+							options={options(STATUSES, "status")}
+							onSave={(status) => {
+								if (status === "Completed" || status === "Rejected") {
+									setPendingStatus(status);
+									setPrompt("resolution");
+									return;
+								}
+								return save({ status });
+							}}
+						/>
+						<InlineField id="priority" kind="select" label={t("field.priority")} value={item.priority} options={options(PRIORITIES, "priority")} onSave={(priority) => save({ priority })} />
+						<InlineField
+							id="area"
+							kind="select"
+							label={t("field.area")}
+							value={item.area ?? ""}
+							options={[...areaNames.map((name) => ({ value: name, label: name })), { value: NEW_AREA, label: t("action.newArea") }]}
+							onSave={(area) => (area === NEW_AREA ? setPrompt("area") : save({ area }))}
+						/>
+						{item.parent && (
+							<InlineField
+								id="required"
+								kind="select"
+								label={t("field.requiredForParent")}
+								value={item.required_for_parent === false ? "no" : "yes"}
+								options={[
+									{ value: "yes", label: t("detail.yes") },
+									{ value: "no", label: t("detail.no") },
+								]}
+								onSave={(value) => save({ required_for_parent: value === "yes" })}
+							/>
+						)}
+						<InlineField
+							id="dependencies"
+							kind="multiselect"
+							label={t("field.dependencies")}
+							value={item.dependencies.map((dependency) => dependency.uid)}
+							options={siblings.filter((entry) => entry.uid !== item.uid).map((entry) => ({ value: entry.uid, label: `${entry.label} — ${entry.title}` }))}
+							onSave={(dependencies) => save({ dependencies })}
+						/>
+					</>
+				)}
 				<DetailField id="created" label={t("field.created")}>
 					<span data-testid={backlogTestIds.field("created")}>{item.created}</span>
 				</DetailField>
@@ -88,6 +161,51 @@ export function ItemDetail({ uid, onSelect }: Props) {
 					<LinksSection elementUid={item.uid} />
 				</DetailSection>
 			</DetailPanel>
+			{dialog === "edit" && <ItemFormDialog projectUid={item.project_uid} type={item.type} item={item} onClose={() => setDialog(undefined)} />}
+			{dialog === "child" && (
+				<ItemFormDialog projectUid={item.project_uid} type={item.type === "Epic" ? "Story" : "Task"} parentUid={item.uid} onClose={() => setDialog(undefined)} />
+			)}
+			{dialog === "retype" && (
+				<RetypeDialog
+					item={item}
+					onClose={() => setDialog(undefined)}
+					onDone={(result) => {
+						setDialog(undefined);
+						setNotice(result);
+					}}
+				/>
+			)}
+			{notice && <RetypeNotice result={notice} onClose={() => setNotice(undefined)} />}
+			{prompt === "resolution" && pendingStatus && (
+				<TextPromptDialog
+					title={t("resolution.title", { label: item.label, status: t(`status.${pendingStatus}`) })}
+					label={t("field.resolution")}
+					initial={defaultResolution(pendingStatus)}
+					multiline
+					confirmLabel={t("form.save")}
+					cancelLabel={t("form.cancel")}
+					onCancel={() => setPrompt(undefined)}
+					onSubmit={async (resolution) => {
+						await save({ status: pendingStatus }, resolution);
+						setPrompt(undefined);
+					}}
+				/>
+			)}
+			{prompt === "area" && (
+				<TextPromptDialog
+					title={t("area.newTitle")}
+					label={t("field.area")}
+					confirmLabel={t("form.save")}
+					cancelLabel={t("form.cancel")}
+					onCancel={() => setPrompt(undefined)}
+					onSubmit={async (area) => {
+						await save({ area });
+						setPrompt(undefined);
+					}}
+				/>
+			)}
+			{write.dialog}
+			{trash.dialog}
 		</Box>
 	);
 }

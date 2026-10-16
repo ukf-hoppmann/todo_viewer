@@ -1,5 +1,6 @@
 // UI state (filters, view, selection, language). Same JSON shape as the old frontend,
 // so configs/ui_state.json keeps working across the switch.
+import type { SyncScope } from "../domain/sync";
 import type { Lang } from "../i18n/messages";
 
 export const VIEWS = ["tree", "graph", "kanban", "notes", "trash"] as const;
@@ -35,7 +36,14 @@ export interface UiState {
   selectedNote: NoteRef | null;
   /** Notes tree: topic levels 1 and 2 get their own background (extended marking); off is the plain tree. */
   notesHighlight: boolean;
+  /** The sync direction chosen per project (by source id); a project without an entry syncs both ways. */
+  syncScopes: Readonly<Record<string, SyncScope>>;
 }
+
+const SYNC_SCOPES: readonly SyncScope[] = ["both", "to_md", "from_md"];
+
+/** The direction a sync of the project runs in. */
+export const scopeOf = (state: Pick<UiState, "syncScopes">, sourceId: string): SyncScope => state.syncScopes[sourceId] ?? "both";
 
 export const INITIAL_UI_STATE: UiState = {
   hiddenProjects: new Set(),
@@ -51,6 +59,7 @@ export const INITIAL_UI_STATE: UiState = {
   defaultBackend: "markdown",
   selectedNote: null,
   notesHighlight: true,
+  syncScopes: {},
 };
 
 const SET_KEYS = ["hiddenProjects", "hiddenStatuses", "hiddenPriorities", "hiddenNoteStatuses", "collapsed", "markedProjects"] as const;
@@ -77,6 +86,10 @@ export function mergeStored(base: UiState, raw: unknown): UiState {
   };
   next.selectedNote = ref(r.selectedNote) ?? next.selectedNote;
   if (typeof r.notesHighlight === "boolean") next.notesHighlight = r.notesHighlight;
+  if (typeof r.syncScopes === "object" && r.syncScopes !== null && !Array.isArray(r.syncScopes)) {
+    const valid = Object.entries(r.syncScopes).filter((entry): entry is [string, SyncScope] => SYNC_SCOPES.includes(entry[1] as SyncScope));
+    next.syncScopes = Object.fromEntries(valid);
+  }
   return next;
 }
 
@@ -95,6 +108,7 @@ export function snapshot(state: UiState): Record<string, unknown> {
     defaultBackend: state.defaultBackend,
     selectedNote: state.selectedNote,
     notesHighlight: state.notesHighlight,
+    syncScopes: state.syncScopes,
   };
 }
 
@@ -114,6 +128,8 @@ export type UiAction =
   | { type: "defaultBackend"; backend: DefaultBackend }
   | { type: "selectNote"; note: NoteRef | null }
   | { type: "notesHighlight"; on: boolean }
+  /** The direction manual syncs of a project run in; "both" is the default and is not stored. */
+  | { type: "syncScope"; sourceId: string; scope: SyncScope }
   /** Jumps into the Notes area to one note (from the due list, an item, or a link). */
   | { type: "openNote"; note: NoteRef };
 
@@ -163,6 +179,10 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, selectedNote: action.note };
     case "notesHighlight":
       return { ...state, notesHighlight: action.on };
+    case "syncScope": {
+      const others = Object.entries(state.syncScopes).filter(([id]) => id !== action.sourceId);
+      return { ...state, syncScopes: Object.fromEntries(action.scope === "both" ? others : [...others, [action.sourceId, action.scope]]) };
+    }
     case "openNote":
       return { ...state, currentView: "notes", selectedNote: action.note };
   }

@@ -1,5 +1,8 @@
 {
-	"tab": { "overview": "Example" },
+	"tab": {
+		"overview": "Example",
+		"workbench": "Building blocks"
+	},
 	"overview": {
 		"header": "Example plugin",
 		"text": "A template for new plugins: own API, own state, events from the server.",
@@ -11,7 +14,21 @@
 		"visits_one": "{{count}} click stored",
 		"visits_other": "{{count}} clicks stored"
 	},
-	"header": { "events_one": "{{count}} event", "events_other": "{{count}} events" },
-	"sidebar": { "text": "Section of the sidebar, only on the example tab." },
-	"settings": { "text": "Section of the settings page." }
+	"header": {
+		"events_one": "{{count}} event",
+		"events_other": "{{count}} events"
+	},
+	"sidebar": {
+		"text": "Section of the sidebar, only on the example tab."
+	},
+	"settings": {
+		"text": "Section of the settings page."
+	},
+	"workbench": {
+		"tree": "Example tree",
+		"save": "Save",
+		"title": "Title",
+		"id": "Identifier",
+		"note": "Note"
+	}
 }

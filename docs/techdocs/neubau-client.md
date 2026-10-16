@@ -88,3 +88,23 @@ Laden an und speichert die Wahl des Nutzers. Der Sprachdetektor von i18next hat 
 Antworten mit Status ab 500 und fehlende Antworten gelten als „nicht erreichbar“ (Banner, erneuter Test). Alle anderen Fehler
 liefert die Verbindung unverändert an den Aufrufer; der Server antwortet mit `{code, message, details}` (siehe
 [Neubau: Server](neubau-server.md)), das Frontend übersetzt den `code`. Es gibt keinen Login und keine Cookies.
+
+## Gemeinsame Bausteine (`shared`)
+
+Aus `client/src/shared/index.ts`; keiner hält globalen Store-Zustand, Texte kommen als Eigenschaften (die Plugins
+übersetzen; Standardtexte englisch), Test-IDs stehen in `sharedTestIds` (`shared.<element>`).
+
+| Baustein | Zweck |
+|---|---|
+| `TreeView` + `buildTree` | Baum aus einer flachen Liste (`{id, parentId, label, badge?, statusColor?, progress?}`); die aufgeklappten Knoten und die Auswahl hält der Aufrufer. Tastatur: Pfeile, Pos1/Ende, Enter/Leertaste; Hover-Aktionen (`actions`); Drag & Drop mit `canDrop(source, target, "before" \| "after" \| "inside")` und `onDrop` (ein Knoten lässt sich nie in seinen eigenen Teilbaum ziehen) |
+| `ProgressRing` | erledigt/gesamt als Tortendiagramm |
+| `DetailPanel`, `DetailSection`, `DetailField` | Kopfleiste mit Icon-Buttons, einklappbare Abschnitte, Felder |
+| `InlineField` | Text, Auswahl, Mehrfachauswahl; speichert sofort (Text beim Verlassen oder Enter, Auswahl bei Änderung); ein abgewiesenes Speichern zeigt die Meldung am Feld und behält die Eingabe |
+| `EditForm` | Speichern/Abbrechen; bei `version_conflict` ein Hinweis mit „Aktuellen Stand laden“ |
+| `MarkdownView`, `MarkdownEditor`, `renderMarkdown` | `marked` + `dompurify`; Editor mit Vorschau daneben; Konflikt mit „Aktuellen Stand anzeigen“ und „Trotzdem speichern“ (`onSave(true)`) |
+| `LargeView` | fast vollbildschirmgroße Ansicht mit Inhaltsverzeichnis aus den Überschriften (`extractHeadings`) |
+| `FilterSection` | Checkbox-Liste mit Farbpunkt und Zähler für die Seitenleiste |
+| `ConfirmDialog`, `ChoiceDialog` | schlichte MUI-Dialoge (siehe Frage 21 in `STORY-060`) |
+| `EntityPicker` | Auswahl von Elementen als „Label — Titel“ (einzeln oder mehrfach, mit gesperrten Einträgen) |
+
+Das Beispiel-Plugin hat die Seite „Bausteine“, die Baum, Detailpanel, Inline-Feld und Markdown-Editor zusammen benutzt.

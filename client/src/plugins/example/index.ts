@@ -1,3 +1,4 @@
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import { definePlugin } from "../../core";
 import { exampleApi } from "./api";
@@ -36,6 +37,13 @@ export const plugin = definePlugin({
 			icon: ViewListIcon,
 			page: () => import("./pages/OverviewPage"),
 			layout: { header: true },
+		},
+		{
+			slot: "core.main",
+			name: "workbench",
+			title: "tab.workbench",
+			icon: AccountTreeIcon,
+			page: () => import("./pages/WorkbenchPage"),
 		},
 		{ slot: "layout-header-sidebar.header-actions", name: "event-counter", component: EventCounter },
 		{ slot: "layout-header-sidebar.sidebar-sections", name: "info", component: SidebarSection, when: ["example/overview"] },

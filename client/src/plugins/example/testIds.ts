@@ -6,4 +6,5 @@ export const exampleTestIds = {
 	counterButton: "example.counter-button",
 	sidebarText: "example.sidebar-text",
 	settingsText: "example.settings-text",
+	workbenchSelected: "example.workbench-selected",
 } as const;

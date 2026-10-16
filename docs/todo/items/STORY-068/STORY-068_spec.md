@@ -13,12 +13,16 @@ Grundlage: `EPIC-007_spec.md`, Abschnitt 9 (`workspace`).
 - `workspace_elements(uid PK, project_uid FK, kind FK, label, revision INT,
   created_at, updated_at, deleted_at NULL, UNIQUE(project_uid, label))`.
 - `workspace_label_counters(project_uid, prefix, last INT)`.
+- `workspace_label_history(project_uid, label, element_uid, PRIMARY KEY(project_uid, label))`:
+  jedes Label, das ein Element je hatte (auch das aktuelle). Labels werden nie
+  wiederverwendet, deshalb bleibt ein altes Label eindeutig auflösbar.
 
 ## Ports für andere Plugins
 
 `ElementRegistry`: `register(project, kind) -> Element` (vergibt `uid` und
 Label), `relabel(uid, new_kind)` (Typwechsel: neues Label, `uid` bleibt),
-`get`, `find_by_label(project, label)`, `bump_revision(uid, expected)`,
+`get`, `find_by_label(project, label)` (findet auch frühere Labels über
+`workspace_label_history`; liefert das Element mit seinem aktuellen Label), `bump_revision(uid, expected)`,
 `mark_deleted`, `restore`, `purge`; `Projects`: lesen.
 
 ## Operationen (HTTP + MCP)

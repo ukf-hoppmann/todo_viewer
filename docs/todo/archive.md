@@ -8,6 +8,59 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
 
 ## Work items
 
+- `TASK-035` **Markdown-Format Version 2 festlegen**
+  - Type: Task.
+  - Parent: `EPIC-007`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-16.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-034`.
+  - Goal: Das Markdown-Format des Spiegels (Backlog, Notes, Topics, Wecker)
+    ist mit UUIDs und Platzhaltern für neue Einträge vollständig beschrieben
+    und mit Beispielen belegt, sodass Codecs und Harness danach gebaut
+    werden können.
+  - Completion criteria: 1. `docs/techdocs/interfaces.md` beschreibt Format
+    Version 2 vollständig: Dateien, Felder, `Uid`, Platzhalter, Verweise,
+    Prüfregeln mit Fehlercodes. 2. Unter `tests/fixtures/mirror-v2/` liegt
+    ein vollständiges Beispiel-Projekt (gültig) und je Prüfregel ein
+    ungültiges Beispiel. 3. Der Projektinhaber hat das Format freigegeben.
+  - Summary: Das Dateiformat festlegen, mit dem die LLM in der Cloud
+    arbeitet: wie Version 1, dazu eine Uid je Eintrag und Platzhalter für
+    neue Einträge.
+  - Resolution: Vom Projektinhaber am 2026-10-16 bestätigt: Format Version 2
+    freigegeben, beschrieben und mit Beispielen belegt.
+  - Notes: `items/TASK-035/TASK-035_notes.md`.
+  - Spec: `items/TASK-035/TASK-035_spec.md`.
+
+- `TASK-034` **Architekturregeln für den Neubau schreiben und freigeben lassen**
+  - Type: Task.
+  - Parent: `EPIC-007`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-10-16.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Architektur des Neubaus aus `EPIC-007_spec.md` ist als
+    verbindliche Regeln in `docs/development/architecture.md` und Scopes
+    festgehalten; die heutigen Regeln gelten bis zum Umstieg nur noch für
+    den Altcode.
+  - Completion criteria: 1. `architecture.md` enthält die projektweiten
+    Regeln des Neubaus. 2. Scopes `server` (`server/**`), `client`
+    (`client/**`) und `legacy` (`backend/**`, `web/**`) sind eingetragen;
+    die heutigen Regeln 1–3 und die Scopes `backend`/`web` stehen in
+    `legacy`. 3. Mechanisch prüfbare Regeln nennen ihren Test
+    (import-linter, ESLint). 4. Der Projektinhaber hat die Änderungen
+    freigegeben.
+  - Summary: Die neuen Architekturregeln aufschreiben und von dir freigeben
+    lassen. Ohne sie darf kein Code des Neubaus entstehen.
+  - Resolution: Vom Projektinhaber am 2026-10-16 bestätigt:
+    Architekturregeln für den Neubau freigegeben und übernommen.
+  - Notes: `items/TASK-034/TASK-034_notes.md`.
+  - Spec: `items/TASK-034/TASK-034_spec.md`.
+
 - `STORY-047` **Notes in Markdown spiegeln und zwischen Rechnern abgleichen**
   - Type: Story.
   - Parent: `EPIC-005`.

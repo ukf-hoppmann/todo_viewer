@@ -26,6 +26,10 @@ Umstieg (`STORY-084`).
 - **Notes:** Kopf wie heute (`Summary`, `Status`, `Topic`, `Review`, `Mode`,
   `Created`, `Updated`, `Archived`, `Deleted`, `Links`, Auslöser) plus
   `Uid:`. Neue Notes in `notes/new-<kurzname>.md` ohne `Uid` und Label.
+- **Verweise** stehen in den Dateien immer als Label, nie als `Uid`. Die DB
+  verweist über `uid`, der Codec schreibt das aktuelle Label; ein früheres
+  Label wird über die Label-Historie (`STORY-068`) aufgelöst. (Entscheidung
+  2026-10-16, siehe Notizen.)
 - **Topics:** `notes/topics.md`, eine Zeile je Topic mit Label, `Uid`, Name,
   Parent, Termin, Erstellt, Gelöscht. Neue Topics mit Platzhalter
   `NEW-<kurzname>`.

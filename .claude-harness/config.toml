@@ -61,6 +61,13 @@ file = "VERSION"
 sync = []
 paths = ["."]
 
+# Cloud sessions (claude.ai/code) load the repository but not the plugin. With
+# export = true the project holds a copy of the plugin (skills, scripts, hooks)
+# that /claude-harness:init and /claude-harness:update create and keep current;
+# it must be committed. Root project only.
+[cloud]
+export = true
+
 # Claude_Harness repository, one path per machine (absolute or starting with
 # "~"). The first path that exists here is used to hand harness wishes over to
 # its backlog. Optional.

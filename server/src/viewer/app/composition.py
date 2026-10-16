@@ -60,10 +60,11 @@ def create_app(
     hub = SseHub(events, settings.sse_keepalive_seconds)
     database = SqliteDatabase(settings.db_path)
     backups = SqliteBackupMaker(database, settings.backup_dir, clock)
+    files = LocalFileStore()
     sync = SyncService(
         lambda: host.mirrors,
         projects=mirror_projects or NoMirrorProjects(),
-        files=LocalFileStore(),
+        files=files,
         state=SqlSyncStateStore(database),
         database=database,
         backups=backups,
@@ -83,6 +84,7 @@ def create_app(
         scheduler=scheduler,
         database=database,
         backups=backups,
+        files=files,
         settings=settings,
         core=core,
     )

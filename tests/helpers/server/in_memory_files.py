@@ -14,6 +14,8 @@ from viewer.core.domain.files import (
     DeleteFile,
     FileEntry,
     FileSet,
+    FolderEntry,
+    FolderListing,
     FolderState,
     MirrorBlocked,
     MirrorConflict,
@@ -54,6 +56,25 @@ class InMemoryFileStore:
         self.git_locks.setdefault(str(folder), []).append(f".git/{name}")
 
     # --- FileStore -------------------------------------------------------------------------------------------
+
+    def list_folders(self, start: Path) -> FolderListing:
+        target = Path(start)
+        while str(target) not in self.folders and target != target.parent:  # nächster vorhandener Elternordner
+            target = target.parent
+        files = self.folders.get(str(target), {})
+        names = {path.split("/")[0] for path in files if "/" in path}
+        names |= {Path(key).name for key in self.folders if Path(key).parent == target}
+        folders = tuple(
+            FolderEntry(name, f"{name}/TODO.md" in files or "TODO.md" in self.folders.get(str(target / name), {}))
+            for name in sorted(names, key=str.lower)
+            if not name.startswith(".")
+        )
+        return FolderListing(
+            path=str(target),
+            parent=str(target.parent) if target != target.parent else None,
+            folders=folders,
+            has_mirror="TODO.md" in files,
+        )
 
     def inspect(self, folder: Path, patterns: Sequence[str] = ("**/*.md",)) -> FolderState:
         return self._scan(folder, patterns)[1]

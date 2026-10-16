@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 from fakes import FixedClock, NullBackups, NullDatabase, NullScheduler
+from in_memory_files import InMemoryFileStore
 from viewer.core.application.plugin import PluginContext, PluginDefinition, PluginHost
 from viewer.core.domain.errors import NotFound, PluginSetupError
 from viewer.core.domain.events import Event
@@ -27,6 +28,7 @@ def host(defs: list[PluginDefinition], settings: Settings | None = None) -> tupl
         scheduler=NullScheduler(),
         database=NullDatabase(),
         backups=NullBackups(),
+        files=InMemoryFileStore(),
         settings=settings or Settings(),
     ), bus
 

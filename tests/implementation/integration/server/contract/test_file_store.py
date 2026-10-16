@@ -242,3 +242,34 @@ def test_unreadable_file_blocks_reading(h: Harness) -> None:
 def test_healthy_folder_is_ok(h: Harness) -> None:
     h.put("a.md", "x")
     assert h.store.inspect(h.folder).ok
+
+
+# --- Ordner-Browser --------------------------------------------------------------------------------------------
+
+
+def test_list_folders_lists_subfolders_without_hidden_ones_sorted_and_marks_mirrors(h: Harness) -> None:
+    h.put("beta/TODO.md", "x")
+    h.put("Alpha/a.md", "x")
+    h.put(".versteckt/a.md", "x")
+    h.put("datei.md", "x")
+
+    listing = h.store.list_folders(h.folder)
+
+    assert [(f.name, f.has_mirror) for f in listing.folders] == [("Alpha", False), ("beta", True)]
+    assert listing.path == str(h.folder) and listing.parent == str(h.folder.parent)
+    assert listing.error is None and not listing.has_mirror
+
+
+def test_list_folders_knows_when_the_folder_itself_is_a_mirror(h: Harness) -> None:
+    h.put("TODO.md", "x")
+
+    assert h.store.list_folders(h.folder).has_mirror
+
+
+def test_list_folders_falls_back_to_the_nearest_existing_parent(h: Harness) -> None:
+    h.put("a/b.md", "x")
+
+    listing = h.store.list_folders(h.folder / "gibt-es-nicht" / "auch-nicht")
+
+    assert listing.path == str(h.folder)
+    assert [f.name for f in listing.folders] == ["a"]

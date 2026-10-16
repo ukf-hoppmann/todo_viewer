@@ -8,11 +8,11 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from viewer.core.application.ports import BackupMaker, Clock, Database, EventBus, Scheduler
+from viewer.core.application.ports import BackupMaker, Clock, Database, EventBus, FileStore, Scheduler
 from viewer.core.application.sync import MirrorBinding
 from viewer.core.domain.errors import NotFound, PluginSetupError
 from viewer.core.domain.operations import Operation
-from viewer.core.domain.plugin import Migration, Subscription, load_order, validate_plugins
+from viewer.core.domain.plugin import ElementKind, Migration, Subscription, load_order, validate_plugins
 from viewer.core.domain.settings import Settings
 
 
@@ -26,6 +26,7 @@ class PluginContext:
     scheduler: Scheduler
     database: Database
     backups: BackupMaker
+    files: FileStore
     settings: Mapping[str, Any]
     required: Mapping[str, Any]  # Dienste der Plugins aus `requires`, nach ID
 
@@ -38,7 +39,7 @@ class PluginDefinition:
     build: Callable[[PluginContext], Any]
     requires: tuple[str, ...] = ()
     migrations: tuple[Migration, ...] = ()
-    element_kinds: tuple[str, ...] = ()
+    element_kinds: tuple[ElementKind, ...] = ()
     operations: tuple[Operation, ...] = ()
     mirror: Callable[[Any], MirrorBinding] | None = None
     subscriptions: tuple[Subscription, ...] = field(default=())
@@ -62,6 +63,7 @@ class PluginHost:
         scheduler: Scheduler,
         database: Database,
         backups: BackupMaker,
+        files: FileStore,
         settings: Settings,
         core: PluginDefinition | None = None,
     ) -> None:
@@ -81,6 +83,7 @@ class PluginHost:
                 scheduler=scheduler,
                 database=database,
                 backups=backups,
+                files=files,
                 settings=settings.for_plugin(pid),
                 required={r: self._loaded[r].services for r in definition.requires},
             )
@@ -90,6 +93,10 @@ class PluginHost:
                 self._mirrors.append(definition.mirror(loaded.services))
             for sub in definition.subscriptions:
                 events.subscribe(sub.topic, _bind(sub, loaded.services))
+
+    def element_kinds(self) -> list[tuple[str, ElementKind]]:
+        """Die Elementtypen aller Plugins als `(plugin-id, Typ)`, in Ladereihenfolge."""
+        return [(p.definition.id, kind) for p in self._loaded.values() for kind in p.definition.element_kinds]
 
     @property
     def mirrors(self) -> list[MirrorBinding]:

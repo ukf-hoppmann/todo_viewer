@@ -20,6 +20,8 @@ from viewer.core.domain.files import (
     DeleteFile,
     FileEntry,
     FileSet,
+    FolderEntry,
+    FolderListing,
     FolderState,
     MirrorBlocked,
     MirrorConflict,
@@ -49,6 +51,33 @@ class LocalFileStore:
         self._locks: dict[str, threading.RLock] = {}
 
     # --- lesen -------------------------------------------------------------------------------------------
+
+    def list_folders(self, start: Path) -> FolderListing:
+        target = Path(start)
+        while not target.is_dir() and target != target.parent:  # nächster vorhandener Elternordner
+            target = target.parent
+        target = target.resolve()
+        folders: list[FolderEntry] = []
+        error: str | None = None
+        try:
+            for entry in sorted(target.iterdir(), key=lambda e: e.name.lower()):
+                if entry.name.startswith("."):
+                    continue
+                try:
+                    if entry.is_dir():
+                        folders.append(FolderEntry(entry.name, (entry / "TODO.md").is_file()))
+                except OSError:
+                    continue
+        except OSError as exc:
+            error = str(exc)
+            log.warning("folder_unreadable", path=str(target), error=error)
+        return FolderListing(
+            path=str(target),
+            parent=str(target.parent) if target != target.parent else None,
+            folders=tuple(folders),
+            has_mirror=(target / "TODO.md").is_file(),
+            error=error,
+        )
 
     def inspect(self, folder: Path, patterns: Sequence[str] = ("**/*.md",)) -> FolderState:
         return self._scan(Path(folder), patterns)[1]

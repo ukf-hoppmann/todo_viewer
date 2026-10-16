@@ -77,6 +77,25 @@ class DeleteFile:
 
 Change = WriteFile | RenameFile | DeleteFile
 
+
+@dataclass(frozen=True)
+class FolderEntry:
+    name: str
+    #: Der Ordner enthält `TODO.md`: er sieht nach einem Spiegel-Ordner aus.
+    has_mirror: bool = False
+
+
+@dataclass(frozen=True)
+class FolderListing:
+    """Die Unterordner eines Ordners für den Ordner-Browser; `error` nennt, warum der Ordner nicht lesbar war."""
+
+    path: str
+    parent: str | None
+    folders: tuple[FolderEntry, ...] = ()
+    has_mirror: bool = False
+    error: str | None = None
+
+
 _MARKER_START = re.compile(r"^<{7}(\s|$)", re.MULTILINE)
 _MARKER_END = re.compile(r"^>{7}(\s|$)", re.MULTILINE)
 _TEMP_NAME = re.compile(r"^\..*\.tmp$")

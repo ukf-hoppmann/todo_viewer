@@ -24,6 +24,14 @@ class Migration:
 
 
 @dataclass(frozen=True)
+class ElementKind:
+    """Ein Elementtyp, den ein Plugin im Element-Register von `workspace` anmeldet; `label_prefix` z. B. `STORY`."""
+
+    kind: str
+    label_prefix: str
+
+
+@dataclass(frozen=True)
 class Subscription:
     """Abonnement eines Plugins; `handler(services, event)`. `topic` ohne `*` ist exakt, mit `*` am Ende ein Präfix."""
 
@@ -42,6 +50,8 @@ class PluginShape(Protocol):
     def operations(self) -> Sequence[Operation]: ...
     @property
     def migrations(self) -> Sequence[Migration]: ...
+    @property
+    def element_kinds(self) -> Sequence[ElementKind]: ...
 
 
 def table_prefix(plugin_id: str) -> str:
@@ -88,6 +98,10 @@ def validate_plugins(plugins: Sequence[PluginShape], reserved_owners: Sequence[s
             elif req == plugin.id:
                 problems.append(f"Plugin '{plugin.id}' verlangt sich selbst")
     problems += _cycle_problems(plugins, ids)
+
+    for plugin in plugins:
+        if plugin.element_kinds and plugin.id != "workspace" and "workspace" not in plugin.requires:
+            problems.append(f"Plugin '{plugin.id}' meldet Elementtypen an und muss 'workspace' in requires nennen")
 
     routes: dict[tuple[str, str], str] = {}
     tools: dict[str, str] = {}

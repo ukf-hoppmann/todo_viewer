@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from viewer.core.domain.events import Event
-from viewer.core.domain.files import Change, FileSet, FolderState
+from viewer.core.domain.files import Change, FileSet, FolderListing, FolderState
 
 EventHandler = Callable[[Event], None]
 
@@ -86,4 +86,9 @@ class FileStore(Protocol):
 
     def inspect(self, folder: Path, patterns: Sequence[str] = ("**/*.md",)) -> FolderState:
         """Zustand des Ordners, ohne Daten zu ändern oder zu liefern."""
+        ...
+
+    def list_folders(self, start: Path) -> FolderListing:
+        """Unterordner ohne versteckte, für den Ordner-Browser. Ein Pfad, der kein Ordner ist, fällt auf den nächsten
+        vorhandenen Elternordner zurück."""
         ...

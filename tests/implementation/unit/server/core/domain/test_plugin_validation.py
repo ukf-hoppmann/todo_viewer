@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from viewer.core.domain.operations import HttpBinding, Operation
-from viewer.core.domain.plugin import Migration, load_order, schema_problems, validate_plugins
+from viewer.core.domain.plugin import ElementKind, Migration, load_order, schema_problems, validate_plugins
 
 
 @dataclass
@@ -15,6 +15,7 @@ class FakePlugin:
     requires: tuple[str, ...] = ()
     operations: tuple[Operation, ...] = ()
     migrations: tuple[Migration, ...] = ()
+    element_kinds: tuple[ElementKind, ...] = ()
 
 
 def op(name: str, http: HttpBinding | None = None, mcp: bool = True) -> Operation:
@@ -120,3 +121,12 @@ def test_schema_problems_checks_prefix_and_foreign_keys() -> None:
     assert problems[0] == "Tabelle 'other_y' von 'notes' trägt nicht das Präfix 'notes_'"
     assert problems[1].startswith("Fremdschlüssel von 'notes_x' auf 'backlog_items'")
     assert len(problems) == 2
+
+
+def test_plugins_with_element_kinds_must_require_workspace() -> None:
+    kinds = (ElementKind("note", "NOTE"),)
+    assert validate_plugins([FakePlugin("workspace", element_kinds=kinds)]) == []
+    assert validate_plugins([FakePlugin("workspace"), FakePlugin("notes", ("workspace",), element_kinds=kinds)]) == []
+    assert validate_plugins([FakePlugin("notes", element_kinds=kinds)]) == [
+        "Plugin 'notes' meldet Elementtypen an und muss 'workspace' in requires nennen"
+    ]

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fakes import FixedClock, NullBackups, NullDatabase, NullScheduler
+from in_memory_files import InMemoryFileStore
 from viewer.core.api.mcp import build_tools
 from viewer.core.application.plugin import PluginDefinition, PluginHost
 from viewer.core.domain.operations import Operation
@@ -29,6 +30,7 @@ def host(*operations: Operation, plugin_id: str = "my-plugin") -> PluginHost:
         scheduler=NullScheduler(),
         database=NullDatabase(),
         backups=NullBackups(),
+        files=InMemoryFileStore(),
         settings=Settings(),
     )
 

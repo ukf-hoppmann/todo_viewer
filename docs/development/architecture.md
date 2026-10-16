@@ -8,78 +8,113 @@ tests/architecture/test_layers.py". -->
 
 ## Rules
 
-### 1. Storage backends behind ports
+The viewer is being rebuilt (`EPIC-007`, design in
+`docs/todo/items/EPIC-007/EPIC-007_spec.md`). The new code lives in
+`server/` and `client/`. Sections 1–5 apply to the new code. The old viewer
+in `backend/` and `web/` follows the scopes `legacy`, `backend`, and `web`
+until the cutover (`STORY-084`), which removes it together with those scopes.
 
-- This section governs the backlog (items and their documents). Notes
-  (section 3) are not part of it.
-- Each project MUST have exactly one primary source, chosen per project:
-  markdown files or the central database. The primary source holds the truth:
-  every request reads from and writes to it. A project MAY additionally keep a
-  mirror in the other backend. A mirror MUST be written only by a sync, never
-  by an ordinary request. The application MUST NOT keep any other copy of a
-  project's data.
-- All backends MUST implement the same storage ports and pass the same
-  contract suite, as primary source and as mirror. Enforced by:
-  `backend/tests/contract/`.
-- The primary source MAY be switched per project. A switch MUST run a sync
-  first so the new primary source is up to date, and MUST create a backup of
-  the previous primary source; if either fails, nothing is switched.
-- Markdown backend: writes MUST be atomic (temporary file + rename), MUST keep
-  line endings, and MUST abort with a conflict error instead of overwriting a
-  file that changed since it was read. Edits MUST change only the affected
-  field or move the affected entry; byte-exact output is pinned by golden
-  files. Enforced by: `backend/tests/characterization/test_edit.py`.
-- Database backend: writes MUST be transactional and MUST abort with a
-  conflict error instead of overwriting an item that changed since it was
-  read. The schema MUST change only through versioned migrations.
-- Data moves between backends only through a sync. A sync is requested by the
-  user or an API call, or, only for a project whose owner switched auto-sync
-  on (default: off), started by the application itself. Without the switch
-  nothing moves automatically, not even after a write to the primary source.
-  A manual sync MUST offer a preview and MUST NOT delete anything without an
-  explicit decision.
+### 1. Core and plugins
+
+- The application MUST consist of a core without domain logic and plugins
+  that carry the domain logic. A plugin has a backend part
+  (`server/src/viewer/plugins/<id>/`) and a frontend part
+  (`client/src/plugins/<id>/`) with the same kebab-case id (`_` instead of
+  `-` in the Python package name); either part MAY be missing.
+- The core MUST NOT import any plugin. A plugin MUST import only the core,
+  shared code, and the public interface of the plugins listed in its
+  `requires`. Enforced by: `server/pyproject.toml` (`[tool.importlinter]`)
+  and the ESLint rule `architecture/boundaries`
+  (`client/configs/eslint/architectureBoundaries.ts`).
+- Only the composition roots (`server/src/viewer/app/composition.py`,
+  `client/src/app/`) know the plugins. The active plugins MUST be a fixed list
+  in code there; plugins are wired there by constructor injection.
+- A plugin MUST NOT write HTTP routes or MCP tools by hand. It declares
+  operations; the core publishes each operation as an HTTP route and, unless
+  excluded, as an MCP tool.
+- Plugins that do not require each other MUST communicate only through core
+  events.
+- Behaviour needed by more than one plugin MUST live in the core or in
+  `client/src/shared`, not be copied between plugins.
+  Why: reuse is a design goal; a new plugin should mostly configure existing
+  building blocks.
+
+### 2. Storage
+
+- The database MUST be the single source of truth. A project MAY keep a
+  markdown mirror. Ordinary requests read and write only the database; the
+  mirror is read and written only by the sync.
+- There MUST be exactly two storage infrastructures in the core: database
+  and files. A plugin that is mirrored provides a codec (files ⇄ entries) and
+  a sync participant (database ⇄ entries). The sync is a use case of the core
+  over these ports and MUST NOT know SQL, file formats, or plugin domains.
+- Entries MUST be matched by their `uid` only. Labels (`STORY-012`,
+  `NOTE-003`) are for display, are assigned only by the database, are counted
+  per project and prefix, and are never reused. An entry created in the files
+  without `uid` is new: the sync assigns `uid` and label, rewrites references
+  to its placeholder, and writes both back.
 - A sync compares entry by entry with the state stored at the last sync. An
   entry changed on one side only is carried to the other side. An entry
   changed on both sides, created on both sides with different content, or
   deleted on one side is a conflict and MUST NOT be overwritten or deleted;
-  the owner decides per conflict (database, file, or defer). The direction
-  MAY be restricted per run.
-- An automatic sync MUST carry only conflict-free changes, MUST NOT delete
-  anything, MUST NOT read unreadable files or files containing merge markers,
-  and MUST create a backup before writing to the database.
-- Whether a mirror differs from the primary source since the last sync MUST be
-  detectable without changing any data, so the UI can show it.
+  the owner decides per conflict (database, file, or defer). A manual sync
+  MUST offer a preview; the direction MAY be restricted per run.
+- An automatic sync (per project, default off) MUST carry only conflict-free
+  changes, MUST NOT delete anything, MUST pause on unreadable files, merge
+  markers, a running git operation, or a missing folder, and MUST back up the
+  database before writing to it. Whether a project's sides differ MUST be
+  detectable without changing any data.
+- Database: writes MUST be transactional and MUST abort with
+  `version_conflict` instead of overwriting an element that changed since it
+  was read. The schema is fixed: no free-form extra fields; fixed value lists
+  are lookup tables. The schema MUST change only through forward-only,
+  versioned migrations per owner, each preceded by a backup.
+- Each plugin MUST own its tables (prefix `<plugin_id>_`). Foreign keys MAY
+  point only to its own tables, the core's, or those of plugins in its
+  `requires`. It reads other plugins' data only through their ports.
+- Files: writes MUST be atomic (temporary file + rename), MUST keep line
+  endings, and MUST abort with `mirror_conflict` instead of overwriting a file
+  that changed since it was read. A codec MUST change only the affected
+  entries and MUST reject values outside the format with file and line.
+- The markdown format is "backlog format version 2", defined in
+  `docs/techdocs/interfaces.md`. Byte-exact output is pinned by golden files
+  in `tests/fixtures/mirror-v2/`.
 
-### 2. One HTTP contract
+### 3. Interfaces
 
-- The frontend MUST talk to the backend only through API v2 (`/api/v2`).
-- The TypeScript API types MUST be generated from the backend's OpenAPI
+- HTTP routes live under `/api/<owner>/…`, the MCP server under `/mcp`.
+  Both MUST be generated from the same operations.
+- Errors MUST be returned as `{code, message, details}` with a stable `code`,
+  over HTTP and MCP alike; the frontend translates codes, not messages.
+- Writing operations MUST take a version token.
+- The TypeScript API types MUST be generated from the server's OpenAPI
   schema, never written by hand. Enforced by:
-  `backend/tests/api_v2/test_openapi.py`.
-- Errors MUST be returned as `{code, message, details}` with a stable `code`;
-  the frontend translates codes, not messages.
+  `tests/implementation/integration/server/test_openapi_types.py`
+  (created with `STORY-066`).
+- The backend MUST reach the frontend only through Server-Sent Events on
+  `/api/core/events`. Events are notifications; the frontend reloads data
+  through the API. The frontend MUST NOT poll.
+- There is no login. The server MUST listen on the local machine only.
+- Permanently deleting data and changing settings MUST NOT be offered as MCP
+  tools.
 
-### 3. Notes, topics, and links
+### 4. Time
 
-- Notes, topics, links, and triggers MUST live only in the central database,
-  whatever the primary source of the project is. They MUST NOT be written to
-  `TODO.md`, to any other markdown file, or to a mirror by an ordinary
-  request; only the optional export (STORY-047) mirrors them as files.
-  Why: markdown projects have no keys and no transactions across items, and
-  notes must keep their links and triggers when a project switches backend.
-  Enforced by: `pyproject.toml` (`[tool.importlinter]`, the markdown adapter
-  does not import notes modules).
-- Labels (`NOTE-001`, `TOPIC-001`) are counted per project and type, are never
-  reused, and never change inside a project.
-- Whether a trigger has arrived MUST be decided by a pure function in
-  `domain` that receives the current time as a parameter. There MUST be no
-  background timer for triggers: time triggers are evaluated when notes are
-  read, event triggers in the use case that changes an item's status. The
-  optional auto-sync of section 1 is exempt; it runs only while at least one
-  project has its switch on.
+- Points in time MUST be stored in UTC and shown and entered in the time zone
+  of the machine the viewer runs on.
+- Whether something is due MUST be decided by a pure function in `domain`
+  that receives the current time as a parameter.
+- Timers MUST go through the core's `Scheduler`: at most one pending point in
+  time per owner, set to the next due point, no polling, active only while
+  the server runs. The automatic sync is the only periodic timer; it runs
+  only while at least one project has it switched on.
   Why: tests need a fixed clock, and an idle viewer must cost nothing.
-- Points in time MUST be stored unambiguously (UTC) and shown and entered in
-  the time zone of the machine the viewer runs on.
+
+### 5. Language
+
+- Stored values (status, priority, type, field names in files) MUST be
+  English; the UI translates them. Content is written in the project's
+  language.
 
 ## Scopes
 
@@ -91,8 +126,11 @@ part, `**` spans any number of parts. Example row:
 
 | Scope | Paths | Covers |
 |---|---|---|
-| backend | `backend/**` | Onion layers, dependency injection, error handling |
-| web | `web/**` | React frontend structure, domain logic, state |
+| server | `server/**` | Layers per core and plugin, ports, operations, errors, migrations, tests, dependencies |
+| client | `client/**` | Layers, plugin contract, slots, state, domain logic, test ids, dependencies |
+| legacy | `backend/**`, `web/**` | Storage, HTTP contract, and notes rules of the old viewer until the cutover |
+| backend | `backend/**` | Old viewer: onion layers, dependency injection, error handling |
+| web | `web/**` | Old viewer: React frontend structure, domain logic, state |
 
 ## Changing these rules
 

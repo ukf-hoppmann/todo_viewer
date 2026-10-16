@@ -13,7 +13,7 @@ from fastapi import FastAPI  # noqa: E402
 from todo_viewer.api import v2  # noqa: E402
 from todo_viewer.bootstrap import PROJECT_ROOT  # noqa: E402
 
-TARGET = PROJECT_ROOT / "web" / "src" / "api" / "openapi.json"
+TARGET = PROJECT_ROOT / "src_old" / "web" / "src" / "api" / "openapi.json"
 
 
 def v2_schema() -> dict[str, Any]:

@@ -66,7 +66,7 @@ from todo_viewer.infrastructure.markdown.layout import LayoutFactory, SourcePath
 from todo_viewer.infrastructure.notes_files import FilesNotesMirror
 from todo_viewer.infrastructure.routing import RoutingBacklogRepository, RoutingDocumentStore, RoutingRawBackup
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 @dataclass(frozen=True)
@@ -85,7 +85,7 @@ class Settings:
         return cls(
             base_dir=PROJECT_ROOT,
             config_dir=Path(os.environ.get("CONFIG_DIR", PROJECT_ROOT / "configs")),
-            frontend_dir=Path(os.environ.get("FRONTEND_DIR", PROJECT_ROOT / "web" / "dist")),
+            frontend_dir=Path(os.environ.get("FRONTEND_DIR", PROJECT_ROOT / "src_old" / "web" / "dist")),
             browse_start=os.environ.get("BROWSE_START"),
             log_file=Path(os.environ["LOG_FILE"]) if os.environ.get("LOG_FILE") else None,
             log_level=os.environ.get("LOG_LEVEL", "INFO"),

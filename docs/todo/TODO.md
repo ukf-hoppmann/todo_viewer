@@ -239,7 +239,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Task.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.

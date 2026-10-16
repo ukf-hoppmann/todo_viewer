@@ -12,6 +12,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from viewer.core.api.errors import register_error_handlers
+from viewer.core.api.mcp import McpHost
 from viewer.core.api.middleware import RequestIdMiddleware
 from viewer.core.api.routes import register_operations
 from viewer.core.api.sse import SseHub
@@ -24,7 +25,9 @@ class Health(BaseModel):
     status: str
 
 
-def create_http_app(host: PluginHost, hub: SseHub, *, lifespan: Lifespan | None = None) -> FastAPI:
+def create_http_app(
+    host: PluginHost, hub: SseHub, *, lifespan: Lifespan | None = None, mcp: McpHost | None = None
+) -> FastAPI:
     app = FastAPI(title="ToDo Viewer", version="0.0.0", lifespan=lifespan)
     app.add_middleware(RequestIdMiddleware)
     register_error_handlers(app)
@@ -49,6 +52,8 @@ def create_http_app(host: PluginHost, hub: SseHub, *, lifespan: Lifespan | None 
         )
 
     register_operations(app, host)
+    if mcp is not None:
+        app.router.routes.append(mcp.route)
     app.openapi = lambda: _openapi(app)  # type: ignore[method-assign]
     return app
 

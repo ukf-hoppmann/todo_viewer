@@ -264,7 +264,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -279,6 +279,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Fehler sind grün.
   - Summary: Neben der API bekommt der Server einen MCP-Zugang, über den
     eine LLM alle Funktionen direkt nutzen kann.
+  - Notes: `items/STORY-062/STORY-062_notes.md`.
   - Spec: `items/STORY-062/STORY-062_spec.md`.
 
 - `STORY-063` **Infrastruktur Datenbank: Migrationen je Plugin, Transaktionen, Backups**

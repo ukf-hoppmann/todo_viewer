@@ -5,6 +5,7 @@ description = "ToDo-Viewer Neubau: Backend (EPIC-007)"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi",
+    "mcp",
     "uvicorn[standard]",
     "pydantic",
     "sqlalchemy",

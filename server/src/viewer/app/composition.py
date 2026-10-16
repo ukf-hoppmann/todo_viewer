@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from viewer.core.api.app import create_http_app
+from viewer.core.api.mcp import create_mcp_host
 from viewer.core.api.sse import SseHub
 from viewer.core.application.plugin import PluginDefinition, PluginHost
 from viewer.core.application.ports import Clock
@@ -35,16 +36,19 @@ def create_app(
     hub = SseHub(events, settings.sse_keepalive_seconds)
     host = PluginHost(plugins, clock=clock, events=events, scheduler=scheduler, settings=settings)
 
+    mcp = create_mcp_host(host)
+
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         scheduler.start(asyncio.get_running_loop())
         try:
-            yield
+            async with mcp.lifespan:
+                yield
         finally:
             hub.close()
             scheduler.stop()
 
-    app = create_http_app(host, hub, lifespan=lifespan)
+    app = create_http_app(host, hub, lifespan=lifespan, mcp=mcp)
     app.state.settings = settings
     app.state.plugin_host = host
     app.state.events = events

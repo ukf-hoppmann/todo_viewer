@@ -56,6 +56,15 @@ Beim Verbinden kommen `retry: 3000` und `: connected`, danach alle `sse_keepaliv
 Es gibt keine Zustellgarantie; der Client lädt nach einem Neuverbinden neu. Beim Herunterfahren schließt der Server alle
 Verbindungen.
 
+## MCP
+
+`/mcp` ist ein MCP-Server (Streamable HTTP, `mcp` 2.x) im selben Prozess. Jede Operation mit `mcp=True` ist ein Tool
+`<owner>_<name>` (Bindestriche der ID als `_`): Beschreibung aus `summary`, Eingabe-Schema aus der Input-Dataclass
+(dasselbe `TypeAdapter`-Schema wie die HTTP-Route), `read_only_hint` für `kind="read"`, Ausgabe als JSON-Text. Fehler
+sind Tool-Ergebnisse mit `isError` und dem JSON `{code, message, details}` — derselbe Inhalt wie die HTTP-Fehlerantwort;
+ungültige Argumente haben `validation_error`, ein unbekanntes Tool `not_found`. Erlaubte Hosts: `127.0.0.1`,
+`localhost`, `[::1]` und `todo.localhost` (Schutz vor DNS-Rebinding).
+
 ## Konfiguration
 
 `configs/viewer.json` (optional) und Umgebungsvariablen; die Umgebung gewinnt.

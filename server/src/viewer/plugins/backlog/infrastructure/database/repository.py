@@ -63,6 +63,57 @@ class SqlItemRepository:
                 {"i": item.uid, "d": target},
             )
 
+    def update(self, tx: Transaction, item: Item) -> None:
+        connection = _conn(tx)
+        area_uid = self._area_uid(connection, item) if item.area else None
+        connection.execute(
+            text(
+                "UPDATE backlog_items SET type = :type, title = :title, status = :status, priority = :priority, "
+                "area_uid = :area, parent_uid = :parent, required_for_parent = :required, goal = :goal, "
+                "completion_criteria = :criteria, summary = :summary, resolution = :resolution, position = :position "
+                "WHERE uid = :uid"
+            ),
+            {
+                "uid": item.uid,
+                "type": item.type,
+                "title": item.title,
+                "status": item.status,
+                "priority": item.priority,
+                "area": area_uid,
+                "parent": item.parent_uid,
+                "required": None if item.required_for_parent is None else int(item.required_for_parent),
+                "goal": item.goal,
+                "criteria": item.completion_criteria,
+                "summary": item.summary,
+                "resolution": item.resolution,
+                "position": item.position,
+            },
+        )
+        connection.execute(text("DELETE FROM backlog_dependencies WHERE item_uid = :u"), {"u": item.uid})
+        for target in item.dependencies:
+            connection.execute(
+                text("INSERT INTO backlog_dependencies(item_uid, depends_on_uid) VALUES (:i, :d)"),
+                {"i": item.uid, "d": target},
+            )
+
+    def area_names(self, tx: Transaction, project_uid: str) -> list[str]:
+        rows = _conn(tx).execute(
+            text("SELECT name FROM backlog_areas WHERE project_uid = :p ORDER BY name"), {"p": project_uid}
+        )
+        return [str(row[0]) for row in rows]
+
+    def siblings(self, tx: Transaction, project_uid: str, parent_uid: str | None) -> list[Item]:
+        where = "i.parent_uid IS NULL" if parent_uid is None else "i.parent_uid = :parent"
+        return self._load(
+            tx,
+            _SELECT + f" WHERE e.project_uid = :p AND e.deleted_at IS NULL AND {where} ORDER BY i.position, e.label",
+            {"p": project_uid, "parent": parent_uid},
+        )
+
+    def set_positions(self, tx: Transaction, uids: Sequence[str]) -> None:
+        for position, uid in enumerate(uids):
+            _conn(tx).execute(text("UPDATE backlog_items SET position = :n WHERE uid = :u"), {"n": position, "u": uid})
+
     @staticmethod
     def _area_uid(connection: Connection, item: Item) -> str:
         row = connection.execute(

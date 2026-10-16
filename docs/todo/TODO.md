@@ -503,7 +503,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -523,6 +523,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Alles, was man heute am Backlog ändern kann, im neuen Viewer,
     dazu Umhängen per Drag & Drop.
   - Spec: `items/STORY-072/STORY-072_spec.md`.
+  - Notes: `items/STORY-072/STORY-072_notes.md`.
 
 - `STORY-073` **Backlog-Dokumente: Notizen und Specs**
   - Type: Story.

@@ -8,6 +8,7 @@ from viewer.core.application.plugin import PluginContext, PluginDefinition
 from viewer.core.application.ports import Transaction
 from viewer.core.domain.errors import DomainError
 from viewer.core.domain.plugin import ElementKind
+from viewer.plugins.backlog.application.editing import EditService
 from viewer.plugins.backlog.application.items import ItemService
 from viewer.plugins.backlog.application.operations import OPERATIONS, BacklogServices
 from viewer.plugins.backlog.infrastructure.database.repository import SqlItemRepository
@@ -39,7 +40,8 @@ def _build(context: PluginContext) -> BacklogServices:
 
     for kind in ELEMENT_KINDS:
         workspace.trash.register(kind.kind, children=children, restore_guard=restore_guard, purger=repository.delete)
-    return BacklogServices(items, repository)
+    editing = EditService(items, repository, workspace.registry, context.database, context.clock, context.events)
+    return BacklogServices(items, repository, editing)
 
 
 plugin = PluginDefinition(

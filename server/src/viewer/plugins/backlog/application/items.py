@@ -55,7 +55,7 @@ class ItemService:
     def get_item(self, ref: str, project_uid: str | None = None) -> ItemDetail:
         """`ref` ist eine `uid` oder ein Label (dann mit Projekt; auch ein früheres Label löst auf)."""
         with self._database.transaction() as tx:
-            item = self._resolve(tx, ref, project_uid)
+            item = self.resolve(tx, ref, project_uid)
             siblings = self._items.list_in(tx, [item.project_uid], include_deleted=True)
             by_uid = {entry.uid: entry for entry in siblings}
             children = self._items.children(tx, item.uid)
@@ -64,7 +64,7 @@ class ItemService:
         progress = item_progress(entry for entry in siblings if entry.deleted_at is None).get(item.uid)
         return ItemDetail(item, parent, children, dependencies, progress)
 
-    def _resolve(self, tx: Transaction, ref: str, project_uid: str | None) -> Item:
+    def resolve(self, tx: Transaction, ref: str, project_uid: str | None) -> Item:
         item = self._items.get(tx, ref)
         if item is None and project_uid is not None:
             element = self._registry.find_by_label(tx, project_uid, ref)

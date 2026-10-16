@@ -7,6 +7,7 @@ from datetime import date
 from typing import Any
 
 from viewer.core.domain.operations import HttpBinding, Operation
+from viewer.plugins.backlog.application.editing import EditService
 from viewer.plugins.backlog.application.items import IndexEntry, ItemDetail, ItemService
 from viewer.plugins.backlog.domain.model import Item, Progress
 
@@ -89,12 +90,91 @@ class ItemOut:
     deleted: bool
 
 
+@dataclass(frozen=True)
+class CreateItem:
+    project: str
+    type: str
+    #: `title`, `area`, `goal`, `completion_criteria` sind Pflicht; dazu `priority`, `required_for_parent`, `summary`,
+    #: `parent` (uid), `dependencies` (uids), `created` (JJJJ-MM-TT).
+    fields: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class UpdateItem:
+    ref: str
+    version: int
+    #: Geändert werden nur die genannten Felder (`title`, `status`, `priority`, `required_for_parent`, `goal`,
+    #: `completion_criteria`, `summary`, `area`, `parent`, `dependencies`).
+    fields: dict[str, Any]
+    #: Pflicht bei `Completed` und `Rejected`.
+    resolution: str | None = None
+    #: Das Projekt, wenn `ref` ein Label ist.
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class MoveItem:
+    ref: str
+    version: int
+    #: `uid` des neuen Parents; `None` macht das Item zur Wurzel.
+    parent: str | None
+    #: Stelle unter den Geschwistern (ab 0).
+    position: int = 0
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class RetypeItem:
+    ref: str
+    version: int
+    type: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class ReopenAncestors:
+    ref: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class NoticeOut:
+    code: str
+    message: str
+    details: dict[str, str]
+
+
+@dataclass(frozen=True)
+class RetypeOut:
+    item: ItemOut
+    old_label: str
+    new_label: str
+    notices: list[NoticeOut]
+
+
+@dataclass(frozen=True)
+class ReopenOut:
+    #: Die wieder geöffneten Items, von oben nach unten.
+    reopened: list[ItemSummary]
+
+
+@dataclass(frozen=True)
+class ListAreas:
+    project: str
+
+
+@dataclass(frozen=True)
+class AreasOut:
+    areas: list[str]
+
+
 class BacklogServices:
     """Die Dienste des Plugins; `repository` ist auch für Tests und für andere Teile des Backlogs offen."""
 
-    def __init__(self, items: ItemService, repository: Any) -> None:
+    def __init__(self, items: ItemService, repository: Any, editing: EditService) -> None:
         self.items = items
         self.repository = repository
+        self.editing = editing
 
 
 def _split(value: str | None) -> list[str]:
@@ -151,6 +231,21 @@ def item_out(detail: ItemDetail) -> ItemOut:
     )
 
 
+def _detail(services: BacklogServices, uid: str) -> ItemOut:
+    return item_out(services.items.get_item(uid))
+
+
+def _reopen(services: BacklogServices, data: ReopenAncestors) -> ReopenOut:
+    uids = services.editing.reopen_ancestors(data.ref, data.project)
+    return ReopenOut([summary(services.items.get_item(uid).item) for uid in uids])
+
+
+def _retype(services: BacklogServices, data: RetypeItem) -> RetypeOut:
+    result = services.editing.retype_item(data.ref, data.project, data.version, data.type)
+    notices = [NoticeOut(n.code, n.message, n.details) for n in result.notices]
+    return RetypeOut(_detail(services, result.uid), result.old_label, result.new_label, notices)
+
+
 def _list(services: BacklogServices, data: ListItems) -> list[IndexItem]:
     projects = _split(data.projects) if data.projects is not None else None
     entries = services.items.list_items(projects, _split(data.statuses), _split(data.priorities), data.query)
@@ -177,5 +272,60 @@ OPERATIONS: tuple[Operation, ...] = (
         ItemOut,
         lambda s, d: item_out(s.items.get_item(d.ref, d.project)),
         HttpBinding("GET", "/items/{ref}"),
+    ),
+    Operation(
+        "create_item",
+        "Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, area, goal, completion_criteria",
+        "write",
+        CreateItem,
+        ItemOut,
+        lambda s, d: _detail(s, s.editing.create_item(d.project, d.type, d.fields)),
+        HttpBinding("POST", "/items"),
+    ),
+    Operation(
+        "update_item",
+        "Ändert Felder eines Items mit Versionsprüfung und den Regeln des Backlog-Formats; Completed und Rejected "
+        "brauchen eine resolution",
+        "write",
+        UpdateItem,
+        ItemOut,
+        lambda s, d: _detail(s, s.editing.update_item(d.ref, d.project, d.version, d.fields, d.resolution)),
+        HttpBinding("PUT", "/items/{ref}"),
+    ),
+    Operation(
+        "move_item",
+        "Hängt ein Item unter einen anderen Parent (oder zur Wurzel) und setzt seine Stelle unter den Geschwistern",
+        "write",
+        MoveItem,
+        ItemOut,
+        lambda s, d: _detail(s, s.editing.move_item(d.ref, d.project, d.version, d.parent, d.position)),
+        HttpBinding("POST", "/items/{ref}/move"),
+    ),
+    Operation(
+        "retype_item",
+        "Ändert den Typ eines Items: es bekommt ein neues Label, die uid bleibt, Verweise im Backlog folgen",
+        "write",
+        RetypeItem,
+        RetypeOut,
+        _retype,
+        HttpBinding("POST", "/items/{ref}/retype"),
+    ),
+    Operation(
+        "reopen_ancestors",
+        "Öffnet ein geschlossenes Item und die geschlossenen Vorfahren darüber von oben nach unten (In progress)",
+        "write",
+        ReopenAncestors,
+        ReopenOut,
+        _reopen,
+        HttpBinding("POST", "/items/{ref}/reopen"),
+    ),
+    Operation(
+        "list_areas",
+        "Die Bereiche eines Projekts (ein neuer entsteht mit dem ersten Item, das seinen Namen trägt)",
+        "read",
+        ListAreas,
+        AreasOut,
+        lambda s, d: AreasOut(s.editing.list_areas(d.project)),
+        HttpBinding("GET", "/areas"),
     ),
 )

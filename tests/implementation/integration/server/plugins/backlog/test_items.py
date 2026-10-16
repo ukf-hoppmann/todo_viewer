@@ -220,7 +220,7 @@ def test_the_read_operations_are_mcp_tools(backlog: Env) -> None:
         if op.mcp
     }
 
-    assert names == {"list_items", "get_item"}
+    assert {"list_items", "get_item"} <= names
 
 
 def test_trash_cascade_and_restore_rule_work_for_backlog_items(backlog: Env) -> None:

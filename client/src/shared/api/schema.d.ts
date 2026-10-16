@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/backlog/areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Bereiche eines Projekts (ein neuer entsteht mit dem ersten Item, das seinen Namen trägt) */
+        get: operations["backlog_list_areas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/backlog/items": {
         parameters: {
             query?: never;
@@ -14,7 +31,8 @@ export interface paths {
         /** Items der Projekte als flache Liste mit Fortschritt; Filter nach Status, Priorität und Text (Projekte, Status und Prioritäten komma-getrennt) */
         get: operations["backlog_list_items"];
         put?: never;
-        post?: never;
+        /** Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, area, goal, completion_criteria */
+        post: operations["backlog_create_item"];
         delete?: never;
         options?: never;
         head?: never;
@@ -30,8 +48,60 @@ export interface paths {
         };
         /** Ein Item mit allen Feldern, Kindern (auch gelöschten) und Abhängigkeiten; `ref` ist die uid oder ein Label (mit `project`) */
         get: operations["backlog_get_item"];
-        put?: never;
+        /** Ändert Felder eines Items mit Versionsprüfung und den Regeln des Backlog-Formats; Completed und Rejected brauchen eine resolution */
+        put: operations["backlog_update_item"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/items/{ref}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hängt ein Item unter einen anderen Parent (oder zur Wurzel) und setzt seine Stelle unter den Geschwistern */
+        post: operations["backlog_move_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/items/{ref}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Öffnet ein geschlossenes Item und die geschlossenen Vorfahren darüber von oben nach unten (In progress) */
+        post: operations["backlog_reopen_ancestors"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/items/{ref}/retype": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ändert den Typ eines Items: es bekommt ein neues Label, die uid bleibt, Verweise im Backlog folgen */
+        post: operations["backlog_retype_item"];
         delete?: never;
         options?: never;
         head?: never;
@@ -376,6 +446,63 @@ export interface components {
             /** Uids */
             uids: string[];
         };
+        /** AreasOut */
+        AreasOut: {
+            /** Areas */
+            areas: string[];
+        };
+        /** BacklogCreateItemBody */
+        BacklogCreateItemBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project: string;
+            /** Type */
+            type: string;
+        };
+        /** BacklogMoveItemBody */
+        BacklogMoveItemBody: {
+            /** Parent */
+            parent: string | null;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** BacklogReopenAncestorsBody */
+        BacklogReopenAncestorsBody: {
+            /** Project */
+            project?: string | null;
+        };
+        /** BacklogRetypeItemBody */
+        BacklogRetypeItemBody: {
+            /** Project */
+            project?: string | null;
+            /** Type */
+            type: string;
+            /** Version */
+            version: number;
+        };
+        /** BacklogUpdateItemBody */
+        BacklogUpdateItemBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
+            /** Resolution */
+            resolution?: string | null;
+            /** Version */
+            version: number;
+        };
         /** ConflictOut */
         ConflictOut: {
             /** Conflict */
@@ -630,6 +757,17 @@ export interface components {
             /** Outgoing */
             outgoing: components["schemas"]["LinkedElement"][];
         };
+        /** NoticeOut */
+        NoticeOut: {
+            /** Code */
+            code: string;
+            /** Details */
+            details: {
+                [key: string]: string;
+            };
+            /** Message */
+            message: string;
+        };
         /** Preview */
         Preview: {
             /** Conflicts */
@@ -703,6 +841,21 @@ export interface components {
              * @default true
              */
             removed: boolean;
+        };
+        /** ReopenOut */
+        ReopenOut: {
+            /** Reopened */
+            reopened: components["schemas"]["ItemSummary"][];
+        };
+        /** RetypeOut */
+        RetypeOut: {
+            item: components["schemas"]["ItemOut"];
+            /** New Label */
+            new_label: string;
+            /** Notices */
+            notices: components["schemas"]["NoticeOut"][];
+            /** Old Label */
+            old_label: string;
         };
         /** SyncResult */
         SyncResult: {
@@ -870,6 +1023,37 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    backlog_list_areas: {
+        parameters: {
+            query: {
+                project: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AreasOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     backlog_list_items: {
         parameters: {
             query?: {
@@ -904,6 +1088,39 @@ export interface operations {
             };
         };
     };
+    backlog_create_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacklogCreateItemBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     backlog_get_item: {
         parameters: {
             query?: {
@@ -924,6 +1141,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_update_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacklogUpdateItemBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_move_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacklogMoveItemBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_reopen_ancestors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacklogReopenAncestorsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReopenOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_retype_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacklogRetypeItemBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetypeOut"];
                 };
             };
             /** @description Client Error */

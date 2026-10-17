@@ -21,7 +21,15 @@ export interface CreateType {
 }
 
 /** Renders a component of the workspace plugin with store, texts, router and the widgets of the test plugins. */
-export async function renderWorkspace(ui: ReactElement, options: { backend?: ReturnType<typeof fakeWorkspaceBackend>; createTypes?: CreateType[] } = {}) {
+export async function renderWorkspace(
+	ui: ReactElement,
+	options: {
+		backend?: ReturnType<typeof fakeWorkspaceBackend>;
+		createTypes?: CreateType[];
+		/** Widgets of other slots, e.g. `backlog.item-detail`. */
+		widgets?: Array<{ ownerId: string; slot: string; name: string; component: ComponentType }>;
+	} = {},
+) {
 	const backend = options.backend ?? fakeWorkspaceBackend();
 	const i18n = await initI18n({ lng: "de" });
 	i18n.addResourceBundle("de", "workspace", de);
@@ -35,6 +43,10 @@ export async function renderWorkspace(ui: ReactElement, options: { backend?: Ret
 		i18n.addResourceBundle("de", type.ownerId, { create: { [type.name]: type.title } });
 		const widget: WidgetContribution = { slot: "workspace.create-types", name: type.name, component: type.form };
 		active.push({ id: type.ownerId, definition: { i18n: { de: {}, en: {} }, contributions: [widget] } });
+	}
+	for (const widget of options.widgets ?? []) {
+		const contribution: WidgetContribution = { slot: widget.slot, name: widget.name, component: widget.component } as WidgetContribution;
+		active.push({ id: widget.ownerId, definition: { i18n: { de: {}, en: {} }, contributions: [contribution] } });
 	}
 	const registry = { active: () => active, statuses: () => [] } as unknown as PluginRegistry;
 	const result = render(

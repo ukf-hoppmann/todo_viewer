@@ -11,6 +11,13 @@ export type ContentOut = components["schemas"]["ContentOut"];
 export type SettingsOut = components["schemas"]["SettingsOut"];
 export type DocumentInfo = components["schemas"]["DocumentInfo"];
 export type DocumentOut = components["schemas"]["DocumentOut"];
+export type NoteNoticeOut = components["schemas"]["NoteNoticeOut"];
+export type TriggerOut = components["schemas"]["TriggerOut"];
+export type TargetRef = components["schemas"]["TargetRef"];
+export type DueNoteOut = components["schemas"]["DueNoteOut"];
+export type DecisionOut = components["schemas"]["DecisionOut"];
+export type PromotedOut = components["schemas"]["PromotedOut"];
+export type DemotedOut = components["schemas"]["DemotedOut"];
 
 /** The error of a write: the code and details the server gave, as an `Error` the forms can show. */
 export class WriteError extends Error {
@@ -65,8 +72,35 @@ export const notesApi = createPluginApi(
 			query: ({ uid, ...body }) => ({ url: `notes/notes/${uid}`, method: "PUT", body }),
 			invalidatesTags: ["Notes"],
 		}),
-		noteAction: build.mutation<NoteOut, { uid: string; version: number; action: "keep" | "snooze" | "finish" | "restore"; review_at?: string; status?: "done" | "dropped" }>({
+		noteAction: build.mutation<
+			NoteOut,
+			{ uid: string; version: number; action: "keep" | "snooze" | "finish" | "restore"; review_at?: string; status?: "done" | "dropped" }
+		>({
 			query: ({ uid, action, ...body }) => ({ url: `notes/notes/${uid}/${action}`, method: "POST", body }),
+			invalidatesTags: ["Notes"],
+		}),
+		addTrigger: build.mutation<NoteOut, { uid: string; kind: "event" | "topic_date"; target?: string; status?: string }>({
+			query: ({ uid, ...body }) => ({ url: `notes/notes/${uid}/triggers`, method: "POST", body }),
+			invalidatesTags: ["Notes"],
+		}),
+		removeTrigger: build.mutation<NoteOut, string>({
+			query: (uid) => ({ url: `notes/triggers/${uid}`, method: "DELETE" }),
+			invalidatesTags: ["Notes"],
+		}),
+		decideNotice: build.mutation<DecisionOut, { uid: string; decision: string; version?: number; type?: string; fields?: Record<string, unknown> }>({
+			query: ({ uid, ...body }) => ({ url: `notes/notices/${uid}/decide`, method: "POST", body }),
+			invalidatesTags: ["Notes"],
+		}),
+		listItemNotices: build.query<NoteNoticeOut[], string>({
+			query: (uid) => `notes/items/${uid}/notices`,
+			providesTags: ["Notes"],
+		}),
+		promoteNote: build.mutation<PromotedOut, { uid: string; version: number; type: string; fields: Record<string, unknown> }>({
+			query: ({ uid, ...body }) => ({ url: `notes/notes/${uid}/promote`, method: "POST", body }),
+			invalidatesTags: ["Notes"],
+		}),
+		demoteItem: build.mutation<DemotedOut, { uid: string; version: number; topic?: string | null }>({
+			query: ({ uid, ...body }) => ({ url: `notes/items/${uid}/demote`, method: "POST", body }),
 			invalidatesTags: ["Notes"],
 		}),
 		createTopic: build.mutation<{ uid: string }, { project: string; name: string; parent?: string | null; due_at?: string | null }>({
@@ -128,6 +162,12 @@ export const {
 	useCreateNoteMutation,
 	useUpdateNoteMutation,
 	useNoteActionMutation,
+	useAddTriggerMutation,
+	useRemoveTriggerMutation,
+	useDecideNoticeMutation,
+	useListItemNoticesQuery,
+	usePromoteNoteMutation,
+	useDemoteItemMutation,
 	useCreateTopicMutation,
 	useUpdateTopicMutation,
 	useMoveTopicMutation,

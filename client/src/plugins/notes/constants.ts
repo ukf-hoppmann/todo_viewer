@@ -19,3 +19,8 @@ export function statusColor(status: string): string {
 
 /** Id of the synthetic drop target "no topic" (the project itself) in the tree. */
 export const NO_TOPIC = "";
+
+/** The reasons a note is due, in the order of the groups of the due list. */
+export const REASONS = ["trigger", "notice", "topic_due", "review_expired"] as const;
+/** The item statuses an event trigger can wait for. */
+export const EVENT_STATUSES = ["In progress", "Awaiting confirmation", "Completed", "Rejected"] as const;

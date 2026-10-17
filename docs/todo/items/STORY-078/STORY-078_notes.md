@@ -24,3 +24,21 @@
 ### Open
 
 - Frage 31 (Hinweise haben zwei Seiten) steht in `STORY-060`.
+
+## 2026-10-17 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant (Server: `domain/due.py`, `domain/notices.py`, `application/{triggers,notices,conversion,telling,deps}.py`, `infrastructure/backlog_gateway.py`, Migration v2; Client: `TriggersSection`, `NoticesSection`, `PromoteDialog`, `DueCounter` gruppiert, `ItemWidgets`, Slot `backlog.item-detail`). Beschreibung in `neubau-server.md` und `neubau-client.md`.
+- Die Namen der Operationsausgabe `NoteNoticeOut` und die Pflichtfelder `triggers`/`notices` in `NoteOut` sind so gewählt, dass die erzeugten Client-Typen eindeutig sind.
+- Das Zurückstellen im Client nimmt nur ein Datum; die Operation kann zusätzlich einen neuen Auslöser nehmen (API und MCP, nicht in der Oberfläche).
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) Ereignis-Auslöser über `backlog.item.status_changed` ohne dass `backlog` notes kennt (`test_note_triggers.py` mit echtem `backlog`); (2) `due_state` rein mit Uhr (`test_due_state.py`); (3) Hinweise mit allen Entscheidungen (`test_note_notices.py`, `NoteReactions.test.tsx`); (4) Befördern mit `origin`, Zurückstufen nur bei `Open`, jeweils wiederholbar (`test_note_conversion.py`, `ItemWidgets.test.tsx`); (5) Fällig-Liste nach Grund (`DueList.test.tsx`); (6) Tests grün.
+- `scripts/check-next.sh` und `scripts/check.sh` grün (siehe Commit). Status: `Awaiting confirmation`.
+
+### Open
+
+- Nicht geprüft: das Zusammenspiel im Browser; Befördern über einen Hinweis der Fällig-Liste öffnet die Note statt des Dialogs.
+- Frage 31 steht in `STORY-060`.

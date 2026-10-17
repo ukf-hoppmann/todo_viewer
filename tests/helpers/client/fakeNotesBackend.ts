@@ -1,6 +1,6 @@
-import { notesApi, type ContentOut, type DocumentOut, type DueOut, type IndexedNote, type IndexedTopic, type NoteOut, type SettingsOut } from "../../../client/src/plugins/notes/api";
+import { notesApi, type NoteNoticeOut, type ContentOut, type DocumentOut, type DueOut, type IndexedNote, type IndexedTopic, type NoteOut, type SettingsOut } from "../../../client/src/plugins/notes/api";
 import { fakeWorkspaceBackend } from "./fakeWorkspaceBackend";
-import { defaultSettings, emptyDue, noContent } from "./notesFixtures";
+import { defaultSettings, emptyDue, noContent, noteDetail } from "./notesFixtures";
 
 type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respond" | "extraApis"> & {
 	topics?: IndexedTopic[];
@@ -11,6 +11,8 @@ type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respon
 	noteDocuments?: Record<string, DocumentOut>;
 	due?: DueOut;
 	settings?: SettingsOut;
+	/** The open notices of an item by `uid` (`GET notes/items/{uid}/notices`). */
+	itemNotices?: Record<string, NoteNoticeOut[]>;
 	/** The content of a topic by `uid` (for the dialog of delete and archive). */
 	contents?: Record<string, ContentOut>;
 	/** Answers a request itself; `undefined` lets the fake answer. */
@@ -43,6 +45,16 @@ export function fakeNotesBackend(options: Options = {}) {
 				if (method === "PUT") settings = { ...settings, ...(request.body as Partial<SettingsOut>) };
 				return Response.json(settings);
 			}
+			const itemNotices = /^notes\/items\/([^/]+)\/notices$/.exec(path);
+			if (itemNotices) return Response.json(options.itemNotices?.[itemNotices[1]!] ?? []);
+			const demote = /^notes\/items\/([^/]+)\/demote$/.exec(path);
+			if (demote) return Response.json({ note: noteDetail("new", { label: "NOTE-009" }), item_uid: demote[1] });
+			const promote = /^notes\/notes\/([^/]+)\/promote$/.exec(path);
+			if (promote) return Response.json({ note: options.noteDetails?.[promote[1]!] ?? noteDetail(promote[1]!), item_uid: "item-new" });
+			const decide = /^notes\/notices\/([^/]+)\/decide$/.exec(path);
+			if (decide) return Response.json({ notice: { uid: decide[1], kind: "item_completed", created_at: "2026-10-17T00:00:00Z", source: null, decisions: [] }, note: null });
+			const removeTrigger = /^notes\/triggers\/([^/]+)$/.exec(path);
+			if (removeTrigger) return Response.json(Object.values(options.noteDetails ?? {})[0] ?? noteDetail("n1"));
 			const content = /^notes\/topics\/([^/]+)\/content$/.exec(path);
 			if (content) return Response.json(options.contents?.[content[1]!] ?? noContent);
 			const topicWrite = /^notes\/topics(?:\/([^/]+)(?:\/(\w+))?)?$/.exec(path);

@@ -8,12 +8,13 @@ describe("notes plugin definition", () => {
 	it("is valid, needs the layout and the workspace, and hangs its filter into the sidebar on its own route only", () => {
 		expect(checkDefinition({ plugin }, "notes").ok).toBe(true);
 		expect(checkContributions(plugin.contributions ?? [])).toEqual([]);
-		expect(manifest.requires).toEqual(["layout-header-sidebar", "workspace"]);
+		expect(manifest.requires).toEqual(["layout-header-sidebar", "workspace", "backlog"]);
 		const widgets = (plugin.contributions ?? []).filter((entry) => entry.slot !== "core.main");
 		const filters = widgets.filter((entry) => entry.slot === "layout-header-sidebar.sidebar-sections");
 		expect(filters).toHaveLength(1);
 		expect(filters.every((entry) => "when" in entry && entry.when?.[0] === "notes/main")).toBe(true);
 		expect(widgets.filter((entry) => entry.slot === "workspace.create-types").map((entry) => entry.name)).toEqual(["note", "topic"]);
+		expect(widgets.filter((entry) => entry.slot === "backlog.item-detail").map((entry) => entry.name)).toEqual(["notices", "demote"]);
 		expect(widgets.filter((entry) => entry.slot === "layout-header-sidebar.header-actions").map((entry) => entry.name)).toEqual(["due"]);
 		expect(widgets.filter((entry) => entry.slot === "core.settings-sections").map((entry) => entry.name)).toEqual(["settings"]);
 	});

@@ -5,11 +5,13 @@ import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { Box, Chip, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSlot } from "../../core";
 import { DetailField, DetailPanel, DetailSection, InlineField, MarkdownView, type DetailAction } from "../../shared";
 import { LinksSection, useDeleteElement } from "../workspace";
 import { useGetItemQuery, useListAreasQuery, useListItemsQuery, type ItemOut, type ItemSummary } from "./api";
 import { PRIORITIES, STATUSES, defaultResolution, statusColor } from "./constants";
 import { DocumentsSection } from "./DocumentsSection";
+import { ItemDetailState } from "./itemDetailContext";
 import { ItemFormDialog, RetypeDialog, RetypeNotice, type RetypeResult } from "./ItemDialogs";
 import { TextPromptDialog } from "./TextPromptDialog";
 import { backlogTestIds } from "./testIds";
@@ -44,6 +46,7 @@ function Loaded({ item, onSelect }: { item: ItemOut; onSelect: (uid: string) => 
 	const [notice, setNotice] = useState<RetypeResult>();
 	const [prompt, setPrompt] = useState<"resolution" | "area">();
 	const [pendingStatus, setPendingStatus] = useState<string>();
+	const widgets = useSlot("backlog.item-detail");
 
 	const save = (fields: Record<string, unknown>, resolution?: string) => write.updateItem(item, fields, resolution).then(() => undefined);
 	const text = (name: string, label: string, value: string | null | undefined) =>
@@ -157,6 +160,13 @@ function Loaded({ item, onSelect }: { item: ItemOut; onSelect: (uid: string) => 
 							<SummaryLink key={child.uid} summary={child} onSelect={onSelect} testId={backlogTestIds.child(child.uid)} />
 						))}
 					</DetailSection>
+				)}
+				{widgets.length > 0 && (
+					<ItemDetailState.Provider value={item}>
+						{widgets.map((entry) => (
+							<entry.component key={`${entry.ownerId}/${entry.name}`} />
+						))}
+					</ItemDetailState.Provider>
 				)}
 				<DetailSection id="documents" title={t("field.documents")}>
 					<DocumentsSection item={item} />

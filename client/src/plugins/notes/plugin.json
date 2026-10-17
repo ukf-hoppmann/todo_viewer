@@ -1,1 +1,1 @@
-{ "requires": ["layout-header-sidebar", "workspace"] }
+{ "requires": ["layout-header-sidebar", "workspace", "backlog"] }

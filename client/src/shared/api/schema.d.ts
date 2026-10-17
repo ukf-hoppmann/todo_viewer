@@ -1075,7 +1075,7 @@ export interface components {
         /** DecisionOut */
         DecisionOut: {
             note: components["schemas"]["NoteOut"] | null;
-            notice: components["schemas"]["viewer__plugins__notes__application__operations__NoticeOut"];
+            notice: components["schemas"]["NoteNoticeOut"];
         };
         /**
          * DeleteResult
@@ -1130,24 +1130,23 @@ export interface components {
             /** Label */
             label: string;
             /** Notices */
-            notices?: components["schemas"]["viewer__plugins__notes__application__operations__NoticeOut"][];
+            notices: components["schemas"]["NoteNoticeOut"][];
             /** Path */
-            path?: string[];
+            path: string[];
             /** Project Uid */
             project_uid: string;
-            /**
-             * Reason
-             * @default review_expired
-             */
+            /** Reason */
             reason: string;
             /** Review At */
             review_at: string | null;
             /** Summary */
             summary: string;
             /** Triggers */
-            triggers?: components["schemas"]["TriggerOut"][];
+            triggers: components["schemas"]["TriggerOut"][];
             /** Uid */
             uid: string;
+            /** Version */
+            version: number;
         };
         /** DueOut */
         DueOut: {
@@ -1371,6 +1370,21 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** NoteNoticeOut */
+        NoteNoticeOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decisions */
+            decisions: string[];
+            /** Kind */
+            kind: string;
+            source: components["schemas"]["TargetRef"] | null;
+            /** Uid */
+            uid: string;
+        };
         /** NoteOut */
         NoteOut: {
             /** Archived */
@@ -1384,13 +1398,13 @@ export interface components {
             /** Label */
             label: string;
             /** Notices */
-            notices?: components["schemas"]["viewer__plugins__notes__application__operations__NoticeOut"][];
+            notices: components["schemas"]["NoteNoticeOut"][];
             /** Path */
             path: components["schemas"]["TopicRef"][];
             /** Project Uid */
             project_uid: string;
             /** Reason */
-            reason?: string | null;
+            reason: string | null;
             /** Review At */
             review_at: string | null;
             /** Status */
@@ -1404,7 +1418,7 @@ export interface components {
             /** Trigger Mode */
             trigger_mode: string;
             /** Triggers */
-            triggers?: components["schemas"]["TriggerOut"][];
+            triggers: components["schemas"]["TriggerOut"][];
             /** Uid */
             uid: string;
             /** Version */
@@ -1618,6 +1632,17 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** NoticeOut */
+        NoticeOut: {
+            /** Code */
+            code: string;
+            /** Details */
+            details: {
+                [key: string]: string;
+            };
+            /** Message */
+            message: string;
+        };
         /** Preview */
         Preview: {
             /** Conflicts */
@@ -1709,7 +1734,7 @@ export interface components {
             /** New Label */
             new_label: string;
             /** Notices */
-            notices: components["schemas"]["viewer__plugins__backlog__application__operations__NoticeOut"][];
+            notices: components["schemas"]["NoticeOut"][];
             /** Old Label */
             old_label: string;
         };
@@ -1954,32 +1979,6 @@ export interface components {
             sync_direction?: ("both" | "to_files" | "to_database") | null;
             /** Version */
             version: number;
-        };
-        /** NoticeOut */
-        viewer__plugins__backlog__application__operations__NoticeOut: {
-            /** Code */
-            code: string;
-            /** Details */
-            details: {
-                [key: string]: string;
-            };
-            /** Message */
-            message: string;
-        };
-        /** NoticeOut */
-        viewer__plugins__notes__application__operations__NoticeOut: {
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Decisions */
-            decisions: string[];
-            /** Kind */
-            kind: string;
-            source: components["schemas"]["TargetRef"] | null;
-            /** Uid */
-            uid: string;
         };
     };
     responses: never;
@@ -2722,7 +2721,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["viewer__plugins__notes__application__operations__NoticeOut"][];
+                    "application/json": components["schemas"]["NoteNoticeOut"][];
                 };
             };
             /** @description Client Error */

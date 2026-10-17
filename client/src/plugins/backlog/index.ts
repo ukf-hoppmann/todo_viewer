@@ -17,6 +17,12 @@ import en from "./locales/en.json";
 export const plugin = definePlugin({
 	i18n: { de, en },
 	api: backlogApi,
+	slots: {
+		"item-detail": {
+			description:
+				"Widgets in the detail panel of an item, below its fields (for example the notices and the action 'back to a note' of `notes`): the widget reads the item with `useItemDetail`.",
+		},
+	},
 	eventHandlers: {
 		"backlog.item.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Items"]));
@@ -42,4 +48,6 @@ export const plugin = definePlugin({
 	],
 });
 
+export type { ItemOut } from "./api";
+export { useItemDetail } from "./itemDetailContext";
 export { backlogTestIds } from "./testIds";

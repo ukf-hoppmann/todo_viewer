@@ -51,7 +51,7 @@ export const plugin = definePlugin({
 
 export { useCreateDialog, type CreateDialogContext } from "./createDialog";
 export { useProjectSelection, useSearchText } from "./state";
-export { useListProjectsQuery, type Project } from "./api";
+export { useListProjectsQuery, useSearchElementsQuery, type ElementOut, type Project } from "./api";
 export { LinksSection } from "./LinksSection";
 export { useDeleteElement } from "./useDeleteElement";
 export { workspaceTestIds } from "./testIds";

@@ -1,4 +1,4 @@
-import type { ContentOut, DocumentOut, DueOut, IndexedNote, IndexedTopic, NoteOut, SettingsOut } from "../../../client/src/plugins/notes/api";
+import type { ContentOut, DocumentOut, DueNoteOut, DueOut, IndexedNote, IndexedTopic, NoteOut, SettingsOut } from "../../../client/src/plugins/notes/api";
 
 /** A topic of the index with plain defaults (project `p1`, no parent, active). */
 export function topic(uid: string, extra: Partial<IndexedTopic> = {}): IndexedTopic {
@@ -52,6 +52,9 @@ export function noteDetail(uid: string, extra: Partial<NoteOut> = {}): NoteOut {
 		documents: [],
 		version: 1,
 		deleted: false,
+		reason: null,
+		triggers: [],
+		notices: [],
 		...extra,
 	};
 }
@@ -63,3 +66,8 @@ export function notesDocument(name: string, content: string, extra: Partial<Docu
 export const emptyDue: DueOut = { count: 0, notes: [] };
 export const defaultSettings: SettingsOut = { max_topic_depth: 3, review_days: 30 };
 export const noContent: ContentOut = { topics: 0, active: 0, archived: 0 };
+
+/** A due note of the counter list with plain defaults (project `p1`, reason review). */
+export function dueNote(uid: string, extra: Partial<DueNoteOut> = {}): DueNoteOut {
+	return { uid, project_uid: "p1", label: uid.toUpperCase(), summary: `Note ${uid}`, review_at: null, version: 1, reason: "review_expired", path: [], triggers: [], notices: [], ...extra };
+}

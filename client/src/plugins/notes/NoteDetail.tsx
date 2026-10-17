@@ -5,6 +5,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import RestoreIcon from "@mui/icons-material/Restore";
 import SnoozeIcon from "@mui/icons-material/Snooze";
+import NorthEastIcon from "@mui/icons-material/NorthEast";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from "@mui/material";
 import { useState } from "react";
@@ -15,6 +16,9 @@ import { useGetNoteQuery, type NoteOut, type WriteError } from "./api";
 import { statusColor } from "./constants";
 import { DocumentsSection } from "./DocumentsSection";
 import { NoteForm } from "./NoteForm";
+import { NoticesSection } from "./NoticesSection";
+import { PromoteDialog } from "./PromoteDialog";
+import { TriggersSection } from "./TriggersSection";
 import { notesTestIds } from "./testIds";
 import { useNoteWrite } from "./useNoteWrite";
 
@@ -33,7 +37,7 @@ function Loaded({ note }: { note: NoteOut }) {
 	const { t } = useTranslation("notes");
 	const write = useNoteWrite();
 	const trash = useDeleteElement();
-	const [dialog, setDialog] = useState<"edit" | "snooze" | "large">();
+	const [dialog, setDialog] = useState<"edit" | "snooze" | "large" | "promote">();
 	const [error, setError] = useState<string>();
 
 	const run = (action: Promise<unknown>) => {
@@ -55,6 +59,7 @@ function Loaded({ note }: { note: NoteOut }) {
 					{ id: "done", label: t("action.done"), icon: CheckIcon, onClick: () => run(write.finish(note, "done")) },
 					{ id: "dropped", label: t("action.dropped"), icon: CloseIcon, onClick: () => run(write.finish(note, "dropped")) },
 					{ id: "snooze", label: t("action.snooze"), icon: SnoozeIcon, onClick: () => setDialog("snooze") },
+					{ id: "promote", label: t("action.promote"), icon: NorthEastIcon, onClick: () => setDialog("promote") },
 					{ id: "keep", label: t("action.keep"), icon: ThumbUpIcon, onClick: () => run(write.keep(note)) },
 					{ id: "delete", label: t("action.delete"), icon: DeleteIcon, onClick: () => void trash.requestDelete(note.uid, note.version) },
 					{ id: "large", label: t("action.large"), icon: FullscreenIcon, onClick: () => setDialog("large") },
@@ -85,6 +90,17 @@ function Loaded({ note }: { note: NoteOut }) {
 						</span>
 					</DetailField>
 				)}
+				{note.reason && !note.archived && (
+					<DetailField id="reason" label={t("field.reason")}>
+						<span data-testid={notesTestIds.detailReason}>{t(`reason.${note.reason}`)}</span>
+					</DetailField>
+				)}
+				<DetailSection id="triggers" title={t("field.triggers")} defaultOpen={note.triggers.length > 0}>
+					<TriggersSection note={note} />
+				</DetailSection>
+				<DetailSection id="notices" title={t("field.notices")} defaultOpen={note.notices.length > 0}>
+					<NoticesSection note={note} />
+				</DetailSection>
 				<DetailSection id="documents" title={t("field.documents")}>
 					<DocumentsSection note={note} />
 				</DetailSection>
@@ -110,6 +126,7 @@ function Loaded({ note }: { note: NoteOut }) {
 					}}
 				/>
 			)}
+			{dialog === "promote" && <PromoteDialog note={note} onClose={() => setDialog(undefined)} />}
 			{dialog === "large" && (
 				<LargeView open onClose={() => setDialog(undefined)} title={`${note.label} — ${note.summary}`} markdown={note.body ?? ""} closeLabel={t("form.close")} tocLabel={t("documents.toc")} />
 			)}

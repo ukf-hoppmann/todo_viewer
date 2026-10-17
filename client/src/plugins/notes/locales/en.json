@@ -38,7 +38,10 @@
 		"name": "Name",
 		"dueAt": "Due date",
 		"documents": "Documents",
-		"links": "Links"
+		"links": "Links",
+		"reason": "Due because",
+		"triggers": "Triggers",
+		"notices": "Notices"
 	},
 	"detail": {
 		"choose": "Choose a note in the tree.",
@@ -55,7 +58,8 @@
 		"keep": "Keep",
 		"delete": "Move to trash",
 		"restore": "Bring back",
-		"large": "Large view"
+		"large": "Large view",
+		"promote": "Promote to item …"
 	},
 	"form": {
 		"save": "Save",
@@ -121,7 +125,13 @@
 	},
 	"due": {
 		"label": "{{count}} due notes",
-		"title": "Due notes"
+		"title": "Due notes",
+		"reason": {
+			"trigger": "Trigger",
+			"notice": "Notice",
+			"topic_due": "Date",
+			"review_expired": "Review"
+		}
 	},
 	"settings": {
 		"title": "Notes",
@@ -130,5 +140,67 @@
 		"maxDepth": "Deepest topic level",
 		"maxDepthHint": "Topics that already lie deeper stay as they are.",
 		"saved": "Saved."
+	},
+	"reason": {
+		"trigger": "a trigger arrived",
+		"notice": "a notice waits for a decision",
+		"topic_due": "the date of the topic is reached",
+		"review_expired": "the review date is reached"
+	},
+	"itemStatus": {
+		"In progress": "In progress",
+		"Awaiting confirmation": "Awaiting confirmation",
+		"Completed": "Completed",
+		"Rejected": "Rejected"
+	},
+	"triggers": {
+		"none": "No triggers. The note comes up at its review date.",
+		"add": "＋ Trigger",
+		"addTitle": "Trigger for {{label}}",
+		"remove": "Remove trigger",
+		"kind": "Kind",
+		"kinds": {
+			"event": "An item reaches a status",
+			"topic_date": "The date of the topic is reached"
+		},
+		"item": "Item",
+		"status": "Status",
+		"searchHint": "Type the label or title of the item",
+		"event": "{{item}} reaches \"{{status}}\"",
+		"topicDate": "The date of the topic is reached",
+		"arrived": "arrived",
+		"alreadyMet": "already met"
+	},
+	"notices": {
+		"none": "No open notices.",
+		"kind": {
+			"item_completed": "The linked item {{item}} is completed.",
+			"item_rejected": "The linked item {{item}} was rejected.",
+			"item_deleted": "The linked item {{item}} is in the trash.",
+			"item_retyped": "The linked item {{item}} has a new type and label.",
+			"note_dropped": "The note {{note}} that refers to it was dropped.",
+			"note_promoted": "The note {{note}} that refers to it was promoted."
+		},
+		"decision": {
+			"keep": "Keep",
+			"detach": "Detach link",
+			"drop": "Drop note",
+			"promote": "Promote …",
+			"acknowledge": "Acknowledge"
+		}
+	},
+	"promote": {
+		"title": "Promote {{label}} to an item",
+		"type": "Type",
+		"itemTitle": "Title of the item",
+		"area": "Area",
+		"goal": "Goal",
+		"criteria": "Completion criteria",
+		"hint": "Text, notes and specs move to the item; the note is then promoted and linked to it.",
+		"confirm": "Promote"
+	},
+	"demote": {
+		"button": "Back to a note",
+		"done": "Demoted to note {{label}}."
 	}
 }

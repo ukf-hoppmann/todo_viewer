@@ -123,7 +123,7 @@ class TriggerOut:
 
 
 @dataclass(frozen=True)
-class NoticeOut:
+class NoteNoticeOut:
     uid: str
     #: `item_completed`, `item_rejected`, `item_deleted`, `item_retyped` (an Notes) oder `note_dropped`,
     #: `note_promoted` (an Items).
@@ -154,10 +154,10 @@ class NoteOut:
     version: int
     deleted: bool
     #: Warum die Note fällig ist (`trigger`, `notice`, `topic_due`, `review_expired`), sonst leer.
-    reason: str | None = None
-    triggers: list[TriggerOut] = field(default_factory=list)
+    reason: str | None
+    triggers: list[TriggerOut]
     #: Die offenen Hinweise an die Note.
-    notices: list[NoticeOut] = field(default_factory=list)
+    notices: list[NoteNoticeOut]
 
 
 @dataclass(frozen=True)
@@ -182,11 +182,12 @@ class DueNoteOut:
     summary: str
     review_at: datetime | None
     #: Warum fällig: `trigger`, `notice`, `topic_due` oder `review_expired`.
-    reason: str = "review_expired"
+    version: int
+    reason: str
     #: Die Namen der Topics von der Wurzel bis zur Note.
-    path: list[str] = field(default_factory=list)
-    triggers: list[TriggerOut] = field(default_factory=list)
-    notices: list[NoticeOut] = field(default_factory=list)
+    path: list[str]
+    triggers: list[TriggerOut]
+    notices: list[NoteNoticeOut]
 
 
 @dataclass(frozen=True)
@@ -405,7 +406,7 @@ class DecideNotice:
 
 @dataclass(frozen=True)
 class DecisionOut:
-    notice: NoticeOut
+    notice: NoteNoticeOut
     #: Die Note nach der Entscheidung (bei Hinweisen an Notes).
     note: NoteOut | None
 
@@ -502,8 +503,10 @@ def _trigger_out(view: TriggerView) -> TriggerOut:
     return TriggerOut(t.uid, t.kind, t.status, _target(view.target), t.fired_at, t.already_met, view.arrived)
 
 
-def _notice_out(notice: Notice, source: Any | None) -> NoticeOut:
-    return NoticeOut(notice.uid, notice.kind, notice.created_at, _target(source), list(decision_options(notice.side)))
+def _notice_out(notice: Notice, source: Any | None) -> NoteNoticeOut:
+    return NoteNoticeOut(
+        notice.uid, notice.kind, notice.created_at, _target(source), list(decision_options(notice.side))
+    )
 
 
 def note_out(detail: NoteDetail) -> NoteOut:
@@ -571,6 +574,7 @@ def _due_note(entry: DueEntry) -> DueNoteOut:
         n.label,
         n.summary,
         n.review_at,
+        n.revision,
         entry.state.reason or "review_expired",
         [topic.name for topic in entry.path],
         [_trigger_out(view) for view in entry.triggers],
@@ -584,7 +588,7 @@ def _due(services: NotesServices, data: DueIn) -> DueOut:
     return DueOut(len(entries), [_due_note(entry) for entry in entries])
 
 
-def _item_notice(entry: ItemNotice) -> NoticeOut:
+def _item_notice(entry: ItemNotice) -> NoteNoticeOut:
     return _notice_out(entry.notice, entry.source)
 
 
@@ -837,7 +841,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "befördert)",
         "read",
         ListItemNotices,
-        list[NoticeOut],
+        list[NoteNoticeOut],
         lambda s, d: [_item_notice(entry) for entry in s.notices.list_for_item(d.ref, d.project)],
         HttpBinding("GET", "/items/{ref}/notices"),
     ),

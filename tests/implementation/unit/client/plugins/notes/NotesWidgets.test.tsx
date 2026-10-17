@@ -9,6 +9,7 @@ import { notesTestIds as ids } from "../../../../../../client/src/plugins/notes/
 import { sharedTestIds } from "../../../../../../client/src/shared";
 import { fakeNotesBackend } from "../../../../../helpers/client/fakeNotesBackend";
 import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
+import { dueNote } from "../../../../../helpers/client/notesFixtures";
 import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 const projects = [project("p0", "Allgemein", 0, { builtin: true }), project("p1", "Viewer", 1)];
@@ -19,7 +20,7 @@ afterEach(() => {
 });
 
 describe("DueCounter", () => {
-	const due = { count: 2, notes: [{ uid: "n1", project_uid: "p1", label: "NOTE-001", summary: "Eins", review_at: null }, { uid: "n2", project_uid: "p1", label: "NOTE-002", summary: "Zwei", review_at: null }] };
+	const due = { count: 2, notes: [dueNote("n1", { label: "NOTE-001", summary: "Eins", reason: "trigger" }), dueNote("n2", { label: "NOTE-002", summary: "Zwei" })] };
 
 	it("shows nothing when no note is due", async () => {
 		await renderWorkspace(<DueCounter />, { backend: fakeNotesBackend({ projects }) });

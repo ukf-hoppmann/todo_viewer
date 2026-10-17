@@ -159,15 +159,11 @@ export default function NotesPage() {
 					);
 				})}
 			</Box>
-			<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }}>
-				{state.selected && selectedExists && allNotes.some((n) => n.uid === state.selected) ? (
-					<NoteDetail uid={state.selected} />
-				) : (
-					<Typography color="text.secondary" data-testid={notesTestIds.detailEmpty}>
-						{t("detail.choose")}
-					</Typography>
-				)}
-			</Box>
+			{state.selected && selectedExists && allNotes.some((n) => n.uid === state.selected) && (
+				<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }} data-testid={notesTestIds.detail}>
+					<NoteDetail uid={state.selected} onClose={() => state.setSelected(null)} />
+				</Box>
+			)}
 			{dialog?.kind === "note" && (
 				<Dialog open onClose={() => setDialog(undefined)} fullWidth maxWidth="md" slotProps={{ paper: { "data-testid": notesTestIds.formDialog } as never }}>
 					<DialogTitle>{t("form.createTitle")}</DialogTitle>

@@ -8,7 +8,7 @@ export const backlogTestIds = {
 	statusFilter: "backlog.status-filter",
 	priorityFilter: "backlog.priority-filter",
 	detail: "backlog.detail",
-	detailEmpty: "backlog.detail-empty",
+	detail: "backlog.detail",
 	field: (name: string) => `backlog.field.${name}`,
 	child: (uid: string) => `backlog.child.${uid}`,
 	dependency: (uid: string) => `backlog.dependency.${uid}`,

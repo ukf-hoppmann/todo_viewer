@@ -53,7 +53,6 @@
 		"documents": "Dokumente"
 	},
 	"detail": {
-		"choose": "Ein Item im Baum wählen.",
 		"failed": "Das Item lässt sich nicht laden.",
 		"deleted": "im Papierkorb",
 		"deletedShort": "gelöscht",

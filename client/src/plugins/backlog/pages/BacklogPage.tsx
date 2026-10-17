@@ -92,15 +92,11 @@ export default function BacklogPage() {
 					);
 				})}
 			</Box>
-			<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }}>
-				{state.selected ? (
-					<ItemDetail uid={state.selected} onSelect={state.setSelected} />
-				) : (
-					<Typography color="text.secondary" data-testid={backlogTestIds.detailEmpty}>
-						{t("detail.choose")}
-					</Typography>
-				)}
-			</Box>
+			{state.selected && (
+				<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }} data-testid={backlogTestIds.detail}>
+					<ItemDetail uid={state.selected} onSelect={state.setSelected} onClose={() => state.setSelected(null)} />
+				</Box>
+			)}
 			{write.dialog}
 		</Box>
 	);

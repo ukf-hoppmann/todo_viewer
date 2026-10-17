@@ -53,7 +53,6 @@
 		"documents": "Documents"
 	},
 	"detail": {
-		"choose": "Choose an item in the tree.",
 		"failed": "The item cannot be loaded.",
 		"deleted": "in the trash",
 		"deletedShort": "deleted",

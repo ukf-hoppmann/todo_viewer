@@ -20,6 +20,8 @@ import { useItemWrite } from "./useItemWrite";
 interface Props {
 	uid: string;
 	onSelect: (uid: string) => void;
+	/** Shows a close button in the header. */
+	onClose?: () => void;
 }
 
 /**
@@ -27,16 +29,16 @@ interface Props {
  * Status, priority, area, "required for parent" and dependencies change at once; the form edits everything
  * else; the buttons create a child, change the type and move the item to the trash.
  */
-export function ItemDetail({ uid, onSelect }: Props) {
+export function ItemDetail({ uid, onSelect, onClose }: Props) {
 	const { t } = useTranslation("backlog");
 	const { data: item, isError } = useGetItemQuery(uid);
 
 	if (isError) return <Typography color="error" sx={{ p: 2 }}>{t("detail.failed")}</Typography>;
 	if (!item) return null;
-	return <Loaded item={item} onSelect={onSelect} />;
+	return <Loaded item={item} onSelect={onSelect} onClose={onClose} />;
 }
 
-function Loaded({ item, onSelect }: { item: ItemOut; onSelect: (uid: string) => void }) {
+function Loaded({ item, onSelect, onClose }: { item: ItemOut; onSelect: (uid: string) => void; onClose?: () => void }) {
 	const { t } = useTranslation("backlog");
 	const write = useItemWrite();
 	const trash = useDeleteElement();
@@ -72,7 +74,7 @@ function Loaded({ item, onSelect }: { item: ItemOut; onSelect: (uid: string) => 
 
 	return (
 		<Box data-testid={backlogTestIds.detail}>
-			<DetailPanel title={`${item.label} — ${item.title}`} subtitle={item.deleted ? t("detail.deleted") : t(`type.${item.type}`)} actions={actions}>
+			<DetailPanel title={`${item.label} — ${item.title}`} subtitle={item.deleted ? t("detail.deleted") : t(`type.${item.type}`)} actions={actions} onClose={onClose} closeLabel={t("form.close")}>
 				{trash.failed && <Typography color="error" variant="body2">{trash.failed}</Typography>}
 				{item.deleted ? (
 					<DetailField id="status" label={t("field.status")}>

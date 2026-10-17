@@ -44,7 +44,6 @@
 		"notices": "Notices"
 	},
 	"detail": {
-		"choose": "Choose a note in the tree.",
 		"failed": "The note cannot be loaded.",
 		"deleted": "in the trash",
 		"archivedWithTopic": "archived with its topic",

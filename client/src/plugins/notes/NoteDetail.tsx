@@ -25,15 +25,15 @@ import { useNoteWrite } from "./useNoteWrite";
 const day = (moment: string | null | undefined) => (moment ? moment.slice(0, 10) : "");
 
 /** The detail panel of a note: status, topic path, review date, text, documents and links, and the actions. */
-export function NoteDetail({ uid }: { uid: string }) {
+export function NoteDetail({ uid, onClose }: { uid: string; onClose?: () => void }) {
 	const { t } = useTranslation("notes");
 	const { data: note, isError } = useGetNoteQuery(uid);
 	if (isError) return <Typography color="error" sx={{ p: 2 }}>{t("detail.failed")}</Typography>;
 	if (!note) return null;
-	return <Loaded note={note} />;
+	return <Loaded note={note} onClose={onClose} />;
 }
 
-function Loaded({ note }: { note: NoteOut }) {
+function Loaded({ note, onClose }: { note: NoteOut; onClose?: () => void }) {
 	const { t } = useTranslation("notes");
 	const write = useNoteWrite();
 	const trash = useDeleteElement();
@@ -67,7 +67,7 @@ function Loaded({ note }: { note: NoteOut }) {
 
 	return (
 		<Box data-testid={notesTestIds.detail}>
-			<DetailPanel title={`${note.label} — ${note.summary}`} subtitle={note.deleted ? t("detail.deleted") : t(`status.${note.status}`)} actions={actions}>
+			<DetailPanel title={`${note.label} — ${note.summary}`} subtitle={note.deleted ? t("detail.deleted") : t(`status.${note.status}`)} actions={actions} onClose={onClose} closeLabel={t("form.close")}>
 				{(error ?? trash.failed) && (
 					<Alert severity="error" data-testid={notesTestIds.detailError} onClose={() => setError(undefined)}>
 						{error ?? trash.failed}

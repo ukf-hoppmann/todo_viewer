@@ -44,7 +44,6 @@
 		"notices": "Hinweise"
 	},
 	"detail": {
-		"choose": "Eine Note im Baum wählen.",
 		"failed": "Die Note lässt sich nicht laden.",
 		"deleted": "im Papierkorb",
 		"archivedWithTopic": "mit dem Topic archiviert",

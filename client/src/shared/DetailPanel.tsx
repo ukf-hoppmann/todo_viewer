@@ -1,3 +1,4 @@
+import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Box, Collapse, IconButton, Tooltip, Typography } from "@mui/material";
 import { useState, type ComponentType, type ReactNode } from "react";
@@ -16,11 +17,14 @@ interface DetailPanelProps {
 	title: ReactNode;
 	subtitle?: ReactNode;
 	actions?: readonly DetailAction[];
+	/** With a handler the header ends in a close button (`closeLabel` is its translated name). */
+	onClose?: () => void;
+	closeLabel?: string;
 	children?: ReactNode;
 }
 
 /** The detail view of one element: a header bar with icon buttons and the sections below it. */
-export function DetailPanel({ title, subtitle, actions = [], children }: DetailPanelProps) {
+export function DetailPanel({ title, subtitle, actions = [], onClose, closeLabel, children }: DetailPanelProps) {
 	return (
 		<Box data-testid={sharedTestIds.detailPanel} sx={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
 			<Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 1.5, borderBottom: 1, borderColor: "divider" }}>
@@ -43,6 +47,13 @@ export function DetailPanel({ title, subtitle, actions = [], children }: DetailP
 						</span>
 					</Tooltip>
 				))}
+				{onClose && (
+					<Tooltip title={closeLabel}>
+						<IconButton aria-label={closeLabel} onClick={onClose} data-testid={sharedTestIds.detailAction("close")}>
+							<CloseIcon />
+						</IconButton>
+					</Tooltip>
+				)}
 			</Box>
 			<Box sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>{children}</Box>
 		</Box>

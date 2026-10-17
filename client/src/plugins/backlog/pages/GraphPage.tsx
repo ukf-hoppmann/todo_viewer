@@ -145,9 +145,11 @@ export default function GraphPage() {
 					</Box>
 				)}
 			</Box>
-			<Box sx={{ flex: "1 1 40%", minWidth: 0, overflowY: "auto" }}>
-				{selected ? <ItemDetail uid={selected} onSelect={setSelected} /> : <Typography color="text.secondary">{t("detail.choose")}</Typography>}
-			</Box>
+			{selected && (
+				<Box sx={{ flex: "1 1 40%", minWidth: 0, overflowY: "auto" }}>
+					<ItemDetail uid={selected} onSelect={setSelected} onClose={() => setSelected(null)} />
+				</Box>
+			)}
 		</Box>
 	);
 }

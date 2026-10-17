@@ -85,22 +85,6 @@ def default_review_at(now: datetime, review_days: int) -> datetime:
     return utc(now) + timedelta(days=review_days)
 
 
-def is_due(note: Note, now: datetime) -> bool:
-    """Fällig ist eine Note in Gebrauch (nicht im Archiv, nicht im Papierkorb), die wartet oder zurückgestellt ist und
-    deren Prüfdatum erreicht ist. Archivierte Notes lösen nie eine Wiedervorlage aus."""
-    return (
-        not note.archived
-        and note.deleted_at is None
-        and note.status in ("waiting", "snoozed")
-        and note.review_at is not None
-        and utc(note.review_at) <= utc(now)
-    )
-
-
-def effective_status(note: Note, now: datetime) -> str:
-    return "due" if is_due(note, now) else note.status
-
-
 def changed_settings(
     current: NotesSettings, max_topic_depth: int | None = None, review_days: int | None = None
 ) -> NotesSettings:

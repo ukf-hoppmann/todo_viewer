@@ -8,12 +8,23 @@ from typing import Any
 
 from viewer.core.domain.errors import InvalidInput
 from viewer.core.domain.operations import HttpBinding, Operation
+from viewer.plugins.notes.application.conversion import ConversionService
 from viewer.plugins.notes.application.documents import DocumentService
-from viewer.plugins.notes.application.notes import IndexedNote, IndexedTopic, NoteDetail, NoteService
+from viewer.plugins.notes.application.notes import (
+    DueEntry,
+    IndexedNote,
+    IndexedTopic,
+    NoteDetail,
+    NoteService,
+    TriggerView,
+)
+from viewer.plugins.notes.application.notices import ItemNotice, NoticeService
 from viewer.plugins.notes.application.ports import Document
 from viewer.plugins.notes.application.settings import SettingsService
 from viewer.plugins.notes.application.topics import TopicService
-from viewer.plugins.notes.domain.model import Note, Topic
+from viewer.plugins.notes.application.triggers import TriggerService
+from viewer.plugins.notes.domain.model import Topic
+from viewer.plugins.notes.domain.notices import Notice, decision_options
 from viewer.plugins.notes.domain.topics import Choice
 
 
@@ -21,12 +32,22 @@ class NotesServices:
     """Die Dienste des Plugins."""
 
     def __init__(
-        self, notes: NoteService, topics: TopicService, documents: DocumentService, settings: SettingsService
+        self,
+        notes: NoteService,
+        topics: TopicService,
+        documents: DocumentService,
+        settings: SettingsService,
+        triggers: TriggerService,
+        notices: NoticeService,
+        conversion: ConversionService,
     ) -> None:
         self.notes = notes
         self.topics = topics
         self.documents = documents
         self.settings = settings
+        self.triggers = triggers
+        self.notices = notices
+        self.conversion = conversion
 
 
 # --- Ausgaben ---------------------------------------------------------------------------------------------------
@@ -77,6 +98,43 @@ class TopicRef:
 
 
 @dataclass(frozen=True)
+class TargetRef:
+    """Das Element am anderen Ende eines Auslösers oder Hinweises."""
+
+    uid: str
+    label: str
+    title: str
+    kind: str
+    deleted: bool
+
+
+@dataclass(frozen=True)
+class TriggerOut:
+    uid: str
+    kind: str
+    #: Bei einem Ereignis: der Status, den das Item erreichen soll.
+    status: str | None
+    target: TargetRef | None
+    fired_at: datetime | None
+    #: Das Item hatte den Status schon, als der Auslöser angelegt wurde.
+    already_met: bool
+    #: Eingetreten (gefeuert oder Topic-Termin erreicht).
+    arrived: bool
+
+
+@dataclass(frozen=True)
+class NoticeOut:
+    uid: str
+    #: `item_completed`, `item_rejected`, `item_deleted`, `item_retyped` (an Notes) oder `note_dropped`,
+    #: `note_promoted` (an Items).
+    kind: str
+    created_at: datetime
+    source: TargetRef | None
+    #: Die möglichen Entscheidungen.
+    decisions: list[str]
+
+
+@dataclass(frozen=True)
 class NoteOut:
     uid: str
     project_uid: str
@@ -95,6 +153,11 @@ class NoteOut:
     documents: list[str]
     version: int
     deleted: bool
+    #: Warum die Note fällig ist (`trigger`, `notice`, `topic_due`, `review_expired`), sonst leer.
+    reason: str | None = None
+    triggers: list[TriggerOut] = field(default_factory=list)
+    #: Die offenen Hinweise an die Note.
+    notices: list[NoticeOut] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -118,6 +181,12 @@ class DueNoteOut:
     label: str
     summary: str
     review_at: datetime | None
+    #: Warum fällig: `trigger`, `notice`, `topic_due` oder `review_expired`.
+    reason: str = "review_expired"
+    #: Die Namen der Topics von der Wurzel bis zur Note.
+    path: list[str] = field(default_factory=list)
+    triggers: list[TriggerOut] = field(default_factory=list)
+    notices: list[NoticeOut] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -202,6 +271,9 @@ class SnoozeNote:
     version: int
     #: Neues Prüfdatum (ISO); ohne Angabe heute + Prüf-Intervall.
     review_at: str | None = None
+    #: Ein neuer Auslöser (`kind`, `target`, `status`); er ersetzt alle alten. Ohne ihn feuern die gefeuerten
+    #: Auslöser wieder neu und ein vorbeigegangener Topic-Termin fällt weg.
+    trigger: dict[str, Any] | None = None
     project: str | None = None
 
 
@@ -303,6 +375,81 @@ class AppendNoteEntry:
 
 
 @dataclass(frozen=True)
+class AddTrigger:
+    ref: str
+    #: `event` (ein Item erreicht `status`; `target` ist seine uid oder ein Label) oder `topic_date` (der Termin des
+    #: Topics der Note ist erreicht).
+    kind: str
+    target: str | None = None
+    #: `In progress`, `Awaiting confirmation`, `Completed` oder `Rejected`.
+    status: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class RemoveTrigger:
+    uid: str
+
+
+@dataclass(frozen=True)
+class DecideNotice:
+    uid: str
+    #: Am Hinweis an eine Note: `keep`, `detach`, `drop`, `promote`; an ein Item: `acknowledge`.
+    decision: str
+    #: Die Version der Note, auf die sich die Entscheidung stützt (Standard: die gespeicherte).
+    version: int | None = None
+    #: Bei `promote`: Typ und Felder des Items wie bei `promote_note`.
+    type: str | None = None
+    fields: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class DecisionOut:
+    notice: NoticeOut
+    #: Die Note nach der Entscheidung (bei Hinweisen an Notes).
+    note: NoteOut | None
+
+
+@dataclass(frozen=True)
+class ListItemNotices:
+    ref: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class PromoteNote:
+    ref: str
+    version: int
+    #: Typ des neuen Items: `Epic`, `Story` oder `Task`.
+    type: str
+    #: Felder des Items: Pflicht `area`, `goal`, `completion_criteria`; Titel und Kurzfassung sind die der Note, wenn
+    #: nichts gegeben ist.
+    fields: dict[str, Any] = field(default_factory=dict)
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class PromotedOut:
+    note: NoteOut
+    item_uid: str
+
+
+@dataclass(frozen=True)
+class DemoteItem:
+    ref: str
+    version: int
+    #: Das Topic der neuen Note (uid).
+    topic: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class DemotedOut:
+    note: NoteOut
+    item_uid: str
+
+
+@dataclass(frozen=True)
 class UpdateSettings:
     max_topic_depth: int | None = None
     review_days: int | None = None
@@ -344,6 +491,21 @@ def _note_index(entry: IndexedNote) -> NoteIndexOut:
     )
 
 
+def _target(element: Any) -> TargetRef | None:
+    if element is None:
+        return None
+    return TargetRef(element.uid, element.label, element.title, element.kind, element.deleted_at is not None)
+
+
+def _trigger_out(view: TriggerView) -> TriggerOut:
+    t = view.trigger
+    return TriggerOut(t.uid, t.kind, t.status, _target(view.target), t.fired_at, t.already_met, view.arrived)
+
+
+def _notice_out(notice: Notice, source: Any | None) -> NoticeOut:
+    return NoticeOut(notice.uid, notice.kind, notice.created_at, _target(source), list(decision_options(notice.side)))
+
+
 def note_out(detail: NoteDetail) -> NoteOut:
     n = detail.note
     return NoteOut(
@@ -362,6 +524,9 @@ def note_out(detail: NoteDetail) -> NoteOut:
         list(n.documents),
         n.revision,
         n.deleted_at is not None,
+        detail.state.reason,
+        [_trigger_out(view) for view in detail.triggers],
+        [_notice_out(notice, detail.sources.get(notice.source_uid)) for notice in detail.notices],
     )
 
 
@@ -398,11 +563,45 @@ def _index(services: NotesServices, data: NotesIndexIn) -> NotesIndexOut:
     return NotesIndexOut([topic_out(t) for t in result.topics], [_note_index(n) for n in result.notes])
 
 
+def _due_note(entry: DueEntry) -> DueNoteOut:
+    n = entry.note
+    return DueNoteOut(
+        n.uid,
+        n.project_uid,
+        n.label,
+        n.summary,
+        n.review_at,
+        entry.state.reason or "review_expired",
+        [topic.name for topic in entry.path],
+        [_trigger_out(view) for view in entry.triggers],
+        [_notice_out(notice, None) for notice in entry.notices],
+    )
+
+
 def _due(services: NotesServices, data: DueIn) -> DueOut:
     projects = _split(data.projects) if data.projects is not None else None
-    due = services.notes.due(projects)
-    notes: list[Note] = [entry.note for entry in due]
-    return DueOut(len(notes), [DueNoteOut(n.uid, n.project_uid, n.label, n.summary, n.review_at) for n in notes])
+    entries = services.notes.due(projects)
+    return DueOut(len(entries), [_due_note(entry) for entry in entries])
+
+
+def _item_notice(entry: ItemNotice) -> NoticeOut:
+    return _notice_out(entry.notice, entry.source)
+
+
+def _decided(services: NotesServices, data: DecideNotice) -> DecisionOut:
+    result = services.notices.decide(data.uid, data.decision, data.version, data.type, data.fields)
+    note = _detail(services, result.note_uid) if result.note_uid else None
+    return DecisionOut(_notice_out(result.notice, None), note)
+
+
+def _promoted(services: NotesServices, data: PromoteNote) -> PromotedOut:
+    result = services.conversion.promote(data.ref, data.project, data.version, data.type, data.fields)
+    return PromotedOut(_detail(services, result.note_uid), result.item_uid)
+
+
+def _demoted(services: NotesServices, data: DemoteItem) -> DemotedOut:
+    result = services.conversion.demote(data.ref, data.project, data.version, data.topic)
+    return DemotedOut(_detail(services, result.note_uid), result.item_uid)
 
 
 def _finish(services: NotesServices, data: FinishNote) -> NoteOut:
@@ -479,7 +678,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "write",
         SnoozeNote,
         NoteOut,
-        lambda s, d: _detail(s, s.notes.snooze(d.ref, d.project, d.version, d.review_at)),
+        lambda s, d: _detail(s, s.notes.snooze(d.ref, d.project, d.version, d.review_at, d.trigger)),
         HttpBinding("POST", "/notes/{ref}/snooze"),
     ),
     Operation(
@@ -601,6 +800,67 @@ OPERATIONS: tuple[Operation, ...] = (
         DocumentOut,
         lambda s, d: _document_out(s.documents.append_note(d.ref, d.project, d.topic, d.discussed, d.decided, d.open)),
         HttpBinding("POST", "/notes/{ref}/entries"),
+    ),
+    Operation(
+        "add_trigger",
+        "Legt einen Auslöser an: ein Item erreicht einen Status (`event`, mit `target` und `status`) oder der "
+        "Termin des Topics der Note ist erreicht (`topic_date`). Erreicht er sein Ziel, wird die Note fällig; hat "
+        "das Item den Status schon, feuert er sofort",
+        "write",
+        AddTrigger,
+        NoteOut,
+        lambda s, d: _detail(s, s.triggers.add(d.ref, d.project, d.kind, d.target, d.status)),
+        HttpBinding("POST", "/notes/{ref}/triggers"),
+    ),
+    Operation(
+        "remove_trigger",
+        "Entfernt einen Auslöser einer Note in Gebrauch (mit seiner Verknüpfung)",
+        "write",
+        RemoveTrigger,
+        NoteOut,
+        lambda s, d: _detail(s, s.triggers.remove(d.uid)),
+        HttpBinding("DELETE", "/triggers/{uid}"),
+    ),
+    Operation(
+        "decide_notice",
+        "Entscheidet einen offenen Hinweis: an einer Note keep (Prüfdatum rückt), detach (Verknüpfung zum Item "
+        "entfernen), drop (Note verwerfen) oder promote (zum Item befördern); an einem Item acknowledge",
+        "write",
+        DecideNotice,
+        DecisionOut,
+        _decided,
+        HttpBinding("POST", "/notices/{uid}/decide"),
+    ),
+    Operation(
+        "list_item_notices",
+        "Die offenen Hinweise an ein Item des Backlogs (eine Note, die auf es verweist, wurde verworfen oder "
+        "befördert)",
+        "read",
+        ListItemNotices,
+        list[NoticeOut],
+        lambda s, d: [_item_notice(entry) for entry in s.notices.list_for_item(d.ref, d.project)],
+        HttpBinding("GET", "/items/{ref}/notices"),
+    ),
+    Operation(
+        "promote_note",
+        "Befördert eine Note zu einem Item (Epic, Story oder Task) im selben Projekt: Langtext, Notizen und Specs "
+        "werden übernommen, die Note ist danach befördert (Archiv) und mit dem Item verknüpft (origin). Pflicht: type "
+        "und die Felder area, goal, completion_criteria",
+        "write",
+        PromoteNote,
+        PromotedOut,
+        _promoted,
+        HttpBinding("POST", "/notes/{ref}/promote"),
+    ),
+    Operation(
+        "demote_item",
+        "Stuft ein offenes Item (Status Open, ohne Kinder, von dem nichts abhängt) zu einer Note zurück; das Item wird "
+        "abgelehnt (Rejected), Notizen und Specs wandern an die Note",
+        "write",
+        DemoteItem,
+        DemotedOut,
+        _demoted,
+        HttpBinding("POST", "/items/{ref}/demote"),
     ),
     Operation(
         "get_notes_settings",

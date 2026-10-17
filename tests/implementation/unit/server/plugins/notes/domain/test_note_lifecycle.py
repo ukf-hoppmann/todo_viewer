@@ -7,6 +7,7 @@ from datetime import timedelta
 import pytest
 from notes_fixtures import NOW, note, topic
 from viewer.core.domain.errors import InvalidInput
+from viewer.plugins.notes.domain.due import effective_status, is_due
 from viewer.plugins.notes.domain.lifecycle import finish, keep, restore, snooze
 from viewer.plugins.notes.domain.model import (
     Note,
@@ -14,8 +15,6 @@ from viewer.plugins.notes.domain.model import (
     NotesViolation,
     changed_settings,
     default_review_at,
-    effective_status,
-    is_due,
 )
 
 PAST = NOW - timedelta(days=1)

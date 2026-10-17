@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+from viewer.plugins.notes.domain.due import Trigger
 from viewer.plugins.notes.domain.model import Note, Topic
 
 NOW = datetime(2026, 10, 17, 12, 0, tzinfo=UTC)
@@ -53,3 +54,15 @@ def topic(
         revision=1,
         deleted_at=deleted_at,
     )
+
+
+def trigger(
+    uid: str,
+    kind: str = "event",
+    target: str | None = "item",
+    status: str | None = "Completed",
+    fired_at: datetime | None = None,
+    already_met: bool = False,
+    note_uid: str = "n",
+) -> Trigger:
+    return Trigger(uid, note_uid, kind, target, status, fired_at, already_met)

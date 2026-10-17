@@ -297,6 +297,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notes/items/{ref}/demote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stuft ein offenes Item (Status Open, ohne Kinder, von dem nichts abhängt) zu einer Note zurück; das Item wird abgelehnt (Rejected), Notizen und Specs wandern an die Note */
+        post: operations["notes_demote_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/items/{ref}/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die offenen Hinweise an ein Item des Backlogs (eine Note, die auf es verweist, wurde verworfen oder befördert) */
+        get: operations["notes_list_item_notices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notes/notes": {
         parameters: {
             query?: never;
@@ -418,6 +452,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notes/notes/{ref}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Befördert eine Note zu einem Item (Epic, Story oder Task) im selben Projekt: Langtext, Notizen und Specs werden übernommen, die Note ist danach befördert (Archiv) und mit dem Item verknüpft (origin). Pflicht: type und die Felder area, goal, completion_criteria */
+        post: operations["notes_promote_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notes/notes/{ref}/restore": {
         parameters: {
             query?: never;
@@ -446,6 +497,40 @@ export interface paths {
         put?: never;
         /** Stellt eine Note zurück auf ein neues Prüfdatum (Standard: heute + Prüf-Intervall) */
         post: operations["notes_snooze_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}/triggers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Legt einen Auslöser an: ein Item erreicht einen Status (`event`, mit `target` und `status`) oder der Termin des Topics der Note ist erreicht (`topic_date`). Erreicht er sein Ziel, wird die Note fällig; hat das Item den Status schon, feuert er sofort */
+        post: operations["notes_add_trigger"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notices/{uid}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Entscheidet einen offenen Hinweis: an einer Note keep (Prüfdatum rückt), detach (Verknüpfung zum Item entfernen), drop (Note verwerfen) oder promote (zum Item befördern); an einem Item acknowledge */
+        post: operations["notes_decide_notice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -584,6 +669,23 @@ export interface paths {
         /** Aktiviert ein archiviertes Topic samt Unter-Topics wieder; Notes, die nur seinetwegen archiviert waren, kommen zurück */
         post: operations["notes_reactivate_topic"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/triggers/{uid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Entfernt einen Auslöser einer Note in Gebrauch (mit seiner Verknüpfung) */
+        delete: operations["notes_remove_trigger"];
         options?: never;
         head?: never;
         patch?: never;
@@ -970,6 +1072,11 @@ export interface components {
             /** Uid */
             uid: string;
         };
+        /** DecisionOut */
+        DecisionOut: {
+            note: components["schemas"]["NoteOut"] | null;
+            notice: components["schemas"]["viewer__plugins__notes__application__operations__NoticeOut"];
+        };
         /**
          * DeleteResult
          * @description `has_children`: nichts gelöscht, weil es `children` Nachkommen gibt und `cascade` fehlte.
@@ -981,6 +1088,12 @@ export interface components {
             deleted: number;
             /** Has Children */
             has_children: boolean;
+        };
+        /** DemotedOut */
+        DemotedOut: {
+            /** Item Uid */
+            item_uid: string;
+            note: components["schemas"]["NoteOut"];
         };
         /** DocumentInfo */
         DocumentInfo: {
@@ -1016,12 +1129,23 @@ export interface components {
         DueNoteOut: {
             /** Label */
             label: string;
+            /** Notices */
+            notices?: components["schemas"]["viewer__plugins__notes__application__operations__NoticeOut"][];
+            /** Path */
+            path?: string[];
             /** Project Uid */
             project_uid: string;
+            /**
+             * Reason
+             * @default review_expired
+             */
+            reason: string;
             /** Review At */
             review_at: string | null;
             /** Summary */
             summary: string;
+            /** Triggers */
+            triggers?: components["schemas"]["TriggerOut"][];
             /** Uid */
             uid: string;
         };
@@ -1259,10 +1383,14 @@ export interface components {
             documents: string[];
             /** Label */
             label: string;
+            /** Notices */
+            notices?: components["schemas"]["viewer__plugins__notes__application__operations__NoticeOut"][];
             /** Path */
             path: components["schemas"]["TopicRef"][];
             /** Project Uid */
             project_uid: string;
+            /** Reason */
+            reason?: string | null;
             /** Review At */
             review_at: string | null;
             /** Status */
@@ -1275,10 +1403,23 @@ export interface components {
             topic_uid: string | null;
             /** Trigger Mode */
             trigger_mode: string;
+            /** Triggers */
+            triggers?: components["schemas"]["TriggerOut"][];
             /** Uid */
             uid: string;
             /** Version */
             version: number;
+        };
+        /** NotesAddTriggerBody */
+        NotesAddTriggerBody: {
+            /** Kind */
+            kind: string;
+            /** Project */
+            project?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Target */
+            target?: string | null;
         };
         /** NotesAppendNoteEntryBody */
         NotesAppendNoteEntryBody: {
@@ -1329,6 +1470,19 @@ export interface components {
             /** Project */
             project: string;
         };
+        /** NotesDecideNoticeBody */
+        NotesDecideNoticeBody: {
+            /** Decision */
+            decision: string;
+            /** Fields */
+            fields?: {
+                [key: string]: unknown;
+            };
+            /** Type */
+            type?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** NotesDeleteTopicBody */
         NotesDeleteTopicBody: {
             /** Active Notes */
@@ -1342,6 +1496,15 @@ export interface components {
             move_to?: string | null;
             /** Project */
             project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesDemoteItemBody */
+        NotesDemoteItemBody: {
+            /** Project */
+            project?: string | null;
+            /** Topic */
+            topic?: string | null;
             /** Version */
             version: number;
         };
@@ -1377,6 +1540,19 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** NotesPromoteNoteBody */
+        NotesPromoteNoteBody: {
+            /** Fields */
+            fields?: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
+            /** Type */
+            type: string;
+            /** Version */
+            version: number;
+        };
         /** NotesPutNoteDocumentBody */
         NotesPutNoteDocumentBody: {
             /** Content */
@@ -1406,6 +1582,10 @@ export interface components {
             project?: string | null;
             /** Review At */
             review_at?: string | null;
+            /** Trigger */
+            trigger?: {
+                [key: string]: unknown;
+            } | null;
             /** Version */
             version: number;
         };
@@ -1437,17 +1617,6 @@ export interface components {
             project?: string | null;
             /** Version */
             version: number;
-        };
-        /** NoticeOut */
-        NoticeOut: {
-            /** Code */
-            code: string;
-            /** Details */
-            details: {
-                [key: string]: string;
-            };
-            /** Message */
-            message: string;
         };
         /** Preview */
         Preview: {
@@ -1510,6 +1679,12 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** PromotedOut */
+        PromotedOut: {
+            /** Item Uid */
+            item_uid: string;
+            note: components["schemas"]["NoteOut"];
+        };
         /** RemoveResult */
         RemoveResult: {
             /** Trashed */
@@ -1534,7 +1709,7 @@ export interface components {
             /** New Label */
             new_label: string;
             /** Notices */
-            notices: components["schemas"]["NoticeOut"][];
+            notices: components["schemas"]["viewer__plugins__backlog__application__operations__NoticeOut"][];
             /** Old Label */
             old_label: string;
         };
@@ -1593,6 +1768,22 @@ export interface components {
              * @default 0
              */
             to_files: number;
+        };
+        /**
+         * TargetRef
+         * @description Das Element am anderen Ende eines Auslösers oder Hinweises.
+         */
+        TargetRef: {
+            /** Deleted */
+            deleted: boolean;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
         };
         /** TopicDone */
         TopicDone: {
@@ -1672,6 +1863,22 @@ export interface components {
             /** Uid */
             uid: string;
         };
+        /** TriggerOut */
+        TriggerOut: {
+            /** Already Met */
+            already_met: boolean;
+            /** Arrived */
+            arrived: boolean;
+            /** Fired At */
+            fired_at: string | null;
+            /** Kind */
+            kind: string;
+            /** Status */
+            status: string | null;
+            target: components["schemas"]["TargetRef"] | null;
+            /** Uid */
+            uid: string;
+        };
         /** UiState */
         UiState: {
             /** Document */
@@ -1747,6 +1954,32 @@ export interface components {
             sync_direction?: ("both" | "to_files" | "to_database") | null;
             /** Version */
             version: number;
+        };
+        /** NoticeOut */
+        viewer__plugins__backlog__application__operations__NoticeOut: {
+            /** Code */
+            code: string;
+            /** Details */
+            details: {
+                [key: string]: string;
+            };
+            /** Message */
+            message: string;
+        };
+        /** NoticeOut */
+        viewer__plugins__notes__application__operations__NoticeOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decisions */
+            decisions: string[];
+            /** Kind */
+            kind: string;
+            source: components["schemas"]["TargetRef"] | null;
+            /** Uid */
+            uid: string;
         };
     };
     responses: never;
@@ -2435,6 +2668,74 @@ export interface operations {
             };
         };
     };
+    notes_demote_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesDemoteItemBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemotedOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_list_item_notices: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["viewer__plugins__notes__application__operations__NoticeOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     notes_create_note: {
         parameters: {
             query?: never;
@@ -2744,6 +3045,41 @@ export interface operations {
             };
         };
     };
+    notes_promote_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesPromoteNoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotedOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     notes_restore_note: {
         parameters: {
             query?: never;
@@ -2801,6 +3137,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_add_trigger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesAddTriggerBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_decide_notice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesDecideNoticeBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
                 };
             };
             /** @description Client Error */
@@ -3104,6 +3510,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TopicDone"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_remove_trigger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
                 };
             };
             /** @description Client Error */

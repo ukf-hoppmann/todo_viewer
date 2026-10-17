@@ -2,23 +2,32 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from viewer.core.application.plugin import PluginContext, PluginDefinition
 from viewer.core.application.ports import Transaction
 from viewer.core.domain.errors import DomainError
-from viewer.core.domain.plugin import ElementKind
+from viewer.core.domain.events import Event
+from viewer.core.domain.plugin import ElementKind, Subscription
 from viewer.plugins.notes.application.common import Resolver
+from viewer.plugins.notes.application.conversion import ConversionService
+from viewer.plugins.notes.application.deps import Deps
 from viewer.plugins.notes.application.documents import DocumentService
 from viewer.plugins.notes.application.notes import NoteService
+from viewer.plugins.notes.application.notices import NoticeService
 from viewer.plugins.notes.application.operations import OPERATIONS, NotesServices
 from viewer.plugins.notes.application.settings import SettingsService
 from viewer.plugins.notes.application.topics import TopicService
+from viewer.plugins.notes.application.triggers import TriggerService
+from viewer.plugins.notes.infrastructure.backlog_gateway import ServicesBacklogGateway
 from viewer.plugins.notes.infrastructure.database.repository import (
     SqlDocumentRepository,
     SqlNoteRepository,
+    SqlNoticeRepository,
     SqlSettingsRepository,
     SqlTopicRepository,
+    SqlTriggerRepository,
 )
 from viewer.plugins.notes.infrastructure.database.schema import MIGRATIONS
 from viewer.plugins.workspace.domain.model import Element
@@ -59,20 +68,59 @@ def _build(context: PluginContext) -> NotesServices:
 
     workspace.trash.register("note", restore_guard=note_restore_guard, purger=notes.delete)
     workspace.trash.register("topic", children=topic_children, restore_guard=topic_restore_guard, purger=topics.delete)
+    deps = Deps(
+        notes,
+        topics,
+        SqlTriggerRepository(),
+        SqlNoticeRepository(),
+        documents,
+        settings,
+        resolver,
+        workspace.registry,
+        workspace.links,
+        ServicesBacklogGateway(context.required["backlog"], context.database),
+        context.database,
+        context.clock,
+        context.events,
+        lambda: str(uuid.uuid4()),
+    )
+    triggers = TriggerService(deps)
+    note_service = NoteService(deps, triggers)
+    conversion = ConversionService(deps, note_service)
     args = (context.database, context.clock, context.events)
     return NotesServices(
-        NoteService(notes, topics, settings, resolver, workspace.registry, *args),
+        note_service,
         TopicService(notes, topics, settings, resolver, workspace.registry, *args),
         DocumentService(documents, resolver, *args),
         SettingsService(settings, context.database, context.events),
+        triggers,
+        NoticeService(deps, note_service, conversion),
+        conversion,
     )
+
+
+def _on_status_changed(services: NotesServices, event: Event) -> None:
+    services.triggers.on_status_changed(event)
+
+
+def _on_element_changed(services: NotesServices, event: Event) -> None:
+    services.notices.on_elements_changed(event)
+
+
+def _on_item_changed(services: NotesServices, event: Event) -> None:
+    services.notices.on_item_changed(event)
 
 
 plugin = PluginDefinition(
     id="notes",
     build=_build,
-    requires=("workspace",),
+    requires=("workspace", "backlog"),
     migrations=MIGRATIONS,
     element_kinds=ELEMENT_KINDS,
     operations=OPERATIONS,
+    subscriptions=(
+        Subscription("backlog.item.status_changed", _on_status_changed),
+        Subscription("backlog.item.changed", _on_item_changed),
+        Subscription("workspace.element.changed", _on_element_changed),
+    ),
 )

@@ -10,6 +10,7 @@ from viewer.core.domain.errors import VersionConflict
 from viewer.core.infrastructure.database import SqlTransaction
 from viewer.plugins.notes.application.ports import Document
 from viewer.plugins.notes.domain.documents import document_kind
+from viewer.plugins.notes.domain.due import Trigger
 from viewer.plugins.notes.domain.model import (
     DEFAULT_MAX_TOPIC_DEPTH,
     DEFAULT_REVIEW_DAYS,
@@ -17,6 +18,7 @@ from viewer.plugins.notes.domain.model import (
     NotesSettings,
     Topic,
 )
+from viewer.plugins.notes.domain.notices import Notice
 
 _NOTE_SELECT = """
 SELECT e.uid, e.project_uid, e.label, e.revision, e.deleted_at,
@@ -105,6 +107,8 @@ class SqlNoteRepository:
     def delete(self, tx: Transaction, uid: str) -> None:
         connection = _conn(tx)
         connection.execute(text("DELETE FROM notes_documents WHERE note_uid = :u"), {"u": uid})
+        connection.execute(text("DELETE FROM notes_triggers WHERE note_uid = :u"), {"u": uid})
+        connection.execute(text("DELETE FROM notes_notices WHERE subject_uid = :u OR source_uid = :u"), {"u": uid})
         connection.execute(text("DELETE FROM notes_notes WHERE uid = :u"), {"u": uid})
 
     def _load(self, tx: Transaction, query: str, params: dict[str, object]) -> list[Note]:
@@ -302,3 +306,153 @@ class SqlSettingsRepository:
                 ),
                 {"k": key, "v": str(value)},
             )
+
+
+def _trigger(row: object) -> Trigger:
+    r = row
+    return Trigger(
+        r.uid,  # type: ignore[attr-defined]
+        r.note_uid,  # type: ignore[attr-defined]
+        r.kind,  # type: ignore[attr-defined]
+        r.target_uid,  # type: ignore[attr-defined]
+        r.status,  # type: ignore[attr-defined]
+        _moment(r.fired_at),  # type: ignore[attr-defined]
+        bool(r.already_met),  # type: ignore[attr-defined]
+        r.link_uid,  # type: ignore[attr-defined]
+    )
+
+
+class SqlTriggerRepository:
+    def for_notes(self, tx: Transaction, note_uids: Sequence[str]) -> dict[str, list[Trigger]]:
+        if not note_uids:
+            return {}
+        marks, names = _in_clause("n", note_uids)
+        rows = _conn(tx).execute(
+            text(f"SELECT * FROM notes_triggers WHERE note_uid IN ({marks}) ORDER BY note_uid, rowid"), names
+        )
+        found: dict[str, list[Trigger]] = {}
+        for row in rows:
+            found.setdefault(row.note_uid, []).append(_trigger(row))
+        return found
+
+    def get(self, tx: Transaction, uid: str) -> Trigger | None:
+        row = _conn(tx).execute(text("SELECT * FROM notes_triggers WHERE uid = :u"), {"u": uid}).first()
+        return _trigger(row) if row else None
+
+    def insert(self, tx: Transaction, trigger: Trigger) -> None:
+        _conn(tx).execute(
+            text(
+                "INSERT INTO notes_triggers(uid, note_uid, kind, target_uid, status, fired_at, already_met, link_uid) "
+                "VALUES (:uid, :note, :kind, :target, :status, :fired, :met, :link)"
+            ),
+            self._params(trigger),
+        )
+
+    def update(self, tx: Transaction, trigger: Trigger) -> None:
+        _conn(tx).execute(
+            text("UPDATE notes_triggers SET fired_at = :fired, already_met = :met, link_uid = :link WHERE uid = :uid"),
+            self._params(trigger),
+        )
+
+    @staticmethod
+    def _params(trigger: Trigger) -> dict[str, object]:
+        return {
+            "uid": trigger.uid,
+            "note": trigger.note_uid,
+            "kind": trigger.kind,
+            "target": trigger.target_uid,
+            "status": trigger.status,
+            "fired": _iso(trigger.fired_at),
+            "met": int(trigger.already_met),
+            "link": trigger.link_uid,
+        }
+
+    def delete(self, tx: Transaction, uid: str) -> None:
+        _conn(tx).execute(text("DELETE FROM notes_triggers WHERE uid = :u"), {"u": uid})
+
+    def waiting_on(self, tx: Transaction, target_uid: str, status: str) -> list[Trigger]:
+        rows = _conn(tx).execute(
+            text(
+                "SELECT * FROM notes_triggers WHERE kind = 'event' AND target_uid = :t AND status = :s "
+                "AND fired_at IS NULL ORDER BY rowid"
+            ),
+            {"t": target_uid, "s": status},
+        )
+        return [_trigger(row) for row in rows]
+
+
+def _notice(row: object) -> Notice:
+    r = row
+    return Notice(
+        r.uid,  # type: ignore[attr-defined]
+        r.side,  # type: ignore[attr-defined]
+        r.subject_uid,  # type: ignore[attr-defined]
+        r.source_uid,  # type: ignore[attr-defined]
+        r.kind,  # type: ignore[attr-defined]
+        datetime.fromisoformat(r.created_at),  # type: ignore[attr-defined]
+        _moment(r.decided_at),  # type: ignore[attr-defined]
+        r.decision,  # type: ignore[attr-defined]
+    )
+
+
+class SqlNoticeRepository:
+    def insert(self, tx: Transaction, notice: Notice) -> None:
+        _conn(tx).execute(
+            text(
+                "INSERT INTO notes_notices(uid, side, subject_uid, source_uid, kind, created_at, decided_at, decision) "
+                "VALUES (:uid, :side, :subject, :source, :kind, :created, :decided, :decision)"
+            ),
+            {
+                "uid": notice.uid,
+                "side": notice.side,
+                "subject": notice.subject_uid,
+                "source": notice.source_uid,
+                "kind": notice.kind,
+                "created": notice.created_at.isoformat(),
+                "decided": _iso(notice.decided_at),
+                "decision": notice.decision,
+            },
+        )
+
+    def get(self, tx: Transaction, uid: str) -> Notice | None:
+        row = _conn(tx).execute(text("SELECT * FROM notes_notices WHERE uid = :u"), {"u": uid}).first()
+        return _notice(row) if row else None
+
+    def decide(self, tx: Transaction, uid: str, decision: str, at: datetime) -> None:
+        _conn(tx).execute(
+            text("UPDATE notes_notices SET decided_at = :t, decision = :d WHERE uid = :u"),
+            {"t": at.isoformat(), "d": decision, "u": uid},
+        )
+
+    def open_for(self, tx: Transaction, subject_uids: Sequence[str]) -> dict[str, list[Notice]]:
+        if not subject_uids:
+            return {}
+        marks, names = _in_clause("s", subject_uids)
+        rows = _conn(tx).execute(
+            text(
+                f"SELECT * FROM notes_notices WHERE subject_uid IN ({marks}) AND decided_at IS NULL "
+                "ORDER BY created_at, rowid"
+            ),
+            names,
+        )
+        found: dict[str, list[Notice]] = {}
+        for row in rows:
+            found.setdefault(row.subject_uid, []).append(_notice(row))
+        return found
+
+    def find_open(self, tx: Transaction, subject_uid: str, source_uid: str, kind: str) -> Notice | None:
+        row = (
+            _conn(tx)
+            .execute(
+                text(
+                    "SELECT * FROM notes_notices WHERE subject_uid = :s AND source_uid = :o AND kind = :k "
+                    "AND decided_at IS NULL"
+                ),
+                {"s": subject_uid, "o": source_uid, "k": kind},
+            )
+            .first()
+        )
+        return _notice(row) if row else None
+
+    def delete_for(self, tx: Transaction, uid: str) -> None:
+        _conn(tx).execute(text("DELETE FROM notes_notices WHERE subject_uid = :u OR source_uid = :u"), {"u": uid})

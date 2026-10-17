@@ -72,5 +72,5 @@ def backlog_env(tmp_path: Path, settings: Settings) -> Env:
 
 
 def notes_env(tmp_path: Path, settings: Settings) -> Env:
-    """Eine Umgebung mit dem echten Plugin `notes` (und `workspace`)."""
-    return Env(tmp_path, settings, plugins=[workspace_plugin, notes_plugin])
+    """Eine Umgebung mit den echten Plugins `notes`, `backlog` (das `notes` braucht) und `workspace`."""
+    return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, notes_plugin])

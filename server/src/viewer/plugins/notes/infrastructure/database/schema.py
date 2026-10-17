@@ -48,4 +48,36 @@ def _v1(connection: Any) -> None:
         connection.execute(text("INSERT INTO notes_statuses(code) VALUES (:c)"), {"c": code})
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1),)
+def _v2(connection: Any) -> None:
+    """Auslöser und Hinweise. `target_uid`, `subject_uid` und `source_uid` verweisen auf Elemente verschiedener
+    Plugins und haben deshalb keinen Fremdschlüssel; ein endgültig gelöschtes Item lässt seine Auslöser nur nie mehr
+    feuern."""
+    for statement in (
+        """CREATE TABLE notes_triggers (
+            uid TEXT PRIMARY KEY,
+            note_uid TEXT NOT NULL REFERENCES notes_notes(uid) ON DELETE CASCADE,
+            kind TEXT NOT NULL CHECK (kind IN ('event', 'topic_date')),
+            target_uid TEXT,
+            status TEXT,
+            fired_at TEXT,
+            already_met INTEGER NOT NULL DEFAULT 0 CHECK (already_met IN (0, 1)),
+            link_uid TEXT
+        )""",
+        "CREATE INDEX notes_triggers_note ON notes_triggers(note_uid)",
+        "CREATE INDEX notes_triggers_target ON notes_triggers(target_uid)",
+        """CREATE TABLE notes_notices (
+            uid TEXT PRIMARY KEY,
+            side TEXT NOT NULL CHECK (side IN ('note', 'item')),
+            subject_uid TEXT NOT NULL,
+            source_uid TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            decided_at TEXT,
+            decision TEXT
+        )""",
+        "CREATE INDEX notes_notices_subject ON notes_notices(subject_uid)",
+    ):
+        connection.exec_driver_sql(statement)
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2))

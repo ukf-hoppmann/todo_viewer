@@ -95,3 +95,16 @@
 - Die Freigaben gelten auch für die Cloud-Sitzung; sie stehen in docs/handover/neubau-cloud.md.
 - Der Altcode liegt in src_old/, die Vorlage des ezf-ui-Core in reference/ezf-ui/; beides ist nur Vorlage und wird erst nach Abnahme des Neubaus durch den Projektinhaber entfernt (neue Regel 0).
 - Nicht in der Nacht: STORY-084 (Umstieg) und jeder Lauf gegen echte Daten (configs/todo.db); STORY-082 nur mit synthetischen Daten.
+
+## 2026-10-17 — Stand nach der Cloud-Sitzung
+
+### Discussed
+
+- Branch `neubau/epic-007` (nie nach `main` gemergt). Stand am Ende dieses Eintrags: letzter Commit siehe `git log` des Branches; der Eintrag wird bei weiterer Arbeit fortgeschrieben.
+- Je Item: Status `Awaiting confirmation` mit allen Abschlusskriterien geprüft (`scripts/check-next.sh` und `scripts/check.sh` grün bei jedem Commit): `STORY-061` bis `STORY-076`. Die Einzelheiten, Abweichungen und offenen Punkte stehen in den Notizen der Items („Umgesetzt und geprüft“) und die Annahmen als Fragen 13 bis 28 in `STORY-060`.
+- Noch nicht umgesetzt (Status unverändert `Open`): `STORY-077` bis `STORY-083`; `STORY-084` ist dem Projektinhaber vorbehalten.
+- Nicht in der Cloud geprüft: ein Lauf des Neubaus gegen echte Daten, das Zeichnen des Abhängigkeiten-Graphen im Browser (React Flow braucht Layout; im Test ersetzt), große Projekte im Spiegel.
+
+### Open
+
+- Der Projektinhaber prüft die Items mit `Awaiting confirmation` und die Fragen in `STORY-060`.

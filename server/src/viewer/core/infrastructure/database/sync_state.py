@@ -45,3 +45,10 @@ class SqlSyncStateStore:
                 text("DELETE FROM core_sync_state WHERE project_uid = :project AND uid = :uid"),
                 [{"project": project, "uid": uid} for uid in uids],
             )
+
+    def last_synced(self, project: str) -> datetime | None:
+        with self._database.transaction() as tx:
+            value = tx.connection.execute(
+                text("SELECT MAX(synced_at) FROM core_sync_state WHERE project_uid = :project"), {"project": project}
+            ).scalar()
+        return datetime.fromisoformat(value) if value else None

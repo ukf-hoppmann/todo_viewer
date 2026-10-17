@@ -155,12 +155,18 @@ class MemoryProjects:
 class MemoryStateStore:
     def __init__(self) -> None:
         self.hashes: dict[str, dict[str, str]] = {}
+        self.synced: dict[str, datetime] = {}
+
+    def last_synced(self, project: str) -> datetime | None:
+        return self.synced.get(project)
 
     def load(self, project: str) -> dict[str, str]:
         return dict(self.hashes.get(project, {}))
 
     def save(self, project: str, hashes: Mapping[str, str], at: datetime) -> None:
         self.hashes.setdefault(project, {}).update(hashes)
+        if hashes:
+            self.synced[project] = at
 
     def forget(self, project: str, uids: Collection[str]) -> None:
         for uid in uids:

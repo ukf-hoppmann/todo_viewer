@@ -998,6 +998,8 @@ export interface components {
             conflicts: number;
             /** Files */
             files?: string[];
+            /** Last Sync */
+            last_sync?: string | null;
             /** Project */
             project: string;
             /** Reason */

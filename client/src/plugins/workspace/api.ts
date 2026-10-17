@@ -11,6 +11,12 @@ export type LinksOut = components["schemas"]["LinksOut"];
 export type ElementOut = components["schemas"]["ElementOut"];
 export type TrashedElement = components["schemas"]["TrashedElement"];
 export type DeleteResult = components["schemas"]["DeleteResult"];
+export type SyncStatus = components["schemas"]["SyncStatus"];
+export type SyncPreview = components["schemas"]["Preview"];
+export type SyncConflict = components["schemas"]["ConflictOut"];
+export type SyncTransfer = components["schemas"]["TransferOut"];
+export type SyncResult = components["schemas"]["SyncResult"];
+export type SyncChoice = components["schemas"]["Decision"]["choice"];
 export type UpdateProjectBody = components["schemas"]["WorkspaceUpdateProjectBody"];
 
 /**
@@ -79,11 +85,26 @@ export const workspaceApi = createPluginApi(
 			query: (uids) => ({ url: "workspace/trash/purge", method: "POST", body: { uids } }),
 			invalidatesTags: ["Trash", "Links"],
 		}),
+		getSyncStatus: build.query<SyncStatus, string>({
+			query: (project) => `core/sync/${project}/status`,
+			providesTags: (_result, _error, project) => [{ type: "Sync", id: project }],
+		}),
+		getSyncPreview: build.query<SyncPreview, { project: string; direction: SyncDirection }>({
+			query: ({ project, direction }) => ({ url: `core/sync/${project}/preview`, params: { direction } }),
+			keepUnusedDataFor: 0,
+		}),
+		executeSync: build.mutation<
+			SyncResult,
+			{ project: string; token: string; direction: SyncDirection; decisions: components["schemas"]["Decision"][]; delete_missing: boolean }
+		>({
+			query: ({ project, ...body }) => ({ url: `core/sync/${project}/execute`, method: "POST", body }),
+			invalidatesTags: (_result, _error, { project }) => [{ type: "Sync", id: project }, "Projects", "Trash", "Links"],
+		}),
 		browseFolders: build.query<FolderListing, string | undefined>({
 			query: (path) => ({ url: "workspace/folders", params: path ? { path } : undefined }),
 		}),
 	}),
-	{ tagTypes: ["Projects", "Links", "Trash"] },
+	{ tagTypes: ["Projects", "Links", "Trash", "Sync"] },
 );
 
 export const {
@@ -101,6 +122,9 @@ export const {
 	useListTrashQuery,
 	useRestoreElementsMutation,
 	usePurgeElementsMutation,
+	useGetSyncStatusQuery,
+	useGetSyncPreviewQuery,
+	useExecuteSyncMutation,
 } = workspaceApi;
 
 /** The text the server gave for an error of a request, if it gave one. */

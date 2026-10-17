@@ -5,6 +5,7 @@ import { useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useMoveProjectMutation, type Project } from "./api";
 import { ProjectCard } from "./ProjectCard";
+import { SyncIndicator } from "./SyncIndicator";
 import { useProjectSelection } from "./state";
 import { workspaceTestIds } from "./testIds";
 
@@ -83,6 +84,7 @@ export function ProjectsSection() {
 						>
 							{project.name}
 						</Box>
+						<SyncIndicator project={project} />
 						<IconButton
 							size="small"
 							aria-label={t("projects.edit", { name: project.name })}

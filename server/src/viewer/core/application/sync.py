@@ -137,6 +137,10 @@ class SyncStateStore(Protocol):
 
     def forget(self, project: str, uids: Collection[str]) -> None: ...
 
+    def last_synced(self, project: str) -> datetime | None:
+        """Der Zeitpunkt, zu dem zuletzt ein Eintrag des Projekts abgeglichen wurde."""
+        ...
+
 
 class Ids(Protocol):
     def new_uid(self) -> str: ...
@@ -154,6 +158,8 @@ class SyncStatus:
     conflicts: int = 0
     reason: str | None = None
     files: list[str] = field(default_factory=list)
+    #: Zeitpunkt des letzten Abgleichs (UTC); `None`, wenn das Projekt noch nie abgeglichen wurde.
+    last_sync: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -257,6 +263,9 @@ class SyncService:
 
     def status(self, project: str) -> SyncStatus:
         """Zustand des Projekts, ohne etwas zu ändern. Ordner- und Formatprobleme ergeben `paused`, keinen Fehler."""
+        return replace(self._status(project), last_sync=self._state.last_synced(project))
+
+    def _status(self, project: str) -> SyncStatus:
         try:
             snapshot = self._load(project, "both")
         except MirrorNotConfigured:

@@ -83,5 +83,87 @@
 		"purgeMessage_one": "{{count}} Element wird mit allen Kindern, Daten und Verknüpfungen endgültig gelöscht. Das lässt sich nicht rückgängig machen.",
 		"purgeMessage_other": "{{count}} Elemente werden mit allen Kindern, Daten und Verknüpfungen endgültig gelöscht. Das lässt sich nicht rückgängig machen.",
 		"failed": "Das hat nicht geklappt."
+	},
+	"settings": {
+		"title": "Projekte",
+		"description": "Spiegel und Abgleich je Projekt: die Datenbank ist die Wahrheit, der Ordner der Spiegel.",
+		"mode": "Spiegel",
+		"modes": {
+			"off": "Aus",
+			"manual": "Sync von Hand",
+			"auto": "Sync automatisch"
+		},
+		"noFolder": "Kein Ordner gewählt",
+		"lastSync": "Letzter Sync: {{time}}",
+		"neverSynced": "Noch nie abgeglichen",
+		"edit": "Bearbeiten …",
+		"setup": "Spiegel einrichten",
+		"sync": "Abgleichen …",
+		"check": "Prüfen …"
+	},
+	"sync": {
+		"title": "Abgleich: {{name}}",
+		"reload": "Neu laden",
+		"execute": "Abgleichen",
+		"close": "Schließen",
+		"failed": "Der Abgleich hat nicht geklappt.",
+		"inSync": "in Sync",
+		"needsYou": "braucht dich",
+		"notMirrored": "nicht gespiegelt",
+		"auto": "gleicht automatisch ab",
+		"paused": "pausiert: {{reason}}",
+		"reasons": {
+			"missing": "der Ordner fehlt",
+			"unreadable": "der Ordner ist nicht lesbar",
+			"merge_markers": "Git-Merge-Konflikt in einer Datei",
+			"git_operation": "ein Git-Vorgang läuft",
+			"not_configured": "kein Ordner eingerichtet",
+			"unknown": "unbekannt"
+		},
+		"states": {
+			"in_sync": "alles gleich",
+			"primary_changed": "die Datenbank hat Änderungen",
+			"mirror_changed": "die Dateien haben Änderungen",
+			"both_changed": "beide Seiten haben Änderungen",
+			"conflicts": "Konflikte warten",
+			"paused": "pausiert"
+		},
+		"conflicts_one": "{{count}} Konflikt",
+		"conflicts_other": "{{count}} Konflikte",
+		"conflict": {
+			"both_changed": "beide Seiten geändert",
+			"both_created": "beide Seiten neu angelegt",
+			"deleted_in_files": "in den Dateien gelöscht",
+			"deleted_in_database": "in der Datenbank gelöscht"
+		},
+		"database": "Datenbank",
+		"files": "Dateien",
+		"choices": {
+			"database": "Datenbank",
+			"files": "Dateien",
+			"defer": "Später"
+		},
+		"choiceDeletes": "{{choice}} (löscht den Eintrag)",
+		"all": {
+			"database": "Alle: Datenbank",
+			"files": "Alle: Dateien"
+		},
+		"deletionsApart": "Löschungen gehören nicht zu „Alle“: sie wählst du einzeln.",
+		"transfers": "Übertragungen",
+		"noTransfers": "Nichts zu übertragen.",
+		"targets": {
+			"database": "in die Datenbank",
+			"files": "in die Dateien"
+		},
+		"actions": {
+			"create": "anlegen",
+			"update": "ändern",
+			"delete": "löschen"
+		},
+		"notImported": "{{count}} neue Einträge aus den Dateien werden in dieser Richtung nicht übernommen.",
+		"result": "{{toDatabase}} in die Datenbank, {{toFiles}} in die Dateien übertragen.",
+		"created": "Neu angelegt: {{labels}}.",
+		"conflictsLeft_one": "{{count}} Konflikt bleibt offen.",
+		"conflictsLeft_other": "{{count}} Konflikte bleiben offen."
 	}
 }

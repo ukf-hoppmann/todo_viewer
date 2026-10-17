@@ -157,11 +157,11 @@ Einträge aus den Dateien ohne `uid` (Platzhalter `NEW-<kurzname>`) sind neu; si
 5. Ereignis `core.sync.state` (öffentlich, also per SSE) `{project, state, reason}` nach jedem manuellen Lauf und bei jeder
    Zustandsänderung im Auto-Sync.
 
-**Operationen des Core** (HTTP und MCP): `sync_status` (`GET /api/core/sync/{project}/status`), `sync_preview`
+**Operationen des Core** (HTTP und MCP): `sync_status` (`GET /api/core/sync/{project}/status`; neben `state`, den Zählern, `reason` und `files` auch `last_sync`, der Zeitpunkt des letzten Abgleichs aus `core_sync_state`), `sync_preview`
 (`GET …/preview?direction=`), `sync_execute` (`POST …/execute`, Body `token`, `direction`, `decisions[{uid, choice}]`,
 `delete_missing`). Fehlercodes: `sync_preview_stale` 409, `deletion_not_confirmed` 422, `mirror_not_configured` 404,
 `mirror_blocked` 409, `mirror_conflict` 409, Formatfehler (Codes aus `docs/techdocs/interfaces.md`, Datei und Zeile in
-`details`) 422. Bis `workspace` die Projekte liefert, ist `NoMirrorProjects` verdrahtet (kein Projekt hat einen Ordner).
+`details`) 422. Die Projekte mit Ordner und Auto-Sync liefert das Plugin `workspace`.
 
 ## MCP
 

@@ -292,3 +292,13 @@ def test_an_item_in_the_trash_is_written_to_the_archive_with_its_day_and_comes_b
     backlog.client.post("/api/workspace/trash/restore", json={"uids": [item["uid"]]})
     mirror.sync()
     assert f"- `{item['label']}`" in mirror.text("TODO.md") and "Deleted:" not in mirror.text("archive.md")
+
+
+def test_the_status_names_the_time_of_the_last_sync(backlog: Env, tmp_path: Path) -> None:
+    mirror = Mirror(backlog, tmp_path)
+    mirror.create()
+    assert mirror.status()["last_sync"] is None
+
+    mirror.sync()
+
+    assert mirror.status()["last_sync"].startswith("2026-10-16T12:00:00")

@@ -78,7 +78,8 @@ def test_database_entries_reach_the_files_and_the_state_is_remembered(env: Env) 
     assert f"- {label} | {U1} | story | Aus der DB | parent= | deps=" in env.text
     assert [row[0] for row in env.sql("SELECT uid FROM core_sync_state")] == [U1]
     assert env.client.get(f"/api/core/sync/{P}/status").json() == {
-        "project": P, "state": "in_sync", "to_database": 0, "to_files": 0, "conflicts": 0, "reason": None, "files": []
+        "project": P, "state": "in_sync", "to_database": 0, "to_files": 0, "conflicts": 0, "reason": None, "files": [],
+        "last_sync": "2026-10-16T12:00:00Z",
     }  # fmt: skip
     assert [e.payload["state"] for e in env.events] == ["in_sync"]
     assert not env.backups.exists() or not list(env.backups.glob("*-sync.db"))  # nur Dateien geschrieben

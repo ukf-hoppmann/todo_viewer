@@ -4,6 +4,7 @@ import type { ConnectionFetch } from "../../../client/src/core/api/types";
 import { createAppStore } from "../../../client/src/core/store/createAppStore";
 import { coreApi } from "../../../client/src/core/ui-state/coreApi";
 import type { PluginRegistry } from "../../../client/src/core/plugins/types";
+import type { SyncPreview, SyncResult, SyncStatus } from "../../../client/src/plugins/workspace/api";
 import { backlogApi, type DocumentOut, type IndexItem, type ItemOut } from "../../../client/src/plugins/backlog/api";
 import { workspaceApi, type ElementOut, type FolderListing, type LinkedElement, type Project, type TrashedElement } from "../../../client/src/plugins/workspace/api";
 
@@ -44,6 +45,11 @@ export function fakeWorkspaceBackend(
 		details?: Record<string, ItemOut>;
 		/** The documents of the items by name (`GET backlog/items/{uid}/documents/{name}`). */
 		itemDocuments?: Record<string, DocumentOut>;
+		/** The sync state by project (`GET core/sync/{project}/status`); an in-sync state without changes if missing. */
+		syncStatus?: Record<string, SyncStatus>;
+		/** The preview of a sync (`GET core/sync/{project}/preview`) and the result of an execute. */
+		syncPreview?: SyncPreview;
+		syncResult?: SyncResult;
 		/** The areas by project, for `GET backlog/areas`. */
 		areas?: Record<string, string[]>;
 		/** Answers a request itself (return `undefined` to let the fake answer): for errors and special cases. */
@@ -78,6 +84,17 @@ export function fakeWorkspaceBackend(
 		if (oneDocument && request.method === "GET") {
 			const found = options.itemDocuments?.[oneDocument[2]!];
 			return found ? Response.json(found) : Response.json({ code: "document_not_found", message: "Dokument gibt es nicht", details: {} }, { status: 400 });
+		}
+		const syncMatch = /^core\/sync\/([^/]+)\/(status|preview|execute)$/.exec(path);
+		if (syncMatch) {
+			const [, project, action] = syncMatch as unknown as [string, string, string];
+			if (action === "status") {
+				return Response.json(options.syncStatus?.[project] ?? { project, state: "in_sync", conflicts: 0, to_database: 0, to_files: 0, files: [], reason: null, last_sync: null });
+			}
+			if (action === "preview") {
+				return Response.json(options.syncPreview ?? { project, direction: "both", state: "in_sync", token: "t0", transfers: [], conflicts: [], skipped: [], not_imported: [] });
+			}
+			return Response.json(options.syncResult ?? { project, state: "in_sync", to_database: 0, to_files: 0, created: [], conflicts_left: [] });
 		}
 		if (path === "backlog/areas") return Response.json({ areas: options.areas?.[searchParams.get("project") ?? ""] ?? [] });
 		if (path.startsWith("backlog/items") && request.method !== "GET") {

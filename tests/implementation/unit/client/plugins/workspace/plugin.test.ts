@@ -15,6 +15,7 @@ describe("workspace plugin definition", () => {
 			"layout-header-sidebar.sidebar-sections",
 			"layout-header-sidebar.sidebar-sections",
 			"layout-header-sidebar.header-actions",
+			"core.settings-sections",
 		]);
 	});
 
@@ -22,7 +23,8 @@ describe("workspace plugin definition", () => {
 		["workspace.project.changed", ["Projects"]],
 		["workspace.links.changed", ["Links"]],
 		["workspace.element.changed", ["Trash", "Links"]],
-		["core.reconnected", ["Projects", "Links", "Trash"]],
+		["core.sync.state", ["Sync", "Projects"]],
+		["core.reconnected", ["Projects", "Links", "Trash", "Sync"]],
 	])("reloads what changed on %s", (topic, tags) => {
 		const dispatch = vi.fn();
 		const invalidateTags = vi.fn((tags: string[]) => ({ type: "invalidate", tags }));

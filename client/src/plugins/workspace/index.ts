@@ -4,6 +4,7 @@ import { workspaceApi } from "./api";
 import de from "./locales/de.json";
 import en from "./locales/en.json";
 import { NewButton } from "./NewButton";
+import { ProjectSettings } from "./ProjectSettings";
 import { ProjectsSection } from "./ProjectsSection";
 import { SearchSection } from "./SearchSection";
 
@@ -29,11 +30,14 @@ export const plugin = definePlugin({
 		"workspace.element.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Trash", "Links"]));
 		},
+		"core.sync.state": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Sync", "Projects"]));
+		},
 		"workspace.links.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Links"]));
 		},
 		"core.reconnected": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Projects", "Links", "Trash"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Projects", "Links", "Trash", "Sync"]));
 		},
 	},
 	contributions: [
@@ -41,6 +45,7 @@ export const plugin = definePlugin({
 		{ slot: "layout-header-sidebar.sidebar-sections", name: "search", component: SearchSection, order: 0 },
 		{ slot: "layout-header-sidebar.sidebar-sections", name: "projects", component: ProjectsSection, order: 10 },
 		{ slot: "layout-header-sidebar.header-actions", name: "new", component: NewButton, order: -10 },
+		{ slot: "core.settings-sections", name: "projects", component: ProjectSettings, order: 0 },
 	],
 });
 

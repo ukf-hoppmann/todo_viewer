@@ -16,6 +16,14 @@ Grundlage: `EPIC-007_spec.md`, Abschnitte 3, 11, 12.
   Projektinhaber** (Regel 0): `src_old/`, `reference/`, alte Skripte, Scopes
   `legacy`, `backend`, `web`,
   alte `pyproject.toml`-Abschnitte.
+- Ordner `configs/` aufräumen (Wunsch des Projektinhabers vom 2026-10-17: er
+  weiß nicht, was wozu gehört). Vorher klären und im Ordner selbst in einer
+  `configs/README.md` festhalten, was bleibt: `viewer.db` (und `-wal`/`-shm`,
+  gehören zur laufenden Datenbank), `viewer.json`, `backups/` (mit Regel, wie
+  lange was bleibt). Entfallen nach der Abnahme: `todo.db*` (alte Datenbank),
+  `config.json`, `config.json.bak`, `ui_state.json.bak` (Reste der Übernahme
+  aus früheren Versionen), die Projekt-Unterordner unter `backups/`. Nichts
+  davon wird vor der Abnahme gelöscht.
 - Doku: README, `docs/techdocs/*` auf den Neubau umschreiben.
 - Übergabe an den Inhaber: Format Version 2 und MCP-Tool-Liste für die
   Anpassung des Harness (`[todo].api_url`, Helfer oder MCP).

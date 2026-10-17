@@ -13,6 +13,7 @@ export function item(uid: string, extra: Partial<IndexItem> = {}): IndexItem {
 		area: null,
 		parent_uid: null,
 		required_for_parent: null,
+		dependencies: [],
 		progress: null,
 		version: 1,
 		...extra,

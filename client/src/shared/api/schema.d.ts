@@ -750,6 +750,8 @@ export interface components {
         IndexItem: {
             /** Area */
             area: string | null;
+            /** Dependencies */
+            dependencies: string[];
             /** Label */
             label: string;
             /** Parent Uid */

@@ -86,6 +86,18 @@ def test_list_items_returns_a_flat_index_with_progress(backlog: Env) -> None:
         "Epic",
     )
     assert index["EPIC-001"]["version"] == 1
+    assert index["EPIC-001"]["dependencies"] == []
+
+
+def test_the_index_names_the_dependencies_by_uid(backlog: Env) -> None:
+    project = str(backlog.general()["uid"])
+    first = _add(backlog, project, "Task", "Erst")
+    _add(backlog, project, "Task", "Danach", dependencies=(first.uid,))
+
+    index = {e["title"]: e for e in _list(backlog)}
+
+    assert index["Danach"]["dependencies"] == [first.uid]
+    assert index["Erst"]["dependencies"] == []
 
 
 def test_optional_and_rejected_items_do_not_count_for_the_progress(backlog: Env) -> None:

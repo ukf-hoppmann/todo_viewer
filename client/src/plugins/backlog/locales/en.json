@@ -1,6 +1,7 @@
 {
 	"tab": {
-		"backlog": "Backlog"
+		"backlog": "Backlog",
+		"graph": "Dependencies"
 	},
 	"filter": {
 		"status": "Status",
@@ -119,5 +120,10 @@
 		"saveAnyway": "Save anyway",
 		"currentState": "current state",
 		"toc": "Table of contents"
+	},
+	"graph": {
+		"info": "{{n}} of {{total}} items have dependencies",
+		"hint": "Click selects, ⌘/Ctrl/⇧-click marks more, Esc resets",
+		"empty": "No items with dependencies in the chosen projects and filters."
 	}
 }

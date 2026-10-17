@@ -550,7 +550,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -564,6 +564,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Tests der Graph-Domäne grün.
   - Summary: Der Abhängigkeiten-Graph aus dem alten Viewer im neuen Viewer.
   - Spec: `items/STORY-074/STORY-074_spec.md`.
+  - Notes: `items/STORY-074/STORY-074_notes.md`.
 
 - `STORY-075` **Backlog im Markdown-Spiegel**
   - Type: Story.

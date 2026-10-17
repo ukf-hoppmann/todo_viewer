@@ -47,6 +47,8 @@ class IndexItem:
     area: str | None
     parent_uid: str | None
     required_for_parent: bool | None
+    #: Die `uid`s der Items, von denen dieses abhängt.
+    dependencies: list[str]
     progress: ProgressOut | None
     version: int
 
@@ -266,6 +268,7 @@ def index_item(entry: IndexEntry) -> IndexItem:
         i.area,
         i.parent_uid,
         i.required_for_parent,
+        list(i.dependencies),
         _progress(entry.progress),
         i.revision,
     )

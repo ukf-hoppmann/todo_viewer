@@ -1,6 +1,7 @@
 {
 	"tab": {
-		"backlog": "Backlog"
+		"backlog": "Backlog",
+		"graph": "Abhängigkeiten"
 	},
 	"filter": {
 		"status": "Status",
@@ -119,5 +120,10 @@
 		"saveAnyway": "Trotzdem speichern",
 		"currentState": "aktueller Stand",
 		"toc": "Inhaltsverzeichnis"
+	},
+	"graph": {
+		"info": "{{n}} von {{total}} Items haben Abhängigkeiten",
+		"hint": "Klick wählt, ⌘/Strg/⇧-Klick markiert weitere, Esc setzt zurück",
+		"empty": "Keine Items mit Abhängigkeiten in den gewählten Projekten und Filtern."
 	}
 }

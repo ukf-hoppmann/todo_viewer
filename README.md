@@ -13,23 +13,22 @@ Markdown-Checklisten werden nicht unterstützt.
 ./todo.sh start
 ```
 
-Baut das Image (falls nötig), startet den Container im Hintergrund und öffnet
-[http://todo.localhost:5411](http://todo.localhost:5411) (`*.localhost` wird
-von macOS automatisch auf `127.0.0.1` aufgelöst, kein `/etc/hosts`-Eintrag
-nötig). Der Container läuft mit `restart: unless-stopped` dauerhaft im
-Hintergrund weiter — kein offenes Terminal nötig.
-
-Weitere Befehle:
+Startet den Neubau (Dienst `todo-viewer-next`): baut das Image (falls nötig), startet den Container im
+Hintergrund und öffnet [http://localhost:5412](http://localhost:5412). Der Container läuft mit
+`restart: unless-stopped` dauerhaft weiter.
 
 ```bash
 ./todo.sh stop      # Container anhalten
 ./todo.sh restart   # Container neu starten
-./todo.sh down      # Container + Netzwerk entfernen (configs/ bleibt erhalten)
+./todo.sh down      # Container entfernen (configs/ und logs/ bleiben erhalten)
 ./todo.sh update    # nach Code-Änderungen neu bauen (--no-cache) und ersetzen
-./todo.sh logs      # Live-Log (logs/todo-viewer.log)
-./todo.sh status    # läuft der Container?
+./todo.sh logs      # Live-Log (logs/viewer.log)
+./todo.sh status    # Container und Antwort von /api/core/health
 ./todo.sh open      # nur den Browser öffnen
 ```
+
+Der alte Viewer (`src_old/`, Port 5411, <http://todo.localhost:5411>) wird mit denselben Befehlen über
+`./todo_old.sh` gesteuert; dort steuert `./todo_old.sh next <befehl>` weiter den Neubau.
 
 ## Quellen konfigurieren
 

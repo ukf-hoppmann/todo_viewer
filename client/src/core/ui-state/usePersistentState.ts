@@ -17,7 +17,9 @@ export function usePersistentState<T>(owner: string, key: string, defaultValue: 
 	const store = useStore.withTypes<AppStore>()();
 	const { data } = useGetUiStateQuery(owner);
 	const stored = data?.document[key];
-	const value = (stored === undefined ? defaultValue : stored) as T;
+	// Callers pass fresh literals (`[]`); the first one is kept, so the value stays the same object between renders.
+	const fallback = useRef(defaultValue).current;
+	const value = (stored === undefined ? fallback : stored) as T;
 
 	// The setter must see the latest value without changing identity at each change.
 	const latest = useRef(value);

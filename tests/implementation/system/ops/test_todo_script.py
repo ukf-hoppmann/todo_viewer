@@ -1,4 +1,4 @@
-"""`todo.sh next …` mit einem Ersatz für `docker` und `docker-compose.yml` mit `docker compose config`."""
+"""`todo.sh` (Neubau) und `todo_old.sh` (alter Viewer, inkl. `next …`) mit einem Ersatz für `docker` und `docker-compose.yml` mit `docker compose config`."""
 
 from __future__ import annotations
 
@@ -24,11 +24,11 @@ def docker(tmp_path: Path) -> Path:
     return script
 
 
-def todo(docker: Path, tmp_path: Path, *args: str) -> tuple[subprocess.CompletedProcess[str], list[str]]:
+def todo(docker: Path, tmp_path: Path, *args: str, script: str = "todo_old.sh") -> tuple[subprocess.CompletedProcess[str], list[str]]:
     calls = tmp_path / "calls.txt"
     calls.write_text("", encoding="utf-8")
     result = subprocess.run(
-        [str(ROOT / "todo.sh"), *args],
+        [str(ROOT / script), *args],
         capture_output=True,
         text=True,
         env={"DOCKER": str(docker), "CALLS": str(calls), "PATH": "/usr/bin:/bin"},
@@ -105,3 +105,29 @@ def test_the_compose_file_has_the_new_service_next_to_the_old_one() -> None:
     assert {"/app/configs", "/app/logs"} <= targets
     assert any(e.startswith("BROWSE_START") or e == "BROWSE_START" for e in new["environment"])
     assert services["todo-viewer"]["ports"][0]["published"] == "5411"
+
+
+@pytest.mark.parametrize(
+    ("arguments", "calls"),
+    [
+        (["start"], ["compose up -d --build todo-viewer-next"]),
+        (["stop"], ["compose stop todo-viewer-next"]),
+        (["restart"], ["compose restart todo-viewer-next"]),
+        (["down"], ["compose rm -sf todo-viewer-next"]),
+        (["update"], ["compose build --no-cache todo-viewer-next", "compose up -d todo-viewer-next"]),
+    ],
+)
+def test_the_new_starter_addresses_only_the_new_service(
+    docker: Path, tmp_path: Path, arguments: list[str], calls: list[str]
+) -> None:
+    result, seen = todo(docker, tmp_path, *arguments, script="todo.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert seen == calls
+
+
+def test_the_new_starter_prints_the_usage_for_an_unknown_command(docker: Path, tmp_path: Path) -> None:
+    result, seen = todo(docker, tmp_path, "nope", script="todo.sh")
+
+    assert result.returncode == 1 and seen == []
+    assert "todo_old.sh" in result.stdout

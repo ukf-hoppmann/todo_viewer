@@ -35,3 +35,99 @@
 - Frage 33 (betrifft STORY-080): `alarms_alarms.target_uid` ist ein Fremdschlüssel auf Elemente, das Format erlaubt aber ein Ziel in einem anderen Projekt, das die Datenbank nicht kennt („ungeprüft erhalten“). Annahme: Die Tabelle hat zusätzlich `target_text`; ein auflösbares Ziel steht in `target_uid`, ein unauflösbares `Projekt:LABEL` nur als Text (beide leer: freier Wecker).
 - Frage 34 (betrifft STORY-080): Die Spec nennt den Slot `workspace.detail-sections` für „Wecker stellen“ im Detail jedes Elements. Ein Widget bekommt keine Eigenschaften (Frage 24). Annahme: `workspace` bietet den Slot an und exportiert die Komponente `DetailSections` (Eigenschaften `uid`, `label`), die die Widgets in einem Kontext zeigt, aus dem `useDetailElement()` das Element liest; die Detailpanels von `backlog` und `notes` binden sie ein.
 - Frage 35 (betrifft STORY-082): Das Abschlusskriterium 1 sagt, der Befehl lese „die alte DB und Markdown-primäre Ordner“; der Umfang (und Frage 1) sagt, er breche bei einem noch Markdown-primären Projekt ab. Annahme: Der Umfang gilt; das Projekt wird vorher im alten Viewer in seine Datenbank gespiegelt, der Befehl nennt es beim Abbruch.
+
+## 2026-10-17 — Antworten zu Frage 1, 3, 4, 12 (Weg zum Live-Gang)
+
+### Discussed
+
+- Frage 4: In configs/todo.db ist item_extra_fields bei 514 Items leer; es geht kein Inhalt verloren.
+- Frage 3: Der Import übernimmt die DB unverändert; offene Altitems kommen als Open mit. Ablehnen ist ein Statuswechsel danach, kein Teil des Imports.
+
+### Decided
+
+- Frage 1/35: Annahme bestätigt. Markdown-primäre Projekte werden vor dem Import im alten Viewer in ihre DB gespiegelt; die DB ist die Wahrheit.
+- Frage 3: Import unverändert. Danach werden EPIC-005, EPIC-006 und STORY-041/048/054/055/056 im neuen Viewer über das MCP auf Rejected gesetzt, mit Verweis auf die Neubau-Storys; zugleich ein Test der MCP-Schnittstelle.
+- Frage 4: entfällt (keine Zusatzfelder in der DB); der Eintrag 'Übernommene Zusatzfelder' bleibt als Vorkehrung im Importer.
+- Frage 12: Annahme bestätigt. Name 'ToDo Viewer' und Adresse http://todo.localhost:5411 bleiben.
+
+### Open
+
+- Weitere Fragen für den Live-Gang: 7, 11, 13 bis 35.
+
+## 2026-10-17 — Antworten zu Frage 6, 7, 11, 27
+
+### Decided
+
+- Frage 6: Annahme bestätigt. Fälliger Wecker: Banner in der UI, Zähler in der Kopfzeile, zusätzlich Browser-Benachrichtigung, wenn erlaubt.
+- Frage 7: Annahme bestätigt. Zeit-Auslöser an Notes werden beim Import zu Weckern mit der Note als Ziel; Notes behalten Prüfdatum, Ereignis-Auslöser und Topic-Termin.
+- Frage 11: Annahme bestätigt. Version beim Umstieg: 1.0.0.
+- Frage 27: Annahme bestätigt. Standard-Filter im Baum: Completed und Rejected ausgeblendet; die Wahl wird im UI-Zustand gemerkt.
+
+### Open
+
+- Weitere Fragen: 13 bis 26, 28 bis 35 (außer 35 durch Frage 1 entschieden); 2, 5, 8, 10 noch nicht bestätigt.
+
+## 2026-10-17 — Antworten zu Frage 2, 5, 8, 10
+
+### Decided
+
+- Frage 2: Annahme bestätigt. Projektlose Notes landen im eingebauten Projekt 'Allgemein'.
+- Frage 5: Serienwecker kommen nach dem Live-Gang als STORY-085 (Feld Wiederholung am Wecker; nach langer Pause ein Wecker mit Zähler der verpassten Termine; Folgetermin ab Fälligkeit). Wecker hängen schon als Verweis an jedem Element, auch an Epics, Stories und Tasks.
+- Frage 8: Takt (Standard 30 s) bleibt; er ist über AUTO_SYNC_INTERVAL oder auto_sync_interval_seconds in der Konfiguration einstellbar (auch 1 s). Keine Dateiüberwachung.
+- Frage 10: Ziehen im Baum wie beschrieben (Parent mit Regelprüfung, Reihenfolge, Note zu Topic, Topic unter Topic), nicht zwischen Projekten. Der Umwandeln-Dialog beim Ziehen (Story auf Story als Task) kommt nach dem Live-Gang als STORY-086; bis dahin lehnt der Server ab.
+
+### Open
+
+- Fragen 13 bis 34 (technische Annahmen aus der Cloud-Sitzung) noch nicht bestätigt.
+
+## 2026-10-17 — Antwort zu Frage 17
+
+### Decided
+
+- Frage 17: Annahme bestätigt. Ein fehlender Eintrag oder eine fehlende Datei ist ein Konflikt; eine Löschung braucht die Wahl der löschenden Seite und zusätzlich delete_missing=true, sonst deletion_not_confirmed.
+
+### Open
+
+- Fragen 13 bis 16, 18 bis 26 und 28 bis 34 noch nicht bestätigt.
+
+## 2026-10-17 — Antworten zu Frage 14, 15, 22, 30
+
+### Decided
+
+- Frage 14: Annahme bestätigt. Ein Backup je Start vor der ersten ausstehenden Migration (nicht bei leerer DB); die letzten 10 je Grund bleiben.
+- Frage 15: Annahme bestätigt. UI-Zustand ohne Konfliktprüfung, der letzte Schreiber gewinnt.
+- Frage 22: Annahme bestätigt. Projekt entfernen legt es samt Inhalt in den Papierkorb (leere werden gelöscht); Projektverwaltung ist kein MCP-Tool, Lesen und Label auflösen schon.
+- Frage 30: Annahme bestätigt. Wiederherstellen aus dem Papierkorb lässt Status und Prüfdatum; 'zurück auf wartet mit neuem Prüfdatum' gilt nur für restore_note aus dem Archiv.
+
+### Open
+
+- Fragen 13, 16, 18 bis 21, 23 bis 26, 28, 29, 31 bis 34 noch nicht bestätigt.
+
+## 2026-10-17 — Antworten zu Frage 26, 28, 31, 32, 33
+
+### Decided
+
+- Frage 26: Annahme bestätigt. restore_elements und purge_elements nehmen eine Liste; gewählte Nachkommen gewählter Elemente übergeht der Server (Vorfahren-Regel).
+- Frage 28: Annahme bestätigt. Ein Verweis auf ein unbekanntes Element wird erst beim Ausführen erkannt (Fehler mit Datei und Zeile, vor jeder Änderung, in der Transaktion); die Vorschau zeigt ihn nicht.
+- Frage 31: Annahme bestätigt. notes_notices mit side, subject_uid, source_uid, kind, created_at, decided_at, decision; Hinweise an Notes und Items; 'Projekt nicht erreichbar' entfällt.
+- Frage 32: Annahme bestätigt. MirrorConfig bekommt name; Verweise auf andere Projekte werden über Projektname und Label aufgelöst, ein unbekanntes Ziel ist unknown_reference.
+- Frage 33: Annahme bestätigt. Nur Wecker halten ein unauflösbares Ziel als Text (target_text) neben target_uid.
+
+### Open
+
+- Fragen 13, 16, 18 bis 21, 23 bis 25, 29, 34 (Architektur) noch nicht bestätigt.
+
+## 2026-10-17 — Architektur-Annahmen bestätigt (13, 16, 18 bis 21, 23 bis 25, 29, 34)
+
+### Discussed
+
+- Die Architekturregeln gelten weiter (verbindlich, import-linter, Hook); die Annahmen sind im Code umgesetzt, eine Ablehnung wäre ein Umbauauftrag.
+
+### Decided
+
+- Frage 13, 16, 18, 19, 21, 23, 24, 25, 29, 34: Annahmen bestätigt wie in den Fragen beschrieben.
+- Frage 20: Annahme bestätigt (Client loggt vorerst nur in die Konsole); die Log-Schnittstelle zum viewer.log kommt als STORY-087 ins Backlog.
+
+### Open
+
+- Keine Frage mehr offen; alle 35 sind beantwortet. Abschlusskriterien 1 bis 3 sind damit erfüllt; die Story bleibt für neue Fragen aus der Umsetzung offen, bis der Inhaber sie abnimmt.

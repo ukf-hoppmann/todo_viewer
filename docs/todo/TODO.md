@@ -448,8 +448,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Slot. 4. Tests grün.
   - Summary: Elemente untereinander verknüpfen, zum Beispiel eine Note mit
     einem Item, und sehen, was worauf verweist.
-  - Spec: `items/STORY-069/STORY-069_spec.md`.
   - Notes: `items/STORY-069/STORY-069_notes.md`.
+  - Spec: `items/STORY-069/STORY-069_spec.md`.
 
 - `STORY-070` **Papierkorb für alle Elementtypen**
   - Type: Story.
@@ -472,8 +472,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Tests grün.
   - Summary: Ein Papierkorb für Items, Notes, Topics und Wecker gemeinsam,
     mit Wiederherstellen und endgültigem Löschen.
-  - Spec: `items/STORY-070/STORY-070_spec.md`.
   - Notes: `items/STORY-070/STORY-070_notes.md`.
+  - Spec: `items/STORY-070/STORY-070_spec.md`.
 
 - `STORY-071` **Backlog anzeigen: Baum, Filter, Suche, Detail (Plugin backlog)**
   - Type: Story.
@@ -522,8 +522,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Tests grün.
   - Summary: Alles, was man heute am Backlog ändern kann, im neuen Viewer,
     dazu Umhängen per Drag & Drop.
-  - Spec: `items/STORY-072/STORY-072_spec.md`.
   - Notes: `items/STORY-072/STORY-072_notes.md`.
+  - Spec: `items/STORY-072/STORY-072_spec.md`.
 
 - `STORY-073` **Backlog-Dokumente: Notizen und Specs**
   - Type: Story.
@@ -543,8 +543,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Dokument bearbeiten mit Vorschau und Konflikterkennung. 4. Erste Notiz
     verlangt eine Kurzfassung des Items. 5. Tests grün.
   - Summary: Notizen und Specs zu Items, wie heute, im neuen Viewer.
-  - Spec: `items/STORY-073/STORY-073_spec.md`.
   - Notes: `items/STORY-073/STORY-073_notes.md`.
+  - Spec: `items/STORY-073/STORY-073_spec.md`.
 
 - `STORY-074` **Abhängigkeiten-Graph**
   - Type: Story.
@@ -563,8 +563,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     setzt zurück. 3. Graph-Bibliotheken werden erst beim Öffnen geladen. 4.
     Tests der Graph-Domäne grün.
   - Summary: Der Abhängigkeiten-Graph aus dem alten Viewer im neuen Viewer.
-  - Spec: `items/STORY-074/STORY-074_spec.md`.
   - Notes: `items/STORY-074/STORY-074_notes.md`.
+  - Spec: `items/STORY-074/STORY-074_spec.md`.
 
 - `STORY-075` **Backlog im Markdown-Spiegel**
   - Type: Story.
@@ -611,8 +611,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     der Seitenleiste) aktualisiert sich über SSE. 4. Tests grün.
   - Summary: Die Oberfläche für den Abgleich: einrichten, Vorschau ansehen,
     Konflikte entscheiden, Stand live sehen.
-  - Spec: `items/STORY-076/STORY-076_spec.md`.
   - Notes: `items/STORY-076/STORY-076_notes.md`.
+  - Spec: `items/STORY-076/STORY-076_spec.md`.
 
 - `STORY-077` **Notes und Topics (Plugin notes)**
   - Type: Story.
@@ -636,8 +636,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Operationen über API und MCP. 8. Tests grün.
   - Summary: Notes und Topics im neuen Viewer, inklusive der offenen Wünsche
     zum Archivieren und Löschen von Topics.
-  - Spec: `items/STORY-077/STORY-077_spec.md`.
   - Notes: `items/STORY-077/STORY-077_notes.md`.
+  - Spec: `items/STORY-077/STORY-077_spec.md`.
 
 - `STORY-078` **Notes-Auslöser, Änderungshinweise, Befördern und Zurückstufen**
   - Type: Story.
@@ -661,8 +661,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Notes, die sich von selbst melden, wenn etwas Bestimmtes
     passiert, und der Weg zwischen Note und Backlog-Item in beide
     Richtungen.
-  - Spec: `items/STORY-078/STORY-078_spec.md`.
   - Notes: `items/STORY-078/STORY-078_notes.md`.
+  - Spec: `items/STORY-078/STORY-078_spec.md`.
 
 - `STORY-079` **Notes im Markdown-Spiegel**
   - Type: Story.
@@ -682,8 +682,8 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     und `uid`s in der DB abgebildet. 4. Tests grün.
   - Summary: Notes und Topics als Markdown-Dateien für die Arbeit in der
     Cloud, abgeglichen mit der Datenbank.
-  - Spec: `items/STORY-079/STORY-079_spec.md`.
   - Notes: `items/STORY-079/STORY-079_notes.md`.
+  - Spec: `items/STORY-079/STORY-079_spec.md`.
 
 - `STORY-080` **Wecker (Plugin alarms)**
   - Type: Story.
@@ -807,3 +807,68 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     die gewohnte Adresse setzen, den alten entfernen.
   - Notes: `items/STORY-084/STORY-084_notes.md`.
   - Spec: `items/STORY-084/STORY-084_spec.md`.
+
+- `STORY-085` **Serienwecker: Wiederholung am Wecker**
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-10-17.
+  - Area: Backend-API.
+  - Priority: Prospective.
+  - Dependencies: `STORY-080`.
+  - Goal: Ein Wecker kann sich wiederholen (täglich, wöchentlich, monatlich,
+    jährlich); nach langer Pause erscheint er einmal, mit der Zahl der
+    verpassten Termine.
+  - Completion criteria: 1. Der Wecker hat ein Feld Wiederholung (keine,
+    täglich, wöchentlich, monatlich, jährlich) in Datenbank, API, MCP,
+    Formular und Markdown-Spiegel. 2. Beim Erledigen oder Fälligwerden rückt
+    er auf den ersten Termin nach jetzt, gerechnet ab dem Fälligkeitstermin.
+    3. Verpasste Termine erscheinen als ein Wecker mit Zähler (Anzeige, wenn
+    optisch gut umsetzbar). 4. Tests für Regeln, Migration und Oberfläche
+    sind grün.
+  - Summary: Folge zu Frage 5 in STORY-060: Serien kommen nach dem
+    Live-Gang. Wecker hängen schon an jedem Element, die Wiederholung ist
+    nur ein Feld am Wecker.
+
+- `STORY-086` **Baum: Umwandeln-Dialog beim Ziehen**
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-10-17.
+  - Area: Web-UI.
+  - Priority: Prospective.
+  - Dependencies: `STORY-072`.
+  - Goal: Zieht man ein Item an eine Stelle, an der sein Typ nicht erlaubt
+    ist, bietet der Baum an, es umzuwandeln und dann zu verschieben, statt
+    abzulehnen.
+  - Completion criteria: 1. Story auf Story: Dialog 'Nur als Task möglich,
+    umwandeln und verschieben?'; bei Ja Typwechsel, dann Verschieben; bei
+    Nein bleibt alles. 2. Ein Epic ohne Kinder lässt sich ebenso als Story
+    umwandeln. 3. Fälle, in denen die Umwandlung Kinder verwaisen ließe,
+    werden mit Grund abgelehnt. 4. Das Label ändert sich wie beim Typwechsel
+    im Detailpanel, Verweise folgen. 5. UI-Tests für Zustimmung, Ablehnung
+    und Fehlerfälle sind grün.
+  - Summary: Folge zu Frage 10 in STORY-060: Umwandlung beim Ziehen mit
+    Bestätigung, nach dem Live-Gang. Ziehen zwischen Projekten gibt es
+    nicht.
+
+- `STORY-087` **Browser-Logs ins viewer.log schreiben**
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-10-17.
+  - Area: Backend-API.
+  - Priority: Prospective.
+  - Dependencies: `STORY-066`, `STORY-083`.
+  - Goal: Meldungen und Fehler des Clients landen über eine Operation des
+    Core im viewer.log des Servers, statt nur in der Browser-Konsole.
+  - Completion criteria: 1. Der Core bietet eine Operation, die Log-Einträge
+    des Browsers (Stufe, Meldung, Quelle) annimmt und ins viewer.log
+    schreibt. 2. Der Client sendet Fehler und Warnungen dorthin, ohne bei
+    Ausfall des Servers selbst Fehler zu erzeugen. 3. Menge und Größe der
+    Einträge sind begrenzt. 4. Tests für Operation und Client sind grün.
+  - Summary: Folge zu Frage 20 in STORY-060: Der Client loggt vorerst nur in
+    die Konsole; die Schnittstelle zum Server folgt als eigene Story.

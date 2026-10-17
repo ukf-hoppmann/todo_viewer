@@ -153,3 +153,14 @@ Das Beispiel-Plugin hat die Seite „Bausteine“, die Baum, Detailpanel, Inline
 - **Neu-Dialog:** Note und Topic hängen als `workspace.create-types` im Menü „＋ Neu“ (`create.note`, `create.topic` im Namensraum `notes`); die Formulare legen im markierten Projekt an.
 - **Dokumente** (`DocumentsSection`) wie im Backlog: Notizen und Specs ansehen, bearbeiten (Version, Konflikt), Notiz-Eintrag anfügen, Spec anlegen.
 - Test-IDs: `notes.<element>` aus `notesTestIds`.
+
+## Plugin `alarms`
+
+`client/src/plugins/alarms/`, benötigt `layout-header-sidebar` und `workspace`. Die Hauptroute `alarms/main` listet die Wecker der gezeigten Projekte (fällige zuerst, dann nach Status und Zeit) mit Status, Zeit und Ziel; je Wecker erledigen und zurückstellen (nicht bei Erledigten), Fehler des Servers stehen als Meldung. Ein Ziel in einem anderen Projekt erscheint als `Projekt:LABEL`.
+
+- **API** (`alarmsApi`): `listAlarms({projects, dueOnly})`, `createAlarm`, `updateAlarm`, `snoozeAlarm`, `finishAlarm`; die Ereignisse `alarms.*`, `workspace.element.changed` und `core.reconnected` laden neu.
+- **Slot `workspace.detail-sections`** (von `workspace` angeboten): `DetailSections({uid, label, projectUid})` rendert die Widgets der Plugins; `useDetailElement()` liefert dem Widget das Element. `backlog/ItemDetail` und `notes/NoteDetail` binden `DetailSections` ein; `alarms` hängt dort „Wecker stellen“ ein (legt einen Wecker mit dem Element als Ziel an).
+- **Neu-Dialog:** Typ „Wecker“ als `workspace.create-types` (Text, Zeitpunkt, Ziel über die Suche).
+- **Zähler** (`AlarmCounter`, Slot `layout-header-sidebar.header-actions`): Zahl der fälligen Wecker; ein Klick listet sie mit Erledigen und Zurückstellen.
+- **Meldung** (`announce.ts`): bei `alarms.due` ein Banner (`banners.show`) und, wenn erlaubt (`canNotify`, Einstellung „Browser-Benachrichtigung“ in `core.settings-sections`), eine `Notification`.
+- Test-IDs: `alarmsTestIds`.

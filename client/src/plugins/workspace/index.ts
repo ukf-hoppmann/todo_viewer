@@ -18,6 +18,10 @@ export const plugin = definePlugin({
 	i18n: { de, en },
 	api: workspaceApi,
 	slots: {
+		"detail-sections": {
+			description:
+				"Widgets in the detail panel of every element (below its fields, drawn by `DetailSections`): the widget reads the element with `useDetailElement`.",
+		},
 		"create-types": {
 			description:
 				"Forms of the dialog '＋ New': `name` is the kind, `component` the form (it uses `useCreateDialog`), the title is the text `create.<name>` of the contributing plugin.",
@@ -52,6 +56,8 @@ export const plugin = definePlugin({
 export { useCreateDialog, type CreateDialogContext } from "./createDialog";
 export { useProjectSelection, useSearchText } from "./state";
 export { useListProjectsQuery, useSearchElementsQuery, type ElementOut, type Project } from "./api";
+export { useDetailElement, type DetailElement } from "./detailElement";
+export { DetailSections } from "./detailSections";
 export { LinksSection } from "./LinksSection";
 export { useDeleteElement } from "./useDeleteElement";
 export { workspaceTestIds } from "./testIds";

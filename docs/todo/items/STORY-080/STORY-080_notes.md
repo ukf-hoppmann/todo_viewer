@@ -30,3 +30,20 @@
 ### Open
 
 - Fragen 33 und 34 stehen in `STORY-060`.
+
+## 2026-10-17 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Wie geplant umgesetzt: Server (Domäne, Dienst mit genau einem Scheduler-Termin, Operationen für HTTP und MCP, Codec und Teilnehmer für `alarms.md`), Client (Slot `workspace.detail-sections`, Neu-Typ, Zähler, Banner, Notification, Einstellungen, Hauptroute `alarms/main`). Techdoku in `neubau-server.md` und `neubau-client.md`.
+- Das Zeitfeld des Formulars ist nicht `required`; der Code meldet „Ein Zeitpunkt fehlt.“ selbst.
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) Anlegen über UI, API, MCP (`test_alarm_flow.py`, `AlarmsPage.test.tsx`, `Widgets.test.tsx`); (2) genau ein Termin, Nachholen beim Start (`test_alarm_flow.py`); (3) Banner, Zähler, Notification, Erledigen, Zurückstellen (`announce.test.ts`, `Widgets.test.tsx`, `AlarmsPage.test.tsx`); (4) Codec für `alarms.md` gegen Golden-Files samt Sync (`test_alarms_mirror_codec.py`, `test_alarm_mirror.py`); (5) Tests mit fester Uhr grün.
+- `scripts/check-next.sh` und `scripts/check.sh` grün. Status: `Awaiting confirmation`.
+
+### Open
+
+- Nicht geprüft: die Wecker-Oberfläche im echten Browser (nur jsdom), echte Browser-Benachrichtigungen.
+- Die Fragen 33 und 34 stehen in `STORY-060`.

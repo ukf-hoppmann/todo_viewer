@@ -1,4 +1,4 @@
-"""Die Wecker im Spiegel, und das ganze Beispielprojekt mit allen Plugins: echte Datenbank, echter Ordner, echte Codecs."""
+"""Die Wecker im Spiegel und das ganze Beispielprojekt mit allen Plugins (echte Datenbank, Ordner, Codecs)."""
 
 from __future__ import annotations
 

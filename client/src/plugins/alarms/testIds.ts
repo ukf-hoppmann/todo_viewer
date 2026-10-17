@@ -1,0 +1,19 @@
+/** Test ids of the alarms plugin. */
+export const alarmsTestIds = {
+	page: "alarms.page",
+	empty: "alarms.empty",
+	row: (uid: string) => `alarms.row.${uid}`,
+	action: (action: string, uid: string) => `alarms.action.${action}.${uid}`,
+	form: "alarms.form",
+	formField: (name: string) => `alarms.form-field.${name}`,
+	formDialog: "alarms.form-dialog",
+	counter: "alarms.counter",
+	dueList: "alarms.due-list",
+	dueItem: (uid: string) => `alarms.due-item.${uid}`,
+	setAlarm: "alarms.set-alarm",
+	setAlarmButton: "alarms.set-alarm-button",
+	elementAlarm: (uid: string) => `alarms.element-alarm.${uid}`,
+	settings: "alarms.settings",
+	permission: "alarms.permission",
+	enableNotifications: "alarms.enable-notifications",
+} as const;

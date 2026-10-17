@@ -78,8 +78,8 @@ def test_a_new_alarm_replaces_its_block_with_uid_label_and_keeps_the_text() -> N
     out = written([new])
     assert "- `NEW-standup`" not in out
     assert out.endswith(
-        "- `ALARM-003` **Neuer Wecker aus der Cloud, Ziel in anderem Projekt**\n  - Uid: u3.\n  - At: 2026-10-21T08:00:00Z.\n"
-        "  - Target: `Misc:NOTE-003`.\n  - Status: Pending.\n  - Created: 2026-10-17.\n"
+        "- `ALARM-003` **Neuer Wecker aus der Cloud, Ziel in anderem Projekt**\n  - Uid: u3.\n"
+        "  - At: 2026-10-21T08:00:00Z.\n  - Target: `Misc:NOTE-003`.\n  - Status: Pending.\n  - Created: 2026-10-17.\n"
     )
     assert out.startswith(CURRENT.files["alarms.md"].text[: CURRENT.files["alarms.md"].text.index("- `ALARM-001`")])
 
@@ -101,7 +101,8 @@ def test_a_new_file_gets_the_template_and_unset_fields_are_left_out() -> None:
     out = written([entry], current=FileSet())
     assert out.startswith("# Alarms\n\nFormat: Claude_Harness backlog format version 2.")
     assert out.endswith(
-        "- `ALARM-007` **Neu**\n  - Uid: u7.\n  - At: 2026-10-20T07:00:00Z.\n  - Target: None.\n  - Status: Done.\n  - Deleted: 2026-10-18.\n"
+        "- `ALARM-007` **Neu**\n  - Uid: u7.\n  - At: 2026-10-20T07:00:00Z.\n  - Target: None.\n"
+        "  - Status: Done.\n  - Deleted: 2026-10-18.\n"
     )
     assert decode(alarms_file(out), "P")[0].fields["deleted"] == "2026-10-18"
 

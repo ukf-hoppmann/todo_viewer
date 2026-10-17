@@ -11,7 +11,7 @@ import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogT
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DetailField, DetailPanel, DetailSection, LargeView, MarkdownView, type DetailAction } from "../../shared";
-import { LinksSection, useDeleteElement } from "../workspace";
+import { DetailSections, LinksSection, useDeleteElement } from "../workspace";
 import { useGetNoteQuery, type NoteOut, type WriteError } from "./api";
 import { statusColor } from "./constants";
 import { DocumentsSection } from "./DocumentsSection";
@@ -107,6 +107,7 @@ function Loaded({ note }: { note: NoteOut }) {
 				<DetailSection id="links" title={t("field.links")} defaultOpen={false}>
 					<LinksSection elementUid={note.uid} />
 				</DetailSection>
+				<DetailSections uid={note.uid} label={note.label} projectUid={note.project_uid} />
 			</DetailPanel>
 			{dialog === "edit" && (
 				<Dialog open onClose={() => setDialog(undefined)} fullWidth maxWidth="md" slotProps={{ paper: { "data-testid": notesTestIds.formDialog } as never }}>

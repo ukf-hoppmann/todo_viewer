@@ -1013,7 +1013,7 @@ export interface components {
             snoozed_until: string | null;
             /** Status */
             status: string;
-            target: components["schemas"]["viewer__plugins__alarms__application__operations__TargetRef"] | null;
+            target: components["schemas"]["AlarmTargetRef"] | null;
             /** Target Text */
             target_text: string | null;
             /** Text */
@@ -1022,6 +1022,19 @@ export interface components {
             uid: string;
             /** Version */
             version: number;
+        };
+        /** AlarmTargetRef */
+        AlarmTargetRef: {
+            /** Deleted */
+            deleted: boolean;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
         };
         /** AlarmsCreateAlarmBody */
         AlarmsCreateAlarmBody: {
@@ -1514,7 +1527,7 @@ export interface components {
             decisions: string[];
             /** Kind */
             kind: string;
-            source: components["schemas"]["viewer__plugins__notes__application__operations__TargetRef"] | null;
+            source: components["schemas"]["TargetRef"] | null;
             /** Uid */
             uid: string;
         };
@@ -1927,6 +1940,22 @@ export interface components {
              */
             to_files: number;
         };
+        /**
+         * TargetRef
+         * @description Das Element am anderen Ende eines Auslösers oder Hinweises.
+         */
+        TargetRef: {
+            /** Deleted */
+            deleted: boolean;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
+        };
         /** TopicDone */
         TopicDone: {
             /**
@@ -2017,7 +2046,7 @@ export interface components {
             kind: string;
             /** Status */
             status: string | null;
-            target: components["schemas"]["viewer__plugins__notes__application__operations__TargetRef"] | null;
+            target: components["schemas"]["TargetRef"] | null;
             /** Uid */
             uid: string;
         };
@@ -2096,35 +2125,6 @@ export interface components {
             sync_direction?: ("both" | "to_files" | "to_database") | null;
             /** Version */
             version: number;
-        };
-        /** TargetRef */
-        viewer__plugins__alarms__application__operations__TargetRef: {
-            /** Deleted */
-            deleted: boolean;
-            /** Kind */
-            kind: string;
-            /** Label */
-            label: string;
-            /** Title */
-            title: string;
-            /** Uid */
-            uid: string;
-        };
-        /**
-         * TargetRef
-         * @description Das Element am anderen Ende eines Auslösers oder Hinweises.
-         */
-        viewer__plugins__notes__application__operations__TargetRef: {
-            /** Deleted */
-            deleted: boolean;
-            /** Kind */
-            kind: string;
-            /** Label */
-            label: string;
-            /** Title */
-            title: string;
-            /** Uid */
-            uid: string;
         };
     };
     responses: never;

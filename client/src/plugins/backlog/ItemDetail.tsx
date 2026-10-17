@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSlot } from "../../core";
 import { DetailField, DetailPanel, DetailSection, InlineField, MarkdownView, type DetailAction } from "../../shared";
-import { LinksSection, useDeleteElement } from "../workspace";
+import { DetailSections, LinksSection, useDeleteElement } from "../workspace";
 import { useGetItemQuery, useListAreasQuery, useListItemsQuery, type ItemOut, type ItemSummary } from "./api";
 import { PRIORITIES, STATUSES, defaultResolution, statusColor } from "./constants";
 import { DocumentsSection } from "./DocumentsSection";
@@ -174,6 +174,7 @@ function Loaded({ item, onSelect }: { item: ItemOut; onSelect: (uid: string) => 
 				<DetailSection id="links" title={t("field.links")} defaultOpen={false}>
 					<LinksSection elementUid={item.uid} />
 				</DetailSection>
+				<DetailSections uid={item.uid} label={item.label} projectUid={item.project_uid} />
 			</DetailPanel>
 			{dialog === "edit" && <ItemFormDialog projectUid={item.project_uid} type={item.type} item={item} onClose={() => setDialog(undefined)} />}
 			{dialog === "child" && (

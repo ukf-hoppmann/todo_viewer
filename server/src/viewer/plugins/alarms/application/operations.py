@@ -17,7 +17,7 @@ class AlarmServices:
 
 
 @dataclass(frozen=True)
-class TargetRef:
+class AlarmTargetRef:
     uid: str
     label: str
     title: str
@@ -36,7 +36,7 @@ class AlarmOut:
     status: str
     snoozed_until: datetime | None
     #: Das Element, auf das sich der Wecker bezieht; sonst leer.
-    target: TargetRef | None
+    target: AlarmTargetRef | None
     #: Ein Ziel in einem anderen Projekt, das hier nicht aufzulösen ist, als Text (`Projekt:LABEL`).
     target_text: str | None
     version: int
@@ -92,7 +92,7 @@ class FinishAlarm:
 
 def alarm_out(view: AlarmView) -> AlarmOut:
     a, t = view.alarm, view.target
-    target = TargetRef(t.uid, t.label, t.title, t.kind, t.deleted_at is not None) if t is not None else None
+    target = AlarmTargetRef(t.uid, t.label, t.title, t.kind, t.deleted_at is not None) if t is not None else None
     return AlarmOut(
         a.uid, a.project_uid, a.label, a.text, a.at, a.status, a.snoozed_until, target, a.target_text, a.revision,
         a.deleted_at is not None,

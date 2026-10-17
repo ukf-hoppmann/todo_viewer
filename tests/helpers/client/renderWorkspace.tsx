@@ -4,6 +4,8 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { initI18n, PluginRegistryProvider, StoreProvider } from "../../../client/src/core";
 import type { ActivePlugin, PluginRegistry, WidgetContribution } from "../../../client/src/core/plugins/types";
+import alarmsDe from "../../../client/src/plugins/alarms/locales/de.json";
+import alarmsEn from "../../../client/src/plugins/alarms/locales/en.json";
 import backlogDe from "../../../client/src/plugins/backlog/locales/de.json";
 import backlogEn from "../../../client/src/plugins/backlog/locales/en.json";
 import notesDe from "../../../client/src/plugins/notes/locales/de.json";
@@ -36,6 +38,8 @@ export async function renderWorkspace(
 	i18n.addResourceBundle("en", "workspace", en);
 	i18n.addResourceBundle("de", "backlog", backlogDe);
 	i18n.addResourceBundle("en", "backlog", backlogEn);
+	i18n.addResourceBundle("de", "alarms", alarmsDe);
+	i18n.addResourceBundle("en", "alarms", alarmsEn);
 	i18n.addResourceBundle("de", "notes", notesDe);
 	i18n.addResourceBundle("en", "notes", notesEn);
 	const active: ActivePlugin[] = [];

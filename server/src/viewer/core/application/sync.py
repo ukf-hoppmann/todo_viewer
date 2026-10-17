@@ -118,6 +118,14 @@ class MirrorBinding:
 class MirrorConfig:
     folder: Path
     auto_sync: bool = False
+    #: Der Name des Projekts: Codecs, die ihn für Verweise brauchen, werden mit `for_project` daran gebunden.
+    name: str = ""
+
+
+def bound_codec(codec: MirrorCodec, name: str) -> MirrorCodec:
+    """Der Codec für das Projekt `name`: bietet er `for_project(name)` an, wird er daran gebunden."""
+    binder = getattr(codec, "for_project", None)
+    return binder(name) if callable(binder) else codec
 
 
 class MirrorProjects(Protocol):
@@ -366,7 +374,7 @@ class SyncService:
         database: list[list[MirrorEntry]] = []
         for mirror in self._mirrors:
             own = FileSet({p: e for p, e in fileset.files.items() if matches_any(mirror.codec.patterns, p)})
-            raw_files.append(mirror.codec.decode(own))
+            raw_files.append(bound_codec(mirror.codec, config.name).decode(own))
             database.append(mirror.participant.load(project))
         _check_unique_placeholders(raw_files)
         aliases = self._aliases(project, raw_files)
@@ -504,7 +512,8 @@ class SyncService:
             current = FileSet(
                 {p: e for p, e in snapshot.fileset.files.items() if matches_any(mirror.codec.patterns, p)}
             )
-            changes.extend(mirror.codec.encode(list(upserts[index].values()), removed[index], current))
+            codec = bound_codec(mirror.codec, snapshot.config.name)
+            changes.extend(codec.encode(list(upserts[index].values()), removed[index], current))
         if not changes:
             return
         expected: dict[str, str | None] = {}

@@ -289,6 +289,11 @@ class SqlDocumentRepository:
             )
         return expected + 1
 
+    def delete(self, tx: Transaction, note_uid: str, name: str) -> None:
+        _conn(tx).execute(
+            text("DELETE FROM notes_documents WHERE note_uid = :u AND name = :n"), {"u": note_uid, "n": name}
+        )
+
 
 class SqlSettingsRepository:
     def load(self, tx: Transaction) -> NotesSettings:

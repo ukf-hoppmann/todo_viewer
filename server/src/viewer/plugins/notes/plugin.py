@@ -7,6 +7,7 @@ from typing import Any
 
 from viewer.core.application.plugin import PluginContext, PluginDefinition
 from viewer.core.application.ports import Transaction
+from viewer.core.application.sync import MirrorBinding
 from viewer.core.domain.errors import DomainError
 from viewer.core.domain.events import Event
 from viewer.core.domain.plugin import ElementKind, Subscription
@@ -30,6 +31,8 @@ from viewer.plugins.notes.infrastructure.database.repository import (
     SqlTriggerRepository,
 )
 from viewer.plugins.notes.infrastructure.database.schema import MIGRATIONS
+from viewer.plugins.notes.infrastructure.mirror.codec import NotesCodec
+from viewer.plugins.notes.infrastructure.mirror.participant import NotesParticipant
 from viewer.plugins.workspace.domain.model import Element
 
 ELEMENT_KINDS = (ElementKind("note", "NOTE"), ElementKind("topic", "TOPIC"))
@@ -96,6 +99,7 @@ def _build(context: PluginContext) -> NotesServices:
         triggers,
         NoticeService(deps, note_service, conversion),
         conversion,
+        NotesParticipant(deps, workspace.project_store),
     )
 
 
@@ -118,6 +122,7 @@ plugin = PluginDefinition(
     migrations=MIGRATIONS,
     element_kinds=ELEMENT_KINDS,
     operations=OPERATIONS,
+    mirror=lambda services: MirrorBinding("notes", NotesCodec(), services.participant),
     subscriptions=(
         Subscription("backlog.item.status_changed", _on_status_changed),
         Subscription("backlog.item.changed", _on_item_changed),

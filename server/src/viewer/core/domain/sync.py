@@ -61,6 +61,8 @@ class MirrorEntry:
     source: tuple[str, int] | None = field(default=None, compare=False)
     #: Zeile je Feld oder Verweis (für Meldungen); nicht Teil des Vergleichs.
     source_lines: Mapping[str, int] = field(default_factory=dict, compare=False)
+    #: Angaben, die der Codec mitführt, die aber nicht verglichen werden (z. B. Zeitstempel der Datei); nicht im Hash.
+    extra: Mapping[str, Any] = field(default_factory=dict, compare=False)
 
     @property
     def key(self) -> str:

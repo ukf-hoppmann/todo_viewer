@@ -183,7 +183,7 @@ class ProjectService:
             project = self._projects.get(tx, project_uid)
         if project is None or project.deleted_at is not None or not project.mirror_enabled or not project.mirror_folder:
             return None
-        return MirrorConfig(Path(project.mirror_folder), project.auto_sync)
+        return MirrorConfig(Path(project.mirror_folder), project.auto_sync, project.name)
 
     def auto_sync_projects(self) -> list[str]:
         with self._database.transaction() as tx:

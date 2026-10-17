@@ -40,6 +40,7 @@ class NotesServices:
         triggers: TriggerService,
         notices: NoticeService,
         conversion: ConversionService,
+        participant: Any,
     ) -> None:
         self.notes = notes
         self.topics = topics
@@ -48,6 +49,7 @@ class NotesServices:
         self.triggers = triggers
         self.notices = notices
         self.conversion = conversion
+        self.participant = participant
 
 
 # --- Ausgaben ---------------------------------------------------------------------------------------------------

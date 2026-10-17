@@ -95,3 +95,23 @@
 - Die Freigaben gelten auch für die Cloud-Sitzung; sie stehen in docs/handover/neubau-cloud.md.
 - Der Altcode liegt in src_old/, die Vorlage des ezf-ui-Core in reference/ezf-ui/; beides ist nur Vorlage und wird erst nach Abnahme des Neubaus durch den Projektinhaber entfernt (neue Regel 0).
 - Nicht in der Nacht: STORY-084 (Umstieg) und jeder Lauf gegen echte Daten (configs/todo.db); STORY-082 nur mit synthetischen Daten.
+
+## 2026-10-17 — Stand nach der Cloud-Sitzung
+
+### Discussed
+
+- **Branch** `neubau/epic-007` (nie nach `main` gemergt, nie mit Gewalt gepusht). Letzter Commit eines Items: `cb72044` (STORY-083); danach folgen nur noch Notiz-Commits (dieser Eintrag, `git log`). `scripts/check-next.sh` und `scripts/check.sh` waren bei jedem Commit der Items grün.
+- **Je Item** (alle `Awaiting confirmation` mit allen Abschlusskriterien geprüft; Einzelheiten, Abweichungen und offene Punkte in den Notizen der Items unter „Umgesetzt und geprüft“, Annahmen als Fragen 13 bis 35 in `STORY-060`):
+  - `STORY-061` bis `STORY-076`: Server-Grundgerüst, MCP-Host, Datenbank, Dateien, Sync, Client-Grundgerüst, gemeinsame Bausteine, workspace, Verknüpfungen, Papierkorb, Backlog (anzeigen, bearbeiten, Dokumente, Graph, Spiegel), Sync in der Oberfläche.
+  - `STORY-077` Notes und Topics, `STORY-078` Auslöser, Hinweise, Befördern, Zurückstufen, `STORY-079` Notes im Spiegel: geprüft durch Unit-, Integrations- und Client-Tests samt Golden-Files; im Browser nur die Notes-Ansicht (Baum, Zähler, Detail) gesehen. Bekannt: ein Verweis zieht nach einem Typwechsel des Ziels erst beim nächsten Schreiben der Note nach; Datei und Datenbank derselben Note zugleich geändert ist ein Konflikt; „Befördern“ in der Fällig-Liste öffnet die Note statt des Dialogs; `\r\n` in Notes-Dateien ungetestet.
+  - `STORY-080` Wecker: Server (genau ein Scheduler-Termin, Nachholen beim Start, Codec für `alarms.md`) und Client (Zähler, Banner, Benachrichtigung, `workspace.detail-sections`) getestet, dazu im Browser gesehen (Liste, Zähler, Detail-Abschnitt, Feuern durch den Scheduler). Nicht geprüft: echte Browser-Benachrichtigungen mit Berechtigung.
+  - `STORY-081` KI-Schnittstelle: Gegenüberstellung aller Befehle von `backlog_api.py` und `notes_api.py` mit den Tools in `interfaces.md`; ergänzt wurden `core_health`, `backlog_index_lines`, `notes_index_lines`, `notes_move_note` (Projektwechsel) und das lesende `notes_get_notes_settings`; Systemtest `tests/implementation/system/server/test_harness_flow.py` (Ablauf über MCP gegen den ganzen Viewer). Nicht geprüft: ein echter MCP-Client des Harness.
+  - `STORY-082` Datenübernahme: `python -m viewer.app.import_legacy` (`--legacy-db`, `--target`, `--dry-run`) mit synthetischer alter Datenbank (`tests/helpers/server/legacy_db.py`) getestet: Abbildungen, Prioritäten, Abbruchfälle, Dry-Run, zweiter Lauf = erster, Rundlauf im Viewer. **Nicht geprüft: jede echte Datenbank** (Regel der Sitzung), also auch ältere Schemastände des alten Viewers und der erste Sync danach (ohne Stand).
+  - `STORY-083` Betrieb: Frontend-Auslieferung durch den Server, `server/Dockerfile`, Compose-Dienst `todo-viewer-next` (Port 5412), `todo.sh next …`, `operations.md`. Das Image wurde in der Sitzung gebaut und gestartet (mit CA-Zertifikat der Sitzung wegen eines TLS-abfangenden Proxys; Health, Frontend, `healthy`); der Image-Test selbst (`VIEWER_IMAGE_TEST=1`) lief hier nicht grün durch, aus demselben Grund. Dabei gefundener Fehler (fehlende `client/.npmrc` im Image) ist behoben. Nicht geprüft: `docker compose up` mit den echten Projekt-Ordnern, macOS.
+- **Nicht umgesetzt:** `STORY-084` (Umstieg) — dem Projektinhaber vorbehalten. Kein Zugriff auf echte Daten (`configs/todo.db`, `configs/viewer.db`, Backups, andere Projekte); nichts in `src_old/` und `reference/` geändert.
+- **Nicht in der Cloud geprüft:** ein Lauf des Neubaus gegen echte Daten, das Zeichnen des Abhängigkeiten-Graphen im Browser (React Flow braucht Layout; im Test ersetzt), große Projekte im Spiegel, die Leistung der Datenübernahme bei großen Datenbanken.
+
+### Open
+
+- Der Projektinhaber prüft die Items mit `Awaiting confirmation` und die Fragen 13 bis 35 in `STORY-060`; neu seit dem letzten Stand: Fragen 29 bis 35 (Notes, Wecker, Datenübernahme).
+- Vor dem Umstieg (`STORY-084`): erst `import_legacy --dry-run` auf einer Kopie der echten Datenbank, Markdown-primäre Projekte vorher im alten Viewer in ihre Datenbank spiegeln, `server/constraints.txt` bei Abhängigkeits-Updates pflegen.

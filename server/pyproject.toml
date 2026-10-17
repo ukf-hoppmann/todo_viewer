@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["viewer*"]
+
+[project]
+name = "viewer"
+version = "0.0.0"
+description = "ToDo-Viewer Neubau: Backend (EPIC-007)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "mcp",
+    "uvicorn[standard]",
+    "pydantic",
+    "sqlalchemy",
+    "structlog",
+]
+
+[tool.pytest.ini_options]
+# Aus server/ aufrufen: ../.venv/bin/pytest (scripts/check-next.sh tut das).
+pythonpath = ["src", "../tests/helpers/server", "../tests/helpers"]
+testpaths = [
+    "../tests/implementation/unit/server",
+    "../tests/implementation/integration/server",
+    "../tests/implementation/system/server",
+    "../tests/implementation/system/ops",
+]
+addopts = "-q --import-mode=importlib"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["src", "../tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src:../tests/helpers/server"
+explicit_package_bases = true
+plugins = ["pydantic.mypy"]
+
+[tool.importlinter]
+root_package = "viewer"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Core: Zwiebel, Abhängigkeiten zeigen nach innen"
+type = "layers"
+layers = [
+    "viewer.core.api | viewer.core.infrastructure",
+    "viewer.core.application",
+    "viewer.core.domain",
+]
+containers = []
+
+[[tool.importlinter.contracts]]
+name = "Kern und Anwendung kennen keine Frameworks"
+type = "forbidden"
+source_modules = ["viewer.core.domain", "viewer.core.application"]
+forbidden_modules = ["fastapi", "pydantic", "starlette", "uvicorn", "sqlalchemy", "mcp"]
+
+[[tool.importlinter.contracts]]
+name = "Der Core importiert kein Plugin und nicht die Composition Root"
+type = "forbidden"
+source_modules = ["viewer.core"]
+forbidden_modules = ["viewer.plugins", "viewer.app"]
+
+[[tool.importlinter.contracts]]
+name = "Regel 0: kein Import aus dem Altcode oder der Vorlage"
+type = "forbidden"
+source_modules = ["viewer"]
+forbidden_modules = ["todo_viewer", "ezf_ui"]
+
+[[tool.importlinter.contracts]]
+name = "Plugins: Zwiebel, Abhängigkeiten zeigen nach innen"
+type = "layers"
+layers = [
+    "infrastructure | (api)",
+    "application",
+    "domain",
+]
+containers = ["viewer.plugins.workspace", "viewer.plugins.backlog", "viewer.plugins.notes", "viewer.plugins.alarms"]

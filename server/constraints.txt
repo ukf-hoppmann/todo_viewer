@@ -1,0 +1,7 @@
+# Die Versionen, mit denen der Neubau getestet ist; das Image installiert damit (pip install -c server/constraints.txt).
+fastapi==0.141.1
+mcp==2.3.0
+pydantic==2.14.1
+SQLAlchemy==2.1.1
+structlog==26.1.0
+uvicorn==0.53.0

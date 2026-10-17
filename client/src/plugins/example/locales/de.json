@@ -1,0 +1,34 @@
+{
+	"tab": {
+		"overview": "Beispiel",
+		"workbench": "Bausteine"
+	},
+	"overview": {
+		"header": "Beispiel-Plugin",
+		"text": "Eine Vorlage für neue Plugins: eigene API, eigener Zustand, Ereignisse vom Server.",
+		"health": "Server",
+		"loading": "wird geladen …",
+		"failed": "nicht erreichbar",
+		"counter": "Zähler",
+		"countUp": "Hochzählen",
+		"visits_one": "{{count}} Klick gespeichert",
+		"visits_other": "{{count}} Klicks gespeichert"
+	},
+	"header": {
+		"events_one": "{{count}} Ereignis",
+		"events_other": "{{count}} Ereignisse"
+	},
+	"sidebar": {
+		"text": "Abschnitt der Seitenleiste, nur beim Beispiel-Tab."
+	},
+	"settings": {
+		"text": "Abschnitt der Einstellungsseite."
+	},
+	"workbench": {
+		"tree": "Beispielbaum",
+		"save": "Speichern",
+		"title": "Titel",
+		"id": "Kennung",
+		"note": "Notiz"
+	}
+}

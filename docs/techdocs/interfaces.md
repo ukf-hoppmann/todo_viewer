@@ -534,6 +534,106 @@ Build, antwortet der Server mit 503 und einem Hinweis.
   Backlog-Formats prüft der Server; der Agent muss sie nicht selbst
   durchsetzen.
 
+## MCP-Tools für den Harness (Neubau)
+
+Zweck: Der Harness (Skills `todo`, `notes`, `alarms`) ersetzt `backlog_api.py` und `notes_api.py` durch den MCP-Server des
+Neubaus; die HTTP-Routen unter `/api/<plugin>/…` bieten dasselbe. Der MCP-Server (`/mcp`, Streamable HTTP) hat je
+Operation ein Tool `<plugin>_<operation>`; Eingabe und Ausgabe sind JSON, Fehler sind Tool-Ergebnisse mit `isError` und
+`{code, message, details}` wie bei HTTP. Die Tool-Liste mit Schema liefert `tools/list`.
+
+Grundregeln:
+
+- **Adressieren:** `ref` ist die `uid` oder ein Label (dann mit `project`, der `uid` des Projekts aus
+  `workspace_list_projects`). Der Harness braucht also einmal die Projekt-`uid` (Name → `uid` über `workspace_list_projects`,
+  das ersetzt `sources`); ein Label eines anderen Projekts löst `workspace_resolve_label` auf.
+- **Version:** jede ändernde Operation verlangt die `version` (Revision) aus der letzten Antwort, sonst
+  `version_conflict`; `backlog_get_item` und `notes_get_note` liefern sie, auch für Archiviertes. Eine Notiz an ein Item
+  (`backlog_append_note`) und jedes Schreiben eines Dokuments zählen als Änderung: danach die Version neu lesen.
+- **Zeiten:** ISO 8601, ohne Zone gilt UTC; der Server antwortet in UTC.
+- **Kompakte Ausgabe:** `backlog_index_lines` → `{text, count}`, `text` mit der Kopfzeile
+  `ID | Type | Status | Area | Title | Parent` und einer Zeile je Item; `notes_index_lines` → `{topics, notes, …}` als Tabellen
+  `Label | Name | Due at | Due | Notes` und `Label | Status | Reason | Review at | Topic | Summary`. Beide nehmen dieselben
+  Filter wie `backlog_list_items` bzw. `notes_index` (`projects`, `statuses`, `query`, …; ohne `projects` alle Projekte, das
+  ist `--all-projects`).
+- Es gibt **kein Tool zum endgültigen Löschen** und keines, das Einstellungen ändert (`workspace_purge_elements`,
+  `notes_update_notes_settings` und die Projekt-Verwaltung sind HTTP-only); Einstellungen sind nur lesbar
+  (`notes_get_notes_settings`).
+
+### `backlog_api.py` → MCP
+
+| Befehl | Tool (Route) | Hinweis |
+|---|---|---|
+| `health` | `core_health` (GET `/api/core/health`) | |
+| `sources` | `workspace_list_projects` | Name, Spiegel-Ordner (`mirror_folder`), `uid` |
+| `index` | `backlog_index_lines` (GET `/api/backlog/index`); strukturiert `backlog_list_items` | |
+| `show <ID>` | `backlog_get_item` | mit `version`, auch Archiviertes und Gelöschtes |
+| `create` | `backlog_create_item` | `project`, `type`, `fields` |
+| `update <ID> <version>` | `backlog_update_item` | `fields`, `resolution`; bei `parent_closed` danach `backlog_reopen_ancestors` |
+| `note <ID>` | `backlog_append_note` | `topic`, `discussed`, `decided`, `open`, `summary` |
+| `doc <ID> <name>` | `backlog_get_document` (Liste: `backlog_list_documents`) | |
+| `put-doc <ID> <name> <version\|new>` | `backlog_put_document` | `version` leer = neu |
+| `retype <ID> <version> <type>` | `backlog_retype_item` | neues Label in der Antwort |
+| `delete <ID> <version> [--cascade]` | `workspace_delete_element` | `uid`, `version`, `cascade` |
+| `trash` | `workspace_list_trash` | |
+| `restore <ID> <version>` | `workspace_restore_elements` | `uids` (mit Nachkommen, die der Papierkorb mitbringt) |
+
+Neu gegenüber dem alten Helfer: `backlog_move_item` (Parent/Position), `backlog_list_areas`.
+
+### `notes_api.py` → MCP
+
+| Befehl | Tool | Hinweis |
+|---|---|---|
+| `health`, `sources` | wie oben | |
+| `index` (`--status`, `--due`, `--archived`, `--all-projects`) | `notes_index_lines`; strukturiert `notes_index` | `statuses` komma-getrennt (`due` = fällig; `done,dropped,promoted` = Archiv), ohne `projects` alle Projekte |
+| `index --topic L` / `notes-of-topic` | `notes_topic_content` | Unter-Topics und Notes |
+| `index --linked-item ID` / `notes-of-item` / `backlinks` | `workspace_list_links` | `incoming` der Item-`uid` (Rolle `reference`/`origin`/`trigger`) |
+| `due` | `notes_due_notes` | Grund, Topic-Pfad, Auslöser, Hinweise |
+| `show <NOTE>` | `notes_get_note` | Langtext, Auslöser, offene Hinweise, `version` |
+| `topics [--deleted]`, `topic <T>` | `notes_index` (`topics`); gelöschte: `workspace_list_trash` | |
+| `links <NOTE>` | `workspace_list_links` | `outgoing` |
+| `docs`, `doc`, `put-doc`, `note-entry` | `notes_list_note_documents`, `notes_get_note_document`, `notes_put_note_document`, `notes_append_note_entry` | |
+| `notices <NOTE>` | `notes_get_note` (offene Hinweise der Note) | |
+| `notices <ID> --side item` | `notes_list_item_notices` | |
+| `create` | `notes_create_note` | |
+| `update <NOTE> <version>` | `notes_update_note` | |
+| `keep` | `notes_keep_note` | |
+| `snooze` | `notes_snooze_note` | optional `review_at` und `trigger` |
+| `finish <NOTE> <version> <done\|dropped>` | `notes_finish_note` | |
+| `move <NOTE> <version> <project> [--topic L]` | `notes_move_note` (POST `/api/notes/notes/{ref}/move`) | `target_project`, `topic`; Antwort ist die neue Note |
+| `delete <NOTE>` | `workspace_delete_element` | |
+| `restore <NOTE>` | `workspace_restore_elements` (aus dem Papierkorb), `notes_restore_note` (aus dem Archiv) | |
+| `trigger-add` (`event`, `topic_due`) | `notes_add_trigger` | |
+| `trigger-add` mit `kind: time` | `alarms_create_alarm` | Zeit-Auslöser gibt es im Neubau nicht; der Wecker ersetzt sie |
+| `trigger-remove` | `notes_remove_trigger` | |
+| `link-add`, `link-remove` | `workspace_add_link`, `workspace_remove_link` | `from_uid`, `to_uid`, `role`; Labels über `workspace_resolve_label` |
+| `decide` | `notes_decide_notice` | `keep`, `detach`, `drop`, `promote`, `acknowledge` |
+| `promote`, `demote` | `notes_promote_note`, `notes_demote_item` | |
+| `topic-create`, `topic-update`, `topic-move` | `notes_create_topic`, `notes_update_topic`, `notes_move_topic` | |
+| `topic-delete [--cascade]` | `notes_delete_topic` (Wahl `active_notes`: `move`/`delete`); `notes_archive_topic` | |
+| `topic-restore` | `workspace_restore_elements` (Papierkorb), `notes_reactivate_topic` (Archiv) | |
+| `trash` | `workspace_list_trash` | |
+| `settings` | `notes_get_notes_settings` | nur lesbar |
+
+### Wecker und Sync (neu)
+
+`alarms_list_alarms`, `alarms_get_alarm`, `alarms_create_alarm`, `alarms_update_alarm`, `alarms_snooze_alarm`,
+`alarms_finish_alarm` (Löschen und Zurückholen über `workspace_*`); `core_sync_status`, `core_sync_preview`,
+`core_sync_execute` für den Abgleich mit dem Markdown-Spiegel; Suche über alle Elemente: `workspace_search_elements`;
+Verknüpfungen: `workspace_add_link`, `workspace_remove_link`, `workspace_list_links`.
+
+### Ablauf eines Agenten (geprüft im Systemtest)
+
+1. `core_health`, `workspace_list_projects` (Projekt-`uid`).
+2. `backlog_index_lines` für den Überblick; `backlog_get_item` für ein Item samt `version`.
+3. `backlog_create_item`; `backlog_update_item` mit `version` (bei `version_conflict` neu lesen und prüfen);
+   `backlog_append_note` für den Notiz-Eintrag.
+4. `notes_create_note`, `notes_index_lines`, `workspace_add_link` (Note → Item).
+5. `alarms_create_alarm` (`text`, `at`, optional `target`), später `alarms_finish_alarm`.
+6. `workspace_delete_element` / `workspace_list_trash` / `workspace_restore_elements`.
+
+Der Systemtest `tests/implementation/system/server/test_harness_flow.py` führt diesen Ablauf gegen den ganzen Viewer
+(echter uvicorn-Server, alle Plugins) über einen MCP-Client aus.
+
 ## Dateiformat: Backlog-Ordner
 
 - Zweck: Quelle der angezeigten Items.

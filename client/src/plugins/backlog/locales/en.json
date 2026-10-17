@@ -1,0 +1,129 @@
+{
+	"tab": {
+		"backlog": "Backlog",
+		"graph": "Dependencies"
+	},
+	"filter": {
+		"status": "Status",
+		"priority": "Priority"
+	},
+	"status": {
+		"Open": "Open",
+		"In progress": "In progress",
+		"Awaiting confirmation": "Awaiting confirmation",
+		"Completed": "Completed",
+		"Rejected": "Rejected"
+	},
+	"priority": {
+		"Urgent": "Urgent",
+		"Important": "Important",
+		"Normal": "Normal",
+		"Prospective": "Prospective"
+	},
+	"type": {
+		"Epic": "Epic",
+		"Story": "Story",
+		"Task": "Task"
+	},
+	"empty": "No items in the chosen projects and filters.",
+	"collapse": {
+		"collapseEpic": "Collapse epics",
+		"expandEpic": "Expand epics",
+		"collapseStory": "Collapse stories",
+		"expandStory": "Expand stories",
+		"scope": "Project {{project}} only",
+		"scopeAll": "All shown projects"
+	},
+	"field": {
+		"status": "Status",
+		"priority": "Priority",
+		"area": "Area",
+		"created": "Created",
+		"parent": "Parent",
+		"goal": "Goal",
+		"completionCriteria": "Completion criteria",
+		"summary": "Summary",
+		"resolution": "Resolution",
+		"progress": "Progress",
+		"dependencies": "Dependencies",
+		"children": "Children",
+		"links": "Links",
+		"title": "Title",
+		"requiredForParent": "Required for parent",
+		"documents": "Documents"
+	},
+	"detail": {
+		"choose": "Choose an item in the tree.",
+		"failed": "The item cannot be loaded.",
+		"deleted": "in the trash",
+		"deletedShort": "deleted",
+		"optional": "optional",
+		"yes": "Yes",
+		"no": "No"
+	},
+	"create": {
+		"epic": "New epic",
+		"story": "New story",
+		"task": "New task"
+	},
+	"action": {
+		"edit": "Edit",
+		"addChild": "Add child",
+		"retype": "Change type",
+		"delete": "Move to trash",
+		"newArea": "＋ New area …"
+	},
+	"form": {
+		"save": "Save",
+		"cancel": "Cancel",
+		"close": "Close",
+		"reload": "Load current state",
+		"conflict": "The item was changed in the meantime.",
+		"areaHint": "Choose an existing area or type a new one.",
+		"editTitle": "Edit {{label}}",
+		"createTitle": "Create {{type}}"
+	},
+	"reopen": {
+		"title": "Reopen closed ancestors?",
+		"message": "{{items}} is closed. Reopen it (status In progress) and create the item below it?",
+		"confirm": "Reopen and continue"
+	},
+	"retype": {
+		"title": "Change the type of {{label}}",
+		"message": "The item gets a new label; the old number still resolves.",
+		"done": "{{old}} is now {{new}}",
+		"failed": "The type could not be changed",
+		"notice": {
+			"external_references_may_remain": "References to {{old}} outside the backlog (technical docs, daily reports, code, commit messages) are not updated. Search for {{old}} and adapt where it is now {{new}}."
+		}
+	},
+	"resolution": {
+		"title": "{{label}} → {{status}}"
+	},
+	"area": {
+		"newTitle": "New area"
+	},
+	"documents": {
+		"none": "No notes or specs yet.",
+		"addNote": "＋ Notes entry",
+		"addSpec": "＋ Create spec",
+		"topic": "Topic",
+		"discussed": "Discussed",
+		"decided": "Decided",
+		"open": "Open",
+		"onePerLine": "One bullet per line",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md or {{label}}_spec_<topic>.md",
+		"large": "Large view",
+		"conflict": "The document was changed in the meantime.",
+		"showCurrent": "Show current state",
+		"saveAnyway": "Save anyway",
+		"currentState": "current state",
+		"toc": "Table of contents"
+	},
+	"graph": {
+		"info": "{{n}} of {{total}} items have dependencies",
+		"hint": "Click selects, ⌘/Ctrl/⇧-click marks more, Esc resets",
+		"empty": "No items with dependencies in the chosen projects and filters."
+	}
+}

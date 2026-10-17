@@ -1,0 +1,169 @@
+{
+	"search": {
+		"label": "Suche",
+		"placeholder": "Suchen …",
+		"clear": "Suche leeren"
+	},
+	"projects": {
+		"title": "Projekte",
+		"add": "Projekt anlegen",
+		"visible": "{{name}} anzeigen",
+		"edit": "{{name}} bearbeiten"
+	},
+	"new": {
+		"button": "Neu",
+		"project": "Projekt"
+	},
+	"card": {
+		"create": "Neues Projekt",
+		"edit": "Projekt „{{name}}“",
+		"name": "Name",
+		"folder": "Spiegel-Ordner",
+		"browse": "Auswählen …",
+		"mirrorEnabled": "Spiegel einschalten",
+		"autoSync": "Automatisch abgleichen",
+		"direction": "Richtung",
+		"directions": {
+			"both": "In beide Richtungen",
+			"to_files": "Nur in die Dateien",
+			"to_database": "Nur in die Datenbank"
+		},
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"remove": "Entfernen",
+		"removeTitle": "Projekt entfernen?",
+		"removeMessage_one": "Das Projekt enthält {{count}} Element. Es kommt mit dem Projekt in den Papierkorb.",
+		"removeMessage_other": "Das Projekt enthält {{count}} Elemente. Sie kommen mit dem Projekt in den Papierkorb.",
+		"failed": "Das hat nicht geklappt."
+	},
+	"folders": {
+		"up": "Eine Ebene höher",
+		"loading": "wird geladen …",
+		"empty": "Keine Unterordner",
+		"hasMirror": "enthält einen Spiegel",
+		"choose": "Diesen Ordner wählen"
+	},
+	"links": {
+		"outgoing": "Verweist auf",
+		"incoming": "Verwiesen von",
+		"none": "keine",
+		"deleted": "gelöscht",
+		"remove": "Verknüpfung mit {{label}} entfernen",
+		"role": "Rolle",
+		"target": "Ziel suchen",
+		"noMatch": "Nichts gefunden",
+		"add": "Verknüpfen",
+		"failed": "Das Verknüpfen hat nicht geklappt.",
+		"roles": {
+			"reference": "Verweis",
+			"origin": "Herkunft",
+			"trigger": "Auslöser"
+		}
+	},
+	"tab": {
+		"trash": "Papierkorb"
+	},
+	"delete": {
+		"title": "Element löschen?",
+		"message_one": "Das Element hat {{count}} Kind. Es kommt mit ihm in den Papierkorb.",
+		"message_other": "Das Element hat {{count}} Kinder. Sie kommen mit ihm in den Papierkorb.",
+		"confirm": "In den Papierkorb"
+	},
+	"trash": {
+		"empty": "Der Papierkorb ist leer.",
+		"count_one": "{{count}} Element",
+		"count_other": "{{count}} Elemente",
+		"selectAll": "Alle auswählen",
+		"select": "{{label}} auswählen",
+		"restore": "Wiederherstellen",
+		"purge": "Endgültig löschen",
+		"restoreOne": "{{label}} wiederherstellen",
+		"purgeOne": "{{label}} endgültig löschen",
+		"purgeTitle": "Endgültig löschen?",
+		"purgeMessage_one": "{{count}} Element wird mit allen Kindern, Daten und Verknüpfungen endgültig gelöscht. Das lässt sich nicht rückgängig machen.",
+		"purgeMessage_other": "{{count}} Elemente werden mit allen Kindern, Daten und Verknüpfungen endgültig gelöscht. Das lässt sich nicht rückgängig machen.",
+		"failed": "Das hat nicht geklappt."
+	},
+	"settings": {
+		"title": "Projekte",
+		"description": "Spiegel und Abgleich je Projekt: die Datenbank ist die Wahrheit, der Ordner der Spiegel.",
+		"mode": "Spiegel",
+		"modes": {
+			"off": "Aus",
+			"manual": "Sync von Hand",
+			"auto": "Sync automatisch"
+		},
+		"noFolder": "Kein Ordner gewählt",
+		"lastSync": "Letzter Sync: {{time}}",
+		"neverSynced": "Noch nie abgeglichen",
+		"edit": "Bearbeiten …",
+		"setup": "Spiegel einrichten",
+		"sync": "Abgleichen …",
+		"check": "Prüfen …"
+	},
+	"sync": {
+		"title": "Abgleich: {{name}}",
+		"reload": "Neu laden",
+		"execute": "Abgleichen",
+		"close": "Schließen",
+		"failed": "Der Abgleich hat nicht geklappt.",
+		"inSync": "in Sync",
+		"needsYou": "braucht dich",
+		"notMirrored": "nicht gespiegelt",
+		"auto": "gleicht automatisch ab",
+		"paused": "pausiert: {{reason}}",
+		"reasons": {
+			"missing": "der Ordner fehlt",
+			"unreadable": "der Ordner ist nicht lesbar",
+			"merge_markers": "Git-Merge-Konflikt in einer Datei",
+			"git_operation": "ein Git-Vorgang läuft",
+			"not_configured": "kein Ordner eingerichtet",
+			"unknown": "unbekannt"
+		},
+		"states": {
+			"in_sync": "alles gleich",
+			"primary_changed": "die Datenbank hat Änderungen",
+			"mirror_changed": "die Dateien haben Änderungen",
+			"both_changed": "beide Seiten haben Änderungen",
+			"conflicts": "Konflikte warten",
+			"paused": "pausiert"
+		},
+		"conflicts_one": "{{count}} Konflikt",
+		"conflicts_other": "{{count}} Konflikte",
+		"conflict": {
+			"both_changed": "beide Seiten geändert",
+			"both_created": "beide Seiten neu angelegt",
+			"deleted_in_files": "in den Dateien gelöscht",
+			"deleted_in_database": "in der Datenbank gelöscht"
+		},
+		"database": "Datenbank",
+		"files": "Dateien",
+		"choices": {
+			"database": "Datenbank",
+			"files": "Dateien",
+			"defer": "Später"
+		},
+		"choiceDeletes": "{{choice}} (löscht den Eintrag)",
+		"all": {
+			"database": "Alle: Datenbank",
+			"files": "Alle: Dateien"
+		},
+		"deletionsApart": "Löschungen gehören nicht zu „Alle“: sie wählst du einzeln.",
+		"transfers": "Übertragungen",
+		"noTransfers": "Nichts zu übertragen.",
+		"targets": {
+			"database": "in die Datenbank",
+			"files": "in die Dateien"
+		},
+		"actions": {
+			"create": "anlegen",
+			"update": "ändern",
+			"delete": "löschen"
+		},
+		"notImported": "{{count}} neue Einträge aus den Dateien werden in dieser Richtung nicht übernommen.",
+		"result": "{{toDatabase}} in die Datenbank, {{toFiles}} in die Dateien übertragen.",
+		"created": "Neu angelegt: {{labels}}.",
+		"conflictsLeft_one": "{{count}} Konflikt bleibt offen.",
+		"conflictsLeft_other": "{{count}} Konflikte bleiben offen."
+	}
+}

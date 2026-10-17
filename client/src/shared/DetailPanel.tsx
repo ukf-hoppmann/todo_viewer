@@ -1,0 +1,95 @@
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { Box, Collapse, IconButton, Tooltip, Typography } from "@mui/material";
+import { useState, type ComponentType, type ReactNode } from "react";
+import { sharedTestIds } from "./testIds";
+
+export interface DetailAction {
+	id: string;
+	/** Also the accessible name and the tooltip; translated by the caller. */
+	label: string;
+	icon: ComponentType;
+	onClick: () => void;
+	disabled?: boolean;
+}
+
+interface DetailPanelProps {
+	title: ReactNode;
+	subtitle?: ReactNode;
+	actions?: readonly DetailAction[];
+	children?: ReactNode;
+}
+
+/** The detail view of one element: a header bar with icon buttons and the sections below it. */
+export function DetailPanel({ title, subtitle, actions = [], children }: DetailPanelProps) {
+	return (
+		<Box data-testid={sharedTestIds.detailPanel} sx={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+			<Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 1.5, borderBottom: 1, borderColor: "divider" }}>
+				<Box sx={{ flexGrow: 1, minWidth: 0 }}>
+					<Typography variant="h6" component="h2" noWrap data-testid={sharedTestIds.detailTitle}>
+						{title}
+					</Typography>
+					{subtitle && (
+						<Typography variant="caption" color="text.secondary">
+							{subtitle}
+						</Typography>
+					)}
+				</Box>
+				{actions.map(({ id, label, icon: Icon, onClick, disabled }) => (
+					<Tooltip key={id} title={label}>
+						<span>
+							<IconButton aria-label={label} onClick={onClick} disabled={disabled} data-testid={sharedTestIds.detailAction(id)}>
+								<Icon />
+							</IconButton>
+						</span>
+					</Tooltip>
+				))}
+			</Box>
+			<Box sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>{children}</Box>
+		</Box>
+	);
+}
+
+interface DetailSectionProps {
+	id: string;
+	title: string;
+	/** Open at the start; true by default. */
+	defaultOpen?: boolean;
+	children?: ReactNode;
+}
+
+/** A section of the detail panel that folds in and out; it keeps its own open state. */
+export function DetailSection({ id, title, defaultOpen = true, children }: DetailSectionProps) {
+	const [open, setOpen] = useState(defaultOpen);
+	return (
+		<Box component="section" data-testid={sharedTestIds.detailSection(id)}>
+			<Box
+				component="button"
+				type="button"
+				aria-expanded={open}
+				onClick={() => setOpen((current) => !current)}
+				data-testid={sharedTestIds.detailSectionToggle(id)}
+				sx={{ display: "flex", alignItems: "center", width: "100%", bgcolor: "transparent", border: 0, color: "text.secondary", cursor: "pointer", p: 0, textAlign: "left" }}
+			>
+				<ExpandMoreIcon fontSize="small" sx={{ transform: open ? "none" : "rotate(-90deg)", transition: "transform .15s" }} />
+				<Typography variant="overline">{title}</Typography>
+			</Box>
+			<Collapse in={open} unmountOnExit>
+				<Box sx={{ pt: 0.5, display: "flex", flexDirection: "column", gap: 1 }}>{children}</Box>
+			</Collapse>
+		</Box>
+	);
+}
+
+/** A read-only field: a small label and the value below it. */
+export function DetailField({ id, label, children }: { id: string; label: string; children: ReactNode }) {
+	return (
+		<Box data-testid={sharedTestIds.detailField(id)}>
+			<Typography variant="caption" color="text.secondary" component="div">
+				{label}
+			</Typography>
+			<Typography variant="body2" component="div">
+				{children}
+			</Typography>
+		</Box>
+	);
+}

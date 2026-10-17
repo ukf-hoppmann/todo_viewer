@@ -240,7 +240,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -264,7 +264,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -279,13 +279,14 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Fehler sind grün.
   - Summary: Neben der API bekommt der Server einen MCP-Zugang, über den
     eine LLM alle Funktionen direkt nutzen kann.
+  - Notes: `items/STORY-062/STORY-062_notes.md`.
   - Spec: `items/STORY-062/STORY-062_spec.md`.
 
 - `STORY-063` **Infrastruktur Datenbank: Migrationen je Plugin, Transaktionen, Backups**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -310,7 +311,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -325,13 +326,14 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     zu lesen. 5. Contract-Tests gegen echte temporäre Ordner sind grün.
   - Summary: Die Dateien-Grundlage für den Markdown-Spiegel: nichts geht
     beim Schreiben kaputt, und fremde Änderungen werden nicht überschrieben.
+  - Notes: `items/STORY-064/STORY-064_notes.md`.
   - Spec: `items/STORY-064/STORY-064_spec.md`.
 
 - `STORY-065` **Generischer Sync-Dienst über Datenbank und Dateien**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -359,7 +361,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -383,7 +385,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -405,7 +407,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -431,7 +433,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -447,12 +449,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Elemente untereinander verknüpfen, zum Beispiel eine Note mit
     einem Item, und sehen, was worauf verweist.
   - Spec: `items/STORY-069/STORY-069_spec.md`.
+  - Notes: `items/STORY-069/STORY-069_notes.md`.
 
 - `STORY-070` **Papierkorb für alle Elementtypen**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -470,12 +473,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Ein Papierkorb für Items, Notes, Topics und Wecker gemeinsam,
     mit Wiederherstellen und endgültigem Löschen.
   - Spec: `items/STORY-070/STORY-070_spec.md`.
+  - Notes: `items/STORY-070/STORY-070_notes.md`.
 
 - `STORY-071` **Backlog anzeigen: Baum, Filter, Suche, Detail (Plugin backlog)**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -499,7 +503,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -519,12 +523,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Alles, was man heute am Backlog ändern kann, im neuen Viewer,
     dazu Umhängen per Drag & Drop.
   - Spec: `items/STORY-072/STORY-072_spec.md`.
+  - Notes: `items/STORY-072/STORY-072_notes.md`.
 
 - `STORY-073` **Backlog-Dokumente: Notizen und Specs**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -539,12 +544,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     verlangt eine Kurzfassung des Items. 5. Tests grün.
   - Summary: Notizen und Specs zu Items, wie heute, im neuen Viewer.
   - Spec: `items/STORY-073/STORY-073_spec.md`.
+  - Notes: `items/STORY-073/STORY-073_notes.md`.
 
 - `STORY-074` **Abhängigkeiten-Graph**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -558,12 +564,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     Tests der Graph-Domäne grün.
   - Summary: Der Abhängigkeiten-Graph aus dem alten Viewer im neuen Viewer.
   - Spec: `items/STORY-074/STORY-074_spec.md`.
+  - Notes: `items/STORY-074/STORY-074_notes.md`.
 
 - `STORY-075` **Backlog im Markdown-Spiegel**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -588,7 +595,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -605,12 +612,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Die Oberfläche für den Abgleich: einrichten, Vorschau ansehen,
     Konflikte entscheiden, Stand live sehen.
   - Spec: `items/STORY-076/STORY-076_spec.md`.
+  - Notes: `items/STORY-076/STORY-076_notes.md`.
 
 - `STORY-077` **Notes und Topics (Plugin notes)**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -629,12 +637,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Notes und Topics im neuen Viewer, inklusive der offenen Wünsche
     zum Archivieren und Löschen von Topics.
   - Spec: `items/STORY-077/STORY-077_spec.md`.
+  - Notes: `items/STORY-077/STORY-077_notes.md`.
 
 - `STORY-078` **Notes-Auslöser, Änderungshinweise, Befördern und Zurückstufen**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -653,12 +662,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     passiert, und der Weg zwischen Note und Backlog-Item in beide
     Richtungen.
   - Spec: `items/STORY-078/STORY-078_spec.md`.
+  - Notes: `items/STORY-078/STORY-078_notes.md`.
 
 - `STORY-079` **Notes im Markdown-Spiegel**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -673,12 +683,13 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Notes und Topics als Markdown-Dateien für die Arbeit in der
     Cloud, abgeglichen mit der Datenbank.
   - Spec: `items/STORY-079/STORY-079_spec.md`.
+  - Notes: `items/STORY-079/STORY-079_notes.md`.
 
 - `STORY-080` **Wecker (Plugin alarms)**
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -701,7 +712,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -724,7 +735,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.
@@ -751,7 +762,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-16.
   - Area: Backend-API.
   - Priority: Normal.

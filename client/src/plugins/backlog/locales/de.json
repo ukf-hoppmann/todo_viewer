@@ -1,0 +1,129 @@
+{
+	"tab": {
+		"backlog": "Backlog",
+		"graph": "Abhängigkeiten"
+	},
+	"filter": {
+		"status": "Status",
+		"priority": "Priorität"
+	},
+	"status": {
+		"Open": "Offen",
+		"In progress": "In Arbeit",
+		"Awaiting confirmation": "Wartet auf Bestätigung",
+		"Completed": "Abgeschlossen",
+		"Rejected": "Abgelehnt"
+	},
+	"priority": {
+		"Urgent": "Dringend",
+		"Important": "Wichtig",
+		"Normal": "Normal",
+		"Prospective": "Perspektivisch"
+	},
+	"type": {
+		"Epic": "Epic",
+		"Story": "Story",
+		"Task": "Task"
+	},
+	"empty": "Keine Items in den gewählten Projekten und Filtern.",
+	"collapse": {
+		"collapseEpic": "Epics zuklappen",
+		"expandEpic": "Epics aufklappen",
+		"collapseStory": "Stories zuklappen",
+		"expandStory": "Stories aufklappen",
+		"scope": "Nur Projekt {{project}}",
+		"scopeAll": "Alle gezeigten Projekte"
+	},
+	"field": {
+		"status": "Status",
+		"priority": "Priorität",
+		"area": "Bereich",
+		"created": "Erstellt",
+		"parent": "Parent",
+		"goal": "Ziel",
+		"completionCriteria": "Fertigstellungskriterien",
+		"summary": "Kurzfassung",
+		"resolution": "Entscheidung",
+		"progress": "Fortschritt",
+		"dependencies": "Abhängigkeiten",
+		"children": "Kinder",
+		"links": "Verknüpfungen",
+		"title": "Titel",
+		"requiredForParent": "Pflicht für Parent",
+		"documents": "Dokumente"
+	},
+	"detail": {
+		"choose": "Ein Item im Baum wählen.",
+		"failed": "Das Item lässt sich nicht laden.",
+		"deleted": "im Papierkorb",
+		"deletedShort": "gelöscht",
+		"optional": "optional",
+		"yes": "Ja",
+		"no": "Nein"
+	},
+	"create": {
+		"epic": "Neues Epic",
+		"story": "Neue Story",
+		"task": "Neuer Task"
+	},
+	"action": {
+		"edit": "Bearbeiten",
+		"addChild": "Kind anlegen",
+		"retype": "Typ ändern",
+		"delete": "In den Papierkorb",
+		"newArea": "＋ Neuer Bereich …"
+	},
+	"form": {
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"close": "Schließen",
+		"reload": "Aktuellen Stand laden",
+		"conflict": "Das Item wurde inzwischen geändert.",
+		"areaHint": "Einen vorhandenen Bereich wählen oder einen neuen eintippen.",
+		"editTitle": "{{label}} bearbeiten",
+		"createTitle": "{{type}} anlegen"
+	},
+	"reopen": {
+		"title": "Geschlossene Vorfahren öffnen?",
+		"message": "{{items}} ist geschlossen. Soll es wieder geöffnet (Status In Arbeit) und das Item darunter angelegt werden?",
+		"confirm": "Öffnen und weitermachen"
+	},
+	"retype": {
+		"title": "Typ von {{label}} ändern",
+		"message": "Das Item bekommt ein neues Label; die alte Nummer löst weiter auf.",
+		"done": "{{old}} heißt jetzt {{new}}",
+		"failed": "Der Typ ließ sich nicht ändern",
+		"notice": {
+			"external_references_may_remain": "Verweise auf {{old}} außerhalb des Backlogs (Technikdoku, Tagesberichte, Code, Commit-Nachrichten) werden nicht angepasst. Nach {{old}} suchen und dort {{new}} eintragen."
+		}
+	},
+	"resolution": {
+		"title": "{{label}} → {{status}}"
+	},
+	"area": {
+		"newTitle": "Neuer Bereich"
+	},
+	"documents": {
+		"none": "Noch keine Notizen oder Specs.",
+		"addNote": "＋ Notiz-Eintrag",
+		"addSpec": "＋ Spec anlegen",
+		"topic": "Thema",
+		"discussed": "Besprochen",
+		"decided": "Entschieden",
+		"open": "Offen",
+		"onePerLine": "Ein Stichpunkt pro Zeile",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md oder {{label}}_spec_<thema>.md",
+		"large": "Großansicht",
+		"conflict": "Das Dokument wurde inzwischen geändert.",
+		"showCurrent": "Aktuellen Stand zeigen",
+		"saveAnyway": "Trotzdem speichern",
+		"currentState": "aktueller Stand",
+		"toc": "Inhaltsverzeichnis"
+	},
+	"graph": {
+		"info": "{{n}} von {{total}} Items haben Abhängigkeiten",
+		"hint": "Klick wählt, ⌘/Strg/⇧-Klick markiert weitere, Esc setzt zurück",
+		"empty": "Keine Items mit Abhängigkeiten in den gewählten Projekten und Filtern."
+	}
+}

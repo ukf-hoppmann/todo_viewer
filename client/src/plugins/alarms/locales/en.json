@@ -1,0 +1,61 @@
+{
+	"tab": {
+		"alarms": "Alarms"
+	},
+	"create": {
+		"alarm": "New alarm"
+	},
+	"status": {
+		"Pending": "Waiting",
+		"Due": "Fired",
+		"Snoozed": "Snoozed",
+		"Done": "Done"
+	},
+	"field": {
+		"text": "Text",
+		"at": "Time",
+		"target": "Refers to"
+	},
+	"action": {
+		"edit": "Edit",
+		"snooze": "Snooze",
+		"finish": "Done"
+	},
+	"form": {
+		"save": "Save",
+		"cancel": "Cancel",
+		"reload": "Load current state",
+		"conflict": "The alarm was changed in the meantime.",
+		"timeRequired": "A time is missing.",
+		"searchHint": "Type the label or title of the element",
+		"editTitle": "Edit {{label}}"
+	},
+	"page": {
+		"title": "Alarms",
+		"new": "New alarm",
+		"empty": "No alarms in the chosen projects."
+	},
+	"setAlarm": {
+		"title": "Alarms",
+		"button": "Set an alarm",
+		"dialogTitle": "Alarm for {{label}}"
+	},
+	"counter": {
+		"label": "{{count}} alarms have fired",
+		"title": "Alarms"
+	},
+	"banner": {
+		"title": "Alarm"
+	},
+	"settings": {
+		"title": "Alarms",
+		"description": "Alarms speak while the viewer is running. Browser notifications show them also when the tab is in the background.",
+		"enable": "Allow notifications",
+		"permission": {
+			"granted": "Notifications are allowed.",
+			"denied": "Notifications are blocked in the browser.",
+			"default": "Notifications are not allowed yet.",
+			"unsupported": "This browser has no notifications."
+		}
+	}
+}

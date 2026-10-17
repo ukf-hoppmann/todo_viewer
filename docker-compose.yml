@@ -25,6 +25,28 @@ services:
       # aus der UI in den Dateien landen.
       - /Users/hoppmann/Documents/GitHub:/Users/hoppmann/Documents/GitHub
 
+  # Der Neubau (EPIC-007) läuft neben dem alten Viewer, bis zum Umstieg (STORY-084).
+  todo-viewer-next:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: todo-viewer-next
+    restart: unless-stopped
+    environment:
+      # Startordner des Dateibrowsers beim Hinzufügen von Projekten
+      - BROWSE_START=/Users/hoppmann/Documents/GitHub
+    ports:
+      # Nur lokal erreichbar: die API und MCP können alles ändern.
+      - "127.0.0.1:5412:5412"
+    volumes:
+      # viewer.db, Backups (configs/backups) und die Konfiguration; die alte todo.db liegt daneben und bleibt unberührt.
+      - ./configs:/app/configs
+      # viewer.log (JSON-Zeilen, rotiert)
+      - ./logs:/app/logs
+      # gleicher absoluter Pfad wie auf dem Host, damit die Spiegel-Ordner der Projekte gefunden werden
+      - /Users/hoppmann/Documents/GitHub:/Users/hoppmann/Documents/GitHub
+
 # Aufruf im Browser: http://todo.localhost:5411
 # (*.localhost wird von macOS ohne /etc/hosts-Eintrag automatisch auf
 # 127.0.0.1 aufgelöst; Port 80 ist auf dieser Maschine bereits belegt)
+# Neubau: http://localhost:5412 (API unter /api, MCP unter /mcp)

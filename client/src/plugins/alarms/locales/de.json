@@ -1,0 +1,61 @@
+{
+	"tab": {
+		"alarms": "Wecker"
+	},
+	"create": {
+		"alarm": "Neuer Wecker"
+	},
+	"status": {
+		"Pending": "Wartet",
+		"Due": "Gemeldet",
+		"Snoozed": "Zurückgestellt",
+		"Done": "Erledigt"
+	},
+	"field": {
+		"text": "Text",
+		"at": "Zeitpunkt",
+		"target": "Bezieht sich auf"
+	},
+	"action": {
+		"edit": "Bearbeiten",
+		"snooze": "Zurückstellen",
+		"finish": "Erledigt"
+	},
+	"form": {
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"reload": "Aktuellen Stand laden",
+		"conflict": "Der Wecker wurde inzwischen geändert.",
+		"timeRequired": "Ein Zeitpunkt fehlt.",
+		"searchHint": "Label oder Titel des Elements tippen",
+		"editTitle": "{{label}} bearbeiten"
+	},
+	"page": {
+		"title": "Wecker",
+		"new": "Neuer Wecker",
+		"empty": "Keine Wecker in den gewählten Projekten."
+	},
+	"setAlarm": {
+		"title": "Wecker",
+		"button": "Wecker stellen",
+		"dialogTitle": "Wecker für {{label}}"
+	},
+	"counter": {
+		"label": "{{count}} Wecker haben sich gemeldet",
+		"title": "Wecker"
+	},
+	"banner": {
+		"title": "Wecker"
+	},
+	"settings": {
+		"title": "Wecker",
+		"description": "Wecker melden sich, solange der Viewer läuft. Browser-Benachrichtigungen zeigen sie auch, wenn der Tab im Hintergrund ist.",
+		"enable": "Benachrichtigungen erlauben",
+		"permission": {
+			"granted": "Benachrichtigungen sind erlaubt.",
+			"denied": "Benachrichtigungen sind im Browser gesperrt.",
+			"default": "Benachrichtigungen sind noch nicht erlaubt.",
+			"unsupported": "Dieser Browser kennt keine Benachrichtigungen."
+		}
+	}
+}

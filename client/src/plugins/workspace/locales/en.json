@@ -1,0 +1,169 @@
+{
+	"search": {
+		"label": "Search",
+		"placeholder": "Search …",
+		"clear": "Clear search"
+	},
+	"projects": {
+		"title": "Projects",
+		"add": "Add project",
+		"visible": "Show {{name}}",
+		"edit": "Edit {{name}}"
+	},
+	"new": {
+		"button": "New",
+		"project": "Project"
+	},
+	"card": {
+		"create": "New project",
+		"edit": "Project “{{name}}”",
+		"name": "Name",
+		"folder": "Mirror folder",
+		"browse": "Choose …",
+		"mirrorEnabled": "Switch the mirror on",
+		"autoSync": "Sync automatically",
+		"direction": "Direction",
+		"directions": {
+			"both": "Both ways",
+			"to_files": "Into the files only",
+			"to_database": "Into the database only"
+		},
+		"save": "Save",
+		"cancel": "Cancel",
+		"remove": "Remove",
+		"removeTitle": "Remove the project?",
+		"removeMessage_one": "The project holds {{count}} element. It goes to the trash with the project.",
+		"removeMessage_other": "The project holds {{count}} elements. They go to the trash with the project.",
+		"failed": "That did not work."
+	},
+	"folders": {
+		"up": "Up one level",
+		"loading": "loading …",
+		"empty": "No sub-folders",
+		"hasMirror": "holds a mirror",
+		"choose": "Choose this folder"
+	},
+	"links": {
+		"outgoing": "Points to",
+		"incoming": "Pointed to by",
+		"none": "none",
+		"deleted": "deleted",
+		"remove": "Remove the link to {{label}}",
+		"role": "Role",
+		"target": "Search for a target",
+		"noMatch": "Nothing found",
+		"add": "Link",
+		"failed": "Linking did not work.",
+		"roles": {
+			"reference": "Reference",
+			"origin": "Origin",
+			"trigger": "Trigger"
+		}
+	},
+	"tab": {
+		"trash": "Trash"
+	},
+	"delete": {
+		"title": "Delete the element?",
+		"message_one": "The element has {{count}} child. It goes to the trash with it.",
+		"message_other": "The element has {{count}} children. They go to the trash with it.",
+		"confirm": "Move to trash"
+	},
+	"trash": {
+		"empty": "The trash is empty.",
+		"count_one": "{{count}} element",
+		"count_other": "{{count}} elements",
+		"selectAll": "Select all",
+		"select": "Select {{label}}",
+		"restore": "Restore",
+		"purge": "Delete for good",
+		"restoreOne": "Restore {{label}}",
+		"purgeOne": "Delete {{label}} for good",
+		"purgeTitle": "Delete for good?",
+		"purgeMessage_one": "{{count}} element is deleted for good with all its children, data and links. This cannot be undone.",
+		"purgeMessage_other": "{{count}} elements are deleted for good with all their children, data and links. This cannot be undone.",
+		"failed": "That did not work."
+	},
+	"settings": {
+		"title": "Projects",
+		"description": "Mirror and sync per project: the database is the truth, the folder the mirror.",
+		"mode": "Mirror",
+		"modes": {
+			"off": "Off",
+			"manual": "Sync by hand",
+			"auto": "Sync automatically"
+		},
+		"noFolder": "No folder chosen",
+		"lastSync": "Last sync: {{time}}",
+		"neverSynced": "Never synced",
+		"edit": "Edit …",
+		"setup": "Set up the mirror",
+		"sync": "Sync …",
+		"check": "Check …"
+	},
+	"sync": {
+		"title": "Sync: {{name}}",
+		"reload": "Reload",
+		"execute": "Sync",
+		"close": "Close",
+		"failed": "The sync did not work.",
+		"inSync": "in sync",
+		"needsYou": "needs you",
+		"notMirrored": "not mirrored",
+		"auto": "syncs by itself",
+		"paused": "paused: {{reason}}",
+		"reasons": {
+			"missing": "the folder is missing",
+			"unreadable": "the folder cannot be read",
+			"merge_markers": "a file has a git merge conflict",
+			"git_operation": "a git operation is running",
+			"not_configured": "no folder set up",
+			"unknown": "unknown"
+		},
+		"states": {
+			"in_sync": "all equal",
+			"primary_changed": "the database has changes",
+			"mirror_changed": "the files have changes",
+			"both_changed": "both sides have changes",
+			"conflicts": "conflicts wait",
+			"paused": "paused"
+		},
+		"conflicts_one": "{{count}} conflict",
+		"conflicts_other": "{{count}} conflicts",
+		"conflict": {
+			"both_changed": "both sides changed",
+			"both_created": "both sides created",
+			"deleted_in_files": "deleted in the files",
+			"deleted_in_database": "deleted in the database"
+		},
+		"database": "Database",
+		"files": "Files",
+		"choices": {
+			"database": "Database",
+			"files": "Files",
+			"defer": "Later"
+		},
+		"choiceDeletes": "{{choice}} (deletes the entry)",
+		"all": {
+			"database": "All: database",
+			"files": "All: files"
+		},
+		"deletionsApart": "Deletions are not part of “All”: you choose them one by one.",
+		"transfers": "Transfers",
+		"noTransfers": "Nothing to transfer.",
+		"targets": {
+			"database": "to the database",
+			"files": "to the files"
+		},
+		"actions": {
+			"create": "create",
+			"update": "update",
+			"delete": "delete"
+		},
+		"notImported": "{{count}} new entries from the files are not taken over in this direction.",
+		"result": "{{toDatabase}} to the database, {{toFiles}} to the files.",
+		"created": "Created: {{labels}}.",
+		"conflictsLeft_one": "{{count}} conflict stays open.",
+		"conflictsLeft_other": "{{count}} conflicts stay open."
+	}
+}

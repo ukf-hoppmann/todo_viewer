@@ -53,7 +53,9 @@ export function fakeWorkspaceBackend(
 		/** The areas by project, for `GET backlog/areas`. */
 		areas?: Record<string, string[]>;
 		/** Answers a request itself (return `undefined` to let the fake answer): for errors and special cases. */
-		respond?: (request: { method: string; path: string; body?: unknown }) => Response | undefined;
+		respond?: (request: { method: string; path: string; body?: unknown; query: URLSearchParams }) => Response | undefined;
+		/** More plugin APIs for the store (e.g. `notes`). */
+		extraApis?: Array<{ id: string; api: unknown }>;
 		/** The elements in the trash. */
 		trash?: TrashedElement[];
 		/** Number of children by element `uid`: deleting such an element needs `cascade`. */
@@ -78,7 +80,7 @@ export function fakeWorkspaceBackend(
 		const body = request.method === "GET" || request.method === "DELETE" ? undefined : ((await request.json()) as Record<string, unknown>);
 		requests.push({ method: request.method, path, query: searchParams, body });
 
-		const custom = options.respond?.({ method: request.method, path, body });
+		const custom = options.respond?.({ method: request.method, path, body, query: searchParams });
 		if (custom) return custom;
 		const oneDocument = /^backlog\/items\/([^/]+)\/documents\/([^/]+)$/.exec(path);
 		if (oneDocument && request.method === "GET") {
@@ -213,6 +215,7 @@ export function fakeWorkspaceBackend(
 		active: () => [
 			{ id: "workspace", definition: { i18n: { de: {}, en: {} }, api: workspaceApi } },
 			{ id: "backlog", definition: { i18n: { de: {}, en: {} }, api: backlogApi } },
+			...(options.extraApis ?? []).map((entry) => ({ id: entry.id, definition: { i18n: { de: {}, en: {} }, api: entry.api } })),
 		],
 		statuses: () => [],
 	} as unknown as PluginRegistry;

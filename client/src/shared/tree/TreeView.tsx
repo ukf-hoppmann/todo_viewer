@@ -124,6 +124,7 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 						}}
 						data-testid={sharedTestIds.treeNode(node.id)}
 						data-dashed={node.dashed ? "true" : undefined}
+						data-area={node.area}
 						draggable={dragEnabled}
 						onClick={() => onSelect(node.id)}
 						onFocus={() => setFocusId(node.id)}
@@ -167,10 +168,11 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 							minHeight: 32,
 							cursor: "pointer",
 							outline: "none",
-							bgcolor: selected ? "action.selected" : "transparent",
+							bgcolor: selected ? "action.selected" : node.area === 1 ? "action.hover" : "transparent",
 							opacity: dragId === node.id ? 0.5 : node.dashed ? 0.7 : 1,
 							border: node.dashed ? "1px dashed" : "1px solid transparent",
 							borderColor: node.dashed ? "text.disabled" : "transparent",
+							...(node.area ? { borderLeft: "3px solid", borderLeftColor: node.area === 1 ? "primary.main" : "text.disabled" } : {}),
 							boxShadow: marker === "inside" ? (theme) => `inset 0 0 0 2px ${theme.palette.primary.main}` : "none",
 							"&:hover, &:focus-visible": { bgcolor: selected ? "action.selected" : "action.hover" },
 							"&:focus-visible": { outline: (theme) => `1px solid ${theme.palette.primary.main}` },
@@ -196,6 +198,15 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 						) : (
 							<Box sx={{ width: 28, flexShrink: 0 }} />
 						)}
+						{node.tag && (
+							<Typography
+								variant="caption"
+								data-testid={sharedTestIds.treeTag(node.id)}
+								sx={{ flexShrink: 0, px: 0.5, borderRadius: 0.5, border: 1, borderColor: node.tagColor ?? "divider", color: node.tagColor ?? "text.secondary" }}
+							>
+								{node.tag}
+							</Typography>
+						)}
 						{node.statusColor && <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: node.statusColor, flexShrink: 0 }} />}
 						{node.badge && (
 							<Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
@@ -206,6 +217,11 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 							{node.label}
 						</Typography>
 						{node.progress && <ProgressRing done={node.progress.done} total={node.progress.total} />}
+						{node.count !== undefined && (
+							<Typography variant="caption" color="text.secondary" data-testid={sharedTestIds.treeCount(node.id)} sx={{ flexShrink: 0 }}>
+								{node.count}
+							</Typography>
+						)}
 						{actions && (
 							<Box className="tree-actions" data-testid={sharedTestIds.treeActions(node.id)} onClick={(event) => event.stopPropagation()} sx={{ display: "flex" }}>
 								{actions(node)}

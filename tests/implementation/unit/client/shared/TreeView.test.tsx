@@ -83,6 +83,21 @@ describe("TreeView: structure", () => {
 		}
 	});
 
+	it("shows a tag, a count and the area of a node", () => {
+		flat.push({ id: "tag", parentId: "e2", label: "Mit Tag", tag: "Topic", count: 4, area: 1 } as (typeof flat)[number]);
+		try {
+			render(<Harness expanded={["e2"]} />);
+
+			expect(screen.getByTestId(sharedTestIds.treeTag("tag")).textContent).toBe("Topic");
+			expect(screen.getByTestId(sharedTestIds.treeCount("tag")).textContent).toBe("4");
+			expect(node("tag").getAttribute("data-area")).toBe("1");
+			expect(node("e2").getAttribute("data-area")).toBeNull();
+			expect(screen.queryByTestId(sharedTestIds.treeCount("e2"))).toBeNull();
+		} finally {
+			flat.pop();
+		}
+	});
+
 	it("opens and closes with the arrow button without selecting", () => {
 		const onSelect = vi.fn();
 		render(<Harness onSelect={onSelect} />);

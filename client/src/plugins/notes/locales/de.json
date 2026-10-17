@@ -1,0 +1,134 @@
+{
+	"tab": {
+		"notes": "Notes"
+	},
+	"create": {
+		"note": "Neue Note",
+		"topic": "Neues Topic"
+	},
+	"filter": {
+		"status": "Status"
+	},
+	"status": {
+		"waiting": "Wartet",
+		"due": "Fällig",
+		"snoozed": "Zurückgestellt",
+		"done": "Erledigt",
+		"dropped": "Verworfen",
+		"promoted": "Befördert"
+	},
+	"empty": "Keine Notes in den gewählten Projekten und Filtern.",
+	"collapse": {
+		"collapse": "Topics zuklappen",
+		"expand": "Topics aufklappen"
+	},
+	"marking": "Erweiterte Markierung",
+	"archivedTopics": "Archivierte Topics zeigen",
+	"resetFilters": "Filter zurücksetzen",
+	"project": {
+		"newNote": "Neue Note",
+		"newTopic": "Neues Topic"
+	},
+	"field": {
+		"status": "Status",
+		"topic": "Topic",
+		"reviewAt": "Prüf-Datum",
+		"body": "Langtext",
+		"summary": "Kurzfassung",
+		"name": "Name",
+		"dueAt": "Termin",
+		"documents": "Dokumente",
+		"links": "Verknüpfungen"
+	},
+	"detail": {
+		"choose": "Eine Note im Baum wählen.",
+		"failed": "Die Note lässt sich nicht laden.",
+		"deleted": "im Papierkorb",
+		"archivedWithTopic": "mit dem Topic archiviert",
+		"noTopic": "Ohne Topic"
+	},
+	"action": {
+		"edit": "Bearbeiten",
+		"done": "Erledigen",
+		"dropped": "Verwerfen",
+		"snooze": "Zurückstellen",
+		"keep": "Behalten",
+		"delete": "In den Papierkorb",
+		"restore": "Zurückholen",
+		"large": "Großansicht"
+	},
+	"form": {
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"close": "Schließen",
+		"reload": "Aktuellen Stand laden",
+		"conflict": "Die Note wurde inzwischen geändert.",
+		"reviewHint": "Ohne Datum: heute plus Prüf-Intervall.",
+		"editTitle": "{{label}} bearbeiten",
+		"createTitle": "Note anlegen"
+	},
+	"topic": {
+		"editTitle": "{{label}} bearbeiten",
+		"createTitle": "Topic anlegen",
+		"newNote": "Neue Note in diesem Topic",
+		"newSubtopic": "Neues Unter-Topic",
+		"edit": "Umbenennen / Termin",
+		"move": "Verschieben …",
+		"archive": "Archivieren …",
+		"delete": "Löschen …",
+		"reactivate": "Wieder aktivieren"
+	},
+	"move": {
+		"title": "{{label}} verschieben",
+		"parent": "Neues Parent-Topic",
+		"noTopicHint": "Leer lassen für „Ohne Topic“ (direkt am Projekt)."
+	},
+	"choice": {
+		"deleteTitle": "{{label}} löschen",
+		"archiveTitle": "{{label}} archivieren",
+		"deleteEmpty": "Das Topic ist leer und kommt in den Papierkorb.",
+		"archiveEmpty": "Das Topic ist leer und wird archiviert.",
+		"counts": "Das Topic enthält {{active}} aktive und {{archived}} archivierte Notes sowie {{topics}} Unter-Topics.",
+		"keepArchived": "Archivierte Notes behalten (sie wandern ins Topic „Archiviert“ des Projekts)",
+		"moveActive": "Aktive Notes verschieben",
+		"target": "Zieltopic (leer: ohne Topic)",
+		"deleteRest": "Was nicht gewählt ist, kommt mit dem Topic in den Papierkorb.",
+		"archiveRest": "Was nicht gewählt ist, wird mit dem Topic archiviert.",
+		"ok": "OK"
+	},
+	"snooze": {
+		"title": "{{label}} zurückstellen",
+		"until": "Bis",
+		"hint": "Ohne Datum: heute plus Prüf-Intervall."
+	},
+	"documents": {
+		"none": "Noch keine Notizen oder Specs.",
+		"addEntry": "＋ Notiz-Eintrag",
+		"addSpec": "＋ Spec anlegen",
+		"topic": "Thema",
+		"discussed": "Besprochen",
+		"decided": "Entschieden",
+		"open": "Offen",
+		"onePerLine": "Ein Stichpunkt pro Zeile",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md oder {{label}}_spec_<thema>.md",
+		"large": "Großansicht",
+		"conflict": "Das Dokument wurde inzwischen geändert.",
+		"showCurrent": "Aktuellen Stand zeigen",
+		"saveAnyway": "Trotzdem speichern",
+		"currentState": "aktueller Stand",
+		"toc": "Inhaltsverzeichnis"
+	},
+	"due": {
+		"label": "{{count}} fällige Notes",
+		"title": "Fällige Notes"
+	},
+	"settings": {
+		"title": "Notes",
+		"reviewDays": "Prüf-Intervall (Tage)",
+		"reviewDaysHint": "Nach so vielen Tagen kommt eine neue oder behaltene Note wieder auf den Tisch.",
+		"maxDepth": "Größte Topic-Tiefe",
+		"maxDepthHint": "Bereits tiefer liegende Topics bleiben, wie sie sind.",
+		"saved": "Gespeichert."
+	}
+}

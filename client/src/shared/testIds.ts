@@ -7,6 +7,8 @@ export const sharedTestIds = {
 	treeToggle: (id: string) => `shared.tree-toggle.${id}`,
 	/** The hover actions of a node: `shared.tree-actions.<node id>`. */
 	treeActions: (id: string) => `shared.tree-actions.${id}`,
+	treeTag: (id: string) => `shared.tree-tag.${id}`,
+	treeCount: (id: string) => `shared.tree-count.${id}`,
 	/** The drop marker on a node: `shared.tree-drop.<node id>.<position>`. */
 	treeDrop: (id: string, position: string) => `shared.tree-drop.${id}.${position}`,
 	progressRing: "shared.progress-ring",

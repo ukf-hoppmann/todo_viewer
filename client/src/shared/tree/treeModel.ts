@@ -11,6 +11,13 @@ export interface TreeNode {
 	dashed?: boolean;
 	/** Done and total of the children, drawn as a `ProgressRing`. */
 	progress?: { done: number; total: number };
+	/** A number at the right of the row, e.g. the open notes below a topic. */
+	count?: number;
+	/** A small word before the label, e.g. `Topic` or `Note`; `tagColor` colors it. */
+	tag?: string;
+	tagColor?: string;
+	/** Shades the row as part of the area of a topic of this level (1 or 2): a tint, and at level 1 or 2 a colored left edge. */
+	area?: 1 | 2;
 	children: TreeNode[];
 }
 

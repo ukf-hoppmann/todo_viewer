@@ -23,3 +23,22 @@
 ### Open
 
 - Frage 29 (Dokument-Bausteine zwischen Plugins) und Frage 30 (Wiederherstellen aus dem Papierkorb) stehen in `STORY-060`.
+
+## 2026-10-17 — Umgesetzt und geprüft (Cloud-Sitzung)
+
+### Discussed
+
+- Umsetzung wie geplant: Server `viewer/plugins/notes/` (Domäne `model`, `lifecycle`, `topics`, `documents`; Anwendung `notes`, `topics`, `documents`, `settings`, `operations`; Infrastruktur Migration v1 und SQLite-Repositories), Client `client/src/plugins/notes/`; der gemeinsame `TreeView` bekam `tag`, `count` und `area`. Beschreibung in `docs/techdocs/neubau-server.md` und `neubau-client.md`.
+- Abweichungen von der Spec (alle klein): `notes_topics` hat zusätzlich die Spalte `system` für das neutrale Topic „Archiviert“ (nicht löschbar); der Auswahldialog beim Löschen und Archivieren ist eine Operation mit Wahl statt zweier Operationen; ein Topic zu wählen zeigt nur den Baum, das Detail gehört den Notes.
+- Im echten Browser (Chromium gegen laufenden Server und Vite, temporäre Datenbank) geprüft: Baum mit Zählern, Fällig-Zähler und Tab-Titel, Drag & Drop einer Note in ein Topic (persistiert), Archivieren-Dialog mit Zahlen und Wirkung.
+
+### Decided
+
+- Abschlusskriterien geprüft: (1) Datenmodell mit festen Status, Topics mit Tiefenbegrenzung, Dokumenten je Note (`test_topic_rules.py`, `test_notes_repository.py`, `test_note_flow.py`); (2) Baum mit Hervorhebung, Zählern, fälligen zuerst und Hover-Aktionen (`NotesPage.test.tsx`, `model.test.ts`, `TreeView.test.tsx`); (3) Detail mit Aktionen Bearbeiten, Erledigen, Verwerfen, Zurückstellen, Behalten, Löschen, Großansicht (`NoteDetail.test.tsx`); (4) Archivieren, Reaktivieren und Löschen mit Auswahldialog (`test_topic_flow.py`, `NotesPage.test.tsx`); (5) Drag & Drop für Notes und Topics (`NotesPage.test.tsx`, Regel in `model.test.ts`); (6) Fällig-Zähler in der Kopfzeile (`NotesWidgets.test.tsx`); (7) Operationen über API und MCP (`test_note_flow.py`, `test_topic_flow.py`); (8) Tests grün.
+- `scripts/check-next.sh` und `scripts/check.sh` grün. Status: `Awaiting confirmation`.
+
+### Open
+
+- Das Befördern, die Auslöser und die Hinweise (STORY-078) und der Spiegel (STORY-079) fehlen noch: eine Note kennt bisher nur Prüfdatum und Status.
+- Nicht geprüft: sehr große Bäume (Leistung), Bedienung mit Touch statt Maus beim Ziehen.
+- Fragen 29 und 30 stehen in `STORY-060`.

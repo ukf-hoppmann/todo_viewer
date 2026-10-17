@@ -9,6 +9,7 @@ export const activePluginIds: readonly string[] = [
 	"layout-header-sidebar",
 	"workspace",
 	"backlog",
+	"notes",
 	...(import.meta.env.DEV ? ["example"] : []),
 ];
 

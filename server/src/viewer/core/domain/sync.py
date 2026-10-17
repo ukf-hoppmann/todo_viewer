@@ -57,6 +57,10 @@ class MirrorEntry:
     refs: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     uid: str | None = None
     placeholder: str | None = None
+    #: Datei und Zeile, aus der der Codec den Eintrag gelesen hat (für Meldungen); nicht Teil des Vergleichs.
+    source: tuple[str, int] | None = field(default=None, compare=False)
+    #: Zeile je Feld oder Verweis (für Meldungen); nicht Teil des Vergleichs.
+    source_lines: Mapping[str, int] = field(default_factory=dict, compare=False)
 
     @property
     def key(self) -> str:
@@ -145,6 +149,9 @@ def compute_plan(
             if db.hash == fl.hash:
                 if known != db.hash:
                     adopt[uid] = db.hash
+                if fl.label is not None and db.label is not None and fl.label != db.label:
+                    # nur die Anzeige weicht ab (z. B. Typwechsel in der Datenbank): die Datei zieht nach
+                    intents.append(Intent("files", "update", db))
             elif known is None:
                 conflicts.append(Conflict("both_created", uid, db.label, db, fl))
             elif known == db.hash:

@@ -126,7 +126,9 @@ class MemoryParticipant:
         known.update(self.history)
         return {label: known[label] for label in labels if label in known}
 
-    def assign_labels(self, project: str, entries: Sequence[MirrorEntry], tx: Transaction) -> Mapping[str, str]:
+    def assign_labels(
+        self, project: str, entries: Sequence[MirrorEntry], tx: Transaction, taken: Collection[str] = ()
+    ) -> Mapping[str, str]:
         return {str(e.placeholder): self._next_label(e.kind) for e in entries}
 
     def apply(self, project: str, changes: SyncChanges, tx: Transaction) -> None:

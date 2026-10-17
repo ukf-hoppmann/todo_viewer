@@ -93,8 +93,13 @@ class SyncParticipant(Protocol):
         """Bildet bekannte Labels (auch frühere) auf das aktuelle Label ab; unbekannte fehlen im Ergebnis."""
         ...
 
-    def assign_labels(self, project: str, entries: Sequence[MirrorEntry], tx: Transaction) -> Mapping[str, str]:
-        """Vergibt für neue Einträge (mit `placeholder`) das nächste freie Label: Platzhalter → Label."""
+    def assign_labels(
+        self, project: str, entries: Sequence[MirrorEntry], tx: Transaction, taken: Collection[str] = ()
+    ) -> Mapping[str, str]:
+        """Vergibt für neue Einträge (mit `placeholder`) das nächste freie Label: Platzhalter → Label.
+
+        `taken` sind Labels, die dieselbe Synchronisierung mit ihrer `uid` aus den Dateien anlegt; sie sind noch nicht
+        in der Datenbank, dürfen aber nicht vergeben werden."""
         ...
 
     def apply(self, project: str, changes: SyncChanges, tx: Transaction) -> None:
@@ -385,7 +390,7 @@ class SyncService:
             self._backups.create("sync")
             placeholder_labels, new_uids = self._write_database(project, snapshot, to_database)
         if to_database or to_files:
-            self._write_files(project, snapshot, to_database, to_files, new_uids)
+            self._write_files(project, snapshot, to_database, to_files, new_uids, placeholder_labels)
         after = self._remember(project)
         return SyncResult(
             project=project,
@@ -415,7 +420,12 @@ class SyncService:
                 fresh = [e for i, intent, e in prepared if i == index and intent.entry.uid is None]
                 if not fresh:
                     continue
-                labels = mirror.participant.assign_labels(project, fresh, tx)
+                taken = [
+                    str(e.label)
+                    for i, intent, e in prepared
+                    if i == index and intent.action == "create" and e.label is not None and not intent.is_deletion
+                ]
+                labels = mirror.participant.assign_labels(project, fresh, tx, taken)
                 missing = sorted(str(e.placeholder) for e in fresh if e.placeholder not in labels)
                 if missing:
                     raise InvalidInput(f"Kein Label vergeben für: {', '.join(missing)}", details={"missing": missing})
@@ -446,9 +456,12 @@ class SyncService:
         to_database: Sequence[Intent],
         to_files: Sequence[Intent],
         new_uids: Mapping[str, str],
+        placeholder_labels: Mapping[str, str],
     ) -> None:
         """Schreibt die Dateien aus dem Stand der Datenbank nach dem Commit, mit den beim Lesen erfassten Versionen."""
-        after = {e.uid: e for entries in (m.participant.load(project) for m in self._mirrors) for e in entries}
+        loaded = [e for entries in (m.participant.load(project) for m in self._mirrors) for e in entries]
+        after = {e.uid: e for e in loaded}
+        by_label = {(e.kind, e.label): e for e in loaded}
         raw = {e.key: e for entries in snapshot.raw_files for e in entries}
         upserts: dict[int, dict[str, MirrorEntry]] = defaultdict(dict)
         removed: dict[int, list[MirrorEntry]] = defaultdict(list)
@@ -464,8 +477,12 @@ class SyncService:
             index = snapshot.owner_of[intent.entry.key]
             uid = intent.entry.uid or new_uids[str(intent.entry.placeholder)]
             fresh = after.get(uid)
+            if fresh is None and intent.entry.placeholder is not None:
+                # der Teilnehmer darf die `uid` neuer Einträge selbst bilden (z. B. Dokumente): dann gilt das Label
+                fresh = by_label.get((intent.entry.kind, placeholder_labels.get(intent.entry.placeholder)))
             if fresh is None:
                 continue
+            uid = str(fresh.uid)
             written = raw.get(intent.entry.key)
             if intent.entry.uid is None or written is None or _differs_in_display(written, fresh):
                 # neue Einträge und Einträge mit Platzhalter oder altem Label; `placeholder` nennt, was in den Dateien

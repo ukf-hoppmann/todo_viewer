@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from datetime import datetime
 
 from viewer.core.application.ports import Clock, Transaction
-from viewer.core.domain.errors import NotFound
+from viewer.core.domain.errors import InvalidInput, NotFound
 from viewer.core.domain.plugin import ElementKind
 from viewer.plugins.workspace.application.ports import ElementStore, ProjectStore
-from viewer.plugins.workspace.domain.model import Element, UnknownElementKind, format_label
+from viewer.plugins.workspace.domain.model import Element, UnknownElementKind, format_label, parse_label
 
 #: Erzeugt eine neue `uid`; die Composition Root gibt `uuid4`, Tests eine feste Folge.
 NewUid = Callable[[], str]
@@ -39,6 +40,35 @@ class RegistryService:
         self._elements.add_history(tx, project_uid, label, element.uid)
         return element
 
+    def reserve_label(self, tx: Transaction, project_uid: str, kind: str) -> str:
+        return self._next_label(tx, project_uid, kind)
+
+    def note_labels(self, tx: Transaction, project_uid: str, labels: Sequence[str]) -> None:
+        for label in labels:
+            parsed = parse_label(label)
+            if parsed is not None:
+                self._elements.raise_counter(tx, project_uid, parsed[0], parsed[1])
+
+    def register_as(
+        self, tx: Transaction, project_uid: str, kind: str, uid: str, label: str, title: str = ""
+    ) -> Element:
+        if self._projects.get(tx, project_uid) is None:
+            raise NotFound(f"Projekt {project_uid} gibt es nicht", details={"project": project_uid})
+        prefix = self._elements.kind_prefix(tx, kind)
+        if prefix is None:
+            raise UnknownElementKind(f"Der Elementtyp '{kind}' ist nicht angemeldet", details={"kind": kind})
+        parsed = parse_label(label)
+        if parsed is None or parsed[0] != prefix:
+            raise InvalidInput(f"'{label}' ist kein Label des Typs {kind}", details={"label": label, "kind": kind})
+        if self._elements.find_uid_by_label(tx, project_uid, label) is not None:
+            raise InvalidInput(f"Das Label {label} gab es im Projekt schon", details={"label": label})
+        self._elements.raise_counter(tx, project_uid, prefix, parsed[1])
+        now = self._clock.now()
+        element = Element(uid, project_uid, kind, label, 1, now, now, title=title.strip())
+        self._elements.insert(tx, element)
+        self._elements.add_history(tx, project_uid, label, uid)
+        return element
+
     def relabel(self, tx: Transaction, uid: str, new_kind: str) -> Element:
         element = self._require(tx, uid)
         if element.kind == new_kind:
@@ -58,10 +88,10 @@ class RegistryService:
     def bump_revision(self, tx: Transaction, uid: str, expected: int) -> int:
         return self._elements.bump_revision(tx, uid, expected, self._clock.now())
 
-    def mark_deleted(self, tx: Transaction, uid: str) -> Element:
+    def mark_deleted(self, tx: Transaction, uid: str, at: datetime | None = None) -> Element:
         now = self._clock.now()
         self._require(tx, uid)
-        self._elements.set_deleted(tx, uid, now, now)
+        self._elements.set_deleted(tx, uid, at or now, now)
         return self._require(tx, uid)
 
     def restore(self, tx: Transaction, uid: str) -> Element:

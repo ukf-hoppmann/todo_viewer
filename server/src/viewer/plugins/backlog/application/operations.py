@@ -238,7 +238,10 @@ def document_out(document: Document) -> DocumentOut:
 class BacklogServices:
     """Die Dienste des Plugins; `repository` ist auch für Tests und für andere Teile des Backlogs offen."""
 
-    def __init__(self, items: ItemService, repository: Any, editing: EditService, documents: DocumentService) -> None:
+    def __init__(
+        self, items: ItemService, repository: Any, editing: EditService, documents: DocumentService, participant: Any
+    ) -> None:
+        self.participant = participant
         self.items = items
         self.repository = repository
         self.editing = editing

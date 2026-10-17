@@ -319,7 +319,7 @@ def test_deleted_in_database_can_delete_the_file_entry_or_bring_it_back(rig: Rig
     for choice, flag in (("database", True), ("files", False)):
         rig2 = rig
         rig2.db.rows.clear()
-        rig2.db.add(U1, "task", "Eins")
+        rig2.db.add(U1, "task", "Eins", label="TASK-001")  # dasselbe Label wie in der Datei: sonst zieht die Datei nach
         rig2.write("# Items\n\n" + line("TASK-001", U1, "task", "Eins"))
         rig2.state.hashes.clear()
         rig2.sync()

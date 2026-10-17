@@ -183,3 +183,26 @@ def test_placeholders_are_replaced_in_refs_of_all_entries_but_not_in_other_field
     new_child, same = substitute_placeholders([child, untouched], {"NEW-x": "STORY-070", "NEW-y": "TASK-050"})
     assert new_child.refs == {"parent": ("STORY-070",), "deps": ("TASK-001", "TASK-050")}
     assert same is untouched
+
+
+U1 = "00000000-0000-0000-0000-000000000001"
+
+
+def test_a_label_that_differs_only_in_display_makes_the_file_follow_without_a_conflict() -> None:
+    database = entry(U1, "t", "TASK-007")  # nach einem Typwechsel in der Datenbank
+    files = entry(U1, "t", "STORY-001")  # in der Datei steht noch das alte Label; Inhalt und Hash gleich
+    base = {U1: database.hash}
+
+    plan = compute_plan([database], [files], base)
+
+    assert plan.conflicts == () and [(i.target, i.action, i.entry.label) for i in plan.intents] == [
+        ("files", "update", "TASK-007")
+    ]
+
+
+def test_the_label_drift_is_not_written_when_the_direction_only_goes_to_the_database() -> None:
+    plan = compute_plan(
+        [entry(U1, "t", "TASK-007")], [entry(U1, "t", "STORY-001")], {U1: entry(U1).hash}, "to_database"
+    )
+
+    assert plan.intents == () and len(plan.skipped) == 1

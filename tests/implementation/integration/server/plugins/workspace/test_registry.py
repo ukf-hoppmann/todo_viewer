@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from viewer.core.domain.errors import NotFound, VersionConflict
+from viewer.core.domain.errors import InvalidInput, NotFound, VersionConflict
 from viewer.plugins.workspace.domain.model import UnknownElementKind
 from workspace_env import Env
 
@@ -93,3 +93,53 @@ def test_browse_folders_lists_sub_folders_and_marks_todo_folders(env: Env) -> No
     assert body["path"] == str(env.tmp_path.resolve())
     assert [d["name"] for d in body["folders"]] == ["docs", "plain"]
     assert [d["has_mirror"] for d in body["folders"]] == [True, False]
+
+
+def test_a_label_can_be_reserved_and_an_element_created_with_a_given_uid_and_label(env: Env) -> None:
+    project = str(env.general()["uid"])
+
+    reserved = env.kinds.run(lambda registry, tx: registry.reserve_label(tx, project, "task"))
+    element = env.kinds.run(
+        lambda registry, tx: registry.register_as(tx, project, "story", "u-1", "STORY-007", "Titel")
+    )
+    after = _register(env, project, "story")
+    next_task = _register(env, project, "task")
+
+    assert reserved == "TASK-001" and next_task.label == "TASK-002"  # die Reservierung wird nie wieder vergeben
+    assert (element.uid, element.label, element.title) == ("u-1", "STORY-007", "Titel")
+    assert after.label == "STORY-008"  # der Zähler zog mit dem vorgegebenen Label nach
+    found = env.kinds.run(lambda registry, tx: registry.find_by_label(tx, project, "STORY-007"))
+    assert found is not None and found.uid == "u-1"
+
+
+def test_register_as_refuses_a_label_of_another_type_a_label_in_use_and_an_unknown_project(env: Env) -> None:
+    project = str(env.general()["uid"])
+    env.kinds.run(lambda registry, tx: registry.register_as(tx, project, "task", "u-1", "TASK-005"))
+
+    with pytest.raises(InvalidInput):
+        env.kinds.run(lambda registry, tx: registry.register_as(tx, project, "task", "u-2", "STORY-001"))
+    with pytest.raises(InvalidInput):
+        env.kinds.run(lambda registry, tx: registry.register_as(tx, project, "task", "u-3", "TASK-005"))
+    with pytest.raises(NotFound):
+        env.kinds.run(lambda registry, tx: registry.register_as(tx, "kein-projekt", "task", "u-4", "TASK-009"))
+
+
+def test_noted_labels_raise_the_counters_without_creating_anything(env: Env) -> None:
+    project = str(env.general()["uid"])
+
+    env.kinds.run(lambda registry, tx: registry.note_labels(tx, project, ["TASK-010", "STORY-003", "kein-label"]))
+
+    assert _register(env, project, "task").label == "TASK-011"
+    assert _register(env, project, "story").label == "STORY-004"
+
+
+def test_an_element_can_be_deleted_at_a_given_time(env: Env) -> None:
+    from datetime import UTC, datetime
+
+    project = str(env.general()["uid"])
+    task = _register(env, project, "task")
+    at = datetime(2026, 10, 10, tzinfo=UTC)
+
+    deleted = env.kinds.run(lambda registry, tx: registry.mark_deleted(tx, task.uid, at))
+
+    assert deleted.deleted_at == at

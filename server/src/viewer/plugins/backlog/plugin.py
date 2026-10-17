@@ -6,6 +6,7 @@ from typing import Any
 
 from viewer.core.application.plugin import PluginContext, PluginDefinition
 from viewer.core.application.ports import Transaction
+from viewer.core.application.sync import MirrorBinding
 from viewer.core.domain.errors import DomainError
 from viewer.core.domain.plugin import ElementKind
 from viewer.plugins.backlog.application.documents import DocumentService
@@ -15,6 +16,8 @@ from viewer.plugins.backlog.application.operations import OPERATIONS, BacklogSer
 from viewer.plugins.backlog.infrastructure.database.documents import SqlDocumentRepository
 from viewer.plugins.backlog.infrastructure.database.repository import SqlItemRepository
 from viewer.plugins.backlog.infrastructure.database.schema import MIGRATIONS
+from viewer.plugins.backlog.infrastructure.mirror.codec import BacklogCodec
+from viewer.plugins.backlog.infrastructure.mirror.participant import BacklogParticipant
 from viewer.plugins.workspace.domain.model import Element
 
 ELEMENT_KINDS = (ElementKind("epic", "EPIC"), ElementKind("story", "STORY"), ElementKind("task", "TASK"))
@@ -49,7 +52,8 @@ def _build(context: PluginContext) -> BacklogServices:
     document_service = DocumentService(
         items, repository, documents, workspace.registry, context.database, context.clock, context.events
     )
-    return BacklogServices(items, repository, editing, document_service)
+    participant = BacklogParticipant(repository, documents, workspace.registry, context.database, context.clock)
+    return BacklogServices(items, repository, editing, document_service, participant)
 
 
 plugin = PluginDefinition(
@@ -59,4 +63,5 @@ plugin = PluginDefinition(
     migrations=MIGRATIONS,
     element_kinds=ELEMENT_KINDS,
     operations=OPERATIONS,
+    mirror=lambda services: MirrorBinding("backlog", BacklogCodec(), services.participant),
 )

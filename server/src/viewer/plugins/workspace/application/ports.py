@@ -35,7 +35,9 @@ class ElementRegistry(Protocol):
         """Erhöht die `revision`, wenn sie `expected` ist; sonst `version_conflict`. Gibt die neue zurück."""
         ...
 
-    def mark_deleted(self, tx: Transaction, uid: str) -> Element: ...
+    def mark_deleted(self, tx: Transaction, uid: str, at: datetime | None = None) -> Element:
+        """Legt das Element in den Papierkorb (`at`: Löschzeitpunkt, sonst jetzt)."""
+        ...
 
     def restore(self, tx: Transaction, uid: str) -> Element: ...
 
@@ -45,6 +47,22 @@ class ElementRegistry(Protocol):
 
     def set_title(self, tx: Transaction, uid: str, title: str) -> None:
         """Setzt den Anzeigetitel (für Suche und Verknüpfungen); das Fach-Plugin ruft das bei jeder Titeländerung."""
+        ...
+
+    def reserve_label(self, tx: Transaction, project_uid: str, kind: str) -> str:
+        """Vergibt das nächste freie Label des Typs, ohne ein Element anzulegen (für den Sync: das Element folgt
+        mit `register_as`). Das Label wird nie wieder vergeben."""
+        ...
+
+    def note_labels(self, tx: Transaction, project_uid: str, labels: Sequence[str]) -> None:
+        """Zieht die Zähler nach, ohne etwas anzulegen: Labels, die gleich mit `register_as` entstehen."""
+        ...
+
+    def register_as(
+        self, tx: Transaction, project_uid: str, kind: str, uid: str, label: str, title: str = ""
+    ) -> Element:
+        """Legt ein Element mit vorgegebener `uid` und vorgegebenem Label an (Sync, Datenübernahme); der Zähler des
+        Typs zieht nach, wenn das Label eine höhere Nummer hat."""
         ...
 
     def search(self, tx: Transaction, query: str, limit: int = 50) -> list[Element]:
@@ -145,6 +163,8 @@ class ElementStore(Protocol):
     def search(self, tx: Transaction, query: str, limit: int) -> list[Element]: ...
 
     def list_deleted(self, tx: Transaction, project_uids: Sequence[str] | None, query: str) -> list[Element]: ...
+
+    def raise_counter(self, tx: Transaction, project_uid: str, prefix: str, number: int) -> None: ...
 
     def delete(self, tx: Transaction, uid: str) -> None: ...
 

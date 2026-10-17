@@ -255,10 +255,22 @@ def _apply(folder: Path, change: Change, created_dirs: list[Path]) -> None:
         _atomic_write(target, encode_text(change.text, _read_bytes(target)))
     elif isinstance(change, DeleteFile):
         target.unlink(missing_ok=True)
+        _prune_empty(folder, target.parent)
     elif isinstance(change, RenameFile):
         destination = folder / change.new_path
         _ensure_parent(destination, created_dirs)
         os.replace(target, destination)
+        _prune_empty(folder, target.parent)
+
+
+def _prune_empty(folder: Path, directory: Path) -> None:
+    """Entfernt einen Unterordner, der durch Löschen oder Umbenennen leer wurde (nie den Spiegel-Ordner selbst)."""
+    while directory != folder and folder in directory.parents:
+        try:
+            directory.rmdir()
+        except OSError:
+            return
+        directory = directory.parent
 
 
 def _atomic_write(path: Path, data: bytes) -> None:

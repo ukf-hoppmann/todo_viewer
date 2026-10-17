@@ -72,3 +72,8 @@ class SqlDocumentRepository:
             text("UPDATE backlog_documents SET name = :new WHERE item_uid = :u AND name = :old"),
             {"new": new, "u": item_uid, "old": old},
         )
+
+    def delete(self, tx: Transaction, item_uid: str, name: str) -> None:
+        _conn(tx).execute(
+            text("DELETE FROM backlog_documents WHERE item_uid = :u AND name = :n"), {"u": item_uid, "n": name}
+        )

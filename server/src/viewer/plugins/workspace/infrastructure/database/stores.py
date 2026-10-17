@@ -167,6 +167,15 @@ class SqlElementStore:
         ).one()
         return int(row[0])
 
+    def raise_counter(self, tx: Transaction, project_uid: str, prefix: str, number: int) -> None:
+        conn(tx).execute(
+            text(
+                "INSERT INTO workspace_label_counters(project_uid, prefix, last) VALUES (:p, :x, :n) "
+                "ON CONFLICT(project_uid, prefix) DO UPDATE SET last = MAX(last, :n)"
+            ),
+            {"p": project_uid, "x": prefix, "n": number},
+        )
+
     def insert(self, tx: Transaction, element: Element) -> None:
         conn(tx).execute(
             insert(elements).values(

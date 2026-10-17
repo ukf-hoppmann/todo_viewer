@@ -81,7 +81,9 @@ class SqlParticipant:
         known = {old: current for old, current in rows}
         return {label: known[label] for label in labels if label in known}
 
-    def assign_labels(self, project: str, entries: Sequence[MirrorEntry], tx: Transaction) -> Mapping[str, str]:
+    def assign_labels(
+        self, project: str, entries: Sequence[MirrorEntry], tx: Transaction, taken: Collection[str] = ()
+    ) -> Mapping[str, str]:
         c = _conn(tx)
         result: dict[str, str] = {}
         for entry in entries:

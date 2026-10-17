@@ -62,3 +62,31 @@ def test_concurrent_writers_in_one_process_never_both_win(tmp_path: Path) -> Non
     for t in threads:
         t.join()
     assert sorted(outcomes) == ["MirrorConflict"] * 7 + ["ok"]
+
+
+def test_a_folder_that_a_delete_or_rename_empties_is_removed_but_never_the_mirror_folder(tmp_path: Path) -> None:
+    from viewer.core.domain.files import DeleteFile, RenameFile
+    from viewer.core.infrastructure.files import LocalFileStore
+
+    store = LocalFileStore()
+    (tmp_path / "items" / "A-1").mkdir(parents=True)
+    (tmp_path / "items" / "A-1" / "x.md").write_text("x", encoding="utf-8")
+    (tmp_path / "items" / "B-1").mkdir()
+    (tmp_path / "items" / "B-1" / "y.md").write_text("y", encoding="utf-8")
+    versions = store.read(tmp_path, ["items/**/*.md"]).versions()
+
+    store.write(
+        tmp_path,
+        [RenameFile("items/A-1/x.md", "items/A-2/x.md")],
+        {"items/A-1/x.md": versions["items/A-1/x.md"], "items/A-2/x.md": None},
+    )
+    store.write(tmp_path, [DeleteFile("items/B-1/y.md")], {"items/B-1/y.md": versions["items/B-1/y.md"]})
+
+    assert not (tmp_path / "items" / "A-1").exists() and not (tmp_path / "items" / "B-1").exists()
+    assert (tmp_path / "items" / "A-2" / "x.md").is_file()
+    store.write(
+        tmp_path,
+        [DeleteFile("items/A-2/x.md")],
+        {"items/A-2/x.md": store.read(tmp_path, ["items/**/*.md"]).versions()["items/A-2/x.md"]},
+    )
+    assert tmp_path.is_dir() and not (tmp_path / "items").exists()

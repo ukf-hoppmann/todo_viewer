@@ -97,8 +97,8 @@ export default function NotesPage() {
 	};
 
 	return (
-		<Box sx={{ display: "flex", gap: 2, p: 2, alignItems: "flex-start" }} data-testid={notesTestIds.page}>
-			<Box sx={{ flex: "1 1 50%", minWidth: 0 }}>
+		<Box sx={{ display: "flex", gap: 2, p: 2, alignItems: "stretch", flex: 1, minHeight: 0 }} data-testid={notesTestIds.page}>
+			<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }}>
 				<Box sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap", alignItems: "center" }}>
 					<Button size="small" variant="outlined" disabled={folding.length === 0} onClick={() => state.setAllCollapsed(folding, !allCollapsed)} data-testid={notesTestIds.collapse}>
 						{t(allCollapsed ? "collapse.expand" : "collapse.collapse")}
@@ -159,7 +159,7 @@ export default function NotesPage() {
 					);
 				})}
 			</Box>
-			<Box sx={{ flex: "1 1 50%", minWidth: 0 }}>
+			<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }}>
 				{state.selected && selectedExists && allNotes.some((n) => n.uid === state.selected) ? (
 					<NoteDetail uid={state.selected} />
 				) : (

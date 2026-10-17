@@ -108,7 +108,7 @@ export default function GraphPage() {
 	);
 
 	return (
-		<Box sx={{ display: "flex", gap: 2, p: 2, alignItems: "stretch", height: "calc(100vh - 96px)" }} data-testid={backlogTestIds.graph}>
+		<Box sx={{ display: "flex", gap: 2, p: 2, alignItems: "stretch", flex: 1, minHeight: 0 }} data-testid={backlogTestIds.graph}>
 			<Box sx={{ flex: "1 1 60%", minWidth: 0, display: "flex", flexDirection: "column" }}>
 				<Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, mb: 1 }}>
 					<Typography variant="caption" color="text.secondary" data-testid={backlogTestIds.graphInfo}>

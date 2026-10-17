@@ -34,15 +34,15 @@ export function SubLayout({ header, sidebar, children }: SubLayoutProps) {
 				</Box>
 			)}
 			{sidebar ? (
-				<Box sx={{ display: "flex", gap: 1 }}>
+				<Box sx={{ display: "flex", gap: 1, flexGrow: 1, minHeight: 0 }}>
 					{sidebar}
 					<Divider orientation="vertical" flexItem />
-					<Box data-testid={coreTestIds.content} sx={{ flexGrow: 1, minWidth: 0 }}>
+					<Box data-testid={coreTestIds.content} sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto" }}>
 						{children}
 					</Box>
 				</Box>
 			) : (
-				<Box data-testid={coreTestIds.content}>{children}</Box>
+				<Box data-testid={coreTestIds.content} sx={{ flexGrow: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto" }}>{children}</Box>
 			)}
 		</PageHeaderContext>
 	);

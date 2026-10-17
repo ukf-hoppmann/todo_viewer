@@ -26,7 +26,7 @@ export function RootLayout({ tabs, actions, children }: RootLayoutProps) {
 	const { t } = useTranslation("core");
 
 	return (
-		<Box data-testid={coreTestIds.rootLayout} sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+		<Box data-testid={coreTestIds.rootLayout} sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
 			<AppBar position="sticky" data-testid={coreTestIds.appBar}>
 				<Toolbar>
 					<AppLogo />
@@ -37,7 +37,7 @@ export function RootLayout({ tabs, actions, children }: RootLayoutProps) {
 				</Toolbar>
 			</AppBar>
 			<BannerHost />
-			<Box component="main" aria-label={t("layout.main")} data-testid={coreTestIds.main} sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
+			<Box component="main" aria-label={t("layout.main")} data-testid={coreTestIds.main} sx={{ flexGrow: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 				{children}
 			</Box>
 		</Box>

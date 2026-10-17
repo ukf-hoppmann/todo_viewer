@@ -41,7 +41,7 @@ export function Frame({ tabs, children }: FrameProps) {
 						))}
 					</Box>
 				)}
-				<Box sx={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>{children}</Box>
+				<Box sx={{ flexGrow: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto" }}>{children}</Box>
 			</Box>
 		</RootLayout>
 	);

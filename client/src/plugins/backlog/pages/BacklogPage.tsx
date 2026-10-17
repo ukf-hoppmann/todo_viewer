@@ -33,8 +33,8 @@ export default function BacklogPage() {
 	const scope = useMemo(() => new Set(marked ? [marked.uid] : []), [marked]);
 
 	return (
-		<Box sx={{ display: "flex", gap: 2, p: 2, alignItems: "flex-start" }} data-testid={backlogTestIds.page}>
-			<Box sx={{ flex: "1 1 50%", minWidth: 0 }}>
+		<Box sx={{ display: "flex", gap: 2, p: 2, alignItems: "stretch", flex: 1, minHeight: 0 }} data-testid={backlogTestIds.page}>
+			<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }}>
 				<Box sx={{ display: "flex", gap: 1, mb: 1 }}>
 					{(["Epic", "Story"] as const).map((type) => {
 						const ids = collapsibleIds(items, type, scope);
@@ -92,7 +92,7 @@ export default function BacklogPage() {
 					);
 				})}
 			</Box>
-			<Box sx={{ flex: "1 1 50%", minWidth: 0 }}>
+			<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }}>
 				{state.selected ? (
 					<ItemDetail uid={state.selected} onSelect={state.setSelected} />
 				) : (

@@ -129,7 +129,7 @@ describe("BacklogPage: folding buttons", () => {
 describe("BacklogPage: selection", () => {
 	it("shows the detail panel of the selected item and remembers the selection", async () => {
 		const backend = await renderPage({ documents: { backlog: { hiddenStatuses: [] } } });
-		expect((await screen.findByTestId(ids.detailEmpty)).textContent).toContain("Ein Item");
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
 
 		fireEvent.click(await screen.findByTestId(sharedTestIds.treeNode("e1")));
 

@@ -137,7 +137,7 @@ describe("NotesPage: tree", () => {
 
 	it("shows the detail of the selected note", async () => {
 		await renderPage();
-		expect((await screen.findByTestId(ids.detailEmpty)).textContent).toContain("Eine Note");
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
 
 		fireEvent.click(await screen.findByTestId(sharedTestIds.treeNode("n1")));
 

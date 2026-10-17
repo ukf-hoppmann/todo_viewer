@@ -15,7 +15,6 @@ export const notesTestIds = {
 	topicAction: (action: string, uid: string) => `notes.topic-action.${action}.${uid}`,
 	noteAction: (action: string, uid: string) => `notes.note-action.${action}.${uid}`,
 	detail: "notes.detail",
-	detail: "notes.detail",
 	detailStatus: "notes.detail-status",
 	detailPath: "notes.detail-path",
 	detailReview: "notes.detail-review",

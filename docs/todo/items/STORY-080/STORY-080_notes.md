@@ -47,3 +47,13 @@
 
 - Nicht geprüft: die Wecker-Oberfläche im echten Browser (nur jsdom), echte Browser-Benachrichtigungen.
 - Die Fragen 33 und 34 stehen in `STORY-060`.
+
+## 2026-10-17 — Nachtrag: Prüfung im Browser (Cloud-Sitzung)
+
+### Discussed
+
+- Der gebaute Client (Chromium, Playwright) gegen den Server als Prozess mit synthetischen Daten: Hauptroute `alarms/main` listet einen gemeldeten (`Gemeldet`) und einen wartenden Wecker mit Zeit und Ziel, der Zähler `⏰1` in der Kopfzeile öffnet die Liste mit „Erledigt“ und „Zurückstellen“, das Detail eines Items zeigt „Wecker stellen“ mit dem vorhandenen Wecker; keine Konsolenfehler. Der Wecker feuerte vom Scheduler des Servers von selbst (`Pending` → `Due` nach zwei Sekunden).
+
+### Decided
+
+- Damit ist der Punkt „im echten Browser“ aus dem Eintrag oben erledigt, bis auf echte Browser-Benachrichtigungen (Berechtigung) und das Banner über einen Seitenwechsel hinweg.

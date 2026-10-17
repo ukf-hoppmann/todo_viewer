@@ -409,3 +409,33 @@ def test_the_command_prints_the_report_and_writes_a_log(
     assert "Items Story" in log.read_text(encoding="utf-8") and target.exists()
     assert main(arguments) == 1
     assert "nicht leer" in capsys.readouterr().err
+
+
+def test_a_nameless_project_row_with_the_name_of_another_project_is_merged_into_it(tmp_path: Path) -> None:
+    placeholder = {
+        "id": "Viewer", "name": None, "backend": None, "path": None, "sync_path": None, "mirror_database": False,
+        "mirror_disabled": False, "auto_sync": False, "position": None,
+    }  # fmt: skip
+    note = legacy_db._note("pn1", "NOTE-099", project_id="Viewer", summary="Alte Note")
+    base = legacy_db.content()
+    legacy = legacy_db.build(
+        tmp_path / "todo.db",
+        projects=[*base["projects"], placeholder],
+        notes=[*base["notes"], note],
+        note_counters=[
+            *base["note_counters"],
+            {"project_id": "Viewer", "kind": "note", "last": 99},
+        ],
+    )
+    target = tmp_path / "out" / "viewer.db"
+
+    run(legacy, target)
+
+    db = sqlite3.connect(target)
+    try:
+        assert scalar(db, "SELECT COUNT(*) FROM workspace_projects WHERE name = 'Viewer'") == 1
+        assert scalar(db, "SELECT project_uid FROM workspace_elements WHERE label = 'NOTE-099'") == legacy_db.P_MAIN
+        counter = "SELECT last FROM workspace_label_counters WHERE project_uid = ? AND prefix = 'NOTE'"
+        assert scalar(db, counter, legacy_db.P_MAIN) >= 99
+    finally:
+        db.close()

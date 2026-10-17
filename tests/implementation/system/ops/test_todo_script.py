@@ -1,4 +1,4 @@
-"""`todo.sh` (Neubau) und `todo_old.sh` (alter Viewer, inkl. `next …`) mit einem Ersatz für `docker` und `docker-compose.yml` mit `docker compose config`."""
+"""`todo.sh` (Neubau) und `todo_old.sh` (alter Viewer) mit einem Ersatz für `docker`; die Compose-Datei."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import json
 import shutil
 import stat
 import subprocess
+import urllib.request
 from pathlib import Path
 
 import pytest
@@ -16,6 +17,14 @@ echo "$@" >> "$CALLS"
 """
 
 
+def _answers(url: str) -> bool:
+    try:
+        urllib.request.urlopen(url, timeout=2)  # noqa: S310
+    except OSError:
+        return False
+    return True
+
+
 @pytest.fixture
 def docker(tmp_path: Path) -> Path:
     script = tmp_path / "fake-docker"
@@ -24,7 +33,9 @@ def docker(tmp_path: Path) -> Path:
     return script
 
 
-def todo(docker: Path, tmp_path: Path, *args: str, script: str = "todo_old.sh") -> tuple[subprocess.CompletedProcess[str], list[str]]:
+def todo(
+    docker: Path, tmp_path: Path, *args: str, script: str = "todo_old.sh"
+) -> tuple[subprocess.CompletedProcess[str], list[str]]:
     calls = tmp_path / "calls.txt"
     calls.write_text("", encoding="utf-8")
     result = subprocess.run(
@@ -56,6 +67,8 @@ def test_next_commands_address_only_the_new_service(
 
 
 def test_next_status_shows_the_container_and_says_when_it_does_not_answer(docker: Path, tmp_path: Path) -> None:
+    if _answers("http://localhost:5412/api/core/health"):
+        pytest.skip("auf dieser Maschine läuft der Neubau gerade auf Port 5412")
     result, seen = todo(docker, tmp_path, "next", "status")
 
     assert seen == ["compose ps -a todo-viewer-next"]

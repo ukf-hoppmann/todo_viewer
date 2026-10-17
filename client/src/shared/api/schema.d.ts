@@ -263,6 +263,332 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notes/due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die fälligen Notes (Prüfdatum erreicht) mit Zahl; gleiches Ergebnis wie der Zähler der Kopfzeile */
+        get: operations["notes_due_notes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Topics (mit Zählern) und Notes der Projekte als flache Liste; Filter nach Status (wartet, fällig, zurückgestellt, erledigt, verworfen, befördert) und Text. Projekte und Status komma-getrennt */
+        get: operations["notes_notes_index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Legt eine Note an (Status wartet); das Label vergibt der Server. Pflicht: summary; Prüfdatum ohne Angabe heute + Prüf-Intervall */
+        post: operations["notes_create_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eine Note mit Langtext, Topic-Pfad, Status und Dokumenten; `ref` ist die uid oder ein Label (mit `project`) */
+        get: operations["notes_get_note"];
+        /** Ändert Felder einer Note in Gebrauch mit Versionsprüfung (summary, body, topic, review_at, trigger_mode) */
+        put: operations["notes_update_note"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Dokumente einer Note (Name, Art, Version) */
+        get: operations["notes_list_note_documents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}/documents/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ein Dokument einer Note mit Inhalt und Version */
+        get: operations["notes_get_note_document"];
+        /** Ersetzt ein Dokument in `version` oder legt ein neues an (<LABEL>_notes.md, <LABEL>_spec[_<thema>].md) */
+        put: operations["notes_put_note_document"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen einer Note */
+        post: operations["notes_append_note_entry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Schließt eine Note als erledigt (done) oder verworfen (dropped) ab; sie liegt dann im Archiv */
+        post: operations["notes_finish_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}/keep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Behalten: die Note bleibt, wie sie ist, nur das Prüfdatum rückt um das Prüf-Intervall vor */
+        post: operations["notes_keep_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Holt eine Note aus dem Archiv zurück auf „wartet“ mit neuem Prüfdatum */
+        post: operations["notes_restore_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}/snooze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stellt eine Note zurück auf ein neues Prüfdatum (Standard: heute + Prüf-Intervall) */
+        post: operations["notes_snooze_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Prüf-Intervall (Tage) und größte Topic-Tiefe */
+        get: operations["notes_get_notes_settings"];
+        /** Ändert Prüf-Intervall und größte Topic-Tiefe */
+        put: operations["notes_update_notes_settings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Legt ein Topic an (unter `parent`, sonst an der Wurzel des Projekts); die Tiefe ist begrenzt (Einstellung) */
+        post: operations["notes_create_topic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/topics/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Ändert Name und Termin (`due_at`) eines Topics mit Versionsprüfung */
+        put: operations["notes_update_topic"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/topics/{ref}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archiviert ein Topic samt Unter-Topics. Mit Inhalt braucht es eine Wahl: archivierte Notes behalten, aktive Notes verschieben (`move`) oder mitarchivieren (`archive`) */
+        post: operations["notes_archive_topic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/topics/{ref}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Zahl der Unter-Topics sowie aktiven und archivierten Notes in einem Topic (für den Auswahldialog) */
+        get: operations["notes_topic_content"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/topics/{ref}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Legt ein Topic in den Papierkorb. Mit Inhalt braucht es eine Wahl: archivierte Notes behalten, aktive Notes verschieben (`move`) oder mit löschen (`delete`); nicht Gewähltes geht mit in den Papierkorb */
+        post: operations["notes_delete_topic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/topics/{ref}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hängt ein Topic samt Unter-Topics unter einen anderen Parent (oder zur Wurzel), innerhalb der Tiefe */
+        post: operations["notes_move_topic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/topics/{ref}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aktiviert ein archiviertes Topic samt Unter-Topics wieder; Notes, die nur seinetwegen archiviert waren, kommen zurück */
+        post: operations["notes_reactivate_topic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspace/elements": {
         parameters: {
             query?: never;
@@ -600,6 +926,15 @@ export interface components {
             /** Label */
             label: string | null;
         };
+        /** ContentOut */
+        ContentOut: {
+            /** Active */
+            active: number;
+            /** Archived */
+            archived: number;
+            /** Topics */
+            topics: number;
+        };
         /** CorePutUiStateBody */
         CorePutUiStateBody: {
             /** Document */
@@ -676,6 +1011,26 @@ export interface components {
             updated_at: string;
             /** Version */
             version: number;
+        };
+        /** DueNoteOut */
+        DueNoteOut: {
+            /** Label */
+            label: string;
+            /** Project Uid */
+            project_uid: string;
+            /** Review At */
+            review_at: string | null;
+            /** Summary */
+            summary: string;
+            /** Uid */
+            uid: string;
+        };
+        /** DueOut */
+        DueOut: {
+            /** Count */
+            count: number;
+            /** Notes */
+            notes: components["schemas"]["DueNoteOut"][];
         };
         /** ElementOut */
         ElementOut: {
@@ -871,6 +1226,218 @@ export interface components {
             /** Outgoing */
             outgoing: components["schemas"]["LinkedElement"][];
         };
+        /** NoteIndexOut */
+        NoteIndexOut: {
+            /** Archived */
+            archived: boolean;
+            /** Label */
+            label: string;
+            /** Project Uid */
+            project_uid: string;
+            /** Review At */
+            review_at: string | null;
+            /** Status */
+            status: string;
+            /** Summary */
+            summary: string;
+            /** Topic Uid */
+            topic_uid: string | null;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
+        /** NoteOut */
+        NoteOut: {
+            /** Archived */
+            archived: boolean;
+            /** Body */
+            body: string | null;
+            /** Deleted */
+            deleted: boolean;
+            /** Documents */
+            documents: string[];
+            /** Label */
+            label: string;
+            /** Path */
+            path: components["schemas"]["TopicRef"][];
+            /** Project Uid */
+            project_uid: string;
+            /** Review At */
+            review_at: string | null;
+            /** Status */
+            status: string;
+            /** Stored Status */
+            stored_status: string;
+            /** Summary */
+            summary: string;
+            /** Topic Uid */
+            topic_uid: string | null;
+            /** Trigger Mode */
+            trigger_mode: string;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
+        /** NotesAppendNoteEntryBody */
+        NotesAppendNoteEntryBody: {
+            /** Decided */
+            decided?: string[];
+            /** Discussed */
+            discussed?: string[];
+            /** Open */
+            open?: string[];
+            /** Project */
+            project?: string | null;
+            /** Topic */
+            topic: string;
+        };
+        /** NotesArchiveTopicBody */
+        NotesArchiveTopicBody: {
+            /** Active Notes */
+            active_notes?: string | null;
+            /**
+             * Keep Archived
+             * @default false
+             */
+            keep_archived: boolean;
+            /** Move To */
+            move_to?: string | null;
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesCreateNoteBody */
+        NotesCreateNoteBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project: string;
+        };
+        /** NotesCreateTopicBody */
+        NotesCreateTopicBody: {
+            /** Due At */
+            due_at?: string | null;
+            /** Name */
+            name: string;
+            /** Parent */
+            parent?: string | null;
+            /** Project */
+            project: string;
+        };
+        /** NotesDeleteTopicBody */
+        NotesDeleteTopicBody: {
+            /** Active Notes */
+            active_notes?: string | null;
+            /**
+             * Keep Archived
+             * @default false
+             */
+            keep_archived: boolean;
+            /** Move To */
+            move_to?: string | null;
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesFinishNoteBody */
+        NotesFinishNoteBody: {
+            /** Project */
+            project?: string | null;
+            /** Status */
+            status: string;
+            /** Version */
+            version: number;
+        };
+        /** NotesIndexOut */
+        NotesIndexOut: {
+            /** Notes */
+            notes: components["schemas"]["NoteIndexOut"][];
+            /** Topics */
+            topics: components["schemas"]["TopicOut"][];
+        };
+        /** NotesKeepNoteBody */
+        NotesKeepNoteBody: {
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesMoveTopicBody */
+        NotesMoveTopicBody: {
+            /** Parent */
+            parent?: string | null;
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesPutNoteDocumentBody */
+        NotesPutNoteDocumentBody: {
+            /** Content */
+            content: string;
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** NotesReactivateTopicBody */
+        NotesReactivateTopicBody: {
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesRestoreNoteBody */
+        NotesRestoreNoteBody: {
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesSnoozeNoteBody */
+        NotesSnoozeNoteBody: {
+            /** Project */
+            project?: string | null;
+            /** Review At */
+            review_at?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesUpdateNoteBody */
+        NotesUpdateNoteBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesUpdateNotesSettingsBody */
+        NotesUpdateNotesSettingsBody: {
+            /** Max Topic Depth */
+            max_topic_depth?: number | null;
+            /** Review Days */
+            review_days?: number | null;
+        };
+        /** NotesUpdateTopicBody */
+        NotesUpdateTopicBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
         /** NoticeOut */
         NoticeOut: {
             /** Code */
@@ -971,6 +1538,13 @@ export interface components {
             /** Old Label */
             old_label: string;
         };
+        /** SettingsOut */
+        SettingsOut: {
+            /** Max Topic Depth */
+            max_topic_depth: number;
+            /** Review Days */
+            review_days: number;
+        };
         /** SyncResult */
         SyncResult: {
             /** Conflicts Left */
@@ -1019,6 +1593,50 @@ export interface components {
              * @default 0
              */
             to_files: number;
+        };
+        /** TopicDone */
+        TopicDone: {
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+            /** Uid */
+            uid: string;
+        };
+        /** TopicOut */
+        TopicOut: {
+            /** Archived */
+            archived: boolean;
+            /** Due At */
+            due_at: string | null;
+            /** Due Notes */
+            due_notes: number;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+            /** Open Notes */
+            open_notes: number;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Project Uid */
+            project_uid: string;
+            /** System */
+            system: boolean;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
+        /** TopicRef */
+        TopicRef: {
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+            /** Uid */
+            uid: string;
         };
         /** TransferOut */
         TransferOut: {
@@ -1740,6 +2358,752 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UiState"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_due_notes: {
+        parameters: {
+            query?: {
+                projects?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DueOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_notes_index: {
+        parameters: {
+            query?: {
+                projects?: string | null;
+                statuses?: string | null;
+                query?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesIndexOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_create_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesCreateNoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_get_note: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_update_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesUpdateNoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_list_note_documents: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentInfo"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_get_note_document: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_put_note_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesPutNoteDocumentBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_append_note_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesAppendNoteEntryBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_finish_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesFinishNoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_keep_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesKeepNoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_restore_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesRestoreNoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_snooze_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesSnoozeNoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_get_notes_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_update_notes_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesUpdateNotesSettingsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_create_topic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesCreateTopicBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDone"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_update_topic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesUpdateTopicBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDone"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_archive_topic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesArchiveTopicBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDone"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_topic_content: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_delete_topic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesDeleteTopicBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDone"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_move_topic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesMoveTopicBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDone"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_reactivate_topic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesReactivateTopicBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDone"];
                 };
             };
             /** @description Client Error */

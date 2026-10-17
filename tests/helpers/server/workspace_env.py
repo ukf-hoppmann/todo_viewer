@@ -13,6 +13,8 @@ from viewer.core.application.plugin import PluginDefinition
 from viewer.core.domain.settings import Settings
 from viewer.plugins.backlog.application.operations import BacklogServices
 from viewer.plugins.backlog.plugin import plugin as backlog_plugin
+from viewer.plugins.notes.application.operations import NotesServices
+from viewer.plugins.notes.plugin import plugin as notes_plugin
 from viewer.plugins.workspace.application.operations import WorkspaceServices
 from viewer.plugins.workspace.plugin import plugin as workspace_plugin
 
@@ -43,6 +45,12 @@ class Env:
         assert isinstance(services, BacklogServices)
         return services
 
+    @property
+    def notes(self) -> NotesServices:
+        services = self.app.state.plugin_host.services("notes")
+        assert isinstance(services, NotesServices)
+        return services
+
     def services_links(self) -> Any:
         return self.workspace.links
 
@@ -61,3 +69,8 @@ class Env:
 def backlog_env(tmp_path: Path, settings: Settings) -> Env:
     """Eine Umgebung mit dem echten Plugin `backlog` (und `workspace`)."""
     return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin])
+
+
+def notes_env(tmp_path: Path, settings: Settings) -> Env:
+    """Eine Umgebung mit dem echten Plugin `notes` (und `workspace`)."""
+    return Env(tmp_path, settings, plugins=[workspace_plugin, notes_plugin])

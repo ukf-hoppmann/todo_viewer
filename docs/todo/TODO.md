@@ -618,7 +618,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-10-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -637,6 +637,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Summary: Notes und Topics im neuen Viewer, inklusive der offenen Wünsche
     zum Archivieren und Löschen von Topics.
   - Spec: `items/STORY-077/STORY-077_spec.md`.
+  - Notes: `items/STORY-077/STORY-077_notes.md`.
 
 - `STORY-078` **Notes-Auslöser, Änderungshinweise, Befördern und Zurückstufen**
   - Type: Story.

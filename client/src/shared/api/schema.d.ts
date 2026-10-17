@@ -91,6 +91,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/backlog/index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Wie list_items, aber als kompakter Text für Agenten: eine Zeile je Item `ID | Type | Status | Area | Title | Parent` */
+        get: operations["backlog_index_lines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/backlog/items": {
         parameters: {
             query?: never;
@@ -358,7 +375,24 @@ export interface paths {
             cookie?: never;
         };
         /** Topics (mit Zählern) und Notes der Projekte als flache Liste; Filter nach Status (wartet, fällig, zurückgestellt, erledigt, verworfen, befördert) und Text. Projekte und Status komma-getrennt */
-        get: operations["notes_notes_index"];
+        get: operations["notes_index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/index/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Wie notes_index, aber als kompakter Text für Agenten: Topics `Label | Name | Due at | Due | Notes` und Notes `Label | Status | Reason | Review at | Topic | Summary` */
+        get: operations["notes_index_lines"];
         put?: never;
         post?: never;
         delete?: never;
@@ -516,6 +550,23 @@ export interface paths {
         put?: never;
         /** Behalten: die Note bleibt, wie sie ist, nur das Prüfdatum rückt um das Prüf-Intervall vor */
         post: operations["notes_keep_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/notes/{ref}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verschiebt eine Note in ein anderes Projekt: dort entsteht eine neue Note mit neuem Label (Texte, Status, Prüfdatum, Dokumente, Verweise und Ereignis-Auslöser werden übernommen), die alte kommt in den Papierkorb. Antwort ist die neue Note */
+        post: operations["notes_move_note"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1398,6 +1449,16 @@ export interface components {
             /** Version */
             version: number;
         };
+        /**
+         * IndexLines
+         * @description Der Index als Text für Agenten: eine Kopfzeile und eine Zeile je Item.
+         */
+        IndexLines: {
+            /** Count */
+            count: number;
+            /** Text */
+            text: string;
+        };
         /** ItemOut */
         ItemOut: {
             /** Area */
@@ -1677,6 +1738,20 @@ export interface components {
             /** Version */
             version: number;
         };
+        /**
+         * NotesIndexLines
+         * @description Der Index als Text für Agenten: Topics und Notes je als Tabelle mit Kopfzeile.
+         */
+        NotesIndexLines: {
+            /** Note Count */
+            note_count: number;
+            /** Notes */
+            notes: string;
+            /** Topic Count */
+            topic_count: number;
+            /** Topics */
+            topics: string;
+        };
         /** NotesIndexOut */
         NotesIndexOut: {
             /** Notes */
@@ -1688,6 +1763,17 @@ export interface components {
         NotesKeepNoteBody: {
             /** Project */
             project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** NotesMoveNoteBody */
+        NotesMoveNoteBody: {
+            /** Project */
+            project?: string | null;
+            /** Target Project */
+            target_project: string;
+            /** Topic */
+            topic?: string | null;
             /** Version */
             version: number;
         };
@@ -2369,6 +2455,40 @@ export interface operations {
             };
         };
     };
+    backlog_index_lines: {
+        parameters: {
+            query?: {
+                projects?: string | null;
+                statuses?: string | null;
+                priorities?: string | null;
+                query?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexLines"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     backlog_list_items: {
         parameters: {
             query?: {
@@ -2983,7 +3103,7 @@ export interface operations {
             };
         };
     };
-    notes_notes_index: {
+    notes_index: {
         parameters: {
             query?: {
                 projects?: string | null;
@@ -3003,6 +3123,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotesIndexOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_index_lines: {
+        parameters: {
+            query?: {
+                projects?: string | null;
+                statuses?: string | null;
+                query?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesIndexLines"];
                 };
             };
             /** @description Client Error */
@@ -3370,6 +3523,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["NotesKeepNoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    notes_move_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesMoveNoteBody"];
             };
         };
         responses: {

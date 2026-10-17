@@ -15,7 +15,11 @@ dependencies = [
 [tool.pytest.ini_options]
 # Aus server/ aufrufen: ../.venv/bin/pytest (scripts/check-next.sh tut das).
 pythonpath = ["src", "../tests/helpers/server", "../tests/helpers"]
-testpaths = ["../tests/implementation/unit/server", "../tests/implementation/integration/server"]
+testpaths = [
+    "../tests/implementation/unit/server",
+    "../tests/implementation/integration/server",
+    "../tests/implementation/system/server",
+]
 addopts = "-q --import-mode=importlib"
 
 [tool.ruff]

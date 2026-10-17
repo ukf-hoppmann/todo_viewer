@@ -20,6 +20,7 @@ from viewer.plugins.notes.application.notes import (
 )
 from viewer.plugins.notes.application.notices import ItemNotice, NoticeService
 from viewer.plugins.notes.application.ports import Document
+from viewer.plugins.notes.application.relocation import RelocationService
 from viewer.plugins.notes.application.settings import SettingsService
 from viewer.plugins.notes.application.topics import TopicService
 from viewer.plugins.notes.application.triggers import TriggerService
@@ -40,6 +41,7 @@ class NotesServices:
         triggers: TriggerService,
         notices: NoticeService,
         conversion: ConversionService,
+        relocation: RelocationService,
         participant: Any,
     ) -> None:
         self.notes = notes
@@ -49,6 +51,7 @@ class NotesServices:
         self.triggers = triggers
         self.notices = notices
         self.conversion = conversion
+        self.relocation = relocation
         self.participant = participant
 
 
@@ -265,6 +268,17 @@ class UpdateNote:
 class NoteAction:
     ref: str
     version: int
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class MoveNote:
+    ref: str
+    version: int
+    #: Das Zielprojekt (uid).
+    target_project: str
+    #: Das Topic im Zielprojekt (uid); ohne Angabe liegt die Note ohne Topic.
+    topic: str | None = None
     project: str | None = None
 
 
@@ -568,6 +582,42 @@ def _index(services: NotesServices, data: NotesIndexIn) -> NotesIndexOut:
     return NotesIndexOut([topic_out(t) for t in result.topics], [_note_index(n) for n in result.notes])
 
 
+@dataclass(frozen=True)
+class NotesIndexLines:
+    """Der Index als Text für Agenten: Topics und Notes je als Tabelle mit Kopfzeile."""
+
+    topics: str
+    notes: str
+    topic_count: int
+    note_count: int
+
+
+def _lines(services: NotesServices, data: NotesIndexIn) -> NotesIndexLines:
+    projects = _split(data.projects) if data.projects is not None else None
+    result = services.notes.index(projects, _split(data.statuses), data.query)
+    reasons = {e.note.uid: e.state.reason or "review_expired" for e in services.notes.due(projects)}
+    labels = {t.topic.uid: t.topic.label for t in result.topics}
+
+    def day(value: Any) -> str:
+        return value.date().isoformat() if value is not None else "-"
+
+    topics = [
+        f"{t.topic.label} | {t.topic.name} | {day(t.topic.due_at)} | {t.due_notes} | {t.open_notes}"
+        for t in result.topics
+    ]
+    notes = [
+        f"{n.note.label} | {n.status} | {reasons.get(n.note.uid, '-')} | {day(n.note.review_at)} | "
+        f"{labels.get(n.note.topic_uid, '-') if n.note.topic_uid else '-'} | {n.note.summary}"
+        for n in result.notes
+    ]
+    return NotesIndexLines(
+        "\n".join(["Label | Name | Due at | Due | Notes", *topics]),
+        "\n".join(["Label | Status | Reason | Review at | Topic | Summary", *notes]),
+        len(topics),
+        len(notes),
+    )
+
+
 def _due_note(entry: DueEntry) -> DueNoteOut:
     n = entry.note
     return DueNoteOut(
@@ -623,7 +673,7 @@ def _settings(services: NotesServices, _data: Any) -> SettingsOut:
 
 OPERATIONS: tuple[Operation, ...] = (
     Operation(
-        "notes_index",
+        "index",
         "Topics (mit Zählern) und Notes der Projekte als flache Liste; Filter nach Status (wartet, fällig, "
         "zurückgestellt, erledigt, verworfen, befördert) und Text. Projekte und Status komma-getrennt",
         "read",
@@ -631,6 +681,16 @@ OPERATIONS: tuple[Operation, ...] = (
         NotesIndexOut,
         _index,
         HttpBinding("GET", "/index"),
+    ),
+    Operation(
+        "index_lines",
+        "Wie notes_index, aber als kompakter Text für Agenten: Topics `Label | Name | Due at | Due | Notes` und "
+        "Notes `Label | Status | Reason | Review at | Topic | Summary`",
+        "read",
+        NotesIndexIn,
+        NotesIndexLines,
+        _lines,
+        HttpBinding("GET", "/index/lines"),
     ),
     Operation(
         "get_note",
@@ -677,6 +737,17 @@ OPERATIONS: tuple[Operation, ...] = (
         NoteOut,
         lambda s, d: _detail(s, s.notes.keep(d.ref, d.project, d.version)),
         HttpBinding("POST", "/notes/{ref}/keep"),
+    ),
+    Operation(
+        "move_note",
+        "Verschiebt eine Note in ein anderes Projekt: dort entsteht eine neue Note mit neuem Label (Texte, Status, "
+        "Prüfdatum, Dokumente, Verweise und Ereignis-Auslöser werden übernommen), die alte kommt in den Papierkorb. "
+        "Antwort ist die neue Note",
+        "write",
+        MoveNote,
+        NoteOut,
+        lambda s, d: _detail(s, s.relocation.move_to_project(d.ref, d.project, d.version, d.target_project, d.topic)),
+        HttpBinding("POST", "/notes/{ref}/move"),
     ),
     Operation(
         "snooze_note",
@@ -876,7 +947,6 @@ OPERATIONS: tuple[Operation, ...] = (
         SettingsOut,
         _settings,
         HttpBinding("GET", "/settings"),
-        mcp=False,
     ),
     Operation(
         "update_notes_settings",

@@ -24,6 +24,7 @@ def test_tools_are_listed_with_description_and_schema(server: RunningServer) -> 
         "example_list_items",
         "example_retitle",
         "example_ping",
+        "core_health",
         "core_sync_status",
         "core_sync_preview",
         "core_sync_execute",

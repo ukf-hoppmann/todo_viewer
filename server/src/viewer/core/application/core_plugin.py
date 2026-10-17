@@ -14,6 +14,16 @@ from viewer.core.domain.plugin import Migration
 
 
 @dataclass(frozen=True)
+class HealthIn:
+    pass
+
+
+@dataclass(frozen=True)
+class HealthOut:
+    status: str
+
+
+@dataclass(frozen=True)
 class CoreServices:
     ui_state: UiStateService
     sync: SyncService
@@ -33,6 +43,14 @@ def build_core_definition(
         build=build,
         migrations=migrations,
         operations=(
+            Operation(
+                "health",
+                "Ist der Viewer erreichbar? Antwortet `ok`; über HTTP gibt es dafür GET /api/core/health",
+                "read",
+                HealthIn,
+                HealthOut,
+                lambda services, data: HealthOut("ok"),
+            ),
             Operation(
                 "get_ui_state",
                 "UI-Zustand eines Besitzers lesen",

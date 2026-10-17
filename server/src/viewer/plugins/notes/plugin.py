@@ -18,6 +18,7 @@ from viewer.plugins.notes.application.documents import DocumentService
 from viewer.plugins.notes.application.notes import NoteService
 from viewer.plugins.notes.application.notices import NoticeService
 from viewer.plugins.notes.application.operations import OPERATIONS, NotesServices
+from viewer.plugins.notes.application.relocation import RelocationService
 from viewer.plugins.notes.application.settings import SettingsService
 from viewer.plugins.notes.application.topics import TopicService
 from viewer.plugins.notes.application.triggers import TriggerService
@@ -99,6 +100,7 @@ def _build(context: PluginContext) -> NotesServices:
         triggers,
         NoticeService(deps, note_service, conversion),
         conversion,
+        RelocationService(deps, triggers),
         NotesParticipant(deps, workspace.project_store),
     )
 

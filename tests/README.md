@@ -7,6 +7,7 @@ Viewers liegen in `src_old/backend/tests/` und `src_old/web/` und laufen mit
 ```
 implementation/unit/server/…         spiegelt server/src/viewer/, mit Fakes statt Adaptern
 implementation/integration/server/…  echte SQLite-Datei, echte Ordner, echter uvicorn-Server, Contract-Suiten
+implementation/system/server/…       ganzer Viewer als Prozess, bedient über MCP wie vom Harness (STORY-081)
 implementation/unit/client/…         spiegelt client/src/ (Vitest, Testing Library)
 fixtures/                            synthetische Testdaten (nie echte Backlogs)
 helpers/server/                      Beispiel-Plugin und Hilfen nur für Tests
@@ -21,6 +22,7 @@ und `.venv/bin/pip install -e server` bzw. die Abhängigkeiten aus `server/pypro
 | Was | Befehl |
 |---|---|
 | Server: alle Tests | `cd server && ../.venv/bin/pytest` |
+| Server: nur der Systemtest (MCP-Ablauf des Harness) | `cd server && ../.venv/bin/pytest -c pyproject.toml --rootdir=. ../tests/implementation/system` |
 | Server: Lint, Typen, Schichtregeln, Tests | `scripts/check-next.sh` |
 | Client: Installation | `cd client && npm ci` (verlinkt auch `tests/node_modules`, damit die Tests außerhalb von `client/` ihre Pakete finden) |
 | Client: alle Tests | `cd client && npx vitest run --config configs/vite/vitest.config.ts` |

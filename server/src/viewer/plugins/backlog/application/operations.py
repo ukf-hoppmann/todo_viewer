@@ -320,6 +320,28 @@ def _retype(services: BacklogServices, data: RetypeItem) -> RetypeOut:
     return RetypeOut(_detail(services, result.uid), result.old_label, result.new_label, notices)
 
 
+@dataclass(frozen=True)
+class IndexLines:
+    """Der Index als Text für Agenten: eine Kopfzeile und eine Zeile je Item."""
+
+    text: str
+    count: int
+
+
+INDEX_HEADER = "ID | Type | Status | Area | Title | Parent"
+
+
+def _lines(services: BacklogServices, data: ListItems) -> IndexLines:
+    entries = _list(services, data)
+    labels = {entry.uid: entry.label for entry in _list(services, ListItems(projects=data.projects))}
+    rows = [
+        f"{e.label} | {e.type} | {e.status} | {e.area or '-'} | {e.title} | "
+        f"{labels.get(e.parent_uid, e.parent_uid) if e.parent_uid else '-'}"
+        for e in entries
+    ]
+    return IndexLines("\n".join([INDEX_HEADER, *rows]), len(rows))
+
+
 def _list(services: BacklogServices, data: ListItems) -> list[IndexItem]:
     projects = _split(data.projects) if data.projects is not None else None
     entries = services.items.list_items(projects, _split(data.statuses), _split(data.priorities), data.query)
@@ -336,6 +358,16 @@ OPERATIONS: tuple[Operation, ...] = (
         list[IndexItem],
         _list,
         HttpBinding("GET", "/items"),
+    ),
+    Operation(
+        "index_lines",
+        "Wie list_items, aber als kompakter Text für Agenten: eine Zeile je Item `ID | Type | Status | Area | Title | "
+        "Parent`",
+        "read",
+        ListItems,
+        IndexLines,
+        _lines,
+        HttpBinding("GET", "/index"),
     ),
     Operation(
         "get_item",

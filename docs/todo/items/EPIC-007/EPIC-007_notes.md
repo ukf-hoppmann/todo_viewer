@@ -100,7 +100,7 @@
 
 ### Discussed
 
-- **Branch** `neubau/epic-007` (nie nach `main` gemergt, nie mit Gewalt gepusht). Der letzte Commit steht im Verlauf des Branches (`git log`, Titel „STORY-083: …“ bzw. der danach folgende Notiz-Commit). `scripts/check-next.sh` und `scripts/check.sh` waren bei jedem Commit der Items grün.
+- **Branch** `neubau/epic-007` (nie nach `main` gemergt, nie mit Gewalt gepusht). Letzter Commit eines Items: `cb72044` (STORY-083); danach folgen nur noch Notiz-Commits (dieser Eintrag, `git log`). `scripts/check-next.sh` und `scripts/check.sh` waren bei jedem Commit der Items grün.
 - **Je Item** (alle `Awaiting confirmation` mit allen Abschlusskriterien geprüft; Einzelheiten, Abweichungen und offene Punkte in den Notizen der Items unter „Umgesetzt und geprüft“, Annahmen als Fragen 13 bis 35 in `STORY-060`):
   - `STORY-061` bis `STORY-076`: Server-Grundgerüst, MCP-Host, Datenbank, Dateien, Sync, Client-Grundgerüst, gemeinsame Bausteine, workspace, Verknüpfungen, Papierkorb, Backlog (anzeigen, bearbeiten, Dokumente, Graph, Spiegel), Sync in der Oberfläche.
   - `STORY-077` Notes und Topics, `STORY-078` Auslöser, Hinweise, Befördern, Zurückstufen, `STORY-079` Notes im Spiegel: geprüft durch Unit-, Integrations- und Client-Tests samt Golden-Files; im Browser nur die Notes-Ansicht (Baum, Zähler, Detail) gesehen. Bekannt: ein Verweis zieht nach einem Typwechsel des Ziels erst beim nächsten Schreiben der Note nach; Datei und Datenbank derselben Note zugleich geändert ist ein Konflikt; „Befördern“ in der Fällig-Liste öffnet die Note statt des Dialogs; `\r\n` in Notes-Dateien ungetestet.

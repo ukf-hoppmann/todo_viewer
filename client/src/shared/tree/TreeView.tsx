@@ -200,7 +200,7 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 						)}
 						{node.tag && (
 							<Typography
-								variant="caption"
+								variant="body2"
 								data-testid={sharedTestIds.treeTag(node.id)}
 								sx={{ flexShrink: 0, px: 0.5, borderRadius: 0.5, border: 1, borderColor: node.tagColor ?? "divider", color: node.tagColor ?? "text.secondary" }}
 							>
@@ -213,7 +213,7 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 								{node.badge}
 							</Typography>
 						)}
-						<Typography variant="body2" noWrap sx={{ flexGrow: 1, minWidth: 0 }}>
+						<Typography variant="body1" noWrap sx={{ flexGrow: 1, minWidth: 0, fontSize: "1.1rem" }}>
 							{node.label}
 						</Typography>
 						{node.progress && <ProgressRing done={node.progress.done} total={node.progress.total} />}

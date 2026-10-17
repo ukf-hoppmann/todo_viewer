@@ -1,3 +1,4 @@
+import { useTheme } from "@mui/material/styles";
 import { sharedTestIds } from "./testIds";
 
 interface ProgressRingProps {
@@ -9,6 +10,7 @@ interface ProgressRingProps {
 
 /** Done / total as a pie chart; nothing is drawn for a total of 0. */
 export function ProgressRing({ done, total, size = 18 }: ProgressRingProps) {
+	const successColor = useTheme().palette.success.main;
 	if (total <= 0) return null;
 	const share = Math.min(Math.max(done / total, 0), 1);
 	const radius = size / 2;
@@ -24,7 +26,7 @@ export function ProgressRing({ done, total, size = 18 }: ProgressRingProps) {
 			width={size}
 			height={size}
 			viewBox={`0 0 ${size} ${size}`}
-			style={{ flexShrink: 0 }}
+			style={{ flexShrink: 0, color: successColor }}
 		>
 			<circle cx={radius} cy={radius} r={radius - 1} fill="none" stroke="currentColor" strokeOpacity={0.35} />
 			{share >= 1 ? (

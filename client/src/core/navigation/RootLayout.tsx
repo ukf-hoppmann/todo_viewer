@@ -27,7 +27,7 @@ export function RootLayout({ tabs, actions, children }: RootLayoutProps) {
 
 	return (
 		<Box data-testid={coreTestIds.rootLayout} sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-			<AppBar position="static" data-testid={coreTestIds.appBar}>
+			<AppBar position="sticky" data-testid={coreTestIds.appBar}>
 				<Toolbar>
 					<AppLogo />
 					{tabs}

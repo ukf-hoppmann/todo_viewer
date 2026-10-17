@@ -28,13 +28,13 @@ from viewer.core.infrastructure.event_bus import InProcessEventBus
 from viewer.core.infrastructure.files import LocalFileStore
 from viewer.core.infrastructure.ids import UuidIds
 from viewer.core.infrastructure.scheduler import AsyncioScheduler
+from viewer.plugins.alarms.plugin import plugin as alarms_plugin
 from viewer.plugins.backlog.plugin import plugin as backlog_plugin
 from viewer.plugins.notes.plugin import plugin as notes_plugin
 from viewer.plugins.workspace.plugin import plugin as workspace_plugin
 
-# Die aktiven Plugins: eine feste Liste im Code (Architektur §1). Die übrigen fachlichen Plugins
-# (alarms) kommen mit ihren Stories hierher.
-PLUGINS: tuple[PluginDefinition, ...] = (workspace_plugin, backlog_plugin, notes_plugin)
+# Die aktiven Plugins: eine feste Liste im Code (Architektur §1).
+PLUGINS: tuple[PluginDefinition, ...] = (workspace_plugin, backlog_plugin, notes_plugin, alarms_plugin)
 
 
 class WorkspaceMirrorProjects:

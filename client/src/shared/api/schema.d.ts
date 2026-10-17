@@ -4,6 +4,76 @@
  */
 
 export interface paths {
+    "/api/alarms/alarms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Wecker als Liste (nach Zeitpunkt); `due_only` zeigt nur die, die sich gemeldet haben. Projekte komma-getrennt */
+        get: operations["alarms_list_alarms"];
+        put?: never;
+        /** Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft; optional an ein Element gebunden (`target`). Für „Erinner mich“; „Merk dir“ ist eine Note */
+        post: operations["alarms_create_alarm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alarms/alarms/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ein Wecker mit Ziel; `ref` ist die uid oder ein Label (mit `project`) */
+        get: operations["alarms_get_alarm"];
+        /** Ändert Text, Zeitpunkt oder Ziel eines Weckers mit Versionsprüfung; ein neuer Zeitpunkt lässt ihn wieder warten */
+        put: operations["alarms_update_alarm"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alarms/alarms/{ref}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Erledigt einen Wecker */
+        post: operations["alarms_finish_alarm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alarms/alarms/{ref}/snooze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stellt einen Wecker zurück (Standard: eine Stunde, sonst bis `until`) */
+        post: operations["alarms_snooze_alarm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/backlog/areas": {
         parameters: {
             query?: never;
@@ -926,6 +996,69 @@ export interface components {
             /** Uids */
             uids: string[];
         };
+        /** AlarmOut */
+        AlarmOut: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Deleted */
+            deleted: boolean;
+            /** Label */
+            label: string;
+            /** Project Uid */
+            project_uid: string;
+            /** Snoozed Until */
+            snoozed_until: string | null;
+            /** Status */
+            status: string;
+            target: components["schemas"]["viewer__plugins__alarms__application__operations__TargetRef"] | null;
+            /** Target Text */
+            target_text: string | null;
+            /** Text */
+            text: string;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
+        /** AlarmsCreateAlarmBody */
+        AlarmsCreateAlarmBody: {
+            /** Fields */
+            fields?: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project: string;
+        };
+        /** AlarmsFinishAlarmBody */
+        AlarmsFinishAlarmBody: {
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** AlarmsSnoozeAlarmBody */
+        AlarmsSnoozeAlarmBody: {
+            /** Project */
+            project?: string | null;
+            /** Until */
+            until?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** AlarmsUpdateAlarmBody */
+        AlarmsUpdateAlarmBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
         /** AreasOut */
         AreasOut: {
             /** Areas */
@@ -1381,7 +1514,7 @@ export interface components {
             decisions: string[];
             /** Kind */
             kind: string;
-            source: components["schemas"]["TargetRef"] | null;
+            source: components["schemas"]["viewer__plugins__notes__application__operations__TargetRef"] | null;
             /** Uid */
             uid: string;
         };
@@ -1794,22 +1927,6 @@ export interface components {
              */
             to_files: number;
         };
-        /**
-         * TargetRef
-         * @description Das Element am anderen Ende eines Auslösers oder Hinweises.
-         */
-        TargetRef: {
-            /** Deleted */
-            deleted: boolean;
-            /** Kind */
-            kind: string;
-            /** Label */
-            label: string;
-            /** Title */
-            title: string;
-            /** Uid */
-            uid: string;
-        };
         /** TopicDone */
         TopicDone: {
             /**
@@ -1900,7 +2017,7 @@ export interface components {
             kind: string;
             /** Status */
             status: string | null;
-            target: components["schemas"]["TargetRef"] | null;
+            target: components["schemas"]["viewer__plugins__notes__application__operations__TargetRef"] | null;
             /** Uid */
             uid: string;
         };
@@ -1980,6 +2097,35 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** TargetRef */
+        viewer__plugins__alarms__application__operations__TargetRef: {
+            /** Deleted */
+            deleted: boolean;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
+        };
+        /**
+         * TargetRef
+         * @description Das Element am anderen Ende eines Auslösers oder Hinweises.
+         */
+        viewer__plugins__notes__application__operations__TargetRef: {
+            /** Deleted */
+            deleted: boolean;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -1989,6 +2135,209 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    alarms_list_alarms: {
+        parameters: {
+            query?: {
+                projects?: string | null;
+                due_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlarmOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    alarms_create_alarm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlarmsCreateAlarmBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlarmOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    alarms_get_alarm: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlarmOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    alarms_update_alarm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlarmsUpdateAlarmBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlarmOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    alarms_finish_alarm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlarmsFinishAlarmBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlarmOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    alarms_snooze_alarm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlarmsSnoozeAlarmBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlarmOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     backlog_list_areas: {
         parameters: {
             query: {

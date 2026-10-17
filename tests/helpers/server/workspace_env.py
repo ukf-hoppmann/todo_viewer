@@ -11,6 +11,8 @@ from starlette.testclient import TestClient
 from viewer.app.composition import create_app
 from viewer.core.application.plugin import PluginDefinition
 from viewer.core.domain.settings import Settings
+from viewer.plugins.alarms.application.operations import AlarmServices
+from viewer.plugins.alarms.plugin import plugin as alarms_plugin
 from viewer.plugins.backlog.application.operations import BacklogServices
 from viewer.plugins.backlog.plugin import plugin as backlog_plugin
 from viewer.plugins.notes.application.operations import NotesServices
@@ -51,6 +53,12 @@ class Env:
         assert isinstance(services, NotesServices)
         return services
 
+    @property
+    def alarms(self) -> AlarmServices:
+        services = self.app.state.plugin_host.services("alarms")
+        assert isinstance(services, AlarmServices)
+        return services
+
     def services_links(self) -> Any:
         return self.workspace.links
 
@@ -74,3 +82,13 @@ def backlog_env(tmp_path: Path, settings: Settings) -> Env:
 def notes_env(tmp_path: Path, settings: Settings) -> Env:
     """Eine Umgebung mit den echten Plugins `notes`, `backlog` (das `notes` braucht) und `workspace`."""
     return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, notes_plugin])
+
+
+def alarms_env(tmp_path: Path, settings: Settings) -> Env:
+    """Eine Umgebung mit dem echten Plugin `alarms` (und `workspace`)."""
+    return Env(tmp_path, settings, plugins=[workspace_plugin, alarms_plugin])
+
+
+def full_env(tmp_path: Path, settings: Settings) -> Env:
+    """Eine Umgebung mit allen fachlichen Plugins: `workspace`, `backlog`, `notes` und `alarms`."""
+    return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, notes_plugin, alarms_plugin])

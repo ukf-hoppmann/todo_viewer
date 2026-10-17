@@ -15,7 +15,7 @@ from running_server import RunningServer
 from viewer.app.composition import create_app
 from viewer.core.domain.settings import Settings
 from viewer.core.infrastructure.database import MigrationRunner, SqliteBackupMaker, SqliteDatabase
-from workspace_env import Env, backlog_env, notes_env
+from workspace_env import Env, alarms_env, backlog_env, full_env, notes_env
 
 
 @pytest.fixture
@@ -93,5 +93,19 @@ def backlog(tmp_path: Path, settings: Settings) -> Iterator[Env]:
 @pytest.fixture
 def notes(tmp_path: Path, settings: Settings) -> Iterator[Env]:
     environment = notes_env(tmp_path, settings)
+    with environment.client:
+        yield environment
+
+
+@pytest.fixture
+def alarms(tmp_path: Path, settings: Settings) -> Iterator[Env]:
+    environment = alarms_env(tmp_path, settings)
+    with environment.client:
+        yield environment
+
+
+@pytest.fixture
+def full(tmp_path: Path, settings: Settings) -> Iterator[Env]:
+    environment = full_env(tmp_path, settings)
     with environment.client:
         yield environment

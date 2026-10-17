@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
@@ -12,6 +13,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from viewer.core.api.errors import register_error_handlers
+from viewer.core.api.frontend import add_frontend
 from viewer.core.api.mcp import McpHost
 from viewer.core.api.middleware import RequestIdMiddleware
 from viewer.core.api.routes import register_operations
@@ -26,7 +28,12 @@ class Health(BaseModel):
 
 
 def create_http_app(
-    host: PluginHost, hub: SseHub, *, lifespan: Lifespan | None = None, mcp: McpHost | None = None
+    host: PluginHost,
+    hub: SseHub,
+    *,
+    lifespan: Lifespan | None = None,
+    mcp: McpHost | None = None,
+    static_dir: Path | None = None,
 ) -> FastAPI:
     app = FastAPI(title="ToDo Viewer", version="0.0.0", lifespan=lifespan)
     app.add_middleware(RequestIdMiddleware)
@@ -54,6 +61,8 @@ def create_http_app(
     register_operations(app, host)
     if mcp is not None:
         app.router.routes.append(mcp.route)
+    if static_dir is not None:
+        add_frontend(app, static_dir)  # zuletzt: fängt alle übrigen Adressen ab
     app.openapi = lambda: _openapi(app)  # type: ignore[method-assign]
     return app
 

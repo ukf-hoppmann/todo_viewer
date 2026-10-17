@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator, Callable, Sequence
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
@@ -120,7 +121,7 @@ def create_app(
             scheduler.stop()
             database.dispose()
 
-    app = create_http_app(host, hub, lifespan=lifespan, mcp=mcp)
+    app = create_http_app(host, hub, lifespan=lifespan, mcp=mcp, static_dir=Path(settings.static_dir))
     app.state.settings = settings
     app.state.plugin_host = host
     app.state.events = events

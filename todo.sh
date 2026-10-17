@@ -7,6 +7,12 @@ cd "$(dirname "$0")"
 URL="http://todo.localhost:5411"
 SERVICE="todo-viewer"
 LOG_FILE="logs/todo-viewer.log"
+# Der Neubau (EPIC-007) läuft als eigener Dienst daneben: ./todo.sh next <befehl>
+NEXT_URL="http://localhost:5412"
+NEXT_SERVICE="todo-viewer-next"
+NEXT_LOG_FILE="logs/viewer.log"
+# Zum Prüfen des Skripts austauschbar (tests/implementation/system/scripts).
+DOCKER="${DOCKER:-docker}"
 
 usage() {
   cat <<EOF
@@ -21,31 +27,42 @@ Befehle:
   logs      Live-Log aus $LOG_FILE anzeigen (Strg+C zum Beenden)
   status    Laufender Zustand des Containers
   open      Nur den Browser öffnen (Container muss bereits laufen)
+
+Der alte Viewer ($SERVICE) und der Neubau ($NEXT_SERVICE) sind getrennte Dienste;
+die Befehle oben betreffen nur den alten Viewer (außer down: beide).
+
+Neubau:  ./todo.sh next <befehl>
+  next start    Image bauen (falls nötig) und den Neubau im Hintergrund starten ($NEXT_URL)
+  next stop     Neubau anhalten
+  next restart  Neubau neu starten
+  next update   Neubau neu bauen (--no-cache) und den Container ersetzen
+  next logs     Live-Log aus $NEXT_LOG_FILE anzeigen (Strg+C zum Beenden)
+  next status   Zustand des Containers und Antwort von /api/core/health
 EOF
 }
 
 cmd_start() {
-  docker compose up -d --build
+  $DOCKER compose up -d --build "$SERVICE"
   echo "Läuft unter $URL"
   open "$URL" 2>/dev/null || true
 }
 
 cmd_stop() {
-  docker compose stop
+  $DOCKER compose stop "$SERVICE"
 }
 
 cmd_restart() {
-  docker compose restart
+  $DOCKER compose restart "$SERVICE"
 }
 
 cmd_down() {
-  docker compose down
-  echo "Container entfernt. configs/ (config.json, ui_state.json) bleibt unangetastet."
+  $DOCKER compose down
+  echo "Container (auch der Neubau) entfernt. configs/ (config.json, ui_state.json) bleibt unangetastet."
 }
 
 cmd_update() {
-  docker compose build --no-cache
-  docker compose up -d
+  $DOCKER compose build --no-cache "$SERVICE"
+  $DOCKER compose up -d "$SERVICE"
   echo "Aktualisiert und neu gestartet unter $URL"
 }
 
@@ -54,18 +71,51 @@ cmd_logs() {
   # Meldungen, bevor das Logging konfiguriert ist (docker compose logs).
   if [ ! -f "$LOG_FILE" ]; then
     echo "$LOG_FILE fehlt noch; Container-Ausgabe:"
-    docker compose logs "$SERVICE"
+    $DOCKER compose logs "$SERVICE"
     return
   fi
   tail -n 50 -F "$LOG_FILE"
 }
 
 cmd_status() {
-  docker compose ps -a
+  $DOCKER compose ps -a "$SERVICE"
 }
 
 cmd_open() {
   open "$URL" 2>/dev/null || echo "$URL"
+}
+
+cmd_next() {
+  case "${1:-}" in
+    start)
+      $DOCKER compose up -d --build "$NEXT_SERVICE"
+      echo "Neubau läuft unter $NEXT_URL"
+      ;;
+    stop) $DOCKER compose stop "$NEXT_SERVICE" ;;
+    restart) $DOCKER compose restart "$NEXT_SERVICE" ;;
+    update)
+      $DOCKER compose build --no-cache "$NEXT_SERVICE"
+      $DOCKER compose up -d "$NEXT_SERVICE"
+      echo "Neubau aktualisiert und neu gestartet unter $NEXT_URL"
+      ;;
+    logs)
+      if [ ! -f "$NEXT_LOG_FILE" ]; then
+        echo "$NEXT_LOG_FILE fehlt noch; Container-Ausgabe:"
+        $DOCKER compose logs "$NEXT_SERVICE"
+        return
+      fi
+      tail -n 50 -F "$NEXT_LOG_FILE"
+      ;;
+    status)
+      $DOCKER compose ps -a "$NEXT_SERVICE"
+      if curl -fsS --max-time 3 "$NEXT_URL/api/core/health" 2>/dev/null; then
+        echo
+      else
+        echo "Der Neubau antwortet nicht unter $NEXT_URL" >&2
+      fi
+      ;;
+    *) usage; exit 1 ;;
+  esac
 }
 
 case "${1:-}" in
@@ -77,5 +127,6 @@ case "${1:-}" in
   logs)    cmd_logs ;;
   status)  cmd_status ;;
   open)    cmd_open ;;
+  next)    shift; cmd_next "$@" ;;
   *)       usage; exit 1 ;;
 esac

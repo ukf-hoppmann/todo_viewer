@@ -14,6 +14,8 @@ class Settings:
     log_dir: str = "logs"
     db_path: str = "configs/viewer.db"
     backup_dir: str = "configs/backups"
+    #: Das gebaute Frontend; besteht der Ordner nicht, liefert der Server nur die API.
+    static_dir: str = "client/dist"
     sse_keepalive_seconds: float = 15.0
     auto_sync_interval_seconds: float = 30.0
     plugins: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)

@@ -258,6 +258,7 @@ Ergänzungen aus dem Spiegel des Backlogs: Weicht in einem Eintrag nur das Label
 | `log_dir` | `VIEWER_LOG_DIR` | Pfad | `logs` | Ordner mit `viewer.log` (JSON-Zeilen) |
 | `db_path` | `VIEWER_DB` | Pfad | `configs/viewer.db` | SQLite-Datei des Neubaus |
 | `backup_dir` | `VIEWER_BACKUP_DIR` | Pfad | `configs/backups` | Ordner der Datenbank-Sicherungen |
+| `static_dir` | `VIEWER_STATIC_DIR` | Pfad | `client/dist` | gebautes Frontend, das der Server unter `/` ausliefert (`core/api/frontend.py`); fehlt der Ordner, gibt es nur die API |
 | `sse_keepalive_seconds` | – | Zahl | `15` | Abstand der Keep-alive-Zeilen |
 | `auto_sync_interval_seconds` | `AUTO_SYNC_INTERVAL` | Zahl | `30` | Takt des Auto-Sync in Sekunden |
 | `plugins.<id>` | – | Objekt | `{}` | Einstellungen eines Plugins (`context.settings`) |

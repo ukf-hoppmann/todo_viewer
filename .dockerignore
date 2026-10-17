@@ -11,3 +11,8 @@ src_old/web/dist
 logs
 configs/todo.db*
 configs/*.bak
+client/node_modules
+client/dist
+tests
+reference
+server/build

@@ -16,3 +16,7 @@ client/node_modules/
 client/dist/
 client/.openapi.json
 tests/node_modules
+
+# Bau-Ausgaben des Servers (pip install ./server)
+server/build/
+server/src/*.egg-info/

@@ -3,6 +3,7 @@ export const alarmsTestIds = {
 	page: "alarms.page",
 	empty: "alarms.empty",
 	row: (uid: string) => `alarms.row.${uid}`,
+	detail: "alarms.detail",
 	action: (action: string, uid: string) => `alarms.action.${action}.${uid}`,
 	form: "alarms.form",
 	formField: (name: string) => `alarms.form-field.${name}`,

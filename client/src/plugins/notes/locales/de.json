@@ -106,8 +106,8 @@
 	},
 	"documents": {
 		"none": "Noch keine Notizen oder Specs.",
-		"addEntry": "＋ Notiz-Eintrag",
-		"addSpec": "＋ Spec anlegen",
+		"addEntry": "Notiz-Eintrag anlegen",
+		"addSpec": "Spec anlegen",
 		"topic": "Thema",
 		"discussed": "Besprochen",
 		"decided": "Entschieden",
@@ -154,7 +154,7 @@
 	},
 	"triggers": {
 		"none": "Keine Auslöser. Die Note meldet sich zum Prüfdatum.",
-		"add": "＋ Auslöser",
+		"add": "Auslöser hinzufügen",
 		"addTitle": "Auslöser für {{label}}",
 		"remove": "Auslöser entfernen",
 		"kind": "Art",

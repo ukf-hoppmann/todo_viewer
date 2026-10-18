@@ -1,6 +1,10 @@
+import EditIcon from "@mui/icons-material/Edit";
+import SyncIcon from "@mui/icons-material/Sync";
+import SyncProblemIcon from "@mui/icons-material/SyncProblem";
 import { Alert, Box, Button, Chip, MenuItem, Paper, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { IconAction } from "../../shared";
 import { errorMessage, useGetSyncStatusQuery, useListProjectsQuery, useUpdateProjectMutation, type Project } from "./api";
 import { ProjectCard } from "./ProjectCard";
 import { SyncDialog } from "./SyncDialog";
@@ -99,14 +103,16 @@ function SettingsCard({ project }: { project: Project }) {
 				</Typography>
 			</Box>
 			{error && <Alert severity="error">{error}</Alert>}
-			<Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-				<Button size="small" onClick={() => setEditing(true)} data-testid={workspaceTestIds.settingsEdit(project.uid)}>
-					{t("settings.edit")}
-				</Button>
+			<Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end", alignItems: "center" }}>
+				<IconAction label={t("settings.edit")} icon={EditIcon} onClick={() => setEditing(true)} testId={workspaceTestIds.settingsEdit(project.uid)} />
 				{project.mirror_enabled ? (
-					<Button size="small" variant="contained" onClick={() => setSyncing(true)} data-testid={workspaceTestIds.settingsMain(project.uid)}>
-						{view.kind === "paused" ? t("settings.check") : t("settings.sync")}
-					</Button>
+					<IconAction
+						label={view.kind === "paused" ? t("settings.check") : t("settings.sync")}
+						icon={view.kind === "paused" ? SyncProblemIcon : SyncIcon}
+						color="primary"
+						onClick={() => setSyncing(true)}
+						testId={workspaceTestIds.settingsMain(project.uid)}
+					/>
 				) : (
 					<Button size="small" variant="contained" onClick={() => setEditing(true)} data-testid={workspaceTestIds.settingsMain(project.uid)}>
 						{t("settings.setup")}

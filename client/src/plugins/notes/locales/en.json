@@ -106,8 +106,8 @@
 	},
 	"documents": {
 		"none": "No notes or specs yet.",
-		"addEntry": "＋ Notes entry",
-		"addSpec": "＋ Create spec",
+		"addEntry": "Add notes entry",
+		"addSpec": "Create spec",
 		"topic": "Topic",
 		"discussed": "Discussed",
 		"decided": "Decided",
@@ -154,7 +154,7 @@
 	},
 	"triggers": {
 		"none": "No triggers. The note comes up at its review date.",
-		"add": "＋ Trigger",
+		"add": "Add trigger",
 		"addTitle": "Trigger for {{label}}",
 		"remove": "Remove trigger",
 		"kind": "Kind",

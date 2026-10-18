@@ -19,7 +19,7 @@
 		"edit": "Projekt „{{name}}“",
 		"name": "Name",
 		"folder": "Spiegel-Ordner",
-		"browse": "Auswählen …",
+		"browse": "Ordner auswählen",
 		"mirrorEnabled": "Spiegel einschalten",
 		"autoSync": "Automatisch abgleichen",
 		"direction": "Richtung",
@@ -96,7 +96,7 @@
 		"noFolder": "Kein Ordner gewählt",
 		"lastSync": "Letzter Sync: {{time}}",
 		"neverSynced": "Noch nie abgeglichen",
-		"edit": "Bearbeiten …",
+		"edit": "Projekt bearbeiten",
 		"setup": "Spiegel einrichten",
 		"sync": "Abgleichen …",
 		"check": "Prüfen …"

@@ -210,11 +210,11 @@ describe("alert details", () => {
 		fireEvent.click(screen.getByTestId(coreTestIds.modalDetailsToggle));
 
 		const copy = screen.getByTestId(coreTestIds.modalDetailsCopy);
-		expect(copy.textContent).toBe("Copy");
+		expect(copy.getAttribute("aria-label")).toBe("Copy");
 		fireEvent.click(copy);
 
 		expect(writeText).toHaveBeenCalledWith("Time: 2026-09-30T12:00:00.000Z\nClose: abc12345");
-		await waitFor(() => expect(copy.textContent).toBe("Copied"));
+		await waitFor(() => expect(screen.getByTestId(coreTestIds.modalDetailsCopy).getAttribute("aria-label")).toBe("Copied"));
 	});
 
 	it("keeps the details inside the dialog", async () => {

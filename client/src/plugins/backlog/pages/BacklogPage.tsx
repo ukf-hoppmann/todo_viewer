@@ -1,8 +1,12 @@
-import { Alert, Box, Button, LinearProgress, Typography } from "@mui/material";
+import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
+import UnfoldLessDoubleIcon from "@mui/icons-material/UnfoldLessDouble";
+import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
+import UnfoldMoreDoubleIcon from "@mui/icons-material/UnfoldMoreDouble";
+import { Alert, Box, LinearProgress, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
-import { buildTree, TreeView } from "../../../shared";
+import { buildTree, IconAction, TreeView } from "../../../shared";
 import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListItemsQuery } from "../api";
 import { ItemDetail } from "../ItemDetail";
@@ -37,22 +41,21 @@ export default function BacklogPage() {
 	return (
 		<Box sx={{ p: 2 }} data-testid={backlogTestIds.page}>
 			<Box>
-				<Box sx={{ display: "flex", gap: 1, mb: 1 }}>
+				<Box sx={{ display: "flex", gap: 0.5, mb: 1 }}>
 					{(["Epic", "Story"] as const).map((type) => {
 						const ids = collapsibleIds(items, type, scope);
 						const allCollapsed = ids.length > 0 && ids.every((id) => state.collapsed.includes(id));
+						const where = marked ? t("collapse.scope", { project: marked.name }) : t("collapse.scopeAll");
+						const icon = type === "Epic" ? (allCollapsed ? UnfoldMoreDoubleIcon : UnfoldLessDoubleIcon) : allCollapsed ? UnfoldMoreIcon : UnfoldLessIcon;
 						return (
-							<Button
+							<IconAction
 								key={type}
-								size="small"
-								variant="outlined"
+								label={`${t(allCollapsed ? `collapse.expand${type}` : `collapse.collapse${type}`)} (${where})`}
+								icon={icon}
 								disabled={ids.length === 0}
-								title={marked ? t("collapse.scope", { project: marked.name }) : t("collapse.scopeAll")}
 								onClick={() => state.setAllCollapsed(ids, !allCollapsed)}
-								data-testid={backlogTestIds.collapse(type)}
-							>
-								{t(allCollapsed ? `collapse.expand${type}` : `collapse.collapse${type}`)}
-							</Button>
+								testId={backlogTestIds.collapse(type)}
+							/>
 						);
 					})}
 				</Box>

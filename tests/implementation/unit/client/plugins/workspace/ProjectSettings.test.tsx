@@ -45,7 +45,7 @@ describe("ProjectSettings", () => {
 		await renderSettings({ syncStatus: { p1: status("p1", "paused", { reason: "merge_markers" }), p2: status("p2", "in_sync") } as never });
 
 		await waitFor(() => expect(screen.getByTestId(ids.settingsState("p1")).textContent).toBe("pausiert: Git-Merge-Konflikt in einer Datei"));
-		expect(screen.getByTestId(ids.settingsMain("p1")).textContent).toBe("Prüfen …");
+		expect(screen.getByTestId(ids.settingsMain("p1")).getAttribute("aria-label")).toBe("Prüfen …");
 	});
 
 	it("switches the mode: by hand, automatically, off — with the version of the project", async () => {
@@ -82,7 +82,7 @@ describe("ProjectSettings", () => {
 		await renderSettings();
 
 		expect(screen.getByTestId(ids.settingsMain("p0")).textContent).toBe("Spiegel einrichten");
-		expect(screen.getByTestId(ids.settingsMain("p1")).textContent).toBe("Abgleichen …");
+		expect(screen.getByTestId(ids.settingsMain("p1")).getAttribute("aria-label")).toBe("Abgleichen …");
 		fireEvent.click(screen.getByTestId(ids.settingsMain("p1")));
 		expect(await screen.findByTestId(ids.syncDialog)).toBeTruthy();
 		fireEvent.click(screen.getByTestId(ids.syncClose));

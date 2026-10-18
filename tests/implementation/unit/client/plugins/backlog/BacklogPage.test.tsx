@@ -112,7 +112,7 @@ describe("BacklogPage: folding buttons", () => {
 
 		fireEvent.click(screen.getByTestId(ids.collapse("Epic")));
 		await waitFor(() => expect(screen.queryByTestId(sharedTestIds.treeNode("s2"))).toBeNull());
-		expect(screen.getByTestId(ids.collapse("Epic")).textContent).toBe("Epics aufklappen");
+		expect(screen.getByTestId(ids.collapse("Epic")).getAttribute("aria-label")).toMatch(/^Epics aufklappen/);
 		fireEvent.click(screen.getByTestId(ids.collapse("Epic")));
 
 		await waitFor(() => expect(screen.getByTestId(sharedTestIds.treeNode("s2"))).toBeTruthy());

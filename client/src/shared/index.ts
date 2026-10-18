@@ -3,10 +3,12 @@
 export type { components, operations, paths } from "./api/schema";
 export { ConfirmDialog, ChoiceDialog, type Choice } from "./dialogs/Dialogs";
 export { DetailField, DetailPanel, DetailSection, type DetailAction } from "./DetailPanel";
+export { DocumentsSection, type DocumentsLabels, type DocumentsSectionProps, type NotesEntry, type StoredDocument } from "./documents/DocumentsSection";
 export { EditForm, type EditFormLabels } from "./EditForm";
 export { EntityPicker } from "./EntityPicker";
 export { entityText, type Entity } from "./entityText";
 export { FilterSection, type FilterOption } from "./FilterSection";
+export { IconAction } from "./IconAction";
 export { InlineField, type FieldOption, type InlineFieldProps } from "./InlineField";
 export { LargeView } from "./markdown/LargeView";
 export { MarkdownEditor, type MarkdownEditorLabels } from "./markdown/MarkdownEditor";

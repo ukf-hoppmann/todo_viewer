@@ -192,7 +192,7 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 									left: `${level * 16 + 18}px`,
 									borderLeft: "1px",
 									borderLeftStyle: dashed ? "dashed" : "solid",
-									borderLeftColor: dashed ? "text.disabled" : "divider",
+									borderLeftColor: dashed ? "action.disabled" : "divider",
 								}}
 							/>
 						))}

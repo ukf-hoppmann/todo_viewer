@@ -1,6 +1,7 @@
 import { Alert, Box, Button, LinearProgress, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { usePageDetail } from "../../../core";
 import { buildTree, TreeView } from "../../../shared";
 import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListItemsQuery } from "../api";
@@ -12,7 +13,7 @@ import { useItemWrite } from "../useItemWrite";
 
 /**
  * The backlog: per project the tree Epic → Story → Task with the progress of every item, filtered by status,
- * priority (sidebar) and the search text, and the detail panel of the selected item at the right. The projects
+ * priority (sidebar) and the search text, and the detail panel of the selected item in the detail column. The projects
  * shown are those switched on in the sidebar; a marked project limits the folding buttons to itself.
  */
 export default function BacklogPage() {
@@ -31,10 +32,11 @@ export default function BacklogPage() {
 	);
 	const groups = useMemo(() => groupByProject(visible, shown), [visible, shown]);
 	const scope = useMemo(() => new Set(marked ? [marked.uid] : []), [marked]);
+	usePageDetail(state.selected && <ItemDetail uid={state.selected} onSelect={state.setSelected} onClose={() => state.setSelected(null)} />);
 
 	return (
-		<Box sx={{ display: "flex", gap: 2, p: 2, alignItems: "stretch", flex: 1, minHeight: 0 }} data-testid={backlogTestIds.page}>
-			<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }}>
+		<Box sx={{ p: 2 }} data-testid={backlogTestIds.page}>
+			<Box>
 				<Box sx={{ display: "flex", gap: 1, mb: 1 }}>
 					{(["Epic", "Story"] as const).map((type) => {
 						const ids = collapsibleIds(items, type, scope);
@@ -92,11 +94,6 @@ export default function BacklogPage() {
 					);
 				})}
 			</Box>
-			{state.selected && (
-				<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }} data-testid={backlogTestIds.detail}>
-					<ItemDetail uid={state.selected} onSelect={state.setSelected} onClose={() => state.setSelected(null)} />
-				</Box>
-			)}
 			{write.dialog}
 		</Box>
 	);

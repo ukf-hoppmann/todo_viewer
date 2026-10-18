@@ -3,6 +3,7 @@ import type { ComponentType, ReactElement } from "react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import { initI18n, PluginRegistryProvider, StoreProvider } from "../../../client/src/core";
+import { SubLayout } from "../../../client/src/core/navigation/SubLayout";
 import type { ActivePlugin, PluginRegistry, WidgetContribution } from "../../../client/src/core/plugins/types";
 import alarmsDe from "../../../client/src/plugins/alarms/locales/de.json";
 import alarmsEn from "../../../client/src/plugins/alarms/locales/en.json";
@@ -57,7 +58,12 @@ export async function renderWorkspace(
 		<I18nextProvider i18n={i18n}>
 			<StoreProvider store={backend.store}>
 				<PluginRegistryProvider registry={registry}>
-					<MemoryRouter>{ui}</MemoryRouter>
+					<MemoryRouter>
+						{/* Pages fill the detail column of their route (`usePageDetail`); other components ignore it. */}
+						<SubLayout ownerId="test" layout={{ detail: true }}>
+							{ui}
+						</SubLayout>
+					</MemoryRouter>
 				</PluginRegistryProvider>
 			</StoreProvider>
 		</I18nextProvider>,

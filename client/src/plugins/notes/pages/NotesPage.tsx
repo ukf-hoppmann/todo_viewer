@@ -9,6 +9,7 @@ import UnarchiveIcon from "@mui/icons-material/Unarchive";
 import { Alert, Box, Button, Checkbox, Dialog, DialogContent, DialogTitle, FormControlLabel, IconButton, Tooltip, Typography } from "@mui/material";
 import { useMemo, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { usePageDetail } from "../../../core";
 import { buildTree, TreeView, type TreeNode } from "../../../shared";
 import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListIndexQuery, type IndexedNote, type IndexedTopic } from "../api";
@@ -28,7 +29,7 @@ type DialogState =
 
 /**
  * The notes: per project the tree Topic → Sub-topic → Note with the open notes counted at every topic, due notes
- * first, filtered by status (sidebar) and the search text, and the detail of the selected note or topic at the right.
+ * first, filtered by status (sidebar) and the search text, and the detail of the selected note in the detail column.
  * Notes and topics are moved by drag and drop (onto a topic, next to a node, or onto the project's name for
  * "no topic"); the actions of a topic show while the pointer is over its row.
  */
@@ -66,7 +67,14 @@ export default function NotesPage() {
 		event.preventDefault();
 		apply(dropChange(allTopics, allNotes, event.dataTransfer.getData("text/plain"), null, "inside", projectUid));
 	};
-	const selectedExists = state.selected && (allNotes.some((n) => n.uid === state.selected) || allTopics.some((tp) => tp.uid === state.selected));
+	const selectedNote = state.selected && allNotes.some((n) => n.uid === state.selected) ? state.selected : undefined;
+	usePageDetail(
+		selectedNote && (
+			<Box data-testid={notesTestIds.detail}>
+				<NoteDetail uid={selectedNote} onClose={() => state.setSelected(null)} />
+			</Box>
+		),
+	);
 
 	const topicActions = (node: TreeNode) => {
 		const topic = allTopics.find((entry) => entry.uid === node.id);
@@ -97,8 +105,8 @@ export default function NotesPage() {
 	};
 
 	return (
-		<Box sx={{ display: "flex", gap: 2, p: 2, alignItems: "stretch", flex: 1, minHeight: 0 }} data-testid={notesTestIds.page}>
-			<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }}>
+		<Box sx={{ p: 2 }} data-testid={notesTestIds.page}>
+			<Box>
 				<Box sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap", alignItems: "center" }}>
 					<Button size="small" variant="outlined" disabled={folding.length === 0} onClick={() => state.setAllCollapsed(folding, !allCollapsed)} data-testid={notesTestIds.collapse}>
 						{t(allCollapsed ? "collapse.expand" : "collapse.collapse")}
@@ -159,11 +167,6 @@ export default function NotesPage() {
 					);
 				})}
 			</Box>
-			{state.selected && selectedExists && allNotes.some((n) => n.uid === state.selected) && (
-				<Box sx={{ flex: "1 1 50%", minWidth: 0, overflowY: "auto" }} data-testid={notesTestIds.detail}>
-					<NoteDetail uid={state.selected} onClose={() => state.setSelected(null)} />
-				</Box>
-			)}
 			{dialog?.kind === "note" && (
 				<Dialog open onClose={() => setDialog(undefined)} fullWidth maxWidth="md" slotProps={{ paper: { "data-testid": notesTestIds.formDialog } as never }}>
 					<DialogTitle>{t("form.createTitle")}</DialogTitle>

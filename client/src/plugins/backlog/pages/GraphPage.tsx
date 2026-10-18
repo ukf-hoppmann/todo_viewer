@@ -3,6 +3,7 @@ import { Background, Controls, MarkerType, ReactFlow, type Edge } from "@xyflow/
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { usePageDetail } from "../../../core";
 import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListItemsQuery } from "../api";
 import { GraphNode, type ItemNode } from "../GraphNode";
@@ -38,6 +39,7 @@ export default function GraphPage() {
 	const [hovered, setHovered] = useState<string | null>(null);
 	const [marked, setMarked] = useState<ReadonlySet<string>>(NO_UIDS);
 	const { selected, setSelected } = state;
+	usePageDetail(selected && <ItemDetail uid={selected} onSelect={setSelected} onClose={() => setSelected(null)} />);
 
 	// ELK lays out asynchronously: the last finished layout is drawn, so nodes and positions always match.
 	useEffect(() => {
@@ -108,8 +110,8 @@ export default function GraphPage() {
 	);
 
 	return (
-		<Box sx={{ display: "flex", gap: 2, p: 2, alignItems: "stretch", flex: 1, minHeight: 0 }} data-testid={backlogTestIds.graph}>
-			<Box sx={{ flex: "1 1 60%", minWidth: 0, display: "flex", flexDirection: "column" }}>
+		<Box sx={{ p: 2, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }} data-testid={backlogTestIds.graph}>
+			<Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
 				<Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, mb: 1 }}>
 					<Typography variant="caption" color="text.secondary" data-testid={backlogTestIds.graphInfo}>
 						{t("graph.info", { n: graph.nodes.length, total: shown.length })}
@@ -145,11 +147,6 @@ export default function GraphPage() {
 					</Box>
 				)}
 			</Box>
-			{selected && (
-				<Box sx={{ flex: "1 1 40%", minWidth: 0, overflowY: "auto" }}>
-					<ItemDetail uid={selected} onSelect={setSelected} onClose={() => setSelected(null)} />
-				</Box>
-			)}
 		</Box>
 	);
 }

@@ -66,6 +66,23 @@ def test_compute_plan_covers_every_case(
         assert result[name] == expected.get(name, []), name
 
 
+def test_ephemeral_entries_deleted_in_the_database_are_deleted_in_unchanged_files() -> None:
+    plan = compute_plan([], [A], {"a": A.hash}, ephemeral=frozenset({"task"}))
+    assert summary(plan) == {"intents": [("files", "delete", "a")], "conflicts": [], "adopt": [], "forget": []}
+
+
+def test_ephemeral_entries_changed_in_the_files_or_deleted_there_stay_conflicts() -> None:
+    changed = compute_plan([], [B], {"a": A.hash}, ephemeral=frozenset({"task"}))
+    assert summary(changed)["conflicts"] == [("deleted_in_database", "a")]
+    gone_in_files = compute_plan([A], [], {"a": A.hash}, ephemeral=frozenset({"task"}))
+    assert summary(gone_in_files)["conflicts"] == [("deleted_in_files", "a")]
+
+
+def test_only_the_marked_kinds_are_ephemeral() -> None:
+    plan = compute_plan([], [A], {"a": A.hash}, ephemeral=frozenset({"note"}))
+    assert summary(plan)["conflicts"] == [("deleted_in_database", "a")]
+
+
 def test_label_is_not_part_of_the_hash_but_kind_fields_and_refs_are() -> None:
     assert entry("a", label="TASK-001").hash == entry("a", label="TASK-099").hash
     assert entry("a").hash != MirrorEntry("story", "TASK-001", {"title": "t"}, {}, "a").hash

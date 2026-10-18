@@ -409,6 +409,31 @@ def test_auto_never_deletes(rig: Rig) -> None:
     assert "TASK-001" in rig.text()
 
 
+def test_auto_deletes_ephemeral_entries_gone_from_the_database(rig: Rig) -> None:
+    rig.service = SyncService(
+        lambda: [MirrorBinding("test", LineCodec(), rig.db, ephemeral=True)],
+        projects=rig.projects,
+        files=rig.files,
+        state=rig.state,
+        database=rig.transactions,
+        backups=rig.backups,
+        events=rig.events,
+        scheduler=rig.scheduler,
+        clock=rig.clock,
+        ids=SequentialIds(),
+    )
+    rig.db.add(U1, "task", "Eins")
+    rig.db.add(U2, "task", "Zwei")
+    rig.write("# Items\n\n" + line("TASK-001", U1, "task", "Eins") + line("TASK-002", U2, "task", "Zwei"))
+    rig.sync()
+    del rig.db.rows[U1]
+    status = rig.service.auto(P)
+    assert status.state == "in_sync"
+    assert "TASK-001" not in rig.text() and "TASK-002" in rig.text()
+    rig.write("# Items\n\n")  # in den Dateien gelöscht: weiter ein Konflikt
+    assert rig.service.auto(P).state == "conflicts" and U2 in rig.db.rows
+
+
 def test_auto_imports_new_entries_and_backs_up_first(rig: Rig) -> None:
     rig.write("# Items\n\n" + line("NEW-x", "", "task", "Neu"))
     status = rig.service.auto(P)

@@ -70,7 +70,17 @@ def _build(context: PluginContext) -> NotesServices:
                 f"{parent.label} liegt im Papierkorb; erst dieses wiederherstellen", details={"topic": parent.label}
             )
 
+    def note_closed(tx: Transaction, uid: str) -> bool:
+        note = notes.get(tx, uid)
+        return note is not None and (note.archived or note.finished)
+
+    def topic_closed(tx: Transaction, uid: str) -> bool:
+        topic = topics.get(tx, uid)
+        return topic is not None and topic.archived_at is not None
+
     workspace.trash.register("note", restore_guard=note_restore_guard, purger=notes.delete)
+    workspace.registry.register_state("note", note_closed)
+    workspace.registry.register_state("topic", topic_closed)
     workspace.trash.register("topic", children=topic_children, restore_guard=topic_restore_guard, purger=topics.delete)
     deps = Deps(
         notes,

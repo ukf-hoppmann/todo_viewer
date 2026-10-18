@@ -36,6 +36,19 @@ async function renderPage(options: Parameters<typeof fakeAlarmsBackend>[0] = {})
 }
 
 describe("AlarmsPage: the detail of an alarm", () => {
+	it("expands and collapses the full text of a row without opening its detail", async () => {
+		await renderPage();
+		const toggle = await screen.findByTestId(ids.action("expand", "wait"));
+		expect(toggle.getAttribute("aria-expanded")).toBe("false");
+
+		fireEvent.click(toggle);
+		expect(screen.getByTestId(ids.action("expand", "wait")).getAttribute("aria-expanded")).toBe("true");
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
+
+		fireEvent.click(screen.getByTestId(ids.action("expand", "wait")));
+		expect(screen.getByTestId(ids.action("expand", "wait")).getAttribute("aria-expanded")).toBe("false");
+	});
+
 	it("opens the alarm with the element it refers to in the detail column when its row is clicked", async () => {
 		await renderPage();
 		fireEvent.click(await screen.findByTestId(ids.row("wait")));

@@ -1,6 +1,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SnoozeIcon from "@mui/icons-material/Snooze";
 import { Alert, Box, Button, Chip, Dialog, DialogContent, DialogTitle, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import { useCallback, useMemo, useState, type ComponentType, type MouseEvent } from "react";
@@ -33,6 +34,13 @@ export default function AlarmsPage() {
 	const [dialog, setDialog] = useState<{ alarm?: AlarmOut } | undefined>();
 	const [error, setError] = useState<string>();
 	const [openUid, setOpenUid] = useState<string>();
+	const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+	const toggle = (uid: string) =>
+		setExpanded((current) => {
+			const next = new Set(current);
+			if (!next.delete(uid)) next.add(uid);
+			return next;
+		});
 	const defaultProject = marked ?? projects.find((project) => project.builtin);
 	const sorted = useMemo(() => sortAlarms(alarms), [alarms]);
 
@@ -90,6 +98,7 @@ export default function AlarmsPage() {
 			{sorted.map((alarm) => {
 				const openable = canOpen(alarm);
 				const selected = alarm.uid === open?.uid;
+				const isExpanded = expanded.has(alarm.uid);
 				return (
 					<Box
 						key={alarm.uid}
@@ -102,7 +111,7 @@ export default function AlarmsPage() {
 							alignItems: "center",
 							gap: 1,
 							px: 1,
-							py: 0.75,
+							py: 1,
 							borderBottom: 1,
 							borderColor: "divider",
 							opacity: alarm.status === "Done" ? 0.6 : 1,
@@ -111,17 +120,36 @@ export default function AlarmsPage() {
 							"&:hover": openable ? { bgcolor: "action.hover" } : undefined,
 						}}
 					>
-						<Chip size="small" color={COLORS[alarm.status] ?? "default"} label={t(`status.${alarm.status}`)} />
+						<Chip size="small" color={COLORS[alarm.status] ?? "default"} label={t(`status.${alarm.status}`)} sx={{ alignSelf: "flex-start", mt: 0.25 }} />
 						<Box sx={{ flexGrow: 1, minWidth: 0 }}>
-							<Typography variant="body2" noWrap>
-								{`${alarm.label} — ${alarm.text}`}
-							</Typography>
 							<Typography variant="caption" color="text.secondary" component="div" noWrap>
-								{when(alarm)}
-								{alarm.target ? ` · ${alarm.target.label} — ${alarm.target.title}` : alarm.target_text ? ` · ${alarm.target_text}` : ""}
+								{`${alarm.label} · ${when(alarm)}`}
 							</Typography>
+							<Typography
+								variant="body2"
+								data-testid={alarmsTestIds.text(alarm.uid)}
+								sx={isExpanded ? undefined : { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+							>
+								{alarm.text}
+							</Typography>
+							{(alarm.target || alarm.target_text) && (
+								<Chip size="small" variant="outlined" label={alarm.target ? `${alarm.target.label} — ${alarm.target.title}` : alarm.target_text} sx={{ mt: 0.5, maxWidth: "100%" }} />
+							)}
 						</Box>
-						<RowActions alarm={alarm} actions={actionsOf(alarm)} />
+						<Stack direction="row" sx={{ flexShrink: 0, alignSelf: "flex-start" }} onClick={(event) => event.stopPropagation()}>
+							<Tooltip title={isExpanded ? t("action.collapse") : t("action.expand")}>
+								<IconButton
+									size="small"
+									aria-label={isExpanded ? t("action.collapse") : t("action.expand")}
+									aria-expanded={isExpanded}
+									onClick={() => toggle(alarm.uid)}
+									data-testid={alarmsTestIds.action("expand", alarm.uid)}
+								>
+									<ExpandMoreIcon fontSize="small" sx={{ transform: isExpanded ? "rotate(180deg)" : undefined, transition: "transform 0.2s" }} />
+								</IconButton>
+							</Tooltip>
+							<RowActions alarm={alarm} actions={actionsOf(alarm)} />
+						</Stack>
 					</Box>
 				);
 			})}

@@ -19,7 +19,9 @@
 	"action": {
 		"edit": "Bearbeiten",
 		"snooze": "Zurückstellen",
-		"finish": "Erledigt"
+		"finish": "Erledigt",
+		"expand": "Aufklappen",
+		"collapse": "Zuklappen"
 	},
 	"form": {
 		"save": "Speichern",

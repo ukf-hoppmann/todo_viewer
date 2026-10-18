@@ -19,7 +19,9 @@
 	"action": {
 		"edit": "Edit",
 		"snooze": "Snooze",
-		"finish": "Done"
+		"finish": "Done",
+		"expand": "Expand",
+		"collapse": "Collapse"
 	},
 	"form": {
 		"save": "Save",

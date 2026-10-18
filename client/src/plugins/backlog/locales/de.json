@@ -26,6 +26,7 @@
 		"Task": "Task"
 	},
 	"empty": "Keine Items in den gewählten Projekten und Filtern.",
+	"marking": "Erweiterte Markierung",
 	"collapse": {
 		"collapseEpic": "Epics zuklappen",
 		"expandEpic": "Epics aufklappen",

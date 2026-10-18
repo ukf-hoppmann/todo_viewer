@@ -68,6 +68,18 @@ describe("BacklogPage: tree", () => {
 
 		expect(node("opt").getAttribute("data-dashed")).toBe("true");
 		expect(node("s2").getAttribute("data-dashed")).toBeNull();
+		expect(node("opt").querySelector('[data-guide="dashed"]')).toBeTruthy();
+		expect(node("s2").querySelector('[data-guide="dashed"]')).toBeNull();
+	});
+
+	it("marks the areas of epics and stories, and drops the marking with the checkbox", async () => {
+		await renderPage({ documents: { backlog: { hiddenStatuses: [], collapsed: [] } } });
+		await waitFor(() => expect(screen.getByTestId(sharedTestIds.treeNode("opt"))).toBeTruthy());
+		expect(node("s2").getAttribute("data-area")).toBe("2");
+
+		fireEvent.click(screen.getByTestId(ids.marking));
+
+		await waitFor(() => expect(node("s2").getAttribute("data-area")).toBeNull());
 	});
 
 	it("filters by the search text of the workspace", async () => {
@@ -112,7 +124,7 @@ describe("BacklogPage: folding buttons", () => {
 
 		fireEvent.click(screen.getByTestId(ids.collapse("Epic")));
 		await waitFor(() => expect(screen.queryByTestId(sharedTestIds.treeNode("s2"))).toBeNull());
-		expect(screen.getByTestId(ids.collapse("Epic")).getAttribute("aria-label")).toMatch(/^Epics aufklappen/);
+		expect(screen.getByTestId(ids.collapse("Epic")).textContent).toBe("Epics aufklappen");
 		fireEvent.click(screen.getByTestId(ids.collapse("Epic")));
 
 		await waitFor(() => expect(screen.getByTestId(sharedTestIds.treeNode("s2"))).toBeTruthy());

@@ -4,7 +4,7 @@ import { Box, IconButton, Typography } from "@mui/material";
 import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
 import { ProgressRing } from "../ProgressRing";
 import { sharedTestIds } from "../testIds";
-import { dropPosition, flattenVisible, isInSubtree, type DropPosition, type TreeNode } from "./treeModel";
+import { dropPosition, flattenVisible, guideLines, isInSubtree, type DropPosition, type TreeNode } from "./treeModel";
 
 export interface TreeDrop {
 	sourceId: string;
@@ -36,6 +36,7 @@ interface TreeViewProps {
  */
 export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, actions, canDrop, onDrop, ariaLabel }: TreeViewProps) {
 	const rows = useMemo(() => flattenVisible(nodes, expanded), [nodes, expanded]);
+	const lines = useMemo(() => guideLines(rows), [rows]);
 	const [focusId, setFocusId] = useState<string | undefined>();
 	const [dragId, setDragId] = useState<string | undefined>();
 	const [over, setOver] = useState<{ id: string; position: DropPosition } | undefined>();
@@ -169,9 +170,8 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 							cursor: "pointer",
 							outline: "none",
 							bgcolor: selected ? "action.selected" : node.area === 1 ? "action.hover" : "transparent",
-							opacity: dragId === node.id ? 0.5 : node.dashed ? 0.7 : 1,
-							border: node.dashed ? "1px dashed" : "1px solid transparent",
-							borderColor: node.dashed ? "text.disabled" : "transparent",
+							opacity: dragId === node.id ? 0.5 : 1,
+							border: "1px solid transparent",
 							...(node.area ? { borderLeft: "3px solid", borderLeftColor: node.area === 1 ? "primary.main" : "text.disabled" } : {}),
 							boxShadow: marker === "inside" ? (theme) => `inset 0 0 0 2px ${theme.palette.primary.main}` : "none",
 							"&:hover, &:focus-visible": { bgcolor: selected ? "action.selected" : "action.hover" },
@@ -180,6 +180,22 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 							"&:hover .tree-actions, &:focus-within .tree-actions": { visibility: "visible" },
 						}}
 					>
+						{lines[index]!.map((dashed, level) => (
+							<Box
+								key={level}
+								aria-hidden
+								data-guide={dashed ? "dashed" : "solid"}
+								sx={{
+									position: "absolute",
+									top: 0,
+									bottom: 0,
+									left: `${level * 16 + 18}px`,
+									borderLeft: "1px",
+									borderLeftStyle: dashed ? "dashed" : "solid",
+									borderLeftColor: dashed ? "action.disabled" : "divider",
+								}}
+							/>
+						))}
 						{marker === "before" && <DropLine id={node.id} position="before" />}
 						{marker === "after" && <DropLine id={node.id} position="after" />}
 						{node.children.length > 0 ? (
@@ -207,13 +223,24 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 								{node.tag}
 							</Typography>
 						)}
-						{node.statusColor && <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: node.statusColor, flexShrink: 0 }} />}
+						{node.statusColor && (
+							<Box
+								sx={{
+									width: 10,
+									height: 10,
+									borderRadius: "50%",
+									flexShrink: 0,
+									boxSizing: "border-box",
+									...(node.dashed ? { border: "1.5px solid", borderColor: node.statusColor } : { bgcolor: node.statusColor }),
+								}}
+							/>
+						)}
 						{node.badge && (
 							<Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
 								{node.badge}
 							</Typography>
 						)}
-						<Typography variant="body1" noWrap sx={{ flexGrow: 1, minWidth: 0, fontSize: "1.1rem" }}>
+						<Typography variant="body1" noWrap color={node.dashed ? "text.secondary" : undefined} sx={{ flexGrow: 1, minWidth: 0, fontSize: "1.1rem" }}>
 							{node.label}
 						</Typography>
 						{node.progress && <ProgressRing done={node.progress.done} total={node.progress.total} />}

@@ -17,5 +17,5 @@ export { extractHeadings, renderMarkdown, slugify, type Heading } from "./markdo
 export { ProgressRing } from "./ProgressRing";
 export { sharedTestIds } from "./testIds";
 export { TreeView, type TreeDrop } from "./tree/TreeView";
-export { ancestorsOf, buildTree, dropPosition, flattenVisible, isInSubtree } from "./tree/treeModel";
+export { ancestorsOf, buildTree, dropPosition, flattenVisible, guideLines, isInSubtree } from "./tree/treeModel";
 export type { DropPosition, FlatNode, TreeNode, VisibleNode } from "./tree/treeModel";

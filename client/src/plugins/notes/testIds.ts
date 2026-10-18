@@ -8,8 +8,6 @@ export const notesTestIds = {
 	newTopic: (uid: string) => `notes.new-topic.${uid}`,
 	collapse: "notes.collapse",
 	marking: "notes.marking",
-	archivedTopics: "notes.archived-topics",
-	resetFilters: "notes.reset-filters",
 	statusFilter: "notes.status-filter",
 	error: "notes.error",
 	topicAction: (action: string, uid: string) => `notes.topic-action.${action}.${uid}`,

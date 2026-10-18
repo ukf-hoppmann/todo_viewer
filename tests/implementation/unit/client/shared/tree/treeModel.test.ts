@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ancestorsOf, buildTree, dropPosition, flattenVisible, isInSubtree } from "../../../../../../client/src/shared/tree/treeModel";
+import { ancestorsOf, buildTree, dropPosition, flattenVisible, guideLines, isInSubtree } from "../../../../../../client/src/shared/tree/treeModel";
 
 const flat = [
 	{ id: "e1", parentId: null, label: "Epic" },
@@ -49,6 +49,22 @@ describe("flattenVisible", () => {
 
 	it("ignores an open mark on a node without children", () => {
 		expect(flattenVisible(roots, new Set(["lost"]))[1]).toMatchObject({ expanded: false });
+	});
+});
+
+describe("guideLines", () => {
+	it("gives each row one line per level above it, dashed below a dashed node", () => {
+		const tree = buildTree([
+			{ id: "e", parentId: null, label: "E" },
+			{ id: "s1", parentId: "e", label: "S1", dashed: true },
+			{ id: "t1", parentId: "s1", label: "T1" },
+			{ id: "s2", parentId: "e", label: "S2" },
+			{ id: "t2", parentId: "s2", label: "T2" },
+		]);
+		const rows = flattenVisible(tree, new Set(["e", "s1", "s2"]));
+
+		expect(rows.map((row) => row.node.id)).toEqual(["e", "s1", "t1", "s2", "t2"]);
+		expect(guideLines(rows)).toEqual([[], [true], [true, false], [false], [false, false]]);
 	});
 });
 

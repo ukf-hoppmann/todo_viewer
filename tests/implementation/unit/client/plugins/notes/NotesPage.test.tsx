@@ -75,7 +75,7 @@ describe("NotesPage: tree", () => {
 
 		fireEvent.click(screen.getByTestId(sharedTestIds.filterOption("done")));
 		await waitFor(() => expect(screen.getByTestId(sharedTestIds.treeNode("n4"))).toBeTruthy());
-		fireEvent.click(screen.getByTestId(ids.archivedTopics));
+		fireEvent.click(screen.getByTestId(sharedTestIds.filterOption("archived-topics")));
 		await waitFor(() => expect(screen.getByTestId(sharedTestIds.treeNode("old"))).toBeTruthy());
 		expect(node("old").getAttribute("data-dashed")).toBe("true");
 	});
@@ -88,17 +88,6 @@ describe("NotesPage: tree", () => {
 		fireEvent.click(screen.getByTestId(ids.marking));
 
 		await waitFor(() => expect(node("t1").getAttribute("data-area")).toBeNull());
-	});
-
-	it("resets the status filter to the open ones", async () => {
-		await renderPage({ documents: { notes: { shownStatuses: ["done"] } } });
-		await screen.findByTestId(sharedTestIds.treeNode("n4"));
-		expect(screen.queryByTestId(sharedTestIds.treeNode("n1"))).toBeNull();
-
-		fireEvent.click(screen.getByTestId(ids.resetFilters));
-
-		await waitFor(() => expect(screen.getByTestId(sharedTestIds.treeNode("n1"))).toBeTruthy());
-		expect(screen.queryByTestId(sharedTestIds.treeNode("n4"))).toBeNull();
 	});
 
 	it("filters by the search text and keeps the topics on the way", async () => {
@@ -130,7 +119,7 @@ describe("NotesPage: tree", () => {
 		});
 
 		fireEvent.click(screen.getByTestId(ids.collapse));
-		await waitFor(() => expect(screen.getByTestId(ids.collapse).getAttribute("aria-label")).toBe("Topics aufklappen"));
+		await waitFor(() => expect(screen.getByTestId(ids.collapse).textContent).toBe("Topics aufklappen"));
 		fireEvent.click(screen.getByTestId(ids.collapse));
 		await waitFor(() => expect(screen.getByTestId(sharedTestIds.treeNode("n3"))).toBeTruthy());
 	});

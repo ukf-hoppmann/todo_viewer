@@ -40,9 +40,21 @@ export function groupByProject<T extends { uid: string }>(
 		.filter((group) => group.items.length > 0);
 }
 
-/** The nodes for the shared tree view; an item whose parent is filtered out becomes a root. */
-export function toFlatNodes(items: readonly IndexItem[]): FlatNode[] {
+/**
+ * The nodes for the shared tree view; an item whose parent is filtered out becomes a root. With the extended marking
+ * a root starts an area and an item below it a nested one; a task belongs to the area of its story.
+ */
+export function toFlatNodes(items: readonly IndexItem[], extendedMarking = false): FlatNode[] {
+	const byUid = new Map(items.map((item) => [item.uid, item]));
+	const isRoot = (item: IndexItem) => !item.parent_uid || !byUid.has(item.parent_uid);
+	const areaOf = (item: IndexItem): 1 | 2 | undefined => {
+		if (!extendedMarking) return undefined;
+		if (isRoot(item)) return 1;
+		const parent = byUid.get(item.parent_uid!)!;
+		return item.type === "Task" && isRoot(parent) ? 1 : 2;
+	};
 	return items.map((item) => ({
+		area: areaOf(item),
 		id: item.uid,
 		parentId: item.parent_uid,
 		label: item.title,

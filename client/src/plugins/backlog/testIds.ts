@@ -5,6 +5,7 @@ export const backlogTestIds = {
 	project: (uid: string) => `backlog.project.${uid}`,
 	projectProgress: (uid: string) => `backlog.project-progress.${uid}`,
 	collapse: (type: string) => `backlog.collapse.${type}`,
+	marking: "backlog.marking",
 	statusFilter: "backlog.status-filter",
 	priorityFilter: "backlog.priority-filter",
 	detail: "backlog.detail",

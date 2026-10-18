@@ -23,8 +23,7 @@
 		"expand": "Topics aufklappen"
 	},
 	"marking": "Erweiterte Markierung",
-	"archivedTopics": "Archivierte Topics zeigen",
-	"resetFilters": "Filter zurücksetzen",
+	"archivedTopics": "Archivierte Topics",
 	"project": {
 		"newNote": "Neue Note",
 		"newTopic": "Neues Topic"

@@ -26,6 +26,7 @@
 		"Task": "Task"
 	},
 	"empty": "No items in the chosen projects and filters.",
+	"marking": "Extended marking",
 	"collapse": {
 		"collapseEpic": "Collapse epics",
 		"expandEpic": "Expand epics",

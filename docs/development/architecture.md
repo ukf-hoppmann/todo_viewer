@@ -77,6 +77,9 @@ rebuild (`STORY-084`).
   markers, a running git operation, or a missing folder, and MUST back up the
   database before writing to it. Whether a project's sides differ MUST be
   detectable without changing any data.
+- An owner MAY mark its mirror entries as ephemeral. For such entries a
+  deletion in the database is carried to the files without a conflict, also
+  by the automatic sync; a deletion in the files stays a conflict.
 - Database: writes MUST be transactional and MUST abort with
   `version_conflict` instead of overwriting an element that changed since it
   was read. The schema is fixed: no free-form extra fields; fixed value lists

@@ -165,5 +165,8 @@
 		"created": "Neu angelegt: {{labels}}.",
 		"conflictsLeft_one": "{{count}} Konflikt bleibt offen.",
 		"conflictsLeft_other": "{{count}} Konflikte bleiben offen."
+	},
+	"detail": {
+		"close": "Schließen"
 	}
 }

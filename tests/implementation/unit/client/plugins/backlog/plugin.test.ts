@@ -14,6 +14,7 @@ describe("backlog plugin definition", () => {
 		expect(filters).toHaveLength(2);
 		expect(filters.every((entry) => "when" in entry && entry.when?.[0] === "backlog/main")).toBe(true);
 		expect(widgets.filter((entry) => entry.slot === "workspace.create-types").map((entry) => entry.name)).toEqual(["epic", "story", "task"]);
+		expect(widgets.filter((entry) => entry.slot === "workspace.element-detail").map((entry) => entry.name)).toEqual(["epic", "story", "task"]);
 	});
 
 	it.each([

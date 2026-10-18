@@ -22,6 +22,10 @@ export const plugin = definePlugin({
 			description:
 				"Widgets in the detail panel of every element (below its fields, drawn by `DetailSections`): the widget reads the element with `useDetailElement`.",
 		},
+		"element-detail": {
+			description:
+				"The detail view of an element kind, drawn by `ElementDetail`: `name` is the kind (e.g. `story`, `note`), the component reads the element with `useShownElement`.",
+		},
 		"create-types": {
 			description:
 				"Forms of the dialog '＋ New': `name` is the kind, `component` the form (it uses `useCreateDialog`), the title is the text `create.<name>` of the contributing plugin.",
@@ -58,6 +62,8 @@ export { useProjectSelection, useSearchText } from "./state";
 export { useListProjectsQuery, useSearchElementsQuery, type ElementOut, type Project } from "./api";
 export { useDetailElement, type DetailElement } from "./detailElement";
 export { DetailSections } from "./detailSections";
+export { ElementDetail } from "./ElementDetail";
+export { useShownElement, type ShownElement } from "./shownElement";
 export { LinksSection } from "./LinksSection";
 export { useDeleteElement } from "./useDeleteElement";
 export { workspaceTestIds } from "./testIds";

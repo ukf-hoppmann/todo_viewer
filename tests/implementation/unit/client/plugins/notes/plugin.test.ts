@@ -14,6 +14,7 @@ describe("notes plugin definition", () => {
 		expect(filters).toHaveLength(1);
 		expect(filters.every((entry) => "when" in entry && entry.when?.[0] === "notes/main")).toBe(true);
 		expect(widgets.filter((entry) => entry.slot === "workspace.create-types").map((entry) => entry.name)).toEqual(["note", "topic"]);
+		expect(widgets.filter((entry) => entry.slot === "workspace.element-detail").map((entry) => entry.name)).toEqual(["note"]);
 		expect(widgets.filter((entry) => entry.slot === "backlog.item-detail").map((entry) => entry.name)).toEqual(["notices", "demote"]);
 		expect(widgets.filter((entry) => entry.slot === "layout-header-sidebar.header-actions").map((entry) => entry.name)).toEqual(["due"]);
 		expect(widgets.filter((entry) => entry.slot === "core.settings-sections").map((entry) => entry.name)).toEqual(["settings"]);

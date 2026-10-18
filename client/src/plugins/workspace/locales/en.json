@@ -165,5 +165,8 @@
 		"created": "Created: {{labels}}.",
 		"conflictsLeft_one": "{{count}} conflict stays open.",
 		"conflictsLeft_other": "{{count}} conflicts stay open."
+	},
+	"detail": {
+		"close": "Close"
 	}
 }

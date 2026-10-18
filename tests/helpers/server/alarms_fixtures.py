@@ -15,5 +15,7 @@ def alarm(
     status: str = "Pending",
     snoozed_until: datetime | None = None,
     deleted_at: datetime | None = None,
+    targets: tuple[str, ...] = (),
+    done_at: datetime | None = None,
 ) -> Alarm:
-    return Alarm(uid, "p", uid.upper(), uid, at, status, None, None, snoozed_until, 1, deleted_at)
+    return Alarm(uid, "p", uid.upper(), uid, at, status, targets, None, snoozed_until, 1, deleted_at, done_at)

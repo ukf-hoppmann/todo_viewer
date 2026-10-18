@@ -5,14 +5,19 @@ from datetime import timedelta
 import pytest
 from alarms_fixtures import NOW, alarm
 from viewer.plugins.alarms.domain.model import (
+    PURGE_AFTER,
     AlarmViolation,
     alarm_time,
     due_now,
     finish,
     fire,
+    follow_targets,
     next_due,
+    next_wakeup,
     reschedule,
     snooze,
+    to_purge,
+    undo,
 )
 
 PAST = NOW - timedelta(hours=2)
@@ -35,7 +40,7 @@ def test_a_snoozed_alarm_waits_for_its_new_time_not_its_old_one() -> None:
     assert alarm_time(quiet) == FUTURE
 
 
-@pytest.mark.parametrize("status", ["Due", "Done"])
+@pytest.mark.parametrize("status", ["Due", "Done", "Expired"])
 def test_alarms_that_were_fired_or_finished_wait_for_nothing(status: str) -> None:
     waiting = alarm("a", PAST, status)
     assert due_now([waiting], NOW) == [] and next_due([waiting], NOW) is None
@@ -81,14 +86,14 @@ def test_snoozing_into_the_past_or_a_closed_alarm_is_refused() -> None:
             snooze(closed, NOW)
         assert error.value.code == code
         with pytest.raises(AlarmViolation):
-            finish(closed)
+            finish(closed, NOW)
 
 
 def test_finishing_clears_the_snooze_and_a_new_time_wakes_the_alarm_again() -> None:
-    done = finish(alarm("a", PAST, "Snoozed", FUTURE))
-    assert (done.status, done.snoozed_until) == ("Done", None)
+    done = finish(alarm("a", PAST, "Snoozed", FUTURE), NOW)
+    assert (done.status, done.snoozed_until, done.done_at) == ("Done", None, NOW)
     again = reschedule(done, FUTURE)
-    assert (again.status, again.at, again.snoozed_until) == ("Pending", FUTURE, None)
+    assert (again.status, again.at, again.snoozed_until, again.done_at) == ("Pending", FUTURE, None, None)
     with pytest.raises(AlarmViolation):
         reschedule(alarm("a", deleted_at=PAST), FUTURE)
 
@@ -96,3 +101,55 @@ def test_finishing_clears_the_snooze_and_a_new_time_wakes_the_alarm_again() -> N
 def test_firing_keeps_the_time_and_marks_due() -> None:
     fired = fire(alarm("a", PAST, "Snoozed", PAST))
     assert (fired.status, fired.at, fired.snoozed_until) == ("Due", PAST, None)
+
+
+# --- Erinnerung an Elemente: erlöschen, zurückkehren, aufräumen -------------------------------------------------
+
+
+def test_an_alarm_expires_when_none_of_its_elements_is_open_any_more() -> None:
+    expired = follow_targets(alarm("a", FUTURE, "Snoozed", FUTURE, targets=("x", "y")), [False, False], NOW)
+    assert (expired.status, expired.done_at, expired.snoozed_until) == ("Expired", NOW, None)
+    assert follow_targets(alarm("a", targets=("x", "y")), [False, True], NOW).status == "Pending"
+
+
+def test_an_alarm_without_elements_never_expires() -> None:
+    assert follow_targets(alarm("a"), [], NOW).status == "Pending"
+
+
+def test_a_finished_or_deleted_alarm_does_not_follow_its_elements() -> None:
+    done = alarm("a", status="Done", targets=("x",), done_at=PAST)
+    assert follow_targets(done, [False], NOW) == done
+    assert follow_targets(done, [True], NOW) == done
+    deleted = alarm("a", targets=("x",), deleted_at=PAST)
+    assert follow_targets(deleted, [False], NOW) == deleted
+
+
+def test_an_expired_alarm_comes_back_when_an_element_opens_again() -> None:
+    later = follow_targets(alarm("a", FUTURE, "Expired", targets=("x",), done_at=PAST), [True], NOW)
+    assert (later.status, later.done_at) == ("Pending", None)
+    missed = follow_targets(alarm("a", PAST, "Expired", targets=("x",), done_at=PAST), [True], NOW)
+    assert missed.status == "Due"
+
+
+def test_undo_reopens_a_finished_alarm_only() -> None:
+    assert undo(alarm("a", FUTURE, "Done", done_at=PAST), NOW).status == "Pending"
+    assert undo(alarm("a", PAST, "Done", done_at=PAST), NOW).status == "Due"
+    for other in (alarm("a"), alarm("a", status="Expired", targets=("x",), done_at=PAST)):
+        with pytest.raises(AlarmViolation) as error:
+            undo(other, NOW)
+        assert error.value.code == "alarm_not_done"
+
+
+def test_finished_and_expired_alarms_are_purged_a_day_later() -> None:
+    fresh = alarm("fresh", status="Done", done_at=NOW - PURGE_AFTER + timedelta(seconds=1))
+    old = alarm("old", status="Done", done_at=NOW - PURGE_AFTER)
+    gone = alarm("gone", status="Expired", targets=("x",), done_at=NOW - timedelta(days=3))
+    trashed = alarm("trashed", status="Done", done_at=NOW - timedelta(days=3), deleted_at=PAST)
+    assert [a.uid for a in to_purge([fresh, old, gone, trashed, alarm("open")], NOW)] == ["old", "gone"]
+
+
+def test_the_timer_wakes_for_the_next_alarm_or_the_next_purge() -> None:
+    finished = alarm("d", status="Done", done_at=NOW)
+    assert next_wakeup([finished], NOW) == NOW + PURGE_AFTER
+    assert next_wakeup([finished, alarm("a", FUTURE)], NOW) == FUTURE
+    assert next_wakeup([], NOW) is None

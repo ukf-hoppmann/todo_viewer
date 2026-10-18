@@ -12,15 +12,18 @@ from viewer.plugins.alarms.infrastructure.mirror.syntax import ALARMS_FILE, NO_E
 
 def render_entry(entry: MirrorEntry, project: str) -> list[str]:
     f, extra = entry.fields, entry.extra
-    lines = [f"- `{entry.label or entry.placeholder}` **{f['text']}**"]
+    head = f"- `{entry.label or entry.placeholder}`"
+    lines = [f"{head} **{f['text']}**" if f["text"] else head]
     if entry.uid is not None:
         lines.append(f"  - Uid: {entry.uid}.")
     lines.append(f"  - At: {f['at']}.")
-    target = entry.refs.get("target")
-    lines.append(f"  - Target: {f'`{target[0]}`' if target else 'None'}.")
+    targets = entry.refs.get("target")
+    lines.append(f"  - Target: {', '.join(f'`{t}`' for t in targets) if targets else 'None'}.")
     lines.append(f"  - Status: {f['status']}.")
     if f["snoozed_until"]:
         lines.append(f"  - Snoozed until: {f['snoozed_until']}.")
+    if f.get("done_at"):
+        lines.append(f"  - Done at: {f['done_at']}.")
     if extra.get("created"):
         lines.append(f"  - Created: {extra['created']}.")
     if f["deleted"]:

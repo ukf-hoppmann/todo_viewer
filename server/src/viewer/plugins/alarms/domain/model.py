@@ -1,4 +1,9 @@
-"""Wecker: Status, Datentyp und die reinen Regeln (wann fällig, wann der nächste Termin, Übergänge)."""
+"""Wecker: Status, Datentyp und die reinen Regeln (wann fällig, wann der nächste Termin, Übergänge, erlöschen,
+aufräumen).
+
+Ein Wecker ist eine Erinnerung, kein Planungselement: er erinnert an seine Elemente oder ist eine freie Erinnerung mit
+Text. Erledigt (`Done`) oder erloschen (`Expired`, kein Element mehr offen) bleibt er `PURGE_AFTER` sichtbar und wird
+dann endgültig gelöscht."""
 
 from __future__ import annotations
 
@@ -8,9 +13,13 @@ from datetime import UTC, datetime, timedelta
 
 from viewer.core.domain.errors import DomainError
 
-STATUSES = ("Pending", "Due", "Done", "Snoozed")
+STATUSES = ("Pending", "Due", "Done", "Snoozed", "Expired")
+#: Wecker, die nichts mehr erwarten: von Hand erledigt oder erloschen.
+CLOSED_STATUSES = frozenset({"Done", "Expired"})
 #: Zurückgestellt wird, wenn nichts anderes gesagt ist, um diese Zeit.
 DEFAULT_SNOOZE = timedelta(hours=1)
+#: So lange bleibt ein erledigter oder erloschener Wecker sichtbar (zum Rückgängigmachen), dann wird er gelöscht.
+PURGE_AFTER = timedelta(hours=24)
 
 
 class AlarmViolation(DomainError):
@@ -30,12 +39,15 @@ class Alarm:
     text: str
     at: datetime
     status: str
-    #: Das Ziel: ein Element (`target_uid`) oder, wenn es das hier nicht gibt, sein Name als Text; sonst frei.
-    target_uid: str | None
+    #: Die Elemente, an die er erinnert (`uid`s, in dieser Reihenfolge); leer bei einer freien Erinnerung.
+    targets: tuple[str, ...]
+    #: Verweise auf Elemente anderer Projekte, die es hier nicht gibt, als Text (`Projekt:LABEL`, komma-getrennt).
     target_text: str | None
     snoozed_until: datetime | None
     revision: int
     deleted_at: datetime | None = None
+    #: Wann er erledigt wurde oder erloschen ist; von da an läuft `PURGE_AFTER`.
+    done_at: datetime | None = None
 
 
 def utc(moment: datetime) -> datetime:
@@ -60,6 +72,23 @@ def due_now(alarms: Sequence[Alarm], now: datetime) -> list[Alarm]:
     return [a for t, a in sorted(((t, a) for t, a in due if t is not None and t <= utc(now)), key=lambda p: p[0])]
 
 
+def to_purge(alarms: Sequence[Alarm], now: datetime) -> list[Alarm]:
+    """Die erledigten und erloschenen Wecker, deren Frist `PURGE_AFTER` vorbei ist (nicht die im Papierkorb)."""
+    return [a for a in alarms if (t := purge_time(a)) is not None and t <= utc(now)]
+
+
+def purge_time(alarm: Alarm) -> datetime | None:
+    if alarm.deleted_at is not None or alarm.status not in CLOSED_STATUSES or alarm.done_at is None:
+        return None
+    return utc(alarm.done_at) + PURGE_AFTER
+
+
+def next_wakeup(alarms: Sequence[Alarm], now: datetime) -> datetime | None:
+    """Der eine Termin des Plugins: der nächste Wecker, der sich meldet, oder der nächste, der aufgeräumt wird."""
+    times = [t for t in (next_due(alarms, now), *(purge_time(a) for a in alarms)) if t is not None]
+    return min(times) if times else None
+
+
 def next_due(alarms: Sequence[Alarm], now: datetime) -> datetime | None:
     """Der früheste Zeitpunkt, auf den noch ein Wecker wartet (auch ein vergangener: er ist verpasst); `None`, wenn
     keiner wartet."""
@@ -78,16 +107,40 @@ def snooze(alarm: Alarm, now: datetime, until: datetime | None = None) -> Alarm:
     return replace(alarm, status="Snoozed", snoozed_until=target)
 
 
-def finish(alarm: Alarm) -> Alarm:
+def finish(alarm: Alarm, now: datetime) -> Alarm:
     _open(alarm)
-    return replace(alarm, status="Done", snoozed_until=None)
+    return replace(alarm, status="Done", snoozed_until=None, done_at=utc(now))
+
+
+def undo(alarm: Alarm, now: datetime) -> Alarm:
+    """Rückgängig: ein von Hand erledigter Wecker wartet wieder (`Due`, wenn seine Zeit schon vorbei ist). Ein
+    erloschener kommt nur zurück, wenn eins seiner Elemente wieder offen ist."""
+    if alarm.deleted_at is not None:
+        raise AlarmViolation("alarm_deleted", f"{alarm.label} liegt im Papierkorb", alarm=alarm.label)
+    if alarm.status != "Done":
+        raise AlarmViolation("alarm_not_done", f"{alarm.label} ist nicht erledigt", alarm=alarm.label)
+    return _reopen(alarm, now)
+
+
+def follow_targets(alarm: Alarm, open_states: Sequence[bool], now: datetime) -> Alarm:
+    """Der Wecker folgt seinen Elementen (`open_states` in der Reihenfolge von `targets`): ist keins mehr offen,
+    erlischt er; ist ein erloschener wieder an einem offenen Element, kehrt er zurück. Ohne Elemente, erledigt oder
+    gelöscht bleibt er, wie er ist."""
+    if alarm.deleted_at is not None or not alarm.targets:
+        return alarm
+    any_open = any(open_states)
+    if alarm.status == "Expired" and any_open:
+        return _reopen(alarm, now)
+    if alarm.status not in CLOSED_STATUSES and not any_open:
+        return replace(alarm, status="Expired", snoozed_until=None, done_at=utc(now))
+    return alarm
 
 
 def reschedule(alarm: Alarm, at: datetime) -> Alarm:
     """Ein neuer Zeitpunkt: der Wecker wartet wieder (auch ein erledigter)."""
     if alarm.deleted_at is not None:
         raise AlarmViolation("alarm_deleted", f"{alarm.label} liegt im Papierkorb", alarm=alarm.label)
-    return replace(alarm, at=utc(at), status="Pending", snoozed_until=None)
+    return replace(alarm, at=utc(at), status="Pending", snoozed_until=None, done_at=None)
 
 
 def fire(alarm: Alarm) -> Alarm:
@@ -95,8 +148,13 @@ def fire(alarm: Alarm) -> Alarm:
     return replace(alarm, status="Due", snoozed_until=None)
 
 
+def _reopen(alarm: Alarm, now: datetime) -> Alarm:
+    status = "Due" if utc(alarm.at) <= utc(now) else "Pending"
+    return replace(alarm, status=status, snoozed_until=None, done_at=None)
+
+
 def _open(alarm: Alarm) -> None:
     if alarm.deleted_at is not None:
         raise AlarmViolation("alarm_deleted", f"{alarm.label} liegt im Papierkorb", alarm=alarm.label)
-    if alarm.status == "Done":
+    if alarm.status in CLOSED_STATUSES:
         raise AlarmViolation("alarm_done", f"{alarm.label} ist schon erledigt", alarm=alarm.label)

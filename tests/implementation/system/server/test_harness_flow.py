@@ -138,7 +138,7 @@ async def session(harness: Harness) -> None:
     alarm = await harness.call(
         "alarms_create_alarm", project=general, fields={"text": "Maske prüfen", "at": at, "target": story["uid"]}
     )
-    assert alarm["status"] == "Pending" and alarm["target"]["label"] == "STORY-001"
+    assert alarm["status"] == "Pending" and alarm["targets"][0]["label"] == "STORY-001"
     listed = await harness.call("alarms_list_alarms", projects=general)
     assert [a["uid"] for a in listed] == [alarm["uid"]]
     done = await harness.call("alarms_finish_alarm", ref=alarm["uid"], version=alarm["version"])

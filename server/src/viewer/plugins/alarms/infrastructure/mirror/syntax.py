@@ -8,7 +8,8 @@ from datetime import UTC, datetime
 ALARMS_FILE = "alarms.md"
 KIND_ALARM = "alarms.alarm"
 
-HEADER = re.compile(r"^- `([A-Za-z0-9_.\-]+)`\s+\*\*(.+?)\*\*\s*$")
+#: Ohne Text (ein Wecker, der nur an Elemente erinnert) fehlt der fette Teil.
+HEADER = re.compile(r"^- `([A-Za-z0-9_.\-]+)`(?:\s+\*\*(.+?)\*\*)?\s*$")
 FIELD = re.compile(r"^ {2}- ([A-Za-z][A-Za-z ]*?):\s?(.*)$")
 SECTION = re.compile(r"^## Alarms\s*$")
 FORMAT_VERSION = re.compile(r"backlog[\s-]*format\s+version\s+(\d+)", re.IGNORECASE)
@@ -19,7 +20,7 @@ BACKTICK = re.compile(r"^`(.+)`$")
 NO_ENTRIES = "No entries."
 
 #: Felder in der Reihenfolge, in der der Codec sie schreibt (gelesen werden sie in jeder).
-FIELD_ORDER = ("Uid", "At", "Target", "Status", "Snoozed until", "Created", "Deleted")
+FIELD_ORDER = ("Uid", "At", "Target", "Status", "Snoozed until", "Done at", "Created", "Deleted")
 
 TEMPLATE = (
     "# Alarms\n\nFormat: Claude_Harness backlog format version 2. The rules are defined in\n"
@@ -58,15 +59,24 @@ def clean(value: str) -> str:
     return value[:-1].rstrip() if value.endswith(".") else value
 
 
-def target_token(value: str, project: str) -> str | None:
-    """`None` → kein Ziel; sonst der Verweis des Eintrags: blankes Label im eigenen Projekt, sonst `Projekt:LABEL`."""
+def target_tokens(value: str, project: str) -> tuple[str, ...]:
+    """`None` → keine Elemente; sonst die Verweise, komma-getrennt (`` `A`, `B` ``): blankes Label im eigenen Projekt,
+    sonst `Projekt:LABEL`. Ein Verweis kommt nur einmal vor."""
     text = clean(value)
     if not text or text == "None":
-        return None
-    match = BACKTICK.match(text)
-    raw = match.group(1) if match else text
-    qualifier, separator, label = raw.rpartition(":")
-    return label if separator and qualifier == project else raw
+        return ()
+    tokens: list[str] = []
+    for part in text.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        match = BACKTICK.match(part)
+        raw = match.group(1) if match else part
+        qualifier, separator, label = raw.rpartition(":")
+        token = label if separator and qualifier == project else raw
+        if token not in tokens:
+            tokens.append(token)
+    return tuple(tokens)
 
 
 def format_line(lines: list[str]) -> tuple[int, int | None]:

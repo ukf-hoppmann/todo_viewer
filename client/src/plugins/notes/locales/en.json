@@ -154,7 +154,7 @@
 	},
 	"triggers": {
 		"none": "No triggers. The note comes up at its review date.",
-		"add": "＋ Trigger",
+		"add": "Add trigger",
 		"addTitle": "Trigger for {{label}}",
 		"remove": "Remove trigger",
 		"kind": "Kind",

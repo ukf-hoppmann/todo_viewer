@@ -1,16 +1,18 @@
-import AddIcon from "@mui/icons-material/Add";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import EditIcon from "@mui/icons-material/Edit";
+import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import UnarchiveIcon from "@mui/icons-material/Unarchive";
-import { Alert, Box, Button, Checkbox, Dialog, DialogContent, DialogTitle, FormControlLabel, IconButton, Tooltip, Typography } from "@mui/material";
+import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
+import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
+import { Alert, Box, Checkbox, Dialog, DialogContent, DialogTitle, FormControlLabel, IconButton, Tooltip, Typography } from "@mui/material";
 import { useMemo, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
-import { buildTree, TreeView, type TreeNode } from "../../../shared";
+import { buildTree, IconAction, TreeView, type TreeNode } from "../../../shared";
 import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListIndexQuery, type IndexedNote, type IndexedTopic } from "../api";
 import { NoteDetail } from "../NoteDetail";
@@ -108,9 +110,13 @@ export default function NotesPage() {
 		<Box sx={{ p: 2 }} data-testid={notesTestIds.page}>
 			<Box>
 				<Box sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap", alignItems: "center" }}>
-					<Button size="small" variant="outlined" disabled={folding.length === 0} onClick={() => state.setAllCollapsed(folding, !allCollapsed)} data-testid={notesTestIds.collapse}>
-						{t(allCollapsed ? "collapse.expand" : "collapse.collapse")}
-					</Button>
+					<IconAction
+						label={t(allCollapsed ? "collapse.expand" : "collapse.collapse")}
+						icon={allCollapsed ? UnfoldMoreIcon : UnfoldLessIcon}
+						disabled={folding.length === 0}
+						onClick={() => state.setAllCollapsed(folding, !allCollapsed)}
+						testId={notesTestIds.collapse}
+					/>
 					<FormControlLabel
 						control={<Checkbox size="small" checked={state.extendedMarking} onChange={(event) => state.setExtendedMarking(event.target.checked)} slotProps={{ input: { "data-testid": notesTestIds.marking } as never }} />}
 						label={t("marking")}
@@ -119,9 +125,7 @@ export default function NotesPage() {
 						control={<Checkbox size="small" checked={state.showArchivedTopics} onChange={(event) => state.setShowArchivedTopics(event.target.checked)} slotProps={{ input: { "data-testid": notesTestIds.archivedTopics } as never }} />}
 						label={t("archivedTopics")}
 					/>
-					<Button size="small" onClick={() => { state.resetFilters(); }} data-testid={notesTestIds.resetFilters}>
-						{t("resetFilters")}
-					</Button>
+					<IconAction label={t("resetFilters")} icon={FilterAltOffIcon} onClick={() => state.resetFilters()} testId={notesTestIds.resetFilters} />
 				</Box>
 				{error && (
 					<Alert severity="error" onClose={() => setError(undefined)} data-testid={notesTestIds.error} sx={{ mb: 1 }}>
@@ -145,12 +149,8 @@ export default function NotesPage() {
 								data-testid={notesTestIds.projectDrop(project.uid)}
 							>
 								<Typography variant="subtitle2" sx={{ flexGrow: 1 }}>{`${project.name} (${notes.length})`}</Typography>
-								<Button size="small" startIcon={<AddIcon />} onClick={() => setDialog({ kind: "note", projectUid: project.uid, topicUid: null })} data-testid={notesTestIds.newNote(project.uid)}>
-									{t("project.newNote")}
-								</Button>
-								<Button size="small" startIcon={<AddIcon />} onClick={() => setDialog({ kind: "topic", projectUid: project.uid })} data-testid={notesTestIds.newTopic(project.uid)}>
-									{t("project.newTopic")}
-								</Button>
+								<IconAction label={t("project.newNote")} icon={NoteAddIcon} onClick={() => setDialog({ kind: "note", projectUid: project.uid, topicUid: null })} testId={notesTestIds.newNote(project.uid)} />
+								<IconAction label={t("project.newTopic")} icon={CreateNewFolderIcon} onClick={() => setDialog({ kind: "topic", projectUid: project.uid })} testId={notesTestIds.newTopic(project.uid)} />
 							</Box>
 							<TreeView
 								ariaLabel={project.name}

@@ -130,7 +130,7 @@ describe("NotesPage: tree", () => {
 		});
 
 		fireEvent.click(screen.getByTestId(ids.collapse));
-		await waitFor(() => expect(screen.getByTestId(ids.collapse).textContent).toBe("Topics aufklappen"));
+		await waitFor(() => expect(screen.getByTestId(ids.collapse).getAttribute("aria-label")).toBe("Topics aufklappen"));
 		fireEvent.click(screen.getByTestId(ids.collapse));
 		await waitFor(() => expect(screen.getByTestId(sharedTestIds.treeNode("n3"))).toBeTruthy());
 	});

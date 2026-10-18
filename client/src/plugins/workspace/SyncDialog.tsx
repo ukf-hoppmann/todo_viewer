@@ -1,6 +1,8 @@
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Radio, RadioGroup, FormControlLabel, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { IconAction } from "../../shared";
 import {
 	errorCode,
 	errorMessage,
@@ -78,9 +80,7 @@ export function SyncDialog({ project, onClose }: { project: Project; onClose: ()
 							</MenuItem>
 						))}
 					</TextField>
-					<Button onClick={() => void refetch()} disabled={isFetching} data-testid={workspaceTestIds.syncReload}>
-						{t("sync.reload")}
-					</Button>
+					<IconAction label={t("sync.reload")} icon={RefreshIcon} size="medium" onClick={() => void refetch()} disabled={isFetching} testId={workspaceTestIds.syncReload} />
 					{preview && (
 						<Typography variant="body2" color="text.secondary" data-testid={workspaceTestIds.syncState}>
 							{t(`sync.states.${preview.state}`)}

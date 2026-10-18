@@ -1,7 +1,9 @@
+import DeleteIcon from "@mui/icons-material/Delete";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, MenuItem, Stack, Switch, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmDialog } from "../../shared";
+import { ConfirmDialog, IconAction } from "../../shared";
 import {
 	errorCode,
 	errorMessage,
@@ -73,7 +75,7 @@ export function ProjectCard({ project, onClose }: Props) {
 						autoFocus
 						slotProps={{ htmlInput: { "data-testid": workspaceTestIds.cardName } }}
 					/>
-					<Stack direction="row" spacing={1}>
+					<Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
 						<TextField
 							label={t("card.folder")}
 							value={folder}
@@ -81,9 +83,7 @@ export function ProjectCard({ project, onClose }: Props) {
 							fullWidth
 							slotProps={{ htmlInput: { "data-testid": workspaceTestIds.cardFolder } }}
 						/>
-						<Button onClick={() => setBrowsing(true)} data-testid={workspaceTestIds.cardBrowse}>
-							{t("card.browse")}
-						</Button>
+						<IconAction label={t("card.browse")} icon={FolderOpenIcon} size="medium" onClick={() => setBrowsing(true)} testId={workspaceTestIds.cardBrowse} />
 					</Stack>
 					<FormControlLabel
 						control={<Switch checked={mirrorEnabled} onChange={(event) => setMirrorEnabled(event.target.checked)} slotProps={{ input: { "data-testid": workspaceTestIds.cardMirrorEnabled } as never }} />}
@@ -115,7 +115,7 @@ export function ProjectCard({ project, onClose }: Props) {
 			</DialogContent>
 			<DialogActions>
 				{project && !project.builtin && (
-					<Button color="error" onClick={() => void removeProject(false)} sx={{ mr: "auto" }} data-testid={workspaceTestIds.cardRemove}>
+					<Button color="error" startIcon={<DeleteIcon />} onClick={() => void removeProject(false)} sx={{ mr: "auto" }} data-testid={workspaceTestIds.cardRemove}>
 						{t("card.remove")}
 					</Button>
 				)}

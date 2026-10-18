@@ -1,8 +1,9 @@
+import AddAlertIcon from "@mui/icons-material/AddAlert";
 import CloseIcon from "@mui/icons-material/Close";
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { EntityPicker, type Entity } from "../../shared";
+import { EntityPicker, IconAction, type Entity } from "../../shared";
 import { useSearchElementsQuery } from "../workspace";
 import { toWriteError, useAddTriggerMutation, useRemoveTriggerMutation, type NoteOut, type TriggerOut, type WriteError } from "./api";
 import { EVENT_STATUSES } from "./constants";
@@ -51,9 +52,7 @@ export function TriggersSection({ note }: { note: NoteOut }) {
 			{error && <Alert severity="error">{error}</Alert>}
 			{open && (
 				<Box>
-					<Button size="small" variant="outlined" onClick={() => setAdding(true)} data-testid={notesTestIds.addTrigger}>
-						{t("triggers.add")}
-					</Button>
+					<IconAction label={t("triggers.add")} icon={AddAlertIcon} onClick={() => setAdding(true)} testId={notesTestIds.addTrigger} />
 				</Box>
 			)}
 			{adding && <AddTriggerDialog note={note} onClose={() => setAdding(false)} />}

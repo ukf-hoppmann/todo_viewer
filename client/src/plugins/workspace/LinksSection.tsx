@@ -1,8 +1,9 @@
+import AddLinkIcon from "@mui/icons-material/AddLink";
 import CloseIcon from "@mui/icons-material/Close";
-import { Box, Button, IconButton, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import { Box, IconButton, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { EntityPicker, type Entity } from "../../shared";
+import { EntityPicker, IconAction, type Entity } from "../../shared";
 import {
 	errorMessage,
 	useAddLinkMutation,
@@ -129,9 +130,7 @@ function AddLink({ elementUid }: { elementUid: string }) {
 						onInputChange={setQuery}
 					/>
 				</Box>
-				<Button variant="outlined" disabled={!target} onClick={() => void submit()} data-testid={workspaceTestIds.linkAdd}>
-					{t("links.add")}
-				</Button>
+				<IconAction label={t("links.add")} icon={AddLinkIcon} size="medium" color="primary" disabled={!target} onClick={() => void submit()} testId={workspaceTestIds.linkAdd} />
 			</Stack>
 			{error && (
 				<Typography color="error" variant="body2" role="alert" data-testid={workspaceTestIds.linkError}>

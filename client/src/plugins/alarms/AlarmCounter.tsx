@@ -1,6 +1,9 @@
-import { Box, Button, Popover, Typography } from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import SnoozeIcon from "@mui/icons-material/Snooze";
+import { Box, Popover, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { IconAction } from "../../shared";
 import { useFinishAlarmMutation, useListAlarmsQuery, useSnoozeAlarmMutation } from "./api";
 import { alarmsTestIds } from "./testIds";
 
@@ -42,12 +45,8 @@ export function AlarmCounter() {
 								)}
 							</Typography>
 							<Box sx={{ display: "flex", gap: 0.5 }}>
-								<Button size="small" onClick={() => void finish({ uid: alarm.uid, version: alarm.version })} data-testid={alarmsTestIds.action("finish", alarm.uid)}>
-									{t("action.finish")}
-								</Button>
-								<Button size="small" onClick={() => void snooze({ uid: alarm.uid, version: alarm.version })} data-testid={alarmsTestIds.action("snooze", alarm.uid)}>
-									{t("action.snooze")}
-								</Button>
+								<IconAction label={t("action.finish")} icon={CheckCircleIcon} onClick={() => void finish({ uid: alarm.uid, version: alarm.version })} testId={alarmsTestIds.action("finish", alarm.uid)} />
+								<IconAction label={t("action.snooze")} icon={SnoozeIcon} onClick={() => void snooze({ uid: alarm.uid, version: alarm.version })} testId={alarmsTestIds.action("snooze", alarm.uid)} />
 							</Box>
 						</Box>
 					))}

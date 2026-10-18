@@ -1,6 +1,9 @@
+import CheckIcon from "@mui/icons-material/Check";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { Alert, AlertTitle, Box, Button, Dialog, DialogActions, DialogContent } from "@mui/material";
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { IconAction } from "../../shared";
 import { coreTestIds } from "../testIds";
 import { ExpandArrow } from "./ExpandArrow";
 import { translateText } from "./text";
@@ -96,9 +99,7 @@ function Details({ rows }: { rows: DetailRow[] }) {
 						</Box>
 					))}
 					{canCopy && (
-						<Button size="small" onClick={copy} data-testid={coreTestIds.modalDetailsCopy}>
-							{copied ? t("modals.copied") : t("modals.copy")}
-						</Button>
+						<IconAction label={copied ? t("modals.copied") : t("modals.copy")} icon={copied ? CheckIcon : ContentCopyIcon} onClick={() => void copy()} testId={coreTestIds.modalDetailsCopy} />
 					)}
 				</Box>
 			)}

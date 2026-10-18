@@ -19,7 +19,7 @@
 		"edit": "Project “{{name}}”",
 		"name": "Name",
 		"folder": "Mirror folder",
-		"browse": "Choose …",
+		"browse": "Choose folder",
 		"mirrorEnabled": "Switch the mirror on",
 		"autoSync": "Sync automatically",
 		"direction": "Direction",
@@ -96,7 +96,7 @@
 		"noFolder": "No folder chosen",
 		"lastSync": "Last sync: {{time}}",
 		"neverSynced": "Never synced",
-		"edit": "Edit …",
+		"edit": "Edit project",
 		"setup": "Set up the mirror",
 		"sync": "Sync …",
 		"check": "Check …"

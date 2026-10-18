@@ -1,8 +1,13 @@
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import SnoozeIcon from "@mui/icons-material/Snooze";
 import { Box, Button, Popover, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { viewPath } from "../../core";
+import { IconAction } from "../../shared";
 import { REASONS } from "./constants";
 import { useDecideNoticeMutation, useGetDueQuery, useNoteActionMutation, type DueNoteOut } from "./api";
 import { useNotesState } from "./state";
@@ -101,16 +106,17 @@ function DueRow({ note, onOpen }: { note: DueNoteOut; onOpen: () => void }) {
 				)}
 			</Box>
 			<Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-				{notice
-					? notice.decisions
-							.filter((decision) => decision !== "promote")
-							.map((decision) => button(decision, t(`notices.decision.${decision}`), () => decide({ uid: notice.uid, decision, version: note.version })))
-					: [
-							button("keep", t("action.keep"), () => act({ uid: note.uid, version: note.version, action: "keep" })),
-							button("snooze", t("action.snooze"), () => act({ uid: note.uid, version: note.version, action: "snooze" })),
-							button("done", t("action.done"), () => act({ uid: note.uid, version: note.version, action: "finish", status: "done" })),
-							button("dropped", t("action.dropped"), () => act({ uid: note.uid, version: note.version, action: "finish", status: "dropped" })),
-						]}
+				{notice?.decisions
+					.filter((decision) => decision !== "promote")
+					.map((decision) => button(decision, t(`notices.decision.${decision}`), () => decide({ uid: notice.uid, decision, version: note.version })))}
+				{!notice && (
+					<>
+						<IconAction label={t("action.keep")} icon={PushPinIcon} onClick={() => void act({ uid: note.uid, version: note.version, action: "keep" })} testId={notesTestIds.dueAction("keep", note.uid)} />
+						<IconAction label={t("action.snooze")} icon={SnoozeIcon} onClick={() => void act({ uid: note.uid, version: note.version, action: "snooze" })} testId={notesTestIds.dueAction("snooze", note.uid)} />
+						<IconAction label={t("action.done")} icon={CheckCircleIcon} onClick={() => void act({ uid: note.uid, version: note.version, action: "finish", status: "done" })} testId={notesTestIds.dueAction("done", note.uid)} />
+						<IconAction label={t("action.dropped")} icon={CancelIcon} onClick={() => void act({ uid: note.uid, version: note.version, action: "finish", status: "dropped" })} testId={notesTestIds.dueAction("dropped", note.uid)} />
+					</>
+				)}
 			</Box>
 		</Box>
 	);

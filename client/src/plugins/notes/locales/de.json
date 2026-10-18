@@ -154,7 +154,7 @@
 	},
 	"triggers": {
 		"none": "Keine Auslöser. Die Note meldet sich zum Prüfdatum.",
-		"add": "＋ Auslöser",
+		"add": "Auslöser hinzufügen",
 		"addTitle": "Auslöser für {{label}}",
 		"remove": "Auslöser entfernen",
 		"kind": "Art",

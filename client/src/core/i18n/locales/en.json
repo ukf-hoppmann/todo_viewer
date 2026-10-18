@@ -4,6 +4,8 @@
 	},
 	"layout": {
 		"main": "Main content",
+		"sidebar": "Sidebar",
+		"detail": "Details",
 		"loading": "Loading"
 	},
 	"appBar": {
@@ -14,8 +16,7 @@
 		"sidebar": "Sidebar",
 		"notFound": "This page does not exist.",
 		"unavailable": "This view is currently not available.",
-		"noViews": "No views are available.",
-		"noEntries": "No entries are available in this area."
+		"noViews": "No views are available."
 	},
 	"modals": {
 		"severity": {

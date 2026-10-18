@@ -51,23 +51,10 @@ describe("checkDefinition: contributions", () => {
 		expect(checkDefinition({ plugin: { i18n } }, "example").ok).toBe(true);
 	});
 
-	it("accepts a main route with a sidebar and no page, and entries for its slot", () => {
-		const plugin = {
-			i18n,
-			contributions: [
-				tab({ name: "hub", page: undefined, layout: { header: true, sidebar: true } }),
-				tab({ slot: "example.hub", name: "start" }),
-				tab({ slot: "other-host.hub", name: "panel" }),
-			],
-		};
+	it("accepts a main route that asks for header, sidebar and detail column", () => {
+		const plugin = { i18n, contributions: [tab({ name: "hub", layout: { header: true, sidebar: true, detail: true } })] };
 
 		expect(checkDefinition({ plugin }, "example")).toEqual({ ok: true, definition: plugin });
-	});
-
-	it("accepts the same name in different slots", () => {
-		const plugin = { i18n, contributions: [tab({ name: "start" }), tab({ slot: "example.hub", name: "start" })] };
-
-		expect(checkDefinition({ plugin }, "example").ok).toBe(true);
 	});
 
 	it("accepts several tabs, an object as icon and the layout switch header", () => {
@@ -92,9 +79,8 @@ describe("checkDefinition: contributions", () => {
 		["layout is no object", { contributions: [tab({ layout: true })] }, "contribution 'overview': `layout` is no object"],
 		["layout switch is no boolean", { contributions: [tab({ layout: { header: "yes" } })] }, "contribution 'overview': `layout.header` is no boolean"],
 		["layout has an unknown key", { contributions: [tab({ layout: { footer: true } })] }, "contribution 'overview': `layout.footer` is unknown"],
-		["a main route with a sidebar has a page", { contributions: [tab({ layout: { sidebar: true } })] }, "contribution 'overview': `page` must not be set when `layout.sidebar` is true"],
-		["an entry has a layout", { contributions: [tab({ slot: "example.hub", layout: { header: true } })] }, "contribution 'overview': `layout` is not allowed in an entry"],
-		["an entry has no page", { contributions: [tab({ slot: "example.hub", page: undefined })] }, "contribution 'overview': `page` is no function"],
+		["a main route without a page asks for a sidebar", { contributions: [tab({ page: undefined, layout: { sidebar: true } })] }, "contribution 'overview': `page` is no function"],
+		["a page hangs into another slot than core.main", { contributions: [tab({ slot: "example.hub" })] }, "contribution 'overview': a contribution to 'example.hub' needs a `component`"],
 		["name is used twice", { contributions: [tab(), tab()] }, "contribution 'overview': the name is used twice in 'core.main'"],
 	])("rejects a definition where %s", (_name, extra, expected) => {
 		const result = checkDefinition({ plugin: { i18n, ...extra } }, "example");

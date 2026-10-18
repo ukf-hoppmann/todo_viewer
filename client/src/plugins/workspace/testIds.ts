@@ -55,6 +55,7 @@ export const workspaceTestIds = {
 	linkRole: "workspace.link-role",
 	linkAdd: "workspace.link-add",
 	linkError: "workspace.link-error",
+	elementDetailPlain: "workspace.element-detail-plain",
 	trash: "workspace.trash",
 	trashSelectAll: "workspace.trash-select-all",
 	trashRestoreSelected: "workspace.trash-restore-selected",

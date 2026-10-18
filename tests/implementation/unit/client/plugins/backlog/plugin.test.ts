@@ -10,10 +10,11 @@ describe("backlog plugin definition", () => {
 		expect(checkContributions(plugin.contributions ?? [])).toEqual([]);
 		expect(manifest.requires).toEqual(["layout-header-sidebar", "workspace"]);
 		const widgets = (plugin.contributions ?? []).filter((entry) => entry.slot !== "core.main");
-		const filters = widgets.filter((entry) => entry.slot === "layout-header-sidebar.sidebar-sections");
+		const filters = widgets.filter((entry) => entry.slot === "core.sidebar-sections");
 		expect(filters).toHaveLength(2);
 		expect(filters.every((entry) => "when" in entry && entry.when?.[0] === "backlog/main")).toBe(true);
 		expect(widgets.filter((entry) => entry.slot === "workspace.create-types").map((entry) => entry.name)).toEqual(["epic", "story", "task"]);
+		expect(widgets.filter((entry) => entry.slot === "workspace.element-detail").map((entry) => entry.name)).toEqual(["epic", "story", "task"]);
 	});
 
 	it.each([

@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { coreTestIds } from "../../../../../../client/src/core";
 import TrashPage from "../../../../../../client/src/plugins/workspace/pages/TrashPage";
 import type { TrashedElement } from "../../../../../../client/src/plugins/workspace/api";
 import { workspaceTestIds as ids } from "../../../../../../client/src/plugins/workspace/testIds";
@@ -43,6 +44,28 @@ describe("TrashPage", () => {
 		await waitFor(() => expect(screen.queryByTestId(ids.trashRow("c"))).toBeNull());
 		expect(screen.queryByTestId(ids.trashRow("b"))).toBeNull();
 		expect(screen.getByTestId(ids.trashRow("a"))).toBeTruthy();
+	});
+
+	it("shows the element of a clicked row in the detail column and closes it on a second click", async () => {
+		await renderTrash();
+
+		fireEvent.click(screen.getByTestId(ids.trashRow("a")));
+
+		const detail = await screen.findByTestId(coreTestIds.detail);
+		expect(detail.querySelector(`[data-testid="${ids.elementDetailPlain}"]`)?.textContent).toContain("TASK-001 — Sync reparieren");
+		expect(screen.getByTestId(ids.trashRow("a")).getAttribute("aria-selected")).toBe("true");
+
+		fireEvent.click(screen.getByTestId(ids.trashRow("a")));
+		expect(screen.queryByTestId(coreTestIds.detail)).toBeNull();
+	});
+
+	it("does not open the detail when the checkbox or a button of the row is used", async () => {
+		await renderTrash();
+
+		fireEvent.click(screen.getByTestId(ids.trashSelect("a")));
+		fireEvent.click(screen.getByTestId(ids.trashPurge("b")));
+
+		expect(screen.queryByTestId(coreTestIds.detail)).toBeNull();
 	});
 
 	it("says so when the trash is empty", async () => {

@@ -4,12 +4,9 @@
  * addressed with these functions.
  */
 
-/**
- * The path of a view: a main route is `/<owner id>/<name>`; an entry of a
- * sidebar also names its host, `/<host id>/<host name>/<owner id>/<name>`.
- */
-export function viewPath(ownerId: string, name: string, host?: { ownerId: string; name: string }): string {
-	return host ? `/${host.ownerId}/${host.name}/${ownerId}/${name}` : `/${ownerId}/${name}`;
+/** The path of a view: a main route is `/<owner id>/<name>`. */
+export function viewPath(ownerId: string, name: string): string {
+	return `/${ownerId}/${name}`;
 }
 
 /** A view written `<owner id>/<name>`, the form used in the app config. */
@@ -34,7 +31,7 @@ export interface ParsedPath {
 	ownerId: string;
 	/** Missing for a path of one part. */
 	name: string | undefined;
-	/** The parts after owner and name, e.g. the entry of a sidebar. */
+	/** The parts after owner and name; a main route has none. */
 	rest: string[];
 }
 

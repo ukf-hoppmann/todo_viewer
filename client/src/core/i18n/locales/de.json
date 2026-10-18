@@ -4,6 +4,8 @@
 	},
 	"layout": {
 		"main": "Hauptbereich",
+		"sidebar": "Seitenleiste",
+		"detail": "Details",
 		"loading": "Wird geladen"
 	},
 	"appBar": {
@@ -14,8 +16,7 @@
 		"sidebar": "Seitenleiste",
 		"notFound": "Diese Seite gibt es nicht.",
 		"unavailable": "Diese Ansicht ist derzeit nicht verfügbar.",
-		"noViews": "Es sind keine Ansichten verfügbar.",
-		"noEntries": "In diesem Bereich sind keine Einträge verfügbar."
+		"noViews": "Es sind keine Ansichten verfügbar."
 	},
 	"modals": {
 		"severity": {

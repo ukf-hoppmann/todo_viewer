@@ -9,11 +9,11 @@ describe("workspace plugin definition", () => {
 		expect(checkDefinition({ plugin }, "workspace").ok).toBe(true);
 		expect(checkContributions(plugin.contributions ?? [])).toEqual([]);
 		expect(manifest.requires).toEqual(["layout-header-sidebar"]);
-		expect(Object.keys(plugin.slots ?? {})).toEqual(["detail-sections", "create-types"]);
+		expect(Object.keys(plugin.slots ?? {})).toEqual(["detail-sections", "element-detail", "create-types"]);
 		expect(plugin.contributions?.map((entry) => entry.slot)).toEqual([
 			"core.main",
-			"layout-header-sidebar.sidebar-sections",
-			"layout-header-sidebar.sidebar-sections",
+			"core.sidebar-sections",
+			"core.sidebar-sections",
 			"layout-header-sidebar.header-actions",
 			"core.settings-sections",
 		]);

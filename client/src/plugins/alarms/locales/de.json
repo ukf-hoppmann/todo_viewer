@@ -47,6 +47,9 @@
 	"banner": {
 		"title": "Wecker"
 	},
+	"detail": {
+		"close": "Schließen"
+	},
 	"settings": {
 		"title": "Wecker",
 		"description": "Wecker melden sich, solange der Viewer läuft. Browser-Benachrichtigungen zeigen sie auch, wenn der Tab im Hintergrund ist.",

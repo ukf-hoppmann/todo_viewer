@@ -2,7 +2,7 @@ import { mainSlot, parseSlot } from "./contributions";
 
 const kebabCase = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-const layoutSwitches = ["header", "sidebar"];
+const layoutSwitches = ["header", "sidebar", "detail"];
 
 function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -93,12 +93,11 @@ export function checkContributions(contributions: unknown, { reservedNames = [] 
 		if (typeof title !== "string" || title === "") problem("`title` is missing");
 		if (!isComponent(icon)) problem("`icon` is no component");
 
-		const isMain = slot === mainSlot;
-		const withSidebar = isMain && isObject(layout) && layout.sidebar === true;
+		// Without a `component` a contribution is a main route; anything else hangs a component into a slot.
+		if (validSlot && slot !== mainSlot) problem(`a contribution to '${String(slot)}' needs a \`component\``);
 
 		if (layout !== undefined) {
-			if (validSlot && !isMain) problem("`layout` is not allowed in an entry");
-			else if (!isObject(layout)) problem("`layout` is no object");
+			if (!isObject(layout)) problem("`layout` is no object");
 			else {
 				for (const [key, value] of Object.entries(layout)) {
 					if (!layoutSwitches.includes(key)) problem(`\`layout.${key}\` is unknown`);
@@ -107,9 +106,7 @@ export function checkContributions(contributions: unknown, { reservedNames = [] 
 			}
 		}
 
-		if (withSidebar) {
-			if (page !== undefined) problem("`page` must not be set when `layout.sidebar` is true");
-		} else if (typeof page !== "function") problem("`page` is no function");
+		if (typeof page !== "function") problem("`page` is no function");
 
 		if (typeof slot === "string" && typeof name === "string") {
 			const key = `${slot}/${name}`;

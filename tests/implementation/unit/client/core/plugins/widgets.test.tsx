@@ -49,7 +49,7 @@ describe("checkContributions: widgets", () => {
 describe("checkSlots: widgets", () => {
 	const registered = new Map<string, RegisteredPlugin>([["layout", { contributions: [], slots: ["header-actions"] }]]);
 	const check = (contributions: Contribution[], requires: string[] = ["layout"], slots: string[] = []) =>
-		checkSlots({ id: "me", requires, contributions, slots, registered, core: [] });
+		checkSlots({ id: "me", requires, contributions, slots, registered });
 
 	it("accepts a widget in a slot of a required plugin", () => {
 		expect(check([widget("layout.header-actions", "x")])).toEqual([]);
@@ -64,7 +64,7 @@ describe("checkSlots: widgets", () => {
 	});
 
 	it("accepts a widget in an own slot and in the slot of the core", () => {
-		expect(check([widget("me.panel", "x"), widget("core.settings-sections", "y")], [], ["panel"])).toEqual([]);
+		expect(check([widget("me.panel", "x"), widget("core.settings-sections", "y"), widget("core.sidebar-sections", "z")], [], ["panel"])).toEqual([]);
 		expect(check([widget("me.panel", "x")], [], [])).toHaveLength(1);
 		expect(check([widget("core.nothing", "y")])).toHaveLength(1);
 	});

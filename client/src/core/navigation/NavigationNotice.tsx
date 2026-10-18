@@ -7,14 +7,12 @@ interface NavigationNoticeProps {
 	/**
 	 * `no-views`: there is no tab at all. `not-found`: the page does not exist.
 	 * `unavailable`: the page belongs to a plugin that is off, failed or blocked.
-	 * `no-entries`: the sidebar of a main route has no entry.
 	 */
-	kind: "no-views" | "not-found" | "unavailable" | "no-entries";
+	kind: "no-views" | "not-found" | "unavailable";
 }
 
 const notices = {
 	"no-views": { testId: coreTestIds.noViews, textKey: "navigation.noViews" },
-	"no-entries": { testId: coreTestIds.noEntries, textKey: "navigation.noEntries" },
 	"not-found": { testId: coreTestIds.notFound, textKey: "navigation.notFound" },
 	unavailable: { testId: coreTestIds.unavailable, textKey: "navigation.unavailable" },
 } as const;
@@ -29,7 +27,7 @@ export function NavigationNotice({ kind }: NavigationNoticeProps) {
 				severity="info"
 				data-testid={notices[kind].testId}
 				action={
-					kind === "no-views" || kind === "no-entries" ? undefined : (
+					kind === "no-views" ? undefined : (
 						<Button color="inherit" size="small" component={Link} to="/" data-testid={coreTestIds.homeButton}>
 							{t("navigation.home")}
 						</Button>

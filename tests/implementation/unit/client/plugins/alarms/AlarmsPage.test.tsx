@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { coreTestIds } from "../../../../../../client/src/core";
 import AlarmsPage from "../../../../../../client/src/plugins/alarms/pages/AlarmsPage";
+import { useShownElement } from "../../../../../../client/src/plugins/workspace/shownElement";
 import { alarmsTestIds as ids } from "../../../../../../client/src/plugins/alarms/testIds";
 import { sharedTestIds } from "../../../../../../client/src/shared";
 import { alarm } from "../../../../../helpers/client/alarmsFixtures";
@@ -21,11 +23,81 @@ const alarms = [
 
 afterEach(cleanup);
 
+/** The detail view of stories of a test plugin (`workspace.element-detail`): shows which element it got. */
+function StoryView() {
+	const { uid } = useShownElement();
+	return <p data-testid="test.story-view">{`Story ${uid}`}</p>;
+}
+
 async function renderPage(options: Parameters<typeof fakeAlarmsBackend>[0] = {}) {
 	const backend = fakeAlarmsBackend({ projects, alarms, ...options });
-	await renderWorkspace(<AlarmsPage />, { backend });
+	await renderWorkspace(<AlarmsPage />, { backend, widgets: [{ ownerId: "backlog", slot: "workspace.element-detail", name: "story", component: StoryView }] });
 	return backend;
 }
+
+describe("AlarmsPage: the detail of an alarm", () => {
+	it("opens the alarm with the element it refers to in the detail column when its row is clicked", async () => {
+		await renderPage();
+		fireEvent.click(await screen.findByTestId(ids.row("wait")));
+
+		const detail = await screen.findByTestId(ids.detail);
+		expect(within(detail).getByTestId(sharedTestIds.detailTitle).textContent).toBe("WAIT — Wecker wait");
+		expect(within(detail).getByTestId("test.story-view").textContent).toBe("Story s1");
+		expect(screen.getByTestId(coreTestIds.detail).contains(detail)).toBe(true);
+		expect(screen.getByTestId(ids.row("wait")).getAttribute("aria-selected")).toBe("true");
+	});
+
+	it("closes the detail with its close button and with a second click on the row", async () => {
+		await renderPage();
+		fireEvent.click(await screen.findByTestId(ids.row("wait")));
+		fireEvent.click(within(await screen.findByTestId(ids.detail)).getByTestId(sharedTestIds.detailAction("close")));
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
+
+		fireEvent.click(screen.getByTestId(ids.row("wait")));
+		await screen.findByTestId(ids.detail);
+		fireEvent.click(screen.getByTestId(ids.row("wait")));
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
+	});
+
+	it("opens nothing for an alarm without a target in the viewer or with a deleted target", async () => {
+		await renderPage({ alarms: [...alarms, alarm("gone", { target: { ...target, deleted: true } })] });
+		fireEvent.click(await screen.findByTestId(ids.row("fired")));
+		fireEvent.click(screen.getByTestId(ids.row("foreign")));
+		fireEvent.click(screen.getByTestId(ids.row("gone")));
+
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
+	});
+
+	it("finishes and snoozes from the header of the detail, with the version", async () => {
+		const backend = await renderPage();
+		fireEvent.click(await screen.findByTestId(ids.row("wait")));
+		const detail = await screen.findByTestId(ids.detail);
+
+		fireEvent.click(within(detail).getByTestId(sharedTestIds.detailAction("snooze")));
+		fireEvent.click(within(detail).getByTestId(sharedTestIds.detailAction("finish")));
+
+		await waitFor(() => expect(backend.calls("POST", "alarms/alarms/wait/finish")).toHaveLength(1));
+		expect(backend.calls("POST", "alarms/alarms/wait/snooze")[0]!.body).toEqual({ version: 1 });
+	});
+
+	it("does not open the detail when an action of the row is clicked", async () => {
+		const backend = await renderPage();
+		fireEvent.click(await screen.findByTestId(ids.action("snooze", "wait")));
+
+		await waitFor(() => expect(backend.calls("POST", "alarms/alarms/wait/snooze")).toHaveLength(1));
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
+	});
+
+	it("shows the actions of a row as icons named by their tooltip", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.row("wait"));
+
+		expect(screen.getByTestId(ids.action("edit", "wait")).getAttribute("aria-label")).toBe("Bearbeiten");
+		expect(screen.getByTestId(ids.action("snooze", "wait")).getAttribute("aria-label")).toBe("Zurückstellen");
+		expect(screen.getByTestId(ids.action("finish", "wait")).getAttribute("aria-label")).toBe("Erledigt");
+		expect(screen.getByTestId(ids.action("finish", "wait")).textContent).toBe("");
+	});
+});
 
 describe("AlarmsPage", () => {
 	it("lists the alarms of the shown projects, fired ones first, with status, time and target", async () => {

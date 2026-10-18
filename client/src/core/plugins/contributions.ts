@@ -1,4 +1,4 @@
-import type { Contribution, MainContribution, MainSidebarContribution, SidebarContribution, WidgetContribution } from "./types";
+import type { Contribution, MainContribution, WidgetContribution } from "./types";
 
 /** The slot of the main routes (the tabs). */
 export const mainSlot = "core.main";
@@ -8,28 +8,16 @@ export function isMainContribution(contribution: Contribution): contribution is 
 	return contribution.slot === mainSlot;
 }
 
-/** A main route that opens a sidebar instead of showing a page. */
-export function hasSidebar(contribution: MainContribution): contribution is MainSidebarContribution {
-	return contribution.layout?.sidebar === true;
-}
-
 /** A component in a slot of an owner. */
 export function isWidgetContribution(contribution: Contribution): contribution is WidgetContribution {
 	return "component" in contribution && contribution.component !== undefined;
 }
 
-/** An entry of a sidebar. */
-export function isSidebarEntry(contribution: Contribution): contribution is SidebarContribution {
-	return contribution.slot !== mainSlot && !isWidgetContribution(contribution);
-}
-
-/** The slots the core itself provides (names without the owner): the sections of the settings page. */
-export const coreSlotNames: readonly string[] = ["settings-sections"];
-
-/** The slot a main route with a sidebar opens: `<owner id>.<name>`. */
-export function sidebarSlot(ownerId: string, name: string): string {
-	return `${ownerId}.${name}`;
-}
+/**
+ * The slots the core itself provides (names without the owner): the sections of the settings page and the
+ * sections of the sidebar of the main routes that ask for one (`layout.sidebar`).
+ */
+export const coreSlotNames: readonly string[] = ["settings-sections", "sidebar-sections"];
 
 /** Splits a slot `<host id>.<host name>`; nothing for any other text. */
 export function parseSlot(slot: string): { hostId: string; hostName: string } | undefined {

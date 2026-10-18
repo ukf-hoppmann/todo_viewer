@@ -1,7 +1,7 @@
-import { isMainContribution, isSidebarEntry, parseSlot } from "../plugins/contributions";
+import { isMainContribution } from "../plugins/contributions";
 import type { ActivePlugin, Contribution } from "../plugins/types";
 import { viewKey, viewPath } from "./paths";
-import type { NavEntry, SidebarEntry } from "./types";
+import type { NavEntry } from "./types";
 
 function mainEntries(ownerId: string, contributions: readonly Contribution[] | undefined): NavEntry[] {
 	return (contributions ?? []).filter(isMainContribution).map((contribution) => ({ ownerId, name: contribution.name, contribution }));
@@ -14,32 +14,6 @@ function mainEntries(ownerId: string, contributions: readonly Contribution[] | u
 export function collectMainEntries(plugins: readonly ActivePlugin[], coreContributions: readonly Contribution[]): NavEntry[] {
 	const byId = [...plugins].sort((left, right) => left.id.localeCompare(right.id));
 	return [...byId.flatMap(({ id, definition }) => mainEntries(id, definition.contributions)), ...mainEntries("core", coreContributions)];
-}
-
-function sidebarEntries(ownerId: string, contributions: readonly Contribution[] | undefined): SidebarEntry[] {
-	return (contributions ?? []).filter(isSidebarEntry).flatMap((contribution) => {
-		const parsed = parseSlot(contribution.slot);
-		if (!parsed) return [];
-		const { hostId, hostName } = parsed;
-		return [{ ownerId, name: contribution.name, slot: contribution.slot, hostId, hostName, contribution }];
-	});
-}
-
-/**
- * The entries of every sidebar, by slot, each in the fixed order: the entries
- * of the host itself first, then those of other plugins by id, each in the
- * order of its definition.
- */
-export function collectSidebarEntries(plugins: readonly ActivePlugin[], coreContributions: readonly Contribution[]): Map<string, SidebarEntry[]> {
-	const byId = [...plugins].sort((left, right) => left.id.localeCompare(right.id));
-	const all = [...sidebarEntries("core", coreContributions), ...byId.flatMap(({ id, definition }) => sidebarEntries(id, definition.contributions))];
-
-	const slots = new Map<string, SidebarEntry[]>();
-	for (const entry of all) slots.set(entry.slot, [...(slots.get(entry.slot) ?? []), entry]);
-	for (const [slot, entries] of slots) {
-		slots.set(slot, [...entries.filter((entry) => entry.ownerId === entry.hostId), ...entries.filter((entry) => entry.ownerId !== entry.hostId)]);
-	}
-	return slots;
 }
 
 /**
@@ -76,7 +50,7 @@ export interface StartResolution {
 }
 
 /**
- * Where `/` leads: to the configured start view (a tab or a sidebar entry),
+ * Where `/` leads: to the configured start view (a tab),
  * else to the first tab. `isAvailable` tells whether a path can be shown.
  */
 export function resolveStart(tabs: readonly NavEntry[], start: string | undefined, isAvailable: (path: string) => boolean): StartResolution {

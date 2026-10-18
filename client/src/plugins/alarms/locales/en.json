@@ -47,6 +47,9 @@
 	"banner": {
 		"title": "Alarm"
 	},
+	"detail": {
+		"close": "Close"
+	},
 	"settings": {
 		"title": "Alarms",
 		"description": "Alarms speak while the viewer is running. Browser notifications show them also when the tab is in the background.",

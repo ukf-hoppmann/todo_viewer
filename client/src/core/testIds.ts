@@ -27,8 +27,8 @@ export const coreTestIds = {
 	homeButton: "core.home-button",
 	languageSelect: "core.language-select",
 	sidebar: "core.sidebar",
+	detail: "core.detail",
 	settingsEmpty: "core.settings-empty",
-	noEntries: "core.no-entries",
 	bannerHost: "core.banner-host",
 	banner: "core.banner",
 	bannerTitle: "core.banner-title",
@@ -42,6 +42,6 @@ export const coreTestIds = {
 	languageOption: (language: string) => `core.language-option.${language}`,
 	/** A section of the settings page: `core.settings-section.<owner id>.<name>` (rule 7.2). */
 	settingsSection: (ownerId: string, name: string) => `core.settings-section.${ownerId}.${name}`,
-	/** An entry of a sidebar: `core.sidebar-item.<slot>.<owner id>.<name>` (rule 7.2). */
-	sidebarItem: (slot: string, ownerId: string, name: string) => `core.sidebar-item.${slot}.${ownerId}.${name}`,
+	/** A section of the sidebar: `core.sidebar-section.<owner id>.<name>` (rule 7.2). */
+	sidebarSection: (ownerId: string, name: string) => `core.sidebar-section.${ownerId}.${name}`,
 } as const;

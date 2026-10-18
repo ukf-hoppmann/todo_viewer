@@ -2,6 +2,7 @@ import { createPluginApi } from "../../core";
 import type { components } from "../../shared";
 
 export type AlarmOut = components["schemas"]["AlarmOut"];
+export type AlarmTarget = components["schemas"]["AlarmTargetRef"];
 
 /** The error of a write: the code and details the server gave, as an `Error` the forms can show. */
 export class WriteError extends Error {
@@ -36,7 +37,7 @@ export const alarmsApi = createPluginApi(
 			}),
 			providesTags: ["Alarms"],
 		}),
-		createAlarm: build.mutation<AlarmOut, { project: string; text: string; at: string; target?: string | null }>({
+		createAlarm: build.mutation<AlarmOut, { project: string; text: string; at: string; targets: string[] }>({
 			query: ({ project, ...fields }) => ({ url: "alarms/alarms", method: "POST", body: { project, fields } }),
 			invalidatesTags: ["Alarms"],
 		}),
@@ -52,8 +53,12 @@ export const alarmsApi = createPluginApi(
 			query: ({ uid, ...body }) => ({ url: `alarms/alarms/${uid}/finish`, method: "POST", body }),
 			invalidatesTags: ["Alarms"],
 		}),
+		reopenAlarm: build.mutation<AlarmOut, { uid: string; version: number }>({
+			query: ({ uid, ...body }) => ({ url: `alarms/alarms/${uid}/reopen`, method: "POST", body }),
+			invalidatesTags: ["Alarms"],
+		}),
 	}),
 	{ tagTypes: ["Alarms"] },
 );
 
-export const { useListAlarmsQuery, useCreateAlarmMutation, useUpdateAlarmMutation, useSnoozeAlarmMutation, useFinishAlarmMutation } = alarmsApi;
+export const { useListAlarmsQuery, useCreateAlarmMutation, useUpdateAlarmMutation, useSnoozeAlarmMutation, useFinishAlarmMutation, useReopenAlarmMutation } = alarmsApi;

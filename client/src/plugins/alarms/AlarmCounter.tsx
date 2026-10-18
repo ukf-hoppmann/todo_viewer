@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconAction } from "../../shared";
 import { useFinishAlarmMutation, useListAlarmsQuery, useSnoozeAlarmMutation } from "./api";
+import { heading } from "./model";
 import { alarmsTestIds } from "./testIds";
 
 /**
@@ -37,10 +38,10 @@ export function AlarmCounter() {
 					{due.map((alarm) => (
 						<Box key={alarm.uid} sx={{ py: 0.5 }} data-testid={alarmsTestIds.dueItem(alarm.uid)}>
 							<Typography variant="body2">
-								{alarm.text}
-								{alarm.target && (
+								{heading(alarm)}
+								{alarm.targets.length > 0 && (
 									<Typography variant="caption" color="text.secondary" component="span">
-										{` · ${alarm.target.label}`}
+										{` · ${alarm.targets.map((target) => target.label).join(", ")}`}
 									</Typography>
 								)}
 							</Typography>

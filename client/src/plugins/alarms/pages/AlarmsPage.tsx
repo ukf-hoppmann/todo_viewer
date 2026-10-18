@@ -1,79 +1,65 @@
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import EditIcon from "@mui/icons-material/Edit";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SnoozeIcon from "@mui/icons-material/Snooze";
-import { Alert, Box, Button, Chip, Dialog, DialogContent, DialogTitle, IconButton, Stack, Tooltip, Typography } from "@mui/material";
-import { useCallback, useMemo, useState, type ComponentType, type MouseEvent } from "react";
+import UndoIcon from "@mui/icons-material/Undo";
+import { Alert, Box, Button, Dialog, DialogContent, DialogTitle, Typography } from "@mui/material";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
-import { DetailPanel, type DetailAction } from "../../../shared";
-import { ElementDetail, useProjectSelection } from "../../workspace";
+import type { DetailAction } from "../../../shared";
+import { useProjectSelection } from "../../workspace";
+import { AlarmCard } from "../AlarmCard";
+import { AlarmDetail } from "../AlarmDetail";
 import { AlarmForm } from "../AlarmForm";
-import { toWriteError, useFinishAlarmMutation, useListAlarmsQuery, useSnoozeAlarmMutation, type AlarmOut } from "../api";
-import { sortAlarms, waitingFor } from "../model";
+import { toWriteError, useFinishAlarmMutation, useListAlarmsQuery, useReopenAlarmMutation, useSnoozeAlarmMutation, type AlarmOut } from "../api";
+import { groupAlarms } from "../model";
 import { alarmsTestIds } from "../testIds";
 
-const COLORS: Record<string, "default" | "warning" | "success" | "info"> = { Due: "warning", Pending: "default", Snoozed: "info", Done: "success" };
-
-/** Only an alarm whose target is an element of the viewer that still exists can be opened. */
-const canOpen = (alarm: AlarmOut) => alarm.target !== null && !alarm.target.deleted;
-
 /**
- * The alarms of the shown projects: fired ones first, with the actions to edit, snooze and finish as icons; and a new
- * one. A click on a row opens the alarm with the element it refers to in the detail column, so one sees what one
- * finishes or snoozes; the element is shown by its owner through `ElementDetail` of `workspace`.
+ * The reminders of the shown projects, grouped by time (due, today, later, finished) with the actions to edit, snooze
+ * and finish as icons; a finished one can be taken back until it goes after a day. A click opens the reminder in the
+ * detail column with the elements it reminds of.
  */
 export default function AlarmsPage() {
-	const { t, i18n } = useTranslation("alarms");
+	const { t } = useTranslation("alarms");
 	const { visible, marked, projects } = useProjectSelection();
 	const projectUids = useMemo(() => visible.map((project) => project.uid), [visible]);
 	const { data: alarms = [] } = useListAlarmsQuery({ projects: projectUids }, { skip: projectUids.length === 0 });
 	const [finish] = useFinishAlarmMutation();
 	const [snooze] = useSnoozeAlarmMutation();
+	const [reopen] = useReopenAlarmMutation();
 	const [dialog, setDialog] = useState<{ alarm?: AlarmOut } | undefined>();
 	const [error, setError] = useState<string>();
 	const [openUid, setOpenUid] = useState<string>();
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+	const defaultProject = marked ?? projects.find((project) => project.builtin);
+	const groups = useMemo(() => groupAlarms(alarms, new Date()), [alarms]);
+
 	const toggle = (uid: string) =>
 		setExpanded((current) => {
 			const next = new Set(current);
 			if (!next.delete(uid)) next.add(uid);
 			return next;
 		});
-	const defaultProject = marked ?? projects.find((project) => project.builtin);
-	const sorted = useMemo(() => sortAlarms(alarms), [alarms]);
-
 	const run = (action: Promise<unknown>) => {
 		setError(undefined);
 		action.catch((failure: unknown) => setError(toWriteError(failure).message));
 	};
-	const actionsOf = (alarm: AlarmOut): DetailAction[] =>
-		alarm.status === "Done"
-			? []
-			: [
-					{ id: "edit", label: t("action.edit"), icon: EditIcon, onClick: () => setDialog({ alarm }) },
-					{ id: "snooze", label: t("action.snooze"), icon: SnoozeIcon, onClick: () => run(snooze({ uid: alarm.uid, version: alarm.version }).unwrap()) },
-					{ id: "finish", label: t("action.finish"), icon: CheckIcon, onClick: () => run(finish({ uid: alarm.uid, version: alarm.version }).unwrap()) },
-				];
-	const when = (alarm: AlarmOut) => new Date(waitingFor(alarm)).toLocaleString(i18n.language);
+	const actionsOf = (alarm: AlarmOut): DetailAction[] => {
+		const ref = { uid: alarm.uid, version: alarm.version };
+		if (alarm.status === "Done") return [{ id: "reopen", label: t("action.reopen"), icon: UndoIcon, onClick: () => run(reopen(ref).unwrap()) }];
+		if (alarm.status === "Expired") return [];
+		return [
+			{ id: "edit", label: t("action.edit"), icon: EditIcon, onClick: () => setDialog({ alarm }) },
+			{ id: "snooze", label: t("action.snooze"), icon: SnoozeIcon, onClick: () => run(snooze(ref).unwrap()) },
+			{ id: "finish", label: t("action.finish"), icon: CheckIcon, onClick: () => run(finish(ref).unwrap()) },
+		];
+	};
 
-	const open = sorted.find((alarm) => alarm.uid === openUid && canOpen(alarm));
+	const open = alarms.find((alarm) => alarm.uid === openUid);
 	const close = useCallback(() => setOpenUid(undefined), []);
-	usePageDetail(
-		open?.target && (
-			<Box data-testid={alarmsTestIds.detail}>
-				<DetailPanel
-					title={`${open.label} — ${open.text}`}
-					subtitle={`${t(`status.${open.status}`)} · ${when(open)}`}
-					actions={actionsOf(open)}
-					onClose={close}
-					closeLabel={t("detail.close")}
-				/>
-				<ElementDetail key={open.target.uid} uid={open.target.uid} kind={open.target.kind} label={open.target.label} title={open.target.title} />
-			</Box>
-		),
-	);
+	usePageDetail(open && <AlarmDetail key={open.uid} alarm={open} actions={actionsOf(open)} onClose={close} />);
 
 	return (
 		<Box sx={{ p: 2 }} data-testid={alarmsTestIds.page}>
@@ -90,97 +76,40 @@ export default function AlarmsPage() {
 					{error}
 				</Alert>
 			)}
-			{sorted.length === 0 && (
+			{groups.length === 0 && (
 				<Typography color="text.secondary" data-testid={alarmsTestIds.empty}>
 					{t("page.empty")}
 				</Typography>
 			)}
-			{sorted.map((alarm) => {
-				const openable = canOpen(alarm);
-				const selected = alarm.uid === open?.uid;
-				const isExpanded = expanded.has(alarm.uid);
-				return (
-					<Box
-						key={alarm.uid}
-						data-testid={alarmsTestIds.row(alarm.uid)}
-						data-status={alarm.status}
-						aria-selected={selected}
-						onClick={openable ? () => setOpenUid(selected ? undefined : alarm.uid) : undefined}
-						sx={{
-							display: "flex",
-							alignItems: "center",
-							gap: 1,
-							px: 1,
-							py: 1,
-							borderBottom: 1,
-							borderColor: "divider",
-							opacity: alarm.status === "Done" ? 0.6 : 1,
-							cursor: openable ? "pointer" : undefined,
-							bgcolor: selected ? "action.selected" : undefined,
-							"&:hover": openable ? { bgcolor: "action.hover" } : undefined,
-						}}
-					>
-						<Chip size="small" color={COLORS[alarm.status] ?? "default"} label={t(`status.${alarm.status}`)} sx={{ alignSelf: "flex-start", mt: 0.25 }} />
-						<Box sx={{ flexGrow: 1, minWidth: 0 }}>
-							<Typography variant="caption" color="text.secondary" component="div" noWrap>
-								{`${alarm.label} · ${when(alarm)}`}
-							</Typography>
-							<Typography
-								variant="body2"
-								data-testid={alarmsTestIds.text(alarm.uid)}
-								sx={isExpanded ? undefined : { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-							>
-								{alarm.text}
-							</Typography>
-							{(alarm.target || alarm.target_text) && (
-								<Chip size="small" variant="outlined" label={alarm.target ? `${alarm.target.label} — ${alarm.target.title}` : alarm.target_text} sx={{ mt: 0.5, maxWidth: "100%" }} />
-							)}
-						</Box>
-						<Stack direction="row" sx={{ flexShrink: 0, alignSelf: "flex-start" }} onClick={(event) => event.stopPropagation()}>
-							<Tooltip title={isExpanded ? t("action.collapse") : t("action.expand")}>
-								<IconButton
-									size="small"
-									aria-label={isExpanded ? t("action.collapse") : t("action.expand")}
-									aria-expanded={isExpanded}
-									onClick={() => toggle(alarm.uid)}
-									data-testid={alarmsTestIds.action("expand", alarm.uid)}
-								>
-									<ExpandMoreIcon fontSize="small" sx={{ transform: isExpanded ? "rotate(180deg)" : undefined, transition: "transform 0.2s" }} />
-								</IconButton>
-							</Tooltip>
-							<RowActions alarm={alarm} actions={actionsOf(alarm)} />
-						</Stack>
-					</Box>
-				);
-			})}
+			{groups.map((group) => (
+				<Box key={group.key} data-testid={alarmsTestIds.group(group.key)} sx={{ mb: 2 }}>
+					<Typography variant="overline" color={group.key === "due" ? "warning.main" : "text.secondary"} component="h3">
+						{t(`group.${group.key}`)}
+					</Typography>
+					{group.alarms.map((alarm) => {
+						const selected = alarm.uid === open?.uid;
+						return (
+							<AlarmCard
+								key={alarm.uid}
+								alarm={alarm}
+								selected={selected}
+								expanded={expanded.has(alarm.uid)}
+								actions={actionsOf(alarm)}
+								onOpen={() => setOpenUid(selected ? undefined : alarm.uid)}
+								onToggle={() => toggle(alarm.uid)}
+							/>
+						);
+					})}
+				</Box>
+			))}
 			{dialog && defaultProject && (
 				<Dialog open onClose={() => setDialog(undefined)} fullWidth maxWidth="sm" slotProps={{ paper: { "data-testid": alarmsTestIds.formDialog } as never }}>
-					<DialogTitle>{dialog.alarm ? t("form.editTitle", { label: dialog.alarm.label }) : t("page.new")}</DialogTitle>
+					<DialogTitle>{dialog.alarm ? t("form.editTitle") : t("page.new")}</DialogTitle>
 					<DialogContent>
 						<AlarmForm key={dialog.alarm?.version ?? "new"} projectUid={dialog.alarm?.project_uid ?? defaultProject.uid} alarm={dialog.alarm} onDone={() => setDialog(undefined)} onCancel={() => setDialog(undefined)} />
 					</DialogContent>
 				</Dialog>
 			)}
 		</Box>
-	);
-}
-
-/** The actions of a row as icon buttons with a tooltip; a click on them does not open the row. */
-function RowActions({ alarm, actions }: { alarm: AlarmOut; actions: DetailAction[] }) {
-	if (actions.length === 0) return null;
-	const stop = (event: MouseEvent) => event.stopPropagation();
-	return (
-		<Stack direction="row" sx={{ flexShrink: 0 }} onClick={stop}>
-			{actions.map(({ id, label, icon, onClick }) => {
-				const Icon = icon as ComponentType<{ fontSize?: "small" }>;
-				return (
-					<Tooltip key={id} title={label}>
-						<IconButton size="small" aria-label={label} onClick={onClick} data-testid={alarmsTestIds.action(id, alarm.uid)}>
-							<Icon fontSize="small" />
-						</IconButton>
-					</Tooltip>
-				);
-			})}
-		</Stack>
 	);
 }

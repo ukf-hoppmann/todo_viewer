@@ -9,19 +9,21 @@
 		"Pending": "Wartet",
 		"Due": "Gemeldet",
 		"Snoozed": "Zurückgestellt",
-		"Done": "Erledigt"
+		"Done": "Erledigt",
+		"Expired": "Erloschen"
 	},
 	"field": {
 		"text": "Text",
 		"at": "Zeitpunkt",
-		"target": "Bezieht sich auf"
+		"targets": "Erinnert an"
 	},
 	"action": {
 		"edit": "Bearbeiten",
 		"snooze": "Zurückstellen",
 		"finish": "Erledigt",
 		"expand": "Aufklappen",
-		"collapse": "Zuklappen"
+		"collapse": "Zuklappen",
+		"reopen": "Rückgängig"
 	},
 	"form": {
 		"save": "Speichern",
@@ -30,7 +32,9 @@
 		"conflict": "Der Wecker wurde inzwischen geändert.",
 		"timeRequired": "Ein Zeitpunkt fehlt.",
 		"searchHint": "Label oder Titel des Elements tippen",
-		"editTitle": "{{label}} bearbeiten"
+		"editTitle": "Wecker bearbeiten",
+		"textOptional": "Optional, wenn Elemente gewählt sind",
+		"textOrTargets": "Ein Text oder mindestens ein Element fehlt."
 	},
 	"page": {
 		"title": "Wecker",
@@ -50,7 +54,8 @@
 		"title": "Wecker"
 	},
 	"detail": {
-		"close": "Schließen"
+		"close": "Schließen",
+		"deleted": "{{label}} liegt im Papierkorb."
 	},
 	"settings": {
 		"title": "Wecker",
@@ -62,5 +67,15 @@
 			"default": "Benachrichtigungen sind noch nicht erlaubt.",
 			"unsupported": "Dieser Browser kennt keine Benachrichtigungen."
 		}
+	},
+	"group": {
+		"due": "Fällig",
+		"today": "Heute",
+		"later": "Später",
+		"done": "Erledigt"
+	},
+	"finished": {
+		"Done": "Erledigt · verschwindet {{when}}",
+		"Expired": "Erloschen: nichts mehr offen · verschwindet {{when}}"
 	}
 }

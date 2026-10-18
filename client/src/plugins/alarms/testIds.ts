@@ -2,9 +2,12 @@
 export const alarmsTestIds = {
 	page: "alarms.page",
 	empty: "alarms.empty",
+	group: (key: string) => `alarms.group.${key}`,
 	row: (uid: string) => `alarms.row.${uid}`,
 	text: (uid: string) => `alarms.text.${uid}`,
+	targetChip: (alarmUid: string, targetUid: string) => `alarms.target-chip.${alarmUid}.${targetUid}`,
 	detail: "alarms.detail",
+	targetCard: (targetUid: string) => `alarms.target-card.${targetUid}`,
 	action: (action: string, uid: string) => `alarms.action.${action}.${uid}`,
 	form: "alarms.form",
 	formField: (name: string) => `alarms.form-field.${name}`,

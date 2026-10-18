@@ -1,42 +1,101 @@
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { coreTestIds } from "../../../../../../client/src/core";
 import AlarmsPage from "../../../../../../client/src/plugins/alarms/pages/AlarmsPage";
 import { useShownElement } from "../../../../../../client/src/plugins/workspace/shownElement";
 import { alarmsTestIds as ids } from "../../../../../../client/src/plugins/alarms/testIds";
 import { sharedTestIds } from "../../../../../../client/src/shared";
-import { alarm } from "../../../../../helpers/client/alarmsFixtures";
+import { alarm, target } from "../../../../../helpers/client/alarmsFixtures";
 import { fakeAlarmsBackend } from "../../../../../helpers/client/fakeAlarmsBackend";
 import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
 import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 const projects = [project("p0", "Allgemein", 0, { builtin: true }), project("p1", "Viewer", 1)];
-const target = { uid: "s1", label: "STORY-001", title: "Eine Story", kind: "story", deleted: false };
+const story = target("s1", { label: "STORY-001", title: "Eine Story" });
+const note = target("n1", { label: "NOTE-001", title: "Eine Note", kind: "note", open: false });
 const alarms = [
-	alarm("wait", { at: "2026-10-22T07:00:00Z", target }),
+	alarm("wait", { at: "2026-10-22T07:00:00Z", targets: [story] }),
 	alarm("fired", { status: "Due", version: 3 }),
 	alarm("snoozed", { status: "Snoozed", snoozed_until: "2026-10-25T07:00:00Z" }),
-	alarm("done", { status: "Done" }),
+	alarm("done", { status: "Done", version: 2, done_at: "2026-10-18T09:00:00Z", purge_at: "2026-10-19T09:00:00Z" }),
 	alarm("foreign", { target_text: "Misc:NOTE-003", at: "2026-10-23T07:00:00Z" }),
 	alarm("other", { project_uid: "p0" }),
+	alarm("multi", { text: "Sachen nachfragen", at: "2026-10-24T07:00:00Z", targets: [story, note] }),
+	alarm("about", { text: "", at: "2026-10-24T08:00:00Z", targets: [story] }),
 ];
 
-afterEach(cleanup);
+beforeEach(() => {
+	vi.useFakeTimers({ toFake: ["Date"] });
+	vi.setSystemTime(new Date(2026, 9, 18, 12, 0));
+});
 
-/** The detail view of stories of a test plugin (`workspace.element-detail`): shows which element it got. */
+afterEach(() => {
+	cleanup();
+	vi.useRealTimers();
+});
+
+/** The detail views of a test plugin (`workspace.element-detail`): show which element they got. */
 function StoryView() {
 	const { uid } = useShownElement();
 	return <p data-testid="test.story-view">{`Story ${uid}`}</p>;
 }
 
+function NoteView() {
+	const { uid } = useShownElement();
+	return <p data-testid="test.note-view">{`Note ${uid}`}</p>;
+}
+
 async function renderPage(options: Parameters<typeof fakeAlarmsBackend>[0] = {}) {
 	const backend = fakeAlarmsBackend({ projects, alarms, ...options });
-	await renderWorkspace(<AlarmsPage />, { backend, widgets: [{ ownerId: "backlog", slot: "workspace.element-detail", name: "story", component: StoryView }] });
+	await renderWorkspace(<AlarmsPage />, {
+		backend,
+		widgets: [
+			{ ownerId: "backlog", slot: "workspace.element-detail", name: "story", component: StoryView },
+			{ ownerId: "notes", slot: "workspace.element-detail", name: "note", component: NoteView },
+		],
+	});
 	return backend;
 }
 
-describe("AlarmsPage: the detail of an alarm", () => {
-	it("expands and collapses the full text of a row without opening its detail", async () => {
+const rowsOf = (key: string) => within(screen.getByTestId(ids.group(key))).queryAllByTestId(/^alarms\.row\./).map((row) => row.getAttribute("data-testid"));
+
+describe("AlarmsPage: the list", () => {
+	it("groups the reminders of the shown projects by time, finished ones last", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.row("fired"));
+
+		expect(rowsOf("due")).toEqual([ids.row("fired")]);
+		expect(rowsOf("later")).toEqual([ids.row("other"), ids.row("wait"), ids.row("foreign"), ids.row("multi"), ids.row("about"), ids.row("snoozed")]);
+		expect(rowsOf("done")).toEqual([ids.row("done")]);
+		expect(screen.queryByTestId(ids.group("today"))).toBeNull();
+	});
+
+	it("shows the heading without label and the elements as chips, closed ones greyed out", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.row("multi"));
+
+		expect(screen.getByTestId(ids.row("multi")).textContent).not.toContain("MULTI");
+		expect(screen.getByTestId(ids.text("multi")).textContent).toBe("Sachen nachfragen");
+		expect(screen.getByTestId(ids.text("about")).textContent).toBe("Eine Story");
+		expect(screen.getByTestId(ids.targetChip("multi", "s1")).getAttribute("data-open")).toBe("true");
+		expect(screen.getByTestId(ids.targetChip("multi", "n1")).getAttribute("data-open")).toBe("false");
+		expect(screen.getByTestId(ids.row("done")).textContent).toContain("verschwindet");
+	});
+
+	it("shows only the projects that are switched on", async () => {
+		await renderPage({ documents: { workspace: { hidden: ["p0"] } } });
+
+		await screen.findByTestId(ids.row("wait"));
+		expect(screen.queryByTestId(ids.row("other"))).toBeNull();
+	});
+
+	it("says so when there are none", async () => {
+		await renderPage({ alarms: [] });
+
+		expect((await screen.findByTestId(ids.empty)).textContent).toContain("Keine Wecker");
+	});
+
+	it("expands and collapses the full heading of a row without opening its detail", async () => {
 		await renderPage();
 		const toggle = await screen.findByTestId(ids.action("expand", "wait"));
 		expect(toggle.getAttribute("aria-expanded")).toBe("false");
@@ -44,20 +103,54 @@ describe("AlarmsPage: the detail of an alarm", () => {
 		fireEvent.click(toggle);
 		expect(screen.getByTestId(ids.action("expand", "wait")).getAttribute("aria-expanded")).toBe("true");
 		expect(screen.queryByTestId(ids.detail)).toBeNull();
-
-		fireEvent.click(screen.getByTestId(ids.action("expand", "wait")));
-		expect(screen.getByTestId(ids.action("expand", "wait")).getAttribute("aria-expanded")).toBe("false");
 	});
+});
 
-	it("opens the alarm with the element it refers to in the detail column when its row is clicked", async () => {
+describe("AlarmsPage: the detail of a reminder", () => {
+	it("shows the reminder bar and the one element it reminds of", async () => {
 		await renderPage();
 		fireEvent.click(await screen.findByTestId(ids.row("wait")));
 
 		const detail = await screen.findByTestId(ids.detail);
-		expect(within(detail).getByTestId(sharedTestIds.detailTitle).textContent).toBe("WAIT — Wecker wait");
+		expect(within(detail).getByTestId(sharedTestIds.detailTitle).textContent).toBe("Wecker wait");
 		expect(within(detail).getByTestId("test.story-view").textContent).toBe("Story s1");
+		expect(within(detail).queryByTestId(ids.targetCard("s1"))).toBeNull();
 		expect(screen.getByTestId(coreTestIds.detail).contains(detail)).toBe(true);
 		expect(screen.getByTestId(ids.row("wait")).getAttribute("aria-selected")).toBe("true");
+	});
+
+	it("names only the time when the element itself is the heading", async () => {
+		await renderPage();
+		fireEvent.click(await screen.findByTestId(ids.row("about")));
+
+		const detail = await screen.findByTestId(ids.detail);
+		expect(within(detail).getByTestId(sharedTestIds.detailTitle).textContent).toMatch(/^⏰ /);
+		expect(within(detail).getByTestId("test.story-view")).toBeTruthy();
+	});
+
+	it("switches between several elements with cards, the first open", async () => {
+		await renderPage();
+		fireEvent.click(await screen.findByTestId(ids.row("multi")));
+
+		const detail = await screen.findByTestId(ids.detail);
+		expect(within(detail).getByTestId(ids.targetCard("s1")).getAttribute("aria-pressed")).toBe("true");
+		expect(within(detail).getByTestId(ids.targetCard("n1")).getAttribute("data-open")).toBe("false");
+		expect(within(detail).getByTestId("test.story-view")).toBeTruthy();
+
+		fireEvent.click(within(detail).getByTestId(ids.targetCard("n1")));
+		expect((await within(detail).findByTestId("test.note-view")).textContent).toBe("Note n1");
+		expect(within(detail).queryByTestId("test.story-view")).toBeNull();
+	});
+
+	it("shows a free reminder as the bar alone and an element in the trash as a hint", async () => {
+		await renderPage({ alarms: [...alarms, alarm("gone", { targets: [target("x", { deleted: true, open: false })] })] });
+		fireEvent.click(await screen.findByTestId(ids.row("fired")));
+		const free = await screen.findByTestId(ids.detail);
+		expect(within(free).getByTestId(sharedTestIds.detailTitle).textContent).toBe("Wecker fired");
+		expect(within(free).queryByTestId("test.story-view")).toBeNull();
+
+		fireEvent.click(screen.getByTestId(ids.row("gone")));
+		expect((await screen.findByTestId(ids.detail)).textContent).toContain("liegt im Papierkorb");
 	});
 
 	it("closes the detail with its close button and with a second click on the row", async () => {
@@ -72,16 +165,7 @@ describe("AlarmsPage: the detail of an alarm", () => {
 		expect(screen.queryByTestId(ids.detail)).toBeNull();
 	});
 
-	it("opens nothing for an alarm without a target in the viewer or with a deleted target", async () => {
-		await renderPage({ alarms: [...alarms, alarm("gone", { target: { ...target, deleted: true } })] });
-		fireEvent.click(await screen.findByTestId(ids.row("fired")));
-		fireEvent.click(screen.getByTestId(ids.row("foreign")));
-		fireEvent.click(screen.getByTestId(ids.row("gone")));
-
-		expect(screen.queryByTestId(ids.detail)).toBeNull();
-	});
-
-	it("finishes and snoozes from the header of the detail, with the version", async () => {
+	it("finishes and snoozes from the bar of the detail, with the version", async () => {
 		const backend = await renderPage();
 		fireEvent.click(await screen.findByTestId(ids.row("wait")));
 		const detail = await screen.findByTestId(ids.detail);
@@ -92,7 +176,9 @@ describe("AlarmsPage: the detail of an alarm", () => {
 		await waitFor(() => expect(backend.calls("POST", "alarms/alarms/wait/finish")).toHaveLength(1));
 		expect(backend.calls("POST", "alarms/alarms/wait/snooze")[0]!.body).toEqual({ version: 1 });
 	});
+});
 
+describe("AlarmsPage: actions", () => {
 	it("does not open the detail when an action of the row is clicked", async () => {
 		const backend = await renderPage();
 		fireEvent.click(await screen.findByTestId(ids.action("snooze", "wait")));
@@ -110,40 +196,16 @@ describe("AlarmsPage: the detail of an alarm", () => {
 		expect(screen.getByTestId(ids.action("finish", "wait")).getAttribute("aria-label")).toBe("Erledigt");
 		expect(screen.getByTestId(ids.action("finish", "wait")).textContent).toBe("");
 	});
-});
 
-describe("AlarmsPage", () => {
-	it("lists the alarms of the shown projects, fired ones first, with status, time and target", async () => {
-		await renderPage();
-
-		await screen.findByTestId(ids.row("fired"));
-		const rows = screen.getAllByTestId(/^alarms\.row\./).map((row) => row.getAttribute("data-testid"));
-		expect(rows).toEqual([ids.row("fired"), ids.row("other"), ids.row("wait"), ids.row("foreign"), ids.row("snoozed"), ids.row("done")]);
-		expect(screen.getByTestId(ids.row("fired")).textContent).toContain("Gemeldet");
-		expect(screen.getByTestId(ids.row("wait")).textContent).toContain("STORY-001 — Eine Story");
-		expect(screen.getByTestId(ids.row("foreign")).textContent).toContain("Misc:NOTE-003");
-		expect(screen.getByTestId(ids.row("snoozed")).textContent).toContain("Zurückgestellt");
-	});
-
-	it("shows only the projects that are switched on", async () => {
-		await renderPage({ documents: { workspace: { hidden: ["p0"] } } });
-
-		await screen.findByTestId(ids.row("wait"));
-		expect(screen.queryByTestId(ids.row("other"))).toBeNull();
-	});
-
-	it("says so when there are none", async () => {
-		await renderPage({ alarms: [] });
-
-		expect((await screen.findByTestId(ids.empty)).textContent).toContain("Keine Wecker");
-	});
-
-	it("offers no actions for a finished alarm", async () => {
-		await renderPage();
+	it("offers only undo for a finished reminder and sends it with the version", async () => {
+		const backend = await renderPage();
 		await screen.findByTestId(ids.row("done"));
 
 		expect(screen.queryByTestId(ids.action("finish", "done"))).toBeNull();
-		expect(screen.getByTestId(ids.action("finish", "wait"))).toBeTruthy();
+		fireEvent.click(screen.getByTestId(ids.action("reopen", "done")));
+
+		await waitFor(() => expect(backend.calls("POST", "alarms/alarms/done/reopen")).toHaveLength(1));
+		expect(backend.calls("POST", "alarms/alarms/done/reopen")[0]!.body).toEqual({ version: 2 });
 	});
 
 	it.each([
@@ -170,8 +232,10 @@ describe("AlarmsPage", () => {
 
 		expect(await screen.findByText("ALARM ist schon erledigt")).toBeTruthy();
 	});
+});
 
-	it("sets a new alarm in the marked project", async () => {
+describe("AlarmsPage: the form", () => {
+	it("sets a new reminder in the marked project", async () => {
 		const backend = await renderPage({ documents: { workspace: { marked: "p1" } } });
 		await screen.findByTestId(ids.row("wait"));
 
@@ -183,23 +247,27 @@ describe("AlarmsPage", () => {
 		await waitFor(() => expect(backend.calls("POST", "alarms/alarms")).toHaveLength(1));
 		expect(backend.calls("POST", "alarms/alarms")[0]!.body).toEqual({
 			project: "p1",
-			fields: { text: "Neu", at: new Date("2026-10-30T09:00").toISOString() },
+			fields: { text: "Neu", at: new Date("2026-10-30T09:00").toISOString(), targets: [] },
 		});
 	});
 
-	it("needs a time to save", async () => {
+	it("needs a time, and a text when no element is chosen", async () => {
 		const backend = await renderPage();
 		await screen.findByTestId(ids.row("wait"));
 
 		fireEvent.click(screen.getByText("Neuer Wecker"));
 		fireEvent.change(await screen.findByTestId(ids.formField("text")), { target: { value: "Ohne Zeit" } });
 		fireEvent.click(screen.getByTestId(sharedTestIds.editFormSave));
-
 		expect(await screen.findByText("Ein Zeitpunkt fehlt.")).toBeTruthy();
+
+		fireEvent.change(screen.getByTestId(ids.formField("text")), { target: { value: " " } });
+		fireEvent.change(screen.getByTestId(ids.formField("at")), { target: { value: "2026-10-30T09:00" } });
+		fireEvent.click(screen.getByTestId(sharedTestIds.editFormSave));
+		expect(await screen.findByText("Ein Text oder mindestens ein Element fehlt.")).toBeTruthy();
 		expect(backend.calls("POST", "alarms/alarms")).toHaveLength(0);
 	});
 
-	it("edits an alarm and sends only what changed", async () => {
+	it("edits a reminder and sends only what changed", async () => {
 		const backend = await renderPage();
 		await screen.findByTestId(ids.row("wait"));
 
@@ -213,7 +281,7 @@ describe("AlarmsPage", () => {
 		expect(backend.calls("PUT", "alarms/alarms/wait")[0]!.body).toEqual({ version: 1, fields: { text: "Anders" } });
 	});
 
-	it("changes the time of an alarm", async () => {
+	it("changes the time of a reminder", async () => {
 		const backend = await renderPage();
 		await screen.findByTestId(ids.row("wait"));
 
@@ -225,7 +293,7 @@ describe("AlarmsPage", () => {
 		expect(backend.calls("PUT", "alarms/alarms/wait")[0]!.body).toEqual({ version: 1, fields: { at: new Date("2026-11-01T10:00").toISOString() } });
 	});
 
-	it("offers the current state when the alarm was changed meanwhile", async () => {
+	it("offers the current state when the reminder was changed meanwhile", async () => {
 		await renderPage({
 			respond: ({ method, path }) =>
 				method === "PUT" && path === "alarms/alarms/wait" ? Response.json({ code: "version_conflict", message: "Version", details: {} }, { status: 409 }) : undefined,

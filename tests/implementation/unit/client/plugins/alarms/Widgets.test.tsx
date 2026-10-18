@@ -8,13 +8,13 @@ import { DetailSections } from "../../../../../../client/src/plugins/workspace/d
 import { NewButton } from "../../../../../../client/src/plugins/workspace/NewButton";
 import { workspaceTestIds } from "../../../../../../client/src/plugins/workspace/testIds";
 import { sharedTestIds } from "../../../../../../client/src/shared";
-import { alarm } from "../../../../../helpers/client/alarmsFixtures";
+import { alarm, target as element } from "../../../../../helpers/client/alarmsFixtures";
 import { fakeAlarmsBackend } from "../../../../../helpers/client/fakeAlarmsBackend";
 import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
 import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 const projects = [project("p0", "Allgemein", 0, { builtin: true }), project("p1", "Viewer", 1)];
-const target = { uid: "e1", label: "STORY-001", title: "Eine Story", kind: "story", deleted: false };
+const target = element("e1", { label: "STORY-001", title: "Eine Story" });
 
 afterEach(cleanup);
 
@@ -28,7 +28,7 @@ describe("AlarmCounter", () => {
 	it("shows how many have fired and lists them with done and snooze", async () => {
 		const backend = fakeAlarmsBackend({
 			projects,
-			alarms: [alarm("a", { status: "Due", version: 4, target }), alarm("b", { status: "Due" }), alarm("c")],
+			alarms: [alarm("a", { status: "Due", version: 4, targets: [target] }), alarm("b", { status: "Due" }), alarm("c")],
 		});
 		await renderWorkspace(<AlarmCounter />, { backend });
 
@@ -48,16 +48,16 @@ describe("AlarmCounter", () => {
 
 describe("SetAlarm in the detail panel of an element", () => {
 	const widgets = [{ ownerId: "alarms", slot: "workspace.detail-sections", name: "set-alarm", component: SetAlarm }];
-	const renderPanel = async (alarms = [alarm("mine", { target }), alarm("done", { target, status: "Done" }), alarm("other")]) => {
+	const renderPanel = async (alarms = [alarm("mine", { targets: [target] }), alarm("done", { targets: [target], status: "Done" }), alarm("other")]) => {
 		const backend = fakeAlarmsBackend({ projects, alarms });
 		await renderWorkspace(<DetailSections uid="e1" label="STORY-001" projectUid="p1" />, { backend, widgets });
 		return backend;
 	};
 
-	it("lists the open alarms bound to the element", async () => {
+	it("lists the waiting reminders of the element", async () => {
 		await renderPanel();
 
-		expect((await screen.findByTestId(ids.elementAlarm("mine"))).textContent).toContain("ALARM — Wecker mine".replace("ALARM", "MINE"));
+		expect((await screen.findByTestId(ids.elementAlarm("mine"))).textContent).toContain("Wecker mine");
 		expect(screen.queryByTestId(ids.elementAlarm("done"))).toBeNull();
 		expect(screen.queryByTestId(ids.elementAlarm("other"))).toBeNull();
 	});
@@ -75,7 +75,7 @@ describe("SetAlarm in the detail panel of an element", () => {
 		await waitFor(() => expect(backend.calls("POST", "alarms/alarms")).toHaveLength(1));
 		expect(backend.calls("POST", "alarms/alarms")[0]!.body).toEqual({
 			project: "p1",
-			fields: { text: "Nachfragen", at: new Date("2026-10-30T09:00").toISOString(), target: "e1" },
+			fields: { text: "Nachfragen", at: new Date("2026-10-30T09:00").toISOString(), targets: ["e1"] },
 		});
 	});
 

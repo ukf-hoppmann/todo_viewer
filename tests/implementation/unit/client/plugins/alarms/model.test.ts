@@ -1,25 +1,44 @@
 import { describe, expect, it } from "vitest";
-import { fromInputValue, notificationBody, sortAlarms, toInputValue, waitingFor } from "../../../../../../client/src/plugins/alarms/model";
-import { alarm } from "../../../../../helpers/client/alarmsFixtures";
+import { fromInputValue, groupAlarms, heading, notificationBody, toInputValue, waitingFor } from "../../../../../../client/src/plugins/alarms/model";
+import { alarm, target } from "../../../../../helpers/client/alarmsFixtures";
 
-describe("sortAlarms", () => {
-	it("puts fired alarms first, then waiting, snoozed and done ones, each by time", () => {
+/** 18 October 2026, 12:00 local time. */
+const NOW = new Date(2026, 9, 18, 12, 0);
+const local = (day: number, hour: number) => new Date(2026, 9, day, hour, 0).toISOString();
+
+describe("groupAlarms", () => {
+	it("groups by time: due, today, later, and finished last", () => {
 		const list = [
-			alarm("done", { status: "Done" }),
-			alarm("later", { at: "2026-10-22T07:00:00Z" }),
-			alarm("snoozed", { status: "Snoozed", at: "2026-10-01T07:00:00Z", snoozed_until: "2026-10-25T07:00:00Z" }),
-			alarm("soon", { at: "2026-10-21T07:00:00Z" }),
-			alarm("due", { status: "Due" }),
+			alarm("done", { status: "Done", done_at: local(18, 9) }),
+			alarm("later", { at: local(20, 7) }),
+			alarm("snoozed", { status: "Snoozed", at: local(1, 7), snoozed_until: local(25, 7) }),
+			alarm("tonight", { at: local(18, 20) }),
+			alarm("fired", { status: "Due", at: local(17, 7) }),
+			alarm("missed", { at: local(18, 11) }),
+			alarm("expired", { status: "Expired", done_at: local(18, 10), targets: [target("s", { open: false })] }),
 		];
 
-		expect(sortAlarms(list).map((entry) => entry.uid)).toEqual(["due", "soon", "later", "snoozed", "done"]);
+		expect(groupAlarms(list, NOW).map((group) => [group.key, group.alarms.map((entry) => entry.uid)])).toEqual([
+			["due", ["fired", "missed"]],
+			["today", ["tonight"]],
+			["later", ["later", "snoozed"]],
+			["done", ["expired", "done"]],
+		]);
 	});
 
-	it("does not change the list it is given and breaks ties by label", () => {
-		const list = [alarm("b"), alarm("a")];
+	it("leaves out empty groups and does not change the list it is given", () => {
+		const list = [alarm("b", { at: local(21, 7) }), alarm("a", { at: local(21, 7) })];
 
-		expect(sortAlarms(list).map((entry) => entry.uid)).toEqual(["a", "b"]);
+		expect(groupAlarms(list, NOW)).toEqual([{ key: "later", alarms: [list[1], list[0]] }]);
 		expect(list.map((entry) => entry.uid)).toEqual(["b", "a"]);
+	});
+});
+
+describe("heading", () => {
+	it("is the text, or the title of the first element of a reminder without text", () => {
+		expect(heading(alarm("a", { text: "Telefonieren" }))).toBe("Telefonieren");
+		expect(heading(alarm("a", { text: "", targets: [target("n10", { title: "Note zehn" }), target("s")] }))).toBe("Note zehn");
+		expect(heading(alarm("a", { text: "", target_text: "Misc:NOTE-003" }))).toBe("Misc:NOTE-003");
 	});
 });
 
@@ -44,8 +63,9 @@ describe("time inputs", () => {
 });
 
 describe("notificationBody", () => {
-	it("names the target of the alarm", () => {
-		expect(notificationBody({ text: "Anrufen", target: null })).toBe("Anrufen");
-		expect(notificationBody({ text: "Anrufen", target: { uid: "u", label: "STORY-001", title: "T", kind: "story", deleted: false } })).toBe("Anrufen (STORY-001)");
+	it("is the heading with the labels of the elements", () => {
+		expect(notificationBody(alarm("a", { text: "Anrufen" }))).toBe("Anrufen");
+		expect(notificationBody(alarm("a", { text: "Nachfragen", targets: [target("story-001"), target("note-002")] }))).toBe("Nachfragen (STORY-001, NOTE-002)");
+		expect(notificationBody(alarm("a", { text: "", targets: [target("note-010", { title: "Note zehn" })] }))).toBe("Note zehn (NOTE-010)");
 	});
 });

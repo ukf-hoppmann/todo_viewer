@@ -57,6 +57,19 @@ describe("toFlatNodes", () => {
 		expect(nodes[1]!.dashed).toBe(true);
 		expect(nodes[2]!.dashed).toBe(false); // ein Root ist nie optional
 	});
+
+	it("marks areas only when asked: a root starts one, a story below it a nested one, a task follows its story", () => {
+		const items = [
+			item("e", { type: "Epic" }),
+			item("s", { type: "Story", parent_uid: "e" }),
+			item("t", { type: "Task", parent_uid: "s" }),
+			item("r", { type: "Story" }),
+			item("rt", { type: "Task", parent_uid: "r" }),
+		];
+
+		expect(toFlatNodes(items).map((node) => node.area)).toEqual([undefined, undefined, undefined, undefined, undefined]);
+		expect(toFlatNodes(items, true).map((node) => node.area)).toEqual([1, 2, 2, 1, 1]);
+	});
 });
 
 describe("collapsibleIds", () => {

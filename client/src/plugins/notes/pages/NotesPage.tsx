@@ -3,12 +3,9 @@ import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import EditIcon from "@mui/icons-material/Edit";
-import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import UnarchiveIcon from "@mui/icons-material/Unarchive";
-import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
-import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
-import { Alert, Box, Checkbox, Dialog, DialogContent, DialogTitle, FormControlLabel, IconButton, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Checkbox, Dialog, DialogContent, DialogTitle, FormControlLabel, IconButton, Tooltip, Typography } from "@mui/material";
 import { useMemo, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
@@ -110,22 +107,13 @@ export default function NotesPage() {
 		<Box sx={{ p: 2 }} data-testid={notesTestIds.page}>
 			<Box>
 				<Box sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap", alignItems: "center" }}>
-					<IconAction
-						label={t(allCollapsed ? "collapse.expand" : "collapse.collapse")}
-						icon={allCollapsed ? UnfoldMoreIcon : UnfoldLessIcon}
-						disabled={folding.length === 0}
-						onClick={() => state.setAllCollapsed(folding, !allCollapsed)}
-						testId={notesTestIds.collapse}
-					/>
+					<Button size="small" disabled={folding.length === 0} onClick={() => state.setAllCollapsed(folding, !allCollapsed)} data-testid={notesTestIds.collapse}>
+						{t(allCollapsed ? "collapse.expand" : "collapse.collapse")}
+					</Button>
 					<FormControlLabel
 						control={<Checkbox size="small" checked={state.extendedMarking} onChange={(event) => state.setExtendedMarking(event.target.checked)} slotProps={{ input: { "data-testid": notesTestIds.marking } as never }} />}
 						label={t("marking")}
 					/>
-					<FormControlLabel
-						control={<Checkbox size="small" checked={state.showArchivedTopics} onChange={(event) => state.setShowArchivedTopics(event.target.checked)} slotProps={{ input: { "data-testid": notesTestIds.archivedTopics } as never }} />}
-						label={t("archivedTopics")}
-					/>
-					<IconAction label={t("resetFilters")} icon={FilterAltOffIcon} onClick={() => state.resetFilters()} testId={notesTestIds.resetFilters} />
 				</Box>
 				{error && (
 					<Alert severity="error" onClose={() => setError(undefined)} data-testid={notesTestIds.error} sx={{ mb: 1 }}>

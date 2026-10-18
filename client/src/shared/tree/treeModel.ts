@@ -7,7 +7,7 @@ export interface TreeNode {
 	badge?: string;
 	/** A color for the status dot (any CSS color). */
 	statusColor?: string;
-	/** Drawn dashed and dimmed, e.g. an item that is not required for its parent. */
+	/** Its guide line is dashed, the label dimmed and the status dot hollow, e.g. an item that is not required for its parent. */
 	dashed?: boolean;
 	/** Done and total of the children, drawn as a `ProgressRing`. */
 	progress?: { done: number; total: number };
@@ -59,6 +59,19 @@ export function flattenVisible(roots: readonly TreeNode[], expanded: ReadonlySet
 	};
 	walk(roots, 0);
 	return rows;
+}
+
+/**
+ * The guide lines left of each row: one per level above it (index 0 = the line of the first level), each `true` when
+ * dashed. A line belongs to the node at that level whose subtree contains the row, so the children of a dashed node
+ * continue its dashed line.
+ */
+export function guideLines(rows: readonly VisibleNode[]): boolean[][] {
+	const dashedAt: boolean[] = [];
+	return rows.map(({ node, depth }) => {
+		dashedAt[depth] = node.dashed === true;
+		return dashedAt.slice(1, depth + 1);
+	});
 }
 
 /** Where a drop lands on a row: the upper quarter is before it, the lower quarter after it, the middle inside it. */

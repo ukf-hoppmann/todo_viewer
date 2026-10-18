@@ -10,6 +10,7 @@ export function useBacklogState() {
 	const [hiddenPriorities, setHiddenPriorities] = usePersistentState<string[]>(OWNER, "hiddenPriorities", []);
 	const [collapsed, setCollapsed] = usePersistentState<string[]>(OWNER, "collapsed", []);
 	const [selected, setSelected] = usePersistentState<string | null>(OWNER, "selected", null);
+	const [extendedMarking, setExtendedMarking] = usePersistentState<boolean>(OWNER, "extendedMarking", true);
 
 	const expanded = useCallback((id: string) => !collapsed.includes(id), [collapsed]);
 	const toggleCollapsed = useCallback(
@@ -22,7 +23,7 @@ export function useBacklogState() {
 		[setCollapsed],
 	);
 	return useMemo(
-		() => ({ hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, selected, setSelected }),
-		[hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, selected, setSelected],
+		() => ({ hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, selected, setSelected, extendedMarking, setExtendedMarking }),
+		[hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, selected, setSelected, extendedMarking, setExtendedMarking],
 	);
 }

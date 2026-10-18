@@ -22,7 +22,6 @@ export function useNotesState() {
 			setCollapsed((current) => (value ? [...new Set([...current, ...ids])] : current.filter((entry) => !ids.includes(entry)))),
 		[setCollapsed],
 	);
-	const resetFilters = useCallback(() => setShownStatuses([...DEFAULT_SHOWN_STATUSES]), [setShownStatuses]);
 	return useMemo(
 		() => ({
 			shownStatuses: STATUSES.filter((status) => shownStatuses.includes(status)) as string[],
@@ -37,8 +36,7 @@ export function useNotesState() {
 			setExtendedMarking,
 			showArchivedTopics,
 			setShowArchivedTopics,
-			resetFilters,
 		}),
-		[shownStatuses, setShownStatuses, collapsed, expanded, toggleCollapsed, setAllCollapsed, selected, setSelected, extendedMarking, setExtendedMarking, showArchivedTopics, setShowArchivedTopics, resetFilters],
+		[shownStatuses, setShownStatuses, collapsed, expanded, toggleCollapsed, setAllCollapsed, selected, setSelected, extendedMarking, setExtendedMarking, showArchivedTopics, setShowArchivedTopics],
 	);
 }

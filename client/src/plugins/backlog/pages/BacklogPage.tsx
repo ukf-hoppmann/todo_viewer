@@ -1,12 +1,8 @@
-import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
-import UnfoldLessDoubleIcon from "@mui/icons-material/UnfoldLessDouble";
-import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
-import UnfoldMoreDoubleIcon from "@mui/icons-material/UnfoldMoreDouble";
-import { Alert, Box, LinearProgress, Typography } from "@mui/material";
+import { Alert, Box, Button, Checkbox, FormControlLabel, LinearProgress, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
-import { buildTree, IconAction, TreeView } from "../../../shared";
+import { buildTree, TreeView } from "../../../shared";
 import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListItemsQuery } from "../api";
 import { ItemDetail } from "../ItemDetail";
@@ -41,23 +37,27 @@ export default function BacklogPage() {
 	return (
 		<Box sx={{ p: 2 }} data-testid={backlogTestIds.page}>
 			<Box>
-				<Box sx={{ display: "flex", gap: 0.5, mb: 1 }}>
+				<Box sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap", alignItems: "center" }}>
 					{(["Epic", "Story"] as const).map((type) => {
 						const ids = collapsibleIds(items, type, scope);
 						const allCollapsed = ids.length > 0 && ids.every((id) => state.collapsed.includes(id));
-						const where = marked ? t("collapse.scope", { project: marked.name }) : t("collapse.scopeAll");
-						const icon = type === "Epic" ? (allCollapsed ? UnfoldMoreDoubleIcon : UnfoldLessDoubleIcon) : allCollapsed ? UnfoldMoreIcon : UnfoldLessIcon;
 						return (
-							<IconAction
+							<Button
 								key={type}
-								label={`${t(allCollapsed ? `collapse.expand${type}` : `collapse.collapse${type}`)} (${where})`}
-								icon={icon}
+								size="small"
 								disabled={ids.length === 0}
+								title={marked ? t("collapse.scope", { project: marked.name }) : t("collapse.scopeAll")}
 								onClick={() => state.setAllCollapsed(ids, !allCollapsed)}
-								testId={backlogTestIds.collapse(type)}
-							/>
+								data-testid={backlogTestIds.collapse(type)}
+							>
+								{t(allCollapsed ? `collapse.expand${type}` : `collapse.collapse${type}`)}
+							</Button>
 						);
 					})}
+					<FormControlLabel
+						control={<Checkbox size="small" checked={state.extendedMarking} onChange={(event) => state.setExtendedMarking(event.target.checked)} slotProps={{ input: { "data-testid": backlogTestIds.marking } as never }} />}
+						label={t("marking")}
+					/>
 				</Box>
 				{error && (
 					<Alert severity="error" onClose={() => setError(undefined)} data-testid={backlogTestIds.error} sx={{ mb: 1 }}>
@@ -87,7 +87,7 @@ export default function BacklogPage() {
 									setError(undefined);
 									write.moveItem(source, placement.parent, placement.position).catch((failure: Error) => setError(failure.message));
 								}}
-								nodes={buildTree(toFlatNodes(projectItems))}
+								nodes={buildTree(toFlatNodes(projectItems, state.extendedMarking))}
 								expanded={new Set(projectItems.filter((item) => state.expanded(item.uid)).map((item) => item.uid))}
 								onToggle={state.toggleCollapsed}
 								selectedId={state.selected}

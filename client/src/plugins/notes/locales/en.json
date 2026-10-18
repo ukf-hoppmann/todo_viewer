@@ -23,8 +23,7 @@
 		"expand": "Expand topics"
 	},
 	"marking": "Extended marking",
-	"archivedTopics": "Show archived topics",
-	"resetFilters": "Reset filters",
+	"archivedTopics": "Archived topics",
 	"project": {
 		"newNote": "New note",
 		"newTopic": "New topic"

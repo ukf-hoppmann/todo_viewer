@@ -23,36 +23,42 @@ interface DetailPanelProps {
 	children?: ReactNode;
 }
 
-/** The detail view of one element: a header bar with icon buttons and the sections below it. */
+/** The detail view of one element: a header with the title and close button, a row of icon buttons below it, then the sections. */
 export function DetailPanel({ title, subtitle, actions = [], onClose, closeLabel, children }: DetailPanelProps) {
 	return (
 		<Box data-testid={sharedTestIds.detailPanel} sx={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-			<Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 1.5, borderBottom: 1, borderColor: "divider" }}>
-				<Box sx={{ flexGrow: 1, minWidth: 0 }}>
-					<Typography variant="h6" component="h2" noWrap data-testid={sharedTestIds.detailTitle}>
-						{title}
-					</Typography>
-					{subtitle && (
-						<Typography variant="caption" color="text.secondary">
-							{subtitle}
+			<Box sx={{ p: 1.5, pb: actions.length > 0 ? 0.5 : 1.5, borderBottom: 1, borderColor: "divider" }}>
+				<Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+					<Box sx={{ flexGrow: 1, minWidth: 0 }}>
+						<Typography variant="h6" component="h2" sx={{ overflowWrap: "anywhere" }} data-testid={sharedTestIds.detailTitle}>
+							{title}
 						</Typography>
+						{subtitle && (
+							<Typography variant="caption" color="text.secondary">
+								{subtitle}
+							</Typography>
+						)}
+					</Box>
+					{onClose && (
+						<Tooltip title={closeLabel}>
+							<IconButton aria-label={closeLabel} onClick={onClose} data-testid={sharedTestIds.detailAction("close")}>
+								<CloseIcon />
+							</IconButton>
+						</Tooltip>
 					)}
 				</Box>
-				{actions.map(({ id, label, icon: Icon, onClick, disabled }) => (
-					<Tooltip key={id} title={label}>
-						<span>
-							<IconButton aria-label={label} onClick={onClick} disabled={disabled} data-testid={sharedTestIds.detailAction(id)}>
-								<Icon />
-							</IconButton>
-						</span>
-					</Tooltip>
-				))}
-				{onClose && (
-					<Tooltip title={closeLabel}>
-						<IconButton aria-label={closeLabel} onClick={onClose} data-testid={sharedTestIds.detailAction("close")}>
-							<CloseIcon />
-						</IconButton>
-					</Tooltip>
+				{actions.length > 0 && (
+					<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, ml: -1 }}>
+						{actions.map(({ id, label, icon: Icon, onClick, disabled }) => (
+							<Tooltip key={id} title={label}>
+								<span>
+									<IconButton aria-label={label} onClick={onClick} disabled={disabled} data-testid={sharedTestIds.detailAction(id)}>
+										<Icon />
+									</IconButton>
+								</span>
+							</Tooltip>
+						))}
+					</Box>
 				)}
 			</Box>
 			<Box sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>{children}</Box>

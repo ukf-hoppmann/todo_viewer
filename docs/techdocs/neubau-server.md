@@ -137,7 +137,11 @@ SQL noch Dateiformate noch Fachlichkeit. Jedes spiegelnde Plugin setzt in `Plugi
 | beide geändert, oder beide neu mit verschiedenem Inhalt | – | Konflikt `both_changed` / `both_created` |
 | neu auf einer Seite | fehlt | anlegen auf der anderen Seite |
 | fehlt auf einer Seite, Basis vorhanden | – | Konflikt `deleted_in_files` / `deleted_in_database`, nie automatisch gelöscht |
+| kurzlebiger Eintrag fehlt in der Datenbank, Dateien seit der Basis unverändert | = Dateien | in den Dateien löschen (kein Konflikt) |
 | auf beiden Seiten weg | – | Basis vergessen |
+
+Kurzlebig sind die Einträge einer Bindung mit `MirrorBinding(..., ephemeral=True)` (heute nur `alarms`); `compute_plan`
+erhält ihre Arten als `ephemeral` und kennt sonst keine Fachlichkeit.
 
 Verweise in Dateien werden vor dem Vergleich über `resolve_labels` auf das aktuelle Label abgebildet (Label-Historie).
 Einträge aus den Dateien ohne `uid` (Platzhalter `NEW-<kurzname>`) sind neu; sie werden nur bei Richtung `both`
@@ -157,7 +161,7 @@ Einträge aus den Dateien ohne `uid` (Platzhalter `NEW-<kurzname>`) sind neu; si
    anwenden) → Dateien schreiben (mit den beim Lesen erfassten Versionen, sonst `mirror_conflict`) → beide Seiten neu
    lesen und die Basis für alle beidseitig gleichen Einträge nachziehen. Schlägt das Schreiben der Dateien nach dem Commit
    fehl, bleibt die Datenbank richtig und der nächste Lauf holt auf.
-4. `auto(project)`: nur konfliktfreie Änderungen, löscht nie, sichert vorher die Datenbank, pausiert bei Problemen.
+4. `auto(project)`: nur konfliktfreie Änderungen, löscht nur kurzlebige Einträge (siehe oben), sichert vorher die Datenbank, pausiert bei Problemen.
    Der Takt ist ein einzelner Termin `core.sync` im `Scheduler`, alle `auto_sync_interval_seconds` (Standard 30), nur
    solange mindestens ein Projekt Auto-Sync an hat (`refresh_auto()` setzt ihn neu).
 5. Ereignis `core.sync.state` (öffentlich, also per SSE) `{project, state, reason}` nach jedem manuellen Lauf und bei jeder
@@ -228,15 +232,21 @@ ungültige Argumente haben `validation_error`, ein unbekanntes Tool `not_found`.
 
 Projektname und Zusatzangaben für Codecs: `MirrorConfig` trägt den Namen des Projekts (`name`); ein Codec mit `for_project(name)` wird damit gebunden (`bound_codec`), wenn er Verweise mit Projektnamen liest und schreibt (`notes`). `MirrorEntry.extra` führt Angaben mit, die der Codec braucht, die aber nicht zum Vergleich oder Hash gehören (Zeitstempel der Dateien).
 
+### Zustand „offen“ im Register
+
+`registry.register_state(kind, is_closed)` meldet je Elementtyp eine Prüfung des Besitzers an, `registry.is_open(tx, uid)` fragt sie ab: offen ist ein Element, das es gibt, das nicht im Papierkorb liegt und das sein Besitzer nicht geschlossen nennt; ohne Prüfung gilt es als offen. Backlog meldet Epic, Story und Task an (geschlossen bei `Completed` und `Rejected`), Notes die Note (erledigt, verworfen, befördert oder archiviert) und das Topic (archiviert). So fragen andere Plugins (z. B. `alarms`) nach, ohne den Besitzer zu kennen.
+
 ## Plugin `alarms` (Wecker)
 
-`viewer/plugins/alarms/` (Schichten `domain`, `application`, `infrastructure`), benötigt nur `workspace`. Elementtyp `alarm` (Präfix `ALARM`, Titel = Text). Keine Wiederholung.
+`viewer/plugins/alarms/` (Schichten `domain`, `application`, `infrastructure`), benötigt nur `workspace`. Elementtyp `alarm` (Präfix `ALARM`, Titel = Text, ohne Text der Titel des ersten Elements). Keine Wiederholung. Ein Wecker ist eine Erinnerung, kein Planungselement: frei mit Text oder an Elemente gebunden; das Label dient nur als Schlüssel für Spiegel und Cloud ([STORY-089](../todo/items/STORY-089/STORY-089_notes.md)).
 
-- **Tabelle** `alarms_alarms(uid, at, text, target_uid, target_text, status, snoozed_until)` (Migration v1). `target_uid` zeigt auf ein Element des Projekts; `target_text` hält ein Ziel in einem anderen, hier unbekannten Projekt unverändert als Text (die Datenbank kann keine Verknüpfung ohne Ziel halten).
-- **Status** `Pending`, `Due`, `Done`, `Snoozed` (`domain/model.py`, rein). `due_now(alarms, now)`: `Pending` mit erreichtem `at` und `Snoozed` mit erreichtem `snoozed_until`, nie im Papierkorb. `next_due`: frühester Zeitpunkt der noch wartenden (auch ein vergangener). `snooze` (Standard eine Stunde, nur in die Zukunft), `finish`, eine Änderung von `at` setzt wieder `Pending`.
-- **Auslösen.** `AlarmService.reschedule()` bestellt beim `Scheduler` genau einen Termin (Besitzer `alarms`, `schedule("alarms", next_due, fire)`); er läuft nach jeder Änderung, beim Bau des Plugins (der `AsyncioScheduler` hält Termine bis `start(loop)` und holt Vergangenes sofort nach), nach `workspace.element.changed` (Papierkorb) und nach `core.sync.state`. `fire()` setzt fällige Wecker auf `Due`, meldet `alarms.due` (öffentlich, `uids`) und `alarms.alarm.changed` und setzt den Termin neu. `Due` bleibt über einen Neustart.
-- **Operationen** (`/api/alarms/…`, auch MCP): `list_alarms` (GET `/alarms?projects=&due_only=`), `get_alarm`, `create_alarm` (POST), `update_alarm` (PUT), `snooze_alarm`, `finish_alarm` (POST `…/snooze|finish`; `version` ist die Revision des Registers). Löschen und Wiederherstellen über `workspace`.
-- **Spiegel** (`infrastructure/mirror/`, Format: `interfaces.md`): `AlarmsCodec` und `AlarmsParticipant`; `alarms.md` wird ganz aus den Einträgen neu erzeugt, die Einleitung bleibt; `format_version` wird geprüft; Platzhalter `NEW-<kurzname>`; ein Ziel ist `` `LABEL` `` oder `` `Projekt:LABEL` ``: ein unbekanntes Label im eigenen Projekt ist `unknown_reference`, ein unbekanntes anderes Projekt oder Label bleibt `target_text`. `Created` gehört nicht zum Vergleich.
+- **Tabellen** `alarms_alarms(uid, at, text, target_text, status, snoozed_until, done_at)` und `alarms_targets(alarm_uid, position, element_uid)` (Migration v2 übernimmt das frühere `target_uid` als erstes Element; schon erledigte Wecker bekommen `done_at` = Zeitpunkt der Migration). Die Elemente sind geordnet (das erste ist im Detail offen) und hängen nicht an den Verknüpfungen von `workspace`, damit „Verknüpfen“ am Element einen Wecker nicht still ändert. `target_text` hält Verweise in andere, hier unbekannte Projekte unverändert als Text (komma-getrennt).
+- **Status** `Pending`, `Due`, `Snoozed`, `Done` (von Hand erledigt) und `Expired` (erloschen) (`domain/model.py`, rein). `due_now(alarms, now)`: `Pending` mit erreichtem `at` und `Snoozed` mit erreichtem `snoozed_until`, nie im Papierkorb. `next_due`: frühester Zeitpunkt der noch wartenden (auch ein vergangener). `snooze` (Standard eine Stunde, nur in die Zukunft), `finish(alarm, now)` setzt `done_at`, `undo` nimmt nur `Done` zurück (`Due`, wenn die Zeit vorbei ist, sonst `Pending`), eine Änderung von `at` setzt wieder `Pending`.
+- **Den Elementen folgen.** `follow_targets(alarm, open_states, now)`: ist keins der Elemente mehr offen, wird ein wartender Wecker `Expired`; ist ein erloschener wieder an einem offenen Element, kehrt er zurück. Ohne Elemente erlischt nichts. Ob ein Element offen ist, sagt `registry.is_open` von `workspace` (siehe dort); der Wecker kennt weder Backlog noch Notes. `AlarmService.follow()` prüft alle Wecker mit Elementen nach jedem fremden Ereignis (Abonnement `*`, die eigenen `alarms.*` ausgenommen) und meldet `alarms.alarm.changed` (`reloaded`), wenn sich offen/Titel eines Elements geändert hat.
+- **Aufräumen.** `to_purge`: `Done` und `Expired`, deren `done_at` `PURGE_AFTER` (24 h) zurückliegt, nicht im Papierkorb. `purge()` löscht sie endgültig (Zeile, Elemente, Register), ohne Papierkorb.
+- **Auslösen.** `AlarmService.reschedule()` bestellt beim `Scheduler` genau einen Termin (Besitzer `alarms`) auf `next_wakeup`: den nächsten Wecker oder das nächste Aufräumen. Er läuft nach jeder Änderung, nach `workspace.element.changed` (Papierkorb), nach `core.sync.state` und wenn `follow()` etwas geändert hat. Beim Bau bestellt `start()` einen Lauf sofort (erst dann haben alle Plugins ihre Prüfung „offen“ angemeldet; der `AsyncioScheduler` hält ihn bis `start(loop)`). Ein Lauf: `follow()`, `fire()` (fällige auf `Due`, meldet `alarms.due` und `alarms.alarm.changed`), `purge()`, `reschedule()`. `Due` bleibt über einen Neustart.
+- **Operationen** (`/api/alarms/…`, auch MCP): `list_alarms` (GET `/alarms?projects=&due_only=`), `get_alarm`, `create_alarm` (POST; `fields`: `at`, `targets` als Liste aus uid oder Label, `text` nur ohne Elemente Pflicht; `target` für ein Element geht weiter), `update_alarm` (PUT; `targets: []` löst alle), `snooze_alarm`, `finish_alarm`, `reopen_alarm` (POST `…/snooze|finish|reopen`; `version` ist die Revision des Registers). Die Antwort trägt `targets` (je `uid`, `label`, `title`, `kind`, `deleted`, `open`), `done_at` und `purge_at`. Löschen und Wiederherstellen über `workspace`.
+- **Spiegel** (`infrastructure/mirror/`, Format: `interfaces.md`): `AlarmsCodec` und `AlarmsParticipant`; `alarms.md` wird ganz aus den Einträgen neu erzeugt, die Einleitung bleibt; `format_version` wird geprüft; Platzhalter `NEW-<kurzname>`; `Target` ist eine Liste aus `` `LABEL` `` oder `` `Projekt:LABEL` ``: ein unbekanntes Label im eigenen Projekt ist `unknown_reference`, ein unbekanntes anderes Projekt oder Label bleibt `target_text`. Ein in der Datei erledigter Wecker ohne `Done at` bekommt den Zeitpunkt des Syncs. Die Bindung ist kurzlebig (`ephemeral`): ein aufgeräumter Wecker verschwindet ohne Konflikt auch aus `alarms.md`. `Created` gehört nicht zum Vergleich.
 - **Ereignisse:** `alarms.alarm.changed`, `alarms.due`.
 
 ## Datenübernahme aus dem alten Viewer

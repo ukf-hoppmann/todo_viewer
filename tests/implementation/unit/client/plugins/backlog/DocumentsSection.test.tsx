@@ -46,6 +46,17 @@ describe("DocumentsSection", () => {
 		await waitFor(() => expect(dialog.querySelector("strong")?.textContent).toBe("Text"));
 	});
 
+	it("offers large view, edit and close as icons in the title bar of the document", async () => {
+		await renderSection();
+
+		fireEvent.click(screen.getByTestId(sharedTestIds.document("TASK-001_spec.md")));
+
+		expect((await screen.findByTestId(sharedTestIds.documentLarge)).getAttribute("aria-label")).toBe("Großansicht");
+		expect(screen.getByTestId(sharedTestIds.documentEdit).getAttribute("aria-label")).toBe("Bearbeiten");
+		fireEvent.click(screen.getByTestId(sharedTestIds.documentClose));
+		await waitFor(() => expect(screen.queryByTestId(sharedTestIds.documentDialog)).toBeNull());
+	});
+
 	it("edits a document with the preview and saves it in the version it was loaded", async () => {
 		const backend = await renderSection();
 

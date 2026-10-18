@@ -27,7 +27,6 @@ Grundlage: `EPIC-007_spec.md`, Abschnitte 3, 11, 12.
 - Doku: README, `docs/techdocs/*` auf den Neubau umschreiben.
 - Übergabe an den Inhaber: Format Version 2 und MCP-Tool-Liste für die
   Anpassung des Harness (`[todo].api_url`, Helfer oder MCP).
-- Altitems nach `STORY-060` Frage 3.
 - Version `1.0.0` (`STORY-060` Frage 11), Release nach Skill
   `claude-harness:semver`.
 

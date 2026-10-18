@@ -131,3 +131,19 @@
 ### Open
 
 - Keine Frage mehr offen; alle 35 sind beantwortet. Abschlusskriterien 1 bis 3 sind damit erfüllt; die Story bleibt für neue Fragen aus der Umsetzung offen, bis der Inhaber sie abnimmt.
+
+## 2026-10-18 — Prüfung vor der Abnahme
+
+### Discussed
+
+- Abgleich der 35 Antworten: Die fachlichen Antworten (1–12) stehen in den Specs der betroffenen Storys; die technischen (13–35) stehen als begründete Abweichung in den Notizen der umsetzenden Storys (061, 063–071, 074, 075, 077–080, 082), nicht in deren Specs. Die Specs waren Eingabe der Umsetzung und sind abgeschlossen.
+- Umsetzung per Stichprobe im Code bestätigt (u. a. PluginShape in core/domain und PluginDefinition in core/application, delete_missing/deletion_not_confirmed, resolve_labels, LinksSection, search_elements, set_title, restore_elements/purge_elements, notes_notices mit subject_uid/decided_at, target_text, DetailSections, for_project, Projekt Allgemein). Frage 3: die Altitems sind Rejected. Frage 20 ist durch STORY-087 überholt (BackendSink an /api/core/client-log).
+- Noch nicht umgesetzt, gehört aber zu STORY-084 (Umstieg): Version 1.0.0 (Frage 11) und Port 5411 (Frage 12); der Neubau läuft noch als todo-viewer-next auf 5412.
+
+### Decided
+
+- Abschlusskriterien 1 und 2 sind erfüllt (Kriterium 2 über die Notizen der betroffenen Items); Status Awaiting confirmation.
+
+### Open
+
+- Abnahme durch den Projektinhaber.

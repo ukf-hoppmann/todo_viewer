@@ -1,11 +1,12 @@
 # NOTE-002
+Uid: a687e6a8-8ba5-4c2c-8091-72f4753b0f5d
 Summary: Sammelstelle für Ideen und Anforderungen zum Rewrite (EPIC-007)
 Status: waiting
 Topic:
 Review: 2026-11-15T14:44:48.169591Z
 Mode: any
 Created: 2026-10-10T14:38:56.056101Z
-Updated: 2026-10-16T14:44:48.170189Z
+Updated: 2026-10-10T14:38:56.056101Z
 Archived: false
 Deleted:
 Links:

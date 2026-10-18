@@ -1,4 +1,5 @@
 # NOTE-001
+Uid: ac3975a5-67ee-473b-99b7-03a657382fef
 Summary: STORY-054 und STORY-055 umsetzen: Topic löschen/archivieren mit Notizen-Dialog
 Status: waiting
 Topic:

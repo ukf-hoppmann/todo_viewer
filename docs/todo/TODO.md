@@ -858,7 +858,7 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: No.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-17.
   - Area: Backend-API.
   - Priority: Prospective.
@@ -870,5 +870,6 @@ Format: Claude_Harness-Backlog-Format Version 1. Die Regeln sind im
     schreibt. 2. Der Client sendet Fehler und Warnungen dorthin, ohne bei
     Ausfall des Servers selbst Fehler zu erzeugen. 3. Menge und Größe der
     Einträge sind begrenzt. 4. Tests für Operation und Client sind grün.
-  - Summary: Folge zu Frage 20 in STORY-060: Der Client loggt vorerst nur in
-    die Konsole; die Schnittstelle zum Server folgt als eigene Story.
+  - Summary: Warnungen und Fehler des Browsers landen im viewer.log des
+    Servers.
+  - Notes: `items/STORY-087/STORY-087_notes.md`.

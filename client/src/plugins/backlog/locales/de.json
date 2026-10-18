@@ -104,8 +104,8 @@
 	},
 	"documents": {
 		"none": "Noch keine Notizen oder Specs.",
-		"addNote": "＋ Notiz-Eintrag",
-		"addSpec": "＋ Spec anlegen",
+		"addEntry": "Notiz-Eintrag anlegen",
+		"addSpec": "Spec anlegen",
 		"topic": "Thema",
 		"discussed": "Besprochen",
 		"decided": "Entschieden",

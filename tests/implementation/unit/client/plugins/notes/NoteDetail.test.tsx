@@ -161,18 +161,18 @@ describe("NoteDetail: documents", () => {
 	it("lists the documents and shows one", async () => {
 		await renderDetail(detail, { noteDocuments: documents });
 
-		expect(screen.getByTestId(ids.document("N1_spec.md"))).toBeTruthy();
-		fireEvent.click(screen.getByTestId(ids.document("N1_notes.md")));
-		const dialog = await screen.findByTestId(ids.documentDialog);
+		expect(screen.getByTestId(sharedTestIds.document("N1_spec.md"))).toBeTruthy();
+		fireEvent.click(screen.getByTestId(sharedTestIds.document("N1_notes.md")));
+		const dialog = await screen.findByTestId(sharedTestIds.documentDialog);
 		await waitFor(() => expect(dialog.textContent).toContain("Start"));
 	});
 
 	it("edits a document in its version", async () => {
 		const backend = await renderDetail(detail, { noteDocuments: documents });
 
-		fireEvent.click(screen.getByTestId(ids.document("N1_spec.md")));
+		fireEvent.click(screen.getByTestId(sharedTestIds.document("N1_spec.md")));
 		await screen.findByText("Spec");
-		fireEvent.click(screen.getByTestId(ids.documentEdit));
+		fireEvent.click(screen.getByTestId(sharedTestIds.documentEdit));
 		const editor = await screen.findByRole("textbox", { name: "N1_spec.md" });
 		fireEvent.change(editor, { target: { value: "Spec neu" } });
 		fireEvent.click(screen.getByText("Speichern"));
@@ -184,10 +184,10 @@ describe("NoteDetail: documents", () => {
 	it("appends an entry to the notes", async () => {
 		const backend = await renderDetail(detail, { noteDocuments: documents });
 
-		fireEvent.click(screen.getByTestId(ids.addEntry));
-		fireEvent.change(await screen.findByTestId(ids.noteField("topic")), { target: { value: "Treffen" } });
-		fireEvent.change(screen.getByTestId(ids.noteField("discussed")), { target: { value: "a\n\nb" } });
-		fireEvent.click(screen.getByTestId(ids.noteSave));
+		fireEvent.click(screen.getByTestId(sharedTestIds.documentsAddEntry));
+		fireEvent.change(await screen.findByTestId(sharedTestIds.entryField("topic")), { target: { value: "Treffen" } });
+		fireEvent.change(screen.getByTestId(sharedTestIds.entryField("discussed")), { target: { value: "a\n\nb" } });
+		fireEvent.click(screen.getByTestId(sharedTestIds.entrySave));
 
 		await waitFor(() => expect(backend.calls("POST", "notes/notes/n1/entries")).toHaveLength(1));
 		expect(backend.calls("POST", "notes/notes/n1/entries")[0]!.body).toEqual({ topic: "Treffen", discussed: ["a", "b"], decided: [], open: [] });
@@ -196,9 +196,9 @@ describe("NoteDetail: documents", () => {
 	it("creates a spec with the name of the label", async () => {
 		const backend = await renderDetail(noteDetail("n1"), { noteDocuments: {} });
 
-		fireEvent.click(screen.getByTestId(ids.addSpec));
-		expect((await screen.findByTestId(ids.specName) as HTMLInputElement).value).toBe("N1_spec.md");
-		fireEvent.click(screen.getByTestId(ids.specSave));
+		fireEvent.click(screen.getByTestId(sharedTestIds.documentsAddSpec));
+		expect((await screen.findByTestId(sharedTestIds.specName) as HTMLInputElement).value).toBe("N1_spec.md");
+		fireEvent.click(screen.getByTestId(sharedTestIds.specSave));
 
 		await waitFor(() => expect(backend.calls("PUT", "notes/notes/n1/documents/N1_spec.md")).toHaveLength(1));
 		expect(backend.calls("PUT", "notes/notes/n1/documents/N1_spec.md")[0]!.body).toEqual({ content: "# N1 — Note n1\n" });
@@ -207,6 +207,6 @@ describe("NoteDetail: documents", () => {
 	it("cannot add documents to an archived note", async () => {
 		await renderDetail(noteDetail("n1", { archived: true, status: "done", stored_status: "done" }));
 
-		expect(screen.queryByTestId(ids.addEntry)).toBeNull();
+		expect(screen.queryByTestId(sharedTestIds.documentsAddEntry)).toBeNull();
 	});
 });

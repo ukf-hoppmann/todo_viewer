@@ -106,8 +106,8 @@
 	},
 	"documents": {
 		"none": "No notes or specs yet.",
-		"addEntry": "＋ Notes entry",
-		"addSpec": "＋ Create spec",
+		"addEntry": "Add notes entry",
+		"addSpec": "Create spec",
 		"topic": "Topic",
 		"discussed": "Discussed",
 		"decided": "Decided",

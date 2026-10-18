@@ -12,8 +12,8 @@ describe("workspace plugin definition", () => {
 		expect(Object.keys(plugin.slots ?? {})).toEqual(["detail-sections", "create-types"]);
 		expect(plugin.contributions?.map((entry) => entry.slot)).toEqual([
 			"core.main",
-			"layout-header-sidebar.sidebar-sections",
-			"layout-header-sidebar.sidebar-sections",
+			"core.sidebar-sections",
+			"core.sidebar-sections",
 			"layout-header-sidebar.header-actions",
 			"core.settings-sections",
 		]);

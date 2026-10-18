@@ -36,7 +36,7 @@ export const plugin = definePlugin({
 			title: "tab.overview",
 			icon: ViewListIcon,
 			page: () => import("./pages/OverviewPage"),
-			layout: { header: true },
+			layout: { header: true, sidebar: true },
 		},
 		{
 			slot: "core.main",
@@ -44,9 +44,10 @@ export const plugin = definePlugin({
 			title: "tab.workbench",
 			icon: AccountTreeIcon,
 			page: () => import("./pages/WorkbenchPage"),
+			layout: { sidebar: true },
 		},
 		{ slot: "layout-header-sidebar.header-actions", name: "event-counter", component: EventCounter },
-		{ slot: "layout-header-sidebar.sidebar-sections", name: "info", component: SidebarSection, when: ["example/overview"] },
+		{ slot: "core.sidebar-sections", name: "info", component: SidebarSection, when: ["example/overview"] },
 		{ slot: "core.settings-sections", name: "info", component: SettingsSection },
 	],
 });

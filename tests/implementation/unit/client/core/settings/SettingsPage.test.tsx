@@ -22,7 +22,7 @@ async function renderPage(active: ActivePlugin[], lng = "en") {
 			{
 				path: "/core/settings",
 				element: (
-					<SubLayout header>
+					<SubLayout ownerId="core" layout={{ header: true }}>
 						<SettingsPage />
 					</SubLayout>
 				),

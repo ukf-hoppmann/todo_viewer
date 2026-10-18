@@ -3,15 +3,13 @@ import type { Logger } from "../logging/types";
 import { checkDefinition } from "./checkDefinition";
 import { checkSlots } from "./checkSlots";
 import { resolvePlugins } from "./resolvePlugins";
-import type { ActivePlugin, Contribution, PluginCatalogue, PluginRegistry, PluginSelection, PluginStatus } from "./types";
+import type { ActivePlugin, PluginCatalogue, PluginRegistry, PluginSelection, PluginStatus } from "./types";
 
 interface PluginRegistryOptions {
 	config: PluginSelection;
 	catalogue: PluginCatalogue;
 	i18n: I18n;
 	logger: Logger;
-	/** The contributions of the core, for the entries that plugins hang into its sidebars; none by default. */
-	coreContributions?: readonly Contribution[];
 }
 
 /**
@@ -26,7 +24,6 @@ export async function createPluginRegistry({
 	catalogue,
 	i18n,
 	logger,
-	coreContributions = [],
 }: PluginRegistryOptions): Promise<PluginRegistry> {
 	const { statuses, candidates } = resolvePlugins(config, catalogue);
 	const loaded = await Promise.allSettled(candidates.map((candidate) => candidate.load()));
@@ -65,7 +62,6 @@ export async function createPluginRegistry({
 					{ contributions: plugin.definition.contributions ?? [], slots: Object.keys(plugin.definition.slots ?? {}) },
 				]),
 			),
-			core: coreContributions,
 		});
 		if (slotProblems.length > 0) {
 			statuses.set(id, { id, status: "failed", code: "contribution-invalid", message: `the contributions are invalid: ${slotProblems.join("; ")}` });

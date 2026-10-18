@@ -31,7 +31,7 @@ export const plugin = definePlugin({
 		},
 	},
 	contributions: [
-		{ slot: "core.main", name: "main", title: "tab.alarms", icon: AlarmIcon, page: () => import("./pages/AlarmsPage") },
+		{ slot: "core.main", name: "main", title: "tab.alarms", icon: AlarmIcon, page: () => import("./pages/AlarmsPage"), layout: { sidebar: true, detail: true } },
 		{ slot: "workspace.create-types", name: "alarm", component: CreateAlarm, order: 30 },
 		{ slot: "workspace.detail-sections", name: "set-alarm", component: SetAlarm, order: 0 },
 		{ slot: "layout-header-sidebar.header-actions", name: "counter", component: AlarmCounter, order: 1 },

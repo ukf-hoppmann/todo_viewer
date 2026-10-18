@@ -45,9 +45,9 @@ export const plugin = definePlugin({
 		},
 	},
 	contributions: [
-		{ slot: "core.main", name: "trash", title: "tab.trash", icon: DeleteIcon, page: () => import("./pages/TrashPage") },
-		{ slot: "layout-header-sidebar.sidebar-sections", name: "search", component: SearchSection, order: 0 },
-		{ slot: "layout-header-sidebar.sidebar-sections", name: "projects", component: ProjectsSection, order: 10 },
+		{ slot: "core.main", name: "trash", title: "tab.trash", icon: DeleteIcon, page: () => import("./pages/TrashPage"), layout: { sidebar: true, detail: true } },
+		{ slot: "core.sidebar-sections", name: "search", component: SearchSection, order: 0 },
+		{ slot: "core.sidebar-sections", name: "projects", component: ProjectsSection, order: 10 },
 		{ slot: "layout-header-sidebar.header-actions", name: "new", component: NewButton, order: -10 },
 		{ slot: "core.settings-sections", name: "projects", component: ProjectSettings, order: 0 },
 	],

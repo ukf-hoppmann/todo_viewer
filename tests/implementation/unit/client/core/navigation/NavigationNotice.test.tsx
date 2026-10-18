@@ -40,14 +40,6 @@ describe("NavigationNotice", () => {
 			},
 		],
 		["no-views", coreTestIds.noViews, { de: "Es sind keine Ansichten verfügbar.", en: "No views are available." }],
-		[
-			"no-entries",
-			coreTestIds.noEntries,
-			{
-				de: "In diesem Bereich sind keine Einträge verfügbar.",
-				en: "No entries are available in this area.",
-			},
-		],
 	] as const)("shows the notice %s in every language", async (kind, testId, texts) => {
 		for (const lng of ["de", "en"] as const) {
 			cleanup();
@@ -65,8 +57,8 @@ describe("NavigationNotice", () => {
 		expect(router.state.location.pathname).toBe("/");
 	});
 
-	it.each(["no-views", "no-entries"] as const)("offers no button for the notice %s", async (kind) => {
-		await renderAt("/x", <NavigationNotice kind={kind} />);
+	it("offers no button for the notice no-views", async () => {
+		await renderAt("/x", <NavigationNotice kind="no-views" />);
 
 		expect(screen.queryByTestId(coreTestIds.homeButton)).toBeNull();
 	});

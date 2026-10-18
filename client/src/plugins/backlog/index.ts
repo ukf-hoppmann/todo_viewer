@@ -38,13 +38,13 @@ export const plugin = definePlugin({
 		},
 	},
 	contributions: [
-		{ slot: "core.main", name: "main", title: "tab.backlog", icon: AccountTreeIcon, page: () => import("./pages/BacklogPage") },
-		{ slot: "core.main", name: "graph", title: "tab.graph", icon: HubIcon, page: () => import("./pages/GraphPage") },
+		{ slot: "core.main", name: "main", title: "tab.backlog", icon: AccountTreeIcon, page: () => import("./pages/BacklogPage"), layout: { sidebar: true, detail: true } },
+		{ slot: "core.main", name: "graph", title: "tab.graph", icon: HubIcon, page: () => import("./pages/GraphPage"), layout: { sidebar: true, detail: true } },
 		{ slot: "workspace.create-types", name: "epic", component: CreateEpic, order: 10 },
 		{ slot: "workspace.create-types", name: "story", component: CreateStory, order: 11 },
 		{ slot: "workspace.create-types", name: "task", component: CreateTask, order: 12 },
-		{ slot: "layout-header-sidebar.sidebar-sections", name: "status-filter", component: StatusFilter, order: 20, when: ["backlog/main", "backlog/graph"] },
-		{ slot: "layout-header-sidebar.sidebar-sections", name: "priority-filter", component: PriorityFilter, order: 21, when: ["backlog/main", "backlog/graph"] },
+		{ slot: "core.sidebar-sections", name: "status-filter", component: StatusFilter, order: 20, when: ["backlog/main", "backlog/graph"] },
+		{ slot: "core.sidebar-sections", name: "priority-filter", component: PriorityFilter, order: 21, when: ["backlog/main", "backlog/graph"] },
 	],
 });
 

@@ -11,13 +11,6 @@ describe("viewPath", () => {
 		expect(viewPath("core", "patients")).toBe("/core/patients");
 	});
 
-	it("builds the path of an entry of a sidebar from the host and the entry", () => {
-		expect(viewPath("example-addon", "panel", { ownerId: "example", name: "hub" })).toBe("/example/hub/example-addon/panel");
-	});
-
-	it("builds the path of an entry of the host itself", () => {
-		expect(viewPath("example", "start", { ownerId: "example", name: "hub" })).toBe("/example/hub/example/start");
-	});
 });
 
 describe("viewKey and parseViewKey", () => {
@@ -65,12 +58,12 @@ describe("coreTestIds for navigation", () => {
 		expect(coreTestIds.navTab("example", "overview")).toBe("core.nav-tab.example.overview");
 	});
 
-	it("builds the id of a sidebar entry from its slot and the identity of its contribution", () => {
-		expect(coreTestIds.sidebarItem("example.hub", "example-addon", "panel")).toBe("core.sidebar-item.example.hub.example-addon.panel");
+	it("builds the id of a sidebar section from the identity of its contribution", () => {
+		expect(coreTestIds.sidebarSection("workspace", "projects")).toBe("core.sidebar-section.workspace.projects");
 	});
 
-	it("has fixed ids for the sidebar and its empty notice", () => {
-		expect(coreTestIds).toMatchObject({ sidebar: "core.sidebar", noEntries: "core.no-entries" });
+	it("has fixed ids for the sidebar and the detail column", () => {
+		expect(coreTestIds).toMatchObject({ sidebar: "core.sidebar", detail: "core.detail" });
 	});
 
 	it("has fixed ids for the areas and notices", () => {

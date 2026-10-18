@@ -10,7 +10,7 @@ describe("notes plugin definition", () => {
 		expect(checkContributions(plugin.contributions ?? [])).toEqual([]);
 		expect(manifest.requires).toEqual(["layout-header-sidebar", "workspace", "backlog"]);
 		const widgets = (plugin.contributions ?? []).filter((entry) => entry.slot !== "core.main");
-		const filters = widgets.filter((entry) => entry.slot === "layout-header-sidebar.sidebar-sections");
+		const filters = widgets.filter((entry) => entry.slot === "core.sidebar-sections");
 		expect(filters).toHaveLength(1);
 		expect(filters.every((entry) => "when" in entry && entry.when?.[0] === "notes/main")).toBe(true);
 		expect(widgets.filter((entry) => entry.slot === "workspace.create-types").map((entry) => entry.name)).toEqual(["note", "topic"]);

@@ -4,7 +4,6 @@ import {
 	errors as defaultErrors,
 	logging as defaultLogging,
 	PluginSelectionError,
-	type Contribution,
 	type Errors,
 	type Logging,
 	type PluginCatalogue,
@@ -18,8 +17,6 @@ interface StartPluginsOptions {
 	i18n: I18n;
 	logging?: Logging;
 	errors?: Errors;
-	/** The contributions of the core; the same list goes to `createAppRouter`. */
-	coreContributions?: readonly Contribution[];
 }
 
 /**
@@ -33,10 +30,9 @@ export async function startPlugins({
 	i18n,
 	logging = defaultLogging,
 	errors = defaultErrors,
-	coreContributions,
 }: StartPluginsOptions): Promise<PluginRegistry | undefined> {
 	try {
-		return await createPluginRegistry({ config, catalogue, i18n, logger: logging.forOrigin("core"), coreContributions });
+		return await createPluginRegistry({ config, catalogue, i18n, logger: logging.forOrigin("core") });
 	} catch (error) {
 		if (!(error instanceof PluginSelectionError)) throw error;
 		void errors.forOrigin("core")({

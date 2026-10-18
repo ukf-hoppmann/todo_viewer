@@ -106,7 +106,7 @@ export async function startApp({
 	await monitor.waitForBackend();
 
 	// Only the plugins that are switched on and whose requirements are met are loaded.
-	const registry = await startPlugins({ config: selection, catalogue, i18n, logging, errors, coreContributions });
+	const registry = await startPlugins({ config: selection, catalogue, i18n, logging, errors });
 	if (!registry) return { kind: "stopped" };
 
 	// The one connection of all plugin APIs; it reaches them through the store. A request that gets no answer

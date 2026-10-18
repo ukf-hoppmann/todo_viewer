@@ -79,18 +79,18 @@ describe("startApp: the application without login", () => {
 		expect(screen.getByTestId(coreTestIds.navTab("example", "overview")).textContent).toBe("Beispiel");
 		expect(screen.getByTestId(coreTestIds.navTab("core", "settings")).textContent).toBe("Einstellungen");
 		expect(screen.getByTestId(layoutTestIds.headerAction("example", "event-counter"))).toBeTruthy();
-		expect(screen.getByTestId(layoutTestIds.sidebarSection("example", "info"))).toBeTruthy();
+		expect(screen.getByTestId(coreTestIds.sidebarSection("example", "info"))).toBeTruthy();
 		expect(screen.getByTestId(coreTestIds.languageSelect)).toBeTruthy();
 	});
 
 	it("shows the sidebar section only on the main route it belongs to", async () => {
 		const { started, i18n } = await start();
 		show(started, i18n);
-		expect(await screen.findByTestId(layoutTestIds.sidebar)).toBeTruthy();
+		expect(await screen.findByTestId(coreTestIds.sidebar)).toBeTruthy();
 
 		fireEvent.click(screen.getByTestId(coreTestIds.navTab("core", "settings")));
 
-		await waitFor(() => expect(screen.queryByTestId(layoutTestIds.sidebar)).toBeNull());
+		await waitFor(() => expect(screen.queryByTestId(coreTestIds.sidebar)).toBeNull());
 		expect(await screen.findByTestId(coreTestIds.settingsSection("example", "info"))).toBeTruthy();
 		expect(screen.getByTestId(exampleTestIds.settingsText)).toBeTruthy();
 	});

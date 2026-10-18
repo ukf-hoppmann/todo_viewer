@@ -24,7 +24,7 @@ describe("SubLayout", () => {
 
 	it("shows the page in the content area", async () => {
 		await renderLayout(
-			<SubLayout header={false}>
+			<SubLayout ownerId="example">
 				<p>Inhalt</p>
 			</SubLayout>,
 		);
@@ -34,7 +34,7 @@ describe("SubLayout", () => {
 
 	it("has no header area unless the main route asks for it", async () => {
 		await renderLayout(
-			<SubLayout header={false}>
+			<SubLayout ownerId="example">
 				<p>Inhalt</p>
 			</SubLayout>,
 		);
@@ -44,7 +44,7 @@ describe("SubLayout", () => {
 
 	it("shows what the page puts into the header", async () => {
 		await renderLayout(
-			<SubLayout header>
+			<SubLayout ownerId="example" layout={{ header: true }}>
 				<PageWithHeader />
 			</SubLayout>,
 		);
@@ -55,7 +55,7 @@ describe("SubLayout", () => {
 
 	it("reserves the header area before the page has loaded", async () => {
 		await renderLayout(
-			<SubLayout header>
+			<SubLayout ownerId="example" layout={{ header: true }}>
 				<PageHost ownerId="example" load={() => new Promise(() => undefined)} />
 			</SubLayout>,
 		);
@@ -76,7 +76,7 @@ describe("SubLayout", () => {
 			);
 		}
 		await renderLayout(
-			<SubLayout header>
+			<SubLayout ownerId="example" layout={{ header: true }}>
 				<Changing />
 			</SubLayout>,
 		);
@@ -98,7 +98,7 @@ describe("SubLayout", () => {
 			);
 		}
 		await renderLayout(
-			<SubLayout header>
+			<SubLayout ownerId="example" layout={{ header: true }}>
 				<Switch />
 			</SubLayout>,
 		);
@@ -115,7 +115,7 @@ describe("SubLayout", () => {
 		logging.addSink(sink, { level: "debug" });
 
 		await renderLayout(
-			<SubLayout header={false}>
+			<SubLayout ownerId="example">
 				<PageHost ownerId="example" load={async () => ({ default: PageWithHeader as ComponentType })} />
 			</SubLayout>,
 		);

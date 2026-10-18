@@ -33,38 +33,24 @@ interface ContributionBase {
 	icon: ComponentType;
 }
 
+/** The areas of the sub layout a main route asks for; each defaults to `false`. */
+export interface MainLayout {
+	/** A header area above the content, filled by the page with `usePageHeader`. */
+	header?: boolean;
+	/** A sidebar at the left, filled with the sections of the slot `core.sidebar-sections`. */
+	sidebar?: boolean;
+	/** A detail column at the right, filled by the page with `usePageDetail`; shown only while it has content. */
+	detail?: boolean;
+}
+
 /**
- * A main route with a page: a tab of the app bar and the page behind it.
+ * A main route: a tab of the app bar and the page behind it.
  * Reachable at `/<owner id>/<name>` (architecture rule 4).
  */
-export interface MainPageContribution extends ContributionBase {
+export interface MainContribution extends ContributionBase {
 	slot: "core.main";
 	page: PageLoader;
-	/** Areas of the sub layout the main route asks for; each defaults to `false`. */
-	layout?: { header?: boolean; sidebar?: false };
-}
-
-/**
- * A main route with a sidebar instead of a page: it opens the slot
- * `<owner id>.<name>`, into which the owner and plugins that require the owner
- * hang entries. The page shown is that of the selected entry.
- */
-export interface MainSidebarContribution extends ContributionBase {
-	slot: "core.main";
-	page?: undefined;
-	layout: { header?: boolean; sidebar: true };
-}
-
-export type MainContribution = MainPageContribution | MainSidebarContribution;
-
-/**
- * An entry of a sidebar: a sub-route of the main route that opens the slot
- * `<host id>.<host name>`. Reachable at `/<host id>/<host name>/<owner id>/<name>`.
- */
-export interface SidebarContribution extends ContributionBase {
-	slot: string;
-	page: PageLoader;
-	layout?: undefined;
+	layout?: MainLayout;
 }
 
 /**
@@ -85,7 +71,7 @@ export interface WidgetContribution {
 }
 
 /** What a plugin or the core adds to a slot. */
-export type Contribution = MainContribution | SidebarContribution | WidgetContribution;
+export type Contribution = MainContribution | WidgetContribution;
 
 /** A slot a plugin provides. Only widget slots exist so far; the owner draws the components with `useSlot`. */
 export interface SlotDeclaration {

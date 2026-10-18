@@ -14,6 +14,7 @@ export type { NavigationConfig } from "./navigation/types";
 export { RootLayout } from "./navigation/RootLayout";
 export { viewPath } from "./navigation/paths";
 export { usePageHeader } from "./navigation/usePageHeader";
+export { usePageDetail } from "./navigation/usePageDetail";
 export { createModals } from "./modals/createModals";
 export { ModalHost } from "./modals/ModalHost";
 export { modals } from "./modals/modals";
@@ -84,6 +85,7 @@ export type {
 	SlotDeclaration,
 	WidgetContribution,
 	MainContribution,
+	MainLayout,
 	PluginCatalogue,
 	PluginCatalogueEntry,
 	PluginDefinition,

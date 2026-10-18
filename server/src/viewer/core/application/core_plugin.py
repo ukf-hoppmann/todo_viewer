@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from viewer.core.application.client_log import ClientLogIn, ClientLogOut, ClientLogService
 from viewer.core.application.plugin import PluginContext, PluginDefinition
-from viewer.core.application.ports import UiStateStore
+from viewer.core.application.ports import ClientLogWriter, Clock, UiStateStore
 from viewer.core.application.sync import Preview, SyncResult, SyncService, SyncStatus
 from viewer.core.application.sync_operations import SyncExecuteIn, SyncPreviewIn, SyncStatusIn
 from viewer.core.application.ui_state import GetUiState, PutUiState, UiState, UiStateService
@@ -27,16 +28,21 @@ class HealthOut:
 class CoreServices:
     ui_state: UiStateService
     sync: SyncService
+    client_log: ClientLogService
 
 
 def build_core_definition(
-    store: UiStateStore, migrations: tuple[Migration, ...], sync: SyncService
+    store: UiStateStore,
+    migrations: tuple[Migration, ...],
+    sync: SyncService,
+    client_log: ClientLogWriter,
+    clock: Clock,
 ) -> PluginDefinition:
     """Die Operationen des Core. UI-Zustand ist kein MCP-Tool (Einstellungen dürfen nicht als Tool angeboten
     werden); Sync-Status, Vorschau und Ausführen sind es, denn der Harness braucht sie."""
 
     def build(context: PluginContext) -> CoreServices:
-        return CoreServices(UiStateService(store), sync)
+        return CoreServices(UiStateService(store), sync, ClientLogService(client_log, clock))
 
     return PluginDefinition(
         id="core",
@@ -69,6 +75,16 @@ def build_core_definition(
                 UiState,
                 lambda services, data: services.ui_state.put(data),
                 HttpBinding("PUT", "/ui-state/{owner}"),
+                mcp=False,
+            ),
+            Operation(
+                "client_log",
+                "Eintrag des Browser-Loggings ins viewer.log schreiben (Menge und Größe begrenzt)",
+                "write",
+                ClientLogIn,
+                ClientLogOut,
+                lambda services, data: services.client_log.write(data),
+                HttpBinding("POST", "/client-log"),
                 mcp=False,
             ),
             Operation(

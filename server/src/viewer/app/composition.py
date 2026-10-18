@@ -20,6 +20,7 @@ from viewer.core.application.sync import MirrorConfig, MirrorProjects, SyncServi
 from viewer.core.domain.errors import PluginSetupError
 from viewer.core.domain.plugin import ElementKind, load_order, validate_plugins
 from viewer.core.domain.settings import Settings
+from viewer.core.infrastructure.client_log import StructlogClientLog
 from viewer.core.infrastructure.clock import SystemClock
 from viewer.core.infrastructure.database import MigrationRunner, SqliteBackupMaker, SqliteDatabase
 from viewer.core.infrastructure.database.core_schema import CORE_MIGRATIONS
@@ -88,7 +89,7 @@ def create_app(
         ids=UuidIds(),
         auto_interval_seconds=settings.auto_sync_interval_seconds,
     )
-    core = build_core_definition(SqlUiStateStore(database, clock), CORE_MIGRATIONS, sync)
+    core = build_core_definition(SqlUiStateStore(database, clock), CORE_MIGRATIONS, sync, StructlogClientLog(), clock)
     definitions = [core, *plugins]
     MigrationRunner(database, backups).run([{d.id: d for d in definitions}[pid] for pid in load_order(definitions)])
     host = PluginHost(

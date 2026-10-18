@@ -79,6 +79,12 @@ eigenen `BEGIN`, damit auch DDL zurückgerollt wird. Adapter holen die Verbindun
   `core_sync_state(project_uid, uid, hash, synced_at)`.
 - **UI-Zustand**: `GET/PUT /api/core/ui-state/{owner}` (Besitzer `[a-z][a-z0-9-]{0,63}`, Dokument ein JSON-Objekt bis
   256 KiB). `PUT` ersetzt das Dokument ohne Versions-Token; es gibt keine MCP-Tools dafür.
+- **Browser-Logs**: `POST /api/core/client-log` (Operation `client_log`, kein MCP-Tool) nimmt einen Eintrag des Browser-Loggings
+  an (`level` = `debug|info|warn|error`, `origin`, `id`, `time`, `session_id`, `route`, `element`, `action`, `message`,
+  `user_message`, `error`, `data`) und schreibt ihn über structlog mit dem Logger `viewer.client` ins `viewer.log`
+  (Felder `client_origin`, `client_id`, `session_id`, …). Begrenzung: Text höchstens 2000 Zeichen, `error` und `data` je
+  16 KiB (größere werden durch `{truncated, size}` ersetzt), höchstens 100 Einträge je 60 Sekunden; darüber antwortet die
+  Operation `{accepted: false}` und verwirft den Eintrag. Eine unbekannte Stufe ist ein `invalid_input`.
 
 ## Dateien (Spiegel-Ordner)
 

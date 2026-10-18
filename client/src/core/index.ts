@@ -50,6 +50,7 @@ export { installGlobalErrorHandlers } from "./errors/installGlobalErrorHandlers"
 export { createRootErrorHandlers } from "./errors/rootErrorHandlers";
 export type { Errors, ReportError, ReportErrorInput } from "./errors/types";
 export { useReportError } from "./errors/useReportError";
+export { BackendSink, type BackendSinkOptions } from "./logging/BackendSink";
 export { ConsoleSink } from "./logging/ConsoleSink";
 export { createLogging } from "./logging/createLogging";
 export { logging } from "./logging/logging";

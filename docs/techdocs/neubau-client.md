@@ -36,7 +36,9 @@ prüft, dass `schema.d.ts` dem Schema des Servers entspricht.
 
 ## Start
 
-`startApp` (ohne Login) in fester Reihenfolge: Logging einschalten → auf den Server warten (`GET /api/core/health`; bei
+`startApp` (ohne Login) in fester Reihenfolge: Logging einschalten (neben der Konsole der `BackendSink`, der Warnungen und
+Fehler einzeln an `POST /api/core/client-log` sendet, ohne Wiederholung; schlägt das Senden fehl, steht nur eine
+`console.warn`-Zeile, nie ein neuer Logeintrag) → auf den Server warten (`GET /api/core/health`; bei
 Ausfall ein Banner und erneutes Prüfen, nie ein Abbruch) → Plugins laden (Auswahl aus `app/plugins/activePlugins.ts`, nur
 dort steht die feste Liste; `example` nur im Entwicklungsmodus) → Verbindung → Store → Router → Ereignisstrom. Fällt der Server
 später aus, startet die Verbindung denselben Test und zeigt das Banner, bis er wieder antwortet.

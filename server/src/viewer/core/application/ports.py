@@ -58,6 +58,12 @@ class UiStateStore(Protocol):
     def put(self, owner: str, document: dict[str, Any]) -> None: ...
 
 
+class ClientLogWriter(Protocol):
+    def write(self, level: str, message: str, fields: Mapping[str, Any]) -> None:
+        """Schreibt einen Eintrag des Browsers (`debug`, `info`, `warn`, `error`) ins Log des Servers."""
+        ...
+
+
 class FileStore(Protocol):
     """Liest und schreibt einen Ordner als Menge von Textdateien; kennt keine Formate."""
 

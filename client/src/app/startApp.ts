@@ -1,6 +1,7 @@
 import type { i18n as I18n } from "i18next";
 import {
 	banners as defaultBanners,
+	BackendSink,
 	BackendUnreachableError,
 	createAppRouter,
 	createAppStore,
@@ -83,6 +84,10 @@ export async function startApp({
 }: StartAppOptions): Promise<StartResult> {
 	logging.configure({});
 	const apiUrl = new URL(apiPath, globalThis.location.href).href;
+	// Warnings and errors also go to `viewer.log` of the server, where they can be analysed; started once, a
+	// second start (tests) replaces the sink.
+	logging.removeSink("backend");
+	logging.addSink(new BackendSink({ url: `${apiUrl}/core/client-log` }), { level: "warn" });
 	const fetchFn: ConnectionFetch = connectionOptions?.fetch ?? ((request) => fetch(request));
 
 	// The one place that reacts when the backend does not answer; the connection reports to it.

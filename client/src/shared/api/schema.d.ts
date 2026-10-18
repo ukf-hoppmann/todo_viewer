@@ -247,6 +247,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/core/client-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Eintrag des Browser-Loggings ins viewer.log schreiben (Menge und Größe begrenzt) */
+        post: operations["core_client_log"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/core/events": {
         parameters: {
             query?: never;
@@ -1206,6 +1223,14 @@ export interface components {
             /** Version */
             version: number;
         };
+        /**
+         * ClientLogOut
+         * @description `accepted` ist `False`, wenn der Eintrag wegen der Mengenbegrenzung verworfen wurde.
+         */
+        ClientLogOut: {
+            /** Accepted */
+            accepted: boolean;
+        };
         /** ConflictOut */
         ConflictOut: {
             /** Conflict */
@@ -1233,6 +1258,38 @@ export interface components {
             archived: number;
             /** Topics */
             topics: number;
+        };
+        /** CoreClientLogBody */
+        CoreClientLogBody: {
+            /** Action */
+            action?: string | null;
+            /** Data */
+            data?: unknown;
+            /** Element */
+            element?: string | null;
+            /** Error */
+            error?: {
+                [key: string]: unknown;
+            } | null;
+            /** Id */
+            id?: string | null;
+            /** Level */
+            level: string;
+            /** Message */
+            message?: string | null;
+            /**
+             * Origin
+             * @default core
+             */
+            origin: string;
+            /** Route */
+            route?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Time */
+            time?: string | null;
+            /** User Message */
+            user_message?: string | null;
         };
         /** CorePutUiStateBody */
         CorePutUiStateBody: {
@@ -2854,6 +2911,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RetypeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    core_client_log: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoreClientLogBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientLogOut"];
                 };
             };
             /** @description Client Error */

@@ -32,7 +32,7 @@ def plugin(plugin_id: str, requires: tuple[str, ...] = (), migrations: tuple[Mig
 
 
 def ordered(*defs: PluginDefinition) -> list[PluginDefinition]:
-    core = build_core_definition(NoStore(), CORE_MIGRATIONS, cast(Any, None))
+    core = build_core_definition(NoStore(), CORE_MIGRATIONS, cast(Any, None), cast(Any, None), cast(Any, None))
     all_defs = [core, *defs]
     by_id = {d.id: d for d in all_defs}
     return [by_id[i] for i in load_order(all_defs)]

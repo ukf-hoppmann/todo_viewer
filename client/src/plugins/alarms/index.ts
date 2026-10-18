@@ -10,7 +10,8 @@ import en from "./locales/en.json";
 import { SetAlarm } from "./SetAlarm";
 
 /**
- * Alarms: a fixed time, free or bound to an element. The server fires them (`alarms.due`) while the viewer runs;
+ * Alarms: reminders at a fixed time, free with a text or reminding of elements (they expire once none of them is open
+ * and go a day after they were finished or expired). The server fires them (`alarms.due`) while the viewer runs;
  * the UI shows a banner, the counter in the app bar and, if allowed, a browser notification. "Set an alarm" hangs in
  * the detail panel of every element (slot `workspace.detail-sections`), "Alarm" in the "＋ New" dialog, the main route
  * `alarms/main` lists all alarms.

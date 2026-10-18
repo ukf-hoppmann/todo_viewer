@@ -11,6 +11,8 @@ from viewer.plugins.workspace.domain.model import Element, UnknownElementKind, f
 
 #: Erzeugt eine neue `uid`; die Composition Root gibt `uuid4`, Tests eine feste Folge.
 NewUid = Callable[[], str]
+#: Die Prüfung des Besitzers eines Elementtyps: ist das Element (nicht gelöscht) geschlossen, also nicht mehr offen?
+IsClosed = Callable[[Transaction, str], bool]
 
 
 class RegistryService:
@@ -26,6 +28,7 @@ class RegistryService:
         self._projects = projects
         self._clock = clock
         self._new_uid = new_uid
+        self._closed: dict[str, IsClosed] = {}
 
     def register_kinds(self, tx: Transaction, owner: str, kinds: list[ElementKind]) -> None:
         self._elements.upsert_kinds(tx, owner, kinds)
@@ -102,6 +105,20 @@ class RegistryService:
     def set_title(self, tx: Transaction, uid: str, title: str) -> None:
         self._require(tx, uid)
         self._elements.set_title(tx, uid, title.strip(), self._clock.now())
+
+    def register_state(self, kind: str, is_closed: IsClosed) -> None:
+        """Der Besitzer eines Elementtyps meldet an, wie man erfährt, ob ein Element geschlossen ist (z. B. erledigt,
+        verworfen, archiviert). So fragen andere Plugins nach, ohne den Besitzer zu kennen."""
+        self._closed[kind] = is_closed
+
+    def is_open(self, tx: Transaction, uid: str) -> bool:
+        """Offen ist ein Element, das es gibt, das nicht gelöscht ist und das sein Besitzer nicht geschlossen nennt;
+        ohne angemeldete Prüfung gilt es als offen."""
+        element = self._elements.get(tx, uid)
+        if element is None or element.deleted_at is not None:
+            return False
+        is_closed = self._closed.get(element.kind)
+        return is_closed is None or not is_closed(tx, uid)
 
     def search(self, tx: Transaction, query: str, limit: int = 50) -> list[Element]:
         return self._elements.search(tx, query, limit) if query.strip() else []

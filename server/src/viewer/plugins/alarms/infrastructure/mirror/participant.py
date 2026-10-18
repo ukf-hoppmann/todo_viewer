@@ -12,7 +12,7 @@ from viewer.core.application.ports import Clock, Database, Transaction
 from viewer.core.application.sync import SyncChanges
 from viewer.core.domain.sync import MirrorEntry, MirrorFormatError
 from viewer.plugins.alarms.application.ports import AlarmRepository
-from viewer.plugins.alarms.domain.model import Alarm
+from viewer.plugins.alarms.domain.model import CLOSED_STATUSES, Alarm
 from viewer.plugins.alarms.infrastructure.mirror.syntax import (
     ALARMS_FILE,
     KIND_ALARM,
@@ -55,20 +55,19 @@ class AlarmsParticipant:
             "at": format_time(alarm.at),
             "status": alarm.status,
             "snoozed_until": format_time(alarm.snoozed_until),
+            "done_at": format_time(alarm.done_at),
             "deleted": format_day(alarm.deleted_at),
         }
-        refs: dict[str, tuple[str, ...]] = {}
-        if alarm.target_uid:
-            target = self._registry.get(tx, alarm.target_uid)
+        tokens: list[str] = []
+        for uid in alarm.targets:
+            target = self._registry.get(tx, uid)
             if target is not None:
                 same = target.project_uid == project
-                refs["target"] = (
-                    str(target.label)
-                    if same
-                    else f"{names.get(target.project_uid, target.project_uid)}:{target.label}",
+                tokens.append(
+                    str(target.label) if same else f"{names.get(target.project_uid, target.project_uid)}:{target.label}"
                 )
-        elif alarm.target_text:
-            refs["target"] = (alarm.target_text,)
+        tokens += [t.strip() for t in (alarm.target_text or "").split(",") if t.strip()]
+        refs: dict[str, tuple[str, ...]] = {"target": tuple(tokens)} if tokens else {}
         extra = {"created": format_day(element.created_at) if element else None}
         return MirrorEntry(KIND_ALARM, alarm.label, fields, refs, alarm.uid, extra=extra)
 
@@ -108,7 +107,7 @@ class AlarmsParticipant:
                 tx,
                 Alarm(
                     str(entry.uid), project, str(entry.label), f["text"], to_datetime(f["at"]), "Pending",
-                    None, None, None, 1,
+                    (), None, None, 1,
                 ),
             )  # fmt: skip
         for entry in (*changes.created, *changes.updated):
@@ -122,19 +121,23 @@ class AlarmsParticipant:
         f = entry.fields
         stored = self._alarms.get(tx, str(entry.uid))
         assert stored is not None
-        target_uid, target_text = self._target(tx, project, entry, new)
+        targets, target_text = self._targets(tx, project, entry, new)
+        done_at = _time(f.get("done_at"))
+        if f["status"] in CLOSED_STATUSES and done_at is None:
+            done_at = stored.done_at or self._clock.now()  # erledigt in der Datei, ohne Zeitpunkt: ab jetzt 24 h
         alarm = replace(
             stored,
             text=f["text"],
             at=to_datetime(f["at"]),
             status=f["status"],
             snoozed_until=_time(f["snoozed_until"]),
-            target_uid=target_uid,
+            targets=targets,
             target_text=target_text,
+            done_at=done_at if f["status"] in CLOSED_STATUSES else None,
         )
         if not is_new:
             alarm = replace(alarm, revision=self._registry.bump_revision(tx, alarm.uid, stored.revision))
-            if alarm.text != stored.text:
+            if alarm.text != stored.text and alarm.text:
                 self._registry.set_title(tx, alarm.uid, alarm.text)
         self._alarms.update(tx, alarm)
         element = self._registry.get(tx, alarm.uid)
@@ -144,28 +147,36 @@ class AlarmsParticipant:
         elif not day and element is not None and element.deleted_at is not None:
             self._registry.restore(tx, alarm.uid)
 
-    def _target(
+    def _targets(
         self, tx: Transaction, project: str, entry: MirrorEntry, new: Mapping[str, str]
-    ) -> tuple[str | None, str | None]:
-        """Das Ziel als `uid` oder, wenn es in einem anderen Projekt liegt, das es hier nicht gibt, als Text. Ein
-        unbekanntes Label im eigenen Projekt ist `unknown_reference`."""
-        if not entry.refs.get("target"):
-            return None, None
-        token = entry.refs["target"][0]
-        if token in new:
-            return new[token], None
-        qualifier, separator, bare = token.rpartition(":")
-        if separator:
-            match = next((p for p in self._projects.list(tx) if p.name == qualifier), None)
-            element = self._registry.find_by_label(tx, match.uid, bare) if match is not None else None
-            return (str(element.uid), None) if element is not None else (None, token)
-        element = self._registry.find_by_label(tx, project, token)
-        if element is None:
-            line = entry.source_lines.get("target", (entry.source or (ALARMS_FILE, 1))[1])
-            raise MirrorFormatError(
-                "unknown_reference",
-                f"`{token}` gab es im Projekt nie (verwendet von `{entry.label}`)",
-                file=ALARMS_FILE,
-                line=line,
-            )
-        return str(element.uid), None
+    ) -> tuple[tuple[str, ...], str | None]:
+        """Die Elemente als `uid`s; Verweise in andere Projekte, die es hier nicht gibt, als Text. Ein unbekanntes Label
+        im eigenen Projekt ist `unknown_reference`."""
+        uids: list[str] = []
+        texts: list[str] = []
+        names = {p.name: p.uid for p in self._projects.list(tx)}
+        for token in entry.refs.get("target", ()):
+            if token in new:
+                uids.append(new[token])
+                continue
+            qualifier, separator, bare = token.rpartition(":")
+            if separator:
+                other = names.get(qualifier)
+                element = self._registry.find_by_label(tx, other, bare) if other is not None else None
+                if element is None:
+                    texts.append(token)
+                elif str(element.uid) not in uids:
+                    uids.append(str(element.uid))
+                continue
+            element = self._registry.find_by_label(tx, project, token)
+            if element is None:
+                line = entry.source_lines.get("target", (entry.source or (ALARMS_FILE, 1))[1])
+                raise MirrorFormatError(
+                    "unknown_reference",
+                    f"`{token}` gab es im Projekt nie (verwendet von `{entry.label}`)",
+                    file=ALARMS_FILE,
+                    line=line,
+                )
+            if str(element.uid) not in uids:
+                uids.append(str(element.uid))
+        return tuple(uids), (", ".join(texts) or None)

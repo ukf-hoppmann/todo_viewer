@@ -185,7 +185,8 @@ def test_links_triggers_and_time_triggers_as_alarms(imported: tuple[sqlite3.Conn
     assert scalar(db, "SELECT role FROM workspace_links WHERE uid = ?", event["link_uid"]) == "trigger"
     alarms = rows(
         db,
-        "SELECT e.project_uid, e.label, a.* FROM alarms_alarms a JOIN workspace_elements e ON e.uid = a.uid "
+        "SELECT e.project_uid, e.label, t.element_uid AS target_uid, a.* FROM alarms_alarms a "
+        "JOIN workspace_elements e ON e.uid = a.uid LEFT JOIN alarms_targets t ON t.alarm_uid = a.uid "
         "ORDER BY a.at DESC",
     )
     assert [(a["project_uid"], a["label"], a["target_uid"], a["status"], a["at"], a["text"]) for a in alarms] == [

@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { alarmsApi } from "../../../../../../client/src/plugins/alarms/api";
 import { canNotify, onAlarmsDue } from "../../../../../../client/src/plugins/alarms/announce";
 import { banners } from "../../../../../../client/src/core";
-import { alarm } from "../../../../../helpers/client/alarmsFixtures";
+import { alarm, target } from "../../../../../helpers/client/alarmsFixtures";
 import { fakeAlarmsBackend } from "../../../../../helpers/client/fakeAlarmsBackend";
 
-const fired = [alarm("a1", { status: "Due", text: "Anrufen", version: 2, target: { uid: "s", label: "STORY-001", title: "T", kind: "story", deleted: false } }), alarm("a2", { status: "Due" })];
+const fired = [alarm("a1", { status: "Due", text: "Anrufen", version: 2, targets: [target("s", { label: "STORY-001" })] }), alarm("a2", { status: "Due" })];
 
 function context(backend: ReturnType<typeof fakeAlarmsBackend>) {
 	return { dispatch: backend.store.dispatch as never, api: alarmsApi as never };

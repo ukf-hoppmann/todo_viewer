@@ -112,6 +112,9 @@ class MirrorBinding:
     owner: str
     codec: MirrorCodec
     participant: SyncParticipant
+    #: Kurzlebige Einträge (Architektur §2): eine Löschung in der Datenbank geht ohne Konflikt in die Dateien, auch
+    #: beim Auto-Sync, solange der Eintrag dort seit dem letzten Sync unverändert ist.
+    ephemeral: bool = False
 
 
 @dataclass(frozen=True)
@@ -327,7 +330,8 @@ class SyncService:
         return result
 
     def auto(self, project: str) -> SyncStatus:
-        """Ein Lauf des Auto-Sync: nur konfliktfreie Änderungen, löscht nie, pausiert bei Problemen."""
+        """Ein Lauf des Auto-Sync: nur konfliktfreie Änderungen, löscht nur kurzlebige Einträge, pausiert bei
+        Problemen."""
         with self._locks[project]:
             try:
                 snapshot = self._load(project, "both")
@@ -335,7 +339,7 @@ class SyncService:
                 status = self._paused(project, exc)
                 self._publish(project, status.state, status.reason)
                 return status
-            intents = [i for i in snapshot.plan.intents if not i.is_deletion]
+            intents = [i for i in snapshot.plan.intents if not i.is_deletion or self._ephemeral(snapshot, i)]
             changed = bool(intents)
             if changed:
                 self._run(project, snapshot, intents, snapshot.plan.conflicts)
@@ -385,8 +389,20 @@ class SyncService:
             owner_of.update({e.key: index for e in entries})
         for index, entries in enumerate(files):
             owner_of.update({e.key: index for e in entries})
-        plan = compute_plan([e for es in database for e in es], [e for es in files for e in es], base, direction)
+        ephemeral = frozenset(
+            e.kind
+            for index, mirror in enumerate(self._mirrors)
+            if mirror.ephemeral
+            for e in (*database[index], *files[index])
+        )
+        plan = compute_plan(
+            [e for es in database for e in es], [e for es in files for e in es], base, direction, ephemeral
+        )
         return _Snapshot(config, fileset, raw_files, files, database, base, plan, owner_of)
+
+    def _ephemeral(self, snapshot: _Snapshot, intent: Intent) -> bool:
+        index = snapshot.owner_of.get(intent.entry.key)
+        return index is not None and self._mirrors[index].ephemeral
 
     def _aliases(self, project: str, raw_files: list[list[MirrorEntry]]) -> dict[str, str]:
         labels = {ref for entries in raw_files for e in entries for refs in e.refs.values() for ref in refs}

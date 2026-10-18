@@ -20,7 +20,7 @@ from viewer.plugins.alarms.infrastructure.mirror.syntax import (
     clean,
     format_line,
     parse_time,
-    target_token,
+    target_tokens,
 )
 
 
@@ -50,7 +50,7 @@ def decode(files: FileSet, project: str) -> list[MirrorEntry]:
         raw = lines[index]
         header = HEADER.match(raw)
         if header:
-            current = (header.group(1), header.group(2).strip(), index + 1, {})
+            current = (header.group(1), (header.group(2) or "").strip(), index + 1, {})
             blocks.append(current)
             continue
         field = FIELD.match(raw)
@@ -113,6 +113,9 @@ def _entry(ident: str, text: str, line: int, fields: dict[str, tuple[str, int]],
         _fail("missing_field", f"`{ident}` ist zurückgestellt, aber ohne `Snoozed until`", line)
     if status != "Snoozed" and snoozed is not None:
         _fail("invalid_value", "`Snoozed until` gehört nur zu `Snoozed`", line_of("Snoozed until"))
+    done_at = moment("Done at")
+    if done_at is not None and status not in ("Done", "Expired"):
+        _fail("invalid_value", "`Done at` gehört nur zu `Done` und `Expired`", line_of("Done at"))
     days: dict[str, str | None] = {}
     for name in ("Created", "Deleted"):
         day = value(name) or None
@@ -121,10 +124,12 @@ def _entry(ident: str, text: str, line: int, fields: dict[str, tuple[str, int]],
         days[name] = day
     refs: dict[str, tuple[str, ...]] = {}
     source_lines: dict[str, int] = {}
-    token = target_token(fields["Target"][0], project) if "Target" in fields else None
-    if token is not None:
-        refs["target"] = (token,)
+    tokens = target_tokens(fields["Target"][0], project) if "Target" in fields else ()
+    if tokens:
+        refs["target"] = tokens
         source_lines["target"] = line_of("Target")
+    if not text and not tokens:
+        _fail("missing_field", f"`{ident}` hat weder Text noch `Target`", line)
     return MirrorEntry(
         KIND_ALARM,
         None if is_new else ident,
@@ -133,6 +138,7 @@ def _entry(ident: str, text: str, line: int, fields: dict[str, tuple[str, int]],
             "at": moment("At"),
             "status": status,
             "snoozed_until": snoozed,
+            "done_at": done_at,
             "deleted": days["Deleted"],
         },
         refs,

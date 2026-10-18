@@ -139,3 +139,32 @@ def test_a_missing_file_has_no_entries() -> None:
 def test_format_errors_name_code_and_line(text: str, code: str, line: int) -> None:
     error = failure(text)
     assert (error.code, error.details["file"], error.details["line"]) == (code, "alarms.md", line)
+
+
+def test_several_targets_without_text_and_a_done_time_round_trip() -> None:
+    text = (
+        PREAMBLE + "\n- `ALARM-004`\n  - Uid: u4.\n  - At: 2026-10-20T07:00:00Z.\n"
+        "  - Target: `NOTE-001`, `Beispiel:EPIC-005`, `Misc:STORY-022`, `NOTE-001`.\n  - Status: Done.\n"
+        "  - Done at: 2026-10-18T10:00:00Z.\n"
+    )
+    [entry] = decode(alarms_file(text), "Beispiel")
+    assert entry.refs["target"] == ("NOTE-001", "EPIC-005", "Misc:STORY-022")  # doppelt nur einmal
+    assert (entry.fields["text"], entry.fields["done_at"]) == ("", "2026-10-18T10:00:00Z")
+    out = written([entry], current=alarms_file(text))
+    assert "- `ALARM-004`\n" in out and "  - Target: `NOTE-001`, `EPIC-005`, `Misc:STORY-022`.\n" in out
+    assert decode(alarms_file(out), "Beispiel") == [
+        replace(entry, source=entry.source, source_lines=entry.source_lines)
+    ]
+
+
+@pytest.mark.parametrize(
+    "text,code,line",
+    [
+        (PREAMBLE + BLOCK.replace("**Text**", "").replace("u1.\n", "u1.\n  - Target: None.\n"), "missing_field", 7),
+        (PREAMBLE + BLOCK + "  - Done at: 2026-10-18T10:00:00Z.\n", "invalid_value", 11),
+        (PREAMBLE + BLOCK.replace("Pending", "Expired") + "  - Done at: gestern.\n", "invalid_value", 11),
+    ],
+)
+def test_reminder_rules_name_code_and_line(text: str, code: str, line: int) -> None:
+    error = failure(text)
+    assert (error.code, error.details["line"]) == (code, line)

@@ -14,7 +14,7 @@ export interface paths {
         /** Wecker als Liste (nach Zeitpunkt); `due_only` zeigt nur die, die sich gemeldet haben. Projekte komma-getrennt */
         get: operations["alarms_list_alarms"];
         put?: never;
-        /** Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft; optional an ein Element gebunden (`target`). Für „Erinner mich“; „Merk dir“ ist eine Note */
+        /** Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente (`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Für „Erinner mich“; „Merk dir“ ist eine Note */
         post: operations["alarms_create_alarm"];
         delete?: never;
         options?: never;
@@ -29,9 +29,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Ein Wecker mit Ziel; `ref` ist die uid oder ein Label (mit `project`) */
+        /** Ein Wecker mit seinen Elementen; `ref` ist die uid oder ein Label (mit `project`) */
         get: operations["alarms_get_alarm"];
-        /** Ändert Text, Zeitpunkt oder Ziel eines Weckers mit Versionsprüfung; ein neuer Zeitpunkt lässt ihn wieder warten */
+        /** Ändert Text, Zeitpunkt oder Elemente eines Weckers mit Versionsprüfung; ein neuer Zeitpunkt lässt ihn wieder warten */
         put: operations["alarms_update_alarm"];
         post?: never;
         delete?: never;
@@ -49,8 +49,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Erledigt einen Wecker */
+        /** Erledigt einen Wecker; 24 h später wird er endgültig gelöscht */
         post: operations["alarms_finish_alarm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alarms/alarms/{ref}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Nimmt „Erledigt“ zurück, solange der Wecker noch nicht gelöscht ist; er wartet wieder (oder ist fällig) */
+        post: operations["alarms_reopen_alarm"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1073,17 +1090,22 @@ export interface components {
             at: string;
             /** Deleted */
             deleted: boolean;
+            /** Done At */
+            done_at: string | null;
             /** Label */
             label: string;
             /** Project Uid */
             project_uid: string;
+            /** Purge At */
+            purge_at: string | null;
             /** Snoozed Until */
             snoozed_until: string | null;
             /** Status */
             status: string;
-            target: components["schemas"]["AlarmTargetRef"] | null;
             /** Target Text */
             target_text: string | null;
+            /** Targets */
+            targets: components["schemas"]["AlarmTargetRef"][];
             /** Text */
             text: string;
             /** Uid */
@@ -1099,6 +1121,8 @@ export interface components {
             kind: string;
             /** Label */
             label: string;
+            /** Open */
+            open: boolean;
             /** Title */
             title: string;
             /** Uid */
@@ -1115,6 +1139,13 @@ export interface components {
         };
         /** AlarmsFinishAlarmBody */
         AlarmsFinishAlarmBody: {
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** AlarmsReopenAlarmBody */
+        AlarmsReopenAlarmBody: {
             /** Project */
             project?: string | null;
             /** Version */
@@ -2423,6 +2454,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AlarmsFinishAlarmBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlarmOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    alarms_reopen_alarm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlarmsReopenAlarmBody"];
             };
         };
         responses: {

@@ -8,6 +8,7 @@ from typing import Any
 
 from viewer.core.domain.operations import HttpBinding, Operation
 from viewer.plugins.alarms.application.service import AlarmService, AlarmView
+from viewer.plugins.alarms.domain.model import purge_time
 
 
 class AlarmServices:
@@ -23,6 +24,8 @@ class AlarmTargetRef:
     title: str
     kind: str
     deleted: bool
+    #: Offen nach seinem Besitzer (nicht erledigt, verworfen, archiviert, gelöscht …).
+    open: bool
 
 
 @dataclass(frozen=True)
@@ -32,13 +35,18 @@ class AlarmOut:
     label: str
     text: str
     at: datetime
-    #: `Pending` (wartet), `Due` (hat sich gemeldet), `Snoozed` (zurückgestellt), `Done`.
+    #: `Pending` (wartet), `Due` (hat sich gemeldet), `Snoozed` (zurückgestellt), `Done` (erledigt) oder `Expired`
+    #: (erloschen: keins seiner Elemente ist mehr offen).
     status: str
     snoozed_until: datetime | None
-    #: Das Element, auf das sich der Wecker bezieht; sonst leer.
-    target: AlarmTargetRef | None
-    #: Ein Ziel in einem anderen Projekt, das hier nicht aufzulösen ist, als Text (`Projekt:LABEL`).
+    #: Die Elemente, an die er erinnert, in ihrer Reihenfolge; leer bei einer freien Erinnerung.
+    targets: list[AlarmTargetRef]
+    #: Verweise in andere Projekte, die hier nicht aufzulösen sind, als Text (`Projekt:LABEL`, komma-getrennt).
     target_text: str | None
+    #: Wann er erledigt wurde oder erloschen ist; 24 h später wird er endgültig gelöscht.
+    done_at: datetime | None
+    #: Wann er endgültig gelöscht wird (nur erledigt oder erloschen).
+    purge_at: datetime | None
     version: int
     deleted: bool
 
@@ -60,7 +68,8 @@ class GetAlarm:
 @dataclass(frozen=True)
 class CreateAlarm:
     project: str
-    #: `text` und `at` (ISO, UTC wenn ohne Zone) sind Pflicht; `target` (uid oder Label) ist optional.
+    #: `at` (ISO, UTC wenn ohne Zone) ist Pflicht; `targets` (Liste aus uid oder Label) optional; `text` ist Pflicht,
+    #: wenn es keine `targets` gibt.
     fields: dict[str, Any] = field(default_factory=dict)
 
 
@@ -68,7 +77,7 @@ class CreateAlarm:
 class UpdateAlarm:
     ref: str
     version: int
-    #: Geändert werden nur die genannten Felder (`text`, `at`, `target`; `null` löst das Ziel). Ein neuer
+    #: Geändert werden nur die genannten Felder (`text`, `at`, `targets`; `[]` löst alle Elemente). Ein neuer
     #: Zeitpunkt lässt den Wecker wieder warten.
     fields: dict[str, Any]
     project: str | None = None
@@ -90,12 +99,23 @@ class FinishAlarm:
     project: str | None = None
 
 
+@dataclass(frozen=True)
+class ReopenAlarm:
+    ref: str
+    version: int
+    project: str | None = None
+
+
 def alarm_out(view: AlarmView) -> AlarmOut:
-    a, t = view.alarm, view.target
-    target = AlarmTargetRef(t.uid, t.label, t.title, t.kind, t.deleted_at is not None) if t is not None else None
+    a = view.alarm
+    targets = [
+        AlarmTargetRef(e.uid, e.label, e.title, e.kind, e.deleted_at is not None, t.open)
+        for t in view.targets
+        if (e := t.element) is not None
+    ]  # fmt: skip
     return AlarmOut(
-        a.uid, a.project_uid, a.label, a.text, a.at, a.status, a.snoozed_until, target, a.target_text, a.revision,
-        a.deleted_at is not None,
+        a.uid, a.project_uid, a.label, a.text, a.at, a.status, a.snoozed_until, targets, a.target_text, a.done_at,
+        purge_time(a), a.revision, a.deleted_at is not None,
     )  # fmt: skip
 
 
@@ -124,7 +144,7 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "get_alarm",
-        "Ein Wecker mit Ziel; `ref` ist die uid oder ein Label (mit `project`)",
+        "Ein Wecker mit seinen Elementen; `ref` ist die uid oder ein Label (mit `project`)",
         "read",
         GetAlarm,
         AlarmOut,
@@ -133,8 +153,9 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "create_alarm",
-        "Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft; optional an ein Element "
-        "gebunden (`target`). Für „Erinner mich“; „Merk dir“ ist eine Note",
+        "Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente "
+        "(`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Für „Erinner mich“; "
+        "„Merk dir“ ist eine Note",
         "write",
         CreateAlarm,
         AlarmOut,
@@ -143,7 +164,7 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "update_alarm",
-        "Ändert Text, Zeitpunkt oder Ziel eines Weckers mit Versionsprüfung; ein neuer Zeitpunkt lässt ihn "
+        "Ändert Text, Zeitpunkt oder Elemente eines Weckers mit Versionsprüfung; ein neuer Zeitpunkt lässt ihn "
         "wieder warten",
         "write",
         UpdateAlarm,
@@ -162,11 +183,20 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "finish_alarm",
-        "Erledigt einen Wecker",
+        "Erledigt einen Wecker; 24 h später wird er endgültig gelöscht",
         "write",
         FinishAlarm,
         AlarmOut,
         lambda s, d: _detail(s, s.alarms.finish(d.ref, d.project, d.version)),
         HttpBinding("POST", "/alarms/{ref}/finish"),
+    ),
+    Operation(
+        "reopen_alarm",
+        "Nimmt „Erledigt“ zurück, solange der Wecker noch nicht gelöscht ist; er wartet wieder (oder ist fällig)",
+        "write",
+        ReopenAlarm,
+        AlarmOut,
+        lambda s, d: _detail(s, s.alarms.reopen(d.ref, d.project, d.version)),
+        HttpBinding("POST", "/alarms/{ref}/reopen"),
     ),
 )

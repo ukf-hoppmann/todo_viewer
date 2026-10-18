@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -63,15 +63,15 @@ def test_alarms_are_imported_with_time_status_and_targets(full: Env, tmp_path: P
     alarms = mirror.alarms()
 
     first, second, new = alarms["ALARM-001"], alarms["ALARM-002"], alarms["ALARM-003"]
-    assert (first["text"], first["status"], first["at"][:16], first["target"]["label"]) == (
+    assert (first["text"], first["status"], first["at"][:16], first["targets"][0]["label"]) == (
         "An die Story erinnern",
         "Pending",
         "2026-10-20T07:00",
         "STORY-001",
     )
-    assert (second["status"], second["snoozed_until"][:16], second["target"]) == ("Snoozed", "2026-10-17T07:00", None)
-    assert (new["target"], new["target_text"]) == (
-        None,
+    assert (second["status"], second["snoozed_until"][:16], second["targets"]) == ("Snoozed", "2026-10-17T07:00", [])
+    assert (new["targets"], new["target_text"]) == (
+        [],
         "Misc:NOTE-003",
     )  # ein Ziel, das es hier nicht gibt, bleibt Text
     assert full.app.state.scheduler.pending_at("alarms") == datetime.fromisoformat("2026-10-17T07:00:00+00:00")
@@ -116,6 +116,25 @@ def test_an_alarm_set_in_the_database_appears_in_the_file_and_comes_back_unchang
     assert f"  - Target: `{item['label']}`.\n  - Status: Pending.\n" in text
     again = mirror.sync()
     assert (again.json()["to_database"], again.json()["to_files"]) == (0, 0)
+
+
+def test_a_purged_alarm_leaves_the_file_without_a_conflict(full: Env, tmp_path: Path) -> None:
+    mirror = Mirror(full, tmp_path, "valid")
+    mirror.sync()
+    first = mirror.alarms()["ALARM-001"]
+    done = full.client.post(f"/api/alarms/alarms/{first['uid']}/finish", json={"version": first["version"]})
+    assert done.status_code == 200, done.text
+    mirror.sync()
+    assert "  - Done at: 2026-10-16T12:00:00Z.\n" in mirror.text("alarms.md")
+
+    full.clock.advance(timedelta(hours=24))
+    assert full.alarms.alarms.purge() == [first["uid"]]
+
+    status = mirror.status()
+    assert (status["state"], status["conflicts"]) == ("primary_changed", 0)
+    assert mirror.sync().status_code == 200
+    assert "ALARM-001" not in mirror.text("alarms.md") and "ALARM-002" in mirror.text("alarms.md")
+    assert mirror.status()["conflicts"] == 0  # ALARM-002 hat sich inzwischen gemeldet, sonst ist nichts offen
 
 
 def test_an_edit_in_the_file_reaches_the_database_and_moves_the_timer(full: Env, tmp_path: Path) -> None:

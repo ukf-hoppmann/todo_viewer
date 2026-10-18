@@ -617,7 +617,7 @@ Neu gegenüber dem alten Helfer: `backlog_move_item` (Parent/Position), `backlog
 ### Wecker und Sync (neu)
 
 `alarms_list_alarms`, `alarms_get_alarm`, `alarms_create_alarm`, `alarms_update_alarm`, `alarms_snooze_alarm`,
-`alarms_finish_alarm` (Löschen und Zurückholen über `workspace_*`); `core_sync_status`, `core_sync_preview`,
+`alarms_finish_alarm`, `alarms_reopen_alarm` (Löschen und Zurückholen über `workspace_*`); `core_sync_status`, `core_sync_preview`,
 `core_sync_execute` für den Abgleich mit dem Markdown-Spiegel; Suche über alle Elemente: `workspace_search_elements`;
 Verknüpfungen: `workspace_add_link`, `workspace_remove_link`, `workspace_list_links`.
 
@@ -628,7 +628,9 @@ Verknüpfungen: `workspace_add_link`, `workspace_remove_link`, `workspace_list_l
 3. `backlog_create_item`; `backlog_update_item` mit `version` (bei `version_conflict` neu lesen und prüfen);
    `backlog_append_note` für den Notiz-Eintrag.
 4. `notes_create_note`, `notes_index_lines`, `workspace_add_link` (Note → Item).
-5. `alarms_create_alarm` (`text`, `at`, optional `target`), später `alarms_finish_alarm`.
+5. `alarms_create_alarm` (`at`, `targets` als Liste, `text` nur ohne Elemente Pflicht), später `alarms_finish_alarm`.
+   Ein Wecker erlischt von selbst, wenn keins seiner Elemente mehr offen ist, und wird 24 h nach Erledigt oder
+   Erlöschen endgültig gelöscht.
 6. `workspace_delete_element` / `workspace_list_trash` / `workspace_restore_elements`.
 
 Der Systemtest `tests/implementation/system/server/test_harness_flow.py` führt diesen Ablauf gegen den ganzen Viewer
@@ -877,18 +879,29 @@ Format: Claude_Harness backlog format version 2.
 - `ALARM-001` **Release vorbereiten**
   - Uid: 9b2e4f7a-1c3d-4e5f-8a6b-7c8d9e0f1a2b.
   - At: 2026-10-20T07:00:00Z.
-  - Target: `STORY-012`.
+  - Target: `STORY-012`, `NOTE-004`.
   - Status: Pending.
   - Created: 2026-10-16.
+
+- `ALARM-002`
+  - Uid: 1f2e3d4c-5b6a-4978-8a6b-7c8d9e0f1a2b.
+  - At: 2026-10-19T07:00:00Z.
+  - Target: `NOTE-010`.
+  - Status: Done.
+  - Done at: 2026-10-18T09:00:00Z.
 ```
 
 - Felder in dieser Reihenfolge: `Uid`, `At`, `Target`, `Status`,
-  `Snoozed until`, `Created`, `Deleted`. Der fett gesetzte Titel ist der
-  Text des Weckers.
-- `Target`: ein Label dieses Projekts, `<projekt>:<LABEL>` für ein anderes
-  Projekt, oder `None`. Die Art des Ziels ergibt sich aus dem Präfix
-  (`EPIC`, `STORY`, `TASK`, `NOTE`, `TOPIC`).
-- `Status`: `Pending`, `Due`, `Snoozed` (dann `Snoozed until`), `Done`.
+  `Snoozed until`, `Done at`, `Created`, `Deleted`. Der fett gesetzte Titel ist
+  der Text des Weckers; ein Wecker, der nur an Elemente erinnert, hat keinen.
+- `Target`: komma-getrennte Verweise, je ein Label dieses Projekts oder
+  `<projekt>:<LABEL>` für ein anderes Projekt, oder `None`. Die Art eines
+  Elements ergibt sich aus dem Präfix (`EPIC`, `STORY`, `TASK`, `NOTE`,
+  `TOPIC`). Ohne Text braucht ein Wecker mindestens ein Element.
+- `Status`: `Pending`, `Due`, `Snoozed` (dann `Snoozed until`), `Done`
+  (von Hand erledigt) oder `Expired` (keins seiner Elemente ist mehr offen);
+  `Done at` gehört nur zu `Done` und `Expired`. 24 h danach löscht der
+  Viewer den Wecker; der Sync entfernt ihn dann ohne Konflikt aus der Datei.
 - Neue Wecker wie neue Backlog-Einträge: Platzhalter `NEW-<kurzname>`,
   ohne `Uid`.
 

@@ -69,6 +69,14 @@ class ElementRegistry(Protocol):
         """Nicht gelöschte Elemente aller Projekte, deren Label oder Titel `query` enthält."""
         ...
 
+    def register_state(self, kind: str, is_closed: Callable[[Transaction, str], bool]) -> None:
+        """Der Besitzer eines Elementtyps meldet an, wie man erfährt, ob ein Element geschlossen ist."""
+        ...
+
+    def is_open(self, tx: Transaction, uid: str) -> bool:
+        """Offen: es gibt das Element, es ist nicht gelöscht und sein Besitzer nennt es nicht geschlossen."""
+        ...
+
 
 #: `ChildrenProvider`: die `uid`s aller direkten Kinder eines Elements, gelöschte eingeschlossen.
 ChildrenProvider = Callable[[Transaction, str], list[str]]

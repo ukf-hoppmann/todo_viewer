@@ -9,19 +9,21 @@
 		"Pending": "Waiting",
 		"Due": "Fired",
 		"Snoozed": "Snoozed",
-		"Done": "Done"
+		"Done": "Done",
+		"Expired": "Expired"
 	},
 	"field": {
 		"text": "Text",
 		"at": "Time",
-		"target": "Refers to"
+		"targets": "Reminds of"
 	},
 	"action": {
 		"edit": "Edit",
 		"snooze": "Snooze",
 		"finish": "Done",
 		"expand": "Expand",
-		"collapse": "Collapse"
+		"collapse": "Collapse",
+		"reopen": "Undo"
 	},
 	"form": {
 		"save": "Save",
@@ -30,7 +32,9 @@
 		"conflict": "The alarm was changed in the meantime.",
 		"timeRequired": "A time is missing.",
 		"searchHint": "Type the label or title of the element",
-		"editTitle": "Edit {{label}}"
+		"editTitle": "Edit alarm",
+		"textOptional": "Optional when elements are chosen",
+		"textOrTargets": "A text or at least one element is missing."
 	},
 	"page": {
 		"title": "Alarms",
@@ -50,7 +54,8 @@
 		"title": "Alarm"
 	},
 	"detail": {
-		"close": "Close"
+		"close": "Close",
+		"deleted": "{{label}} is in the trash."
 	},
 	"settings": {
 		"title": "Alarms",
@@ -62,5 +67,15 @@
 			"default": "Notifications are not allowed yet.",
 			"unsupported": "This browser has no notifications."
 		}
+	},
+	"group": {
+		"due": "Due",
+		"today": "Today",
+		"later": "Later",
+		"done": "Done"
+	},
+	"finished": {
+		"Done": "Done · goes {{when}}",
+		"Expired": "Expired: nothing open any more · goes {{when}}"
 	}
 }

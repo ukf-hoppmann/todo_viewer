@@ -385,13 +385,17 @@ class Importer:
         text = str(note["summary"] or f"Wecker aus Note {note['label']}")
         self._element_row(uid, project, "alarm", f"ALARM-{number + 1:03d}", text, self._now, None)
         self._exec(
-            "INSERT INTO alarms_alarms(uid, at, text, target_uid, target_text, status, snoozed_until) VALUES (:u, :at, "
-            ":t, :target, NULL, :status, NULL)",
+            "INSERT INTO alarms_alarms(uid, at, text, target_text, status, snoozed_until, done_at) VALUES (:u, :at, "
+            ":t, NULL, :status, NULL, NULL)",
             u=uid,
             at=trigger["at"] or self._now,
             t=text,
-            target=note["uid"],
             status="Due" if trigger["fired_at"] else "Pending",
+        )
+        self._exec(
+            "INSERT INTO alarms_targets(alarm_uid, position, element_uid) VALUES (:u, 0, :target)",
+            u=uid,
+            target=note["uid"],
         )
         self._report.count("Wecker aus Zeit-Auslösern")
 

@@ -80,15 +80,16 @@ Vollständige Tabelle: `interfaces.md`, „`backlog_api.py` → MCP“ und „`n
 
 Neu, ohne Vorbild im alten Helfer: `backlog_move_item`, `backlog_list_areas`, `backlog_reopen_ancestors`,
 `notes_list_item_notices`, `workspace_search_elements`, `alarms_*` (`list_alarms`, `get_alarm`, `create_alarm`,
-`update_alarm`, `snooze_alarm`, `finish_alarm`), `core_sync_status`, `core_sync_preview`, `core_sync_execute`.
+`update_alarm`, `snooze_alarm`, `finish_alarm`, `reopen_alarm`), `core_sync_status`, `core_sync_preview`, `core_sync_execute`.
 
 Geprüfter Ablauf eines Agenten: `tests/implementation/system/server/test_harness_flow.py` (echter Server, MCP-Client).
 
 ## 5. Fachliche Änderungen, die Skills betreffen
 
-- **Wecker statt Zeit-Auslöser.** Erinnerung zu einem Zeitpunkt = `alarms_create_alarm` (`text`, `at`, optional `target`:
-  Item, Note oder Topic, auch in einem anderen Projekt). Labels `ALARM-001` …, Status `Pending`, `Due`, `Snoozed`,
-  `Done`. Notes behalten Prüfdatum, Ereignis-Auslöser und Topic-Termin. Beim Import werden alte Zeit-Auslöser zu Weckern.
+- **Wecker statt Zeit-Auslöser.** Erinnerung zu einem Zeitpunkt = `alarms_create_alarm` (`at`, `targets`: Liste aus
+  Items, Notes oder Topics, auch in anderen Projekten; `text` nur ohne Elemente Pflicht). Labels `ALARM-001` … nur als
+  Schlüssel, Status `Pending`, `Due`, `Snoozed`, `Done`, `Expired` (keins der Elemente mehr offen). 24 h nach Erledigt
+  oder Erlöschen löscht der Viewer den Wecker endgültig. Notes behalten Prüfdatum, Ereignis-Auslöser und Topic-Termin. Beim Import werden alte Zeit-Auslöser zu Weckern.
 - **Labels werden nie wiederverwendet**; die DB kennt jedes frühere Label eines Elements (nach einem Typwechsel findet
   `STORY-012` weiter dasselbe Element, das jetzt `TASK-040` heißt).
 - **Hinweise gibt es an Notes und an Items** (`acknowledge` am Item); „Projekt nicht erreichbar“ entfällt (eine

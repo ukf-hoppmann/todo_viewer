@@ -13,6 +13,7 @@ from viewer.plugins.backlog.application.documents import DocumentService
 from viewer.plugins.backlog.application.editing import EditService
 from viewer.plugins.backlog.application.items import ItemService
 from viewer.plugins.backlog.application.operations import OPERATIONS, BacklogServices
+from viewer.plugins.backlog.domain.model import FINAL_STATUSES
 from viewer.plugins.backlog.infrastructure.database.documents import SqlDocumentRepository
 from viewer.plugins.backlog.infrastructure.database.repository import SqlItemRepository
 from viewer.plugins.backlog.infrastructure.database.schema import MIGRATIONS
@@ -43,8 +44,13 @@ def _build(context: PluginContext) -> BacklogServices:
                 f"{parent.label} liegt im Papierkorb; erst dieses wiederherstellen", details={"parent": parent.label}
             )
 
+    def is_closed(tx: Transaction, uid: str) -> bool:
+        item = repository.get(tx, uid)
+        return item is not None and item.status in FINAL_STATUSES
+
     for kind in ELEMENT_KINDS:
         workspace.trash.register(kind.kind, children=children, restore_guard=restore_guard, purger=repository.delete)
+        workspace.registry.register_state(kind.kind, is_closed)
     documents = SqlDocumentRepository()
     editing = EditService(
         items, repository, documents, workspace.registry, context.database, context.clock, context.events

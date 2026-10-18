@@ -143,3 +143,20 @@ def test_an_element_can_be_deleted_at_a_given_time(env: Env) -> None:
     deleted = env.kinds.run(lambda registry, tx: registry.mark_deleted(tx, task.uid, at))
 
     assert deleted.deleted_at == at
+
+
+def test_an_element_is_open_unless_its_owner_says_closed_or_it_is_deleted(env: Env) -> None:
+    project = str(env.general()["uid"])
+    task = _register(env, project, "task")
+    story = _register(env, project, "story")
+    closed = {task.uid}
+    env.kinds.run(lambda registry, tx: registry.register_state("task", lambda _tx, uid: uid in closed))
+
+    def is_open(uid: str) -> bool:
+        return bool(env.kinds.run(lambda registry, tx: registry.is_open(tx, uid)))
+
+    assert (is_open(task.uid), is_open(story.uid)) == (False, True)  # story: keine Prüfung angemeldet → offen
+    closed.clear()
+    assert is_open(task.uid)
+    env.kinds.run(lambda registry, tx: registry.mark_deleted(tx, story.uid))
+    assert not is_open(story.uid) and not is_open("gibt-es-nicht")

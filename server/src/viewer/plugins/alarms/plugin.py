@@ -1,4 +1,4 @@
-"""Plugin `alarms`: Wecker zu einem Zeitpunkt, frei oder an ein Element gebunden."""
+"""Plugin `alarms`: Wecker zu einem Zeitpunkt, als freie Erinnerung oder an Elemente gebunden."""
 
 from __future__ import annotations
 
@@ -25,15 +25,15 @@ def _build(context: PluginContext) -> AlarmServices:
     service = AlarmService(
         repository, workspace.registry, context.database, context.clock, context.events, context.scheduler
     )
-    service.reschedule()  # nach einem Neustart wartet der nächste Wecker; ein verpasster wird nachgeholt
+    service.start()
     participant = AlarmsParticipant(
         repository, workspace.registry, workspace.project_store, context.database, context.clock
     )
     return AlarmServices(service, participant)
 
 
-def _on_changed(services: AlarmServices, event: Event) -> None:
-    services.alarms.on_elements_changed(event)
+def _on_event(services: AlarmServices, event: Event) -> None:
+    services.alarms.on_event(event)
 
 
 plugin = PluginDefinition(
@@ -43,9 +43,9 @@ plugin = PluginDefinition(
     migrations=MIGRATIONS,
     element_kinds=ELEMENT_KINDS,
     operations=OPERATIONS,
-    mirror=lambda services: MirrorBinding("alarms", AlarmsCodec(), services.participant),
-    subscriptions=(
-        Subscription("workspace.element.changed", _on_changed),
-        Subscription("core.sync.state", _on_changed),
-    ),
+    # Wecker sind kurzlebig: nach dem Aufräumen verschwinden sie ohne Konflikt auch aus `alarms.md`.
+    mirror=lambda services: MirrorBinding("alarms", AlarmsCodec(), services.participant, ephemeral=True),
+    # Jedes fremde Ereignis kann ein Element geschlossen oder wieder geöffnet haben; der Wecker fragt nach, statt die
+    # Ereignisse anderer Plugins zu kennen.
+    subscriptions=(Subscription("*", _on_event),),
 )

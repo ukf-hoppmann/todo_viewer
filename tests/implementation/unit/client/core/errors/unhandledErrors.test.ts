@@ -140,6 +140,17 @@ describe("installGlobalErrorHandlers", () => {
 		});
 	});
 
+	it("only warns about the harmless ResizeObserver loop event", () => {
+		const { unhandled, sink, modals } = setup();
+		remove = installGlobalErrorHandlers(unhandled);
+
+		window.dispatchEvent(new ErrorEvent("error", { message: "ResizeObserver loop completed with undelivered notifications." }));
+
+		expect(sink.entries).toHaveLength(1);
+		expect(sink.entries[0]).toMatchObject({ level: "warn", action: "resize-observer-loop" });
+		expect(modals.getSnapshot()?.kind).toBeUndefined();
+	});
+
 	it("reports a rejected promise once", () => {
 		const { unhandled, sink, modals } = setup();
 		remove = installGlobalErrorHandlers(unhandled);

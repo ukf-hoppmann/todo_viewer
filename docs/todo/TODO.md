@@ -782,3 +782,100 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Slot. 4. Tests grün.
   - Summary: Elemente untereinander verknüpfen, zum Beispiel eine Note mit
     einem Item, und sehen, was worauf verweist.
+
+- `STORY-089` **Wecker als Erinnerung: mehrere Elemente, Erlöschen und Aufräumen nach 24 h**
+  - Uid: f6066bb8-fe33-447b-859f-8ed7455742e9.
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Awaiting confirmation.
+  - Created: 2026-10-18.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Ein Wecker ist eine Erinnerung, kein Planungselement. Er verweist
+    auf beliebig viele Elemente (Note, Epic, Story, Task …) oder ist eine
+    freie Erinnerung mit Text. Erledigt bleibt er 24 Stunden sichtbar und
+    verschwindet dann endgültig. Sind alle seine Elemente nicht mehr offen
+    (erledigt, archiviert, gelöscht …), erlischt er von selbst. Das Label
+    bleibt als Transportschlüssel für Cloud und Markdown-Spiegel, die
+    Oberfläche zeigt es nicht.
+  - Completion criteria: 1. Ein erledigter Wecker bleibt 24 h ausgegraut mit
+    Rückgängig sichtbar und wird danach endgültig gelöscht, ohne Papierkorb.
+    2. Ein Wecker hat 0..n verknüpfte Elemente statt eines Ziels; der Text
+    ist optional, ohne Elemente aber Pflicht; bestehende Wecker sind
+    migriert (Backup vorher); API, MCP und Spiegel führen die Liste. 3. Die
+    Liste ist nach Zeit gruppiert (Fällig, Heute, Später) und zeigt kein
+    Label; Überschrift ist der Text, sonst der Titel des ersten Elements. 4.
+    Das Detail zeigt oben eine Erinnerungsleiste mit Zeit, Überschrift und
+    Icon-Aktionen; bei einem Element dieses direkt, bei mehreren Karten zum
+    Wechseln (erste offen); nicht mehr offene Elemente ausgegraut. 5. Ist
+    kein verknüpftes Element mehr offen, gilt der Wecker als erledigt
+    (24-h-Übergang); wird eins in dieser Zeit wieder geöffnet, kehrt er
+    zurück. 6. Techdoku angepasst, Tests je Schritt grün.
+  - Summary: Wecker werden zu Erinnerungen: beliebig viele Elemente oder
+    freier Text, Erlöschen, wenn nichts mehr offen ist, und Aufräumen 24 h
+    nach Erledigt.
+
+- `TASK-041` **Wecker-Server: mehrere Elemente, Erlöschen, Aufräumen nach 24 h, Spiegel**
+  - Uid: 377708ff-c0fe-46c2-b138-0a59bbed6b9e.
+  - Type: Task.
+  - Parent: `STORY-089`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-10-18.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Ein Wecker hat 0..n Elemente, erlischt, wenn keins mehr offen ist,
+    kehrt zurück, wenn eins wieder offen ist, und wird 24 h nach Erledigt
+    endgültig gelöscht; Spiegel und API führen die Liste.
+  - Completion criteria: 1. Domain: Status Expired, done_at,
+    expire/revive/undo, to_purge, next_wakeup mit fester Uhr getestet. 2.
+    Migration v2 mit alarms_targets, done_at, Übernahme von target_uid;
+    Migrationstest. 3. Operationen mit targets (Liste), text optional nur
+    mit Elementen, reopen_alarm; Timer räumt auf. 4. alarms.md: Target als
+    Liste, Done at, Expired; Bindung ephemeral; Golden Files und
+    Contract-Suite grün. 5. OpenAPI-Typen neu erzeugt.
+
+- `TASK-042` **Wecker-Client: Liste nach Zeit, Detail mit Erinnerungsleiste und Karten, Formular mit mehreren Elementen**
+  - Uid: 644841f7-ff68-42f0-9d45-89a85882273e.
+  - Type: Task.
+  - Parent: `STORY-089`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-10-18.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Wecker-Seite zeigt Erinnerungen nach Zeit gruppiert ohne
+    Label; das Detail zeigt eine Erinnerungsleiste und das Element oder
+    Karten zum Wechseln; das Formular nimmt mehrere Elemente.
+  - Completion criteria: 1. domain/grouping.ts (Fällig, Heute, Später,
+    Erledigt) und Überschrift getestet. 2. Liste mit Karten, ausgegrauten
+    geschlossenen Elementen und Rückgängig. 3. Detail: Leiste, ein Element
+    direkt, mehrere als Karten (erstes offen), keins nur Leiste. 4. Formular
+    mit Mehrfachauswahl; SetAlarm, AlarmCounter und Meldung auf targets. 5.
+    Techdoku angepasst, Tests grün, im Browser angesehen.
+
+- `TASK-040` **Grundlagen: kurzlebige Spiegel-Einträge und Zustand „offen“ im Register**
+  - Uid: e9d19c3e-68bb-43e9-bb48-693e780fc796.
+  - Type: Task.
+  - Parent: `STORY-089`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-10-18.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Sync trägt Löschungen kurzlebiger Einträge aus der Datenbank
+    ohne Konflikt in die Dateien; das Element-Register beantwortet, ob ein
+    Element offen ist, über Prüfungen, die Backlog und Notes je Typ
+    anmelden.
+  - Completion criteria: 1. MirrorBinding.ephemeral; compute_plan löscht in
+    den Dateien unveränderte kurzlebige Einträge, die in der Datenbank
+    fehlen; der automatische Sync führt nur diese Löschungen aus. 2.
+    registry.register_state und registry.is_open; gelöscht gilt als
+    geschlossen, ohne Prüfung als offen. 3. Backlog (Completed/Rejected) und
+    Notes (erledigt, verworfen, befördert, archiviert; Topic archiviert)
+    melden ihre Prüfung an. 4. Tests grün.

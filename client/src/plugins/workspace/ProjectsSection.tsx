@@ -5,7 +5,7 @@ import { useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useMoveProjectMutation, type Project } from "./api";
 import { ProjectCard } from "./ProjectCard";
-import { SyncIndicator } from "./SyncIndicator";
+import { SYNC_AUTO_CLASS, SyncIndicator } from "./SyncIndicator";
 import { useProjectSelection } from "./state";
 import { workspaceTestIds } from "./testIds";
 
@@ -83,6 +83,8 @@ export function ProjectsSection() {
 							bgcolor: marked?.uid === project.uid ? "action.selected" : undefined,
 							borderTop: over === project.uid && dragged !== project.uid ? "2px solid" : "2px solid transparent",
 							borderColor: over === project.uid ? "primary.main" : "transparent",
+							[`& .${SYNC_AUTO_CLASS}`]: { visibility: "hidden" },
+							[`&:hover .${SYNC_AUTO_CLASS}, &:focus-within .${SYNC_AUTO_CLASS}`]: { visibility: "visible" },
 						}}
 					>
 						<Checkbox

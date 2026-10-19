@@ -2,6 +2,7 @@ import { cleanup, createEvent, fireEvent, screen, waitFor, within } from "@testi
 import { afterEach, describe, expect, it } from "vitest";
 import { flushUiState } from "../../../../../../client/src/core/ui-state/uiState";
 import { ProjectsSection } from "../../../../../../client/src/plugins/workspace/ProjectsSection";
+import { SYNC_AUTO_CLASS } from "../../../../../../client/src/plugins/workspace/SyncIndicator";
 import { workspaceTestIds as ids } from "../../../../../../client/src/plugins/workspace/testIds";
 import { expectPersisted, fakeWorkspaceBackend, project } from "../../../../../helpers/client/fakeWorkspaceBackend";
 import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
@@ -145,6 +146,20 @@ describe("ProjectsSection", () => {
 		fireEvent.doubleClick(screen.getByTestId(ids.projectName("p2")));
 
 		expect(((await screen.findByTestId(ids.cardName)) as HTMLInputElement).value).toBe("Notizen");
+	});
+
+	it("opens the sync of a project directly from its warning, and keeps the auto-sync sign for hovering", async () => {
+		const mirrored = project("p1", "Viewer", 1, { mirror_enabled: true, mirror_folder: "/work/viewer", auto_sync: true });
+		await renderSection({
+			projects: [project("p0", "Allgemein", 0, { builtin: true }), mirrored],
+			syncStatus: { p1: { project: "p1", state: "conflicts", conflicts: 1, to_database: 0, to_files: 0, files: [], reason: null, last_sync: null } },
+		});
+
+		const warning = await screen.findByTestId(ids.syncAttention("p1"));
+		expect(screen.getByTestId(ids.syncAuto("p1")).classList.contains(SYNC_AUTO_CLASS)).toBe(true);
+		fireEvent.click(warning);
+
+		expect(await screen.findByTestId(ids.syncDialog)).toBeTruthy();
 	});
 
 	it("does not offer to rename or remove the built-in project", async () => {

@@ -15,8 +15,19 @@
 	"field": {
 		"text": "Text",
 		"at": "Time",
-		"targets": "Reminds of"
+		"targets": "Reminds of",
+		"repeat": "Repeat"
 	},
+	"repeat": {
+		"none": "None",
+		"daily": "Daily",
+		"weekly": "Weekly",
+		"monthly": "Monthly",
+		"yearly": "Yearly"
+	},
+	"repeatTooltip": "Repeats: {{repeat}}",
+	"missed_one": "{{count}} missed",
+	"missed_other": "{{count}} missed",
 	"action": {
 		"edit": "Edit",
 		"snooze": "Snooze",

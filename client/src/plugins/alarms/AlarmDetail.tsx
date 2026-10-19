@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { DetailPanel, type DetailAction } from "../../shared";
 import { ElementDetail } from "../workspace";
 import type { AlarmOut, AlarmTarget } from "./api";
-import { formatWhen, heading, waitingFor } from "./model";
+import { formatWhen, heading, isSeries, waitingFor } from "./model";
 import { alarmsTestIds } from "./testIds";
 
 interface Props {
@@ -23,7 +23,13 @@ export function AlarmDetail({ alarm, actions, onClose }: Props) {
 	const [chosen, setChosen] = useState<string>();
 	const current = alarm.targets.find((target) => target.uid === chosen) ?? alarm.targets[0];
 	const when = `⏰ ${formatWhen(waitingFor(alarm), i18n.language)}`;
-	const status = alarm.status === "Pending" ? "" : t(`status.${alarm.status}`);
+	const status = [
+		alarm.status === "Pending" ? "" : t(`status.${alarm.status}`),
+		isSeries(alarm) ? t(`repeat.${alarm.repeat}`) : "",
+		alarm.missed > 0 ? t("missed", { count: alarm.missed }) : "",
+	]
+		.filter(Boolean)
+		.join(" · ");
 	// Ohne eigenen Text ist das Element selbst die Überschrift: die Leiste nennt dann nur Zeit und Zustand.
 	const title = alarm.text ? heading(alarm) : when;
 	const subtitle = alarm.text ? [when, status].filter(Boolean).join(" · ") : status || undefined;

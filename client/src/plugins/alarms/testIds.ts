@@ -9,6 +9,8 @@ export const alarmsTestIds = {
 	detail: "alarms.detail",
 	targetCard: (targetUid: string) => `alarms.target-card.${targetUid}`,
 	action: (action: string, uid: string) => `alarms.action.${action}.${uid}`,
+	repeat: (uid: string) => `alarms.repeat.${uid}`,
+	missed: (uid: string) => `alarms.missed.${uid}`,
 	form: "alarms.form",
 	formField: (name: string) => `alarms.form-field.${name}`,
 	formDialog: "alarms.form-dialog",

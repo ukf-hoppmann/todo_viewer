@@ -1,5 +1,14 @@
 import type { AlarmOut } from "./api";
 
+/** The kinds of repetition the server knows, in the order of the form; `none` is a reminder without a series. */
+export const REPEATS = ["none", "daily", "weekly", "monthly", "yearly"] as const;
+export type Repeat = (typeof REPEATS)[number];
+
+/** A series alarm repeats; finishing it only moves it to its next term. */
+export function isSeries(alarm: Pick<AlarmOut, "repeat">): boolean {
+	return alarm.repeat !== "none";
+}
+
 /** The groups of the list, in this order: what needs the user now, later today, later, and finished ones. */
 export type AlarmGroupKey = "due" | "today" | "later" | "done";
 

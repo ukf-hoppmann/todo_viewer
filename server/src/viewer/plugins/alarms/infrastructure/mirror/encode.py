@@ -7,7 +7,13 @@ from collections.abc import Sequence
 from viewer.core.domain.files import Change, FileSet, WriteFile
 from viewer.core.domain.sync import MirrorEntry
 from viewer.plugins.alarms.infrastructure.mirror.decode import decode
-from viewer.plugins.alarms.infrastructure.mirror.syntax import ALARMS_FILE, NO_ENTRIES, SECTION, TEMPLATE
+from viewer.plugins.alarms.infrastructure.mirror.syntax import (
+    ALARMS_FILE,
+    NO_ENTRIES,
+    REPEAT_WORDS,
+    SECTION,
+    TEMPLATE,
+)
 
 
 def render_entry(entry: MirrorEntry, project: str) -> list[str]:
@@ -17,6 +23,9 @@ def render_entry(entry: MirrorEntry, project: str) -> list[str]:
     if entry.uid is not None:
         lines.append(f"  - Uid: {entry.uid}.")
     lines.append(f"  - At: {f['at']}.")
+    if f.get("repeat", "none") != "none":
+        lines.append(f"  - Repeat: {REPEAT_WORDS[f['repeat']]}.")
+        lines.append(f"  - Series from: {f['series_from']}.")
     targets = entry.refs.get("target")
     lines.append(f"  - Target: {', '.join(f'`{t}`' for t in targets) if targets else 'None'}.")
     lines.append(f"  - Status: {f['status']}.")

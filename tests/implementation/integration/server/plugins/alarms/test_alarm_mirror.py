@@ -118,6 +118,30 @@ def test_an_alarm_set_in_the_database_appears_in_the_file_and_comes_back_unchang
     assert (again.json()["to_database"], again.json()["to_files"]) == (0, 0)
 
 
+def test_a_series_alarm_travels_both_ways_and_stays_in_sync(full: Env, tmp_path: Path) -> None:
+    mirror = Mirror(full, tmp_path)
+    (mirror.folder / "alarms.md").write_text(
+        "# Alarms\n\nFormat: Claude_Harness backlog format version 2.\n\n## Alarms\n\n"
+        "- `NEW-montag` **Backlog sichten**\n  - At: 2026-10-16T09:00:00Z.\n  - Target: None.\n"
+        "  - Repeat: Daily.\n  - Series from: 2026-10-16T09:00:00Z.\n  - Status: Due.\n",
+        encoding="utf-8",
+    )
+
+    assert mirror.sync().status_code == 200
+
+    series = mirror.alarms()["ALARM-001"]
+    assert (series["repeat"], series["series_from"][:16], series["missed"]) == ("daily", "2026-10-16T09:00", 0)
+    assert "  - Repeat: Daily.\n  - Series from: 2026-10-16T09:00:00Z.\n" in mirror.text("alarms.md")
+    done = full.client.post(f"/api/alarms/alarms/{series['uid']}/finish", json={"version": series["version"]})
+    assert done.status_code == 200, done.text
+    assert mirror.sync().status_code == 200
+    text = mirror.text("alarms.md")
+    assert "  - At: 2026-10-17T09:00:00Z.\n" in text and "  - Series from: 2026-10-16T09:00:00Z.\n" in text
+    assert "  - Status: Pending.\n" in text and "Done at" not in text
+    again = mirror.sync()
+    assert (again.json()["to_database"], again.json()["to_files"]) == (0, 0)
+
+
 def test_a_purged_alarm_leaves_the_file_without_a_conflict(full: Env, tmp_path: Path) -> None:
     mirror = Mirror(full, tmp_path, "valid")
     mirror.sync()

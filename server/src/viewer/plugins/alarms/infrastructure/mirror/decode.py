@@ -17,6 +17,7 @@ from viewer.plugins.alarms.infrastructure.mirror.syntax import (
     LABEL,
     PLACEHOLDER,
     SECTION,
+    WORD_REPEATS,
     clean,
     format_line,
     parse_time,
@@ -113,6 +114,16 @@ def _entry(ident: str, text: str, line: int, fields: dict[str, tuple[str, int]],
         _fail("missing_field", f"`{ident}` ist zurückgestellt, aber ohne `Snoozed until`", line)
     if status != "Snoozed" and snoozed is not None:
         _fail("invalid_value", "`Snoozed until` gehört nur zu `Snoozed`", line_of("Snoozed until"))
+    repeat = "none"
+    if "Repeat" in fields:
+        repeat = WORD_REPEATS.get(value("Repeat"), "")
+        if not repeat:
+            _fail("invalid_value", f"Wiederholung `{value('Repeat')}` gibt es nicht", line_of("Repeat"))
+    series_from = moment("Series from")
+    if repeat != "none" and series_from is None:
+        _fail("missing_field", f"`{ident}` wiederholt sich, aber ohne `Series from`", line)
+    if repeat == "none" and series_from is not None:
+        _fail("invalid_value", "`Series from` gehört nur zu `Repeat`", line_of("Series from"))
     done_at = moment("Done at")
     if done_at is not None and status not in ("Done", "Expired"):
         _fail("invalid_value", "`Done at` gehört nur zu `Done` und `Expired`", line_of("Done at"))
@@ -138,6 +149,8 @@ def _entry(ident: str, text: str, line: int, fields: dict[str, tuple[str, int]],
             "at": moment("At"),
             "status": status,
             "snoozed_until": snoozed,
+            "repeat": repeat,
+            "series_from": series_from,
             "done_at": done_at,
             "deleted": days["Deleted"],
         },

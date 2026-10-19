@@ -8,7 +8,8 @@
 		"title": "Projekte",
 		"add": "Projekt anlegen",
 		"visible": "{{name}} anzeigen",
-		"edit": "{{name}} bearbeiten"
+		"editMarked": "Markiertes Projekt bearbeiten",
+		"selectFirst": "Erst ein Projekt auswählen"
 	},
 	"new": {
 		"button": "Neu",

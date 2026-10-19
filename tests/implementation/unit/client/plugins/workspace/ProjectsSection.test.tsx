@@ -17,6 +17,14 @@ async function renderSection(options: Parameters<typeof fakeWorkspaceBackend>[0]
 	return backend;
 }
 
+/** Marks the project by a click on its name and opens its card with the pencil in the header. */
+async function editProject(uid: string) {
+	fireEvent.click(screen.getByTestId(ids.projectName(uid)));
+	await waitFor(() => expect(screen.getByTestId(ids.project(uid)).getAttribute("data-marked")).toBe("true"));
+	fireEvent.click(screen.getByTestId(ids.projectEditMarked));
+	await screen.findByTestId(ids.projectCard);
+}
+
 describe("ProjectsSection", () => {
 	it("lists the projects in the order of the server, all visible, none marked", async () => {
 		await renderSection();
@@ -103,7 +111,7 @@ describe("ProjectsSection", () => {
 	it("edits a project: name, folder and mirror, sent with the version", async () => {
 		const backend = await renderSection();
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p1")));
+		await editProject("p1");
 		fireEvent.change(screen.getByTestId(ids.cardName), { target: { value: "Viewer 2" } });
 		fireEvent.change(screen.getByTestId(ids.cardFolder), { target: { value: "/work/viewer" } });
 		fireEvent.click(screen.getByTestId(ids.cardMirrorEnabled));
@@ -119,10 +127,30 @@ describe("ProjectsSection", () => {
 		});
 	});
 
+	it("offers the pencil in the header only while a project is marked, with a hint otherwise", async () => {
+		await renderSection();
+
+		const pencil = screen.getByTestId(ids.projectEditMarked) as HTMLButtonElement;
+		expect(pencil.disabled).toBe(true);
+		expect(screen.getByTestId(ids.projectEditHint).getAttribute("aria-label")).toBe("Erst ein Projekt auswählen");
+		expect(screen.queryByTestId("workspace.project-edit.p1")).toBeNull();
+
+		await editProject("p1");
+		expect((screen.getByTestId(ids.cardName) as HTMLInputElement).value).toBe("Viewer");
+	});
+
+	it("opens the card of a project by a double click on its name", async () => {
+		await renderSection();
+
+		fireEvent.doubleClick(screen.getByTestId(ids.projectName("p2")));
+
+		expect(((await screen.findByTestId(ids.cardName)) as HTMLInputElement).value).toBe("Notizen");
+	});
+
 	it("does not offer to rename or remove the built-in project", async () => {
 		await renderSection();
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p0")));
+		await editProject("p0");
 
 		expect((screen.getByTestId(ids.cardName) as HTMLInputElement).disabled).toBe(true);
 		expect(screen.queryByTestId(ids.cardRemove)).toBeNull();
@@ -131,7 +159,7 @@ describe("ProjectsSection", () => {
 	it("removes an empty project at once", async () => {
 		await renderSection();
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p2")));
+		await editProject("p2");
 		fireEvent.click(screen.getByTestId(ids.cardRemove));
 
 		await waitFor(() => expect(screen.queryByTestId(ids.project("p2"))).toBeNull());
@@ -140,7 +168,7 @@ describe("ProjectsSection", () => {
 	it("asks before it removes a project with content, then removes it with confirmation", async () => {
 		const backend = await renderSection({ projects: three(), elementsInProjects: { p1: 2 } });
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p1")));
+		await editProject("p1");
 		fireEvent.click(screen.getByTestId(ids.cardRemove));
 		const dialog = await screen.findByTestId("shared.confirm-dialog");
 		expect(dialog.textContent).toContain("2 Elemente");
@@ -159,7 +187,7 @@ describe("ProjectsSection", () => {
 			},
 		});
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p1")));
+		await editProject("p1");
 		fireEvent.click(screen.getByTestId(ids.cardBrowse));
 		fireEvent.click(await screen.findByTestId(ids.folder("work")));
 		await waitFor(() => expect(screen.getByTestId(ids.folderBrowser).textContent).toContain("/home/me/work"));

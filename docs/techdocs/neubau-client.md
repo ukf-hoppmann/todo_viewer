@@ -25,7 +25,7 @@ Schichten und öffentliche API (nur über `index.ts`) prüft die ESLint-Regel `a
 | Zweck | Befehl |
 |---|---|
 | Installation | `cd client && npm ci` (legt auch `tests/node_modules` als Verweis auf `client/node_modules` an) |
-| Entwicklung | `npm run dev` (Vite, Port 5173; `/api` und `/mcp` gehen an den Server auf 5412) |
+| Entwicklung | `npm run dev` (Vite, Port 5173; `/api` und `/mcp` gehen an den Server auf 5411) |
 | Typen, Regeln, Lint | `npx tsc -b && npm run lint` |
 | Tests | `npx vitest run --config configs/vite/vitest.config.ts` |
 | Bauen | `npm run build` |

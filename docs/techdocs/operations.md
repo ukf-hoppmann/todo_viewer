@@ -6,7 +6,7 @@
   `npm ci` + `npm run build`), dann das Backend-Image (`python:3.11-slim`), das
   API und `src_old/web/dist` ausliefert.
 - `docker-compose.yml` startet den Dienst `todo-viewer` mit
-  `restart: unless-stopped` auf Host-Port 5412, nur an `127.0.0.1` gebunden (die API
+  `restart: unless-stopped` auf Port 5412, nur an `127.0.0.1` gebunden (die API
   kann Items ändern und löschen), und bindet ein:
   - `./configs` → `/app/configs` (Quellen, UI-Zustand und die zentrale
     Datenbank `todo.db` bleiben auf dem Host),
@@ -120,11 +120,11 @@
 
 ## Neubau (EPIC-007): Container neben dem alten Viewer
 
-Der Neubau läuft als eigener Dienst `todo-viewer-next` (Host-Port **5411**, im Container 5412) neben dem alten `todo-viewer` (Host-Port 5412, im Container 5411), bis zum Umstieg. Beide teilen `./configs` und `./logs`, haben aber eigene Dateien: der alte `todo.db`/`todo-viewer.log`, der Neubau `viewer.db` und `viewer.log`.
+Der Neubau läuft als eigener Dienst `todo-viewer-next` (Port **5411**) neben dem alten `todo-viewer` (Port 5412), bis zum Umstieg. Beide teilen `./configs` und `./logs`, haben aber eigene Dateien: der alte `todo.db`/`todo-viewer.log`, der Neubau `viewer.db` und `viewer.log`.
 
 - **Image.** `server/Dockerfile` (gebaut vom Projektordner: `build: {context: ., dockerfile: server/Dockerfile}`): Stage 1 baut den Client (`node:22-alpine`, `npm ci --ignore-scripts`, `vite build`), Stage 2 (`python:3.11-slim`) installiert den Server (`pip install -c server/constraints.txt ./server`; die Versionen in `server/constraints.txt` sind die getesteten) und kopiert `client/dist`. Der Server liefert `/` (Oberfläche, `index.html` für jede Adresse der Oberfläche), `/api/…` (HTTP-API, Health: `GET /api/core/health`) und `/mcp` (MCP für LLMs). Ein `HEALTHCHECK` fragt die Health-Adresse.
 - **Compose-Dienst.** `restart: unless-stopped`; Port nur an `127.0.0.1:5411` gebunden (API und MCP können alles ändern); Volumes `./configs` → `/app/configs` (`viewer.db`, `configs/backups`), `./logs` → `/app/logs` (`viewer.log`, JSON-Zeilen) und der Projekte-Ordner unter demselben Pfad wie auf dem Host (Spiegel-Ordner; `BROWSE_START` wie beim alten Dienst). Aufruf: `http://localhost:5411`.
-- **Konfiguration im Container** (Umgebung gewinnt, siehe `neubau-server.md`, „Konfiguration“): `VIEWER_HOST=0.0.0.0`, `VIEWER_PORT=5412`, `VIEWER_DB=/app/configs/viewer.db`, `VIEWER_BACKUP_DIR=/app/configs/backups`, `VIEWER_LOG_DIR=/app/logs`, `VIEWER_STATIC_DIR=/app/client/dist`.
+- **Konfiguration im Container** (Umgebung gewinnt, siehe `neubau-server.md`, „Konfiguration“): `VIEWER_HOST=0.0.0.0`, `VIEWER_PORT=5411`, `VIEWER_DB=/app/configs/viewer.db`, `VIEWER_BACKUP_DIR=/app/configs/backups`, `VIEWER_LOG_DIR=/app/logs`, `VIEWER_STATIC_DIR=/app/client/dist`.
 - **`./todo.sh next <befehl>`:** `start` (bauen, falls nötig, und im Hintergrund starten), `stop`, `restart`, `update` (neu bauen ohne Cache, Container ersetzen), `logs` (folgt `logs/viewer.log`, sonst Container-Ausgabe), `status` (Container und Antwort von `/api/core/health`). Die Befehle ohne `next` betreffen nur den alten Viewer (`down` beide).
 - **Backups.** Die Datenbank sichert sich selbst nach `configs/backups/viewer-<Zeit>Z-<Grund>.db` (SQLite-Backup-API, auch im laufenden Betrieb): Grund `migration` (vor der ersten ausstehenden Migration einer nicht leeren Datenbank), `sync` (vor einem Abgleich, der die Datenbank ändert) und `import` (vor der Datenübernahme in eine bestehende Datei). Je Grund bleiben die **letzten 10**; ältere löscht der Dienst. Wiederherstellen: Container anhalten (`./todo.sh next stop`), die gewählte Sicherung nach `configs/viewer.db` kopieren (`-wal` und `-shm` daneben löschen), starten.
 - **Logs.** `logs/viewer.log` (JSON je Zeile, mit Request-ID); Meldungen vor der Log-Einrichtung stehen in `docker compose logs todo-viewer-next`.

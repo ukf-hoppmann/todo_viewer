@@ -43,7 +43,7 @@ def container(tmp_path: Path) -> Iterator[str]:
     configs.mkdir()
     logs.mkdir()
     subprocess.run(
-        ["docker", "run", "-d", "--name", name, "-p", f"127.0.0.1:{port}:5412"]
+        ["docker", "run", "-d", "--name", name, "-p", f"127.0.0.1:{port}:5411"]
         + ["-v", f"{configs}:/app/configs", "-v", f"{logs}:/app/logs", TAG],
         check=True,
     )

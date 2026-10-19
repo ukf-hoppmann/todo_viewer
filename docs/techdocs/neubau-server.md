@@ -270,7 +270,7 @@ Ergänzungen aus dem Spiegel des Backlogs: Weicht in einem Eintrag nur das Label
 | Schlüssel (Datei) | Umgebung | Typ | Standard | Wirkung |
 |---|---|---|---|---|
 | `host` | `VIEWER_HOST` | String | `127.0.0.1` | Bind-Adresse (nur lokal laut Architektur) |
-| `port` | `VIEWER_PORT` | Integer | `5412` | HTTP-Port des Neubaus |
+| `port` | `VIEWER_PORT` | Integer | `5411` | HTTP-Port des Neubaus |
 | `log_dir` | `VIEWER_LOG_DIR` | Pfad | `logs` | Ordner mit `viewer.log` (JSON-Zeilen) |
 | `db_path` | `VIEWER_DB` | Pfad | `configs/viewer.db` | SQLite-Datei des Neubaus |
 | `backup_dir` | `VIEWER_BACKUP_DIR` | Pfad | `configs/backups` | Ordner der Datenbank-Sicherungen |
@@ -283,6 +283,6 @@ Ergänzungen aus dem Spiegel des Backlogs: Weicht in einem Eintrag nur das Label
 ## Betrieb in der Entwicklung
 
 ```bash
-PYTHONPATH=server/src .venv/bin/python -m viewer.app.main    # Port 5412
+PYTHONPATH=server/src .venv/bin/python -m viewer.app.main    # Port 5411
 scripts/check-next.sh                                         # ruff, mypy, import-linter, pytest
 ```

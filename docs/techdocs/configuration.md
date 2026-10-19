@@ -7,7 +7,7 @@
 | Einstellung | Typ | Standard | Pflicht | Wirkung |
 |---|---|---|---|---|
 | `HOST` | String | `127.0.0.1` (im Docker-Image `0.0.0.0`) | nein | Adresse, an die uvicorn bindet |
-| `PORT` | Integer | `5411` | nein | HTTP-Port |
+| `PORT` | Integer | `5411` (im Compose-Image `5412`) | nein | HTTP-Port |
 | `DEV_RELOAD` | `0`/`1` | `1` (im Docker-Image `0`) | nein | Auto-Reload von uvicorn bei Code-Änderungen |
 | `CONFIG_DIR` | Pfad | `<Projekt>/configs` | nein | Ordner mit `config.json` und (Standard) der Datenbank `todo.db` |
 | `FRONTEND_DIR` | Pfad | `<Projekt>/src_old/web/dist` | nein | Ordner mit dem gebauten Frontend |

@@ -20,9 +20,9 @@ COPY configs configs
 COPY --from=web /web/dist src_old/web/dist
 
 ENV HOST=0.0.0.0 \
-    PORT=5411 \
+    PORT=5412 \
     DEV_RELOAD=0
 
-EXPOSE 5411
+EXPOSE 5412
 
 CMD ["python3", "src_old/backend/main.py"]

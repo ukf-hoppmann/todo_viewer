@@ -113,7 +113,7 @@ def test_the_compose_file_has_the_new_service_next_to_the_old_one() -> None:
     new = services["todo-viewer-next"]
     assert new["restart"] == "unless-stopped"
     assert new["build"]["dockerfile"] == "server/Dockerfile"
-    assert [(p["host_ip"], p["published"], p["target"]) for p in new["ports"]] == [("127.0.0.1", "5411", 5412)]
+    assert [(p["host_ip"], p["published"], p["target"]) for p in new["ports"]] == [("127.0.0.1", "5411", 5411)]
     targets = {v["target"] for v in new["volumes"]}
     assert {"/app/configs", "/app/logs"} <= targets
     assert any(e.startswith("BROWSE_START") or e == "BROWSE_START" for e in new["environment"])

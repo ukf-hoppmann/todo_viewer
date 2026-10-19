@@ -7,7 +7,7 @@ from viewer.core.infrastructure.config import ConfigError, load_settings
 
 def test_defaults_without_file() -> None:
     s = load_settings(Path("/nonexistent/viewer.json"), env={})
-    assert (s.host, s.port, s.sse_keepalive_seconds) == ("127.0.0.1", 5412, 15.0)
+    assert (s.host, s.port, s.sse_keepalive_seconds) == ("127.0.0.1", 5411, 15.0)
     assert s.for_plugin("x") == {}
 
 

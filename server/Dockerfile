@@ -21,15 +21,15 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY --from=client /build/client/dist client/dist
 
 ENV VIEWER_HOST=0.0.0.0 \
-    VIEWER_PORT=5412 \
+    VIEWER_PORT=5411 \
     VIEWER_DB=/app/configs/viewer.db \
     VIEWER_BACKUP_DIR=/app/configs/backups \
     VIEWER_LOG_DIR=/app/logs \
     VIEWER_STATIC_DIR=/app/client/dist
 
-EXPOSE 5412
+EXPOSE 5411
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5412/api/core/health', timeout=4)"
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5411/api/core/health', timeout=4)"
 
 CMD ["python", "-m", "viewer.app.main"]

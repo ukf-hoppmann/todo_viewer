@@ -9,7 +9,7 @@ Das vollständige Schema der HTTP-API liegt in `src_old/web/src/api/openapi.json
 
 - Zweck: Lesen und Bearbeiten der konfigurierten Backlogs, Verwaltung der
   Quellen, UI-Zustand.
-- Aufruf / Endpunkt: Präfix `/api/v2`, Standard-Port 5411 im Container (auf dem Host seit der Port-Vertauschung 5412; 5411 gehört dem Neubau).
+- Aufruf / Endpunkt: Präfix `/api/v2`, Standard-Port 5412 (seit der Port-Vertauschung; 5411 gehört dem Neubau).
 
 | Methode und Pfad | Zweck |
 |---|---|

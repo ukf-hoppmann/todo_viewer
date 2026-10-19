@@ -10,7 +10,7 @@ from typing import Any
 @dataclass(frozen=True)
 class Settings:
     host: str = "127.0.0.1"
-    port: int = 5412
+    port: int = 5411
     log_dir: str = "logs"
     db_path: str = "configs/viewer.db"
     backup_dir: str = "configs/backups"

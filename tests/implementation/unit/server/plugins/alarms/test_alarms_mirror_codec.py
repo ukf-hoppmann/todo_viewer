@@ -141,6 +141,57 @@ def test_format_errors_name_code_and_line(text: str, code: str, line: int) -> No
     assert (error.code, error.details["file"], error.details["line"]) == (code, "alarms.md", line)
 
 
+SERIES = PREAMBLE + BLOCK.replace(
+    "  - Status:", "  - Repeat: Weekly.\n  - Series from: 2026-10-06T07:00:00Z.\n  - Target: None.\n  - Status:"
+)
+
+
+def test_a_file_without_repetition_fields_means_no_repetition() -> None:
+    assert {(e.fields["repeat"], e.fields["series_from"]) for e in ENTRIES} == {("none", None)}
+
+
+def test_a_series_alarm_is_read_and_written_with_its_fields_after_the_time() -> None:
+    [entry] = decode(alarms_file(SERIES), "Beispiel")
+
+    assert (entry.fields["repeat"], entry.fields["series_from"]) == ("weekly", "2026-10-06T07:00:00Z")
+    assert written([changed(entry, status="Due")], current=alarms_file(SERIES)).count("Repeat: Weekly.") == 1
+    assert encode([entry], [], alarms_file(SERIES), "Beispiel") == []  # Zeile für Zeile wie gelesen
+    assert "  - At: 2026-10-20T07:00:00Z.\n  - Repeat: Weekly.\n  - Series from: 2026-10-06T07:00:00Z.\n" in written(
+        [entry], current=FileSet()
+    )
+
+
+@pytest.mark.parametrize(("name", "word"), [("daily", "Daily"), ("monthly", "Monthly"), ("yearly", "Yearly")])
+def test_every_kind_of_repetition_round_trips(name: str, word: str) -> None:
+    text = SERIES.replace("Weekly", word)
+    [entry] = decode(alarms_file(text), "Beispiel")
+
+    assert entry.fields["repeat"] == name
+    assert encode([entry], [], alarms_file(text), "Beispiel") == []
+
+
+def test_switching_the_repetition_off_removes_both_lines() -> None:
+    [entry] = decode(alarms_file(SERIES), "Beispiel")
+
+    out = written([changed(entry, repeat="none", series_from=None)], current=alarms_file(SERIES))
+
+    assert "Repeat" not in out and "Series from" not in out
+
+
+@pytest.mark.parametrize(
+    "text,code,line",
+    [
+        (SERIES.replace("Weekly", "Hourly"), "invalid_value", 10),
+        (SERIES.replace("  - Series from: 2026-10-06T07:00:00Z.\n", ""), "missing_field", 7),
+        (SERIES.replace("  - Repeat: Weekly.\n", ""), "invalid_value", 10),
+        (SERIES.replace("2026-10-06T07:00:00Z", "damals"), "invalid_value", 11),
+    ],
+)
+def test_repetition_errors_name_code_and_line(text: str, code: str, line: int) -> None:
+    error = failure(text)
+    assert (error.code, error.details["line"]) == (code, line)
+
+
 def test_several_targets_without_text_and_a_done_time_round_trip() -> None:
     text = (
         PREAMBLE + "\n- `ALARM-004`\n  - Uid: u4.\n  - At: 2026-10-20T07:00:00Z.\n"

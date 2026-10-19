@@ -18,6 +18,7 @@ dependencies = [
     "pydantic",
     "sqlalchemy",
     "structlog",
+    "tzdata",
 ]
 
 [tool.pytest.ini_options]

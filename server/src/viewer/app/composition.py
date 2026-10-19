@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from collections.abc import AsyncIterator, Callable, Sequence
 from contextlib import asynccontextmanager
+from datetime import tzinfo
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +32,7 @@ from viewer.core.infrastructure.event_bus import InProcessEventBus
 from viewer.core.infrastructure.files import LocalFileStore
 from viewer.core.infrastructure.ids import UuidIds
 from viewer.core.infrastructure.scheduler import AsyncioScheduler
+from viewer.core.infrastructure.timezone import resolve_zone
 from viewer.plugins.alarms.plugin import plugin as alarms_plugin
 from viewer.plugins.backlog.plugin import plugin as backlog_plugin
 from viewer.plugins.notes.plugin import plugin as notes_plugin
@@ -62,6 +65,7 @@ def create_app(
     settings: Settings | None = None,
     plugins: Sequence[PluginDefinition] = PLUGINS,
     clock: Clock | None = None,
+    zone: tzinfo | None = None,
     mirror_projects: MirrorProjects | None = None,
 ) -> FastAPI:
     """Baut die Anwendung. Eine fehlerhafte Plugin-Liste wirft `PluginSetupError` (Start abgebrochen)."""
@@ -70,6 +74,7 @@ def create_app(
         raise PluginSetupError(problems)
     settings = settings or Settings()
     clock = clock or SystemClock()
+    zone = zone or resolve_zone(os.environ.get("TZ"))
     events = InProcessEventBus()
     scheduler = AsyncioScheduler(clock)
     hub = SseHub(events, settings.sse_keepalive_seconds)
@@ -95,6 +100,7 @@ def create_app(
     host = PluginHost(
         plugins,
         clock=clock,
+        zone=zone,
         events=events,
         scheduler=scheduler,
         database=database,

@@ -14,7 +14,7 @@ export interface paths {
         /** Wecker als Liste (nach Zeitpunkt); `due_only` zeigt nur die, die sich gemeldet haben. Projekte komma-getrennt */
         get: operations["alarms_list_alarms"];
         put?: never;
-        /** Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente (`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Für „Erinner mich“; „Merk dir“ ist eine Note */
+        /** Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente (`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Mit `repeat` (`none`, `daily`, `weekly`, `monthly`, `yearly`) wiederholt er sich; die Termine rechnen in der Zeitzone des Servers. Für „Erinner mich“; „Merk dir“ ist eine Note */
         post: operations["alarms_create_alarm"];
         delete?: never;
         options?: never;
@@ -31,7 +31,7 @@ export interface paths {
         };
         /** Ein Wecker mit seinen Elementen; `ref` ist die uid oder ein Label (mit `project`) */
         get: operations["alarms_get_alarm"];
-        /** Ändert Text, Zeitpunkt oder Elemente eines Weckers mit Versionsprüfung; ein neuer Zeitpunkt lässt ihn wieder warten */
+        /** Ändert Text, Zeitpunkt, Wiederholung (`repeat`) oder Elemente eines Weckers mit Versionsprüfung; ein neuer Zeitpunkt lässt ihn wieder warten und beginnt bei einem Serienwecker eine neue Serie */
         put: operations["alarms_update_alarm"];
         post?: never;
         delete?: never;
@@ -49,7 +49,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Erledigt einen Wecker; 24 h später wird er endgültig gelöscht */
+        /** Erledigt einen Wecker; 24 h später wird er endgültig gelöscht. Ein Serienwecker wird nie erledigt, sondern wartet auf den nächsten Termin nach jetzt */
         post: operations["alarms_finish_alarm"];
         delete?: never;
         options?: never;
@@ -66,7 +66,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Nimmt „Erledigt“ zurück, solange der Wecker noch nicht gelöscht ist; er wartet wieder (oder ist fällig) */
+        /** Nimmt „Erledigt“ zurück, solange der Wecker noch nicht gelöscht ist; er wartet wieder (oder ist fällig). Nicht für Serienwecker */
         post: operations["alarms_reopen_alarm"];
         delete?: never;
         options?: never;
@@ -1094,10 +1094,16 @@ export interface components {
             done_at: string | null;
             /** Label */
             label: string;
+            /** Missed */
+            missed: number;
             /** Project Uid */
             project_uid: string;
             /** Purge At */
             purge_at: string | null;
+            /** Repeat */
+            repeat: string;
+            /** Series From */
+            series_from: string | null;
             /** Snoozed Until */
             snoozed_until: string | null;
             /** Status */

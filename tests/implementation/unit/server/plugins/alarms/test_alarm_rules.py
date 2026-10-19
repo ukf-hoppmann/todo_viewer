@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import UTC, timedelta
 
 import pytest
 from alarms_fixtures import NOW, alarm
@@ -86,11 +86,11 @@ def test_snoozing_into_the_past_or_a_closed_alarm_is_refused() -> None:
             snooze(closed, NOW)
         assert error.value.code == code
         with pytest.raises(AlarmViolation):
-            finish(closed, NOW)
+            finish(closed, NOW, UTC)
 
 
 def test_finishing_clears_the_snooze_and_a_new_time_wakes_the_alarm_again() -> None:
-    done = finish(alarm("a", PAST, "Snoozed", FUTURE), NOW)
+    done = finish(alarm("a", PAST, "Snoozed", FUTURE), NOW, UTC)
     assert (done.status, done.snoozed_until, done.done_at) == ("Done", None, NOW)
     again = reschedule(done, FUTURE)
     assert (again.status, again.at, again.snoozed_until, again.done_at) == ("Pending", FUTURE, None, None)

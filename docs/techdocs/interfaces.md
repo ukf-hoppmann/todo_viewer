@@ -891,9 +891,19 @@ Format: Claude_Harness backlog format version 2.
   - Done at: 2026-10-18T09:00:00Z.
 ```
 
-- Felder in dieser Reihenfolge: `Uid`, `At`, `Target`, `Status`,
-  `Snoozed until`, `Done at`, `Created`, `Deleted`. Der fett gesetzte Titel ist
-  der Text des Weckers; ein Wecker, der nur an Elemente erinnert, hat keinen.
+- Felder in dieser Reihenfolge: `Uid`, `At`, `Repeat`, `Series from`, `Target`,
+  `Status`, `Snoozed until`, `Done at`, `Created`, `Deleted`. Der fett gesetzte
+  Titel ist der Text des Weckers; ein Wecker, der nur an Elemente erinnert,
+  hat keinen.
+- `Repeat` und `Series from`: Ein Serienwecker hat `Repeat: Daily.`, `Weekly.`,
+  `Monthly.` oder `Yearly.` und `Series from` (Startpunkt der Serie, UTC wie
+  `At`); beide Felder stehen zusammen oder fehlen ganz. Fehlen sie, wiederholt
+  sich der Wecker nicht; eine Datei ohne diese Felder bleibt gültig. Ein
+  unbekannter Wert ist `invalid_value`, `Repeat` ohne `Series from`
+  `missing_field`. Die Termine der Serie rechnet der Viewer in der Zeitzone
+  des Rechners, auf dem er läuft (`TZ`); `At` ist der nächste Termin. Ein
+  erledigter Serienwecker wird nie `Done`, er rückt in `At` auf den nächsten
+  Termin vor.
 - `Target`: komma-getrennte Verweise, je ein Label dieses Projekts oder
   `<projekt>:<LABEL>` für ein anderes Projekt, oder `None`. Die Art eines
   Elements ergibt sich aus dem Präfix (`EPIC`, `STORY`, `TASK`, `NOTE`,

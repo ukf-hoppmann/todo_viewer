@@ -20,12 +20,28 @@ BACKTICK = re.compile(r"^`(.+)`$")
 NO_ENTRIES = "No entries."
 
 #: Felder in der Reihenfolge, in der der Codec sie schreibt (gelesen werden sie in jeder).
-FIELD_ORDER = ("Uid", "At", "Target", "Status", "Snoozed until", "Done at", "Created", "Deleted")
+FIELD_ORDER = (
+    "Uid",
+    "At",
+    "Repeat",
+    "Series from",
+    "Target",
+    "Status",
+    "Snoozed until",
+    "Done at",
+    "Created",
+    "Deleted",
+)
 
 TEMPLATE = (
     "# Alarms\n\nFormat: Claude_Harness backlog format version 2. The rules are defined in\n"
     "`docs/techdocs/interfaces.md` of the ToDo Viewer.\n\n## Alarms\n"
 )
+
+
+#: Wiederholung in der Datei (`Repeat: Weekly.`) und in der Datenbank (`weekly`); `none` fehlt in der Datei.
+REPEAT_WORDS = {"daily": "Daily", "weekly": "Weekly", "monthly": "Monthly", "yearly": "Yearly"}
+WORD_REPEATS = {word: repeat for repeat, word in REPEAT_WORDS.items()}
 
 
 def format_time(moment: datetime | None) -> str | None:

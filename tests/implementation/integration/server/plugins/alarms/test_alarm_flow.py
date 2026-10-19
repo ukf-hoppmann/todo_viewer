@@ -286,6 +286,71 @@ def test_reopen_takes_back_finish_and_a_missed_time_makes_it_due(alarms: Env) ->
     assert (reopened["status"], reopened["done_at"]) == ("Due", None)
 
 
+def test_a_series_alarm_starts_its_series_at_its_time(alarms: Env) -> None:
+    alarm = _create(alarms, repeat="daily")
+
+    assert (alarm["repeat"], alarm["series_from"], alarm["missed"]) == ("daily", alarm["at"], 0)
+    assert _create(alarms)["repeat"] == "none" and _create(alarms)["series_from"] is None
+
+
+def test_an_unknown_repetition_is_refused_with_the_allowed_values(alarms: Env) -> None:
+    refused = alarms.client.post(
+        f"{API}/alarms", json={"project": _project(alarms), "fields": {"text": "x", "at": AT, "repeat": "hourly"}}
+    )
+
+    body = refused.json()
+    assert (refused.status_code, body["code"]) == (422, "invalid_input")
+    assert body["details"]["field"] == "repeat"
+    assert body["details"]["allowed"] == ["none", "daily", "weekly", "monthly", "yearly"]
+
+
+def test_changing_the_repetition_of_an_alarm_starts_or_ends_its_series(alarms: Env) -> None:
+    alarm = _create(alarms)
+
+    series = alarms.client.put(
+        f"{API}/alarms/{alarm['uid']}", json={"version": alarm["version"], "fields": {"repeat": "weekly"}}
+    ).json()
+    assert (series["repeat"], series["series_from"]) == ("weekly", series["at"])
+
+    plain = alarms.client.put(
+        f"{API}/alarms/{alarm['uid']}", json={"version": series["version"], "fields": {"repeat": "none"}}
+    ).json()
+    assert (plain["repeat"], plain["series_from"]) == ("none", None)
+
+
+def test_a_new_time_starts_a_new_series(alarms: Env) -> None:
+    alarm = _create(alarms, repeat="daily")
+
+    moved = alarms.client.put(
+        f"{API}/alarms/{alarm['uid']}", json={"version": alarm["version"], "fields": {"at": "2026-10-20T07:00:00Z"}}
+    ).json()
+
+    assert moved["series_from"] == moved["at"] and moved["at"].startswith("2026-10-20T07:00:00")
+
+
+def test_finishing_a_series_alarm_waits_for_the_next_term_and_reports_missed_terms(alarms: Env) -> None:
+    alarm = _create(alarms, "Backlog sichten", at="2026-10-16T13:00:00Z", repeat="daily")
+    alarms.clock.advance(timedelta(days=3))  # 2026-10-19 12:00
+    alarms.alarms.alarms.fire()
+    shown = alarms.client.get(f"{API}/alarms/{alarm['uid']}").json()
+    assert (shown["status"], shown["missed"]) == ("Due", 2)  # 17. und 18.; der 19. 13:00 steht noch aus
+
+    done = _post(alarms, shown, "finish").json()
+
+    assert (done["status"], done["done_at"], done["missed"]) == ("Pending", None, 0)
+    assert done["at"].startswith("2026-10-19T13:00:00") and done["series_from"] == alarm["series_from"]
+    assert _pending(alarms) == datetime.fromisoformat("2026-10-19T13:00:00+00:00")
+
+
+def test_a_series_alarm_cannot_be_reopened(alarms: Env) -> None:
+    alarm = _create(alarms, repeat="daily")
+    done = _post(alarms, alarm, "finish").json()
+
+    refused = _post(alarms, done, "reopen")
+
+    assert (refused.status_code, refused.json()["code"]) == (400, "alarm_not_done")
+
+
 def test_finished_alarms_are_purged_a_day_later_without_trash(alarms: Env) -> None:
     keep = _create(alarms, "Bleibt", at="2026-10-30T09:00:00Z")
     alarm = _create(alarms)

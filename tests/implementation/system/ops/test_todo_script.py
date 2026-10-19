@@ -102,6 +102,25 @@ def test_an_unknown_command_prints_the_usage_for_both_viewers(docker: Path, tmp_
     assert "next start" in result.stdout and "Neubau" in result.stdout
 
 
+def test_todo_sh_hands_its_time_zone_to_compose(tmp_path: Path) -> None:
+    """Gesetztes `TZ` bleibt; sonst kommt die Zone des Rechners aus `/etc/localtime`."""
+    seen = tmp_path / "tz.txt"
+    fake = tmp_path / "fake-docker"
+    fake.write_text('#!/bin/bash\necho "${TZ:-unset}" >> "$SEEN"\n', encoding="utf-8")
+    fake.chmod(fake.stat().st_mode | stat.S_IEXEC)
+
+    def run(env: dict[str, str]) -> str:
+        seen.write_text("", encoding="utf-8")
+        base = {"DOCKER": str(fake), "SEEN": str(seen), "PATH": "/usr/bin:/bin"}
+        subprocess.run([str(ROOT / "todo.sh"), "stop"], env={**base, **env}, capture_output=True, check=True)
+        return seen.read_text(encoding="utf-8").strip()
+
+    assert run({"TZ": "Asia/Tokyo"}) == "Asia/Tokyo"
+    localtime = Path("/etc/localtime")
+    if localtime.is_symlink() and "zoneinfo/" in str(localtime.resolve()):
+        assert run({}) == str(localtime.resolve()).split("zoneinfo/", 1)[1]
+
+
 @pytest.mark.skipif(shutil.which("docker") is None, reason="docker ist nicht installiert")
 def test_the_compose_file_has_the_new_service_next_to_the_old_one() -> None:
     output = subprocess.run(
@@ -117,6 +136,7 @@ def test_the_compose_file_has_the_new_service_next_to_the_old_one() -> None:
     targets = {v["target"] for v in new["volumes"]}
     assert {"/app/configs", "/app/logs"} <= targets
     assert any(e.startswith("BROWSE_START") or e == "BROWSE_START" for e in new["environment"])
+    assert "TZ" in new["environment"]
     assert services["todo-viewer"]["ports"][0]["published"] == "5412"
 
 

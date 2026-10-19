@@ -72,4 +72,5 @@ Applies to `server/**` in addition to `../architecture.md`.
 
 - A new runtime dependency in `server/pyproject.toml` MUST be approved by
   the project owner before it is added. Approved with this scope: FastAPI,
-  uvicorn, SQLAlchemy, Pydantic, the official MCP SDK (`mcp`), structlog.
+  uvicorn, SQLAlchemy, Pydantic, the official MCP SDK (`mcp`), structlog,
+  `tzdata` (time zone data for the image; `python:3.11-slim` has none).

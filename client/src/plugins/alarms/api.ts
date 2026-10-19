@@ -37,7 +37,7 @@ export const alarmsApi = createPluginApi(
 			}),
 			providesTags: ["Alarms"],
 		}),
-		createAlarm: build.mutation<AlarmOut, { project: string; text: string; at: string; targets: string[] }>({
+		createAlarm: build.mutation<AlarmOut, { project: string; text: string; at: string; targets: string[]; repeat?: string }>({
 			query: ({ project, ...fields }) => ({ url: "alarms/alarms", method: "POST", body: { project, fields } }),
 			invalidatesTags: ["Alarms"],
 		}),

@@ -11,6 +11,12 @@ LOG_FILE="logs/viewer.log"
 # Zum Prüfen des Skripts austauschbar (tests/implementation/system/ops).
 DOCKER="${DOCKER:-docker}"
 
+# Zeitzone des Rechners für den Container (Serientermine der Wecker): Name aus dem Ziel von /etc/localtime.
+if [ -z "${TZ:-}" ] && [ -L /etc/localtime ]; then
+  TZ="$(readlink /etc/localtime | sed 's|.*/zoneinfo/||')"
+  [ -n "$TZ" ] && export TZ
+fi
+
 usage() {
   cat <<EOF
 Nutzung: ./todo.sh <befehl>

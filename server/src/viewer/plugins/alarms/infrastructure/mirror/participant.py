@@ -55,6 +55,8 @@ class AlarmsParticipant:
             "at": format_time(alarm.at),
             "status": alarm.status,
             "snoozed_until": format_time(alarm.snoozed_until),
+            "repeat": alarm.repeat,
+            "series_from": format_time(alarm.series_from),
             "done_at": format_time(alarm.done_at),
             "deleted": format_day(alarm.deleted_at),
         }
@@ -131,6 +133,8 @@ class AlarmsParticipant:
             at=to_datetime(f["at"]),
             status=f["status"],
             snoozed_until=_time(f["snoozed_until"]),
+            repeat=f["repeat"],
+            series_from=_time(f["series_from"]),
             targets=targets,
             target_text=target_text,
             done_at=done_at if f["status"] in CLOSED_STATUSES else None,

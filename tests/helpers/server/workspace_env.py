@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +27,7 @@ class Env:
         self.tmp_path = tmp_path
         self.clock = FixedClock()
         chosen = plugins or [workspace_plugin, KINDS_PLUGIN, MIRROR_PLUGIN]
-        self.app = create_app(settings, plugins=chosen, clock=self.clock)
+        self.app = create_app(settings, plugins=chosen, clock=self.clock, zone=UTC)
         self.client = TestClient(self.app)
 
     @property

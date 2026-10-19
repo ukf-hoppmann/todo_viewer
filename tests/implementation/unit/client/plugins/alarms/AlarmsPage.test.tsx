@@ -59,6 +59,72 @@ async function renderPage(options: Parameters<typeof fakeAlarmsBackend>[0] = {})
 
 const rowsOf = (key: string) => within(screen.getByTestId(ids.group(key))).queryAllByTestId(/^alarms\.row\./).map((row) => row.getAttribute("data-testid"));
 
+const series = alarm("series", { status: "Due", at: "2026-10-18T09:00:00Z", repeat: "weekly", series_from: "2026-09-20T09:00:00Z", missed: 3 });
+
+describe("AlarmsPage: series alarms", () => {
+	it("marks a series alarm with its repetition and the count of missed terms, others with nothing", async () => {
+		await renderPage({ alarms: [...alarms, series] });
+		await screen.findByTestId(ids.row("series"));
+
+		expect(screen.getByTestId(ids.repeat("series")).getAttribute("aria-label")).toBe("Wiederholung: Wöchentlich");
+		expect(screen.getByTestId(ids.missed("series")).textContent).toBe("3 verpasst");
+		expect(screen.queryByTestId(ids.repeat("wait"))).toBeNull();
+		expect(screen.queryByTestId(ids.missed("wait"))).toBeNull();
+	});
+
+	it("shows no counter when nothing was missed", async () => {
+		await renderPage({ alarms: [alarm("daily", { repeat: "daily", series_from: "2026-10-18T09:00:00Z" })] });
+		await screen.findByTestId(ids.row("daily"));
+
+		expect(screen.getByTestId(ids.repeat("daily"))).toBeTruthy();
+		expect(screen.queryByTestId(ids.missed("daily"))).toBeNull();
+	});
+
+	it("offers finish but never undo, and names repetition and missed terms in the detail bar", async () => {
+		await renderPage({ alarms: [...alarms, series] });
+		await screen.findByTestId(ids.row("series"));
+
+		expect(screen.getByTestId(ids.action("finish", "series"))).toBeTruthy();
+		expect(screen.queryByTestId(ids.action("reopen", "series"))).toBeNull();
+		fireEvent.click(screen.getByTestId(ids.row("series")));
+		const detail = await screen.findByTestId(ids.detail);
+		expect(detail.textContent).toContain("Wöchentlich");
+		expect(detail.textContent).toContain("3 verpasst");
+	});
+
+	it("sets a series alarm and sends the repetition only when there is one", async () => {
+		const backend = await renderPage({ documents: { workspace: { marked: "p1" } } });
+		await screen.findByTestId(ids.row("wait"));
+
+		fireEvent.click(screen.getByText("Neuer Wecker"));
+		fireEvent.change(await screen.findByTestId(ids.formField("text")), { target: { value: "Montag" } });
+		fireEvent.change(screen.getByTestId(ids.formField("at")), { target: { value: "2026-10-30T09:00" } });
+		expect((screen.getByTestId(ids.formField("repeat")) as HTMLSelectElement).value).toBe("none");
+		fireEvent.change(screen.getByTestId(ids.formField("repeat")), { target: { value: "weekly" } });
+		fireEvent.click(screen.getByTestId(sharedTestIds.editFormSave));
+
+		await waitFor(() => expect(backend.calls("POST", "alarms/alarms")).toHaveLength(1));
+		expect(backend.calls("POST", "alarms/alarms")[0]!.body).toEqual({
+			project: "p1",
+			fields: { text: "Montag", at: new Date("2026-10-30T09:00").toISOString(), targets: [], repeat: "weekly" },
+		});
+	});
+
+	it("shows the repetition when editing and switches it off", async () => {
+		const backend = await renderPage({ alarms: [series] });
+		await screen.findByTestId(ids.row("series"));
+
+		fireEvent.click(screen.getByTestId(ids.action("edit", "series")));
+		const field = (await screen.findByTestId(ids.formField("repeat"))) as HTMLSelectElement;
+		expect(field.value).toBe("weekly");
+		fireEvent.change(field, { target: { value: "none" } });
+		fireEvent.click(screen.getByTestId(sharedTestIds.editFormSave));
+
+		await waitFor(() => expect(backend.calls("PUT", "alarms/alarms/series")).toHaveLength(1));
+		expect(backend.calls("PUT", "alarms/alarms/series")[0]!.body).toEqual({ version: 1, fields: { repeat: "none" } });
+	});
+});
+
 describe("AlarmsPage: the list", () => {
 	it("groups the reminders of the shown projects by time, finished ones last", async () => {
 		await renderPage();

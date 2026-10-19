@@ -36,6 +36,9 @@ services:
     environment:
       # Startordner des Dateibrowsers beim Hinzufügen von Projekten
       - BROWSE_START=/Users/hoppmann/Documents/GitHub
+      # Zeitzone des Rechners (Architektur §4): Serientermine der Wecker werden in ihr gerechnet. todo.sh gibt die
+      # Zone des Macs weiter; ohne sie gilt Europe/Berlin.
+      - TZ=${TZ:-Europe/Berlin}
     ports:
       # Nur lokal erreichbar: die API und MCP können alles ändern.
       - "127.0.0.1:5411:5411"

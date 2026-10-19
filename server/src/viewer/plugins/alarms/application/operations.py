@@ -49,6 +49,13 @@ class AlarmOut:
     purge_at: datetime | None
     version: int
     deleted: bool
+    #: `none`, `daily`, `weekly`, `monthly` oder `yearly`. Ein Serienwecker wird beim Erledigen nie `Done`, sondern
+    #: wartet auf den nächsten Termin; die Termine rechnen in der Zeitzone des Servers.
+    repeat: str
+    #: Startpunkt der Serie (UTC); leer ohne Wiederholung.
+    series_from: datetime | None
+    #: Verpasste Serientermine seit `at` (abgeleitet, nicht gespeichert); 0 ohne Wiederholung.
+    missed: int
 
 
 @dataclass(frozen=True)
@@ -68,8 +75,8 @@ class GetAlarm:
 @dataclass(frozen=True)
 class CreateAlarm:
     project: str
-    #: `at` (ISO, UTC wenn ohne Zone) ist Pflicht; `targets` (Liste aus uid oder Label) optional; `text` ist Pflicht,
-    #: wenn es keine `targets` gibt.
+    #: `at` (ISO, UTC wenn ohne Zone) ist Pflicht; `targets` (Liste aus uid oder Label) optional; `repeat` (`none`,
+    #: `daily`, `weekly`, `monthly`, `yearly`) optional; `text` ist Pflicht, wenn es keine `targets` gibt.
     fields: dict[str, Any] = field(default_factory=dict)
 
 
@@ -77,7 +84,7 @@ class CreateAlarm:
 class UpdateAlarm:
     ref: str
     version: int
-    #: Geändert werden nur die genannten Felder (`text`, `at`, `targets`; `[]` löst alle Elemente). Ein neuer
+    #: Geändert werden nur die genannten Felder (`text`, `at`, `repeat`, `targets`; `[]` löst alle Elemente). Ein neuer
     #: Zeitpunkt lässt den Wecker wieder warten.
     fields: dict[str, Any]
     project: str | None = None
@@ -115,7 +122,7 @@ def alarm_out(view: AlarmView) -> AlarmOut:
     ]  # fmt: skip
     return AlarmOut(
         a.uid, a.project_uid, a.label, a.text, a.at, a.status, a.snoozed_until, targets, a.target_text, a.done_at,
-        purge_time(a), a.revision, a.deleted_at is not None,
+        purge_time(a), a.revision, a.deleted_at is not None, a.repeat, a.series_from, view.missed,
     )  # fmt: skip
 
 
@@ -154,8 +161,9 @@ OPERATIONS: tuple[Operation, ...] = (
     Operation(
         "create_alarm",
         "Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente "
-        "(`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Für „Erinner mich“; "
-        "„Merk dir“ ist eine Note",
+        "(`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Mit `repeat` (`none`, "
+        "`daily`, `weekly`, `monthly`, `yearly`) wiederholt er sich; die Termine rechnen in der Zeitzone des Servers. "
+        "Für „Erinner mich“; „Merk dir“ ist eine Note",
         "write",
         CreateAlarm,
         AlarmOut,
@@ -164,8 +172,8 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "update_alarm",
-        "Ändert Text, Zeitpunkt oder Elemente eines Weckers mit Versionsprüfung; ein neuer Zeitpunkt lässt ihn "
-        "wieder warten",
+        "Ändert Text, Zeitpunkt, Wiederholung (`repeat`) oder Elemente eines Weckers mit Versionsprüfung; ein neuer "
+        "Zeitpunkt lässt ihn wieder warten und beginnt bei einem Serienwecker eine neue Serie",
         "write",
         UpdateAlarm,
         AlarmOut,
@@ -183,7 +191,8 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "finish_alarm",
-        "Erledigt einen Wecker; 24 h später wird er endgültig gelöscht",
+        "Erledigt einen Wecker; 24 h später wird er endgültig gelöscht. Ein Serienwecker wird nie erledigt, sondern "
+        "wartet auf den nächsten Termin nach jetzt",
         "write",
         FinishAlarm,
         AlarmOut,
@@ -192,7 +201,8 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "reopen_alarm",
-        "Nimmt „Erledigt“ zurück, solange der Wecker noch nicht gelöscht ist; er wartet wieder (oder ist fällig)",
+        "Nimmt „Erledigt“ zurück, solange der Wecker noch nicht gelöscht ist; er wartet wieder (oder ist fällig). "
+        "Nicht für Serienwecker",
         "write",
         ReopenAlarm,
         AlarmOut,

@@ -1,11 +1,12 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import RepeatIcon from "@mui/icons-material/Repeat";
 import SnoozeIcon from "@mui/icons-material/Snooze";
 import { Box, Chip, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import type { ComponentType, MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { DetailAction } from "../../shared";
 import type { AlarmOut } from "./api";
-import { formatWhen, heading, isFinished, waitingFor } from "./model";
+import { formatWhen, heading, isFinished, isSeries, waitingFor } from "./model";
 import { alarmsTestIds } from "./testIds";
 
 interface Props {
@@ -27,6 +28,7 @@ export function AlarmCard({ alarm, selected, expanded, actions, onOpen, onToggle
 	const finished = isFinished(alarm);
 	const stop = (event: MouseEvent) => event.stopPropagation();
 	const toggleLabel = expanded ? t("action.collapse") : t("action.expand");
+	const repeatLabel = t("repeatTooltip", { repeat: t(`repeat.${alarm.repeat}`) });
 	return (
 		<Box
 			data-testid={alarmsTestIds.row(alarm.uid)}
@@ -50,6 +52,14 @@ export function AlarmCard({ alarm, selected, expanded, actions, onOpen, onToggle
 				<Typography variant="caption" color={alarm.status === "Due" ? "warning.main" : "text.secondary"} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
 					{formatWhen(waitingFor(alarm), i18n.language)}
 					{alarm.status === "Snoozed" && <SnoozeIcon sx={{ fontSize: 14 }} titleAccess={t("status.Snoozed")} />}
+					{isSeries(alarm) && (
+						<Tooltip title={repeatLabel}>
+							<RepeatIcon sx={{ fontSize: 14 }} aria-label={repeatLabel} data-testid={alarmsTestIds.repeat(alarm.uid)} />
+						</Tooltip>
+					)}
+					{alarm.missed > 0 && (
+						<Chip size="small" color="warning" variant="outlined" label={t("missed", { count: alarm.missed })} data-testid={alarmsTestIds.missed(alarm.uid)} sx={{ height: 18, fontSize: 11 }} />
+					)}
 				</Typography>
 				<Typography
 					variant="body2"

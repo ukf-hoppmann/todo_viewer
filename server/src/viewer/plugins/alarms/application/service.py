@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import datetime, tzinfo
 from typing import Any
 
 from viewer.core.application.ports import Clock, Database, EventBus, Scheduler, Transaction
@@ -15,11 +15,12 @@ from viewer.core.domain.events import Event
 from viewer.plugins.alarms.application.ports import AlarmRepository
 from viewer.plugins.alarms.domain import model
 from viewer.plugins.alarms.domain.model import Alarm, AlarmViolation, utc
+from viewer.plugins.alarms.domain.series import REPEATS
 
 ALARM_TOPIC = "alarms.alarm.changed"
 DUE_TOPIC = "alarms.due"
 SCHEDULER_OWNER = "alarms"
-FIELDS = {"text", "at", "targets", "target"}
+FIELDS = {"text", "at", "targets", "target", "repeat"}
 #: Ereignisse, nach denen sich der nächste Termin geändert haben kann (Papierkorb, Wiederherstellen, Sync).
 RELOAD_TOPICS = frozenset({"workspace.element.changed", "core.sync.state"})
 _LABEL = re.compile(r"^[A-Z]+-\d+$")
@@ -36,6 +37,8 @@ class TargetView:
 class AlarmView:
     alarm: Alarm
     targets: list[TargetView]
+    #: Verpasste Serientermine seit `at` (abgeleitet); 0 ohne Wiederholung.
+    missed: int = 0
 
 
 def _text(value: object, required: bool) -> str:
@@ -56,6 +59,15 @@ def _moment(name: str, value: object) -> datetime:
         except ValueError:
             pass
     raise InvalidInput(f"{name} ist kein Zeitpunkt (JJJJ-MM-TT[THH:MM])", details={"field": name})
+
+
+def _repeat(value: object) -> str:
+    if value not in REPEATS:
+        raise InvalidInput(
+            f"repeat ist keine Wiederholung ({', '.join(REPEATS)})",
+            details={"field": "repeat", "allowed": list(REPEATS)},
+        )
+    return str(value)
 
 
 def _refs(fields: Mapping[str, Any]) -> list[str] | None:
@@ -83,6 +95,7 @@ class AlarmService:
         registry: Any,
         database: Database,
         clock: Clock,
+        zone: tzinfo,
         events: EventBus,
         scheduler: Scheduler,
     ) -> None:
@@ -90,6 +103,7 @@ class AlarmService:
         self._registry = registry
         self._database = database
         self._clock = clock
+        self._zone = zone
         self._events = events
         self._scheduler = scheduler
         #: Was die Oberfläche zuletzt von den Elementen der Wecker wissen konnte (offen, Titel): ändert es sich, meldet
@@ -115,6 +129,7 @@ class AlarmService:
         self._check_fields(fields)
         refs = _refs(fields) or []
         at = _moment("at", fields.get("at"))
+        repeat = _repeat(fields.get("repeat", "none"))
         with self._database.transaction() as tx:
             targets = self._targets(tx, refs, project_uid)
             text = _text(fields.get("text"), required=not targets)
@@ -122,6 +137,7 @@ class AlarmService:
             alarm = Alarm(
                 element.uid, project_uid, element.label, text, at, "Pending", targets, None, None, element.revision
             )
+            alarm = model.with_repeat(alarm, repeat)
             self._alarms.insert(tx, alarm)
         self._changed(alarm.uid, "created")
         self.follow()
@@ -129,7 +145,7 @@ class AlarmService:
         return alarm.uid
 
     def update(self, ref: str, project_uid: str | None, version: int, fields: Mapping[str, Any]) -> str:
-        """Ändert Text, Zeitpunkt und Elemente; ein neuer Zeitpunkt lässt den Wecker wieder warten."""
+        """Ändert Text, Zeitpunkt, Wiederholung und Elemente; ein neuer Zeitpunkt lässt den Wecker wieder warten."""
         self._check_fields(fields)
         refs = _refs(fields)
         with self._database.transaction() as tx:
@@ -142,6 +158,8 @@ class AlarmService:
             if "text" in fields or refs is not None:
                 text = fields.get("text", updated.text)
                 updated = replace(updated, text=_text(text, required=not updated.targets))
+            if "repeat" in fields:
+                updated = model.with_repeat(updated, _repeat(fields["repeat"]))
             if "at" in fields:
                 updated = model.reschedule(updated, _moment("at", fields["at"]))
             self._save(tx, alarm, updated, version)
@@ -155,7 +173,7 @@ class AlarmService:
         return self._transition(ref, project_uid, version, lambda a: model.snooze(a, self._clock.now(), target))
 
     def finish(self, ref: str, project_uid: str | None, version: int) -> str:
-        return self._transition(ref, project_uid, version, lambda a: model.finish(a, self._clock.now()))
+        return self._transition(ref, project_uid, version, lambda a: model.finish(a, self._clock.now(), self._zone))
 
     def reopen(self, ref: str, project_uid: str | None, version: int) -> str:
         return self._transition(ref, project_uid, version, lambda a: model.undo(a, self._clock.now()))
@@ -300,7 +318,7 @@ class AlarmService:
             for uid in alarm.targets
             if (element := self._registry.get(tx, uid)) is not None
         ]
-        return AlarmView(alarm, targets)
+        return AlarmView(alarm, targets, model.alarm_missed(alarm, self._clock.now(), self._zone))
 
     @staticmethod
     def _check_fields(fields: Mapping[str, Any]) -> None:

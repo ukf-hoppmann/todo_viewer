@@ -23,7 +23,7 @@ def _build(context: PluginContext) -> AlarmServices:
     repository = SqlAlarmRepository()
     workspace.trash.register("alarm", purger=repository.delete)
     service = AlarmService(
-        repository, workspace.registry, context.database, context.clock, context.events, context.scheduler
+        repository, workspace.registry, context.database, context.clock, context.zone, context.events, context.scheduler
     )
     service.start()
     participant = AlarmsParticipant(

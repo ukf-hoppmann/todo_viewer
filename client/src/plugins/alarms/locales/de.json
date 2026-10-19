@@ -15,8 +15,19 @@
 	"field": {
 		"text": "Text",
 		"at": "Zeitpunkt",
-		"targets": "Erinnert an"
+		"targets": "Erinnert an",
+		"repeat": "Wiederholung"
 	},
+	"repeat": {
+		"none": "Keine",
+		"daily": "Täglich",
+		"weekly": "Wöchentlich",
+		"monthly": "Monatlich",
+		"yearly": "Jährlich"
+	},
+	"repeatTooltip": "Wiederholung: {{repeat}}",
+	"missed_one": "{{count}} verpasst",
+	"missed_other": "{{count}} verpasst",
 	"action": {
 		"edit": "Bearbeiten",
 		"snooze": "Zurückstellen",

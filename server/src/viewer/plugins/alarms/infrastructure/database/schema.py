@@ -63,4 +63,43 @@ def _v2(connection: Any) -> None:
         connection.exec_driver_sql(statement)
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2))
+def _v3(connection: Any) -> None:
+    """Wiederholung (`repeat`, geprüft gegen `alarms_repeats`) und Serienstart (`series_from`). SQLite erlaubt keine
+    neue Spalte mit Verweis und Standardwert, darum wird `alarms_alarms` neu gebaut; `alarms_targets` (löscht mit dem
+    Wecker) wird dafür zwischengespeichert. Bestehende Wecker bekommen `none`."""
+    for statement in (
+        "CREATE TABLE alarms_repeats (code TEXT PRIMARY KEY)",
+        "INSERT INTO alarms_repeats(code) VALUES ('none'), ('daily'), ('weekly'), ('monthly'), ('yearly')",
+        "CREATE TABLE alarms_targets_v2 AS SELECT alarm_uid, position, element_uid FROM alarms_targets",
+        "DROP TABLE alarms_targets",
+        "DROP INDEX alarms_alarms_status",
+        "ALTER TABLE alarms_alarms RENAME TO alarms_alarms_v2",
+        """CREATE TABLE alarms_alarms (
+            uid TEXT PRIMARY KEY REFERENCES workspace_elements(uid),
+            at TEXT NOT NULL,
+            text TEXT NOT NULL,
+            target_text TEXT,
+            status TEXT NOT NULL REFERENCES alarms_statuses(code),
+            snoozed_until TEXT,
+            done_at TEXT,
+            repeat TEXT NOT NULL DEFAULT 'none' REFERENCES alarms_repeats(code),
+            series_from TEXT
+        )""",
+        """INSERT INTO alarms_alarms(uid, at, text, target_text, status, snoozed_until, done_at)
+           SELECT uid, at, text, target_text, status, snoozed_until, done_at FROM alarms_alarms_v2""",
+        "DROP TABLE alarms_alarms_v2",
+        """CREATE TABLE alarms_targets (
+            alarm_uid TEXT NOT NULL REFERENCES alarms_alarms(uid) ON DELETE CASCADE,
+            position INTEGER NOT NULL,
+            element_uid TEXT NOT NULL REFERENCES workspace_elements(uid) ON DELETE CASCADE,
+            PRIMARY KEY (alarm_uid, position)
+        )""",
+        "INSERT INTO alarms_targets(alarm_uid, position, element_uid) SELECT * FROM alarms_targets_v2",
+        "DROP TABLE alarms_targets_v2",
+        "CREATE INDEX alarms_alarms_status ON alarms_alarms(status)",
+        "CREATE INDEX alarms_targets_element ON alarms_targets(element_uid)",
+    ):
+        connection.exec_driver_sql(statement)
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3))

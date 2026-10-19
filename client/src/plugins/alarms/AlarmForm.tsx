@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { EditForm, EntityPicker, type Entity } from "../../shared";
 import { useSearchElementsQuery } from "../workspace";
 import { toWriteError, useCreateAlarmMutation, useUpdateAlarmMutation, type AlarmOut } from "./api";
-import { fromInputValue, toInputValue } from "./model";
+import { REPEATS, fromInputValue, toInputValue } from "./model";
 import { alarmsTestIds } from "./testIds";
 
 interface Props {
@@ -28,6 +28,7 @@ export function AlarmForm({ projectUid, alarm, target = null, onDone, onCancel }
 	const [update] = useUpdateAlarmMutation();
 	const [text, setText] = useState(alarm?.text ?? "");
 	const [at, setAt] = useState(alarm ? toInputValue(alarm.at) : "");
+	const [repeat, setRepeat] = useState<string>(alarm?.repeat ?? "none");
 	const initial = alarm ? alarm.targets.map((entry) => entry.uid) : target ? [target.id] : [];
 	const [targets, setTargets] = useState<string[]>(initial);
 	const [query, setQuery] = useState("");
@@ -54,10 +55,11 @@ export function AlarmForm({ projectUid, alarm, target = null, onDone, onCancel }
 				const fields: Record<string, unknown> = {};
 				if (text !== alarm.text) fields.text = text;
 				if (iso !== new Date(alarm.at).toISOString()) fields.at = iso;
+				if (repeat !== alarm.repeat) fields.repeat = repeat;
 				if (!same(targets, initial)) fields.targets = targets;
 				if (Object.keys(fields).length > 0) await update({ uid: alarm.uid, version: alarm.version, fields }).unwrap();
 			} else {
-				await create({ project: projectUid, text, at: iso, targets }).unwrap();
+				await create({ project: projectUid, text, at: iso, targets, ...(repeat !== "none" ? { repeat } : {}) }).unwrap();
 			}
 		} catch (failure) {
 			throw toWriteError(failure);
@@ -82,6 +84,20 @@ export function AlarmForm({ projectUid, alarm, target = null, onDone, onCancel }
 					autoFocus
 					slotProps={{ inputLabel: { shrink: true }, htmlInput: { "data-testid": alarmsTestIds.formField("at") } }}
 				/>
+				<TextField
+					select
+					label={t("field.repeat")}
+					value={repeat}
+					onChange={(event) => setRepeat(event.target.value)}
+					size="small"
+					slotProps={{ select: { native: true }, htmlInput: { "data-testid": alarmsTestIds.formField("repeat") } }}
+				>
+					{REPEATS.map((kind) => (
+						<option key={kind} value={kind}>
+							{t(`repeat.${kind}`)}
+						</option>
+					))}
+				</TextField>
 				<EntityPicker multiple label={t("field.targets")} options={options} value={targets} onChange={choose} onInputChange={setQuery} noOptionsText={t("form.searchHint")} />
 				<TextField
 					label={t("field.text")}

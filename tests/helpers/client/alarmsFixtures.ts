@@ -16,6 +16,9 @@ export function alarm(uid: string, extra: Partial<AlarmOut> = {}): AlarmOut {
 		purge_at: null,
 		version: 1,
 		deleted: false,
+		repeat: "none",
+		series_from: null,
+		missed: 0,
 		...extra,
 	};
 }

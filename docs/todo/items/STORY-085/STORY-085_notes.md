@@ -37,3 +37,19 @@
 ### Decided
 
 - Abschlusskriterien auf Wunsch des Projektinhabers an die Spec vom 2026-10-19 angepasst.
+
+## 2026-10-19 — Umsetzung
+
+### Discussed
+
+- Migration v3: SQLite erlaubt keine neue Spalte mit Verweis und Standardwert, darum wird alarms_alarms neu gebaut (alarms_targets wird zwischengespeichert)
+- Zone als Feld zone im PluginContext (aus TZ); tzdata als Server-Abhängigkeit freigegeben
+
+### Decided
+
+- Umgesetzt: Zeitzone, Termine, Übergänge, Migration, API/MCP, Spiegel, Client; die Spiegelfelder Repeat und Series from stehen zusammen nach At
+- Optik geprüft: Wiederholungssymbol und Zähler fügen sich in die Karte; Erledigen rückt auf den nächsten Termin vor
+
+### Open
+
+- Harness-Doku alarms.md braucht die Felder Repeat und Series from und die Zeitzonenregel (Text liegt beim Projektinhaber)

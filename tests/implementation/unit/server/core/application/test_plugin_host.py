@@ -1,6 +1,8 @@
 import asyncio
 from dataclasses import dataclass
+from datetime import UTC
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 from fakes import FixedClock, NullBackups, NullDatabase, NullScheduler
@@ -24,6 +26,7 @@ def host(defs: list[PluginDefinition], settings: Settings | None = None) -> tupl
     return PluginHost(
         defs,
         clock=FixedClock(),
+        zone=UTC,
         events=bus,
         scheduler=NullScheduler(),
         database=NullDatabase(),
@@ -92,3 +95,21 @@ def test_subscriptions_are_wired_with_services() -> None:
     bus.publish(Event("x.done"))
     bus.publish(Event("y.done"))
     assert seen == [("svc", "x.done")]
+
+
+def test_the_zone_reaches_every_plugin_context() -> None:
+    zone = ZoneInfo("Europe/Berlin")
+    seen: list[object] = []
+    PluginHost(
+        [PluginDefinition("a", lambda ctx: seen.append(ctx.zone))],
+        clock=FixedClock(),
+        zone=zone,
+        events=InProcessEventBus(),
+        scheduler=NullScheduler(),
+        database=NullDatabase(),
+        backups=NullBackups(),
+        files=InMemoryFileStore(),
+        settings=Settings(),
+    )
+
+    assert seen == [zone]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC
 
 from fakes import FixedClock, NullBackups, NullDatabase, NullScheduler
 from in_memory_files import InMemoryFileStore
@@ -26,6 +27,7 @@ def host(*operations: Operation, plugin_id: str = "my-plugin") -> PluginHost:
     return PluginHost(
         [PluginDefinition(plugin_id, lambda c: None, operations=operations)],
         clock=FixedClock(),
+        zone=UTC,
         events=InProcessEventBus(),
         scheduler=NullScheduler(),
         database=NullDatabase(),

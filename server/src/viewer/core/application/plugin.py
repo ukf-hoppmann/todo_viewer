@@ -6,6 +6,7 @@ import asyncio
 import inspect
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import tzinfo
 from typing import Any
 
 from viewer.core.application.ports import BackupMaker, Clock, Database, EventBus, FileStore, Scheduler
@@ -22,6 +23,8 @@ class PluginContext:
 
     plugin_id: str
     clock: Clock
+    #: Die Zeitzone des Rechners, auf dem der Server läuft; Ortszeit rechnen nur reine Funktionen mit ihr als Parameter.
+    zone: tzinfo
     events: EventBus
     scheduler: Scheduler
     database: Database
@@ -59,6 +62,7 @@ class PluginHost:
         definitions: Sequence[PluginDefinition],
         *,
         clock: Clock,
+        zone: tzinfo,
         events: EventBus,
         scheduler: Scheduler,
         database: Database,
@@ -79,6 +83,7 @@ class PluginHost:
             context = PluginContext(
                 plugin_id=pid,
                 clock=clock,
+                zone=zone,
                 events=events,
                 scheduler=scheduler,
                 database=database,

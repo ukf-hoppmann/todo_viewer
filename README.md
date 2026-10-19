@@ -159,7 +159,7 @@ stören nicht.
 
 ## Nutzung durch Agenten
 
-Agenten pflegen Backlogs über die API unter `http://localhost:5411/api/v2`
+Agenten pflegen Backlogs über die API unter `http://localhost:5412/api/v2`
 statt die Dateien direkt zu bearbeiten: neuen Backlog anlegen
 (`POST /backlogs` erzeugt `TODO.md`, `archive.md` und `items/` und trägt die
 Quelle ein), Überblick, Anlegen, Ändern (mit
@@ -321,8 +321,8 @@ npm --prefix src_old/web install
 ```
 
 ```bash
-.venv/bin/python src_old/backend/main.py        # API + gebautes Frontend auf :5411 (Auto-Reload)
-npm --prefix src_old/web run dev                # Vite auf :5173, proxyt /api auf :5411
+.venv/bin/python src_old/backend/main.py        # API + gebautes Frontend auf :5412 (Auto-Reload)
+npm --prefix src_old/web run dev                # Vite auf :5173, proxyt /api auf :5412
 scripts/check.sh                        # ruff, mypy --strict, import-linter, pytest, tsc, eslint, vitest
 ```
 

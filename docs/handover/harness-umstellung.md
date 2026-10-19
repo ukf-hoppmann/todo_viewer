@@ -13,8 +13,8 @@ Tool-Liste).
 - **Neues Spiegel-Format Version 2** (`Uid`-Zeilen, Platzhalter `NEW-…`, Wecker in `alarms.md`); Version 1 wird nicht
   mehr gelesen.
 - **Zeit-Auslöser an Notes gibt es nicht mehr**, sie werden Wecker (neues Plugin `alarms`).
-- Der Umstieg ist ein **harter Schnitt** ohne Parallelbetrieb: danach läuft der Neubau auf Port 5411, der alte Viewer
-  ist weg.
+- Der Umstieg ist ein **harter Schnitt** ohne Parallelbetrieb: der Neubau läuft bereits auf Port 5411 (Ports vertauscht), der alte Viewer
+  liegt bis zum Umstieg auf 5412 und ist danach weg.
 
 ## 2. Der MCP-Server
 
@@ -22,15 +22,14 @@ Tool-Liste).
 |---|---|
 | Name | `todo-viewer` (Server-Name im MCP-Handshake) |
 | Transport | Streamable HTTP |
-| Endpunkt heute (Parallelbetrieb) | `http://localhost:5412/mcp` (Container `todo-viewer-next`, `./todo.sh`) |
-| Endpunkt nach dem Umstieg | `http://localhost:5411/mcp` |
+| Endpunkt | `http://localhost:5411/mcp` (Container `todo-viewer-next`; seit der Port-Vertauschung schon vor dem Umstieg) |
 | Authentifizierung | keine; der Port ist nur an `127.0.0.1` gebunden |
 | Erlaubte Hosts (DNS-Rebinding-Schutz) | `127.0.0.1`, `localhost`, `[::1]`, `todo.localhost` (jeder Port) |
 | Tool-Namen | `<plugin>_<operation>`, z. B. `backlog_get_item`; in Claude Code `mcp__todo-viewer__backlog_get_item` |
 | Tool-Liste mit JSON-Schema | `tools/list`; lesende Tools tragen `readOnlyHint` |
 | Ergebnisse | JSON als Text; Fehler als `isError` mit `{code, message, details}` (dieselben Codes wie über HTTP) |
 
-Einbinden in Claude Code (nach dem Umstieg):
+Einbinden in Claude Code (Neubau, Port 5411):
 
 ```bash
 claude mcp add --transport http todo-viewer http://localhost:5411/mcp
@@ -139,6 +138,6 @@ dem Token aus der Vorschau. Committen der Spiegel bleibt Sache des jeweiligen Re
 - Erledigt im Neubau: MCP-Host (`STORY-062`), Tools für den Harness mit Gegenüberstellung und Systemtest (`STORY-081`),
   Datenübernahme (`STORY-082`), Betrieb (`STORY-083`).
 - Offen: Umstieg `STORY-084` (Backup, Übernahme, Port 5411, erster Sync schreibt Version 2, Version `1.0.0`).
-- Bis zum Umstieg bleibt der Harness am alten Viewer (`/api/v2` auf 5411); gegen den Neubau lässt er sich auf 5412
+- Bis zum Umstieg bleibt der Harness am alten Viewer (`/api/v2` auf 5412); gegen den Neubau lässt er sich auf 5411
   testen. Nach dem Umstieg funktioniert die alte Anbindung nicht mehr – die Harness-Umstellung sollte also zusammen mit
   dem Umstieg ausgeliefert werden.

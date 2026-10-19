@@ -43,7 +43,7 @@ export function AttentionList({ entries, onOpened }: { entries: AttentionEntry[]
 							>
 								{entry.title}
 							</Box>
-							<Typography variant="caption" color="text.secondary">
+							<Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
 								{formatDueSince(entry.dueSince, i18n.language)}
 							</Typography>
 							<IconButton

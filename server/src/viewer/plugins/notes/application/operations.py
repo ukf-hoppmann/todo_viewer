@@ -10,6 +10,7 @@ from viewer.core.domain.errors import InvalidInput
 from viewer.core.domain.operations import HttpBinding, Operation
 from viewer.plugins.notes.application.conversion import ConversionService
 from viewer.plugins.notes.application.documents import DocumentService
+from viewer.plugins.notes.application.due_watch import DueWatch
 from viewer.plugins.notes.application.notes import (
     DueEntry,
     IndexedNote,
@@ -44,6 +45,7 @@ class NotesServices:
         conversion: ConversionService,
         relocation: RelocationService,
         participant: Any,
+        due_watch: DueWatch,
     ) -> None:
         self.notes = notes
         self.topics = topics
@@ -54,6 +56,7 @@ class NotesServices:
         self.conversion = conversion
         self.relocation = relocation
         self.participant = participant
+        self.due_watch = due_watch
 
 
 # --- Ausgaben ---------------------------------------------------------------------------------------------------

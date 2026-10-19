@@ -13,16 +13,14 @@ import { attentionOf } from "./model";
 import { useNotesState } from "./state";
 import { notesTestIds } from "./testIds";
 
-/** How often the due notes are asked for again: notes become due with the clock, not by an event. */
-const POLL_MS = 60_000;
-
 /**
  * The due notes for the bell of `workspace` (slot `workspace.attention-sources`), with the actions of each note (or the
  * decisions of its notice); opening one shows it in the notes view (its project is switched on if it was hidden).
+ * The list reloads on the events of `notes`, also `notes.due` when a review date or a topic date has come.
  */
 export function NotesAttention() {
 	const { t } = useTranslation("notes");
-	const { data } = useGetDueQuery(undefined, { pollingInterval: POLL_MS });
+	const { data } = useGetDueQuery();
 	const [act] = useNoteActionMutation();
 	const [decide] = useDecideNoticeMutation();
 	const { setSelected } = useNotesState();

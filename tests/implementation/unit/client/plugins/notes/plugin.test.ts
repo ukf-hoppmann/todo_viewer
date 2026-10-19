@@ -24,6 +24,7 @@ describe("notes plugin definition", () => {
 		["workspace.element.changed", ["Notes", "Due"]],
 		["notes.note.changed", ["Notes", "Due"]],
 		["notes.topic.changed", ["Notes", "Due"]],
+		["notes.due", ["Notes", "Due"]],
 		["notes.document.changed", ["Notes", "Documents"]],
 		["notes.settings.changed", ["Settings", "Notes", "Due"]],
 		["core.reconnected", ["Notes", "Due", "Documents", "Settings"]],

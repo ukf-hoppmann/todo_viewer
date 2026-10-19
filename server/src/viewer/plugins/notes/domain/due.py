@@ -101,6 +101,21 @@ def due_since(
     return utc(note.review_at) if note.review_at is not None else None
 
 
+def next_clock_due(notes: Sequence[Note], topics: Sequence[Topic], now: datetime) -> datetime | None:
+    """Der nächste Zeitpunkt nach `now`, zu dem eine Note durch die Uhr fällig werden kann: das früheste künftige
+    Prüfdatum einer Note in Gebrauch oder der früheste künftige Termin eines Topics (weder archiviert noch im
+    Papierkorb); `None`, wenn keiner kommt. Alle anderen Gründe kommen mit einem Ereignis."""
+    moments = [
+        utc(n.review_at)
+        for n in notes
+        if n.review_at is not None and not n.archived and n.deleted_at is None and n.status in ("waiting", "snoozed")
+    ]
+    moments += [
+        utc(t.due_at) for t in topics if t.due_at is not None and t.archived_at is None and t.deleted_at is None
+    ]
+    return min((m for m in moments if m > utc(now)), default=None)
+
+
 def _arrived_at(trigger: Trigger, topic: Topic | None) -> datetime | None:
     if trigger.fired_at is not None:
         return trigger.fired_at

@@ -24,6 +24,10 @@ export const plugin = definePlugin({
 		"notes.note.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Notes", "Due"]));
 		},
+		// The server announces that a review date or a topic date has come (notes become due with the clock).
+		"notes.due": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Notes", "Due"]));
+		},
 		"notes.topic.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Notes", "Due"]));
 		},

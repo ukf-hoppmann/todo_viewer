@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pytest
 from notes_fixtures import NOW, note, topic, trigger
 from viewer.core.domain.errors import InvalidInput
-from viewer.plugins.notes.domain.due import check_new_trigger, due_since, due_state, hit, reset
+from viewer.plugins.notes.domain.due import check_new_trigger, due_since, due_state, hit, next_clock_due, reset
 from viewer.plugins.notes.domain.model import NotesViolation, Topic
 from viewer.plugins.notes.domain.notices import Notice, cause_of_status, check_decision, decision_options
 
@@ -192,3 +192,25 @@ def test_due_since(triggers, topic_, notices, review, expected) -> None:  # type
     open_notices = [x for x in notices if x.is_open]
     state = due_state(n, triggers, topic_, len(open_notices), NOW)
     assert due_since(state, n, triggers, topic_, open_notices) == expected
+
+
+def test_next_clock_due_is_the_earliest_future_review_date_or_topic_date() -> None:
+    later = NOW + timedelta(days=5)
+    notes = [
+        note("past", review_at=PAST),  # schon fällig: kein Termin mehr
+        note("now", review_at=NOW),  # gerade erreicht: zählt nicht mehr als künftig
+        note("far", review_at=later),
+        note("near", status="snoozed", review_at=FUTURE),
+        note("done", status="done", review_at=NOW + timedelta(hours=1)),
+        note("archived", archived=True, review_at=NOW + timedelta(hours=1)),
+        note("trash", review_at=NOW + timedelta(hours=1), deleted_at=PAST),
+    ]
+    topics = [
+        replace(topic("t1"), due_at=NOW + timedelta(hours=12)),
+        replace(topic("old", archived_at=PAST), due_at=NOW + timedelta(hours=2)),
+        replace(topic("gone", deleted_at=PAST), due_at=NOW + timedelta(hours=2)),
+    ]
+
+    assert next_clock_due(notes, [], NOW) == FUTURE
+    assert next_clock_due(notes, topics, NOW) == NOW + timedelta(hours=12)
+    assert next_clock_due([note("past", review_at=PAST)], [], NOW) is None

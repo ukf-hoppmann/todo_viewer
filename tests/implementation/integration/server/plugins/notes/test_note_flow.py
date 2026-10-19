@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
+from viewer.core.domain.events import Event
 from workspace_env import Env
 
 API = "/api/notes"
@@ -77,6 +78,27 @@ def test_a_note_becomes_due_when_its_date_comes(notes: Env) -> None:
     assert due["notes"][0]["due_since"] == due["notes"][0]["review_at"]
     shown = notes.client.get(f"{API}/notes/{note['uid']}").json()
     assert (shown["status"], shown["stored_status"]) == ("due", "waiting")
+
+
+def test_the_next_review_date_is_scheduled_and_announced_as_notes_due(notes: Env) -> None:
+    def pending() -> datetime | None:
+        return notes.app.state.scheduler.pending_at("notes")  # type: ignore[no-any-return]
+
+    seen: list[Event] = []
+    notes.app.state.events.subscribe("notes.due", seen.append)
+    assert pending() is None
+
+    first = _create(notes, "Später")
+    soon = _create(notes, "Bald", review_at="2026-10-20T08:00:00Z")
+    assert pending() == datetime.fromisoformat("2026-10-20T08:00:00+00:00")
+
+    notes.client.put(f"{API}/notes/{soon['uid']}", json={"version": soon["version"], "fields": {"review_at": None}})
+    assert pending() == datetime.fromisoformat(first["review_at"])
+
+    notes.clock.advance(timedelta(days=31))
+    notes.notes.due_watch.fire()
+    assert [event.topic for event in seen] == ["notes.due"]
+    assert pending() is None
 
 
 def test_keep_snooze_and_finish_lead_through_the_lifecycle(notes: Env) -> None:

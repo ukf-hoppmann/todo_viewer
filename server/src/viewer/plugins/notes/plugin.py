@@ -15,6 +15,7 @@ from viewer.plugins.notes.application.common import Resolver
 from viewer.plugins.notes.application.conversion import ConversionService
 from viewer.plugins.notes.application.deps import Deps
 from viewer.plugins.notes.application.documents import DocumentService
+from viewer.plugins.notes.application.due_watch import DueWatch
 from viewer.plugins.notes.application.notes import NoteService
 from viewer.plugins.notes.application.notices import NoticeService
 from viewer.plugins.notes.application.operations import OPERATIONS, NotesServices
@@ -102,6 +103,8 @@ def _build(context: PluginContext) -> NotesServices:
     note_service = NoteService(deps, triggers)
     conversion = ConversionService(deps, note_service)
     args = (context.database, context.clock, context.events)
+    due_watch = DueWatch(notes, topics, context.database, context.clock, context.events, context.scheduler)
+    due_watch.start()
     return NotesServices(
         note_service,
         TopicService(notes, topics, settings, resolver, workspace.registry, *args),
@@ -112,6 +115,7 @@ def _build(context: PluginContext) -> NotesServices:
         conversion,
         RelocationService(deps, triggers),
         NotesParticipant(deps, workspace.project_store),
+        due_watch,
     )
 
 
@@ -127,6 +131,10 @@ def _on_item_changed(services: NotesServices, event: Event) -> None:
     services.notices.on_item_changed(event)
 
 
+def _on_any(services: NotesServices, event: Event) -> None:
+    services.due_watch.on_event(event)
+
+
 plugin = PluginDefinition(
     id="notes",
     build=_build,
@@ -139,5 +147,8 @@ plugin = PluginDefinition(
         Subscription("backlog.item.status_changed", _on_status_changed),
         Subscription("backlog.item.changed", _on_item_changed),
         Subscription("workspace.element.changed", _on_element_changed),
+        # Jedes Ereignis kann ein Prüfdatum oder einen Topic-Termin geändert haben (auch die eigenen und der Sync):
+        # der Termin für `notes.due` wird neu gesetzt.
+        Subscription("*", _on_any),
     ),
 )

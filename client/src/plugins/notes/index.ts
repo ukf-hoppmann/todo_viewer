@@ -2,7 +2,7 @@ import NotesIcon from "@mui/icons-material/StickyNote2";
 import { definePlugin } from "../../core";
 import { notesApi } from "./api";
 import { CreateNote, CreateTopic } from "./CreateForms";
-import { DueCounter } from "./DueCounter";
+import { NotesAttention } from "./NotesAttention";
 import { NoteElementViewLoader } from "./elementView";
 import { StatusFilter } from "./Filters";
 import de from "./locales/de.json";
@@ -13,7 +13,7 @@ import { NotesSettings } from "./NotesSettings";
 /**
  * Notes with a review date and their topics. The main route `notes/main` shows the tree per project (project →
  * topic → note) and the detail of the selected note; the status filter hangs in the sidebar of the core on that
- * route. Other plugins show a note through `ElementDetail` of `workspace`. The number of due notes stands in the app bar, the review interval and the topic depth are in
+ * route. Other plugins show a note through `ElementDetail` of `workspace`. The due notes appear in the bell of the projects section (slot `workspace.attention-sources`), the review interval and the topic depth are in
  * the settings. Projects and the search text come from the plugin `workspace`. What the user chose (shown
  * statuses, folded nodes, the selected note) is kept in the UI state of the server under the owner `notes`.
  */
@@ -48,7 +48,7 @@ export const plugin = definePlugin({
 		{ slot: "backlog.item-detail", name: "notices", component: ItemNotices, order: 0 },
 		{ slot: "backlog.item-detail", name: "demote", component: DemoteAction, order: 1 },
 		{ slot: "core.sidebar-sections", name: "status-filter", component: StatusFilter, order: 20, when: ["notes/main"] },
-		{ slot: "layout-header-sidebar.header-actions", name: "due", component: DueCounter, order: 0 },
+		{ slot: "workspace.attention-sources", name: "due", component: NotesAttention },
 		{ slot: "core.settings-sections", name: "settings", component: NotesSettings, order: 10 },
 	],
 });

@@ -1,9 +1,10 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { CreateNote, CreateTopic } from "../../../../../../client/src/plugins/notes/CreateForms";
-import { DueCounter } from "../../../../../../client/src/plugins/notes/DueCounter";
+import { NotesAttention } from "../../../../../../client/src/plugins/notes/NotesAttention";
 import { NotesSettings } from "../../../../../../client/src/plugins/notes/NotesSettings";
 import { NewButton } from "../../../../../../client/src/plugins/workspace/NewButton";
+import { ProjectsSection } from "../../../../../../client/src/plugins/workspace/ProjectsSection";
 import { workspaceTestIds } from "../../../../../../client/src/plugins/workspace/testIds";
 import { notesTestIds as ids } from "../../../../../../client/src/plugins/notes/testIds";
 import { sharedTestIds } from "../../../../../../client/src/shared";
@@ -19,36 +20,42 @@ afterEach(() => {
 	document.title = "";
 });
 
-describe("DueCounter", () => {
-	const due = { count: 2, notes: [dueNote("n1", { label: "NOTE-001", summary: "Eins", reason: "trigger" }), dueNote("n2", { label: "NOTE-002", summary: "Zwei" })] };
+describe("NotesAttention in the bell of the projects section", () => {
+	const due = {
+		count: 2,
+		notes: [
+			dueNote("n1", { label: "NOTE-001", summary: "Eins", reason: "trigger", due_since: "2026-10-18T07:00:00Z" }),
+			dueNote("n2", { label: "NOTE-002", summary: "Zwei", review_at: "2026-10-18T09:00:00Z", due_since: "2026-10-18T09:00:00Z" }),
+		],
+	};
+	const widgets = [{ ownerId: "notes", slot: "workspace.attention-sources", name: "due", component: NotesAttention }];
 
-	it("shows nothing when no note is due", async () => {
-		await renderWorkspace(<DueCounter />, { backend: fakeNotesBackend({ projects }) });
+	it("reports nothing when no note is due", async () => {
+		await renderWorkspace(<ProjectsSection />, { backend: fakeNotesBackend({ projects }), widgets });
 
-		await waitFor(() => expect(screen.queryByTestId(ids.dueCounter)).toBeNull());
+		await screen.findByTestId(workspaceTestIds.project("p1"));
+		await waitFor(() => expect(screen.queryByTestId(workspaceTestIds.attentionBell)).toBeNull());
 	});
 
-	it("shows the number, puts it into the tab title, and lists the due notes on a click", async () => {
+	it("counts the due notes, puts the number into the tab title, and lists them the latest first", async () => {
 		document.title = "ToDo-Viewer";
-		await renderWorkspace(<DueCounter />, { backend: fakeNotesBackend({ projects, due }) });
+		await renderWorkspace(<ProjectsSection />, { backend: fakeNotesBackend({ projects, due }), widgets });
 
-		const counter = await screen.findByTestId(ids.dueCounter);
-		expect(counter.textContent).toBe("!2");
-		expect(counter.getAttribute("aria-label")).toBe("2 fällige Notes");
-		expect(document.title).toBe("(2) ToDo-Viewer");
+		const bell = await screen.findByTestId(workspaceTestIds.attentionBell);
+		expect(bell.getAttribute("aria-label")).toBe("2 fällig");
+		await waitFor(() => expect(document.title).toBe("(2) ToDo-Viewer"));
 
-		fireEvent.click(counter);
-		const list = await screen.findByTestId(ids.dueList);
-		expect(list.textContent).toContain("NOTE-001 — Eins");
-		expect(list.textContent).toContain("NOTE-002 — Zwei");
+		fireEvent.click(bell);
+		const items = (await screen.findByTestId(workspaceTestIds.attentionList)).querySelectorAll("[data-testid^='workspace.attention-item.']");
+		expect([...items].map((item) => item.textContent?.slice(0, 15))).toEqual(["NOTE-002 — Zwei", "NOTE-001 — Eins"]);
 	});
 
 	it("remembers the chosen note as the selected one", async () => {
 		const backend = fakeNotesBackend({ projects, due });
-		await renderWorkspace(<DueCounter />, { backend });
+		await renderWorkspace(<ProjectsSection />, { backend, widgets });
 
-		fireEvent.click(await screen.findByTestId(ids.dueCounter));
-		fireEvent.click(await screen.findByTestId(ids.dueItem("n2")));
+		fireEvent.click(await screen.findByTestId(workspaceTestIds.attentionBell));
+		fireEvent.click(await screen.findByTestId(workspaceTestIds.attentionOpen("notes:n2")));
 
 		await waitFor(async () => {
 			const { flushUiState } = await import("../../../../../../client/src/core/ui-state/uiState");

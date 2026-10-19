@@ -1,6 +1,16 @@
 import type { FlatNode } from "../../shared";
-import type { IndexedNote, IndexedTopic } from "./api";
+import type { DueNoteOut, IndexedNote, IndexedTopic } from "./api";
 import { statusColor } from "./constants";
+
+/**
+ * The parts of a due note for the list of due things of `workspace`: key, project, since when (the review date if the
+ * server gave none), title, and the reason (translated by the caller) with the topic path.
+ */
+export function attentionOf(note: DueNoteOut, reason: string): { key: string; projectUid: string; dueSince: string; title: string; caption: string } {
+	const dueSince = note.due_since ?? note.review_at ?? "";
+	const caption = [reason, note.path.join(" › ")].filter((part) => part !== "").join(" · ");
+	return { key: `notes:${note.uid}`, projectUid: note.project_uid, dueSince, title: `${note.label} — ${note.summary}`, caption };
+}
 
 export interface Filters {
 	shownStatuses: ReadonlySet<string>;

@@ -12,7 +12,7 @@ services:
       - LOG_LEVEL=INFO
     ports:
       # Nur lokal erreichbar: die API kann Items anlegen, ändern und löschen.
-      - "127.0.0.1:5411:5411"
+      - "127.0.0.1:5412:5411"
     volumes:
       # config.json + UI-Zustand (ui_state.json) liegen hier beschreibbar auf
       # dem Host und überleben damit "docker compose down" bzw. Rebuilds.
@@ -25,7 +25,8 @@ services:
       # aus der UI in den Dateien landen.
       - /Users/hoppmann/Documents/GitHub:/Users/hoppmann/Documents/GitHub
 
-  # Der Neubau (EPIC-007) läuft neben dem alten Viewer, bis zum Umstieg (STORY-084).
+  # Der Neubau (EPIC-007) liegt auf Host-Port 5411 (der Harness sucht dort), der alte Viewer auf 5412.
+  # Im Container hört der Neubau weiter auf 5412, der alte auf 5411.
   todo-viewer-next:
     build:
       context: .
@@ -37,7 +38,7 @@ services:
       - BROWSE_START=/Users/hoppmann/Documents/GitHub
     ports:
       # Nur lokal erreichbar: die API und MCP können alles ändern.
-      - "127.0.0.1:5412:5412"
+      - "127.0.0.1:5411:5412"
     volumes:
       # viewer.db, Backups (configs/backups) und die Konfiguration; die alte todo.db liegt daneben und bleibt unberührt.
       - ./configs:/app/configs
@@ -46,7 +47,7 @@ services:
       # gleicher absoluter Pfad wie auf dem Host, damit die Spiegel-Ordner der Projekte gefunden werden
       - /Users/hoppmann/Documents/GitHub:/Users/hoppmann/Documents/GitHub
 
-# Aufruf im Browser: http://todo.localhost:5411
+# Aufruf im Browser: http://todo.localhost:5412 (alter Viewer)
 # (*.localhost wird von macOS ohne /etc/hosts-Eintrag automatisch auf
 # 127.0.0.1 aufgelöst; Port 80 ist auf dieser Maschine bereits belegt)
-# Neubau: http://localhost:5412 (API unter /api, MCP unter /mcp)
+# Neubau: http://localhost:5411 (API unter /api, MCP unter /mcp)

@@ -1,11 +1,11 @@
 #!/bin/bash
 # Steuerskript für den ToDo Viewer (Neubau, EPIC-007) als Docker-Container.
 # Nutzung: ./todo.sh <befehl>
-# Der alte Viewer (Port 5411) wird mit ./todo_old.sh gesteuert.
+# Der alte Viewer (Port 5412) wird mit ./todo_old.sh gesteuert.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-URL="http://localhost:5412"
+URL="http://localhost:5411"
 SERVICE="todo-viewer-next"
 LOG_FILE="logs/viewer.log"
 # Zum Prüfen des Skripts austauschbar (tests/implementation/system/ops).

@@ -67,12 +67,12 @@ def test_next_commands_address_only_the_new_service(
 
 
 def test_next_status_shows_the_container_and_says_when_it_does_not_answer(docker: Path, tmp_path: Path) -> None:
-    if _answers("http://localhost:5412/api/core/health"):
-        pytest.skip("auf dieser Maschine läuft der Neubau gerade auf Port 5412")
+    if _answers("http://localhost:5411/api/core/health"):
+        pytest.skip("auf dieser Maschine läuft der Neubau gerade auf Port 5411")
     result, seen = todo(docker, tmp_path, "next", "status")
 
     assert seen == ["compose ps -a todo-viewer-next"]
-    assert result.returncode == 0 and "antwortet nicht unter http://localhost:5412" in result.stderr
+    assert result.returncode == 0 and "antwortet nicht unter http://localhost:5411" in result.stderr
 
 
 def test_next_logs_fall_back_to_the_container_output_without_a_log_file(docker: Path, tmp_path: Path) -> None:
@@ -113,11 +113,11 @@ def test_the_compose_file_has_the_new_service_next_to_the_old_one() -> None:
     new = services["todo-viewer-next"]
     assert new["restart"] == "unless-stopped"
     assert new["build"]["dockerfile"] == "server/Dockerfile"
-    assert [(p["host_ip"], p["published"], p["target"]) for p in new["ports"]] == [("127.0.0.1", "5412", 5412)]
+    assert [(p["host_ip"], p["published"], p["target"]) for p in new["ports"]] == [("127.0.0.1", "5411", 5412)]
     targets = {v["target"] for v in new["volumes"]}
     assert {"/app/configs", "/app/logs"} <= targets
     assert any(e.startswith("BROWSE_START") or e == "BROWSE_START" for e in new["environment"])
-    assert services["todo-viewer"]["ports"][0]["published"] == "5411"
+    assert services["todo-viewer"]["ports"][0]["published"] == "5412"
 
 
 @pytest.mark.parametrize(

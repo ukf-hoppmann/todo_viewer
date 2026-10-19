@@ -4,11 +4,11 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-URL="http://todo.localhost:5411"
+URL="http://todo.localhost:5412"
 SERVICE="todo-viewer"
 LOG_FILE="logs/todo-viewer.log"
 # Der Neubau (EPIC-007) läuft als eigener Dienst daneben: ./todo.sh next <befehl>
-NEXT_URL="http://localhost:5412"
+NEXT_URL="http://localhost:5411"
 NEXT_SERVICE="todo-viewer-next"
 NEXT_LOG_FILE="logs/viewer.log"
 # Zum Prüfen des Skripts austauschbar (tests/implementation/system/scripts).

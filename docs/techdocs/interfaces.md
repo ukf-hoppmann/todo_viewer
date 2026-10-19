@@ -9,7 +9,7 @@ Das vollständige Schema der HTTP-API liegt in `src_old/web/src/api/openapi.json
 
 - Zweck: Lesen und Bearbeiten der konfigurierten Backlogs, Verwaltung der
   Quellen, UI-Zustand.
-- Aufruf / Endpunkt: Präfix `/api/v2`, Standard-Port 5411.
+- Aufruf / Endpunkt: Präfix `/api/v2`, Standard-Port 5411 im Container (auf dem Host seit der Port-Vertauschung 5412; 5411 gehört dem Neubau).
 
 | Methode und Pfad | Zweck |
 |---|---|
@@ -490,8 +490,8 @@ Build, antwortet der Server mit 503 und einem Hinweis.
 - Zweck: Agenten (z. B. der `todo`-Skill des Claude_Harness) pflegen Backlogs
   über die HTTP-API statt die Dateien direkt zu bearbeiten.
 - Aufruf / Endpunkt: Der Container läuft dauerhaft (`restart: unless-stopped`)
-  und ist nur lokal erreichbar: `http://localhost:5411/api/v2`
-  (gleichwertig `http://todo.localhost:5411/api/v2`). Ob er läuft, zeigt
+  und ist nur lokal erreichbar: `http://localhost:5412/api/v2`
+  (gleichwertig `http://todo.localhost:5412/api/v2`; 5411 gehört dem Neubau, der `/api/v2` nicht kennt). Ob er läuft, zeigt
   `GET /health`; wie ein Agent reagiert, wenn nicht, regelt das Harness
   (Entscheidung: [STORY-010](../todo/items/STORY-010/STORY-010_notes.md)).
 - Eingabe: Die `source_id` eines Projekts steht in `GET /sources` beim Eintrag,

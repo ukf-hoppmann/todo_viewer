@@ -14,7 +14,7 @@ Markdown-Checklisten werden nicht unterstützt.
 ```
 
 Startet den Neubau (Dienst `todo-viewer-next`): baut das Image (falls nötig), startet den Container im
-Hintergrund und öffnet [http://localhost:5412](http://localhost:5412). Der Container läuft mit
+Hintergrund und öffnet [http://localhost:5411](http://localhost:5411). Der Container läuft mit
 `restart: unless-stopped` dauerhaft weiter.
 
 ```bash
@@ -27,7 +27,7 @@ Hintergrund und öffnet [http://localhost:5412](http://localhost:5412). Der Cont
 ./todo.sh open      # nur den Browser öffnen
 ```
 
-Der alte Viewer (`src_old/`, Port 5411, <http://todo.localhost:5411>) wird mit denselben Befehlen über
+Der alte Viewer (`src_old/`, Port 5412, <http://todo.localhost:5412>) wird mit denselben Befehlen über
 `./todo_old.sh` gesteuert; dort steuert `./todo_old.sh next <befehl>` weiter den Neubau.
 
 ## Quellen konfigurieren

@@ -11,7 +11,8 @@ from viewer.plugins.alarms.domain.model import Alarm
 
 _SELECT = """
 SELECT e.uid, e.project_uid, e.label, e.revision, e.deleted_at,
-       a.at, a.text, a.status, a.target_text, a.snoozed_until, a.done_at
+       a.at, a.text, a.status, a.target_text, a.snoozed_until, a.done_at,
+       a.repeat, a.series_from
 FROM alarms_alarms a JOIN workspace_elements e ON e.uid = a.uid
 """
 
@@ -29,8 +30,8 @@ class SqlAlarmRepository:
     def insert(self, tx: Transaction, alarm: Alarm) -> None:
         _conn(tx).execute(
             text(
-                "INSERT INTO alarms_alarms(uid, at, text, target_text, status, snoozed_until, done_at) "
-                "VALUES (:uid, :at, :text, :target_text, :status, :until, :done)"
+                "INSERT INTO alarms_alarms(uid, at, text, target_text, status, snoozed_until, done_at, repeat, "
+                "series_from) VALUES (:uid, :at, :text, :target_text, :status, :until, :done, :repeat, :series_from)"
             ),
             self._params(alarm),
         )
@@ -40,7 +41,8 @@ class SqlAlarmRepository:
         _conn(tx).execute(
             text(
                 "UPDATE alarms_alarms SET at = :at, text = :text, target_text = :target_text, status = :status, "
-                "snoozed_until = :until, done_at = :done WHERE uid = :uid"
+                "snoozed_until = :until, done_at = :done, repeat = :repeat, series_from = :series_from "
+                "WHERE uid = :uid"
             ),
             self._params(alarm),
         )
@@ -66,6 +68,8 @@ class SqlAlarmRepository:
             "status": alarm.status,
             "until": alarm.snoozed_until.isoformat() if alarm.snoozed_until else None,
             "done": alarm.done_at.isoformat() if alarm.done_at else None,
+            "repeat": alarm.repeat,
+            "series_from": alarm.series_from.isoformat() if alarm.series_from else None,
         }
 
     def get(self, tx: Transaction, uid: str) -> Alarm | None:
@@ -112,6 +116,8 @@ class SqlAlarmRepository:
                 revision=row.revision,
                 deleted_at=_moment(row.deleted_at),
                 done_at=_moment(row.done_at),
+                repeat=row.repeat,
+                series_from=_moment(row.series_from),
             )
             for row in _conn(tx).execute(text(query), params).all()
         ]

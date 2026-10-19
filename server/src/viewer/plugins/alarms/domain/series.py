@@ -1,7 +1,8 @@
 """Serientermine eines Weckers: reine Funktionen, die Ortszeit rechnen (Zone als Parameter, Architektur §4).
 
-Termin n ist der Startpunkt plus n Intervalle, immer vom Startpunkt aus gerechnet und nie vom vorigen Termin, damit nichts
-wandert. Die Wandzeit bleibt über die Sommerzeit-Umstellung gleich („11 Uhr bleibt 11 Uhr“); am Monatsende wird gekürzt."""
+Termin n ist der Startpunkt plus n Intervalle, immer vom Startpunkt aus gerechnet und nie vom vorigen Termin, damit
+nichts wandert. Die Wandzeit bleibt über die Sommerzeit-Umstellung gleich („11 Uhr bleibt 11 Uhr“); am Monatsende wird
+gekürzt."""
 
 from __future__ import annotations
 

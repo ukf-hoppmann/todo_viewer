@@ -17,5 +17,22 @@ def alarm(
     deleted_at: datetime | None = None,
     targets: tuple[str, ...] = (),
     done_at: datetime | None = None,
+    repeat: str = "none",
+    series_from: datetime | None = None,
 ) -> Alarm:
-    return Alarm(uid, "p", uid.upper(), uid, at, status, targets, None, snoozed_until, 1, deleted_at, done_at)
+    return Alarm(
+        uid,
+        "p",
+        uid.upper(),
+        uid,
+        at,
+        status,
+        targets,
+        None,
+        snoozed_until,
+        1,
+        deleted_at,
+        done_at,
+        repeat,
+        series_from,
+    )

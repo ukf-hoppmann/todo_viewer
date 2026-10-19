@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import datetime, tzinfo
 from typing import Any
 
 from viewer.core.application.ports import Clock, Database, EventBus, Scheduler, Transaction
@@ -83,6 +83,7 @@ class AlarmService:
         registry: Any,
         database: Database,
         clock: Clock,
+        zone: tzinfo,
         events: EventBus,
         scheduler: Scheduler,
     ) -> None:
@@ -90,6 +91,7 @@ class AlarmService:
         self._registry = registry
         self._database = database
         self._clock = clock
+        self._zone = zone
         self._events = events
         self._scheduler = scheduler
         #: Was die Oberfläche zuletzt von den Elementen der Wecker wissen konnte (offen, Titel): ändert es sich, meldet
@@ -155,7 +157,7 @@ class AlarmService:
         return self._transition(ref, project_uid, version, lambda a: model.snooze(a, self._clock.now(), target))
 
     def finish(self, ref: str, project_uid: str | None, version: int) -> str:
-        return self._transition(ref, project_uid, version, lambda a: model.finish(a, self._clock.now()))
+        return self._transition(ref, project_uid, version, lambda a: model.finish(a, self._clock.now(), self._zone))
 
     def reopen(self, ref: str, project_uid: str | None, version: int) -> str:
         return self._transition(ref, project_uid, version, lambda a: model.undo(a, self._clock.now()))

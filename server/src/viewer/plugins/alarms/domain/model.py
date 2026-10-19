@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, tzinfo
 
 from viewer.core.domain.errors import DomainError
+from viewer.plugins.alarms.domain import series
 
 STATUSES = ("Pending", "Due", "Done", "Snoozed", "Expired")
 #: Wecker, die nichts mehr erwarten: von Hand erledigt oder erloschen.
@@ -48,6 +49,9 @@ class Alarm:
     deleted_at: datetime | None = None
     #: Wann er erledigt wurde oder erloschen ist; von da an läuft `PURGE_AFTER`.
     done_at: datetime | None = None
+    #: Wiederholung (`REPEATS`); bei einer Serie ist `series_from` ihr Startpunkt (UTC), sonst leer.
+    repeat: str = "none"
+    series_from: datetime | None = None
 
 
 def utc(moment: datetime) -> datetime:
@@ -107,9 +111,27 @@ def snooze(alarm: Alarm, now: datetime, until: datetime | None = None) -> Alarm:
     return replace(alarm, status="Snoozed", snoozed_until=target)
 
 
-def finish(alarm: Alarm, now: datetime) -> Alarm:
+def finish(alarm: Alarm, now: datetime, zone: tzinfo) -> Alarm:
+    """Erledigt. Ein Serienwecker wird nie `Done`: er wartet auf den ersten Termin der Serie nach jetzt."""
     _open(alarm)
+    if alarm.repeat != "none" and alarm.series_from is not None:
+        following = series.first_after(alarm.series_from, alarm.repeat, now, zone)
+        return replace(alarm, status="Pending", at=following, snoozed_until=None, done_at=None)
     return replace(alarm, status="Done", snoozed_until=None, done_at=utc(now))
+
+
+def alarm_missed(alarm: Alarm, now: datetime, zone: tzinfo) -> int:
+    """Wie viele Termine der Serie seit `at` verpasst sind (abgeleitet, nicht gespeichert); ohne Wiederholung 0."""
+    return series.missed(alarm.at, alarm.series_from, alarm.repeat, now, zone)
+
+
+def with_repeat(alarm: Alarm, repeat: str) -> Alarm:
+    """Setzt die Wiederholung. Beginnt eine Serie, ist `at` ihr Startpunkt; eine andere Art behält ihn; `none` leert
+    ihn. Ob `repeat` erlaubt ist (`series.REPEATS`), prüft der Aufrufer."""
+    if repeat == "none":
+        return replace(alarm, repeat="none", series_from=None)
+    started = alarm.series_from if alarm.repeat != "none" and alarm.series_from is not None else utc(alarm.at)
+    return replace(alarm, repeat=repeat, series_from=started)
 
 
 def undo(alarm: Alarm, now: datetime) -> Alarm:
@@ -137,10 +159,11 @@ def follow_targets(alarm: Alarm, open_states: Sequence[bool], now: datetime) -> 
 
 
 def reschedule(alarm: Alarm, at: datetime) -> Alarm:
-    """Ein neuer Zeitpunkt: der Wecker wartet wieder (auch ein erledigter)."""
+    """Ein neuer Zeitpunkt: der Wecker wartet wieder (auch ein erledigter); bei einer Serie beginnt damit eine neue."""
     if alarm.deleted_at is not None:
         raise AlarmViolation("alarm_deleted", f"{alarm.label} liegt im Papierkorb", alarm=alarm.label)
-    return replace(alarm, at=utc(at), status="Pending", snoozed_until=None, done_at=None)
+    started = utc(at) if alarm.repeat != "none" else None
+    return replace(alarm, at=utc(at), status="Pending", snoozed_until=None, done_at=None, series_from=started)
 
 
 def fire(alarm: Alarm) -> Alarm:

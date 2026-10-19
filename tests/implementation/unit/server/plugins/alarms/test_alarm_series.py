@@ -14,8 +14,8 @@ def local(year: int, month: int, day: int, hour: int = 11, minute: int = 0) -> d
     return datetime(year, month, day, hour, minute, tzinfo=BERLIN).astimezone(UTC)
 
 
-def utc(*parts: int) -> datetime:
-    return datetime(*parts, tzinfo=UTC)
+def utc(year: int, month: int, day: int, hour: int = 0, minute: int = 0) -> datetime:
+    return datetime(year, month, day, hour, minute, tzinfo=UTC)
 
 
 @pytest.mark.parametrize(

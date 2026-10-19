@@ -53,6 +53,8 @@ export function SyncDialog({ project, onClose }: { project: Project; onClose: ()
 		} else {
 			setResult(outcome.data);
 			setPicked({});
+			// The old preview still lists the decided conflicts and its token is used up: show what is left now.
+			void refetch();
 		}
 	};
 

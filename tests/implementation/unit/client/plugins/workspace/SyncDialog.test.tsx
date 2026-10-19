@@ -107,6 +107,18 @@ describe("SyncDialog", () => {
 		expect(executeBody(backend)).toMatchObject({ decisions: [{ uid: "u1", choice: "database" }] });
 	});
 
+	it("reloads the preview after a sync, so a decided conflict does not stay in the list", async () => {
+		const backend = await renderDialog();
+		const previews = () => backend.calls("GET", "core/sync/p1/preview").length;
+		const before = previews();
+
+		fireEvent.click(screen.getByTestId(ids.syncChoice("u1", "database")));
+		fireEvent.click(screen.getByTestId(ids.syncExecute));
+
+		await screen.findByTestId(ids.syncResult);
+		await waitFor(() => expect(previews()).toBe(before + 1));
+	});
+
 	it("reloads the preview with the other direction", async () => {
 		const backend = await renderDialog();
 

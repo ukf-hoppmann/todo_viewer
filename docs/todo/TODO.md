@@ -879,3 +879,61 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     geschlossen, ohne Prüfung als offen. 3. Backlog (Completed/Rejected) und
     Notes (erledigt, verworfen, befördert, archiviert; Topic archiviert)
     melden ihre Prüfung an. 4. Tests grün.
+
+- `STORY-091` **Fällige Wecker in der Projektleiste: globaler und projektbezogener Wecker-Button mit Liste**
+  - Uid: 1145a9d5-6c90-48b2-9849-dd3ccf0d5ad6.
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-10-19.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Fällige Wecker sind dort sichtbar, wo man Projekte wählt: ein
+    globaler Wecker-Button im Kopf „Projekte“ und einer je Projektzeile.
+    Beide öffnen dieselbe Liste, die der zuletzt ausgelöste Wecker anführt,
+    damit ein ignorierter Wecker einen neuen nicht verdeckt.
+  - Completion criteria: 1. Der globale Zähler zieht aus der App-Leiste in
+    den Kopf „Projekte“ (neben Stift und Plus) und ist ein Wecker-Icon mit
+    Anzahl als Badge; er zählt alle fälligen Wecker und ist nur sichtbar,
+    wenn es welche gibt. 2. Jede Projektzeile mit fälligen Weckern zeigt
+    einen Wecker-IconButton mit Anzahl, immer sichtbar. 3. Ein Klick öffnet
+    immer ein Popup mit einer Liste, auch bei nur einem Wecker;
+    projektbezogen gefiltert auf die Wecker des Projekts. 4. Sortierung nach
+    Auslösezeit absteigend; der oberste Eintrag ist aufgeklappt. 5. Jeder
+    Eintrag bietet Erledigt und Schlummern; ein Klick auf den Wecker bzw.
+    ein verknüpftes Element springt dorthin und zeigt es im Detail. 6.
+    Globale und projektbezogene Liste sind dieselbe Komponente
+    (Wiederverwendung des bisherigen Wecker-Popups). 7. Techdoku angepasst,
+    Tests je Schritt grün.
+  - Summary: Ein Wecker-Button im Kopf der Projektliste und je Projekt
+    öffnet die fälligen Wecker als Liste, neuester oben und aufgeklappt, mit
+    Sprung zum Element.
+
+- `STORY-090` **Projektleiste schlanker: Bearbeiten oben, Sync-Symbole als Aktion bzw. beim Hovern**
+  - Uid: e2855cf3-e6e6-44dd-8aa3-2af63212036f.
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-10-19.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Projektliste in der Sidebar zeigt pro Zeile nur, was
+    Aufmerksamkeit braucht. Bearbeitet wird das markierte Projekt über einen
+    Stift im Kopf neben dem Plus oder per Doppelklick auf den Namen; das
+    Sync-Warndreieck führt direkt zum Sync des Projekts, das
+    Auto-Sync-Symbol erscheint nur beim Hovern.
+  - Completion criteria: 1. Im Kopf „Projekte“ steht neben dem Plus ein
+    Stift, der die Karte des markierten Projekts öffnet; ohne Markierung ist
+    er ausgegraut mit dem Tooltip „Erst ein Projekt auswählen“. 2. Der Stift
+    pro Zeile entfällt; ein Doppelklick auf den Projektnamen öffnet die
+    Karte. 3. Das Warndreieck ist ein IconButton mit Tooltip, bleibt immer
+    sichtbar und öffnet direkt die Sync- bzw. Konfliktansicht des Projekts.
+    4. Das Auto-Sync-Symbol erscheint nur, solange die Zeile gehovert oder
+    fokussiert ist. 5. Techdoku angepasst, Tests je Schritt grün.
+  - Summary: Weniger Symbole pro Projektzeile: Bearbeiten zentral oben oder
+    per Doppelklick, Sync-Warnung als direkter Link, Auto-Sync nur beim
+    Hovern.

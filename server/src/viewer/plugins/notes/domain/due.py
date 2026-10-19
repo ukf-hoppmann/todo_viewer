@@ -8,6 +8,7 @@ from datetime import datetime
 
 from viewer.core.domain.errors import InvalidInput
 from viewer.plugins.notes.domain.model import Note, NotesViolation, Topic, utc
+from viewer.plugins.notes.domain.notices import Notice
 
 #: Die Status eines Items, bei denen ein Ereignis-Auslöser feuert.
 EVENT_STATUSES = ("In progress", "Awaiting confirmation", "Completed", "Rejected")
@@ -80,6 +81,30 @@ def due_state(
     if note.review_at is not None and utc(note.review_at) <= utc(now):
         return DueState("due", "review_expired", fired, all_fired)
     return DueState(note.status, None, fired, all_fired)
+
+
+def due_since(
+    state: DueState, note: Note, triggers: Sequence[Trigger], topic: Topic | None, notices: Sequence[Notice]
+) -> datetime | None:
+    """Seit wann eine fällige Note fällig ist, nach ihrem Grund: das späteste Eintreten ihrer Auslöser (ein Topic-Termin
+    mit seinem Termin), der jüngste offene Hinweis, der Topic-Termin oder das Prüfdatum; nichts, wenn sie nicht fällig
+    ist."""
+    if state.status != "due":
+        return None
+    if state.reason == "trigger":
+        moments = [_arrived_at(t, topic) for t in triggers if t.uid in state.fired]
+        return max((utc(m) for m in moments if m is not None), default=None)
+    if state.reason == "notice":
+        return max((utc(n.created_at) for n in notices if n.is_open), default=None)
+    if state.reason == "topic_due":
+        return utc(topic.due_at) if topic is not None and topic.due_at is not None else None
+    return utc(note.review_at) if note.review_at is not None else None
+
+
+def _arrived_at(trigger: Trigger, topic: Topic | None) -> datetime | None:
+    if trigger.fired_at is not None:
+        return trigger.fired_at
+    return topic.due_at if trigger.kind == "topic_date" and topic is not None else None
 
 
 def is_due(

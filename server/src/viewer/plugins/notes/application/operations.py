@@ -24,6 +24,7 @@ from viewer.plugins.notes.application.relocation import RelocationService
 from viewer.plugins.notes.application.settings import SettingsService
 from viewer.plugins.notes.application.topics import TopicService
 from viewer.plugins.notes.application.triggers import TriggerService
+from viewer.plugins.notes.domain.due import due_since
 from viewer.plugins.notes.domain.model import Topic
 from viewer.plugins.notes.domain.notices import Notice, decision_options
 from viewer.plugins.notes.domain.topics import Choice
@@ -193,6 +194,8 @@ class DueNoteOut:
     path: list[str]
     triggers: list[TriggerOut]
     notices: list[NoteNoticeOut]
+    #: Seit wann die Note fällig ist (nach ihrem Grund, siehe `due_since`).
+    due_since: datetime | None
 
 
 @dataclass(frozen=True)
@@ -631,6 +634,13 @@ def _due_note(entry: DueEntry) -> DueNoteOut:
         [topic.name for topic in entry.path],
         [_trigger_out(view) for view in entry.triggers],
         [_notice_out(notice, None) for notice in entry.notices],
+        due_since(
+            entry.state,
+            n,
+            [view.trigger for view in entry.triggers],
+            entry.path[-1] if entry.path else None,
+            entry.notices,
+        ),
     )
 
 

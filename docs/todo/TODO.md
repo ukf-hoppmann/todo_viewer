@@ -9,36 +9,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
-- `STORY-085` **Serienwecker: Wiederholung am Wecker**
-  - Uid: 409b1dce-0f22-4222-91b9-7fb867234356.
-  - Type: Story.
-  - Parent: `EPIC-007`.
-  - Required for parent: No.
-  - Status: Awaiting confirmation.
-  - Created: 2026-10-17.
-  - Area: Backend-API.
-  - Priority: Prospective.
-  - Dependencies: `STORY-080`.
-  - Goal: Ein Wecker kann sich wiederholen (täglich, wöchentlich, monatlich,
-    jährlich); nach langer Pause erscheint er einmal, mit der Zahl der
-    verpassten Termine.
-  - Completion criteria: 1. Der Wecker hat ein Feld Wiederholung (keine,
-    täglich, wöchentlich, monatlich, jährlich) und einen Serienstart in
-    Datenbank (Migration v3), API, MCP, Formular und Markdown-Spiegel;
-    Dateien ohne die Felder bleiben gültig. 2. Beim Fälligwerden bleibt der
-    Wecker Due; beim Erledigen rückt er auf den ersten Termin der Serie nach
-    jetzt, gerechnet vom Serienstart, mit Kürzung am Monatsende; ein
-    Serienwecker wird nie Done. 3. Serientermine werden in der Zeitzone des
-    Rechners gerechnet, auf dem das Backend läuft: der Container bekommt TZ
-    und Zeitzonendaten, 11 Uhr bleibt 11 Uhr über die Sommerzeit-Umstellung.
-    4. Verpasste Termine erscheinen als ein Wecker mit Zähler (abgeleitet,
-    nicht gespeichert; Anzeige, wenn optisch gut umsetzbar). 5. Tests für
-    Regeln (Monatsende, Schaltjahr, Sommerzeit, lange Pause), Migration,
-    Spiegel, API/MCP und Oberfläche sind grün.
-  - Summary: Folge zu Frage 5 in STORY-060: Serien kommen nach dem
-    Live-Gang. Wecker hängen schon an jedem Element, die Wiederholung ist
-    nur ein Feld am Wecker.
-
 - `STORY-086` **Baum: Umwandeln-Dialog beim Ziehen**
   - Uid: 9ccc4f8d-f897-4fdd-bc8d-a67da5569d3f.
   - Type: Story.

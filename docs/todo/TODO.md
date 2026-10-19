@@ -23,12 +23,18 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     jährlich); nach langer Pause erscheint er einmal, mit der Zahl der
     verpassten Termine.
   - Completion criteria: 1. Der Wecker hat ein Feld Wiederholung (keine,
-    täglich, wöchentlich, monatlich, jährlich) in Datenbank, API, MCP,
-    Formular und Markdown-Spiegel. 2. Beim Erledigen oder Fälligwerden rückt
-    er auf den ersten Termin nach jetzt, gerechnet ab dem Fälligkeitstermin.
-    3. Verpasste Termine erscheinen als ein Wecker mit Zähler (Anzeige, wenn
-    optisch gut umsetzbar). 4. Tests für Regeln, Migration und Oberfläche
-    sind grün.
+    täglich, wöchentlich, monatlich, jährlich) und einen Serienstart in
+    Datenbank (Migration v3), API, MCP, Formular und Markdown-Spiegel;
+    Dateien ohne die Felder bleiben gültig. 2. Beim Fälligwerden bleibt der
+    Wecker Due; beim Erledigen rückt er auf den ersten Termin der Serie nach
+    jetzt, gerechnet vom Serienstart, mit Kürzung am Monatsende; ein
+    Serienwecker wird nie Done. 3. Serientermine werden in der Zeitzone des
+    Rechners gerechnet, auf dem das Backend läuft: der Container bekommt TZ
+    und Zeitzonendaten, 11 Uhr bleibt 11 Uhr über die Sommerzeit-Umstellung.
+    4. Verpasste Termine erscheinen als ein Wecker mit Zähler (abgeleitet,
+    nicht gespeichert; Anzeige, wenn optisch gut umsetzbar). 5. Tests für
+    Regeln (Monatsende, Schaltjahr, Sommerzeit, lange Pause), Migration,
+    Spiegel, API/MCP und Oberfläche sind grün.
   - Summary: Folge zu Frage 5 in STORY-060: Serien kommen nach dem
     Live-Gang. Wecker hängen schon an jedem Element, die Wiederholung ist
     nur ein Feld am Wecker.
@@ -46,13 +52,23 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Goal: Zieht man ein Item an eine Stelle, an der sein Typ nicht erlaubt
     ist, bietet der Baum an, es umzuwandeln und dann zu verschieben, statt
     abzulehnen.
-  - Completion criteria: 1. Story auf Story: Dialog 'Nur als Task möglich,
-    umwandeln und verschieben?'; bei Ja Typwechsel, dann Verschieben; bei
-    Nein bleibt alles. 2. Ein Epic ohne Kinder lässt sich ebenso als Story
-    umwandeln. 3. Fälle, in denen die Umwandlung Kinder verwaisen ließe,
-    werden mit Grund abgelehnt. 4. Das Label ändert sich wie beim Typwechsel
-    im Detailpanel, Verweise folgen. 5. UI-Tests für Zustimmung, Ablehnung
-    und Fehlerfälle sind grün.
+  - Completion criteria: 1. Die Server-Domain erzwingt die Struktur für
+    Anlegen, Ändern, Verschieben, Typwechsel, Wiederherstellen und Abgleich:
+    Epic nur als Wurzel, Story als Wurzel oder unter einem Epic, Task als
+    Wurzel, unter einem Epic oder einer Story, nichts unter einem Task;
+    bestehende Verletzungen blockieren unbeteiligte Änderungen nicht. 2. Ein
+    Typwechsel ist nur erlaubt, wenn danach der ganze Teilbaum passt (Epic
+    -> Story wandelt Kind-Storys zu Tasks, nicht möglich bei Kind-Storys mit
+    Kindern; Story/Epic -> Task nur ohne Kinder); Labels und Verweise
+    folgen. 3. Verschieben und Typwechsel über API und MCP antworten mit
+    retype_required und dem Plan, wenn ein Typwechsel nötig ist, und führen
+    ihn mit allow_retype in einer Transaktion aus; eine Vorschau ohne
+    Änderung liefert denselben Plan. 4. Im Baum wird ohne nötigen Typwechsel
+    ohne Rückfrage verschoben; sonst zeigt ein Dialog die betroffenen Items
+    mit altem und neuem Label und die möglichen Zieltypen samt Abbrechen;
+    Typ ändern im Detailpanel nutzt dieselben Regeln. 5. Domain-, API/MCP-
+    und UI-Tests für Zustimmung, Ablehnung, Abbrechen und Fehlerfälle sind
+    grün.
   - Summary: Folge zu Frage 10 in STORY-060: Umwandlung beim Ziehen mit
     Bestätigung, nach dem Live-Gang. Ziehen zwischen Projekten gibt es
     nicht.

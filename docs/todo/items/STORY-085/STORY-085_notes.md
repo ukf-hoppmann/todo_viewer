@@ -31,3 +31,9 @@
 - Der Container bekommt TZ mit der Zone des Macs (über todo.sh bzw. .env) und tzdata im Image; damit kennt das Backend Sommer- und Winterzeit.
 - Die Domain rechnet die Wiederholung in dieser Zone; die Zone kommt als Parameter in die reine Funktion. 11 Uhr bleibt 11 Uhr über die Umstellung.
 - Gespeichert werden nur repeat und series_from.
+
+## 2026-10-19 — Abschlusskriterien an die Spec angepasst
+
+### Decided
+
+- Abschlusskriterien auf Wunsch des Projektinhabers an die Spec vom 2026-10-19 angepasst.

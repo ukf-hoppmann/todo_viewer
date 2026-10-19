@@ -31,3 +31,9 @@
 - Gefragt wird nur, wenn ein Typwechsel nötig ist; geht es ohne, wird ohne Rückfrage umgehängt. Der Dialog nennt alle betroffenen Items mit altem und neuem Label. Für das LLM: Fehler retype_required mit den nötigen Änderungen, Wiederholung mit allow_retype.
 - Typ ändern im Detailpanel nutzt dieselben Regeln (Upgrade und Downgrade mit Vorschau des Teilbaums, sonst Ablehnung mit Grund).
 - Typwechsel im Teilbaum und Verschieben laufen serverseitig in einer Transaktion; das frühere Vorgehen erst retype, dann move im Client entfällt.
+
+## 2026-10-19 — Abschlusskriterien an die Spec angepasst
+
+### Decided
+
+- Abschlusskriterien auf Wunsch des Projektinhabers an die Spec vom 2026-10-19 angepasst.

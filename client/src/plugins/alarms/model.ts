@@ -51,6 +51,12 @@ export function waitingFor(alarm: AlarmOut): string {
 	return alarm.status === "Snoozed" && alarm.snoozed_until ? alarm.snoozed_until : alarm.at;
 }
 
+/** The parts of a fired alarm for the list of due things of `workspace`: key, project, since when, title, elements. */
+export function attentionOf(alarm: AlarmOut): { key: string; projectUid: string; dueSince: string; title: string; caption?: string } {
+	const elements = alarm.targets.map((target) => target.label).join(", ") || alarm.target_text || undefined;
+	return { key: `alarms:${alarm.uid}`, projectUid: alarm.project_uid, dueSince: waitingFor(alarm), title: heading(alarm), caption: elements };
+}
+
 /** A time for `<input type="datetime-local">` in the local zone (`2026-10-20T09:00`). */
 export function toInputValue(iso: string): string {
 	const date = new Date(iso);

@@ -12,7 +12,7 @@ describe("alarms plugin definition", () => {
 		const widgets = (plugin.contributions ?? []).filter((entry) => entry.slot !== "core.main");
 		expect(widgets.map((entry) => entry.slot).sort()).toEqual([
 			"core.settings-sections",
-			"layout-header-sidebar.header-actions",
+			"workspace.attention-sources",
 			"workspace.create-types",
 			"workspace.detail-sections",
 		]);

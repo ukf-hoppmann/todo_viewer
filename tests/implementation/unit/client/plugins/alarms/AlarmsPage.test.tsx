@@ -119,6 +119,13 @@ describe("AlarmsPage: the detail of a reminder", () => {
 		expect(screen.getByTestId(ids.row("wait")).getAttribute("aria-selected")).toBe("true");
 	});
 
+	it("opens the reminder chosen elsewhere (UI state `alarms.selected`, e.g. from the bell)", async () => {
+		await renderPage({ documents: { alarms: { selected: "wait" } } });
+
+		const detail = await screen.findByTestId(ids.detail);
+		expect(within(detail).getByTestId(sharedTestIds.detailTitle).textContent).toBe("Wecker wait");
+	});
+
 	it("names only the time when the element itself is the heading", async () => {
 		await renderPage();
 		fireEvent.click(await screen.findByTestId(ids.row("about")));
@@ -150,19 +157,19 @@ describe("AlarmsPage: the detail of a reminder", () => {
 		expect(within(free).queryByTestId("test.story-view")).toBeNull();
 
 		fireEvent.click(screen.getByTestId(ids.row("gone")));
-		expect((await screen.findByTestId(ids.detail)).textContent).toContain("liegt im Papierkorb");
+		await waitFor(() => expect(screen.getByTestId(ids.detail).textContent).toContain("liegt im Papierkorb"));
 	});
 
 	it("closes the detail with its close button and with a second click on the row", async () => {
 		await renderPage();
 		fireEvent.click(await screen.findByTestId(ids.row("wait")));
 		fireEvent.click(within(await screen.findByTestId(ids.detail)).getByTestId(sharedTestIds.detailAction("close")));
-		expect(screen.queryByTestId(ids.detail)).toBeNull();
+		await waitFor(() => expect(screen.queryByTestId(ids.detail)).toBeNull());
 
 		fireEvent.click(screen.getByTestId(ids.row("wait")));
 		await screen.findByTestId(ids.detail);
 		fireEvent.click(screen.getByTestId(ids.row("wait")));
-		expect(screen.queryByTestId(ids.detail)).toBeNull();
+		await waitFor(() => expect(screen.queryByTestId(ids.detail)).toBeNull());
 	});
 
 	it("finishes and snoozes from the bar of the detail, with the version", async () => {

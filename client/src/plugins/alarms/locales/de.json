@@ -46,10 +46,6 @@
 		"button": "Wecker stellen",
 		"dialogTitle": "Wecker für {{label}}"
 	},
-	"counter": {
-		"label": "{{count}} Wecker haben sich gemeldet",
-		"title": "Wecker"
-	},
 	"banner": {
 		"title": "Wecker"
 	},

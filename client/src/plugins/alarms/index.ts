@@ -1,6 +1,6 @@
 import AlarmIcon from "@mui/icons-material/Alarm";
 import { definePlugin } from "../../core";
-import { AlarmCounter } from "./AlarmCounter";
+import { AlarmAttention } from "./AlarmAttention";
 import { AlarmSettings } from "./AlarmSettings";
 import { alarmsApi } from "./api";
 import { onAlarmsDue } from "./announce";
@@ -12,7 +12,7 @@ import { SetAlarm } from "./SetAlarm";
 /**
  * Alarms: reminders at a fixed time, free with a text or reminding of elements (they expire once none of them is open
  * and go a day after they were finished or expired). The server fires them (`alarms.due`) while the viewer runs;
- * the UI shows a banner, the counter in the app bar and, if allowed, a browser notification. "Set an alarm" hangs in
+ * the UI shows a banner, the fired ones in the bell of the projects section (slot `workspace.attention-sources`) and, if allowed, a browser notification. "Set an alarm" hangs in
  * the detail panel of every element (slot `workspace.detail-sections`), "Alarm" in the "＋ New" dialog, the main route
  * `alarms/main` lists all alarms.
  */
@@ -35,7 +35,7 @@ export const plugin = definePlugin({
 		{ slot: "core.main", name: "main", title: "tab.alarms", icon: AlarmIcon, page: () => import("./pages/AlarmsPage"), layout: { sidebar: true, detail: true } },
 		{ slot: "workspace.create-types", name: "alarm", component: CreateAlarm, order: 30 },
 		{ slot: "workspace.detail-sections", name: "set-alarm", component: SetAlarm, order: 0 },
-		{ slot: "layout-header-sidebar.header-actions", name: "counter", component: AlarmCounter, order: 1 },
+		{ slot: "workspace.attention-sources", name: "due", component: AlarmAttention },
 		{ slot: "core.settings-sections", name: "settings", component: AlarmSettings, order: 20 },
 	],
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fromInputValue, groupAlarms, heading, notificationBody, toInputValue, waitingFor } from "../../../../../../client/src/plugins/alarms/model";
+import { attentionOf, fromInputValue, groupAlarms, heading, notificationBody, toInputValue, waitingFor } from "../../../../../../client/src/plugins/alarms/model";
 import { alarm, target } from "../../../../../helpers/client/alarmsFixtures";
 
 /** 18 October 2026, 12:00 local time. */
@@ -67,5 +67,15 @@ describe("notificationBody", () => {
 		expect(notificationBody(alarm("a", { text: "Anrufen" }))).toBe("Anrufen");
 		expect(notificationBody(alarm("a", { text: "Nachfragen", targets: [target("story-001"), target("note-002")] }))).toBe("Nachfragen (STORY-001, NOTE-002)");
 		expect(notificationBody(alarm("a", { text: "", targets: [target("note-010", { title: "Note zehn" })] }))).toBe("Note zehn (NOTE-010)");
+	});
+});
+
+describe("attentionOf", () => {
+	it("is due since it spoke (the snoozed time if snoozed), headed like the list, with its elements", () => {
+		const story = target("s1", { label: "STORY-001", title: "Eine Story" });
+		const snoozed = alarm("a", { text: "", status: "Snoozed", at: "2026-10-18T07:00:00Z", snoozed_until: "2026-10-18T09:00:00Z", targets: [story] });
+
+		expect(attentionOf(snoozed)).toEqual({ key: "alarms:a", projectUid: "p1", dueSince: "2026-10-18T09:00:00Z", title: "Eine Story", caption: "STORY-001" });
+		expect(attentionOf(alarm("b", { text: "Frei" })).caption).toBeUndefined();
 	});
 });

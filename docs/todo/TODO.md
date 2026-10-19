@@ -880,7 +880,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Notes (erledigt, verworfen, befördert, archiviert; Topic archiviert)
     melden ihre Prüfung an. 4. Tests grün.
 
-- `STORY-091` **Fällige Wecker in der Projektleiste: globaler und projektbezogener Wecker-Button mit Liste**
+- `STORY-091` **Fällig-Glocke in der Projektleiste: Wecker und fällige Notes in einer Liste, global und je Projekt**
   - Uid: 1145a9d5-6c90-48b2-9849-dd3ccf0d5ad6.
   - Type: Story.
   - Parent: `EPIC-007`.
@@ -890,26 +890,34 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Area: Web-UI.
   - Priority: Normal.
   - Dependencies: None.
-  - Goal: Fällige Wecker sind dort sichtbar, wo man Projekte wählt: ein
-    globaler Wecker-Button im Kopf „Projekte“ und einer je Projektzeile.
-    Beide öffnen dieselbe Liste, die der zuletzt ausgelöste Wecker anführt,
-    damit ein ignorierter Wecker einen neuen nicht verdeckt.
-  - Completion criteria: 1. Der globale Zähler zieht aus der App-Leiste in
-    den Kopf „Projekte“ (neben Stift und Plus) und ist ein Wecker-Icon mit
-    Anzahl als Badge; er zählt alle fälligen Wecker und ist nur sichtbar,
-    wenn es welche gibt. 2. Jede Projektzeile mit fälligen Weckern zeigt
-    einen Wecker-IconButton mit Anzahl, immer sichtbar. 3. Ein Klick öffnet
-    immer ein Popup mit einer Liste, auch bei nur einem Wecker;
-    projektbezogen gefiltert auf die Wecker des Projekts. 4. Sortierung nach
-    Auslösezeit absteigend; der oberste Eintrag ist aufgeklappt. 5. Jeder
-    Eintrag bietet Erledigt und Schlummern; ein Klick auf den Wecker bzw.
-    ein verknüpftes Element springt dorthin und zeigt es im Detail. 6.
-    Globale und projektbezogene Liste sind dieselbe Komponente
-    (Wiederverwendung des bisherigen Wecker-Popups). 7. Techdoku angepasst,
-    Tests je Schritt grün.
-  - Summary: Ein Wecker-Button im Kopf der Projektliste und je Projekt
-    öffnet die fälligen Wecker als Liste, neuester oben und aufgeklappt, mit
-    Sprung zum Element.
+  - Goal: Alles, was jetzt Aufmerksamkeit will, meldet sich an einer Stelle:
+    eine Glocke im Kopf „Projekte“ (global) und je Projektzeile. Beide
+    öffnen dieselbe Liste aus fälligen Weckern und fälligen Notes, angeführt
+    vom zuletzt fällig gewordenen Eintrag, damit ein ignorierter Eintrag
+    einen neuen nicht verdeckt. Wecker und Notes bleiben in Daten und
+    Plugins getrennt; nur die Anzeige ist gemeinsam.
+  - Completion criteria: 1. Im Kopf „Projekte“ (neben Stift und Plus) steht
+    eine Glocke mit der Anzahl aller fälligen Wecker und Notes als Badge,
+    nur sichtbar, wenn es welche gibt; ⏰n und !n verschwinden aus der
+    App-Leiste; die Zahl im Browser-Tab ist die Summe. 2. Jede Projektzeile
+    mit Fälligem zeigt eine Glocke mit Anzahl als IconButton, immer
+    sichtbar. 3. Ein Klick öffnet immer ein Popup mit einer Liste, auch bei
+    einem Eintrag; je Projekt gefiltert auf dieses Projekt. 4. Die Liste
+    mischt Wecker und Notes, sortiert nach „fällig seit“ absteigend; der
+    oberste Eintrag ist aufgeklappt. 5. Jede Zeile zeigt ein Art-Symbol
+    (Wecker/Note), bei Notes den Grund als Beschriftung, und die eigenen
+    Aktionen der Art (Wecker: Erledigt, Schlummern; Note: Behalten,
+    Schlummern, Erledigt, Verworfen bzw. Hinweis-Entscheidungen); ein Klick
+    springt zum Wecker-Element bzw. zur Note und zeigt es im Detail. 6. Der
+    Server liefert für fällige Notes „fällig seit“ (Auslöser: fired_at,
+    Hinweis: created_at, Topic-Termin: due_at, Prüfdatum: review_at). 7. Die
+    gemeinsame Liste ist eine Komponente mit einem Anknüpfungspunkt, an den
+    Wecker- und Notes-Plugin ihre Einträge und Zeilen melden, ohne einander
+    zu kennen (Architekturregeln vor der Planung geprüft). 8. Techdoku
+    angepasst, Tests je Schritt grün.
+  - Summary: Eine Glocke im Kopf der Projektliste und je Projekt öffnet
+    alles Fällige – Wecker und Notes – als eine Liste, neuester oben und
+    aufgeklappt, mit Sprung zum Element.
 
 - `STORY-090` **Projektleiste schlanker: Bearbeiten oben, Sync-Symbole als Aktion bzw. beim Hovern**
   - Uid: e2855cf3-e6e6-44dd-8aa3-2af63212036f.

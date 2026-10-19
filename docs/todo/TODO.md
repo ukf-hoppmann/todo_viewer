@@ -9,33 +9,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
-- `STORY-084` **Umstieg: der Neubau ersetzt den alten Viewer**
-  - Uid: 1d71c607-6a99-4e28-ab92-cfad65a29d99.
-  - Type: Story.
-  - Parent: `EPIC-007`.
-  - Required for parent: Yes.
-  - Status: Open.
-  - Created: 2026-10-16.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `STORY-060`, `STORY-074`, `STORY-076`, `STORY-081`,
-    `STORY-082`, `STORY-083`.
-  - Goal: Der Neubau läuft als ToDo-Viewer auf Port 5411 mit allen
-    übernommenen Daten, die Spiegel sind im Format Version 2 neu
-    geschrieben, die Dokumentation beschreibt nur noch den Neubau, und der
-    Altcode ist entfernt.
-  - Completion criteria: 1. Backup der alten DB und aller Spiegel-Ordner
-    liegt vor. 2. Übernahme ausgeführt, Bericht ohne ungeklärte Abweichung.
-    3. Neubau auf 5411, alter Container entfernt. 4. Spiegel aller Projekte
-    neu geschrieben und in den Repositories committet (vom Inhaber). 5. Nach
-    ausdrücklicher Abnahme des Neubaus durch den Projektinhaber: `src_old/`,
-    `reference/` und die Scopes `legacy`, `backend`, `web` entfernt; README
-    und `docs/techdocs/` beschreiben den Neubau. 6. Formatbeschreibung und
-    Tool-Liste an den Projektinhaber für den Harness übergeben. 7. Version
-    1.0.0. 8. Offene Altitems nach Entscheidung des Inhabers geschlossen.
-  - Summary: Der Tag des Umstiegs: Daten übernehmen, den neuen Viewer auf
-    die gewohnte Adresse setzen, den alten entfernen.
-
 - `STORY-085` **Serienwecker: Wiederholung am Wecker**
   - Uid: 409b1dce-0f22-4222-91b9-7fb867234356.
   - Type: Story.
@@ -104,28 +77,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     ohne Harness-Bezug. 6. Der Cutover ist erfolgt und der Altcode entfernt.
   - Summary: Kompletter Neubau des ToDo-Viewers mit besserer Architektur und
     relationaler Datenstruktur, als eigenständiges Tool mit API für die KI.
-
-- `STORY-060` **Noch zu klären: offene Fragen zum Neubau**
-  - Uid: e82954be-70bf-4ad6-9b73-cca74503771c.
-  - Type: Story.
-  - Parent: `EPIC-007`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-10-16.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Alle Fragen zum Neubau, die beim Zerlegen offen geblieben sind,
-    sind beantwortet, und die Antworten stehen in den betroffenen Specs und
-    Notizen.
-  - Completion criteria: 1. Jede Frage in der Spec dieser Story ist vom
-    Projektinhaber beantwortet oder ihre Annahme bestätigt. 2. Die Antworten
-    stehen in den Notizen dieser Story und in den Specs der betroffenen
-    Items. 3. Neue Fragen, die während der Umsetzung auftauchen, werden hier
-    ergänzt.
-  - Summary: Sammelstelle für offene Fragen zum Neubau. Jede Frage hat eine
-    Annahme, mit der die Umsetzung weiterlaufen kann, bis du anders
-    entscheidest.
 
 - `STORY-092` **MCP-Server fehlerarm für Agenten: Projektbindung, Labels, typisierte Felder**
   - Uid: 203401d1-c591-4737-9d56-60aea47a3fec.

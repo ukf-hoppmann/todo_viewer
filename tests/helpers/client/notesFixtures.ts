@@ -69,5 +69,5 @@ export const noContent: ContentOut = { topics: 0, active: 0, archived: 0 };
 
 /** A due note of the counter list with plain defaults (project `p1`, reason review). */
 export function dueNote(uid: string, extra: Partial<DueNoteOut> = {}): DueNoteOut {
-	return { uid, project_uid: "p1", label: uid.toUpperCase(), summary: `Note ${uid}`, review_at: null, version: 1, reason: "review_expired", path: [], triggers: [], notices: [], ...extra };
+	return { uid, project_uid: "p1", label: uid.toUpperCase(), summary: `Note ${uid}`, review_at: null, version: 1, reason: "review_expired", path: [], triggers: [], notices: [], due_since: null, ...extra };
 }

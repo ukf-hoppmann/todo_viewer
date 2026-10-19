@@ -4,6 +4,8 @@ import { Box, Checkbox, IconButton, Tooltip, Typography } from "@mui/material";
 import { useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useMoveProjectMutation, type Project } from "./api";
+import { AttentionBell } from "./AttentionBell";
+import { AttentionProvider } from "./AttentionProvider";
 import { ProjectCard } from "./ProjectCard";
 import { SYNC_AUTO_CLASS, SyncIndicator } from "./SyncIndicator";
 import { useProjectSelection } from "./state";
@@ -12,7 +14,8 @@ import { workspaceTestIds } from "./testIds";
 /**
  * The projects in the sidebar: the checkbox shows or hides a project, a click marks it, the pencil in the header (or a
  * double click on the name) opens the card of the marked project, and the order is changed by dragging. The sync
- * indicators of the mirror come with the sync UI.
+ * indicators of the mirror come with the sync UI. A bell in the header lists everything due (slot
+ * `workspace.attention-sources`), one in each row the due things of that project.
  */
 export function ProjectsSection() {
 	const { t } = useTranslation("workspace");
@@ -30,11 +33,12 @@ export function ProjectsSection() {
 	};
 
 	return (
-		<Box>
+		<AttentionProvider>
 			<Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
 				<Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
 					{t("projects.title")}
 				</Typography>
+				<AttentionBell />
 				<Tooltip title={marked ? t("projects.editMarked") : t("projects.selectFirst")}>
 					<span aria-label={marked ? undefined : t("projects.selectFirst")} data-testid={workspaceTestIds.projectEditHint}>
 						<IconButton
@@ -107,11 +111,12 @@ export function ProjectsSection() {
 						>
 							{project.name}
 						</Box>
+						<AttentionBell projectUid={project.uid} />
 						<SyncIndicator project={project} />
 					</Box>
 				))}
 			</Box>
 			{card && <ProjectCard project={card.project} onClose={() => setCard(undefined)} />}
-		</Box>
+		</AttentionProvider>
 	);
 }

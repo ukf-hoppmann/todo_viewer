@@ -26,6 +26,10 @@ export const plugin = definePlugin({
 			description:
 				"The detail view of an element kind, drawn by `ElementDetail`: `name` is the kind (e.g. `story`, `note`), the component reads the element with `useShownElement`.",
 		},
+		"attention-sources": {
+			description:
+				"Sources of due things (fired alarms, due notes …) for the bell in the projects section: a component without output that reports its entries with `useReportAttention`.",
+		},
 		"create-types": {
 			description:
 				"Forms of the dialog '＋ New': `name` is the kind, `component` the form (it uses `useCreateDialog`), the title is the text `create.<name>` of the contributing plugin.",
@@ -57,6 +61,8 @@ export const plugin = definePlugin({
 	],
 });
 
+export { type AttentionAction, type AttentionEntry } from "./attention";
+export { useReportAttention } from "./attentionContext";
 export { useCreateDialog, type CreateDialogContext } from "./createDialog";
 export { useProjectSelection, useSearchText } from "./state";
 export { useListProjectsQuery, useSearchElementsQuery, type ElementOut, type Project } from "./api";

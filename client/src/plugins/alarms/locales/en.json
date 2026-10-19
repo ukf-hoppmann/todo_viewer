@@ -46,10 +46,6 @@
 		"button": "Set an alarm",
 		"dialogTitle": "Alarm for {{label}}"
 	},
-	"counter": {
-		"label": "{{count}} alarms have fired",
-		"title": "Alarms"
-	},
 	"banner": {
 		"title": "Alarm"
 	},

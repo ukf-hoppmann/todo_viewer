@@ -1412,6 +1412,8 @@ export interface components {
         };
         /** DueNoteOut */
         DueNoteOut: {
+            /** Due Since */
+            due_since: string | null;
             /** Label */
             label: string;
             /** Notices */

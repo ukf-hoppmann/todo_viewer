@@ -1,17 +1,21 @@
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
-import { Box, Checkbox, IconButton, Typography } from "@mui/material";
+import { Box, Checkbox, IconButton, Tooltip, Typography } from "@mui/material";
 import { useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useMoveProjectMutation, type Project } from "./api";
+import { AttentionBell } from "./AttentionBell";
+import { AttentionProvider } from "./AttentionProvider";
 import { ProjectCard } from "./ProjectCard";
-import { SyncIndicator } from "./SyncIndicator";
+import { SYNC_AUTO_CLASS, SyncIndicator } from "./SyncIndicator";
 import { useProjectSelection } from "./state";
 import { workspaceTestIds } from "./testIds";
 
 /**
- * The projects in the sidebar: the checkbox shows or hides a project, a click marks it, the pencil opens its
- * card, and the order is changed by dragging. The sync indicators of the mirror come with the sync UI.
+ * The projects in the sidebar: the checkbox shows or hides a project, a click marks it, the pencil in the header (or a
+ * double click on the name) opens the card of the marked project, and the order is changed by dragging. The sync
+ * indicators of the mirror come with the sync UI. A bell in the header lists everything due (slot
+ * `workspace.attention-sources`), one in each row the due things of that project.
  */
 export function ProjectsSection() {
 	const { t } = useTranslation("workspace");
@@ -29,9 +33,25 @@ export function ProjectsSection() {
 	};
 
 	return (
-		<Box>
+		<AttentionProvider>
 			<Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-				<Typography variant="subtitle2">{t("projects.title")}</Typography>
+				<Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+					{t("projects.title")}
+				</Typography>
+				<AttentionBell />
+				<Tooltip title={marked ? t("projects.editMarked") : t("projects.selectFirst")}>
+					<span aria-label={marked ? undefined : t("projects.selectFirst")} data-testid={workspaceTestIds.projectEditHint}>
+						<IconButton
+							size="small"
+							aria-label={t("projects.editMarked")}
+							disabled={!marked}
+							onClick={() => marked && setCard({ project: marked })}
+							data-testid={workspaceTestIds.projectEditMarked}
+						>
+							<EditIcon fontSize="small" />
+						</IconButton>
+					</span>
+				</Tooltip>
 				<IconButton size="small" aria-label={t("projects.add")} onClick={() => setCard({})} data-testid={workspaceTestIds.projectAdd}>
 					<AddIcon fontSize="small" />
 				</IconButton>
@@ -67,6 +87,8 @@ export function ProjectsSection() {
 							bgcolor: marked?.uid === project.uid ? "action.selected" : undefined,
 							borderTop: over === project.uid && dragged !== project.uid ? "2px solid" : "2px solid transparent",
 							borderColor: over === project.uid ? "primary.main" : "transparent",
+							[`& .${SYNC_AUTO_CLASS}`]: { visibility: "hidden" },
+							[`&:hover .${SYNC_AUTO_CLASS}, &:focus-within .${SYNC_AUTO_CLASS}`]: { visibility: "visible" },
 						}}
 					>
 						<Checkbox
@@ -79,24 +101,22 @@ export function ProjectsSection() {
 							role="button"
 							tabIndex={0}
 							onClick={() => mark(marked?.uid === project.uid ? null : project.uid)}
+							onDoubleClick={() => {
+								mark(project.uid);
+								setCard({ project });
+							}}
 							onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && mark(marked?.uid === project.uid ? null : project.uid)}
+							data-testid={workspaceTestIds.projectName(project.uid)}
 							sx={{ flexGrow: 1, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
 						>
 							{project.name}
 						</Box>
+						<AttentionBell projectUid={project.uid} />
 						<SyncIndicator project={project} />
-						<IconButton
-							size="small"
-							aria-label={t("projects.edit", { name: project.name })}
-							onClick={() => setCard({ project })}
-							data-testid={workspaceTestIds.projectEdit(project.uid)}
-						>
-							<EditIcon fontSize="small" />
-						</IconButton>
 					</Box>
 				))}
 			</Box>
 			{card && <ProjectCard project={card.project} onClose={() => setCard(undefined)} />}
-		</Box>
+		</AttentionProvider>
 	);
 }

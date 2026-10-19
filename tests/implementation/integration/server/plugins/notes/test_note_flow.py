@@ -74,6 +74,7 @@ def test_a_note_becomes_due_when_its_date_comes(notes: Env) -> None:
     notes.clock.advance(timedelta(days=31))
     due = notes.client.get(f"{API}/due").json()
     assert (due["count"], due["notes"][0]["label"]) == (1, "NOTE-001")
+    assert due["notes"][0]["due_since"] == due["notes"][0]["review_at"]
     shown = notes.client.get(f"{API}/notes/{note['uid']}").json()
     assert (shown["status"], shown["stored_status"]) == ("due", "waiting")
 

@@ -14,6 +14,7 @@ import { AlarmDetail } from "../AlarmDetail";
 import { AlarmForm } from "../AlarmForm";
 import { toWriteError, useFinishAlarmMutation, useListAlarmsQuery, useReopenAlarmMutation, useSnoozeAlarmMutation, type AlarmOut } from "../api";
 import { groupAlarms } from "../model";
+import { useOpenAlarm } from "../state";
 import { alarmsTestIds } from "../testIds";
 
 /**
@@ -31,7 +32,7 @@ export default function AlarmsPage() {
 	const [reopen] = useReopenAlarmMutation();
 	const [dialog, setDialog] = useState<{ alarm?: AlarmOut } | undefined>();
 	const [error, setError] = useState<string>();
-	const [openUid, setOpenUid] = useState<string>();
+	const [openUid, setOpenUid] = useOpenAlarm();
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
 	const defaultProject = marked ?? projects.find((project) => project.builtin);
 	const groups = useMemo(() => groupAlarms(alarms, new Date()), [alarms]);
@@ -58,7 +59,7 @@ export default function AlarmsPage() {
 	};
 
 	const open = alarms.find((alarm) => alarm.uid === openUid);
-	const close = useCallback(() => setOpenUid(undefined), []);
+	const close = useCallback(() => setOpenUid(null), [setOpenUid]);
 	usePageDetail(open && <AlarmDetail key={open.uid} alarm={open} actions={actionsOf(open)} onClose={close} />);
 
 	return (
@@ -95,7 +96,7 @@ export default function AlarmsPage() {
 								selected={selected}
 								expanded={expanded.has(alarm.uid)}
 								actions={actionsOf(alarm)}
-								onOpen={() => setOpenUid(selected ? undefined : alarm.uid)}
+								onOpen={() => setOpenUid(selected ? null : alarm.uid)}
 								onToggle={() => toggle(alarm.uid)}
 							/>
 						);

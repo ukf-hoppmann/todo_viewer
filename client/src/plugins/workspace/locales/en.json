@@ -8,7 +8,15 @@
 		"title": "Projects",
 		"add": "Add project",
 		"visible": "Show {{name}}",
-		"edit": "Edit {{name}}"
+		"editMarked": "Edit the marked project",
+		"selectFirst": "Select a project first"
+	},
+	"attention": {
+		"title": "Due",
+		"label_one": "{{count}} due",
+		"label_other": "{{count}} due",
+		"unfold": "Unfold",
+		"fold": "Fold"
 	},
 	"new": {
 		"button": "New",

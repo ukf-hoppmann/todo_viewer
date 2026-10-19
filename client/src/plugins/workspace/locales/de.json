@@ -8,7 +8,15 @@
 		"title": "Projekte",
 		"add": "Projekt anlegen",
 		"visible": "{{name}} anzeigen",
-		"edit": "{{name}} bearbeiten"
+		"editMarked": "Markiertes Projekt bearbeiten",
+		"selectFirst": "Erst ein Projekt auswählen"
+	},
+	"attention": {
+		"title": "Fällig",
+		"label_one": "{{count}} fällig",
+		"label_other": "{{count}} fällig",
+		"unfold": "Aufklappen",
+		"fold": "Zuklappen"
 	},
 	"new": {
 		"button": "Neu",

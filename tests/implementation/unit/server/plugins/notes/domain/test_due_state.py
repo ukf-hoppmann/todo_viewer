@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import pytest
 from notes_fixtures import NOW, note, topic, trigger
 from viewer.core.domain.errors import InvalidInput
-from viewer.plugins.notes.domain.due import check_new_trigger, due_state, hit, reset
+from viewer.plugins.notes.domain.due import check_new_trigger, due_since, due_state, hit, reset
 from viewer.plugins.notes.domain.model import NotesViolation, Topic
 from viewer.plugins.notes.domain.notices import Notice, cause_of_status, check_decision, decision_options
 
@@ -150,3 +150,45 @@ def test_only_the_closing_statuses_cause_a_notice() -> None:
         None,
         None,
     ]
+
+
+def _open_notice(uid: str, created_at: datetime, decided: bool = False) -> Notice:
+    return Notice(uid, "note", "n", "item", "status_changed", created_at, NOW if decided else None)
+
+
+EARLIER = NOW - timedelta(days=3)
+
+
+@pytest.mark.parametrize(
+    "triggers,topic_,notices,review,expected",
+    [
+        # Auslöser: das späteste Eintreten, ein Topic-Termin zählt mit seinem Termin
+        ([trigger("a", fired_at=EARLIER), FIRED], None, [], FUTURE, PAST),
+        (
+            [trigger("d", kind="topic_date", target=None, status=None), trigger("a", fired_at=EARLIER)],
+            PASSED,
+            [],
+            FUTURE,
+            PAST,
+        ),
+        # Hinweis: der jüngste offene
+        (
+            [],
+            None,
+            [_open_notice("x", EARLIER), _open_notice("y", PAST), _open_notice("z", NOW, decided=True)],
+            FUTURE,
+            PAST,
+        ),
+        # Topic-Termin
+        ([trigger("d", kind="topic_date", target=None, status=None)], PASSED, [], FUTURE, PAST),
+        # Prüfdatum
+        ([], None, [], EARLIER, EARLIER),
+        # nicht fällig
+        ([WAITING], None, [], FUTURE, None),
+    ],
+)
+def test_due_since(triggers, topic_, notices, review, expected) -> None:  # type: ignore[no-untyped-def]
+    n = note("n", review_at=review)
+    open_notices = [x for x in notices if x.is_open]
+    state = due_state(n, triggers, topic_, len(open_notices), NOW)
+    assert due_since(state, n, triggers, topic_, open_notices) == expected

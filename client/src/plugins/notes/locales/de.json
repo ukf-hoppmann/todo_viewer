@@ -122,8 +122,6 @@
 		"toc": "Inhaltsverzeichnis"
 	},
 	"due": {
-		"label": "{{count}} fällige Notes",
-		"title": "Fällige Notes",
 		"reason": {
 			"trigger": "Auslöser",
 			"notice": "Hinweis",

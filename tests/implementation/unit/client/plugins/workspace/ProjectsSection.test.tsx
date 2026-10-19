@@ -2,6 +2,7 @@ import { cleanup, createEvent, fireEvent, screen, waitFor, within } from "@testi
 import { afterEach, describe, expect, it } from "vitest";
 import { flushUiState } from "../../../../../../client/src/core/ui-state/uiState";
 import { ProjectsSection } from "../../../../../../client/src/plugins/workspace/ProjectsSection";
+import { SYNC_AUTO_CLASS } from "../../../../../../client/src/plugins/workspace/SyncIndicator";
 import { workspaceTestIds as ids } from "../../../../../../client/src/plugins/workspace/testIds";
 import { expectPersisted, fakeWorkspaceBackend, project } from "../../../../../helpers/client/fakeWorkspaceBackend";
 import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
@@ -15,6 +16,14 @@ async function renderSection(options: Parameters<typeof fakeWorkspaceBackend>[0]
 	await renderWorkspace(<ProjectsSection />, { backend });
 	await screen.findByTestId(ids.project("p0"));
 	return backend;
+}
+
+/** Marks the project by a click on its name and opens its card with the pencil in the header. */
+async function editProject(uid: string) {
+	fireEvent.click(screen.getByTestId(ids.projectName(uid)));
+	await waitFor(() => expect(screen.getByTestId(ids.project(uid)).getAttribute("data-marked")).toBe("true"));
+	fireEvent.click(screen.getByTestId(ids.projectEditMarked));
+	await screen.findByTestId(ids.projectCard);
 }
 
 describe("ProjectsSection", () => {
@@ -103,7 +112,7 @@ describe("ProjectsSection", () => {
 	it("edits a project: name, folder and mirror, sent with the version", async () => {
 		const backend = await renderSection();
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p1")));
+		await editProject("p1");
 		fireEvent.change(screen.getByTestId(ids.cardName), { target: { value: "Viewer 2" } });
 		fireEvent.change(screen.getByTestId(ids.cardFolder), { target: { value: "/work/viewer" } });
 		fireEvent.click(screen.getByTestId(ids.cardMirrorEnabled));
@@ -119,10 +128,44 @@ describe("ProjectsSection", () => {
 		});
 	});
 
+	it("offers the pencil in the header only while a project is marked, with a hint otherwise", async () => {
+		await renderSection();
+
+		const pencil = screen.getByTestId(ids.projectEditMarked) as HTMLButtonElement;
+		expect(pencil.disabled).toBe(true);
+		expect(screen.getByTestId(ids.projectEditHint).getAttribute("aria-label")).toBe("Erst ein Projekt auswählen");
+		expect(screen.queryByTestId("workspace.project-edit.p1")).toBeNull();
+
+		await editProject("p1");
+		expect((screen.getByTestId(ids.cardName) as HTMLInputElement).value).toBe("Viewer");
+	});
+
+	it("opens the card of a project by a double click on its name", async () => {
+		await renderSection();
+
+		fireEvent.doubleClick(screen.getByTestId(ids.projectName("p2")));
+
+		expect(((await screen.findByTestId(ids.cardName)) as HTMLInputElement).value).toBe("Notizen");
+	});
+
+	it("opens the sync of a project directly from its warning, and keeps the auto-sync sign for hovering", async () => {
+		const mirrored = project("p1", "Viewer", 1, { mirror_enabled: true, mirror_folder: "/work/viewer", auto_sync: true });
+		await renderSection({
+			projects: [project("p0", "Allgemein", 0, { builtin: true }), mirrored],
+			syncStatus: { p1: { project: "p1", state: "conflicts", conflicts: 1, to_database: 0, to_files: 0, files: [], reason: null, last_sync: null } },
+		});
+
+		const warning = await screen.findByTestId(ids.syncAttention("p1"));
+		expect(screen.getByTestId(ids.syncAuto("p1")).classList.contains(SYNC_AUTO_CLASS)).toBe(true);
+		fireEvent.click(warning);
+
+		expect(await screen.findByTestId(ids.syncDialog)).toBeTruthy();
+	});
+
 	it("does not offer to rename or remove the built-in project", async () => {
 		await renderSection();
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p0")));
+		await editProject("p0");
 
 		expect((screen.getByTestId(ids.cardName) as HTMLInputElement).disabled).toBe(true);
 		expect(screen.queryByTestId(ids.cardRemove)).toBeNull();
@@ -131,7 +174,7 @@ describe("ProjectsSection", () => {
 	it("removes an empty project at once", async () => {
 		await renderSection();
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p2")));
+		await editProject("p2");
 		fireEvent.click(screen.getByTestId(ids.cardRemove));
 
 		await waitFor(() => expect(screen.queryByTestId(ids.project("p2"))).toBeNull());
@@ -140,7 +183,7 @@ describe("ProjectsSection", () => {
 	it("asks before it removes a project with content, then removes it with confirmation", async () => {
 		const backend = await renderSection({ projects: three(), elementsInProjects: { p1: 2 } });
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p1")));
+		await editProject("p1");
 		fireEvent.click(screen.getByTestId(ids.cardRemove));
 		const dialog = await screen.findByTestId("shared.confirm-dialog");
 		expect(dialog.textContent).toContain("2 Elemente");
@@ -159,7 +202,7 @@ describe("ProjectsSection", () => {
 			},
 		});
 
-		fireEvent.click(screen.getByTestId(ids.projectEdit("p1")));
+		await editProject("p1");
 		fireEvent.click(screen.getByTestId(ids.cardBrowse));
 		fireEvent.click(await screen.findByTestId(ids.folder("work")));
 		await waitFor(() => expect(screen.getByTestId(ids.folderBrowser).textContent).toContain("/home/me/work"));

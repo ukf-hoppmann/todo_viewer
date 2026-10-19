@@ -1,16 +1,18 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { AlarmCounter } from "../../../../../../client/src/plugins/alarms/AlarmCounter";
+import { flushUiState } from "../../../../../../client/src/core/ui-state/uiState";
+import { AlarmAttention } from "../../../../../../client/src/plugins/alarms/AlarmAttention";
 import { CreateAlarm } from "../../../../../../client/src/plugins/alarms/CreateForms";
 import { SetAlarm } from "../../../../../../client/src/plugins/alarms/SetAlarm";
 import { alarmsTestIds as ids } from "../../../../../../client/src/plugins/alarms/testIds";
 import { DetailSections } from "../../../../../../client/src/plugins/workspace/detailSections";
 import { NewButton } from "../../../../../../client/src/plugins/workspace/NewButton";
+import { ProjectsSection } from "../../../../../../client/src/plugins/workspace/ProjectsSection";
 import { workspaceTestIds } from "../../../../../../client/src/plugins/workspace/testIds";
 import { sharedTestIds } from "../../../../../../client/src/shared";
 import { alarm, target as element } from "../../../../../helpers/client/alarmsFixtures";
 import { fakeAlarmsBackend } from "../../../../../helpers/client/fakeAlarmsBackend";
-import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
+import { expectPersisted, project } from "../../../../../helpers/client/fakeWorkspaceBackend";
 import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 const projects = [project("p0", "Allgemein", 0, { builtin: true }), project("p1", "Viewer", 1)];
@@ -18,31 +20,47 @@ const target = element("e1", { label: "STORY-001", title: "Eine Story" });
 
 afterEach(cleanup);
 
-describe("AlarmCounter", () => {
-	it("shows nothing while no alarm has fired", async () => {
-		await renderWorkspace(<AlarmCounter />, { backend: fakeAlarmsBackend({ projects, alarms: [alarm("a")] }) });
+describe("AlarmAttention in the bell of the projects section", () => {
+	const widgets = [{ ownerId: "alarms", slot: "workspace.attention-sources", name: "due", component: AlarmAttention }];
 
-		await waitFor(() => expect(screen.queryByTestId(ids.counter)).toBeNull());
+	it("reports nothing while no alarm has fired", async () => {
+		await renderWorkspace(<ProjectsSection />, { backend: fakeAlarmsBackend({ projects, alarms: [alarm("a")] }), widgets });
+
+		await screen.findByTestId(workspaceTestIds.project("p1"));
+		await waitFor(() => expect(screen.queryByTestId(workspaceTestIds.attentionBell)).toBeNull());
 	});
 
-	it("shows how many have fired and lists them with done and snooze", async () => {
+	it("lists the fired ones, the latest first, with done and snooze", async () => {
 		const backend = fakeAlarmsBackend({
 			projects,
-			alarms: [alarm("a", { status: "Due", version: 4, targets: [target] }), alarm("b", { status: "Due" }), alarm("c")],
+			alarms: [
+				alarm("a", { status: "Due", version: 4, at: "2026-10-18T09:00:00Z", targets: [target] }),
+				alarm("b", { status: "Due", at: "2026-10-18T07:00:00Z" }),
+				alarm("c"),
+			],
 		});
-		await renderWorkspace(<AlarmCounter />, { backend });
+		await renderWorkspace(<ProjectsSection />, { backend, widgets });
 
-		const counter = await screen.findByTestId(ids.counter);
-		expect(counter.textContent).toBe("⏰2");
-		expect(counter.getAttribute("aria-label")).toBe("2 Wecker haben sich gemeldet");
-		fireEvent.click(counter);
-		expect((await screen.findByTestId(ids.dueItem("a"))).textContent).toContain("STORY-001");
+		fireEvent.click(await screen.findByTestId(workspaceTestIds.attentionBell));
+		const first = await screen.findByTestId(workspaceTestIds.attentionItem("alarms:a"));
+		expect(first.textContent).toContain("STORY-001");
 		fireEvent.click(screen.getByTestId(ids.action("finish", "a")));
+		fireEvent.click(screen.getByTestId(workspaceTestIds.attentionToggle("alarms:b")));
 		fireEvent.click(screen.getByTestId(ids.action("snooze", "b")));
 
 		await waitFor(() => expect(backend.calls("POST", "alarms/alarms/a/finish")).toHaveLength(1));
 		expect(backend.calls("POST", "alarms/alarms/a/finish")[0]!.body).toEqual({ version: 4 });
 		await waitFor(() => expect(backend.calls("POST", "alarms/alarms/b/snooze")).toHaveLength(1));
+	});
+
+	it("opens a fired alarm in the alarms view", async () => {
+		const backend = fakeAlarmsBackend({ projects, alarms: [alarm("a", { status: "Due" })] });
+		await renderWorkspace(<ProjectsSection />, { backend, widgets });
+
+		fireEvent.click(await screen.findByTestId(workspaceTestIds.attentionBell));
+		fireEvent.click(await screen.findByTestId(workspaceTestIds.attentionOpen("alarms:a")));
+
+		await expectPersisted(backend, flushUiState, waitFor, { selected: "a" }, "alarms");
 	});
 });
 

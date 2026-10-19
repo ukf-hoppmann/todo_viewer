@@ -122,8 +122,6 @@
 		"toc": "Table of contents"
 	},
 	"due": {
-		"label": "{{count}} due notes",
-		"title": "Due notes",
 		"reason": {
 			"trigger": "Trigger",
 			"notice": "Notice",

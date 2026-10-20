@@ -9,6 +9,7 @@ from typing import Protocol
 
 from viewer.core.application.ports import Transaction
 from viewer.plugins.backlog.domain.model import Item
+from viewer.plugins.backlog.domain.notes import NotesParts
 
 
 class ItemRepository(Protocol):
@@ -73,3 +74,37 @@ class DocumentRepository(Protocol):
     def rename(self, tx: Transaction, item_uid: str, old: str, new: str) -> None: ...
 
     def delete(self, tx: Transaction, item_uid: str, name: str) -> None: ...
+
+
+@dataclass(frozen=True)
+class Notes:
+    """Die Notes eines Items in Teilen; `revision` ist die Version der zusammengesetzten Datei, `state_revision` die
+    des Kopfs mit Stempel."""
+
+    item_uid: str
+    name: str
+    parts: NotesParts
+    state_revision: int
+    revision: int
+    updated_at: datetime
+
+
+class NotesRepository(Protocol):
+    def get(self, tx: Transaction, item_uid: str) -> Notes | None: ...
+
+    def names(self, tx: Transaction, item_uids: Sequence[str]) -> dict[str, str]:
+        """Item-uid → Name der Notes, nur für Items mit Notes."""
+        ...
+
+    def insert(self, tx: Transaction, notes: Notes) -> None: ...
+
+    def save(
+        self, tx: Transaction, item_uid: str, parts: NotesParts, *, expected: int, state_changed: bool, at: datetime
+    ) -> int:
+        """Ersetzt die Teile, wenn die Revision `expected` ist (sonst `version_conflict`); gibt die neue zurück.
+        `state_changed` zählt auch die Version des Kopfs hoch."""
+        ...
+
+    def rename(self, tx: Transaction, item_uid: str, new: str) -> None: ...
+
+    def delete(self, tx: Transaction, item_uid: str) -> None: ...

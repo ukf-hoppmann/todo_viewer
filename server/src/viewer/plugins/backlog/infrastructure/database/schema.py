@@ -8,6 +8,7 @@ from sqlalchemy import text
 
 from viewer.core.domain.plugin import Migration
 from viewer.plugins.backlog.domain.model import FINAL_STATUSES, PRIORITIES, STATUSES, TYPES
+from viewer.plugins.backlog.domain.notes import split_lossless
 
 
 def _v1(connection: Any) -> None:
@@ -73,4 +74,66 @@ def _v2(connection: Any) -> None:
     )
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2))
+def _v3(connection: Any) -> None:
+    """Notes der Items in eigenen Tabellen: Vorspann, Kopf mit Stempel und Protokolleinträge. Die Notes-Dokumente aus
+    `backlog_documents` werden zerlegt übernommen (ohne Textverlust, notfalls alles als Vorspann); dort bleiben nur
+    die Specs."""
+    for statement in (
+        """CREATE TABLE backlog_notes (
+            item_uid TEXT PRIMARY KEY REFERENCES backlog_items(uid) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            preamble TEXT NOT NULL,
+            state TEXT NOT NULL,
+            stamp_day TEXT,
+            stamp_topic TEXT,
+            stamp_checksum TEXT,
+            state_revision INTEGER NOT NULL DEFAULT 1,
+            revision INTEGER NOT NULL DEFAULT 1,
+            updated_at TEXT NOT NULL,
+            CHECK ((stamp_day IS NULL) = (stamp_topic IS NULL) AND (stamp_day IS NULL) = (stamp_checksum IS NULL))
+        )""",
+        """CREATE TABLE backlog_notes_entries (
+            item_uid TEXT NOT NULL REFERENCES backlog_notes(item_uid) ON DELETE CASCADE,
+            position INTEGER NOT NULL,
+            day TEXT NOT NULL,
+            topic TEXT NOT NULL,
+            body TEXT NOT NULL,
+            PRIMARY KEY (item_uid, position)
+        )""",
+    ):
+        connection.exec_driver_sql(statement)
+    rows = connection.execute(
+        text("SELECT item_uid, name, content, revision, updated_at FROM backlog_documents WHERE kind = 'notes'")
+    ).all()
+    for row in rows:
+        parts = split_lossless(row.content)
+        stamp = parts.stamp
+        connection.execute(
+            text(
+                "INSERT INTO backlog_notes(item_uid, name, preamble, state, stamp_day, stamp_topic, stamp_checksum, "
+                "state_revision, revision, updated_at) VALUES (:u, :n, :p, :s, :sd, :st, :sc, 1, :r, :t)"
+            ),
+            {
+                "u": row.item_uid,
+                "n": row.name,
+                "p": parts.preamble,
+                "s": parts.state,
+                "sd": stamp.day if stamp else None,
+                "st": stamp.topic if stamp else None,
+                "sc": stamp.checksum if stamp else None,
+                "r": row.revision,
+                "t": row.updated_at,
+            },
+        )
+        for position, entry in enumerate(parts.entries):
+            connection.execute(
+                text(
+                    "INSERT INTO backlog_notes_entries(item_uid, position, day, topic, body) "
+                    "VALUES (:u, :i, :d, :o, :b)"
+                ),
+                {"u": row.item_uid, "i": position, "d": entry.day, "o": entry.topic, "b": entry.body},
+            )
+    connection.exec_driver_sql("DELETE FROM backlog_documents WHERE kind = 'notes'")
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3))

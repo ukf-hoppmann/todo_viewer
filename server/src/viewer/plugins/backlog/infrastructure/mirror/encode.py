@@ -220,6 +220,13 @@ def _doc_path(entry: MirrorEntry) -> str:
     return f"items/{entry.refs['item'][0]}/{entry.label}"
 
 
+def _doc_text(entry: MirrorEntry) -> str:
+    """Notizen bekommen ihre Titelzeile aus dem aktuellen Label und Titel des Items."""
+    if entry.fields["kind"] != "notes":
+        return str(entry.fields["content"])
+    return f"# {entry.refs['item'][0]} — {entry.fields['title']}\n{entry.fields['content']}"
+
+
 def encode(upserts: Sequence[MirrorEntry], removed: Sequence[MirrorEntry], current: FileSet) -> list[Change]:
     files = _load(current)
     items = [e for e in upserts if e.kind != DOCUMENT_KIND]
@@ -267,7 +274,7 @@ def _document_changes(upserts: Sequence[MirrorEntry], removed: Sequence[MirrorEn
             old_path = f"items/{folder}/{folder}_{suffix}.md"
         elif entry.uid is not None:
             old_path = existing.get(entry.uid)
-        content = entry.fields["content"]
+        content = _doc_text(entry)
         if old_path is not None and old_path in current.files and old_path != new_path:
             changes.append(RenameFile(old_path, new_path))
             if current.files[old_path].text != content:

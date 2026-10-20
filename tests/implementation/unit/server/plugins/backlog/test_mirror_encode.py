@@ -208,7 +208,7 @@ def test_a_retyped_item_gets_a_new_header_and_its_documents_follow() -> None:
 
 def test_a_document_with_new_content_is_written_and_a_new_document_is_created() -> None:
     notes = next(e for e in ENTRIES if e.label == "STORY-001_notes.md")
-    changed_notes = replace(notes, fields={**notes.fields, "content": "# Neu\n"})
+    changed_notes = replace(notes, fields={**notes.fields, "content": "\n## 2026-10-03 — Neu\n"})
     topic = MirrorEntry(
         "backlog.document",
         "STORY-001_spec_Teil.md",
@@ -220,7 +220,7 @@ def test_a_document_with_new_content_is_written_and_a_new_document_is_created() 
     changes = encode([changed_notes, topic], [], CURRENT)
 
     assert texts(changes) == {
-        "items/STORY-001/STORY-001_notes.md": "# Neu\n",
+        "items/STORY-001/STORY-001_notes.md": "# STORY-001 — Pflicht-Story mit Dokumenten\n\n## 2026-10-03 — Neu\n",
         "items/STORY-001/STORY-001_spec_Teil.md": "# Teil\n",
     }
 
@@ -259,3 +259,14 @@ def test_without_any_file_a_new_item_creates_todo_md_from_the_template_and_no_ar
     out = texts(changes)["TODO.md"]
     assert out.startswith("# Project Backlog\n") and "backlog format version 2" in out and "## Work items" in out
     assert decode(FileSet({"TODO.md": FileEntry("TODO.md", out, "v")}))[0].uid == entry.uid
+
+
+def test_the_title_line_of_notes_follows_label_and_title_of_the_item() -> None:
+    notes = next(e for e in ENTRIES if e.label == "STORY-001_notes.md")
+    retyped = replace(
+        notes, label="TASK-009_notes.md", refs={"item": ("TASK-009",)}, fields={**notes.fields, "title": "Neu"}
+    )
+
+    text = texts(encode([retyped], [], CURRENT))["items/TASK-009/TASK-009_notes.md"]
+
+    assert text.startswith("# TASK-009 — Neu\n\n## 2026-10-02 — Erster Eintrag\n")

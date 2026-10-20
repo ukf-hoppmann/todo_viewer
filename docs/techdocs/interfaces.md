@@ -743,13 +743,53 @@ und die Wecker; `counters.md` und Zeit-Auslöser an Notes entfallen.
 |---|---|
 | `TODO.md` | aktive Items (nicht abgeschlossen, nicht im Papierkorb) |
 | `archive.md` | Items mit `Completed`/`Rejected` und Items im Papierkorb |
-| `items/<LABEL>/` | `<LABEL>_notes.md`, `<LABEL>_spec.md`, `<LABEL>_spec_<thema>.md`, Text unverändert |
+| `items/<LABEL>/` | `<LABEL>_notes.md` (Aufbau unten), `<LABEL>_spec.md`, `<LABEL>_spec_<thema>.md` (Text unverändert) |
 | `notes/` | Notes, ihre Dokumente und `topics.md` wie heute, ohne `counters.md` |
 | `alarms.md` | alle Wecker |
 
 Andere Dateien werden nicht gelesen. Feldnamen und Werte sind englisch,
 Inhalte in der Sprache des Projekts. Zeitpunkte sind UTC mit `Z`, Tage
 `YYYY-MM-DD`. Zeilenenden bleiben, wie sie in der Datei sind.
+
+### Notes eines Items
+
+Die Datenbank speichert die Notes eines Items in Teilen (`backlog_notes`:
+Vorspann, Kopf, Stempel; `backlog_notes_entries`: Protokolleinträge). API
+und Spiegel zeigen sie als eine Datei
+([STORY-093](../todo/items/STORY-093/STORY-093_spec.md)):
+
+```markdown
+# <LABEL> — <Titel>
+<Vorspann, falls vorhanden>
+## Stand
+
+<Kopf>
+
+Stand bestätigt nach Eintrag <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
+
+## <YYYY-MM-DD> — <Thema>
+…
+```
+
+- **Titelzeile:** wird immer aus dem aktuellen Label und Titel des Items
+  erzeugt und folgt Typ- und Titelwechsel. Der Sync vergleicht sie nicht: Eine
+  abweichende Titelzeile in einer Datei ist keine Änderung und wird beim
+  nächsten Schreiben der Datei erneuert.
+- **Protokolleintrag:** ab einer Zeile `## YYYY-MM-DD — <Thema>` (Gedankenstrich
+  U+2014) bis vor die nächste; der Text bleibt unverändert.
+- **Kopf:** der Abschnitt `## Stand` vor dem ersten Eintrag. Die letzte
+  Zeile darin ist der **Stempel**, wenn sie dem Muster oben folgt (Prüfsumme:
+  12 Hex-Zeichen).
+- **Vorspann:** Text zwischen Titelzeile und Kopf bzw. erstem Eintrag (z. B.
+  ein altes `## Summary`), unverändert.
+- Notes ohne Kopf kommen bis auf die Titelzeile byteweise so heraus, wie sie
+  hineingingen. Notes mit Kopf werden in das Layout oben gebracht.
+- `PUT …/documents/<LABEL>_notes.md` über die API: Vorspann und Protokoll kommen
+  aus dem Text; der Kopf nur, wenn der Text `## Stand` enthält, sonst bleibt
+  er. Eine Stempelzeile im Text wird ignoriert, den Stempel setzt nur der
+  Server.
+- Spiegel: Die Datei ist dort der ganze Stand. Der Stempel wird aus ihr
+  übernommen, und ohne `## Stand` ist der Kopf leer.
 
 ### Verweise
 

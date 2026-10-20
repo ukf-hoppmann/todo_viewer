@@ -176,11 +176,12 @@ class SqlItemRepository:
         dependencies: dict[str, list[str]] = {}
         for row in dependency_rows:
             dependencies.setdefault(row.item_uid, []).append(row.depends_on_uid)
+        in_marks = ", ".join(f":{name}" for name in marks)
         document_rows = connection.execute(
             text(
-                "SELECT item_uid, name, kind FROM backlog_documents WHERE item_uid IN ("
-                + ", ".join(f":{name}" for name in marks)
-                + ") ORDER BY item_uid, kind DESC, name"
+                f"SELECT item_uid, name, kind FROM backlog_documents WHERE item_uid IN ({in_marks}) "
+                f"UNION ALL SELECT item_uid, name, 'notes' AS kind FROM backlog_notes WHERE item_uid IN ({in_marks}) "
+                "ORDER BY item_uid, kind DESC, name"
             ),
             marks,
         ).all()

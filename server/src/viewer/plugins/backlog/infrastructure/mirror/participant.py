@@ -11,9 +11,16 @@ from typing import Any
 from viewer.core.application.ports import Clock, Database, Transaction
 from viewer.core.application.sync import SyncChanges
 from viewer.core.domain.sync import MirrorEntry, MirrorFormatError
-from viewer.plugins.backlog.application.ports import Document, DocumentRepository, ItemRepository
+from viewer.plugins.backlog.application.ports import (
+    Document,
+    DocumentRepository,
+    ItemRepository,
+    Notes,
+    NotesRepository,
+)
 from viewer.plugins.backlog.domain.lifecycle import LifecycleRules, LifecycleViolation
 from viewer.plugins.backlog.domain.model import KIND_BY_TYPE, TYPE_BY_KIND, Item
+from viewer.plugins.backlog.domain.notes import assemble, split, title_of, without_title
 from viewer.plugins.backlog.infrastructure.mirror.decode import DOCUMENT_KIND
 from viewer.plugins.backlog.infrastructure.mirror.syntax import TODO_FILE
 
@@ -38,10 +45,17 @@ def _documents(entries: Sequence[MirrorEntry]) -> list[MirrorEntry]:
 
 class BacklogParticipant:
     def __init__(
-        self, items: ItemRepository, documents: DocumentRepository, registry: Any, database: Database, clock: Clock
+        self,
+        items: ItemRepository,
+        documents: DocumentRepository,
+        notes: NotesRepository,
+        registry: Any,
+        database: Database,
+        clock: Clock,
     ) -> None:
         self._items = items
         self._documents = documents
+        self._notes = notes
         self._registry = registry
         self._database = database
         self._clock = clock
@@ -55,15 +69,19 @@ class BacklogParticipant:
             label = {item.uid: item.label for item in items}
             entries = [self._entry(item, label) for item in items]
             for item in items:
+                notes = self._notes.get(tx, item.uid)
+                documents: list[tuple[str, dict[str, Any]]] = []
+                if notes is not None:
+                    content = without_title(assemble(title_of(item), notes.parts))
+                    documents.append((notes.name, {"content": content, "kind": "notes", "title": item.title}))
                 for document in self._documents.list_for(tx, item.uid):
-                    suffix = _suffix(item.label, document.name)
+                    documents.append((document.name, {"content": document.content, "kind": document.kind}))
+                for name, fields in documents:
+                    suffix = _suffix(item.label, name)
                     if suffix is None:
                         continue
-                    fields = {"content": document.content, "kind": document.kind}
                     entries.append(
-                        MirrorEntry(
-                            DOCUMENT_KIND, document.name, fields, {"item": (item.label,)}, f"{item.uid}/{suffix}"
-                        )
+                        MirrorEntry(DOCUMENT_KIND, name, fields, {"item": (item.label,)}, f"{item.uid}/{suffix}")
                     )
         return entries
 
@@ -236,6 +254,9 @@ class BacklogParticipant:
         for entry in (*created, *updated):
             item_uid = self._uid_of(tx, project, entry, entry.refs["item"][0], new)
             name = str(entry.label)
+            if entry.fields["kind"] == "notes":
+                self._write_notes(tx, item_uid, name, entry.fields["content"], now)
+                continue
             existing = self._documents.get(tx, item_uid, name)
             if existing is None:
                 self._documents.insert(
@@ -245,8 +266,23 @@ class BacklogParticipant:
                 self._documents.update(tx, item_uid, name, entry.fields["content"], existing.revision, now)
         for entry in deleted:
             element = self._registry.find_by_label(tx, project, entry.refs["item"][0])
-            if element is not None:
+            if element is None:
+                continue
+            notes = self._notes.get(tx, element.uid)
+            if notes is not None and notes.name == str(entry.label):
+                self._notes.delete(tx, element.uid)
+            else:
                 self._documents.delete(tx, element.uid, str(entry.label))
+
+    def _write_notes(self, tx: Transaction, item_uid: str, name: str, content: str, now: datetime) -> None:
+        """Die Datei ist im Spiegel der ganze Stand: der Stempel kommt aus ihr, ohne `## Stand` ist der Kopf leer."""
+        parts = split(content)
+        existing = self._notes.get(tx, item_uid)
+        if existing is None:
+            self._notes.insert(tx, Notes(item_uid, name, parts, 1, 1, now))
+            return
+        changed = (parts.state, parts.stamp) != (existing.parts.state, existing.parts.stamp)
+        self._notes.save(tx, item_uid, parts, expected=existing.revision, state_changed=changed, at=now)
 
     def _check(
         self, tx: Transaction, project: str, before: list[Item], returning: list[Item], entries: Sequence[MirrorEntry]

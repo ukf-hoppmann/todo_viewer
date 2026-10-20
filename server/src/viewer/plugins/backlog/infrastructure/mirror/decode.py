@@ -7,11 +7,13 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
+from typing import Any
 
 from viewer.core.domain.files import FileSet
 from viewer.core.domain.sync import MirrorEntry, MirrorFormatError
 from viewer.plugins.backlog.domain.lifecycle import LifecycleRules, LifecycleViolation
 from viewer.plugins.backlog.domain.model import KIND_BY_TYPE, PRIORITIES, STATUSES, TYPES, Item
+from viewer.plugins.backlog.domain.notes import without_title
 from viewer.plugins.backlog.infrastructure.mirror.syntax import (
     ARCHIVE_FILE,
     DAY,
@@ -246,7 +248,14 @@ def _documents(files: FileSet, items: list[_Decoded]) -> list[MirrorEntry]:
         if item is None:
             continue  # ein Ordner ohne Eintrag in TODO.md oder archive.md: nichts zuzuordnen
         suffix = match.group("kind")  # `notes`, `spec` oder `spec_<thema>`: bleibt beim Typwechsel gleich
-        fields = {"content": files.files[path].text, "kind": "notes" if suffix == "notes" else "spec"}
+        text = files.files[path].text
+        if suffix == "notes":
+            # Die Titelzeile ist abgeleitet: das Schreiben erzeugt sie aus Label und Titel des Items, verglichen wird
+            # sie nicht. So erscheint die Datei nach einem Typwechsel nicht als geändert, und eine abweichende alte
+            # Titelzeile ist kein Konflikt; sie wird beim nächsten Schreiben erneuert.
+            fields: dict[str, Any] = {"content": without_title(text), "kind": "notes", "title": item.fields["title"]}
+        else:
+            fields = {"content": text, "kind": "spec"}
         refs = {"item": (folder,)}
         if item.uid is not None:
             docs.append(MirrorEntry(DOCUMENT_KIND, name, fields, refs, f"{item.uid}/{suffix}", source=(path, 1)))

@@ -111,26 +111,28 @@ def test_areas_dependencies_and_documents(imported: tuple[sqlite3.Connection, Re
         {"item_uid": "t1", "depends_on_uid": "s2"}
     ]
     documents = {(r["item_uid"], r["name"]): r for r in rows(db, "SELECT * FROM backlog_documents")}
-    assert set(documents) == {
-        ("s1", "STORY-001_spec.md"),
-        ("s2", "STORY-002_notes.md"),
-        ("s3", "STORY-003_notes.md"),
-        ("s3", "STORY-003_spec.md"),
-    }
+    assert set(documents) == {("s1", "STORY-001_spec.md"), ("s3", "STORY-003_spec.md")}
     assert documents[("s1", "STORY-001_spec.md")]["kind"] == "spec"
-    assert documents[("s3", "STORY-003_notes.md")]["kind"] == "notes"
+    notes = rows(db, "SELECT item_uid, name FROM backlog_notes ORDER BY item_uid")
+    assert notes == [
+        {"item_uid": "s2", "name": "STORY-002_notes.md"},
+        {"item_uid": "s3", "name": "STORY-003_notes.md"},
+    ]
 
 
 def test_extra_fields_become_one_dated_notes_entry(imported: tuple[sqlite3.Connection, Report]) -> None:
     db, _ = imported
 
-    created = scalar(db, "SELECT content FROM backlog_documents WHERE item_uid='s2' AND name='STORY-002_notes.md'")
-    appended = scalar(db, "SELECT content FROM backlog_documents WHERE item_uid='s3' AND name='STORY-003_notes.md'")
+    def entries(uid: str) -> list[dict[str, Any]]:
+        return rows(db, "SELECT day, topic, body FROM backlog_notes_entries WHERE item_uid = ? ORDER BY position", uid)
 
-    assert created.startswith("# STORY-002 — Titel STORY-002\n\n## 2026-10-17 — Übernommene Zusatzfelder\n")
-    assert "- Implementation: Erste Zeile Zweite Zeile\n- Context: Kontext\n" in created
-    assert appended.startswith("# STORY-003 — Titel STORY-003\n\n## 2026-10-17 — Übernommene Zusatzfelder\n")
-    assert "- Verification: Geprüft\n" in appended
+    created, appended = entries("s2"), entries("s3")
+
+    assert scalar(db, "SELECT preamble FROM backlog_notes WHERE item_uid='s2'") == "\n"
+    assert [(e["day"], e["topic"]) for e in created] == [("2026-10-17", "Übernommene Zusatzfelder")]
+    assert "- Implementation: Erste Zeile Zweite Zeile\n- Context: Kontext\n" in created[0]["body"]
+    assert (appended[-1]["day"], appended[-1]["topic"]) == ("2026-10-17", "Übernommene Zusatzfelder")
+    assert "- Verification: Geprüft\n" in appended[-1]["body"]
 
 
 def test_topics_and_notes_keep_their_state(imported: tuple[sqlite3.Connection, Report]) -> None:

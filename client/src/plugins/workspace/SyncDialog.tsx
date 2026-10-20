@@ -14,7 +14,7 @@ import {
 	type SyncDirection,
 	type SyncResult,
 } from "./api";
-import { choiceDeletes, decisionsOf, differences, isDeletionConflict, withBulkChoice, type Choices } from "./sync";
+import { choiceEffect, decisionsOf, differences, isDeletionConflict, withBulkChoice, type Choices } from "./sync";
 import { workspaceTestIds } from "./testIds";
 
 const directions: SyncDirection[] = ["both", "to_files", "to_database"];
@@ -192,15 +192,21 @@ function ConflictCard({ conflict, choice, onChoose }: { conflict: SyncConflict; 
 					))}
 				</tbody>
 			</Box>
-			<RadioGroup row value={choice ?? ""} onChange={(event) => onChoose(event.target.value as SyncChoice)}>
+			<RadioGroup value={choice ?? ""} onChange={(event) => onChoose(event.target.value as SyncChoice)}>
 				{choices.map((value) => (
 					<FormControlLabel
 						key={value}
 						value={value}
 						control={<Radio size="small" slotProps={{ input: { "data-testid": workspaceTestIds.syncChoice(conflict.key, value) } as never }} />}
 						label={
-							choiceDeletes(conflict, value) ? t("sync.choiceDeletes", { choice: t(`sync.choices.${value}`) }) : t(`sync.choices.${value}`)
+							<Box>
+								<Typography variant="body2">{t(`sync.choices.${value}`)}</Typography>
+								<Typography variant="caption" color="text.secondary">
+									{t(`sync.effect.${choiceEffect(conflict, value)}`)}
+								</Typography>
+							</Box>
 						}
+						sx={{ alignItems: "flex-start", mb: 0.5 }}
 					/>
 				))}
 			</RadioGroup>

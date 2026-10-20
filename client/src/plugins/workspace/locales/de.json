@@ -147,11 +147,19 @@
 		"database": "Datenbank",
 		"files": "Dateien",
 		"choices": {
-			"database": "Datenbank",
-			"files": "Dateien",
-			"defer": "Später"
-		},
-		"choiceDeletes": "{{choice}} (löscht den Eintrag)",
+		"database": "Datenbank übernehmen",
+		"files": "Dateien übernehmen",
+		"defer": "Später entscheiden"
+	},
+		"effect": {
+		"database": "Die Dateien werden mit dem Stand der Datenbank überschrieben.",
+		"files": "Die Datenbank wird mit dem Stand der Dateien überschrieben.",
+		"defer": "Nichts wird geändert, der Konflikt bleibt offen.",
+		"databaseDeletes": "Der Eintrag wird auch in den Dateien gelöscht.",
+		"filesDeletes": "Der Eintrag wird auch in der Datenbank gelöscht.",
+		"databaseRecreates": "Der Eintrag wird in den Dateien neu angelegt.",
+		"filesRecreates": "Der Eintrag wird in der Datenbank neu angelegt."
+	},
 		"all": {
 			"database": "Alle: Datenbank",
 			"files": "Alle: Dateien"

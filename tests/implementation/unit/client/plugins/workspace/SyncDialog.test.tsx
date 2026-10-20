@@ -79,7 +79,7 @@ describe("SyncDialog", () => {
 
 		await waitFor(() => expect(backend.calls("POST", "core/sync/p1/execute")).toHaveLength(1));
 		expect(executeBody(backend)).toMatchObject({ decisions: [{ uid: "u1", choice: "files" }, { uid: "u2", choice: "files" }], delete_missing: false });
-		expect(screen.getByTestId(ids.syncConflict("u3")).textContent).toContain("löscht den Eintrag");
+		expect(screen.getByTestId(ids.syncConflict("u3")).textContent).toContain("gelöscht");
 	});
 
 	it("sends delete_missing only when a deleting choice was made for one conflict", async () => {

@@ -35,6 +35,14 @@ export function choiceDeletes(conflict: SyncConflict, choice: SyncChoice): boole
 	return false;
 }
 
+/** What choosing `choice` does to the other side, as the key of the explanation shown next to the option. */
+export function choiceEffect(conflict: SyncConflict, choice: SyncChoice): string {
+	if (choice === "defer") return "defer";
+	if (choiceDeletes(conflict, choice)) return `${choice}Deletes`;
+	if (isDeletionConflict(conflict)) return `${choice}Recreates`;
+	return choice;
+}
+
 export type Choices = Record<string, SyncChoice>;
 
 /** The choice for every conflict that a bulk button may set: deletions are left out, they are chosen one by one. */

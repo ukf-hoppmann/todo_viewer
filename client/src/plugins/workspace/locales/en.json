@@ -147,11 +147,19 @@
 		"database": "Database",
 		"files": "Files",
 		"choices": {
-			"database": "Database",
-			"files": "Files",
-			"defer": "Later"
-		},
-		"choiceDeletes": "{{choice}} (deletes the entry)",
+		"database": "Use database",
+		"files": "Use files",
+		"defer": "Decide later"
+	},
+		"effect": {
+		"database": "The files are overwritten with the database version.",
+		"files": "The database is overwritten with the files version.",
+		"defer": "Nothing changes, the conflict stays open.",
+		"databaseDeletes": "The entry is deleted in the files as well.",
+		"filesDeletes": "The entry is deleted in the database as well.",
+		"databaseRecreates": "The entry is created again in the files.",
+		"filesRecreates": "The entry is created again in the database."
+	},
 		"all": {
 			"database": "All: database",
 			"files": "All: files"

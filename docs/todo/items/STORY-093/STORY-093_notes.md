@@ -42,3 +42,23 @@
 - Notes ohne Kopf ergeben dieselbe Datei wie heute (Vorschlag; Prüfung mit allen bestehenden Notes).
 - Prüfen, ob der Harness im Files-Modus (Cloud-Kopie) mit `## Stand` und Stempelzeile im Spiegel zurechtkommt.
 - Ob GET/PUT auf die ganze Datei überhaupt entfallen sollen; die Spec im Harness sieht sie dauerhaft vor.
+
+## 2026-10-20 — Kompatibilität: Vorschläge angenommen, Migration und Abschaltung
+
+### Discussed
+
+- Frage des Owners: Wenn alle Einträge einmalig migriert werden, können die alten Endpunkte dann gleich nach dem Umbau entfallen?
+- Die Migration betrifft die Daten; die alten Endpunkte braucht es wegen der Aufrufer (backlog_api.py des Harness, MCP-Tools, Cloud-Kopien des Plugins in den Projekten), die erst nachgezogen werden müssen.
+
+### Decided
+
+- Open vom 2026-10-20 (Version) erledigt: Version der zusammengesetzten Datei ist eine Zahl, die bei jeder Änderung von Kopf oder Protokoll steigt (Summe der Revisionen oder eigener Zähler; Wahl im Plan).
+- Open vom 2026-10-20 (PUT ohne Stand) erledigt: Fehlt `## Stand`, bleibt der Kopf unverändert.
+- Open vom 2026-10-20 (Stempelzeile) erledigt: Über die API ignoriert der Server die Stempelzeile im PUT-Text; im Spiegel wird sie übernommen.
+- Open vom 2026-10-20 (Notes ohne Kopf) erledigt: Sie ergeben dieselbe Datei wie heute; geprüft per Rundlauf über alle bestehenden Notes.
+- Alle bestehenden Notes werden einmalig migriert; danach gibt es nur noch Kopf- und Protokolltabellen.
+- Die alten Endpunkte entfallen erst, wenn der Harness umgestellt ist und die Cloud-Kopien aktualisiert sind.
+
+### Open
+
+- Ob PUT auf die ganze Datei bleibt oder durch einen Endpunkt zum Bearbeiten einzelner Einträge ersetzt wird (mit dem Harness abstimmen).

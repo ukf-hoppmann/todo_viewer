@@ -772,8 +772,9 @@ Stand bestätigt nach Eintrag <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
 ```
 
 - **Titelzeile:** wird immer aus dem aktuellen Label und Titel des Items
-  erzeugt; sie folgt Typ- und Titelwechsel. Im Spiegel vergleicht der Sync
-  nur den Titel, nicht die ganze Zeile.
+  erzeugt und folgt Typ- und Titelwechsel. Der Sync vergleicht sie nicht: Eine
+  abweichende Titelzeile in einer Datei ist keine Änderung und wird beim
+  nächsten Schreiben der Datei erneuert.
 - **Protokolleintrag:** ab einer Zeile `## YYYY-MM-DD — <Thema>` (Gedankenstrich
   U+2014) bis vor die nächste; der Text bleibt unverändert.
 - **Kopf:** der Abschnitt `## Stand` vor dem ersten Eintrag. Die letzte

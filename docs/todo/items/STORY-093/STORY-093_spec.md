@@ -176,17 +176,22 @@ Fähigkeitsprüfung des Harness: ein Viewer ohne Köpfe antwortet auf
 
 ## Spiegel
 
-- Der Codec bleibt textbasiert: ein Spiegel-Eintrag `backlog.document` pro
-  Notes-Datei mit dem zusammengesetzten Text, wie heute.
+- Ein Spiegel-Eintrag `backlog.document` pro Notes-Datei. Für Notizen
+  enthält er den Text **ohne Titelzeile** (`content`) und den Titel des Items
+  (`title`); beim Einlesen kommt `title` aus dem Item-Eintrag in `TODO.md`,
+  nicht aus der Datei. Der Codec schreibt die Titelzeile aus Label und `title`.
+  Die Titelzeile ist damit abgeleitet und wird nicht verglichen: Ein
+  Typwechsel ist nur ein Umbenennen, ein Titelwechsel schreibt die Datei neu,
+  und eine abweichende alte Titelzeile (z. B. `— Notizen`) ist kein Konflikt;
+  sie wird beim nächsten Schreiben der Datei erneuert.
 - Der Sync-Teilnehmer setzt beim Lesen aus der Datenbank zusammen und zerlegt
   beim Schreiben in die Datenbank. Anders als über die API wird eine gültige
   Stempelzeile aus der Datei übernommen (Files-Modus bestätigt mit
   `backlog.py --confirm-state`). Fehlt `## Stand` in der Datei, wird der Kopf
   geleert, weil die Datei dort die ganze Wahrheit ist.
-- Weil die Titelzeile erzeugt wird, ändert ein Typ- oder Titelwechsel die
-  Notes-Datei im Spiegel; das ist gewollt.
-- Neue Golden Files in `tests/fixtures/mirror-v2/` für Notes mit Kopf und
-  Stempel, mit Vorspann und ohne datierte Einträge.
+- Die Fälle (Kopf mit Stempel, Vorspann, ohne datierte Einträge, abweichende
+  Titelzeile, Typ- und Titelwechsel) sind mit byte-genauen Erwartungen in den
+  Spiegel-Tests abgedeckt.
 
 ## Oberfläche
 

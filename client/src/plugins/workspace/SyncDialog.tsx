@@ -174,7 +174,10 @@ function ConflictCard({ conflict, choice, onChoose }: { conflict: SyncConflict; 
 			<Typography variant="body2" sx={{ fontWeight: 600 }}>
 				{conflict.label ?? conflict.kind} · {t(`sync.conflict.${conflict.conflict}`)}
 			</Typography>
-			<Box component="table" sx={{ width: "100%", fontSize: 13, borderCollapse: "collapse", my: 0.5 }}>
+			<Box
+				component="table"
+				sx={{ width: "100%", fontSize: 13, borderCollapse: "collapse", my: 0.5, "& td": { verticalAlign: "top", whiteSpace: "pre-wrap", wordBreak: "break-word", pr: 1 } }}
+			>
 				<thead>
 					<tr>
 						<th align="left" />
@@ -186,8 +189,12 @@ function ConflictCard({ conflict, choice, onChoose }: { conflict: SyncConflict; 
 					{rows.map((row) => (
 						<tr key={row.name} data-testid={workspaceTestIds.syncDifference(conflict.key, row.name)}>
 							<td>{row.name}</td>
-							<td>{row.database}</td>
-							<td>{row.files}</td>
+							<td>
+								<Box sx={{ maxHeight: 160, overflow: "auto" }}>{row.database}</Box>
+							</td>
+							<td>
+								<Box sx={{ maxHeight: 160, overflow: "auto" }}>{row.files}</Box>
+							</td>
 						</tr>
 					))}
 				</tbody>

@@ -67,7 +67,9 @@ Stand bestätigt nach Eintrag <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
   Reihenfolge ab der ersten Eintragszeile, Zeilenenden LF, Leerzeichen und
   Tabs am Zeilenende entfernt, genau ein Zeilenumbruch am Ende. Vorspann,
   Kopf und Stempel gehören nicht dazu. Maßgeblich ist `format.md` des
-  Harness; ein leeres Protokoll wird so behandelt, wie es dort festgelegt ist.
+  Harness. Ein leeres Protokoll braucht keine Prüfsumme, weil es ohne Eintrag
+  keinen Stempel gibt. Testvektoren: `tests/fixtures/notes-state/checksum.json`,
+  erzeugt direkt aus dieser Definition; der Harness übernimmt sie (TASK-022).
 - Zustand des Kopfs (`notes_state`):
   - `null`: das Item hat keine Notes.
   - `missing`: Notes ohne Kopf (auch leerer Kopf). Kein Fehler.
@@ -120,7 +122,7 @@ Neu:
 | Operation | HTTP | Eingabe | Ausgabe |
 |---|---|---|---|
 | `get_notes_state` | `GET /items/{ref}/notes/state` | `ref`, `project` | `NotesStateOut` |
-| `put_notes_state` | `PUT /items/{ref}/notes/state` | `content`, `version` (= `state_revision`; ohne Angabe nur, wenn noch kein Kopf existiert) | `NotesStateOut` |
+| `put_notes_state` | `PUT /items/{ref}/notes/state` | `content`, `version` (= `state_revision`, Pflicht) | `NotesStateOut` |
 | `confirm_notes_state` | `POST /items/{ref}/notes/state/confirm` | `version` | `NotesStateOut` |
 | `list_notes_entries` | `GET /items/{ref}/notes/entries` | `last` (optional, die letzten N) | Liste von `{position, day, topic, text}` |
 
@@ -129,12 +131,16 @@ Neu:
   `checksum` (aktuelle Prüfsumme des Protokolls), `last_entry` (`{day,
   topic}` oder `null`), `version` (= `state_revision`), `hints`.
 - `put_notes_state` ersetzt den Kopf und setzt den Stempel auf den letzten
-  Eintrag und die aktuelle Prüfsumme. Ohne Notes legt es sie an (dann gelten
-  die Regeln für die erste Notiz: Kurzfassung nötig).
+  Eintrag und die aktuelle Prüfsumme. Es legt keine Notes an: ohne Notes
+  `notes_not_found`, ohne Protokolleintrag `notes_without_entries`. Neue Notes
+  mit Kopf entstehen mit `append_note` und `state`. Ein leerer Kopf ist
+  `invalid_input`.
 - `confirm_notes_state` setzt nur den Stempel; ohne Kopf Fehler
   `notes_state_missing`.
-- Ohne Protokolleinträge kann kein Stempel gesetzt werden, wenn `format.md`
-  das nicht anders festlegt (Fehler `notes_without_entries`).
+- Ohne Protokolleinträge kann kein Stempel gesetzt werden (Fehler
+  `notes_without_entries`).
+- Fehlercodes `notes_not_found`, `notes_state_missing`,
+  `notes_without_entries` antworten mit HTTP 400 (Standard des Cores).
 - `text` in `list_notes_entries` ist der Eintrag mit Überschriftszeile.
 
 Erweitert, rückwärtskompatibel (Felder nur zusätzlich):

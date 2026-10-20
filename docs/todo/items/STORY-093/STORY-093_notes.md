@@ -92,3 +92,21 @@
 
 - Bestätigt: Fehlt `## Stand` in einer Datei im Spiegel, wird der Kopf geleert; über die API bleibt er erhalten (die Datei ist im Spiegel der vollständige Stand, ein alter API-Client kennt den Kopf nur nicht).
 - Bestätigt: Die Oberfläche zeigt in dieser Story Kopf, Markierung und einklappbares Protokoll; Kopf bestätigen und einzeln bearbeiten kommt später.
+
+## 2026-10-20 — TASK-044: Festlegungen für den Harness
+
+### Discussed
+
+- Beim Planen von TASK-044 fiel ein Widerspruch in der Spec auf: put_notes_state sollte Notes anlegen, aber ohne Eintrag gibt es keinen Stempel.
+- Die Testvektoren der Prüfsumme sollten aus dem Harness kommen (TASK-021/022), dort gibt es sie noch nicht.
+
+### Decided
+
+- put_notes_state legt keine Notes an (notes_not_found bzw. notes_without_entries); neue Notes mit Kopf entstehen mit append_note und state. Damit braucht es keine Prüfsumme für ein leeres Protokoll; der offene Punkt dazu ist erledigt.
+- Open vom 2026-10-20 (Testvektoren) erledigt: Die Vektoren liegen in tests/fixtures/notes-state/checksum.json des ToDo-Viewers, erzeugt direkt aus der Definition (SHA-256, erste 12 Hex-Zeichen, kanonische Form). Der Harness übernimmt diese Datei für TASK-022.
+- Neue Fehlercodes notes_not_found, notes_state_missing, notes_without_entries mit HTTP 400.
+- Index-Zeilen haben eine neue letzte Spalte Notes (current, stale, missing oder -).
+
+### Open
+
+- Harness: TASK-021/022 übernehmen die Vektor-Datei; TASK-023 gegen den echten Viewer abstimmen, sobald v0.8.14 läuft.

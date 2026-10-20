@@ -69,6 +69,10 @@ export const sharedTestIds = {
 	largeView: "shared.large-view",
 	largeViewClose: "shared.large-view-close",
 	largeViewToc: "shared.large-view-toc",
+	outlineButton: "shared.outline-button",
+	outline: "shared.outline",
+	/** An entry of the outline menu: `shared.outline-item.<slug>`. */
+	outlineItem: (slug: string) => `shared.outline-item.${slug}`,
 	/** An entry of the table of contents: `shared.large-view-toc-item.<slug>`. */
 	largeViewTocItem: (slug: string) => `shared.large-view-toc-item.${slug}`,
 } as const;

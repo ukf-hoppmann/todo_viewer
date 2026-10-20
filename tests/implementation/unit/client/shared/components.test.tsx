@@ -275,6 +275,37 @@ describe("MarkdownView and MarkdownEditor", () => {
 	});
 });
 
+describe("MarkdownView outline", () => {
+	it("jumps to a heading from the outline menu, inside its own view", () => {
+		const markdown = "# Eins\n\n## Zwei\n\nmehr";
+		render(
+			<>
+				<MarkdownView source={markdown} />
+				<MarkdownView source={markdown} outlineLabel="Gliederung" />
+			</>,
+		);
+		const [other, own] = Array.from(document.querySelectorAll("[id='zwei']"));
+		const scrollOther = vi.fn();
+		const scrollOwn = vi.fn();
+		other.scrollIntoView = scrollOther;
+		own.scrollIntoView = scrollOwn;
+
+		fireEvent.click(screen.getByRole("button", { name: "Gliederung" }));
+		fireEvent.click(screen.getByTestId(sharedTestIds.outlineItem("zwei")));
+
+		expect(scrollOwn).toHaveBeenCalledTimes(1);
+		expect(scrollOther).not.toHaveBeenCalled();
+	});
+
+	it("shows no outline without a label or with fewer than two headings", () => {
+		render(<MarkdownView source={"# Eins\n\n## Zwei"} />);
+		expect(screen.queryByTestId(sharedTestIds.outlineButton)).toBeNull();
+		cleanup();
+		render(<MarkdownView source="# Eins" outlineLabel="Gliederung" />);
+		expect(screen.queryByTestId(sharedTestIds.outlineButton)).toBeNull();
+	});
+});
+
 describe("LargeView", () => {
 	it("shows the document with a table of contents from its headings and jumps to a heading", () => {
 		const scroll = vi.fn();
@@ -287,6 +318,26 @@ describe("LargeView", () => {
 		fireEvent.click(screen.getByTestId(sharedTestIds.largeViewTocItem("zwei")));
 
 		expect(scroll).toHaveBeenCalledTimes(1);
+	});
+
+	it("jumps inside the dialog even when the page behind shows the same document", () => {
+		const markdown = "# Eins\n\n## Zwei\n\nmehr";
+		render(
+			<>
+				<MarkdownView source={markdown} />
+				<LargeView open onClose={() => {}} title="Spec" markdown={markdown} closeLabel="Schließen" tocLabel="Inhalt" />
+			</>,
+		);
+		const [behind, inDialog] = Array.from(document.querySelectorAll("[id='zwei']"));
+		const scrollBehind = vi.fn();
+		const scrollInDialog = vi.fn();
+		behind.scrollIntoView = scrollBehind;
+		inDialog.scrollIntoView = scrollInDialog;
+
+		fireEvent.click(screen.getByTestId(sharedTestIds.largeViewTocItem("zwei")));
+
+		expect(scrollInDialog).toHaveBeenCalledTimes(1);
+		expect(scrollBehind).not.toHaveBeenCalled();
 	});
 
 	it("has no table of contents without headings, and closes", () => {

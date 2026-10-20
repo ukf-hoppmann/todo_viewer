@@ -138,7 +138,7 @@ function DocumentDialog({ owner, name, readOnly, useDocument, saveDocument, labe
 			</DialogTitle>
 			<DialogContent dividers>
 				{!document && <Typography color="text.secondary">…</Typography>}
-				{document && !editing && <MarkdownView source={document.content} />}
+				{document && !editing && <MarkdownView source={document.content} outlineLabel={labels.toc} />}
 				{document && editing && (
 					<MarkdownEditor
 						ariaLabel={name}

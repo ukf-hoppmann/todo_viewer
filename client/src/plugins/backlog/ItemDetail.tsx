@@ -55,7 +55,7 @@ function Loaded({ item, onSelect, onClose }: { item: ItemOut; onSelect: (uid: st
 		value ? (
 			<DetailField id={name} label={label}>
 				<span data-testid={backlogTestIds.field(name)}>
-					<MarkdownView source={value} />
+					<MarkdownView source={value} outlineLabel={t("documents.toc")} />
 				</span>
 			</DetailField>
 		) : null;

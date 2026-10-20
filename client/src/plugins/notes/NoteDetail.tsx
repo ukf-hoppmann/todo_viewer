@@ -86,7 +86,7 @@ function Loaded({ note, onClose }: { note: NoteOut; onClose?: () => void }) {
 				{note.body && (
 					<DetailField id="body" label={t("field.body")}>
 						<span data-testid={notesTestIds.detailBody}>
-							<MarkdownView source={note.body} />
+							<MarkdownView source={note.body} outlineLabel={t("documents.toc")} />
 						</span>
 					</DetailField>
 				)}

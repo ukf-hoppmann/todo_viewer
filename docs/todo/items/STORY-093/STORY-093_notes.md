@@ -62,3 +62,22 @@
 ### Open
 
 - Ob PUT auf die ganze Datei bleibt oder durch einen Endpunkt zum Bearbeiten einzelner Einträge ersetzt wird (mit dem Harness abstimmen).
+
+## 2026-10-20 — Spec geschrieben, Abgleich mit dem Harness-Stand
+
+### Discussed
+
+- Der Harness hat inzwischen entschieden: Prüfsumme SHA-256 über das kanonische Protokoll, erste 12 Hex-Zeichen; Stempelzeile `Stand bestätigt nach Eintrag <Datum> — <Thema> (<Prüfsumme>)`; Hinweise ab 15 Beschlüssen und beim Umschreiben älterer Einträge; Umstellung Viewer zuerst, Notes ohne Kopf sind `missing`, kein Massenlauf für Köpfe.
+- Scan der vorhandenen Notes (Viewer und Harness): Vorspann wie `## Summary`, eine Datei ohne Titelzeile, Notes ganz ohne datierte Einträge.
+
+### Decided
+
+- Open vom 2026-10-20 (verlustfreies Zerlegen) erledigt: Text zwischen Titelzeile und Kopf bzw. erstem Eintrag wird als Vorspann gespeichert; schlägt der Rundlauf in der Migration fehl, kommt der ganze Text in den Vorspann.
+- Open vom 2026-10-20 (Version) erledigt: eigener Zähler `revision` für die Datei, `state_revision` für den Kopf; Anhängen ändert nur `revision`.
+- `put_document` ändert den Stempel nie; der Spiegel übernimmt ihn aus der Datei und leert den Kopf, wenn `## Stand` in der Datei fehlt.
+- Kopf bestätigen und einzeln bearbeiten gibt es in der Oberfläche in dieser Story nicht.
+- Entfernen der alten Wege ist eine eigene Folge-Story nach dem Harness-Release.
+
+### Open
+
+- Testvektoren der Prüfsumme und der Fall eines leeren Protokolls mit dem Harness (TASK-021, TASK-022) abstimmen.

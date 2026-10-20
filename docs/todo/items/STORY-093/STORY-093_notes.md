@@ -21,3 +21,24 @@
 - Gemeinsame Testbeispiele für die Prüfsumme mit dem Harness abstimmen (Definition in format.md des Harness).
 - Im Harness noch offen und für das Verhalten der Endpunkte relevant: Längenhinweis für den Kopf, Warnung beim Umschreiben älterer Einträge, Umgang mit bestehenden Notes-Dateien. Plan erst nach deren Klärung.
 - Die nicht committeten UI-Änderungen an ItemDetail, DocumentsSection und MarkdownView vorher abschließen.
+
+## 2026-10-20 — Rückwärtskompatibilität der bisherigen Endpunkte
+
+### Discussed
+
+- Bisherige Endpunkte: GET /items/{ref}/documents, GET/PUT /items/{ref}/documents/{name}, POST /items/{ref}/notes, dazu die gleichnamigen MCP-Tools.
+- Knackpunkte: eine gemeinsame Version für die zusammengesetzte Datei, PUT von Clients, die den Kopf nicht kennen, die Stempelzeile im PUT-Text, Notes ohne Kopf.
+
+### Decided
+
+- Die bisherigen Endpunkte bleiben gültig: GET setzt Kopf und Protokoll zur Datei zusammen, PUT zerlegt sie wieder, POST …/notes hängt wie bisher an; neue Felder (z. B. `state`) sind nur Zusätze.
+- Die neuen Endpunkte kommen daneben; die alten werden entfernt, wenn der Harness nachgezogen ist.
+
+### Open
+
+- Gemeinsame Version der zusammengesetzten Datei (Vorschlag: Summe der Revisionen von Kopf und Protokoll oder ein eigener Zähler).
+- PUT ohne Abschnitt `## Stand`: Kopf unverändert lassen (Vorschlag) oder leeren.
+- Stempelzeile im PUT-Text über die API ignorieren (Vorschlag: der Server setzt den Stempel), im Spiegel übernehmen.
+- Notes ohne Kopf ergeben dieselbe Datei wie heute (Vorschlag; Prüfung mit allen bestehenden Notes).
+- Prüfen, ob der Harness im Files-Modus (Cloud-Kopie) mit `## Stand` und Stempelzeile im Spiegel zurechtkommt.
+- Ob GET/PUT auf die ganze Datei überhaupt entfallen sollen; die Spec im Harness sieht sie dauerhaft vor.

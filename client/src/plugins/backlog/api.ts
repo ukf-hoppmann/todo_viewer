@@ -5,7 +5,7 @@ export type IndexItem = components["schemas"]["IndexItem"];
 export type ItemOut = components["schemas"]["ItemOut"];
 export type ItemSummary = components["schemas"]["ItemSummary"];
 export type RetypeOut = components["schemas"]["RetypeOut"];
-export type DocumentOut = components["schemas"]["DocumentOut"];
+export type DocumentOut = components["schemas"]["ItemDocumentOut"];
 export type ReopenOut = components["schemas"]["ReopenOut"];
 
 /** The error of a write: the code and details the server gave, as an `Error` the forms can show. */

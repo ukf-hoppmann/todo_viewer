@@ -58,6 +58,32 @@ class SqlNotesRepository:
         )
         return {row.item_uid: row.name for row in rows}
 
+    def parts_for(self, tx: Transaction, item_uids: Sequence[str]) -> dict[str, NotesParts]:
+        if not item_uids:
+            return {}
+        marks = {f"n{n}": uid for n, uid in enumerate(item_uids)}
+        in_marks = ", ".join(f":{name}" for name in marks)
+        connection = _conn(tx)
+        rows = connection.execute(text(f"SELECT * FROM backlog_notes WHERE item_uid IN ({in_marks})"), marks).all()
+        entries: dict[str, list[Entry]] = {}
+        for e in connection.execute(
+            text(
+                "SELECT item_uid, day, topic, body FROM backlog_notes_entries "
+                f"WHERE item_uid IN ({in_marks}) ORDER BY item_uid, position"
+            ),
+            marks,
+        ):
+            entries.setdefault(e.item_uid, []).append(Entry(e.day, e.topic, e.body))
+        return {
+            row.item_uid: NotesParts(
+                row.preamble,
+                row.state,
+                Stamp(row.stamp_day, row.stamp_topic, row.stamp_checksum) if row.stamp_day is not None else None,
+                tuple(entries.get(row.item_uid, ())),
+            )
+            for row in rows
+        }
+
     def insert(self, tx: Transaction, notes: Notes) -> None:
         _conn(tx).execute(
             text(
@@ -78,13 +104,22 @@ class SqlNotesRepository:
         self._write_entries(tx, notes.item_uid, notes.parts.entries)
 
     def save(
-        self, tx: Transaction, item_uid: str, parts: NotesParts, *, expected: int, state_changed: bool, at: datetime
+        self,
+        tx: Transaction,
+        item_uid: str,
+        parts: NotesParts,
+        *,
+        expected: int,
+        state_changed: bool,
+        at: datetime,
+        expected_state: int | None = None,
     ) -> int:
+        check_state = "" if expected_state is None else " AND state_revision = :sr"
         result = _conn(tx).execute(
             text(
                 "UPDATE backlog_notes SET preamble = :p, state = :s, stamp_day = :sd, stamp_topic = :st, "
                 "stamp_checksum = :sc, state_revision = state_revision + :inc, revision = revision + 1, "
-                "updated_at = :t WHERE item_uid = :u AND revision = :r"
+                f"updated_at = :t WHERE item_uid = :u AND revision = :r{check_state}"
             ),
             {
                 "p": parts.preamble,
@@ -94,10 +129,13 @@ class SqlNotesRepository:
                 "t": at.isoformat(),
                 "u": item_uid,
                 "r": expected,
+                "sr": expected_state,
             },
         )
         if result.rowcount != 1:
-            raise VersionConflict("Die Notizen wurden inzwischen geändert", details={"expected": expected})
+            raise VersionConflict(
+                "Die Notizen wurden inzwischen geändert", details={"expected": expected_state or expected}
+            )
         _conn(tx).execute(text("DELETE FROM backlog_notes_entries WHERE item_uid = :u"), {"u": item_uid})
         self._write_entries(tx, item_uid, parts.entries)
         return expected + 1

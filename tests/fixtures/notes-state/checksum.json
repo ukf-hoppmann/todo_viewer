@@ -1,0 +1,53 @@
+{
+  "description": "Testvektoren der Prüfsumme des Notes-Protokolls (gemeinsamer Vertrag mit dem Harness, STORY-051/STORY-093). protocol: Text ab der ersten Eintragszeile `## YYYY-MM-DD — `. canonical: LF, Leerzeichen und Tabs am Zeilenende entfernt, genau ein Zeilenumbruch am Ende. checksum: die ersten 12 Hex-Zeichen von SHA-256 über canonical (UTF-8). Erzeugt direkt aus der Definition, nicht mit dem Code des Viewers.",
+  "vectors": [
+    {
+      "name": "ein Eintrag",
+      "protocol": "## 2026-10-01 — Thema\n\n### Discussed\n\n- a\n",
+      "canonical": "## 2026-10-01 — Thema\n\n### Discussed\n\n- a\n",
+      "checksum": "6b44126944fc"
+    },
+    {
+      "name": "mehrere Einträge",
+      "protocol": "## 2026-10-01 — Erstes\n\n### Discussed\n\n- a\n\n## 2026-10-02 — Zweites\n\n### Decided\n\n- b\n\n### Open\n\n- c\n",
+      "canonical": "## 2026-10-01 — Erstes\n\n### Discussed\n\n- a\n\n## 2026-10-02 — Zweites\n\n### Decided\n\n- b\n\n### Open\n\n- c\n",
+      "checksum": "54a3a02b0ff0"
+    },
+    {
+      "name": "CRLF",
+      "protocol": "## 2026-10-01 — Thema\r\n\r\n### Discussed\r\n\r\n- a\r\n",
+      "canonical": "## 2026-10-01 — Thema\n\n### Discussed\n\n- a\n",
+      "checksum": "6b44126944fc"
+    },
+    {
+      "name": "Leerzeichen und Tabs am Zeilenende",
+      "protocol": "## 2026-10-01 — Thema  \n\n### Discussed\t\n\n- a \t\n",
+      "canonical": "## 2026-10-01 — Thema\n\n### Discussed\n\n- a\n",
+      "checksum": "6b44126944fc"
+    },
+    {
+      "name": "ohne Zeilenumbruch am Ende",
+      "protocol": "## 2026-10-01 — Thema\n\n- a",
+      "canonical": "## 2026-10-01 — Thema\n\n- a\n",
+      "checksum": "0b945faf7a76"
+    },
+    {
+      "name": "mehrere Zeilenumbrüche am Ende",
+      "protocol": "## 2026-10-01 — Thema\n\n- a\n\n\n",
+      "canonical": "## 2026-10-01 — Thema\n\n- a\n",
+      "checksum": "0b945faf7a76"
+    },
+    {
+      "name": "Umlaute und Gedankenstrich im Thema",
+      "protocol": "## 2026-10-03 — Größe – Übergänge „klären“\n\n- ä ö ü ß — ok\n",
+      "canonical": "## 2026-10-03 — Größe – Übergänge „klären“\n\n- ä ö ü ß — ok\n",
+      "checksum": "0182a2725665"
+    },
+    {
+      "name": "Einrückung bleibt",
+      "protocol": "## 2026-10-01 — Thema\n\n- a\n  - eingerückt\n\tTab am Anfang\n",
+      "canonical": "## 2026-10-01 — Thema\n\n- a\n  - eingerückt\n\tTab am Anfang\n",
+      "checksum": "133cc1ece165"
+    }
+  ]
+}

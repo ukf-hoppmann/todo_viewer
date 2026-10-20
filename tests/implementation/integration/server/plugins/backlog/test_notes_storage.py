@@ -164,3 +164,27 @@ def test_insert_rename_names_and_delete(runner: MigrationRunner, database: Sqlit
         assert repository.names(tx, ["story-001", "other"]) == {"story-001": "TASK-009_notes.md"}
         stored = repository.get(tx, "story-001")
     assert stored is not None and stored.parts == parts and stored.updated_at == AT
+
+
+def test_saving_the_state_can_also_check_its_own_version(runner: MigrationRunner, database: SqliteDatabase) -> None:
+    _empty_item(runner, database)
+    repository = SqlNotesRepository()
+    with database.transaction() as tx:
+        notes = repository.get(tx, "story-001")
+        assert notes is not None
+        parts = NotesParts("\n", "- Ziel/Status: y", None, notes.parts.entries)
+        with pytest.raises(VersionConflict):
+            repository.save(tx, "story-001", parts, expected=4, expected_state=2, state_changed=True, at=AT)
+        assert repository.save(tx, "story-001", parts, expected=4, expected_state=1, state_changed=True, at=AT) == 5
+
+
+def test_parts_for_many_items_names_only_items_with_notes(runner: MigrationRunner, database: SqliteDatabase) -> None:
+    _empty_item(runner, database)
+    repository = SqlNotesRepository()
+    with database.transaction() as tx:
+        stored = repository.get(tx, "story-001")
+        found = repository.parts_for(tx, ["story-001", "unknown"])
+        empty = repository.parts_for(tx, [])
+    assert stored is not None
+    assert found == {"story-001": stored.parts}
+    assert empty == {}

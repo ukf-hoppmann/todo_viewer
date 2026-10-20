@@ -392,7 +392,7 @@ def test_the_imported_database_runs_in_the_viewer(legacy: Path, tmp_path: Path) 
     assert (item["label"], item["priority"], item["area"]) == ("STORY-002", "Normal", "Client")
     assert note["triggers"][0]["target"]["label"] == "STORY-001" and note["triggers"][0]["arrived"] is True
     assert {t["label"] for t in trash} == {"TASK-002", "TOPIC-003", "NOTE-006"}
-    assert "STORY-001 | Story | In progress | Server | Titel STORY-001 | EPIC-001" in lines["text"].splitlines()
+    assert "STORY-001 | Story | In progress | Server | Titel STORY-001 | EPIC-001 | -" in lines["text"].splitlines()
 
 
 def test_the_command_prints_the_report_and_writes_a_log(

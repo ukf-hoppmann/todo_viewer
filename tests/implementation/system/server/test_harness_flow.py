@@ -86,7 +86,7 @@ async def session(harness: Harness) -> None:
 
     # index: die kompakten Zeilen, zuerst leer
     empty = await harness.call("backlog_index_lines", projects=general)
-    assert empty == {"text": "ID | Type | Status | Area | Title | Parent", "count": 0}
+    assert empty == {"text": "ID | Type | Status | Area | Title | Parent | Notes", "count": 0}
 
     # create und update mit Version
     epic = await harness.call("backlog_create_item", project=general, type="Epic", fields=ITEM)
@@ -107,7 +107,7 @@ async def session(harness: Harness) -> None:
     assert stale["code"] == "version_conflict"
     index = await harness.call("backlog_index_lines", projects=general)
     assert index["count"] == 2
-    assert "STORY-001 | Story | In progress | Server | Maske | EPIC-001" in index["text"].splitlines()
+    assert "STORY-001 | Story | In progress | Server | Maske | EPIC-001 | -" in index["text"].splitlines()
 
     # note: Eintrag an die Notizen des Items
     entry = await harness.call(
@@ -122,6 +122,20 @@ async def session(harness: Harness) -> None:
     assert entry["name"] == "STORY-001_notes.md"
     document = await harness.call("backlog_get_document", ref=story["uid"], name="STORY-001_notes.md")
     assert "Start" in document["content"]
+    assert entry["notes_state"] == "missing" and entry["hints"][0]["code"] == "notes_state_stale"
+
+    # state, put-state, confirm-state: der Kopf der Notizen ohne Protokoll (STORY-093)
+    head = await harness.call("backlog_put_notes_state", ref=story["uid"], content="- Ziel/Status: Maske", version=1)
+    assert head["state"] == "current" and head["stamp"]["topic"] == "Start"
+    later = await harness.call(
+        "backlog_append_note", ref=story["uid"], topic="Weiter", discussed=["Feinschliff"], decided=[], open=[]
+    )
+    assert later["notes_state"] == "stale"
+    assert (await harness.call("backlog_get_notes_state", ref=story["uid"]))["state"] == "stale"
+    confirmed = await harness.call("backlog_confirm_notes_state", ref=story["uid"], version=head["version"])
+    assert confirmed["state"] == "current" and confirmed["content"] == "- Ziel/Status: Maske"
+    last = await harness.call("backlog_list_notes_entries", ref=story["uid"], last=1)
+    assert [e["topic"] for e in last] == ["Weiter"]
 
     # Note anlegen, im Index sehen, mit dem Item verknüpfen
     note = await harness.call("notes_create_note", project=general, fields={"summary": "Passwort-Regeln klären"})

@@ -551,7 +551,7 @@ Grundregeln:
   (`backlog_append_note`) und jedes Schreiben eines Dokuments zählen als Änderung: danach die Version neu lesen.
 - **Zeiten:** ISO 8601, ohne Zone gilt UTC; der Server antwortet in UTC.
 - **Kompakte Ausgabe:** `backlog_index_lines` → `{text, count}`, `text` mit der Kopfzeile
-  `ID | Type | Status | Area | Title | Parent` und einer Zeile je Item; `notes_index_lines` → `{topics, notes, …}` als Tabellen
+  `ID | Type | Status | Area | Title | Parent | Notes` (Zustand des Kopfs der Notes oder `-`) und einer Zeile je Item; `notes_index_lines` → `{topics, notes, …}` als Tabellen
   `Label | Name | Due at | Due | Notes` und `Label | Status | Reason | Review at | Topic | Summary`. Beide nehmen dieselben
   Filter wie `backlog_list_items` bzw. `notes_index` (`projects`, `statuses`, `query`, …; ohne `projects` alle Projekte, das
   ist `--all-projects`).
@@ -569,7 +569,11 @@ Grundregeln:
 | `show <ID>` | `backlog_get_item` | mit `version`, auch Archiviertes und Gelöschtes |
 | `create` | `backlog_create_item` | `project`, `type`, `fields` |
 | `update <ID> <version>` | `backlog_update_item` | `fields`, `resolution`; bei `parent_closed` danach `backlog_reopen_ancestors` |
-| `note <ID>` | `backlog_append_note` | `topic`, `discussed`, `decided`, `open`, `summary` |
+| `note <ID>` | `backlog_append_note` | `topic`, `discussed`, `decided`, `open`, `summary`; optional `state` (neuer Kopf, danach gestempelt) mit `state_version`, wenn es schon einen Kopf gibt. Antwort mit `notes_state` und `hints` |
+| `state <ID>` | `backlog_get_notes_state` (GET `/api/backlog/items/{ref}/notes/state`) | Kopf ohne Protokoll: `content`, `stamp`, `state`, `checksum`, `last_entry`, `version` (des Kopfs) |
+| `put-state <ID> <version>` | `backlog_put_notes_state` (PUT …`/notes/state`) | `content`, `version`; ersetzt und stempelt |
+| `confirm-state <ID> <version>` | `backlog_confirm_notes_state` (POST …`/notes/state/confirm`) | `version`; nur der Stempel zieht nach |
+| (Einträge) | `backlog_list_notes_entries` (GET …`/notes/entries`) | optional `last`; `{position, day, topic, text}` |
 | `doc <ID> <name>` | `backlog_get_document` (Liste: `backlog_list_documents`) | |
 | `put-doc <ID> <name> <version\|new>` | `backlog_put_document` | `version` leer = neu |
 | `retype <ID> <version> <type>` | `backlog_retype_item` | neues Label in der Antwort |
@@ -790,6 +794,27 @@ Stand bestätigt nach Eintrag <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
   Server.
 - Spiegel: Die Datei ist dort der ganze Stand. Der Stempel wird aus ihr
   übernommen, und ohne `## Stand` ist der Kopf leer.
+- **Prüfsumme:** SHA-256 über die kanonische Form des Protokolls (alle
+  Einträge ab der ersten Eintragszeile, LF, Leerzeichen und Tabs am
+  Zeilenende entfernt, genau ein Zeilenumbruch am Ende), davon die ersten 12
+  Hex-Zeichen. Gemeinsamer Vertrag mit `backlog.py` des Harness (`format.md`);
+  Testvektoren in `tests/fixtures/notes-state/checksum.json`.
+- **Zustand des Kopfs** (`notes_state` in `backlog_get_item`, `backlog_list_items`,
+  Spalte `Notes` in `backlog_index_lines`): `missing` ohne Kopf, `stale` ohne
+  Stempel oder mit abweichender Prüfsumme, sonst `current`; `null` bzw. `-`
+  ohne Notes.
+- **Kopf über die API:** `put_notes_state` und `confirm_notes_state` stempeln
+  gegen den letzten Eintrag und brauchen die Version des Kopfs
+  (`state_revision`); Anhängen ändert nur die Version der Datei. Ohne
+  Protokolleintrag gibt es keinen Stempel (`notes_without_entries`); neue
+  Notes mit Kopf entstehen mit `append_note` und `state`. Fehler:
+  `notes_not_found` (Item ohne Notes), `notes_state_missing` (bestätigen ohne
+  Kopf), `notes_without_entries`; HTTP 400.
+- **Hinweise** (`hints: [{code, message}]` in schreibenden Antworten auf Notes,
+  nie eine Ablehnung): `notes_state_stale` (Kopf danach `stale` oder
+  `missing`), `notes_state_long` (mehr als 15 Punkte unter `- Beschlossen:`),
+  `notes_history_rewritten` (`put_document` hat einen bisherigen Eintrag
+  geändert oder entfernt).
 
 ### Verweise
 

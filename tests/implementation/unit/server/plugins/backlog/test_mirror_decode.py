@@ -95,7 +95,9 @@ def test_documents_are_entries_with_the_uid_of_the_item_and_the_name() -> None:
     notes = docs["STORY-001_notes.md"]
     assert notes.uid == "0b6f2c1e-4d3a-4e8b-9c7d-1a2b3c4d5e02/notes"
     assert notes.refs == {"item": ("STORY-001",)} and notes.fields["kind"] == "notes"
-    assert notes.fields["content"].startswith("# STORY-001 — Pflicht-Story mit Dokumenten\n")
+    # Die Titelzeile ist kein Inhalt: das Schreiben erzeugt sie aus Label und Titel.
+    assert notes.fields["title"] == "Pflicht-Story mit Dokumenten"
+    assert notes.fields["content"].startswith("\n## 2026-10-02 — Erster Eintrag\n")
     assert docs["STORY-001_spec.md"].fields["kind"] == "spec"
     new = docs["NEW-login-dialog/notes"]
     assert (new.uid, new.label, new.refs) == (None, None, {"item": ("NEW-login-dialog",)})

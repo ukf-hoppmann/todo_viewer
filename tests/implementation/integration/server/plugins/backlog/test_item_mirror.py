@@ -302,3 +302,81 @@ def test_the_status_names_the_time_of_the_last_sync(backlog: Env, tmp_path: Path
     mirror.sync()
 
     assert mirror.status()["last_sync"].startswith("2026-10-16T12:00:00")
+
+
+NOTES_FILE = "# TASK-001 — Ein Item\n\n## 2026-10-16 — Thema\n\n### Discussed\n\n- x\n"
+STATE = "## Stand\n\n- Ziel/Status: läuft\n\n"
+STAMP = "Stand bestätigt nach Eintrag 2026-10-16 — Thema (0123456789ab)\n\n"
+
+
+def _notes_mirror(backlog: Env, tmp_path: Path) -> tuple[Mirror, dict[str, Any], Path]:
+    mirror = Mirror(backlog, tmp_path)
+    item = mirror.create(summary="Kurz")
+    backlog.client.post(
+        f"/api/backlog/items/{item['uid']}/notes",
+        json={"topic": "Thema", "discussed": ["x"], "decided": [], "open": []},
+    )
+    mirror.sync()
+    path = mirror.folder / "items" / "TASK-001" / "TASK-001_notes.md"
+    assert path.read_text(encoding="utf-8") == NOTES_FILE
+    return mirror, item, path
+
+
+def _stored_notes(backlog: Env, item: dict[str, Any]) -> str:
+    response = backlog.client.get(f"/api/backlog/items/{item['uid']}/documents/TASK-001_notes.md")
+    return str(response.json()["content"])
+
+
+def test_a_state_with_stamp_written_in_the_files_is_taken_over_with_its_stamp(backlog: Env, tmp_path: Path) -> None:
+    mirror, item, path = _notes_mirror(backlog, tmp_path)
+    with_state = NOTES_FILE.replace("\n\n## 2026", f"\n\n{STATE}{STAMP}## 2026", 1)
+    path.write_text(with_state, encoding="utf-8")
+
+    result = mirror.sync()
+
+    assert result.status_code == 200, result.text
+    assert _stored_notes(backlog, item) == with_state
+    assert path.read_text(encoding="utf-8") == with_state
+    assert mirror.sync().json()["to_files"] == 0
+
+
+def test_a_file_without_state_section_empties_the_state(backlog: Env, tmp_path: Path) -> None:
+    mirror, item, path = _notes_mirror(backlog, tmp_path)
+    path.write_text(NOTES_FILE.replace("\n\n## 2026", f"\n\n{STATE}{STAMP}## 2026", 1), encoding="utf-8")
+    mirror.sync()
+
+    path.write_text(NOTES_FILE + "\n## 2026-10-16 — Von Hand\n\n- y\n", encoding="utf-8")
+    mirror.sync()
+
+    stored = _stored_notes(backlog, item)
+    assert "## Stand" not in stored and "Stand bestätigt" not in stored
+    assert stored.endswith("## 2026-10-16 — Von Hand\n\n- y\n")
+
+
+def test_a_different_old_title_line_is_no_change_and_is_renewed_with_the_next_write(
+    backlog: Env, tmp_path: Path
+) -> None:
+    mirror, item, path = _notes_mirror(backlog, tmp_path)
+    path.write_text(NOTES_FILE.replace("# TASK-001 — Ein Item", "# TASK-001 – Notizen"), encoding="utf-8")
+
+    unchanged = mirror.sync().json()
+    backlog.client.post(
+        f"/api/backlog/items/{item['uid']}/notes", json={"topic": "Mehr", "discussed": ["y"], "decided": [], "open": []}
+    )
+    mirror.sync()
+
+    assert (unchanged["to_files"], unchanged["to_database"], unchanged["conflicts_left"]) == (0, 0, [])
+    assert path.read_text(encoding="utf-8").startswith(NOTES_FILE)
+
+
+def test_a_new_title_of_the_item_rewrites_the_title_line_of_the_notes_file(backlog: Env, tmp_path: Path) -> None:
+    mirror, item, path = _notes_mirror(backlog, tmp_path)
+    current = backlog.client.get(f"/api/backlog/items/{item['uid']}").json()
+    backlog.client.put(
+        f"/api/backlog/items/{item['uid']}", json={"version": current["version"], "fields": {"title": "Neuer Titel"}}
+    )
+
+    result = mirror.sync()
+
+    assert result.status_code == 200 and result.json()["conflicts_left"] == []
+    assert path.read_text(encoding="utf-8") == NOTES_FILE.replace("Ein Item", "Neuer Titel")

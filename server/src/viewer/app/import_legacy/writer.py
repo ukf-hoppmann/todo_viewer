@@ -22,6 +22,7 @@ from viewer.app.import_legacy.report import Report
 from viewer.app.import_legacy.validate import project_name
 from viewer.core.infrastructure.database import SqlTransaction
 from viewer.plugins.backlog.domain.documents import NotesEntry, append_entry
+from viewer.plugins.backlog.domain.notes import split_lossless
 from viewer.plugins.workspace.domain.model import BUILTIN_PROJECT
 
 EXTRA_TOPIC = "Übernommene Zusatzfelder"
@@ -228,16 +229,44 @@ class Importer:
             self._report.count("Einträge „Übernommene Zusatzfelder“")
             self._report.count("Zusatzfelder", len(fields))
         for (uid, name), content in sorted(contents.items()):
-            self._exec(
-                "INSERT INTO backlog_documents(item_uid, name, kind, content, revision, updated_at) "
-                "VALUES (:u, :n, :k, :c, 1, :now)",
-                u=uid,
-                n=name,
-                k=document_kind(labels[uid], name, listed.get((uid, name))),
-                c=content,
-                now=self._now,
-            )
+            if document_kind(labels[uid], name, listed.get((uid, name))) == "notes":
+                self._item_notes(uid, name, content)
+            else:
+                self._exec(
+                    "INSERT INTO backlog_documents(item_uid, name, kind, content, revision, updated_at) "
+                    "VALUES (:u, :n, 'spec', :c, 1, :now)",
+                    u=uid,
+                    n=name,
+                    c=content,
+                    now=self._now,
+                )
             self._report.count("Dokumente der Items")
+
+    def _item_notes(self, uid: str, name: str, content: str) -> None:
+        """Notes eines Items zerlegt in Vorspann, Kopf mit Stempel und Protokolleinträge (ohne Textverlust)."""
+        parts = split_lossless(content)
+        stamp = parts.stamp
+        self._exec(
+            "INSERT INTO backlog_notes(item_uid, name, preamble, state, stamp_day, stamp_topic, stamp_checksum, "
+            "state_revision, revision, updated_at) VALUES (:u, :n, :p, :s, :sd, :st, :sc, 1, 1, :now)",
+            u=uid,
+            n=name,
+            p=parts.preamble,
+            s=parts.state,
+            sd=stamp.day if stamp else None,
+            st=stamp.topic if stamp else None,
+            sc=stamp.checksum if stamp else None,
+            now=self._now,
+        )
+        for position, entry in enumerate(parts.entries):
+            self._exec(
+                "INSERT INTO backlog_notes_entries(item_uid, position, day, topic, body) VALUES (:u, :i, :d, :o, :b)",
+                u=uid,
+                i=position,
+                d=entry.day,
+                o=entry.topic,
+                b=entry.body,
+            )
 
     # --- Notes ----------------------------------------------------------------------------------------------------
 

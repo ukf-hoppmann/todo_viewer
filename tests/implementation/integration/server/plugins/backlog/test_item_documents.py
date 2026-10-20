@@ -159,7 +159,7 @@ def test_a_type_change_renames_the_documents_and_keeps_their_content(backlog: En
     detail = backlog.client.get(f"/api/backlog/items/{item['uid']}").json()
     assert (detail["notes"], detail["spec"]) == ([f"{new_label}_notes.md"], [f"{new_label}_spec_Teil.md"])
     first = backlog.client.get(f"/api/backlog/items/{item['uid']}/documents/{new_label}_notes.md").json()
-    assert first["content"].startswith("# STORY-001 — Ein Item\n")  # der Inhalt bleibt, wie er war
+    assert first["content"].startswith("# TASK-001 — Ein Item\n\n## 2026-10-16 — Thema\n")  # Titelzeile folgt dem Typ
 
 
 def test_documents_go_with_the_item_when_it_is_purged_and_stay_in_the_trash(backlog: Env) -> None:
@@ -199,3 +199,54 @@ def test_the_document_operations_are_mcp_tools(backlog: Env) -> None:
     }
 
     assert {"list_documents", "get_document", "put_document", "append_note"} <= names
+
+
+STATE = "## Stand\n\n- Ziel/Status: läuft\n\n"
+
+
+def _notes_doc(env: Env, item: dict[str, Any]) -> dict[str, Any]:
+    return env.client.get(f"/api/backlog/items/{item['uid']}/documents/TASK-001_notes.md").json()  # type: ignore[no-any-return]
+
+
+def _put_notes(env: Env, item: dict[str, Any], content: str, version: int) -> Any:
+    return env.client.put(
+        f"/api/backlog/items/{item['uid']}/documents/TASK-001_notes.md", json={"content": content, "version": version}
+    )
+
+
+def test_put_without_a_state_section_keeps_the_state(backlog: Env) -> None:
+    item = _create(backlog, summary="Kurz")
+    first = _note(backlog, item).json()
+    with_state = first["content"].replace("\n\n## 2026", f"\n\n{STATE}## 2026", 1)
+    assert _put_notes(backlog, item, with_state, 1).status_code == 200
+
+    replaced = _put_notes(backlog, item, first["content"] + "\n## 2026-10-16 — Von Hand\n\n- x\n", 2).json()
+
+    assert replaced["version"] == 3
+    assert STATE in replaced["content"]
+    assert replaced["content"].endswith("## 2026-10-16 — Von Hand\n\n- x\n")
+    assert _notes_doc(backlog, item)["content"] == replaced["content"]
+
+
+def test_a_stamp_line_in_put_is_ignored(backlog: Env) -> None:
+    item = _create(backlog, summary="Kurz")
+    first = _note(backlog, item).json()
+    stamp = "Stand bestätigt nach Eintrag 2026-10-16 — Thema (0123456789ab)\n\n"
+
+    stored = _put_notes(backlog, item, first["content"].replace("\n\n## 2026", f"\n\n{STATE}{stamp}## 2026", 1), 1)
+
+    assert STATE in stored.json()["content"]
+    assert "Stand bestätigt" not in stored.json()["content"]
+
+
+def test_notes_without_state_keep_their_text_through_put(backlog: Env) -> None:
+    item = _create(backlog, summary="Kurz")
+    first = _note(backlog, item).json()
+    text = first["content"].replace("\n\n## 2026", "\n\n## Summary\n\nAlter Vorspann.\n\n## 2026", 1)
+
+    stored = _put_notes(backlog, item, text, 1).json()
+
+    assert stored["content"] == text
+    appended = _note(backlog, item, topic="Zweites").json()
+    assert appended["version"] == 3
+    assert appended["content"].startswith(text)

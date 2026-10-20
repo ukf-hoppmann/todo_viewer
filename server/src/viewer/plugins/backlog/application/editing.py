@@ -8,7 +8,7 @@ from viewer.core.application.ports import Clock, Database, EventBus, Transaction
 from viewer.core.domain.errors import InvalidInput
 from viewer.core.domain.events import Event
 from viewer.plugins.backlog.application.items import ItemService
-from viewer.plugins.backlog.application.ports import DocumentRepository, ItemRepository
+from viewer.plugins.backlog.application.ports import DocumentRepository, ItemRepository, NotesRepository
 from viewer.plugins.backlog.domain.documents import renamed_documents
 from viewer.plugins.backlog.domain.editing import (
     apply_update,
@@ -54,6 +54,7 @@ class EditService:
         items: ItemService,
         repository: ItemRepository,
         documents: DocumentRepository,
+        notes: NotesRepository,
         registry: Any,
         database: Database,
         clock: Clock,
@@ -62,6 +63,7 @@ class EditService:
         self._items = items
         self._repository = repository
         self._documents = documents
+        self._notes = notes
         self._registry = registry
         self._database = database
         self._clock = clock
@@ -176,7 +178,10 @@ class EditService:
             element = self._registry.relabel(tx, item.uid, KIND_BY_TYPE[new_type])
             renames = renamed_documents([*item.notes, *item.spec], item.label, element.label)
             for old_name, new_name in renames.items():
-                self._documents.rename(tx, item.uid, old_name, new_name)
+                if old_name in item.notes:
+                    self._notes.rename(tx, item.uid, new_name)
+                else:
+                    self._documents.rename(tx, item.uid, old_name, new_name)
             retyped = replace(
                 item,
                 type=new_type,

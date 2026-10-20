@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
 
 from viewer.core.domain.operations import HttpBinding, Operation
-from viewer.plugins.backlog.application.documents import DocumentService
+from viewer.plugins.backlog.application.documents import DocumentService, DocumentWrite
 from viewer.plugins.backlog.application.editing import EditService
 from viewer.plugins.backlog.application.items import IndexEntry, ItemDetail, ItemService
+from viewer.plugins.backlog.application.notes_state import NotesState, NotesStateService
 from viewer.plugins.backlog.application.ports import Document
 from viewer.plugins.backlog.domain.model import Item, Progress
+from viewer.plugins.backlog.domain.notes import Hint, checksum, entry_text, state_of
 
 
 @dataclass(frozen=True)
@@ -51,6 +54,8 @@ class IndexItem:
     dependencies: list[str]
     progress: ProgressOut | None
     version: int
+    #: Zustand des Kopfs der Notes (`current`, `stale`, `missing`); `null` ohne Notes.
+    notes_state: str | None = None
 
 
 @dataclass(frozen=True)
@@ -94,6 +99,8 @@ class ItemOut:
     progress: ProgressOut | None
     version: int
     deleted: bool
+    #: Zustand des Kopfs der Notes (`current`, `stale`, `missing`); `null` ohne Notes.
+    notes_state: str | None = None
 
 
 @dataclass(frozen=True)
@@ -196,12 +203,24 @@ class GetDocument:
 
 
 @dataclass(frozen=True)
-class DocumentOut:
+class HintOut:
+    """Ein Hinweis nach dem Schreiben, nie eine Ablehnung: `notes_state_stale`, `notes_state_long`,
+    `notes_history_rewritten`."""
+
+    code: str
+    message: str
+
+
+@dataclass(frozen=True)
+class ItemDocumentOut:
     name: str
     kind: str
     content: str
     version: int
     updated_at: datetime
+    #: Nur in schreibenden Antworten auf Notizen: Zustand des Kopfs danach (`current`, `stale`, `missing`).
+    notes_state: str | None = None
+    hints: list[HintOut] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -224,28 +243,133 @@ class AppendNote:
     decided: list[str] = field(default_factory=list)
     open: list[str] = field(default_factory=list)
     summary: str | None = None
+    #: Neuer Kopf der Notizen, im selben Schritt nach dem Eintrag gesetzt und gestempelt.
+    state: str | None = None
+    #: Version des Kopfs (`state_revision`); nötig, wenn es schon einen Kopf gibt.
+    state_version: int | None = None
     project: str | None = None
+
+
+@dataclass(frozen=True)
+class NotesRef:
+    ref: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class PutNotesState:
+    ref: str
+    #: Der neue Kopf (Text unter `## Stand`, ohne Überschrift und ohne Stempelzeile).
+    content: str
+    #: Die Version des Kopfs, die ersetzt wird.
+    version: int
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class ConfirmNotesState:
+    ref: str
+    #: Die Version des Kopfs, die bestätigt wird.
+    version: int
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class ListNotesEntries:
+    ref: str
+    #: Nur die letzten N Einträge; ohne Angabe alle.
+    last: int | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class StampOut:
+    day: str
+    topic: str
+    checksum: str
+
+
+@dataclass(frozen=True)
+class EntryRefOut:
+    day: str
+    topic: str
+
+
+@dataclass(frozen=True)
+class NotesStateOut:
+    """Der Kopf der Notes ohne Protokoll; `version` ist die Version des Kopfs, `checksum` die aktuelle Prüfsumme des
+    Protokolls."""
+
+    name: str
+    content: str
+    stamp: StampOut | None
+    state: str
+    checksum: str
+    last_entry: EntryRefOut | None
+    version: int
+    hints: list[HintOut]
+
+
+@dataclass(frozen=True)
+class NotesEntryOut:
+    position: int
+    day: str
+    topic: str
+    #: Der Eintrag mit Überschriftszeile.
+    text: str
 
 
 def document_info(document: Document) -> DocumentInfo:
     return DocumentInfo(document.name, document.kind, document.revision, document.updated_at)
 
 
-def document_out(document: Document) -> DocumentOut:
-    return DocumentOut(document.name, document.kind, document.content, document.revision, document.updated_at)
+def document_out(document: Document) -> ItemDocumentOut:
+    return ItemDocumentOut(document.name, document.kind, document.content, document.revision, document.updated_at)
+
+
+def _hints(found: Sequence[Hint]) -> list[HintOut]:
+    return [HintOut(h.code, h.message) for h in found]
+
+
+def document_write_out(write: DocumentWrite) -> ItemDocumentOut:
+    d = write.document
+    return ItemDocumentOut(d.name, d.kind, d.content, d.revision, d.updated_at, write.notes_state, _hints(write.hints))
+
+
+def notes_state_out(result: NotesState) -> NotesStateOut:
+    notes, parts = result.notes, result.notes.parts
+    last = parts.entries[-1] if parts.entries else None
+    stamp = parts.stamp
+    return NotesStateOut(
+        notes.name,
+        parts.state,
+        StampOut(stamp.day, stamp.topic, stamp.checksum) if stamp else None,
+        state_of(parts),
+        checksum(parts.entries),
+        EntryRefOut(last.day, last.topic) if last else None,
+        notes.state_revision,
+        _hints(result.hints),
+    )
 
 
 class BacklogServices:
     """Die Dienste des Plugins; `repository` ist auch für Tests und für andere Teile des Backlogs offen."""
 
     def __init__(
-        self, items: ItemService, repository: Any, editing: EditService, documents: DocumentService, participant: Any
+        self,
+        items: ItemService,
+        repository: Any,
+        editing: EditService,
+        documents: DocumentService,
+        participant: Any,
+        notes_state: NotesStateService,
     ) -> None:
         self.participant = participant
         self.items = items
         self.repository = repository
         self.editing = editing
         self.documents = documents
+        self.notes_state = notes_state
 
 
 def _split(value: str | None) -> list[str]:
@@ -274,6 +398,7 @@ def index_item(entry: IndexEntry) -> IndexItem:
         list(i.dependencies),
         _progress(entry.progress),
         i.revision,
+        entry.notes_state,
     )
 
 
@@ -302,6 +427,7 @@ def item_out(detail: ItemDetail) -> ItemOut:
         _progress(detail.progress),
         i.revision,
         i.deleted_at is not None,
+        detail.notes_state,
     )
 
 
@@ -328,7 +454,7 @@ class IndexLines:
     count: int
 
 
-INDEX_HEADER = "ID | Type | Status | Area | Title | Parent"
+INDEX_HEADER = "ID | Type | Status | Area | Title | Parent | Notes"
 
 
 def _lines(services: BacklogServices, data: ListItems) -> IndexLines:
@@ -336,7 +462,7 @@ def _lines(services: BacklogServices, data: ListItems) -> IndexLines:
     labels = {entry.uid: entry.label for entry in _list(services, ListItems(projects=data.projects))}
     rows = [
         f"{e.label} | {e.type} | {e.status} | {e.area or '-'} | {e.title} | "
-        f"{labels.get(e.parent_uid, e.parent_uid) if e.parent_uid else '-'}"
+        f"{labels.get(e.parent_uid, e.parent_uid) if e.parent_uid else '-'} | {e.notes_state or '-'}"
         for e in entries
     ]
     return IndexLines("\n".join([INDEX_HEADER, *rows]), len(rows))
@@ -448,7 +574,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "Ein Dokument eines Items mit Inhalt und Version",
         "read",
         GetDocument,
-        DocumentOut,
+        ItemDocumentOut,
         lambda s, d: document_out(s.documents.get_document(d.ref, d.project, d.name)),
         HttpBinding("GET", "/items/{ref}/documents/{name}"),
     ),
@@ -457,20 +583,65 @@ OPERATIONS: tuple[Operation, ...] = (
         "Ersetzt ein Dokument in `version` oder legt ein neues an (<LABEL>_notes.md, <LABEL>_spec[_<thema>].md)",
         "write",
         PutDocument,
-        DocumentOut,
-        lambda s, d: document_out(s.documents.put_document(d.ref, d.project, d.name, d.content, d.version, d.summary)),
+        ItemDocumentOut,
+        lambda s, d: document_write_out(
+            s.documents.put_document(d.ref, d.project, d.name, d.content, d.version, d.summary)
+        ),
         HttpBinding("PUT", "/items/{ref}/documents/{name}"),
     ),
     Operation(
         "append_note",
         "Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen; der erste legt sie an und "
-        "braucht eine Kurzfassung des Items",
+        "braucht eine Kurzfassung des Items. Mit `state` wird danach der Kopf ersetzt und gestempelt (gibt es schon "
+        "einen, mit `state_version`). Die Antwort nennt den Zustand des Kopfs und Hinweise",
         "write",
         AppendNote,
-        DocumentOut,
-        lambda s, d: document_out(
-            s.documents.append_note(d.ref, d.project, d.topic, d.discussed, d.decided, d.open, d.summary)
+        ItemDocumentOut,
+        lambda s, d: document_write_out(
+            s.documents.append_note(
+                d.ref, d.project, d.topic, d.discussed, d.decided, d.open, d.summary, d.state, d.state_version
+            )
         ),
         HttpBinding("POST", "/items/{ref}/notes"),
+    ),
+    Operation(
+        "get_notes_state",
+        "Der Kopf (`## Stand`) der Notizen eines Items ohne Protokoll: Inhalt, Stempel, Zustand (`current`, `stale`, "
+        "`missing`), aktuelle Prüfsumme, letzter Eintrag und Version des Kopfs",
+        "read",
+        NotesRef,
+        NotesStateOut,
+        lambda s, d: notes_state_out(s.notes_state.get(d.ref, d.project)),
+        HttpBinding("GET", "/items/{ref}/notes/state"),
+    ),
+    Operation(
+        "put_notes_state",
+        "Ersetzt den Kopf der Notizen in `version` und stempelt ihn gegen den letzten Protokolleintrag",
+        "write",
+        PutNotesState,
+        NotesStateOut,
+        lambda s, d: notes_state_out(s.notes_state.put(d.ref, d.project, d.content, d.version)),
+        HttpBinding("PUT", "/items/{ref}/notes/state"),
+    ),
+    Operation(
+        "confirm_notes_state",
+        "Bestätigt den Kopf der Notizen unverändert als aktuell: nur der Stempel zieht auf den letzten Eintrag nach",
+        "write",
+        ConfirmNotesState,
+        NotesStateOut,
+        lambda s, d: notes_state_out(s.notes_state.confirm(d.ref, d.project, d.version)),
+        HttpBinding("POST", "/items/{ref}/notes/state/confirm"),
+    ),
+    Operation(
+        "list_notes_entries",
+        "Die Protokolleinträge der Notizen mit Position, mit `last` nur die letzten N",
+        "read",
+        ListNotesEntries,
+        list[NotesEntryOut],
+        lambda s, d: [
+            NotesEntryOut(position, e.day, e.topic, entry_text(e))
+            for position, e in s.notes_state.entries(d.ref, d.project, d.last)
+        ],
+        HttpBinding("GET", "/items/{ref}/notes/entries"),
     ),
 )

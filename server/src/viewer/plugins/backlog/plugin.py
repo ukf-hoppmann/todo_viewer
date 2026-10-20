@@ -12,6 +12,7 @@ from viewer.core.domain.plugin import ElementKind
 from viewer.plugins.backlog.application.documents import DocumentService
 from viewer.plugins.backlog.application.editing import EditService
 from viewer.plugins.backlog.application.items import ItemService
+from viewer.plugins.backlog.application.notes_state import NotesStateService
 from viewer.plugins.backlog.application.operations import OPERATIONS, BacklogServices
 from viewer.plugins.backlog.domain.model import FINAL_STATUSES
 from viewer.plugins.backlog.infrastructure.database.documents import SqlDocumentRepository
@@ -32,7 +33,8 @@ class ParentInTrash(DomainError):
 def _build(context: PluginContext) -> BacklogServices:
     workspace: Any = context.required["workspace"]
     repository = SqlItemRepository()
-    items = ItemService(repository, workspace.registry, context.database)
+    notes = SqlNotesRepository()
+    items = ItemService(repository, workspace.registry, context.database, notes)
 
     def children(tx: Transaction, uid: str) -> list[str]:
         return [child.uid for child in repository.children(tx, uid)]
@@ -53,7 +55,6 @@ def _build(context: PluginContext) -> BacklogServices:
         workspace.trash.register(kind.kind, children=children, restore_guard=restore_guard, purger=repository.delete)
         workspace.registry.register_state(kind.kind, is_closed)
     documents = SqlDocumentRepository()
-    notes = SqlNotesRepository()
     editing = EditService(
         items, repository, documents, notes, workspace.registry, context.database, context.clock, context.events
     )
@@ -61,7 +62,8 @@ def _build(context: PluginContext) -> BacklogServices:
         items, repository, documents, notes, workspace.registry, context.database, context.clock, context.events
     )
     participant = BacklogParticipant(repository, documents, notes, workspace.registry, context.database, context.clock)
-    return BacklogServices(items, repository, editing, document_service, participant)
+    notes_state = NotesStateService(items, notes, context.database, context.clock, context.events)
+    return BacklogServices(items, repository, editing, document_service, participant, notes_state)
 
 
 plugin = PluginDefinition(

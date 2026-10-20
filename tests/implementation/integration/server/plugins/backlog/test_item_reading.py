@@ -263,3 +263,29 @@ def test_purging_removes_the_backlog_rows_and_dependencies(backlog: Env) -> None
     assert purged.status_code == 200
     assert backlog.client.get(f"/api/backlog/items/{first.uid}").status_code == 404
     assert backlog.client.get(f"/api/backlog/items/{second.uid}").json()["dependencies"] == []
+
+
+def test_show_and_index_name_the_state_of_the_notes_head(backlog: Env) -> None:
+    project = str(backlog.general()["uid"])
+    items = {name: _add(backlog, project, "Task", name) for name in ("Ohne", "Fehlt", "Aktuell", "Veraltet")}
+    for name in ("Fehlt", "Aktuell", "Veraltet"):
+        uid = items[name].uid
+        backlog.client.post(
+            f"/api/backlog/items/{uid}/notes",
+            json={"topic": "T", "discussed": ["x"], "summary": "Kurz", **({} if name == "Fehlt" else {"state": "- Z"})},
+        )
+    backlog.client.post(f"/api/backlog/items/{items['Veraltet'].uid}/notes", json={"topic": "Neu", "discussed": ["y"]})
+
+    states = {
+        name: backlog.client.get(f"/api/backlog/items/{i.uid}").json()["notes_state"] for name, i in items.items()
+    }
+    lines = backlog.client.get("/api/backlog/index", params={"projects": project}).json()["text"].splitlines()
+
+    assert states == {"Ohne": None, "Fehlt": "missing", "Aktuell": "current", "Veraltet": "stale"}
+    assert lines[0] == "ID | Type | Status | Area | Title | Parent | Notes"
+    assert {line.split(" | ")[4]: line.split(" | ")[6] for line in lines[1:]} == {
+        "Ohne": "-",
+        "Fehlt": "missing",
+        "Aktuell": "current",
+        "Veraltet": "stale",
+    }

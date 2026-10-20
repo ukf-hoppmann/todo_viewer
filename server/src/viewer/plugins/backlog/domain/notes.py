@@ -7,14 +7,34 @@ kommt); Notes mit Kopf werden auf ein festes Layout gebracht. Der Aufbau ist mit
 
 from __future__ import annotations
 
+import hashlib
 import re
-from dataclasses import dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass, replace
 
+from viewer.core.domain.errors import DomainError
 from viewer.plugins.backlog.domain.model import Item
 
 ENTRY_HEADING = re.compile(r"^## (\d{4}-\d{2}-\d{2}) — (.*)$")
 STATE_HEADING = "## Stand"
 STAMP_LINE = re.compile(r"^Stand bestätigt nach Eintrag (\d{4}-\d{2}-\d{2}) — (.+) \(([0-9a-f]{12})\)$")
+DECIDED_HEADING = "- Beschlossen:"
+#: Ab so vielen Punkten unter `- Beschlossen:` gibt es einen Hinweis (Spec schreiben oder Item teilen?), nie eine
+#: Ablehnung (STORY-051).
+LONG_STATE = 15
+CURRENT, STALE, MISSING = "current", "stale", "missing"
+
+
+class NotesNotFound(DomainError):
+    code = "notes_not_found"
+
+
+class NotesStateMissing(DomainError):
+    code = "notes_state_missing"
+
+
+class NotesWithoutEntries(DomainError):
+    code = "notes_without_entries"
 
 
 @dataclass(frozen=True)
@@ -150,3 +170,82 @@ def replaced_by_text(old: NotesParts, text: str) -> NotesParts:
     nur der Server, eine Stempelzeile im Text zählt nicht."""
     new = split(text)
     return NotesParts(new.preamble, new.state if has_state_section(text) else old.state, old.stamp, new.entries)
+
+
+# --- Prüfsumme, Zustand und Hinweise ------------------------------------------------------------------------------
+
+
+def canonical(entries: Sequence[Entry]) -> str:
+    """Kanonische Form des Protokolls (gemeinsamer Vertrag mit dem Harness, dort `format.md`): alle Einträge ab der
+    ersten Eintragszeile, LF als Zeilenende, Leerzeichen und Tabs am Zeilenende entfernt, genau ein Zeilenumbruch am
+    Ende."""
+    text = "".join(entry_text(entry) for entry in entries).replace("\r\n", "\n").replace("\r", "\n")
+    return "\n".join(line.rstrip(" \t") for line in text.split("\n")).rstrip("\n") + "\n"
+
+
+def checksum(entries: Sequence[Entry]) -> str:
+    """Die ersten 12 Hex-Zeichen von SHA-256 über die kanonische Form (UTF-8)."""
+    return hashlib.sha256(canonical(entries).encode("utf-8")).hexdigest()[:12]
+
+
+def state_of(parts: NotesParts) -> str:
+    """`missing` ohne Kopf, `stale` ohne Stempel oder mit abweichender Prüfsumme, sonst `current`."""
+    if not parts.state.strip():
+        return MISSING
+    if parts.stamp is None or parts.stamp.checksum != checksum(parts.entries):
+        return STALE
+    return CURRENT
+
+
+def state_text(content: str) -> str:
+    """Der Text eines neuen Kopfs ohne umgebende Leerzeilen; eine Stempelzeile am Ende zählt nicht (den Stempel setzt
+    der Server)."""
+    return _state(content.splitlines(keepends=True))[0]
+
+
+def stamped(parts: NotesParts) -> NotesParts:
+    """Setzt den Stempel auf den letzten Eintrag und die aktuelle Prüfsumme; das Protokoll bleibt unverändert."""
+    if not parts.entries:
+        raise NotesWithoutEntries("Ohne Protokolleintrag lässt sich der Kopf nicht bestätigen; zuerst einen anhängen")
+    last = parts.entries[-1]
+    return replace(parts, stamp=Stamp(last.day, last.topic, checksum(parts.entries)))
+
+
+def history_rewritten(before: NotesParts, after: NotesParts) -> bool:
+    """Wurde ein bisheriger Eintrag geändert oder entfernt? Neue Einträge am Ende zählen nicht."""
+    return any(i >= len(after.entries) or after.entries[i] != entry for i, entry in enumerate(before.entries))
+
+
+def decided_count(state: str) -> int:
+    """Die Unterpunkte unter `- Beschlossen:` bis zum nächsten Punkt der obersten Ebene."""
+    count, inside = 0, False
+    for line in state.splitlines():
+        if line.rstrip() == DECIDED_HEADING:
+            inside = True
+        elif line.startswith("- "):
+            inside = False
+        elif inside and line.lstrip().startswith("- "):
+            count += 1
+    return count
+
+
+@dataclass(frozen=True)
+class Hint:
+    """Etwas, das der Aufrufer nach dem Schreiben wissen sollte; nie eine Ablehnung. `code` ist stabil."""
+
+    code: str
+    message: str
+
+
+def hints(before: NotesParts | None, after: NotesParts, *, rewritten: bool) -> tuple[Hint, ...]:
+    """Hinweise nach einer Änderung der Notes; `rewritten`: die ganze Datei wurde ersetzt."""
+    found: list[Hint] = []
+    if state_of(after) != CURRENT:
+        found.append(Hint("notes_state_stale", "Der Kopf der Notes ist nicht aktuell: anpassen oder bestätigen"))
+    if decided_count(after.state) > LONG_STATE:
+        found.append(
+            Hint("notes_state_long", f"Mehr als {LONG_STATE} Beschlüsse im Kopf: Spec schreiben oder Item teilen?")
+        )
+    if rewritten and before is not None and history_rewritten(before, after):
+        found.append(Hint("notes_history_rewritten", "Ein älterer Protokolleintrag wurde geändert oder entfernt"))
+    return tuple(found)

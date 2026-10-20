@@ -98,11 +98,24 @@ class NotesRepository(Protocol):
 
     def insert(self, tx: Transaction, notes: Notes) -> None: ...
 
+    def parts_for(self, tx: Transaction, item_uids: Sequence[str]) -> dict[str, NotesParts]:
+        """Item-uid → Teile der Notes, nur für Items mit Notes (für Übersichten über viele Items)."""
+        ...
+
     def save(
-        self, tx: Transaction, item_uid: str, parts: NotesParts, *, expected: int, state_changed: bool, at: datetime
+        self,
+        tx: Transaction,
+        item_uid: str,
+        parts: NotesParts,
+        *,
+        expected: int,
+        state_changed: bool,
+        at: datetime,
+        expected_state: int | None = None,
     ) -> int:
-        """Ersetzt die Teile, wenn die Revision `expected` ist (sonst `version_conflict`); gibt die neue zurück.
-        `state_changed` zählt auch die Version des Kopfs hoch."""
+        """Ersetzt die Teile, wenn die Revision `expected` ist (und, falls angegeben, die des Kopfs
+        `expected_state`; sonst `version_conflict`); gibt die neue Revision zurück. `state_changed` zählt auch die
+        Version des Kopfs hoch."""
         ...
 
     def rename(self, tx: Transaction, item_uid: str, new: str) -> None: ...

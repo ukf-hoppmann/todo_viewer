@@ -222,8 +222,60 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen; der erste legt sie an und braucht eine Kurzfassung des Items */
+        /** Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen; der erste legt sie an und braucht eine Kurzfassung des Items. Mit `state` wird danach der Kopf ersetzt und gestempelt (gibt es schon einen, mit `state_version`). Die Antwort nennt den Zustand des Kopfs und Hinweise */
         post: operations["backlog_append_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/items/{ref}/notes/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Protokolleinträge der Notizen mit Position, mit `last` nur die letzten N */
+        get: operations["backlog_list_notes_entries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/items/{ref}/notes/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Der Kopf (`## Stand`) der Notizen eines Items ohne Protokoll: Inhalt, Stempel, Zustand (`current`, `stale`, `missing`), aktuelle Prüfsumme, letzter Eintrag und Version des Kopfs */
+        get: operations["backlog_get_notes_state"];
+        /** Ersetzt den Kopf der Notizen in `version` und stempelt ihn gegen den letzten Protokolleintrag */
+        put: operations["backlog_put_notes_state"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/backlog/items/{ref}/notes/state/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bestätigt den Kopf der Notizen unverändert als aktuell: nur der Stempel zieht auf den letzten Eintrag nach */
+        post: operations["backlog_confirm_notes_state"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1192,10 +1244,21 @@ export interface components {
             open?: string[];
             /** Project */
             project?: string | null;
+            /** State */
+            state?: string | null;
+            /** State Version */
+            state_version?: number | null;
             /** Summary */
             summary?: string | null;
             /** Topic */
             topic: string;
+        };
+        /** BacklogConfirmNotesStateBody */
+        BacklogConfirmNotesStateBody: {
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
         };
         /** BacklogCreateItemBody */
         BacklogCreateItemBody: {
@@ -1232,6 +1295,15 @@ export interface components {
             summary?: string | null;
             /** Version */
             version?: number | null;
+        };
+        /** BacklogPutNotesStateBody */
+        BacklogPutNotesStateBody: {
+            /** Content */
+            content: string;
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
         };
         /** BacklogReopenAncestorsBody */
         BacklogReopenAncestorsBody: {
@@ -1478,6 +1550,13 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** EntryRefOut */
+        EntryRefOut: {
+            /** Day */
+            day: string;
+            /** Topic */
+            topic: string;
+        };
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -1517,6 +1596,17 @@ export interface components {
             /** Status */
             status: string;
         };
+        /**
+         * HintOut
+         * @description Ein Hinweis nach dem Schreiben, nie eine Ablehnung: `notes_state_stale`, `notes_state_long`,
+         *     `notes_history_rewritten`.
+         */
+        HintOut: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
         /** IndexItem */
         IndexItem: {
             /** Area */
@@ -1525,6 +1615,8 @@ export interface components {
             dependencies: string[];
             /** Label */
             label: string;
+            /** Notes State */
+            notes_state?: string | null;
             /** Parent Uid */
             parent_uid: string | null;
             /** Priority */
@@ -1555,6 +1647,26 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** ItemDocumentOut */
+        ItemDocumentOut: {
+            /** Content */
+            content: string;
+            /** Hints */
+            hints?: components["schemas"]["HintOut"][];
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Notes State */
+            notes_state?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+        };
         /** ItemOut */
         ItemOut: {
             /** Area */
@@ -1578,6 +1690,8 @@ export interface components {
             label: string;
             /** Notes */
             notes: string[];
+            /** Notes State */
+            notes_state?: string | null;
             parent: components["schemas"]["ItemSummary"] | null;
             /** Priority */
             priority: string;
@@ -1825,6 +1939,17 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** NotesEntryOut */
+        NotesEntryOut: {
+            /** Day */
+            day: string;
+            /** Position */
+            position: number;
+            /** Text */
+            text: string;
+            /** Topic */
+            topic: string;
+        };
         /** NotesFinishNoteBody */
         NotesFinishNoteBody: {
             /** Project */
@@ -1928,6 +2053,27 @@ export interface components {
             trigger?: {
                 [key: string]: unknown;
             } | null;
+            /** Version */
+            version: number;
+        };
+        /**
+         * NotesStateOut
+         * @description Der Kopf der Notes ohne Protokoll; `version` ist die Version des Kopfs, `checksum` die aktuelle Prüfsumme des
+         *     Protokolls.
+         */
+        NotesStateOut: {
+            /** Checksum */
+            checksum: string;
+            /** Content */
+            content: string;
+            /** Hints */
+            hints: components["schemas"]["HintOut"][];
+            last_entry: components["schemas"]["EntryRefOut"] | null;
+            /** Name */
+            name: string;
+            stamp: components["schemas"]["StampOut"] | null;
+            /** State */
+            state: string;
             /** Version */
             version: number;
         };
@@ -2072,6 +2218,15 @@ export interface components {
             max_topic_depth: number;
             /** Review Days */
             review_days: number;
+        };
+        /** StampOut */
+        StampOut: {
+            /** Checksum */
+            checksum: string;
+            /** Day */
+            day: string;
+            /** Topic */
+            topic: string;
         };
         /** SyncResult */
         SyncResult: {
@@ -2808,7 +2963,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocumentOut"];
+                    "application/json": components["schemas"]["ItemDocumentOut"];
                 };
             };
             /** @description Client Error */
@@ -2844,7 +2999,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocumentOut"];
+                    "application/json": components["schemas"]["ItemDocumentOut"];
                 };
             };
             /** @description Client Error */
@@ -2914,7 +3069,144 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocumentOut"];
+                    "application/json": components["schemas"]["ItemDocumentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_list_notes_entries: {
+        parameters: {
+            query?: {
+                last?: number | null;
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesEntryOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_get_notes_state: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesStateOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_put_notes_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacklogPutNotesStateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesStateOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_confirm_notes_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacklogConfirmNotesStateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesStateOut"];
                 };
             };
             /** @description Client Error */

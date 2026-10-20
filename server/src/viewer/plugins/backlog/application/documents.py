@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import Any
 
 from viewer.core.application.ports import Clock, Database, EventBus, Transaction
+from viewer.core.domain.errors import InvalidInput, VersionConflict
 from viewer.core.domain.events import Event
 from viewer.plugins.backlog.application.items import ItemService
 from viewer.plugins.backlog.application.ports import (
@@ -27,9 +28,29 @@ from viewer.plugins.backlog.domain.documents import (
 from viewer.plugins.backlog.domain.editing import normalize
 from viewer.plugins.backlog.domain.lifecycle import LifecycleRules
 from viewer.plugins.backlog.domain.model import Item
-from viewer.plugins.backlog.domain.notes import NotesParts, assemble, replaced_by_text, split, title_of
+from viewer.plugins.backlog.domain.notes import (
+    Hint,
+    NotesParts,
+    assemble,
+    hints,
+    replaced_by_text,
+    split,
+    stamped,
+    state_of,
+    state_text,
+    title_of,
+)
 
 CHANGED_TOPIC = "backlog.document.changed"
+
+
+@dataclass(frozen=True)
+class DocumentWrite:
+    """Ein geschriebenes Dokument; bei Notizen mit dem Zustand des Kopfs danach und Hinweisen (nie Ablehnungen)."""
+
+    document: Document
+    notes_state: str | None = None
+    hints: tuple[Hint, ...] = ()
 
 
 class DocumentService:
@@ -78,10 +99,12 @@ class DocumentService:
         content: str,
         version: int | None,
         summary: str | None,
-    ) -> Document:
+    ) -> DocumentWrite:
         """Ersetzt ein Dokument in `version` oder legt ein neues an (`version` fehlt). Notizen werden zerlegt: ohne
         `## Stand` im Text bleibt der Kopf, den Stempel setzt nur der Server."""
         change = "updated"
+        before: NotesParts | None = None
+        parts: NotesParts | None = None
         with self._database.transaction() as tx:
             item = self._items.resolve(tx, ref, project_uid)
             now = self._clock.now()
@@ -103,6 +126,7 @@ class DocumentService:
                 self._check_and_summarize(tx, item, summary, add_notes=None)
                 if existing.kind == NOTES:
                     notes = self._stored_notes(tx, item)
+                    before = notes.parts
                     parts = replaced_by_text(notes.parts, content)
                     changed = (parts.state, parts.stamp) != (notes.parts.state, notes.parts.stamp)
                     self._notes.save(tx, item.uid, parts, expected=version, state_changed=changed, at=now)
@@ -110,7 +134,9 @@ class DocumentService:
                     self._documents.update(tx, item.uid, name, content, version, now)
             document = self._existing(tx, item, name)
         self._changed(item.uid, name, change)
-        return document
+        if parts is None:
+            return DocumentWrite(document)
+        return DocumentWrite(document, state_of(parts), hints(before, parts, rewritten=before is not None))
 
     def append_note(
         self,
@@ -121,8 +147,12 @@ class DocumentService:
         decided: Sequence[str],
         open_points: Sequence[str],
         summary: str | None,
-    ) -> Document:
-        """Hängt einen datierten Eintrag an die Notizen; der erste Eintrag legt sie an."""
+        state: str | None = None,
+        state_version: int | None = None,
+    ) -> DocumentWrite:
+        """Hängt einen datierten Eintrag an die Notizen; der erste Eintrag legt sie an. Mit `state` wird danach im
+        selben Schritt der Kopf ersetzt und gegen den neuen Eintrag gestempelt; gibt es schon einen Kopf, braucht das
+        dessen Version `state_version`."""
         with self._database.transaction() as tx:
             item = self._items.resolve(tx, ref, project_uid)
             now = self._clock.now()
@@ -131,17 +161,50 @@ class DocumentService:
             name = existing.name if existing else notes_name(item.label)
             self._check_and_summarize(tx, item, summary, add_notes=None if existing else name)
             if existing is None:
-                parts = split(append_entry(notes_header(item), entry))
+                parts = self._with_state(split(append_entry(notes_header(item), entry)), state)
                 self._notes.insert(tx, Notes(item.uid, name, parts, 1, 1, now))
                 change = "created"
             else:
+                self._check_state_version(existing, state, state_version)
                 appended = split(append_entry(assemble(title_of(item), existing.parts), entry))
                 parts = replace(existing.parts, preamble=appended.preamble, entries=appended.entries)
-                self._notes.save(tx, item.uid, parts, expected=existing.revision, state_changed=False, at=now)
+                parts = self._with_state(parts, state)
+                self._notes.save(
+                    tx,
+                    item.uid,
+                    parts,
+                    expected=existing.revision,
+                    expected_state=state_version if state is not None else None,
+                    state_changed=state is not None,
+                    at=now,
+                )
                 change = "updated"
             document = self._existing(tx, item, name)
         self._changed(item.uid, name, change)
-        return document
+        return DocumentWrite(
+            document, state_of(parts), hints(existing.parts if existing else None, parts, rewritten=False)
+        )
+
+    @staticmethod
+    def _with_state(parts: NotesParts, state: str | None) -> NotesParts:
+        if state is None:
+            return parts
+        text = state_text(state)
+        if not text:
+            raise InvalidInput("Der Kopf ist leer", details={"field": "state"})
+        return stamped(replace(parts, state=text))
+
+    @staticmethod
+    def _check_state_version(notes: Notes, state: str | None, state_version: int | None) -> None:
+        """Ein neuer Kopf ersetzt einen vorhandenen nur in dessen Version."""
+        if state is None or not notes.parts.state.strip():
+            return
+        if state_version is None:
+            raise InvalidInput(
+                "Die Notes haben schon einen Kopf: `state_version` angeben", details={"field": "state_version"}
+            )
+        if state_version != notes.state_revision:
+            raise VersionConflict("Der Kopf wurde inzwischen geändert", details={"expected": state_version})
 
     # --- Hilfen ---------------------------------------------------------------------------------------------------
 

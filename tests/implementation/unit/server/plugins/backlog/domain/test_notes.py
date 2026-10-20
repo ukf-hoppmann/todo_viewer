@@ -1,19 +1,34 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+import pytest
 from backlog_fixtures import item
 from viewer.plugins.backlog.domain.notes import (
     Entry,
     NotesParts,
+    NotesWithoutEntries,
     Stamp,
     assemble,
+    canonical,
+    checksum,
     entry_text,
     has_state_section,
+    hints,
+    history_rewritten,
     replaced_by_text,
     split,
     split_lossless,
     stamp_line,
+    stamped,
+    state_of,
     title_of,
 )
+
+VECTORS = json.loads(
+    (Path(__file__).resolve().parents[6] / "fixtures" / "notes-state" / "checksum.json").read_text(encoding="utf-8")
+)["vectors"]
 
 TITLE = "STORY-001 — Login"
 
@@ -190,3 +205,72 @@ def test_replacing_by_text_takes_a_new_state_but_never_its_stamp_line() -> None:
     assert "fertig" in new.state
     assert new.stamp == old.stamp
     assert has_state_section(text) and not has_state_section(PLAIN)
+
+
+@pytest.mark.parametrize("vector", VECTORS, ids=[v["name"] for v in VECTORS])
+def test_the_checksum_matches_the_shared_vectors(vector: dict[str, str]) -> None:
+    entries = split(vector["protocol"]).entries
+
+    assert canonical(entries) == vector["canonical"]
+    assert checksum(entries) == vector["checksum"]
+
+
+def _entries() -> tuple[Entry, ...]:
+    return split(PLAIN).entries
+
+
+def test_the_state_is_missing_stale_or_current() -> None:
+    entries = _entries()
+    current = Stamp("2026-10-02", "Zweites Thema", checksum(entries))
+
+    assert state_of(NotesParts("\n", "", None, entries)) == "missing"
+    assert state_of(NotesParts("\n", "  \n", current, entries)) == "missing"
+    assert state_of(NotesParts("\n", "- Ziel/Status: x", None, entries)) == "stale"
+    assert state_of(NotesParts("\n", "- Ziel/Status: x", current, entries[:1])) == "stale"
+    assert state_of(NotesParts("\n", "- Ziel/Status: x", current, entries)) == "current"
+
+
+def test_stamping_names_the_last_entry_and_the_current_checksum() -> None:
+    parts = stamped(NotesParts("\n", "- Ziel/Status: x", None, _entries()))
+
+    assert parts.stamp == Stamp("2026-10-02", "Zweites Thema", checksum(_entries()))
+    assert state_of(parts) == "current"
+    with pytest.raises(NotesWithoutEntries):
+        stamped(NotesParts("\n", "- Ziel/Status: x", None, ()))
+
+
+def _decided(count: int) -> str:
+    rows = "".join(f"  - Beschluss {n} (2026-10-01)\n" for n in range(count))
+    return f"- Ziel/Status: x\n- Beschlossen:\n{rows}- Verweise: Spec\n  - nicht gezählt"
+
+
+def test_a_long_state_gives_a_hint_from_16_decisions_on() -> None:
+    codes = {
+        count: [
+            h.code for h in hints(None, stamped(NotesParts("\n", _decided(count), None, _entries())), rewritten=False)
+        ]
+        for count in (15, 16)
+    }
+
+    assert codes == {15: [], 16: ["notes_state_long"]}
+
+
+def test_a_stale_or_missing_state_gives_a_hint() -> None:
+    assert [h.code for h in hints(None, NotesParts("\n", "", None, _entries()), rewritten=False)] == [
+        "notes_state_stale"
+    ]
+    assert [h.code for h in hints(None, NotesParts("\n", "- x", None, _entries()), rewritten=False)] == [
+        "notes_state_stale"
+    ]
+
+
+def test_rewriting_an_older_entry_is_noticed_but_appending_is_not() -> None:
+    before = NotesParts("\n", "", None, _entries())
+    appended = NotesParts("\n", "", None, (*_entries(), Entry("2026-10-03", "Neu", "\n- n\n")))
+    changed = NotesParts("\n", "", None, (Entry("2026-10-01", "Erstes Thema", "\n- anders\n"), _entries()[1]))
+    removed = NotesParts("\n", "", None, _entries()[1:])
+
+    assert not history_rewritten(before, appended)
+    assert history_rewritten(before, changed) and history_rewritten(before, removed)
+    assert "notes_history_rewritten" in [h.code for h in hints(before, changed, rewritten=True)]
+    assert "notes_history_rewritten" not in [h.code for h in hints(before, changed, rewritten=False)]

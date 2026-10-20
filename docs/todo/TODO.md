@@ -95,3 +95,45 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Verbesserungen am MCP-Server nach einer Prüfung aus
     Claude_Harness heraus: Agenten sollen keine uids mehr abschreiben müssen
     und Fehler früher und lesbarer sehen. Ergänzt STORY-081.
+
+- `STORY-093` **Item-Notes mit Kopf und Protokoll: getrennt gespeichert, Stempel und Zustand**
+  - Uid: 70cb741a-f5be-4430-951f-080f2fa6aa63.
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-10-20.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Notes eines Backlog-Items bestehen aus einem Kopf mit dem
+    geltenden Stand und einem Protokoll mit datierten Einträgen. Beide
+    werden in eigenen Tabellen gespeichert und lassen sich unabhängig lesen
+    und bearbeiten. Ein Stempel mit der Prüfsumme des Protokolls zeigt, ob
+    der Kopf noch zum Protokoll passt. So kann der Harness (STORY-051 im
+    Claude_Harness) den Kopf ohne das Protokoll laden und nach jeder
+    Änderung prüfen lassen.
+  - Completion criteria: 1. Kopf (1:1 zum Item, mit Inhalt, Stempel und
+    eigener Revision) und Protokolleinträge (1:n, mit Datum, Thema,
+    unverändertem Markdown-Text und Reihenfolge) liegen in eigenen Tabellen;
+    die Migration zerlegt bestehende Notes ohne Textverlust, ein vorhandener
+    Abschnitt `## Stand` wird zum Kopf. 2. Die Prüfsumme wird nach der
+    gemeinsamen Definition in `format.md` des Harness berechnet; ein Test
+    mit gemeinsamen Beispielen zeigt dasselbe Ergebnis wie `backlog.py`. 3.
+    Es gibt Endpunkte (API und MCP) zum Lesen des Kopfs ohne Protokoll, zum
+    Ersetzen und zum Bestätigen des Kopfs (beide setzen den Stempel); `POST
+    …/notes` nimmt optional einen neuen Kopf mit; `GET/PUT` auf
+    `<ID>_notes.md` arbeiten weiter auf der zusammengesetzten Datei. 4.
+    `show` und `index` melden den Zustand des Kopfs (`current`, `stale`,
+    `missing`); schreibende Antworten auf Notes weisen auf einen veralteten
+    Kopf hin. 5. Der Spiegel setzt die Datei aus Titelzeile (immer aus dem
+    aktuellen Item), Kopf, Stempelzeile und Protokoll zusammen und zerlegt
+    sie beim Einlesen wieder, den Stempel aus der Datei eingeschlossen. 6.
+    Die Oberfläche zeigt den Kopf oben, markiert einen veralteten Kopf und
+    lässt das Protokoll einklappen. 7. Vertragstests decken Endpunkte,
+    Prüfsumme, Migration und Spiegel in beide Richtungen ab; die technische
+    Dokumentation ist nachgezogen.
+  - Summary: Die Notizen zu einem Item bekommen oben einen Kopf mit dem
+    aktuellen Stand und darunter das Protokoll. Beide werden getrennt
+    gespeichert, und der Viewer zeigt an, wenn der Kopf nach neuen Einträgen
+    nicht mehr geprüft wurde.

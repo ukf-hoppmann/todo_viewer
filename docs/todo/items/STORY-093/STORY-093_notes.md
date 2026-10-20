@@ -81,3 +81,14 @@
 ### Open
 
 - Testvektoren der Prüfsumme und der Fall eines leeren Protokolls mit dem Harness (TASK-021, TASK-022) abstimmen.
+
+## 2026-10-20 — Owner bestätigt Spiegel- und Oberflächen-Entscheidung
+
+### Discussed
+
+- Zwei Entscheidungen aus dem Schreiben der Spec lagen dem Owner zur Bestätigung vor.
+
+### Decided
+
+- Bestätigt: Fehlt `## Stand` in einer Datei im Spiegel, wird der Kopf geleert; über die API bleibt er erhalten (die Datei ist im Spiegel der vollständige Stand, ein alter API-Client kennt den Kopf nur nicht).
+- Bestätigt: Die Oberfläche zeigt in dieser Story Kopf, Markierung und einklappbares Protokoll; Kopf bestätigen und einzeln bearbeiten kommt später.

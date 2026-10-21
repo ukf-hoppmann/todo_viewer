@@ -270,3 +270,27 @@ def test_the_title_line_of_notes_follows_label_and_title_of_the_item() -> None:
     text = texts(encode([retyped], [], CURRENT))["items/TASK-009/TASK-009_notes.md"]
 
     assert text.startswith("# TASK-009 — Neu\n\n## 2026-10-02 — Erster Eintrag\n")
+
+
+def test_list_items_get_their_own_lines_and_never_start_a_soft_wrap() -> None:
+    value = "1. Fragen besprochen.\n2. Die Spec liegt vor und ist freigegeben."
+
+    lines = field_lines("Completion criteria", value)
+
+    assert lines[0] == "  - Completion criteria: 1. Fragen besprochen."
+    assert lines[1] == "    2. Die Spec liegt vor und ist freigegeben."
+
+    wrapped = field_lines("Goal", "Ein langer Satz, der ziemlich lang ist und umbrochen werden muss, bis Version 1. 2. wird danach erwähnt")
+    assert not any(line.strip()[:2] == "2." for line in wrapped[1:])
+
+
+def test_a_list_survives_writing_and_reading() -> None:
+    from viewer.plugins.backlog.infrastructure.mirror.syntax import same_text, parse_blocks  # noqa: PLC0415
+
+    value = "1. Erstens\n2. Zweitens, mit sehr viel Text " + "x " * 60 + "\n3. Drittens"
+    text = "- `TASK-001`  **T**\n" + "\n".join(field_lines("Goal", value)) + "\n"
+
+    read = parse_blocks(text.splitlines())[0].fields[0].value
+
+    assert read.count("\n") == 2 and same_text(read, value)
+    assert not same_text("Flach 1. Eins 2. Zwei", "Flach 1. Eins\n2. Zwei")

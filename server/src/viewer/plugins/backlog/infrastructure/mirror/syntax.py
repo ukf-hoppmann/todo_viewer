@@ -19,6 +19,8 @@ DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 BACKTICK_ID = re.compile(r"`([A-Za-z0-9_.\-]+)`")
 NO_ENTRIES = "No entries."
 LINE_WIDTH = 76
+#: Eine Folgezeile, die so beginnt, ist ein harter Umbruch (Listenpunkt); jede andere setzt die Zeile davor nur fort.
+LIST_MARKER = re.compile(r"^(\d+[.)]|[-*])\s")
 
 #: Felder und ihre Reihenfolge (der Codec schreibt in dieser Reihenfolge und liest in jeder).
 FIELD_ORDER = (
@@ -124,7 +126,8 @@ def parse_blocks(lines: list[str]) -> list[Block]:
             continue
         if current.fields:
             last = current.fields[-1]
-            last.value += " " + raw.strip()
+            text = raw.strip()
+            last.value += ("\n" if LIST_MARKER.match(text) else " ") + text
             last.end = index + 1
     if current is not None:
         current.end = _last_used(current)
@@ -139,17 +142,43 @@ def with_period(value: str) -> str:
     return value if value.endswith(".") else value + "."
 
 
+def logical_lines(value: str) -> list[str]:
+    """Der Text als logische Zeilen: nur vor einem Listenpunkt bleibt ein Umbruch, sonst gilt Fließtext."""
+    lines: list[str] = []
+    for raw in value.splitlines():
+        text = " ".join(raw.split())
+        if not text:
+            continue
+        if lines and not LIST_MARKER.match(text):
+            lines[-1] += " " + text
+        else:
+            lines.append(text)
+    return lines
+
+
 def field_lines(label: str, value: str) -> list[str]:
-    """Die Zeilen eines Feldes; lange Werte umbrechen, Fortsetzungszeilen sind vier Leerzeichen eingerückt."""
-    wrapped = textwrap.wrap(
-        value,
-        width=LINE_WIDTH,
-        initial_indent=f"  - {label}: ",
-        subsequent_indent="    ",
-        break_long_words=False,
-        break_on_hyphens=False,
-    )
-    return wrapped or [f"  - {label}: "]
+    """Die Zeilen eines Feldes; lange Werte umbrechen, Fortsetzungszeilen sind vier Leerzeichen eingerückt.
+
+    Jeder Listenpunkt beginnt eine eigene Zeile; ein weicher Umbruch setzt nie mit einem Listenpunkt an.
+    """
+    lines: list[str] = []
+    for index, logical in enumerate(logical_lines(value) or [""]):
+        wrapped = textwrap.wrap(
+            logical,
+            width=LINE_WIDTH,
+            initial_indent=f"  - {label}: " if index == 0 and not lines else "    ",
+            subsequent_indent="    ",
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+        for line in wrapped[:1]:
+            lines.append(line)
+        for line in wrapped[1:]:
+            if LIST_MARKER.match(line.strip()):
+                lines[-1] += " " + line.strip()
+            else:
+                lines.append(line)
+    return lines or [f"  - {label}: "]
 
 
 def reference_text(labels: tuple[str, ...]) -> str:
@@ -158,4 +187,4 @@ def reference_text(labels: tuple[str, ...]) -> str:
 
 def same_text(a: str, b: str) -> bool:
     """Gleicher Text, unabhängig vom Umbruch."""
-    return " ".join(a.split()) == " ".join(b.split())
+    return logical_lines(a) == logical_lines(b)

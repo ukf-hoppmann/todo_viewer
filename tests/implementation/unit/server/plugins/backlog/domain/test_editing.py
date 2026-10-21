@@ -151,3 +151,12 @@ def test_rewrite_references_finds_the_text_fields_that_mention_the_old_label() -
         "a": {"title": "Folge von TASK-004"},
         "b": {"goal": "Wie TASK-004", "resolution": "TASK-004 erledigt"},
     }
+
+
+@pytest.mark.parametrize("field", ["goal", "completion_criteria", "summary"])
+def test_long_texts_keep_their_line_breaks(field: str) -> None:
+    assert normalize(field, "\n 1.  Erstens\r\n2. Zweites \n\n\n\n3. Drittes\n") == "1. Erstens\n2. Zweites\n\n3. Drittes"
+
+
+def test_title_stays_one_line() -> None:
+    assert normalize("title", "Ein\nTitel") == "Ein Titel"

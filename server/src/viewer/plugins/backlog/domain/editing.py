@@ -50,8 +50,20 @@ def _line(value: object) -> str:
     return " ".join(str(value).split()) if value is not None else ""
 
 
+#: Texte, in denen Zeilenumbrüche (Listen, Absätze) erhalten bleiben.
+MULTILINE_TEXT = frozenset({"goal", "completion_criteria", "summary", "resolution"})
+
+
+def _block(value: object) -> str:
+    """Getrimmt; je Zeile zusammengefasst, Zeilenumbrüche bleiben, Leerzeilen am Rand und doppelte Leerzeilen entfallen."""
+    if value is None:
+        return ""
+    lines = [" ".join(line.split()) for line in str(value).replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+
+
 def _text(field: str, raw: object, *, required: bool) -> str | None:
-    value = _line(raw)
+    value = _block(raw) if field in MULTILINE_TEXT else _line(raw)
     if value:
         return value
     if required:
@@ -122,7 +134,7 @@ def apply_update(item: Item, changes: Mapping[str, object], resolution: str | No
                 raise ResolutionRequired(
                     "Für Completed und Rejected braucht es eine Entscheidung", details={"field": "resolution"}
                 )
-            values["resolution"] = _line(resolution)
+            values["resolution"] = _block(resolution)
         else:
             values["resolution"] = None
     return replace(item, **values)  # type: ignore[arg-type]

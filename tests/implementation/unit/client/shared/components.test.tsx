@@ -276,7 +276,7 @@ describe("MarkdownView and MarkdownEditor", () => {
 });
 
 describe("MarkdownView outline", () => {
-	it("jumps to a heading from the outline menu, inside its own view", () => {
+	it("jumps to a heading from the outline that the icon shows, inside its own view", () => {
 		const markdown = "# Eins\n\n## Zwei\n\nmehr";
 		render(
 			<>
@@ -290,11 +290,14 @@ describe("MarkdownView outline", () => {
 		other.scrollIntoView = scrollOther;
 		own.scrollIntoView = scrollOwn;
 
+		expect(screen.queryByTestId(sharedTestIds.outline)).toBeNull();
 		fireEvent.click(screen.getByRole("button", { name: "Gliederung" }));
 		fireEvent.click(screen.getByTestId(sharedTestIds.outlineItem("zwei")));
 
 		expect(scrollOwn).toHaveBeenCalledTimes(1);
 		expect(scrollOther).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", { name: "Gliederung" }));
+		expect(screen.queryByTestId(sharedTestIds.outline)).toBeNull();
 	});
 
 	it("shows no outline without a label or with fewer than two headings", () => {

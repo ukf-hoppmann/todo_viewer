@@ -1,8 +1,9 @@
 import CloseIcon from "@mui/icons-material/Close";
-import { Box, Dialog, IconButton, List, ListItemButton, ListItemText, Typography } from "@mui/material";
+import { Box, Dialog, IconButton, Typography } from "@mui/material";
 import { useMemo, useRef } from "react";
 import { sharedTestIds } from "../testIds";
 import { MarkdownView } from "./MarkdownView";
+import { OutlineList } from "./OutlineList";
 import { extractHeadings } from "./renderMarkdown";
 
 interface LargeViewProps {
@@ -34,18 +35,14 @@ export function LargeView({ open, onClose, title, markdown, closeLabel, tocLabel
 			</Box>
 			<Box sx={{ display: "flex", flexGrow: 1, minHeight: 0 }}>
 				{headings.length > 0 && (
-					<List component="nav" aria-label={tocLabel} dense data-testid={sharedTestIds.largeViewToc} sx={{ width: 260, flexShrink: 0, overflowY: "auto", borderRight: 1, borderColor: "divider" }}>
-						{headings.map((heading) => (
-							<ListItemButton
-								key={heading.slug}
-								data-testid={sharedTestIds.largeViewTocItem(heading.slug)}
-								sx={{ pl: 1 + (heading.depth - 1) * 2 }}
-								onClick={() => jumpTo(heading.slug)}
-							>
-								<ListItemText primary={heading.text} slotProps={{ primary: { noWrap: true } }} />
-							</ListItemButton>
-						))}
-					</List>
+					<OutlineList
+						headings={headings}
+						label={tocLabel}
+						onJump={jumpTo}
+						testId={sharedTestIds.largeViewToc}
+						itemTestId={sharedTestIds.largeViewTocItem}
+						sx={{ width: 260, flexShrink: 0, overflowY: "auto", borderRight: 1, borderColor: "divider" }}
+					/>
 				)}
 				<Box ref={contentRef} sx={{ flexGrow: 1, minWidth: 0, overflowY: "auto", p: 3 }}>
 					<MarkdownView source={markdown} />

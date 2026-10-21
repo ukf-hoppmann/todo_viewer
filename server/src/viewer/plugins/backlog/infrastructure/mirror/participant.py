@@ -275,7 +275,7 @@ class BacklogParticipant:
                 self._documents.delete(tx, element.uid, str(entry.label))
 
     def _write_notes(self, tx: Transaction, item_uid: str, name: str, content: str, now: datetime) -> None:
-        """Die Datei ist im Spiegel der ganze Stand: der Stempel kommt aus ihr, ohne `## Stand` ist der Kopf leer."""
+        """Die Datei ist im Spiegel der ganze Stand: der Stempel kommt aus ihr, ohne `## State` ist der Kopf leer."""
         parts = split(content)
         existing = self._notes.get(tx, item_uid)
         if existing is None:

@@ -7,7 +7,7 @@ from typing import Any
 from workspace_env import Env
 
 BASE = {"title": "Ein Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
-STATE = "- Ziel/Status: läuft\n- Nächster Schritt: weiter"
+STATE = "- Goal/Status: läuft\n- Next step: weiter"
 
 
 def _create(env: Env, **fields: Any) -> dict[str, Any]:
@@ -52,14 +52,14 @@ def test_replacing_the_state_stamps_it_and_needs_the_current_version(backlog: En
     _note(backlog, item)
 
     stored = _put(backlog, item, STATE, 1).json()
-    stale = _put(backlog, item, "- Ziel/Status: alt", 1)
+    stale = _put(backlog, item, "- Goal/Status: alt", 1)
 
     assert stored["state"] == "current" and stored["content"] == STATE and stored["version"] == 2
     assert stored["stamp"] == {"day": "2026-10-16", "topic": "Thema", "checksum": stored["checksum"]}
     assert stored["hints"] == []
     assert (stale.status_code, stale.json()["code"]) == (409, "version_conflict")
     document = backlog.client.get(f"/api/backlog/items/{item['uid']}/documents/TASK-001_notes.md").json()
-    assert f"## Stand\n\n{STATE}\n\nStand bestätigt nach Eintrag 2026-10-16 — Thema (" in document["content"]
+    assert f"## State\n\n{STATE}\n\nState confirmed after entry 2026-10-16 — Thema (" in document["content"]
 
 
 def test_a_state_without_entries_is_refused(backlog: Env) -> None:
@@ -95,15 +95,15 @@ def test_append_note_can_bring_a_new_state(backlog: Env) -> None:
     item = _create(backlog)
     first = _note(backlog, item, state=STATE).json()
     assert first["notes_state"] == "current" and first["hints"] == []
-    assert "Stand bestätigt nach Eintrag 2026-10-16 — Thema (" in first["content"]
+    assert "State confirmed after entry 2026-10-16 — Thema (" in first["content"]
 
-    refused = _note(backlog, item, "Zweites", state="- Ziel/Status: neu")
-    second = _note(backlog, item, "Zweites", state="- Ziel/Status: neu", state_version=1).json()
+    refused = _note(backlog, item, "Zweites", state="- Goal/Status: neu")
+    second = _note(backlog, item, "Zweites", state="- Goal/Status: neu", state_version=1).json()
 
     assert (refused.status_code, refused.json()["code"]) == (422, "invalid_input")
     assert second["notes_state"] == "current"
     state = _state(backlog, item).json()
-    assert state["content"] == "- Ziel/Status: neu" and state["stamp"]["topic"] == "Zweites"
+    assert state["content"] == "- Goal/Status: neu" and state["stamp"]["topic"] == "Zweites"
     assert state["version"] == 2
 
 
@@ -130,7 +130,7 @@ def test_a_long_state_gives_a_hint(backlog: Env) -> None:
     _note(backlog, item)
     decided = "".join(f"  - Beschluss {n}\n" for n in range(16))
 
-    stored = _put(backlog, item, f"- Ziel/Status: x\n- Beschlossen:\n{decided}- Verweise: -", 1).json()
+    stored = _put(backlog, item, f"- Goal/Status: x\n- Decided:\n{decided}- References: -", 1).json()
 
     assert stored["state"] == "current"
     assert [h["code"] for h in stored["hints"]] == ["notes_state_long"]

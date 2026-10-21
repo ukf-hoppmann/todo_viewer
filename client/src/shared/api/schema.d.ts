@@ -254,7 +254,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Der Kopf (`## Stand`) der Notizen eines Items ohne Protokoll: Inhalt, Stempel, Zustand (`current`, `stale`, `missing`), aktuelle Prüfsumme, letzter Eintrag und Version des Kopfs */
+        /** Der Kopf (`## State`) der Notizen eines Items ohne Protokoll: Inhalt, Stempel, Zustand (`current`, `stale`, `missing`), aktuelle Prüfsumme, letzter Eintrag und Version des Kopfs */
         get: operations["backlog_get_notes_state"];
         /** Ersetzt den Kopf der Notizen in `version` und stempelt ihn gegen den letzten Protokolleintrag */
         put: operations["backlog_put_notes_state"];

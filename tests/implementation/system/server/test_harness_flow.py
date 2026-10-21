@@ -125,7 +125,7 @@ async def session(harness: Harness) -> None:
     assert entry["notes_state"] == "missing" and entry["hints"][0]["code"] == "notes_state_stale"
 
     # state, put-state, confirm-state: der Kopf der Notizen ohne Protokoll (STORY-093)
-    head = await harness.call("backlog_put_notes_state", ref=story["uid"], content="- Ziel/Status: Maske", version=1)
+    head = await harness.call("backlog_put_notes_state", ref=story["uid"], content="- Goal/Status: Maske", version=1)
     assert head["state"] == "current" and head["stamp"]["topic"] == "Start"
     later = await harness.call(
         "backlog_append_note", ref=story["uid"], topic="Weiter", discussed=["Feinschliff"], decided=[], open=[]
@@ -133,7 +133,7 @@ async def session(harness: Harness) -> None:
     assert later["notes_state"] == "stale"
     assert (await harness.call("backlog_get_notes_state", ref=story["uid"]))["state"] == "stale"
     confirmed = await harness.call("backlog_confirm_notes_state", ref=story["uid"], version=head["version"])
-    assert confirmed["state"] == "current" and confirmed["content"] == "- Ziel/Status: Maske"
+    assert confirmed["state"] == "current" and confirmed["content"] == "- Goal/Status: Maske"
     last = await harness.call("backlog_list_notes_entries", ref=story["uid"], last=1)
     assert [e["topic"] for e in last] == ["Weiter"]
 

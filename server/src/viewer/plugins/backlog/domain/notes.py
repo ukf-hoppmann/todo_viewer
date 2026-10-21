@@ -1,4 +1,4 @@
-"""Aufbau der Item-Notes: Titelzeile, Vorspann, Kopf (`## Stand`) mit Stempel und Protokoll aus datierten Einträgen.
+"""Aufbau der Item-Notes: Titelzeile, Vorspann, Kopf (`## State`) mit Stempel und Protokoll aus datierten Einträgen.
 
 Zerlegen und Zusammensetzen sind verlustfrei für Notes ohne Kopf (bis auf die Titelzeile, die immer aus dem Item
 kommt); Notes mit Kopf werden auf ein festes Layout gebracht. Der Aufbau ist mit dem Harness abgestimmt (dort
@@ -16,10 +16,10 @@ from viewer.core.domain.errors import DomainError
 from viewer.plugins.backlog.domain.model import Item
 
 ENTRY_HEADING = re.compile(r"^## (\d{4}-\d{2}-\d{2}) — (.*)$")
-STATE_HEADING = "## Stand"
-STAMP_LINE = re.compile(r"^Stand bestätigt nach Eintrag (\d{4}-\d{2}-\d{2}) — (.+) \(([0-9a-f]{12})\)$")
-DECIDED_HEADING = "- Beschlossen:"
-#: Ab so vielen Punkten unter `- Beschlossen:` gibt es einen Hinweis (Spec schreiben oder Item teilen?), nie eine
+STATE_HEADING = "## State"
+STAMP_LINE = re.compile(r"^State confirmed after entry (\d{4}-\d{2}-\d{2}) — (.+) \(([0-9a-f]{12})\)$")
+DECIDED_HEADING = "- Decided:"
+#: Ab so vielen Punkten unter `- Decided:` gibt es einen Hinweis (Spec schreiben oder Item teilen?), nie eine
 #: Ablehnung (STORY-051).
 LONG_STATE = 15
 CURRENT, STALE, MISSING = "current", "stale", "missing"
@@ -70,7 +70,7 @@ def title_of(item: Item) -> str:
 
 
 def stamp_line(stamp: Stamp) -> str:
-    return f"Stand bestätigt nach Eintrag {stamp.day} — {stamp.topic} ({stamp.checksum})"
+    return f"State confirmed after entry {stamp.day} — {stamp.topic} ({stamp.checksum})"
 
 
 def entry_text(entry: Entry) -> str:
@@ -155,7 +155,7 @@ def split_lossless(text: str) -> NotesParts:
 
 
 def has_state_section(text: str) -> bool:
-    """Steht vor dem ersten Eintrag ein Abschnitt `## Stand`?"""
+    """Steht vor dem ersten Eintrag ein Abschnitt `## State`?"""
     for line in text.splitlines():
         if ENTRY_HEADING.match(line):
             return False
@@ -166,7 +166,7 @@ def has_state_section(text: str) -> bool:
 
 def replaced_by_text(old: NotesParts, text: str) -> NotesParts:
     """Neue Teile, wenn ein Client die ganze Datei über die API ersetzt: Vorspann und Protokoll kommen aus dem Text,
-    der Kopf nur, wenn der Text `## Stand` enthält (ältere Clients kennen ihn nicht). Den Stempel setzt über die API
+    der Kopf nur, wenn der Text `## State` enthält (ältere Clients kennen ihn nicht). Den Stempel setzt über die API
     nur der Server, eine Stempelzeile im Text zählt nicht."""
     new = split(text)
     return NotesParts(new.preamble, new.state if has_state_section(text) else old.state, old.stamp, new.entries)
@@ -206,18 +206,27 @@ def state_text(content: str) -> str:
 def stamped(parts: NotesParts) -> NotesParts:
     """Setzt den Stempel auf den letzten Eintrag und die aktuelle Prüfsumme; das Protokoll bleibt unverändert."""
     if not parts.entries:
-        raise NotesWithoutEntries("Ohne Protokolleintrag lässt sich der Kopf nicht bestätigen; zuerst einen anhängen")
+        raise NotesWithoutEntries("The head cannot be confirmed without a log entry; append one first")
     last = parts.entries[-1]
     return replace(parts, stamp=Stamp(last.day, last.topic, checksum(parts.entries)))
 
 
 def history_rewritten(before: NotesParts, after: NotesParts) -> bool:
     """Wurde ein bisheriger Eintrag geändert oder entfernt? Neue Einträge am Ende zählen nicht."""
-    return any(i >= len(after.entries) or after.entries[i] != entry for i, entry in enumerate(before.entries))
+    return any(
+        i >= len(after.entries) or _comparable(after.entries[i]) != _comparable(entry)
+        for i, entry in enumerate(before.entries)
+    )
+
+
+def _comparable(entry: Entry) -> tuple[str, str, str]:
+    """Zeilenenden und Leerzeilen am Ende des Eintrags zählen beim Vergleich nicht."""
+    body = entry.body.replace("\r\n", "\n").replace("\r", "\n").rstrip("\n")
+    return entry.day, entry.topic, body
 
 
 def decided_count(state: str) -> int:
-    """Die Unterpunkte unter `- Beschlossen:` bis zum nächsten Punkt der obersten Ebene."""
+    """Die Unterpunkte unter `- Decided:` bis zum nächsten Punkt der obersten Ebene."""
     count, inside = 0, False
     for line in state.splitlines():
         if line.rstrip() == DECIDED_HEADING:
@@ -241,11 +250,11 @@ def hints(before: NotesParts | None, after: NotesParts, *, rewritten: bool) -> t
     """Hinweise nach einer Änderung der Notes; `rewritten`: die ganze Datei wurde ersetzt."""
     found: list[Hint] = []
     if state_of(after) != CURRENT:
-        found.append(Hint("notes_state_stale", "Der Kopf der Notes ist nicht aktuell: anpassen oder bestätigen"))
+        found.append(Hint("notes_state_stale", "The notes head is not current: update or confirm it"))
     if decided_count(after.state) > LONG_STATE:
         found.append(
-            Hint("notes_state_long", f"Mehr als {LONG_STATE} Beschlüsse im Kopf: Spec schreiben oder Item teilen?")
+            Hint("notes_state_long", f"More than {LONG_STATE} decisions in the head: write a spec or split the item?")
         )
     if rewritten and before is not None and history_rewritten(before, after):
-        found.append(Hint("notes_history_rewritten", "Ein älterer Protokolleintrag wurde geändert oder entfernt"))
+        found.append(Hint("notes_history_rewritten", "An earlier log entry was changed or removed"))
     return tuple(found)

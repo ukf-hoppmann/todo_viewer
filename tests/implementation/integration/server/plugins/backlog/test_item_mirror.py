@@ -305,8 +305,8 @@ def test_the_status_names_the_time_of_the_last_sync(backlog: Env, tmp_path: Path
 
 
 NOTES_FILE = "# TASK-001 — Ein Item\n\n## 2026-10-16 — Thema\n\n### Discussed\n\n- x\n"
-STATE = "## Stand\n\n- Ziel/Status: läuft\n\n"
-STAMP = "Stand bestätigt nach Eintrag 2026-10-16 — Thema (0123456789ab)\n\n"
+STATE = "## State\n\n- Goal/Status: läuft\n\n"
+STAMP = "State confirmed after entry 2026-10-16 — Thema (0123456789ab)\n\n"
 
 
 def _notes_mirror(backlog: Env, tmp_path: Path) -> tuple[Mirror, dict[str, Any], Path]:
@@ -349,7 +349,7 @@ def test_a_file_without_state_section_empties_the_state(backlog: Env, tmp_path: 
     mirror.sync()
 
     stored = _stored_notes(backlog, item)
-    assert "## Stand" not in stored and "Stand bestätigt" not in stored
+    assert "## State" not in stored and "State confirmed" not in stored
     assert stored.endswith("## 2026-10-16 — Von Hand\n\n- y\n")
 
 

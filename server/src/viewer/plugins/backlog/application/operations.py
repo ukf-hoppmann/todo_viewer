@@ -259,7 +259,7 @@ class NotesRef:
 @dataclass(frozen=True)
 class PutNotesState:
     ref: str
-    #: Der neue Kopf (Text unter `## Stand`, ohne Überschrift und ohne Stempelzeile).
+    #: Der neue Kopf (Text unter `## State`, ohne Überschrift und ohne Stempelzeile).
     content: str
     #: Die Version des Kopfs, die ersetzt wird.
     version: int
@@ -606,7 +606,7 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "get_notes_state",
-        "Der Kopf (`## Stand`) der Notizen eines Items ohne Protokoll: Inhalt, Stempel, Zustand (`current`, `stale`, "
+        "Der Kopf (`## State`) der Notizen eines Items ohne Protokoll: Inhalt, Stempel, Zustand (`current`, `stale`, "
         "`missing`), aktuelle Prüfsumme, letzter Eintrag und Version des Kopfs",
         "read",
         NotesRef,

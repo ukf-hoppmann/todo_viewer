@@ -21,8 +21,8 @@ AT = datetime(2026, 10, 20, 12, tzinfo=UTC)
 
 PLAIN = "# STORY-001 — Login\n\n## 2026-10-01 — A\n\n### Discussed\n\n- a\n"
 WITH_STATE = (
-    "# STORY-002 — Alt\n\n## Stand\n\n- Ziel/Status: x\n\n"
-    "Stand bestätigt nach Eintrag 2026-10-01 — A (0123456789ab)\n\n## 2026-10-01 — A\n\n- a\n"
+    "# STORY-002 — Alt\n\n## State\n\n- Goal/Status: x\n\n"
+    "State confirmed after entry 2026-10-01 — A (0123456789ab)\n\n## 2026-10-01 — A\n\n- a\n"
 )
 PREAMBLE = "# STORY-003 — Vorspann\n\n## Summary\n\nAlt.\n\n## 2026-10-01 — A\n\n- a\n"
 NO_ENTRIES = "# STORY-004 — Ohne\n\n## Discussed (2026-09-25)\n\n- a\n"
@@ -113,7 +113,7 @@ def test_migration_3_splits_notes_documents_without_losing_text(
             assert _body(assemble("X", notes.parts)) == _body(content), label
         state = repository.get(tx, "story-002")
         crlf = repository.get(tx, "story-006")
-    assert state is not None and state.parts.state == "- Ziel/Status: x"
+    assert state is not None and state.parts.state == "- Goal/Status: x"
     assert state.parts.stamp == Stamp("2026-10-01", "A", "0123456789ab")
     assert crlf is not None and crlf.parts.entries == ()  # kein verlustfreier Rundlauf: alles in den Vorspann
     with database.engine.begin() as connection:
@@ -142,7 +142,7 @@ def test_saving_needs_the_current_revision_and_counts_state_changes(
             )
             == 5
         )
-        parts = NotesParts("\n", "- Ziel/Status: y", Stamp("2026-10-02", "B", "aaaaaaaaaaaa"), entries)
+        parts = NotesParts("\n", "- Goal/Status: y", Stamp("2026-10-02", "B", "aaaaaaaaaaaa"), entries)
         assert repository.save(tx, "story-001", parts, expected=5, state_changed=True, at=AT) == 6
         with pytest.raises(VersionConflict):
             repository.save(tx, "story-001", parts, expected=5, state_changed=False, at=AT)
@@ -172,7 +172,7 @@ def test_saving_the_state_can_also_check_its_own_version(runner: MigrationRunner
     with database.transaction() as tx:
         notes = repository.get(tx, "story-001")
         assert notes is not None
-        parts = NotesParts("\n", "- Ziel/Status: y", None, notes.parts.entries)
+        parts = NotesParts("\n", "- Goal/Status: y", None, notes.parts.entries)
         with pytest.raises(VersionConflict):
             repository.save(tx, "story-001", parts, expected=4, expected_state=2, state_changed=True, at=AT)
         assert repository.save(tx, "story-001", parts, expected=4, expected_state=1, state_changed=True, at=AT) == 5

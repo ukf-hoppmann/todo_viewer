@@ -101,7 +101,7 @@ class DocumentService:
         summary: str | None,
     ) -> DocumentWrite:
         """Ersetzt ein Dokument in `version` oder legt ein neues an (`version` fehlt). Notizen werden zerlegt: ohne
-        `## Stand` im Text bleibt der Kopf, den Stempel setzt nur der Server."""
+        `## State` im Text bleibt der Kopf, den Stempel setzt nur der Server."""
         change = "updated"
         before: NotesParts | None = None
         parts: NotesParts | None = None

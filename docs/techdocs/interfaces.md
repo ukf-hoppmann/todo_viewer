@@ -765,11 +765,11 @@ und Spiegel zeigen sie als eine Datei
 ```markdown
 # <LABEL> — <Titel>
 <Vorspann, falls vorhanden>
-## Stand
+## State
 
 <Kopf>
 
-Stand bestätigt nach Eintrag <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
+State confirmed after entry <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
 
 ## <YYYY-MM-DD> — <Thema>
 …
@@ -781,7 +781,7 @@ Stand bestätigt nach Eintrag <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
   nächsten Schreiben der Datei erneuert.
 - **Protokolleintrag:** ab einer Zeile `## YYYY-MM-DD — <Thema>` (Gedankenstrich
   U+2014) bis vor die nächste; der Text bleibt unverändert.
-- **Kopf:** der Abschnitt `## Stand` vor dem ersten Eintrag. Die letzte
+- **Kopf:** der Abschnitt `## State` vor dem ersten Eintrag. Die letzte
   Zeile darin ist der **Stempel**, wenn sie dem Muster oben folgt (Prüfsumme:
   12 Hex-Zeichen).
 - **Vorspann:** Text zwischen Titelzeile und Kopf bzw. erstem Eintrag (z. B.
@@ -789,11 +789,11 @@ Stand bestätigt nach Eintrag <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
 - Notes ohne Kopf kommen bis auf die Titelzeile byteweise so heraus, wie sie
   hineingingen. Notes mit Kopf werden in das Layout oben gebracht.
 - `PUT …/documents/<LABEL>_notes.md` über die API: Vorspann und Protokoll kommen
-  aus dem Text; der Kopf nur, wenn der Text `## Stand` enthält, sonst bleibt
+  aus dem Text; der Kopf nur, wenn der Text `## State` enthält, sonst bleibt
   er. Eine Stempelzeile im Text wird ignoriert, den Stempel setzt nur der
   Server.
 - Spiegel: Die Datei ist dort der ganze Stand. Der Stempel wird aus ihr
-  übernommen, und ohne `## Stand` ist der Kopf leer.
+  übernommen, und ohne `## State` ist der Kopf leer.
 - **Prüfsumme:** SHA-256 über die kanonische Form des Protokolls (alle
   Einträge ab der ersten Eintragszeile, LF, Leerzeichen und Tabs am
   Zeilenende entfernt, genau ein Zeilenumbruch am Ende), davon die ersten 12
@@ -812,9 +812,16 @@ Stand bestätigt nach Eintrag <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
   Kopf), `notes_without_entries`; HTTP 400.
 - **Hinweise** (`hints: [{code, message}]` in schreibenden Antworten auf Notes,
   nie eine Ablehnung): `notes_state_stale` (Kopf danach `stale` oder
-  `missing`), `notes_state_long` (mehr als 15 Punkte unter `- Beschlossen:`),
+  `missing`), `notes_state_long` (mehr als 15 Punkte unter `- Decided:`),
   `notes_history_rewritten` (`put_document` hat einen bisherigen Eintrag
   geändert oder entfernt).
+  Die Texte der Hinweise und Fehler zu den Notes sind Englisch (sie liest
+  meist eine KI), die Codes stabil; die Oberfläche übersetzt nach Code.
+  Beim Vergleich der Einträge zählen Zeilenenden (CRLF) und Leerzeilen am
+  Ende eines Eintrags nicht.
+- **Marker im Kopf:** Der Viewer wertet nur `- Decided:` aus; die übrigen
+  (`- Goal/Status:`, `- Next step:`, `- Open:`, `- References:`) gehören dem
+  Harness. Die frühere deutsche Überschrift `## Stand` wird nicht mehr erkannt.
 
 ### Verweise
 

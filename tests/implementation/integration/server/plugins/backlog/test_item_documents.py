@@ -201,7 +201,7 @@ def test_the_document_operations_are_mcp_tools(backlog: Env) -> None:
     assert {"list_documents", "get_document", "put_document", "append_note"} <= names
 
 
-STATE = "## Stand\n\n- Ziel/Status: läuft\n\n"
+STATE = "## State\n\n- Goal/Status: läuft\n\n"
 
 
 def _notes_doc(env: Env, item: dict[str, Any]) -> dict[str, Any]:
@@ -231,12 +231,12 @@ def test_put_without_a_state_section_keeps_the_state(backlog: Env) -> None:
 def test_a_stamp_line_in_put_is_ignored(backlog: Env) -> None:
     item = _create(backlog, summary="Kurz")
     first = _note(backlog, item).json()
-    stamp = "Stand bestätigt nach Eintrag 2026-10-16 — Thema (0123456789ab)\n\n"
+    stamp = "State confirmed after entry 2026-10-16 — Thema (0123456789ab)\n\n"
 
     stored = _put_notes(backlog, item, first["content"].replace("\n\n## 2026", f"\n\n{STATE}{stamp}## 2026", 1), 1)
 
     assert STATE in stored.json()["content"]
-    assert "Stand bestätigt" not in stored.json()["content"]
+    assert "State confirmed" not in stored.json()["content"]
 
 
 def test_notes_without_state_keep_their_text_through_put(backlog: Env) -> None:

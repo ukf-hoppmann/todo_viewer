@@ -576,10 +576,11 @@ Grundregeln:
 | (Einträge) | `backlog_list_notes_entries` (GET …`/notes/entries`) | optional `last`; `{position, day, topic, text}` |
 | `doc <ID> <name>` | `backlog_get_document` (Liste: `backlog_list_documents`) | |
 | `put-doc <ID> <name> <version\|new>` | `backlog_put_document` | `version` leer = neu |
+| `delete-doc <ID> <name> <version>` | `backlog_delete_document` (DELETE `/api/backlog/items/{ref}/documents/{name}?version=`) | in den Papierkorb; mit der Notiz gehen Kopf und Kurzfassung. Antwort `name`, `trash_uid` |
 | `retype <ID> <version> <type>` | `backlog_retype_item` | neues Label in der Antwort |
 | `delete <ID> <version> [--cascade]` | `workspace_delete_element` | `uid`, `version`, `cascade` |
-| `trash` | `workspace_list_trash` | |
-| `restore <ID> <version>` | `workspace_restore_elements` | `uids` (mit Nachkommen, die der Papierkorb mitbringt) |
+| `trash` | `workspace_list_trash` | auch gelöschte Dokumente: `kind` `document`, `uid`, `label` = Item, `title` = Dokumentname, `owner_uid` |
+| `restore <ID\|trash uid> <version>` | `workspace_restore_elements` | `uids` (mit Nachkommen, die der Papierkorb mitbringt; ein gelöschtes Dokument über seine `uid`) |
 
 Neu gegenüber dem alten Helfer: `backlog_move_item` (Parent/Position), `backlog_list_areas`.
 

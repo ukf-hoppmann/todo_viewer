@@ -4,8 +4,8 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from viewer.core.application.ports import Clock, Database, EventBus, Transaction
-from viewer.core.domain.errors import NotFound, VersionConflict
+from viewer.core.application.ports import BackupMaker, Clock, Database, EventBus, Transaction
+from viewer.core.domain.errors import BackupFailed, NotFound, VersionConflict
 from viewer.core.domain.events import Event
 from viewer.plugins.workspace.application.ports import (
     ChildrenProvider,
@@ -50,12 +50,14 @@ class TrashService:
         database: Database,
         clock: Clock,
         events: EventBus,
+        backups: BackupMaker,
     ) -> None:
         self._elements = elements
         self._projects = projects
         self._database = database
         self._clock = clock
         self._events = events
+        self._backups = backups
         self._handlers: dict[str, KindHandlers] = {}
 
     # --- Anmeldung der Plugins (`TrashRegistry`) -----------------------------------------------------------------
@@ -120,7 +122,9 @@ class TrashService:
         return restored
 
     def purge_elements(self, uids: Sequence[str]) -> list[str]:
-        """Löscht die Elemente aus dem Papierkorb endgültig, mit allen Nachkommen. Gibt die gelöschten `uid`s zurück."""
+        """Löscht die Elemente aus dem Papierkorb endgültig, mit allen Nachkommen. Gibt die gelöschten `uid`s zurück.
+        Vorher wird die Datenbank gesichert (Architektur §2); scheitert das, bleibt alles stehen."""
+        self._back_up()
         purged: list[str] = []
         with self._database.transaction() as tx:
             for root in self._roots(tx, uids):
@@ -136,6 +140,14 @@ class TrashService:
         return purged
 
     # --- Hilfen --------------------------------------------------------------------------------------------------
+
+    def _back_up(self) -> None:
+        try:
+            self._backups.create("purge")
+        except OSError as exc:
+            raise BackupFailed(
+                "Die Datenbank konnte nicht gesichert werden; nichts wurde gelöscht", details={"reason": str(exc)}
+            ) from exc
 
     def _require(self, tx: Transaction, uid: str) -> Element:
         element = self._elements.get(tx, uid)

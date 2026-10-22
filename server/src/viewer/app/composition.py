@@ -60,6 +60,10 @@ class WorkspaceMirrorProjects:
         workspace = self._workspace()
         return workspace.auto_sync_projects() if workspace else []
 
+    def mirror_projects(self) -> list[str]:
+        workspace = self._workspace()
+        return workspace.mirror_projects() if workspace else []
+
 
 def create_app(
     settings: Settings | None = None,

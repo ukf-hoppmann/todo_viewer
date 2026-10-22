@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sqlite3
+from contextlib import closing
 from datetime import timedelta
 from typing import Any
 
@@ -154,6 +156,29 @@ def test_purge_removes_the_subtree_plugin_data_and_links(env: Env) -> None:
     assert all(_get(env, e) is None for e in (epic, story, task, other))
     assert env.client.get(f"/api/workspace/elements/{outside.uid}/links").json()["outgoing"] == []
     assert _trash(env) == []
+
+
+def test_purge_backs_up_the_database_first_and_the_backup_still_holds_the_element(env: Env) -> None:
+    _, _, _, task, _ = _tree(env)
+    _delete(env, task)
+
+    env.client.post("/api/workspace/trash/purge", json={"uids": [task.uid]})
+
+    [backup] = sorted((env.tmp_path / "backups").glob("*-purge.db"))
+    with closing(sqlite3.connect(backup)) as saved:
+        assert saved.execute("SELECT COUNT(*) FROM workspace_elements WHERE uid = ?", (task.uid,)).fetchone() == (1,)
+    assert _get(env, task) is None
+
+
+def test_purge_does_nothing_when_the_backup_fails(env: Env) -> None:
+    _, _, _, task, _ = _tree(env)
+    _delete(env, task)
+    (env.tmp_path / "backups").write_text("keine Ordner")  # das Ziel der Sicherung ist eine Datei
+
+    r = env.client.post("/api/workspace/trash/purge", json={"uids": [task.uid]})
+
+    assert r.status_code >= 400
+    assert _get(env, task) is not None
 
 
 def test_purge_only_takes_elements_from_the_trash(env: Env) -> None:

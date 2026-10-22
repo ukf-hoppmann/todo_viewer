@@ -8,7 +8,7 @@ import { useNotesMarkText } from "./useNotesMarkText";
 import { backlogTestIds as ids } from "./testIds";
 
 /**
- * A small notes symbol at a row of the list. Pointing at it shows the head of the notes (goal, next step, open,
+ * A small notes symbol at a row of the list; the tree shows it only while the pointer or the focus is on the row. Pointing at it shows the head of the notes (goal, next step, open,
  * decided) without opening the item; the head is fetched on the first look only. It turns to the warning color when
  * the head is out of date; a missing head (the usual case of older notes) only dims it, so the list stays calm.
  */

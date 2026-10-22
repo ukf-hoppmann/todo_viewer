@@ -2,9 +2,9 @@
 
 ## State
 
-Lösch-Befehl für Notiz- und Spec-Dokumente über API, MCP und Harness-Helfer; Spec STORY-094_spec.md liegt vor. Entschieden: Löschen geht in den Papierkorb (wiederherstellbar); mit der Notiz entfallen Kopf und Kurzfassung (beim Wiederherstellen kommen sie zurück); Haupt- und Themen-Specs werden gleich und ohne Folgen gelöscht. Offen: Darstellung im Spiegel (Empfehlung: Datei entfernen, Architekturregel erweitern), Anzeige im zentralen Papierkorb (Empfehlung) und Wiederherstellen bei Namenskonflikt. Noch kein Code.
+Lösch-Befehl für Notiz- und Spec-Dokumente über API, MCP und Harness-Helfer; die Spec STORY-094_spec.md ist vollständig entschieden, bereit für den Umsetzungsplan. Kern: Löschen legt das Dokument in den zentralen Papierkorb (Workspace-Papierkorb bekommt von Plugins beigesteuerte Einträge); mit der Notiz gehen Kopf und Kurzfassung, beim Wiederherstellen kommen sie zurück; Haupt- und Themen-Specs gleich. Spiegel: Datei wird sofort entfernt, konfliktfrei wenn unverändert (Architekturregel §2 dafür erweitert, vom Owner freigegeben). Wiederherstellen wird bei gleichnamigem Dokument oder Item im Papierkorb abgewiesen. Noch kein Code.
 
-State confirmed after entry 2026-10-22 — Spec angelegt; offene Entwurfsfragen (b63ba0907d9c)
+State confirmed after entry 2026-10-22 — Entscheidung zu den offenen Entwurfsfragen (aeca69f3d479)
 
 ## 2026-10-22 — Löschverhalten von Notiz- und Spec-Dokumenten
 
@@ -53,3 +53,15 @@ State confirmed after entry 2026-10-22 — Spec angelegt; offene Entwurfsfragen 
 - Spiegel-Darstellung eines Dokuments im Papierkorb: (a) Datei entfernen oder (b) Formatänderung.
 - Anzeige im zentralen Papierkorb oder je Item.
 - Wiederherstellen bei Namenskonflikt bzw. Item im Papierkorb abweisen?
+
+## 2026-10-22 — Entscheidung zu den offenen Entwurfsfragen
+
+### Discussed
+
+- Die drei Empfehlungen aus dem vorigen Eintrag zu Spiegel, Anzeige im Papierkorb und Wiederherstellen.
+
+### Decided
+
+- Spiegel: Ein Dokument, das in den Papierkorb kommt, wird aus den Spiegel-Dateien entfernt, ohne Konflikt, sofern die Datei seit dem letzten Abgleich unverändert ist; sonst bleibt es ein Konflikt. Wiederherstellen schreibt die Datei wieder. Der Owner gibt dafür die Erweiterung der Architekturregel §2 (gewolltes Löschen) frei. Abgelehnt: Formatänderung (Markierung oder Papierkorb-Ordner), weil deutlich aufwendiger (Format v2, Golden Files).
+- Anzeige: Gelöschte Dokumente erscheinen als eigene Einträge im zentralen Papierkorb; der Workspace-Papierkorb bekommt dafür Einträge, die Plugins beisteuern. Abgelehnt: Papierkorb je Item in der Detailansicht.
+- Wiederherstellen wird abgewiesen, wenn inzwischen ein gleichnamiges Dokument existiert (document_exists) oder das Item selbst im Papierkorb liegt.

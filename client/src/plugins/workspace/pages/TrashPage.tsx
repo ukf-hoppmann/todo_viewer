@@ -1,4 +1,5 @@
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import DescriptionIcon from "@mui/icons-material/Description";
 import RestoreIcon from "@mui/icons-material/Restore";
 import { Box, Button, Checkbox, IconButton, Tooltip, Typography } from "@mui/material";
 import { useCallback, useMemo, useState, type MouseEvent } from "react";
@@ -33,7 +34,8 @@ export default function TrashPage() {
 	const [shownUid, setShownUid] = useState<string>();
 	const shown = entries.find((entry) => entry.uid === shownUid);
 	const close = useCallback(() => setShownUid(undefined), []);
-	usePageDetail(shown && <ElementDetail uid={shown.uid} kind={shown.kind} label={shown.label} title={shown.title} onClose={close} />);
+	// A deleted document is no element: its detail is the plain view of the item it belonged to.
+	usePageDetail(shown && <ElementDetail uid={shown.owner_uid ?? shown.uid} kind={shown.kind} label={shown.label} title={shown.title} onClose={close} />);
 	// The checkbox and the buttons of a row act on their own; a click elsewhere on the row shows the element.
 	const stop = (event: MouseEvent) => event.stopPropagation();
 
@@ -89,6 +91,7 @@ export default function TrashPage() {
 					<Typography variant="body2" sx={{ minWidth: 96, fontWeight: 600 }}>
 						{entry.label}
 					</Typography>
+					{entry.owner_uid && <DescriptionIcon fontSize="small" color="action" data-testid={workspaceTestIds.trashDocument(entry.uid)} />}
 					<Typography variant="body2" sx={{ flexGrow: 1 }}>
 						{entry.title}
 					</Typography>

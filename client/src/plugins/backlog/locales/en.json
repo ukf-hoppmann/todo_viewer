@@ -119,7 +119,12 @@
 		"showCurrent": "Show current state",
 		"saveAnyway": "Save anyway",
 		"currentState": "current state",
-		"toc": "Table of contents"
+		"toc": "Table of contents",
+		"delete": "Move to trash",
+		"deleteTitle": "Move the document to the trash?",
+		"deleteMessage": "{{name}} goes to the trash and can be restored from there.",
+		"deleteMessageNotes": "{{name}} goes to the trash with the state and the summary of the item and can be restored from there.",
+		"deleteConfirm": "Move to trash"
 	},
 	"notes": {
 		"head": "State",

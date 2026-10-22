@@ -78,10 +78,10 @@ def _body(content: str) -> str:
     return content.split("\n", 1)[1] if content.startswith("# ") else content
 
 
-def test_an_empty_database_reaches_version_3(runner: MigrationRunner, database: SqliteDatabase) -> None:
+def test_an_empty_database_reaches_the_current_version(runner: MigrationRunner, database: SqliteDatabase) -> None:
     runner.run(_defs(len(MIGRATIONS)))
 
-    assert versions(database)["backlog"] == 3
+    assert versions(database)["backlog"] == len(MIGRATIONS)
     with database.engine.begin() as connection:
         tables = {row[0] for row in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'table'"))}
     assert {"backlog_notes", "backlog_notes_entries"} <= tables

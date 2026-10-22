@@ -1,4 +1,5 @@
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
 import EditIcon from "@mui/icons-material/Edit";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
@@ -6,6 +7,7 @@ import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
+import { ConfirmDialog } from "../dialogs/Dialogs";
 import { IconAction } from "../IconAction";
 import { LargeView } from "../markdown/LargeView";
 import { MarkdownEditor } from "../markdown/MarkdownEditor";
@@ -48,6 +50,12 @@ export interface DocumentsLabels {
 	saveAnyway: string;
 	currentState: string;
 	toc: string;
+	/** Tooltip of the delete icon; only needed together with `deleteDocument`. */
+	delete?: string;
+	deleteTitle?: string;
+	/** The question; `notes` is true for the notes document, whose removal takes the summary with it. */
+	deleteMessage?: (name: string, notes: boolean) => string;
+	deleteConfirm?: string;
 }
 
 export interface DocumentsSectionProps {
@@ -65,6 +73,8 @@ export interface DocumentsSectionProps {
 	/** Writes a document; without `version` it is created. Rejects with `code: "version_conflict"` for a conflict. */
 	saveDocument: (name: string, content: string, version?: number) => Promise<StoredDocument>;
 	appendEntry: (entry: NotesEntry) => Promise<void>;
+	/** Puts a document in the trash in the version that is shown; without it the delete icon is not offered. */
+	deleteDocument?: (name: string, version: number) => Promise<void>;
 	/** The message to show for a refused write. */
 	errorMessage: (failure: unknown) => string;
 	labels: DocumentsLabels;
@@ -109,8 +119,10 @@ export function DocumentsSection(props: DocumentsSectionProps) {
 }
 
 /** A document: the formatted text, and "Edit" with the editor, its preview and the way out of a conflict. */
-function DocumentDialog({ owner, name, readOnly, useDocument, saveDocument, labels, onClose }: DocumentsSectionProps & { name: string; onClose: () => void }) {
+function DocumentDialog({ owner, name, readOnly, useDocument, saveDocument, deleteDocument, errorMessage, labels, onClose }: DocumentsSectionProps & { name: string; onClose: () => void }) {
 	const { document, refetch } = useDocument(owner, name);
+	const [asking, setAsking] = useState(false);
+	const [failure, setFailure] = useState<string>();
 	const [draft, setDraft] = useState<string>();
 	const [large, setLarge] = useState(false);
 	const [current, setCurrent] = useState<string>();
@@ -126,6 +138,17 @@ function DocumentDialog({ owner, name, readOnly, useDocument, saveDocument, labe
 		setDraft(undefined);
 	};
 
+	const remove = async () => {
+		if (!document || !deleteDocument) return;
+		setAsking(false);
+		try {
+			await deleteDocument(name, document.version);
+			onClose();
+		} catch (error) {
+			setFailure(errorMessage(error));
+		}
+	};
+
 	return (
 		<Dialog open onClose={onClose} fullWidth maxWidth="md" slotProps={{ paper: { "data-testid": ids.documentDialog } as never }}>
 			<DialogTitle sx={{ display: "flex", alignItems: "center", gap: 0.5, pr: 1.5 }}>
@@ -134,9 +157,17 @@ function DocumentDialog({ owner, name, readOnly, useDocument, saveDocument, labe
 				</Box>
 				{document && !editing && <IconAction label={labels.large} icon={OpenInFullIcon} onClick={() => setLarge(true)} testId={ids.documentLarge} />}
 				{document && !editing && !readOnly && <IconAction label={labels.edit} icon={EditIcon} onClick={() => setDraft(document.content)} testId={ids.documentEdit} />}
+				{document && !editing && !readOnly && deleteDocument && (
+					<IconAction label={labels.delete ?? ""} icon={DeleteIcon} onClick={() => setAsking(true)} testId={ids.documentDelete} />
+				)}
 				<IconAction label={labels.close} icon={CloseIcon} onClick={onClose} testId={ids.documentClose} />
 			</DialogTitle>
 			<DialogContent dividers>
+				{failure && (
+					<Alert severity="error" data-testid={ids.documentError} sx={{ mb: 1 }}>
+						{failure}
+					</Alert>
+				)}
 				{!document && <Typography color="text.secondary">…</Typography>}
 				{document && !editing && <MarkdownView source={document.content} outlineLabel={labels.toc} />}
 				{document && editing && (
@@ -159,6 +190,15 @@ function DocumentDialog({ owner, name, readOnly, useDocument, saveDocument, labe
 					</Button>
 				</DialogActions>
 			)}
+			<ConfirmDialog
+				open={asking}
+				title={labels.deleteTitle ?? ""}
+				message={labels.deleteMessage?.(name, name.endsWith("_notes.md")) ?? ""}
+				confirmLabel={labels.deleteConfirm ?? ""}
+				cancelLabel={labels.cancel}
+				onCancel={() => setAsking(false)}
+				onConfirm={() => void remove()}
+			/>
 		</Dialog>
 	);
 }

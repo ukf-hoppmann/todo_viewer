@@ -190,7 +190,8 @@ export interface paths {
         /** Ersetzt ein Dokument in `version` oder legt ein neues an (<LABEL>_notes.md, <LABEL>_spec[_<thema>].md) */
         put: operations["backlog_put_document"];
         post?: never;
-        delete?: never;
+        /** Legt ein Dokument eines Items (Notiz oder Spec) in `version` in den Papierkorb. Mit der Notiz gehen ihr Kopf und die Kurzfassung des Items; wiederherstellen geht über den Papierkorb */
+        delete: operations["backlog_delete_document"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1458,6 +1459,16 @@ export interface components {
             item_uid: string;
             note: components["schemas"]["NoteOut"];
         };
+        /**
+         * DocumentDeleted
+         * @description Das Dokument liegt jetzt im Papierkorb; `trash_uid` ist sein Eintrag dort.
+         */
+        DocumentDeleted: {
+            /** Name */
+            name: string;
+            /** Trash Uid */
+            trash_uid: string;
+        };
         /** DocumentInfo */
         DocumentInfo: {
             /** Kind */
@@ -2364,6 +2375,8 @@ export interface components {
             kind: string;
             /** Label */
             label: string;
+            /** Owner Uid */
+            owner_uid?: string | null;
             /** Project Uid */
             project_uid: string;
             /** Title */
@@ -3000,6 +3013,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ItemDocumentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    backlog_delete_document: {
+        parameters: {
+            query: {
+                version: number;
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDeleted"];
                 };
             };
             /** @description Client Error */

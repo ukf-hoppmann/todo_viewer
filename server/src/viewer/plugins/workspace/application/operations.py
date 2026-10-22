@@ -213,6 +213,8 @@ class TrashedElement:
     label: str
     title: str
     deleted_at: datetime | None
+    #: Bei einem Eintrag, der kein Element ist (ein gelöschtes Dokument): das Element, zu dem er gehört.
+    owner_uid: str | None = None
 
 
 @dataclass(frozen=True)
@@ -264,7 +266,7 @@ def _delete(services: WorkspaceServices, data: DeleteElement) -> DeleteResult:
 def _list_trash(services: WorkspaceServices, data: ListTrash) -> list[TrashedElement]:
     projects = [uid for uid in (data.projects or "").split(",") if uid] if data.projects is not None else None
     return [
-        TrashedElement(e.uid, e.project_uid, e.kind, e.label, e.title, e.deleted_at)
+        TrashedElement(e.uid, e.project_uid, e.kind, e.label, e.title, e.deleted_at, e.owner_uid)
         for e in services.trash.list_trash(projects, data.query)
     ]
 

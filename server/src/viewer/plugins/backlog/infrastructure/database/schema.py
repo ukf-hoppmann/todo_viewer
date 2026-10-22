@@ -136,4 +136,20 @@ def _v3(connection: Any) -> None:
     connection.exec_driver_sql("DELETE FROM backlog_documents WHERE kind = 'notes'")
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3))
+def _v4(connection: Any) -> None:
+    """Gelöschte Notiz- und Spec-Dokumente als Schnappschuss (Papierkorb); sie gehen mit ihrem Item."""
+    connection.exec_driver_sql(
+        """CREATE TABLE backlog_trashed_documents (
+            uid TEXT PRIMARY KEY,
+            item_uid TEXT NOT NULL REFERENCES backlog_items(uid) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            kind TEXT NOT NULL CHECK (kind IN ('notes', 'spec')),
+            content TEXT NOT NULL,
+            summary TEXT,
+            deleted_at TEXT NOT NULL
+        )"""
+    )
+    connection.exec_driver_sql("CREATE INDEX backlog_trashed_documents_item ON backlog_trashed_documents(item_uid)")
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3), Migration(4, _v4))

@@ -119,7 +119,12 @@
 		"showCurrent": "Aktuellen Stand zeigen",
 		"saveAnyway": "Trotzdem speichern",
 		"currentState": "aktueller Stand",
-		"toc": "Inhaltsverzeichnis"
+		"toc": "Inhaltsverzeichnis",
+		"delete": "In den Papierkorb legen",
+		"deleteTitle": "Dokument in den Papierkorb legen?",
+		"deleteMessage": "{{name}} kommt in den Papierkorb und lässt sich von dort wiederherstellen.",
+		"deleteMessageNotes": "{{name}} kommt mit dem Stand und der Kurzfassung des Items in den Papierkorb und lässt sich von dort wiederherstellen.",
+		"deleteConfirm": "In den Papierkorb"
 	},
 	"notes": {
 		"head": "Stand",

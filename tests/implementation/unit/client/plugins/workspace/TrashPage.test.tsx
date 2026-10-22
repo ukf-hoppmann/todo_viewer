@@ -59,6 +59,22 @@ describe("TrashPage", () => {
 		expect(screen.queryByTestId(coreTestIds.detail)).toBeNull();
 	});
 
+	it("marks a deleted document of an item and shows the item in the detail column", async () => {
+		const document: TrashedElement = { ...entry("d", "TASK-007", "TASK-007_spec.md"), kind: "document", owner_uid: "task-7" };
+		const backend = fakeWorkspaceBackend({ projects, trash: [...trash, document] });
+		await renderWorkspace(<TrashPage />, { backend });
+		await screen.findByTestId(ids.trashRow("d"));
+
+		expect(screen.getByTestId(ids.trashDocument("d"))).toBeTruthy();
+		expect(screen.queryByTestId(ids.trashDocument("a"))).toBeNull();
+		fireEvent.click(screen.getByTestId(ids.trashRow("d")));
+
+		const detail = await screen.findByTestId(coreTestIds.detail);
+		expect(detail.querySelector(`[data-testid="${ids.elementDetailPlain}"]`)?.textContent).toContain("TASK-007 — TASK-007_spec.md");
+		await waitFor(() => expect(backend.calls("GET", "workspace/elements/task-7/links")).toHaveLength(1));
+		expect(backend.calls("GET", "workspace/elements/d/links")).toHaveLength(0);
+	});
+
 	it("does not open the detail when the checkbox or a button of the row is used", async () => {
 		await renderTrash();
 

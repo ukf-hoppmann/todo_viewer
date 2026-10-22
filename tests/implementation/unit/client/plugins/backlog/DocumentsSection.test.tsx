@@ -154,4 +154,63 @@ describe("DocumentsSection", () => {
 		await waitFor(() => expect(backend.calls("PUT", "documents/TASK-001_spec_Teil.md")).toHaveLength(1));
 		expect(backend.calls("PUT", "documents/TASK-001_spec_Teil.md")[0]!.body).toEqual({ content: "# TASK-001 — Ein Task\n" });
 	});
+
+	it("deletes a document after asking, in the version that is shown, and closes it", async () => {
+		const backend = await renderSection();
+
+		fireEvent.click(screen.getByTestId(sharedTestIds.document("TASK-001_spec.md")));
+		const trash = await screen.findByTestId(sharedTestIds.documentDelete);
+		expect(trash.getAttribute("aria-label")).toBe("In den Papierkorb legen");
+		fireEvent.click(trash);
+		expect(backend.calls("DELETE", "documents/TASK-001_spec.md")).toHaveLength(0);
+		fireEvent.click(await screen.findByTestId(sharedTestIds.confirmDialogConfirm));
+
+		await waitFor(() => expect(backend.calls("DELETE", "documents/TASK-001_spec.md")).toHaveLength(1));
+		expect(backend.calls("DELETE", "documents/TASK-001_spec.md")[0]!.query.get("version")).toBe("3");
+		await waitFor(() => expect(screen.queryByTestId(sharedTestIds.documentDialog)).toBeNull());
+	});
+
+	it("deletes nothing when the question is cancelled", async () => {
+		const backend = await renderSection();
+
+		fireEvent.click(screen.getByTestId(sharedTestIds.document("TASK-001_spec.md")));
+		fireEvent.click(await screen.findByTestId(sharedTestIds.documentDelete));
+		fireEvent.click(await screen.findByTestId(sharedTestIds.confirmDialogCancel));
+
+		await waitFor(() => expect(screen.queryByTestId(sharedTestIds.confirmDialog)).toBeNull());
+		expect(backend.calls("DELETE", "documents/")).toHaveLength(0);
+		expect(screen.getByTestId(sharedTestIds.documentDialog)).toBeTruthy();
+	});
+
+	it("tells the notes apart in the question: the summary goes with them", async () => {
+		await renderSection();
+
+		fireEvent.click(screen.getByTestId(sharedTestIds.document("TASK-001_notes.md")));
+		fireEvent.click(await screen.findByTestId(sharedTestIds.documentDelete));
+
+		expect((await screen.findByTestId(sharedTestIds.confirmDialog)).textContent).toContain("Kurzfassung");
+	});
+
+	it("shows the message of the server when deleting is refused and keeps the document open", async () => {
+		await renderSection(withDocs, {
+			respond: ({ method }) =>
+				method === "DELETE" ? Response.json({ code: "version_conflict", message: "Das Dokument wurde inzwischen geändert", details: {} }, { status: 409 }) : undefined,
+		});
+
+		fireEvent.click(screen.getByTestId(sharedTestIds.document("TASK-001_spec.md")));
+		fireEvent.click(await screen.findByTestId(sharedTestIds.documentDelete));
+		fireEvent.click(await screen.findByTestId(sharedTestIds.confirmDialogConfirm));
+
+		await waitFor(() => expect(screen.getByTestId(sharedTestIds.documentError).textContent).toBe("Das Dokument wurde inzwischen geändert"));
+		expect(screen.getByTestId(sharedTestIds.documentDialog)).toBeTruthy();
+	});
+
+	it("offers no deleting for an item in the trash", async () => {
+		await renderSection({ ...withDocs, deleted: true });
+
+		fireEvent.click(screen.getByTestId(sharedTestIds.document("TASK-001_spec.md")));
+
+		await screen.findByTestId(sharedTestIds.documentLarge);
+		expect(screen.queryByTestId(sharedTestIds.documentDelete)).toBeNull();
+	});
 });

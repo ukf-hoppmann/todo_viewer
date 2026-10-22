@@ -380,3 +380,66 @@ def test_a_new_title_of_the_item_rewrites_the_title_line_of_the_notes_file(backl
 
     assert result.status_code == 200 and result.json()["conflicts_left"] == []
     assert path.read_text(encoding="utf-8") == NOTES_FILE.replace("Ein Item", "Neuer Titel")
+
+
+# --- Dokument in den Papierkorb (STORY-094): die Datei folgt sofort -----------------------------------------------
+
+
+def _spec_mirror(backlog: Env, tmp_path: Path) -> tuple[Mirror, dict[str, Any], Path]:
+    mirror = Mirror(backlog, tmp_path)
+    item = mirror.create()
+    backlog.client.put(f"/api/backlog/items/{item['uid']}/documents/TASK-001_spec.md", json={"content": "# Spec\n"})
+    mirror.sync()
+    path = mirror.folder / "items" / "TASK-001" / "TASK-001_spec.md"
+    assert path.is_file()
+    return mirror, item, path
+
+
+def _delete_document(backlog: Env, item: dict[str, Any], name: str) -> None:
+    deleted = backlog.client.delete(f"/api/backlog/items/{item['uid']}/documents/{name}", params={"version": 1})
+    assert deleted.status_code == 200, deleted.text
+
+
+def test_a_document_moved_to_the_trash_leaves_the_files_at_once_without_a_conflict(
+    backlog: Env, tmp_path: Path
+) -> None:
+    mirror, item, path = _spec_mirror(backlog, tmp_path)
+
+    _delete_document(backlog, item, "TASK-001_spec.md")
+
+    assert not path.exists()
+    again = mirror.sync().json()
+    assert (again["to_files"], again["to_database"], again["conflicts_left"]) == (0, 0, [])
+    assert mirror.status()["state"] == "in_sync"
+
+
+def test_a_changed_file_stays_and_the_deletion_is_a_conflict(backlog: Env, tmp_path: Path) -> None:
+    mirror, item, path = _spec_mirror(backlog, tmp_path)
+    path.write_text("# Spec\n\nVon Hand geändert.\n", encoding="utf-8")
+
+    _delete_document(backlog, item, "TASK-001_spec.md")
+
+    assert path.read_text(encoding="utf-8") == "# Spec\n\nVon Hand geändert.\n"
+    left = mirror.sync().json()["conflicts_left"]
+    assert [c["conflict"] for c in left] == ["deleted_in_database"]
+
+
+def test_a_restored_document_comes_back_to_the_files_with_the_next_sync(backlog: Env, tmp_path: Path) -> None:
+    mirror, item, path = _spec_mirror(backlog, tmp_path)
+    _delete_document(backlog, item, "TASK-001_spec.md")
+    [entry] = [e for e in backlog.client.get("/api/workspace/trash").json() if e["kind"] == "document"]
+
+    backlog.client.post("/api/workspace/trash/restore", json={"uids": [entry["uid"]]})
+    result = mirror.sync()
+
+    assert result.status_code == 200 and result.json()["conflicts_left"] == []
+    assert path.read_text(encoding="utf-8") == "# Spec\n"
+
+
+def test_deleting_the_notes_removes_their_file_too(backlog: Env, tmp_path: Path) -> None:
+    mirror, item, path = _notes_mirror(backlog, tmp_path)
+
+    _delete_document(backlog, item, "TASK-001_notes.md")
+
+    assert not path.exists()
+    assert mirror.sync().json()["conflicts_left"] == []

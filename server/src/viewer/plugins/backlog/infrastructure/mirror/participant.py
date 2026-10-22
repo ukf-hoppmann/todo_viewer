@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import replace
 from datetime import UTC, date, datetime
@@ -18,6 +17,7 @@ from viewer.plugins.backlog.application.ports import (
     Notes,
     NotesRepository,
 )
+from viewer.plugins.backlog.domain.documents import document_suffix
 from viewer.plugins.backlog.domain.lifecycle import LifecycleRules, LifecycleViolation
 from viewer.plugins.backlog.domain.model import KIND_BY_TYPE, TYPE_BY_KIND, Item
 from viewer.plugins.backlog.domain.notes import assemble, split, title_of, without_title
@@ -27,12 +27,6 @@ from viewer.plugins.backlog.infrastructure.mirror.syntax import TODO_FILE
 
 def _day(value: datetime | None) -> str | None:
     return value.astimezone(UTC).date().isoformat() if value is not None else None
-
-
-def _suffix(label: str, name: str) -> str | None:
-    """`STORY-001_spec_Teil.md` → `spec_Teil`; `None`, wenn der Name nicht dem Label folgt."""
-    match = re.fullmatch(rf"{re.escape(label)}_(notes|spec(?:_[A-Za-z0-9-]+)?)\.md", name)
-    return match.group(1) if match else None
 
 
 def _items(entries: Sequence[MirrorEntry]) -> list[MirrorEntry]:
@@ -77,7 +71,7 @@ class BacklogParticipant:
                 for document in self._documents.list_for(tx, item.uid):
                     documents.append((document.name, {"content": document.content, "kind": document.kind}))
                 for name, fields in documents:
-                    suffix = _suffix(item.label, name)
+                    suffix = document_suffix(item.label, name)
                     if suffix is None:
                         continue
                     entries.append(

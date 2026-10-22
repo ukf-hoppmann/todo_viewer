@@ -118,7 +118,8 @@
 		"inSync": "in Sync",
 		"needsYou": "braucht dich",
 		"notMirrored": "nicht gespiegelt",
-		"auto": "gleicht automatisch ab",
+		"now": "Abgleichen …",
+		"nowAuto": "Abgleichen … (gleicht auch automatisch ab)",
 		"paused": "pausiert: {{reason}}",
 		"reasons": {
 			"missing": "der Ordner fehlt",

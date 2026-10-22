@@ -118,7 +118,8 @@
 		"inSync": "in sync",
 		"needsYou": "needs you",
 		"notMirrored": "not mirrored",
-		"auto": "syncs by itself",
+		"now": "Sync …",
+		"nowAuto": "Sync … (also syncs by itself)",
 		"paused": "paused: {{reason}}",
 		"reasons": {
 			"missing": "the folder is missing",

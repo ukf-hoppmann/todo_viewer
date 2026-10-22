@@ -1,4 +1,4 @@
-import AutorenewIcon from "@mui/icons-material/Autorenew";
+import SyncIcon from "@mui/icons-material/Sync";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import { useState } from "react";
@@ -8,12 +8,12 @@ import { needsAttention, syncView } from "./sync";
 import { SyncDialog } from "./SyncDialog";
 import { workspaceTestIds } from "./testIds";
 
-/** The class of the ↻ sign; the project row shows it only while it is hovered or focused. */
-export const SYNC_AUTO_CLASS = "workspace-sync-auto";
+/** The class of the ↻ button; the project row shows it only while it is hovered or focused. */
+export const SYNC_NOW_CLASS = "workspace-sync-now";
 
 /**
- * ⚠ if the mirror of the project needs the owner (a button that opens the sync of the project), ↻ if it syncs by
- * itself; nothing for a project without mirror.
+ * ⚠ if the mirror of the project needs the owner, and ↻ (only on hover) to start the sync; both open the sync of the
+ * project with its preview. Nothing for a project without mirror.
  */
 export function SyncIndicator({ project }: { project: Project }) {
 	const { t } = useTranslation("workspace");
@@ -35,15 +35,17 @@ export function SyncIndicator({ project }: { project: Project }) {
 					</IconButton>
 				</Tooltip>
 			)}
-			{project.mirror_enabled && project.auto_sync && (
-				<Tooltip title={t("sync.auto")}>
-					<AutorenewIcon
-						fontSize="small"
-						color="action"
-						className={SYNC_AUTO_CLASS}
-						data-testid={workspaceTestIds.syncAuto(project.uid)}
-						aria-label={t("sync.auto")}
-					/>
+			{project.mirror_enabled && (
+				<Tooltip title={project.auto_sync ? t("sync.nowAuto") : t("sync.now")}>
+					<IconButton
+						size="small"
+						aria-label={t("sync.now")}
+						className={SYNC_NOW_CLASS}
+						onClick={() => setSyncing(true)}
+						data-testid={workspaceTestIds.syncNow(project.uid)}
+					>
+						<SyncIcon fontSize="small" color="action" />
+					</IconButton>
 				</Tooltip>
 			)}
 			{syncing && <SyncDialog project={project} onClose={() => setSyncing(false)} />}

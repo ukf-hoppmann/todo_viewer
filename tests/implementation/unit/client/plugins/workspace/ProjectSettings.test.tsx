@@ -101,7 +101,7 @@ describe("ProjectSettings", () => {
 });
 
 describe("sync indicators in the project list", () => {
-	it("shows ⚠ for a project that needs the owner and ↻ for one that syncs by itself", async () => {
+	it("shows ⚠ for a project that needs the owner and a ↻ button for every mirrored project", async () => {
 		const backend = fakeWorkspaceBackend({
 			projects,
 			syncStatus: { p1: status("p1", "in_sync"), p2: status("p2", "mirror_changed", { to_database: 1 }) } as never,
@@ -109,9 +109,10 @@ describe("sync indicators in the project list", () => {
 		await renderWorkspace(<ProjectsSection />, { backend });
 
 		await waitFor(() => expect(screen.getByTestId(ids.syncAttention("p2"))).toBeTruthy());
-		expect(screen.getByTestId(ids.syncAuto("p1"))).toBeTruthy();
+		expect(screen.getByTestId(ids.syncNow("p1"))).toBeTruthy();
 		expect(screen.queryByTestId(ids.syncAttention("p1"))).toBeNull();
-		expect(screen.queryByTestId(ids.syncAuto("p2"))).toBeNull();
+		expect(screen.getByTestId(ids.syncNow("p2"))).toBeTruthy();
+		expect(screen.queryByTestId(ids.syncNow("p0"))).toBeNull();
 		expect(screen.queryByTestId(ids.syncAttention("p0"))).toBeNull();
 		expect(backend.calls("GET", "core/sync/p0")).toHaveLength(0); // ein Projekt ohne Spiegel wird nicht gefragt
 	});

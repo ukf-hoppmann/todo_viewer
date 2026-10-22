@@ -34,7 +34,7 @@ export const workspaceTestIds = {
 	folder: (name: string) => `workspace.folder.${name}`,
 	folderChoose: "workspace.folder-choose",
 	syncAttention: (uid: string) => `workspace.sync-attention.${uid}`,
-	syncAuto: (uid: string) => `workspace.sync-auto.${uid}`,
+	syncNow: (uid: string) => `workspace.sync-now.${uid}`,
 	settings: "workspace.settings",
 	settingsProject: (uid: string) => `workspace.settings-project.${uid}`,
 	settingsMode: (uid: string) => `workspace.settings-mode.${uid}`,

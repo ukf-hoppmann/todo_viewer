@@ -138,39 +138,12 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     gespeichert, und der Viewer zeigt an, wenn der Kopf nach neuen Einträgen
     nicht mehr geprüft wurde.
 
-- `TASK-043` **Notes zerlegt speichern: Tabellen, Migration, bisherige Endpunkte und Spiegel**
-  - Uid: 1069e00b-b5e9-4498-9bc0-3e2159d1a7d8.
-  - Type: Task.
-  - Parent: `STORY-093`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-10-20.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Die Notes der Items liegen zerlegt in Kopf, Vorspann und
-    Protokolleinträgen in eigenen Tabellen. Die bisherigen Endpunkte und der
-    Spiegel arbeiten unverändert auf der zusammengesetzten Datei; die
-    Titelzeile wird aus dem Item erzeugt.
-  - Completion criteria: 1. Zerlegen und Zusammensetzen sind reine
-    Funktionen in domain mit Unit-Tests; Notes ohne Kopf ergeben bis auf die
-    Titelzeile denselben Text. 2. Migration v3 legt backlog_notes und
-    backlog_notes_entries an und überführt alle Notes ohne Textverlust
-    (Rückfall in den Vorspann). 3. get_document, put_document,
-    list_documents und append_note arbeiten über die neuen Tabellen;
-    bestehende Tests laufen unverändert. 4. Der Spiegel setzt zusammen und
-    zerlegt, übernimmt den Stempel aus der Datei und leert den Kopf ohne ##
-    Stand; Golden Files dazu. 5. Probelauf der Migration auf einer Kopie der
-    echten Datenbank ohne Verlust. 6. Techdocs nachgezogen.
-  - Summary: Die Notes werden intern in Kopf und Einträge zerlegt
-    gespeichert; nach außen bleibt alles wie bisher.
-
 - `TASK-045` **Kopf und Protokoll der Item-Notes in der Oberfläche**
   - Uid: 7e806f03-76ea-4c41-83e8-6e6d7f09acd6.
   - Type: Task.
   - Parent: `STORY-093`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-10-20.
   - Area: Web-UI.
   - Priority: Normal.
@@ -184,28 +157,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     aus OpenAPI erzeugt. 4. Client-Tests mit Test-IDs.
   - Summary: Die Oberfläche zeigt den aktuellen Stand der Notes oben und
     markiert, wenn er nicht mehr geprüft ist.
-
-- `TASK-044` **Kopf-Endpunkte, Zustand und Hinweise für Item-Notes**
-  - Uid: 91ad95f5-8d8c-4392-8715-fa6aabf8a30c.
-  - Type: Task.
-  - Parent: `STORY-093`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-10-20.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `TASK-043`.
-  - Goal: Der Harness kann den Kopf der Notes ohne Protokoll lesen, ersetzen
-    und bestätigen und sieht, ob er aktuell ist.
-  - Completion criteria: 1. Prüfsumme nach format.md des Harness mit
-    gemeinsamen Testvektoren. 2. Operationen get_notes_state,
-    put_notes_state, confirm_notes_state, list_notes_entries über HTTP und
-    MCP; append_note nimmt optional state und state_version. 3. show und
-    index melden notes_state; schreibende Antworten enthalten hints
-    (notes_state_stale, notes_state_long, notes_history_rewritten). 4.
-    Vertragstests und Systemtest; interfaces.md nachgezogen.
-  - Summary: Neue Schnittstellen, um den Kopf der Notes zu lesen, zu
-    ersetzen und zu bestätigen, und Meldungen, wenn er veraltet ist.
 
 - `STORY-094` **Notiz- und Spec-Dokumente löschen: Lösch-Befehl in API und MCP**
   - Uid: 564c047d-2845-4699-a295-e8b7f1bf680d.

@@ -151,6 +151,9 @@ class MemoryProjects:
     def auto_sync_projects(self) -> list[str]:
         return [p for p, c in self.configs.items() if c.auto_sync]
 
+    def mirror_projects(self) -> list[str]:
+        return list(self.configs)
+
 
 class MemoryStateStore:
     def __init__(self) -> None:

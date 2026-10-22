@@ -176,7 +176,7 @@ def compute_plan(
         elif fl:
             if known is None:
                 intents.append(Intent("database", "create", fl))
-            elif known == fl.hash and (fl.kind in ephemeral or _is_purged(uid, purged)):
+            elif known == fl.hash and (fl.kind in ephemeral or is_purged(uid, purged)):
                 intents.append(Intent("files", "delete", fl))
             else:
                 conflicts.append(Conflict("deleted_in_database", uid, fl.label, None, fl))
@@ -253,7 +253,7 @@ def _intent_for(conflict: Conflict, choice: Choice) -> Intent | None:
     return Intent("files", "delete", fl) if choice == "database" else Intent("database", "create", fl)
 
 
-def _is_purged(key: str, purged: frozenset[str]) -> bool:
+def is_purged(key: str, purged: frozenset[str]) -> bool:
     """Ist `key` ein endgültig gelöschtes Element oder gehört es dazu (Dokumente: `<uid>/<name>`)?"""
     return key in purged or any(key.startswith(f"{uid}/") for uid in purged)
 

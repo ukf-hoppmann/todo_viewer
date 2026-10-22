@@ -19,6 +19,7 @@ from viewer.plugins.backlog.infrastructure.database.documents import SqlDocument
 from viewer.plugins.backlog.infrastructure.database.notes import SqlNotesRepository
 from viewer.plugins.backlog.infrastructure.database.repository import SqlItemRepository
 from viewer.plugins.backlog.infrastructure.database.schema import MIGRATIONS
+from viewer.plugins.backlog.infrastructure.database.trashed_documents import SqlTrashedDocumentRepository
 from viewer.plugins.backlog.infrastructure.mirror.codec import BacklogCodec
 from viewer.plugins.backlog.infrastructure.mirror.participant import BacklogParticipant
 from viewer.plugins.workspace.domain.model import Element
@@ -58,8 +59,9 @@ def _build(context: PluginContext) -> BacklogServices:
     editing = EditService(
         items, repository, documents, notes, workspace.registry, context.database, context.clock, context.events
     )
+    trashed = SqlTrashedDocumentRepository()
     document_service = DocumentService(
-        items, repository, documents, notes, workspace.registry, context.database, context.clock, context.events
+        items, repository, documents, notes, trashed, workspace.registry, context.database, context.clock, context.events
     )
     participant = BacklogParticipant(repository, documents, notes, workspace.registry, context.database, context.clock)
     notes_state = NotesStateService(items, notes, context.database, context.clock, context.events)

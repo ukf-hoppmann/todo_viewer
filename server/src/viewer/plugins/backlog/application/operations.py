@@ -12,7 +12,7 @@ from viewer.plugins.backlog.application.documents import DocumentService, Docume
 from viewer.plugins.backlog.application.editing import EditService
 from viewer.plugins.backlog.application.items import IndexEntry, ItemDetail, ItemService
 from viewer.plugins.backlog.application.notes_state import NotesState, NotesStateService
-from viewer.plugins.backlog.application.ports import Document
+from viewer.plugins.backlog.application.ports import Document, TrashedDocument
 from viewer.plugins.backlog.domain.model import Item, Progress
 from viewer.plugins.backlog.domain.notes import Hint, checksum, entry_text, state_of
 
@@ -196,6 +196,23 @@ class DocumentInfo:
 
 
 @dataclass(frozen=True)
+class DeleteDocument:
+    ref: str
+    name: str
+    #: Die Version des Dokuments, das in den Papierkorb kommt.
+    version: int
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class DocumentDeleted:
+    """Das Dokument liegt jetzt im Papierkorb; `trash_uid` ist sein Eintrag dort."""
+
+    name: str
+    trash_uid: str
+
+
+@dataclass(frozen=True)
 class GetDocument:
     ref: str
     name: str
@@ -329,6 +346,10 @@ def document_out(document: Document) -> ItemDocumentOut:
 
 def _hints(found: Sequence[Hint]) -> list[HintOut]:
     return [HintOut(h.code, h.message) for h in found]
+
+
+def _deleted(snapshot: TrashedDocument) -> DocumentDeleted:
+    return DocumentDeleted(snapshot.name, snapshot.uid)
 
 
 def document_write_out(write: DocumentWrite) -> ItemDocumentOut:
@@ -588,6 +609,16 @@ OPERATIONS: tuple[Operation, ...] = (
             s.documents.put_document(d.ref, d.project, d.name, d.content, d.version, d.summary)
         ),
         HttpBinding("PUT", "/items/{ref}/documents/{name}"),
+    ),
+    Operation(
+        "delete_document",
+        "Legt ein Dokument eines Items (Notiz oder Spec) in `version` in den Papierkorb. Mit der Notiz gehen ihr "
+        "Kopf und die Kurzfassung des Items; wiederherstellen geht über den Papierkorb",
+        "write",
+        DeleteDocument,
+        DocumentDeleted,
+        lambda s, d: _deleted(s.documents.delete_document(d.ref, d.project, d.name, d.version)),
+        HttpBinding("DELETE", "/items/{ref}/documents/{name}"),
     ),
     Operation(
         "append_note",

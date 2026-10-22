@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from typing import Any
@@ -7,6 +8,7 @@ from typing import Any
 from viewer.core.application.ports import Clock, Database, EventBus, Transaction
 from viewer.core.domain.errors import InvalidInput, VersionConflict
 from viewer.core.domain.events import Event
+from viewer.plugins.backlog.application.editing import ItemDeleted
 from viewer.plugins.backlog.application.items import ItemService
 from viewer.plugins.backlog.application.ports import (
     Document,
@@ -14,6 +16,8 @@ from viewer.plugins.backlog.application.ports import (
     ItemRepository,
     Notes,
     NotesRepository,
+    TrashedDocument,
+    TrashedDocumentRepository,
 )
 from viewer.plugins.backlog.domain.documents import (
     NOTES,
@@ -21,6 +25,7 @@ from viewer.plugins.backlog.domain.documents import (
     DocumentNotFound,
     NotesEntry,
     append_entry,
+    document_suffix,
     new_document_kind,
     notes_header,
     notes_name,
@@ -65,6 +70,7 @@ class DocumentService:
         repository: ItemRepository,
         documents: DocumentRepository,
         notes: NotesRepository,
+        trashed: TrashedDocumentRepository,
         registry: Any,
         database: Database,
         clock: Clock,
@@ -74,6 +80,7 @@ class DocumentService:
         self._repository = repository
         self._documents = documents
         self._notes = notes
+        self._trashed = trashed
         self._registry = registry
         self._database = database
         self._clock = clock
@@ -137,6 +144,39 @@ class DocumentService:
         if parts is None:
             return DocumentWrite(document)
         return DocumentWrite(document, state_of(parts), hints(before, parts, rewritten=before is not None))
+
+    def delete_document(self, ref: str, project_uid: str | None, name: str, version: int) -> TrashedDocument:
+        """Legt ein Dokument in `version` in den Papierkorb (als Schnappschuss). Mit der Notiz gehen ihr Kopf und die
+        Kurzfassung des Items; beim Wiederherstellen kommen sie zurück."""
+        with self._database.transaction() as tx:
+            item = self._items.resolve(tx, ref, project_uid)
+            if item.deleted_at is not None:
+                raise ItemDeleted(item.label)
+            existing = self._existing(tx, item, name)
+            if existing.revision != version:
+                raise VersionConflict(
+                    "Das Dokument wurde inzwischen geändert",
+                    details={"name": name, "expected": version, "current": existing.revision},
+                )
+            is_notes = existing.kind == NOTES
+            snapshot = TrashedDocument(
+                str(uuid.uuid4()),
+                item.uid,
+                name,
+                existing.kind,
+                existing.content,
+                item.summary if is_notes else None,
+                self._clock.now(),
+            )
+            self._trashed.insert(tx, snapshot)
+            if is_notes:
+                self._notes.delete(tx, item.uid)
+                self._drop_summary(tx, item)
+            else:
+                self._documents.delete(tx, item.uid, name)
+        suffix = document_suffix(item.label, name)
+        self._changed(item.uid, name, "deleted", f"{item.uid}/{suffix}" if suffix else None)
+        return snapshot
 
     def append_note(
         self,
@@ -238,8 +278,21 @@ class DocumentService:
             revision = self._registry.bump_revision(tx, item.uid, item.revision)
             self._repository.update(tx, replace(updated, revision=revision))
 
-    def _changed(self, uid: str, name: str, change: str) -> None:
-        self._events.publish(Event(CHANGED_TOPIC, {"uid": uid, "name": name, "change": change}, public=True))
+    def _drop_summary(self, tx: Transaction, item: Item) -> None:
+        """Nimmt dem Item die Kurzfassung, die nur mit Notizen Pflicht war: die Notizen sind gerade weg."""
+        if item.summary is None:
+            return
+        updated = replace(item, summary=None, notes=())
+        before = self._repository.list_in(tx, [item.project_uid])
+        self._rules.check_change(before, [updated if entry.uid == item.uid else entry for entry in before])
+        revision = self._registry.bump_revision(tx, item.uid, item.revision)
+        self._repository.update(tx, replace(updated, revision=revision))
+
+    def _changed(self, uid: str, name: str, change: str, entry_key: str | None = None) -> None:
+        payload: dict[str, Any] = {"uid": uid, "name": name, "change": change}
+        if entry_key is not None:
+            payload["entry_key"] = entry_key
+        self._events.publish(Event(CHANGED_TOPIC, payload, public=True))
 
 
 def _as_document(item: Item, notes: Notes) -> Document:

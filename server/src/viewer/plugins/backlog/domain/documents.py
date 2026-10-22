@@ -31,6 +31,13 @@ def spec_name_pattern(label: str) -> re.Pattern[str]:
     return re.compile(rf"{re.escape(label)}_spec(_[A-Za-z0-9-]+)?\.md")
 
 
+def document_suffix(label: str, name: str) -> str | None:
+    """`STORY-001_spec_Teil.md` → `spec_Teil`; `None`, wenn der Name nicht dem Label folgt. Der Teil bildet mit der
+    `uid` des Items den Schlüssel des Dokuments im Spiegel."""
+    match = re.fullmatch(rf"{re.escape(label)}_(notes|spec(?:_[A-Za-z0-9-]+)?)\.md", name)
+    return match.group(1) if match else None
+
+
 def new_document_kind(item: Item, name: str) -> str:
     """Art eines neuen Dokuments: `<LABEL>_notes.md` (die erste Notiz) oder `<LABEL>_spec[_<thema>].md`."""
     if name == notes_name(item.label) and not item.notes:

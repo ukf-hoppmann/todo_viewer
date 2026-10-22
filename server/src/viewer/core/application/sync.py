@@ -33,6 +33,7 @@ from viewer.core.domain.sync import (
     SyncPreviewStale,
     SyncState,
     compute_plan,
+    is_purged,
     plan_token,
     resolve_conflicts,
     sync_state,
@@ -137,6 +138,10 @@ class MirrorProjects(Protocol):
     def config(self, project: str) -> MirrorConfig | None: ...
 
     def auto_sync_projects(self) -> list[str]: ...
+
+    def mirror_projects(self) -> list[str]:
+        """Alle Projekte mit eingeschaltetem Spiegel, mit und ohne Auto-Sync."""
+        ...
 
 
 class SyncStateStore(Protocol):
@@ -349,6 +354,36 @@ class SyncService:
         self._publish(project, status.state, status.reason, force=changed)
         return status
 
+    def carry_purged(self, uids: Collection[str]) -> None:
+        """Trägt endgültig gelöschte Elemente in die Dateien aller Spiegel-Projekte (Architektur §2): nur ihre
+        Einträge und Dokumente, nur wo die Datei seit dem letzten Sync unverändert ist; alles andere bleibt offen.
+        Wirft nicht: die Datenbank ist schon geändert, ein Hindernis (Git-Operation, geänderte Datei) lässt den
+        Eintrag als Konflikt stehen."""
+        purged = frozenset(uids)
+        for project in self._projects.mirror_projects():
+            try:
+                self._carry_purged(project, purged)
+            except Exception:
+                log.exception("purge_sync_failed", project=project)
+
+    def _carry_purged(self, project: str, purged: frozenset[str]) -> None:
+        with self._locks[project]:
+            try:
+                snapshot = self._load(project, "both", purged)
+            except (MirrorNotConfigured, MirrorBlocked, MirrorFormatError):
+                log.warning("purge_sync_paused", project=project)
+                return
+            intents = [i for i in snapshot.plan.intents if i.is_deletion and is_purged(i.entry.key, purged)]
+            if not intents:
+                return
+            self._write_files(project, snapshot, [], intents, {}, {})
+            status = self._status_of_remembered(project)
+        self._publish(project, status.state, None, force=True)
+
+    def _status_of_remembered(self, project: str) -> SyncStatus:
+        plan = self._remember(project)
+        return self._status_of(project, plan) if plan else SyncStatus(project, "paused")
+
     # --- Auto-Sync-Takt ----------------------------------------------------------------------------------------
 
     def refresh_auto(self) -> None:
@@ -368,7 +403,7 @@ class SyncService:
 
     # --- Innenleben ------------------------------------------------------------------------------------------------
 
-    def _load(self, project: str, direction: Direction) -> _Snapshot:
+    def _load(self, project: str, direction: Direction, purged: frozenset[str] = frozenset()) -> _Snapshot:
         config = self._projects.config(project)
         if config is None:
             raise MirrorNotConfigured(f"Projekt {project} hat keinen Spiegel-Ordner", details={"project": project})
@@ -396,7 +431,7 @@ class SyncService:
             for e in (*database[index], *files[index])
         )
         plan = compute_plan(
-            [e for es in database for e in es], [e for es in files for e in es], base, direction, ephemeral
+            [e for es in database for e in es], [e for es in files for e in es], base, direction, ephemeral, purged
         )
         return _Snapshot(config, fileset, raw_files, files, database, base, plan, owner_of)
 

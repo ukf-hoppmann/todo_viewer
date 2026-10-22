@@ -38,7 +38,7 @@ def _build(context: PluginContext) -> WorkspaceServices:
     links = LinkService(
         SqlLinkStore(), elements, context.database, context.clock, context.events, lambda: str(uuid.uuid4())
     )
-    trash = TrashService(elements, projects, context.database, context.clock, context.events)
+    trash = TrashService(elements, projects, context.database, context.clock, context.events, context.backups)
     return WorkspaceServices(service, registry, projects, links, trash)
 
 

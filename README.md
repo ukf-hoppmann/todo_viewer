@@ -84,7 +84,10 @@ Hand“). Der Viewer gleicht dann alle
 `AUTO_SYNC_INTERVAL` Sekunden (Standard 30) von selbst ab, was nur eine Seite
 geändert hat, löscht nie und überträgt keine Konflikte; die bleiben offen (Zahl in
 der Projektkarte, ⚠ in der Sidebar), bis du sie im Sync-Dialog mit Vergleichsansicht
-entscheidest. Ein Pull wird abgewartet, Dateien mit Git-Merge-Markern oder ein
+entscheidest. Die einzige Ausnahme beim Löschen: Einträge, die du im Papierkorb
+**endgültig** löschst, nimmt der Viewer sofort aus den Spiegel-Dateien, sofern dort
+seit dem letzten Sync nichts daran geändert wurde (sonst bleibt es ein Konflikt);
+vorher sichert er die Datenbank (`-purge.db`). Ein Pull wird abgewartet, Dateien mit Git-Merge-Markern oder ein
 fehlender Ordner pausieren das Projekt. Beim **Wechsel der Primärquelle** (Einstellungsmenü →
 Projekte) wird vorher synchronisiert und ein Backup der bisherigen
 Primärquelle angelegt; danach bleibt die bisherige Seite als Spiegel, die

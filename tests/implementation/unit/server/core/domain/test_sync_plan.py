@@ -83,6 +83,34 @@ def test_only_the_marked_kinds_are_ephemeral() -> None:
     assert summary(plan)["conflicts"] == [("deleted_in_database", "a")]
 
 
+def test_purged_entries_are_deleted_in_unchanged_files() -> None:
+    plan = compute_plan([], [A], {"a": A.hash}, purged=frozenset({"a"}))
+    assert summary(plan) == {"intents": [("files", "delete", "a")], "conflicts": [], "adopt": [], "forget": []}
+
+
+def test_purged_entries_changed_in_the_files_stay_conflicts() -> None:
+    plan = compute_plan([], [B], {"a": A.hash}, purged=frozenset({"a"}))
+    assert summary(plan) == {"intents": [], "conflicts": [("deleted_in_database", "a")], "adopt": [], "forget": []}
+
+
+def test_entries_not_purged_stay_conflicts_even_if_others_were() -> None:
+    plan = compute_plan([], [A], {"a": A.hash}, purged=frozenset({"other"}))
+    assert summary(plan)["conflicts"] == [("deleted_in_database", "a")]
+
+
+def test_documents_follow_their_purged_item() -> None:
+    document = MirrorEntry("backlog.document", "TASK-001_notes.md", {"content": "x"}, {}, "a/notes")
+    plan = compute_plan([], [document], {"a/notes": document.hash}, purged=frozenset({"a"}))
+    assert [(i.target, i.action, i.entry.key) for i in plan.intents] == [("files", "delete", "a/notes")]
+    sibling = compute_plan([], [document], {"a/notes": document.hash}, purged=frozenset({"ab"}))
+    assert summary(sibling)["conflicts"] == [("deleted_in_database", "a/notes")]
+
+
+def test_purged_does_not_touch_entries_that_are_still_in_the_database() -> None:
+    plan = compute_plan([A], [A], {"a": A.hash}, purged=frozenset({"a"}))
+    assert summary(plan) == {"intents": [], "conflicts": [], "adopt": [], "forget": []}
+
+
 def test_label_is_not_part_of_the_hash_but_kind_fields_and_refs_are() -> None:
     assert entry("a", label="TASK-001").hash == entry("a", label="TASK-099").hash
     assert entry("a").hash != MirrorEntry("story", "TASK-001", {"title": "t"}, {}, "a").hash

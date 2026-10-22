@@ -189,6 +189,10 @@ class ProjectService:
         with self._database.transaction() as tx:
             return [p.uid for p in self._projects.list(tx) if p.mirror_enabled and p.auto_sync and p.mirror_folder]
 
+    def mirror_projects(self) -> list[str]:
+        with self._database.transaction() as tx:
+            return [p.uid for p in self._projects.list(tx) if p.mirror_enabled and p.mirror_folder]
+
     def _require(self, tx, uid: str) -> Project:  # type: ignore[no-untyped-def]
         project = self._projects.get(tx, uid)
         if project is None or project.deleted_at is not None:

@@ -20,6 +20,7 @@ log = structlog.get_logger(__name__)
 STATUS_BY_CODE: dict[str, int] = {
     "not_found": 404,
     "version_conflict": 409,
+    "backup_failed": 409,
     "mirror_conflict": 409,
     "mirror_blocked": 409,
     "sync_preview_stale": 409,

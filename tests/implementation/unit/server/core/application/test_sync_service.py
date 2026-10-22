@@ -434,6 +434,60 @@ def test_auto_deletes_ephemeral_entries_gone_from_the_database(rig: Rig) -> None
     assert rig.service.auto(P).state == "conflicts" and U2 in rig.db.rows
 
 
+# --- Endgültig gelöschte Einträge ------------------------------------------------------------------------------------
+
+
+def _synced_pair(rig: Rig) -> None:
+    rig.db.add(U1, "task", "Eins")
+    rig.db.add(U2, "task", "Zwei")
+    rig.write("# Items\n\n" + line("TASK-001", U1, "task", "Eins") + line("TASK-002", U2, "task", "Zwei"))
+    rig.sync()
+
+
+def test_purged_entry_is_deleted_in_the_unchanged_files_without_a_conflict(rig: Rig) -> None:
+    _synced_pair(rig)
+    del rig.db.rows[U1]
+    rig.service.carry_purged([U1])
+    assert "TASK-001" not in rig.text() and "TASK-002" in rig.text()
+    assert U1 not in rig.state.hashes[P] and U2 in rig.state.hashes[P]
+    assert rig.service.status(P).state == "in_sync"
+    assert rig.backups.reasons == [] and rig.transactions.committed == 0
+
+
+def test_purged_entry_changed_in_the_files_stays_a_conflict_and_is_kept(rig: Rig) -> None:
+    _synced_pair(rig)
+    del rig.db.rows[U1]
+    rig.write(rig.text().replace("Eins", "Eins geändert"))
+    rig.service.carry_purged([U1])
+    assert "Eins geändert" in rig.text()
+    assert [c.conflict for c in rig.service.preview(P).conflicts] == ["deleted_in_database"]
+
+
+def test_carry_purged_leaves_other_open_differences_alone(rig: Rig) -> None:
+    _synced_pair(rig)
+    del rig.db.rows[U1]
+    del rig.db.rows[U2]  # nicht endgültig gelöscht gemeldet: bleibt ein Konflikt
+    rig.db.add("00000000-0000-0000-0000-000000000009", "task", "Neu in der DB")
+    rig.service.carry_purged([U1])
+    assert "TASK-001" not in rig.text() and "TASK-002" in rig.text() and "Neu in der DB" not in rig.text()
+    assert [c.key for c in rig.service.preview(P).conflicts] == [U2]
+
+
+def test_carry_purged_does_not_raise_when_the_folder_is_blocked(rig: Rig) -> None:
+    _synced_pair(rig)
+    del rig.db.rows[U1]
+    rig.files.add_git_lock(FOLDER)
+    rig.service.carry_purged([U1])
+    rig.files.git_locks.clear()
+    assert "TASK-001" in rig.text()
+    assert [c.conflict for c in rig.service.preview(P).conflicts] == ["deleted_in_database"]
+
+
+def test_carry_purged_skips_projects_without_a_mirror(rig: Rig) -> None:
+    rig.projects.configs.clear()
+    rig.service.carry_purged([U1])  # kein Fehler
+
+
 def test_auto_imports_new_entries_and_backs_up_first(rig: Rig) -> None:
     rig.write("# Items\n\n" + line("NEW-x", "", "task", "Neu"))
     status = rig.service.auto(P)

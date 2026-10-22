@@ -30,6 +30,12 @@ class InvalidInput(DomainError):
     code = "invalid_input"
 
 
+class BackupFailed(DomainError):
+    """Die Sicherung vor einem unumkehrbaren Schritt ist gescheitert; der Schritt wurde nicht ausgeführt."""
+
+    code = "backup_failed"
+
+
 class MigrationFailed(DomainError):
     code = "migration_failed"
 

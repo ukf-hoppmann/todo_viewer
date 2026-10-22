@@ -129,6 +129,7 @@ def compute_plan(
     base: Mapping[str, str],
     direction: Direction = "both",
     ephemeral: frozenset[str] = frozenset(),
+    purged: frozenset[str] = frozenset(),
 ) -> Plan:
     """Vergleicht die Einträge beider Seiten je `uid` mit der Basis (Architektur §2, EPIC-007-Spec §7.3).
 
@@ -137,6 +138,8 @@ def compute_plan(
     - auf einer Seite gelöscht (Basis vorhanden) → Konflikt, nie automatisch gelöscht; Ausnahme: ein kurzlebiger
       Eintrag (`kind` in `ephemeral`), der in der Datenbank fehlt und in den Dateien seit der Basis unverändert ist,
       wird in den Dateien gelöscht;
+    - ebenso ein Eintrag, den der Besitzer eben endgültig gelöscht hat (`uid` oder die `uid` seines Elements in
+      `purged`), solange er in den Dateien seit der Basis unverändert ist (Architektur §2);
     - beidseitig gleich → nur die Basis wird nachgezogen.
     Einträge aus den Dateien ohne `uid` sind neu und kommen nur bei Richtung `both` in die Datenbank, weil dazu der
     Rückschrieb von `uid` und Label in die Dateien gehört.
@@ -173,7 +176,7 @@ def compute_plan(
         elif fl:
             if known is None:
                 intents.append(Intent("database", "create", fl))
-            elif fl.kind in ephemeral and known == fl.hash:
+            elif known == fl.hash and (fl.kind in ephemeral or is_purged(uid, purged)):
                 intents.append(Intent("files", "delete", fl))
             else:
                 conflicts.append(Conflict("deleted_in_database", uid, fl.label, None, fl))
@@ -248,6 +251,11 @@ def _intent_for(conflict: Conflict, choice: Choice) -> Intent | None:
         return Intent("files", "create", db) if choice == "database" else Intent("database", "delete", db)
     assert fl is not None  # deleted_in_database
     return Intent("files", "delete", fl) if choice == "database" else Intent("database", "create", fl)
+
+
+def is_purged(key: str, purged: frozenset[str]) -> bool:
+    """Ist `key` ein endgültig gelöschtes Element oder gehört es dazu (Dokumente: `<uid>/<name>`)?"""
+    return key in purged or any(key.startswith(f"{uid}/") for uid in purged)
 
 
 def plan_token(project: str, direction: Direction, plan: Plan) -> str:

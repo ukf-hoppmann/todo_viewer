@@ -165,10 +165,10 @@ def test_keeping_the_surviving_entry_needs_no_confirmation() -> None:
     assert [(i.target, i.action) for i in undeleted] == [("database", "create")]
 
 
-def test_decisions_against_the_direction_are_skipped() -> None:
+def test_decisions_against_the_direction_are_skipped_and_the_conflict_stays_open() -> None:
     conflict = conflict_of(B, entry("a", "dritte"), A.hash)
     intents, open_conflicts, skipped = resolve_conflicts([conflict], {"a": "files"}, direction="to_files")
-    assert intents == () and open_conflicts == () and [i.target for i in skipped] == ["database"]
+    assert intents == () and open_conflicts == (conflict,) and [i.target for i in skipped] == ["database"]
 
 
 # --- Token, Zustand, Platzhalter -----------------------------------------------------------------------------------

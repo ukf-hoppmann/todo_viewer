@@ -223,3 +223,17 @@ def test_auto_sync_never_overwrites_a_conflict(env: Env) -> None:
     status = env.app.state.sync.auto(P)
     assert status.state == "conflicts"
     assert "Datei" in env.text and env.services.titles(P) == {"TASK-001": "DB"}
+
+
+def test_decision_against_the_direction_leaves_the_conflict_open_and_says_so(env: Env) -> None:
+    env.services.seed(P, "task", "alt", U1)
+    env.sync()
+    env.write(env.text.replace("alt", "Datei"))
+    conn = sqlite3.connect(env.settings.db_path)
+    conn.execute("UPDATE mirror_test_entries SET title = 'DB'")
+    conn.commit()
+    conn.close()
+    result = env.sync(direction="to_files", decisions=[{"uid": U1, "choice": "files"}]).json()
+    assert result["to_database"] == 0
+    assert [c["key"] for c in result["conflicts_left"]] == [U1]
+    assert env.services.titles(P) == {"TASK-001": "DB"}

@@ -165,6 +165,7 @@
 			"database": "Alle: Datenbank",
 			"files": "Alle: Dateien"
 		},
+		"blockedByDirection": "Geht gegen die gewählte Richtung und ist gesperrt.",
 		"deletionsApart": "Löschungen gehören nicht zu „Alle“: sie wählst du einzeln.",
 		"transfers": "Übertragungen",
 		"noTransfers": "Nichts zu übertragen.",

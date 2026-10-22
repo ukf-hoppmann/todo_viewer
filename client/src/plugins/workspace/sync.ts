@@ -1,4 +1,4 @@
-import type { Project, SyncChoice, SyncConflict, SyncStatus } from "./api";
+import type { Project, SyncChoice, SyncConflict, SyncDirection, SyncStatus } from "./api";
 
 /** How a project's mirror is doing, for the sidebar and the project card. */
 export type SyncView =
@@ -35,6 +35,11 @@ export function choiceDeletes(conflict: SyncConflict, choice: SyncChoice): boole
 	return false;
 }
 
+/** Whether the direction forbids `choice`: taking the database writes the files, taking the files writes the database. */
+export function choiceBlocked(direction: SyncDirection, choice: SyncChoice): boolean {
+	return (direction === "to_files" && choice === "files") || (direction === "to_database" && choice === "database");
+}
+
 /** What choosing `choice` does to the other side, as the key of the explanation shown next to the option. */
 export function choiceEffect(conflict: SyncConflict, choice: SyncChoice): string {
 	if (choice === "defer") return "defer";
@@ -46,8 +51,9 @@ export function choiceEffect(conflict: SyncConflict, choice: SyncChoice): string
 export type Choices = Record<string, SyncChoice>;
 
 /** The choice for every conflict that a bulk button may set: deletions are left out, they are chosen one by one. */
-export function withBulkChoice(conflicts: readonly SyncConflict[], current: Choices, choice: SyncChoice): Choices {
+export function withBulkChoice(conflicts: readonly SyncConflict[], current: Choices, choice: SyncChoice, direction: SyncDirection = "both"): Choices {
 	const next = { ...current };
+	if (choiceBlocked(direction, choice)) return next;
 	for (const conflict of conflicts) {
 		if (!choiceDeletes(conflict, choice)) next[conflict.key] = choice;
 	}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SyncConflict, SyncStatus } from "../../../../../../client/src/plugins/workspace/api";
-import { choiceDeletes, decisionsOf, differences, isDeletionConflict, needsAttention, syncView, withBulkChoice } from "../../../../../../client/src/plugins/workspace/sync";
+import { choiceDeletes, decisionsOf, differences, isDeletionConflict, needsAttention, syncView, withBulkChoice, choiceBlocked } from "../../../../../../client/src/plugins/workspace/sync";
 
 const status = (state: SyncStatus["state"], extra: Partial<SyncStatus> = {}): SyncStatus => ({ project: "p", state, conflicts: 0, to_database: 0, to_files: 0, files: [], reason: null, last_sync: null, ...extra });
 const on = { mirror_enabled: true };
@@ -91,5 +91,15 @@ describe("differences", () => {
 			{ name: "title", database: "T", files: "—" },
 			{ name: "required_for_parent", database: "Yes", files: "—" },
 		]);
+	});
+});
+
+describe("choices against the direction", () => {
+	it("blocks the side that would be written against the direction", () => {
+		expect(choiceBlocked("to_files", "files")).toBe(true);
+		expect(choiceBlocked("to_files", "database")).toBe(false);
+		expect(choiceBlocked("to_database", "database")).toBe(true);
+		expect(choiceBlocked("both", "files")).toBe(false);
+		expect(choiceBlocked("to_files", "defer")).toBe(false);
 	});
 });

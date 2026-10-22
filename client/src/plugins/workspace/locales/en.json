@@ -165,6 +165,7 @@
 			"database": "All: database",
 			"files": "All: files"
 		},
+		"blockedByDirection": "Goes against the chosen direction and is disabled.",
 		"deletionsApart": "Deletions are not part of “All”: you choose them one by one.",
 		"transfers": "Transfers",
 		"noTransfers": "Nothing to transfer.",

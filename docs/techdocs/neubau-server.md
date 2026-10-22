@@ -156,7 +156,9 @@ Einträge aus den Dateien ohne `uid` (Platzhalter `NEW-<kurzname>`) sind neu; si
    `direction`: `both`, `to_database`, `to_files`. Das Token ist zustandslos (SHA-256 über den Plan).
 3. `execute(project, token, direction, decisions, delete_missing)`: weicht der Plan vom Token ab, `sync_preview_stale`.
    Je Konflikt eine Entscheidung `database`, `files` oder `defer`; eine Entscheidung, die löscht, braucht
-   `delete_missing=true` (sonst `deletion_not_confirmed`). Reihenfolge: Backup der Datenbank (Grund `sync`) →
+   `delete_missing=true` (sonst `deletion_not_confirmed`). Eine Entscheidung, die gegen die Richtung
+   schreiben müsste (`files` bei `to_files`, `database` bei `to_database`), lässt den Konflikt offen und steht in
+   `conflicts_left`; der Sync-Dialog sperrt diese Wahl. Reihenfolge: Backup der Datenbank (Grund `sync`) →
    eine Transaktion für alle Teilnehmer (uid vergeben, Labels vergeben, Platzhalter in allen Verweisen ersetzen, Änderungen
    anwenden) → Dateien schreiben (mit den beim Lesen erfassten Versionen, sonst `mirror_conflict`) → beide Seiten neu
    lesen und die Basis für alle beidseitig gleichen Einträge nachziehen. Schlägt das Schreiben der Dateien nach dem Commit

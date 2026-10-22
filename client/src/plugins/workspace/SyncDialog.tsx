@@ -14,7 +14,7 @@ import {
 	type SyncDirection,
 	type SyncResult,
 } from "./api";
-import { choiceEffect, decisionsOf, differences, isDeletionConflict, withBulkChoice, type Choices } from "./sync";
+import { choiceBlocked, choiceEffect, decisionsOf, differences, isDeletionConflict, withBulkChoice, type Choices } from "./sync";
 import { workspaceTestIds } from "./testIds";
 
 const directions: SyncDirection[] = ["both", "to_files", "to_database"];
@@ -116,7 +116,7 @@ export function SyncDialog({ project, onClose }: { project: Project; onClose: ()
 								{t("sync.conflicts", { count: conflicts.length })}
 							</Typography>
 							{(["database", "files"] as const).map((choice) => (
-								<Button key={choice} size="small" variant="outlined" onClick={() => setPicked((current) => withBulkChoice(conflicts, current, choice))} data-testid={workspaceTestIds.syncAll(choice)}>
+								<Button key={choice} size="small" variant="outlined" onClick={() => setPicked((current) => withBulkChoice(conflicts, current, choice, direction))} disabled={choiceBlocked(direction, choice)} data-testid={workspaceTestIds.syncAll(choice)}>
 									{t(`sync.all.${choice}`)}
 								</Button>
 							))}
@@ -127,7 +127,7 @@ export function SyncDialog({ project, onClose }: { project: Project; onClose: ()
 							</Typography>
 						)}
 						{conflicts.map((conflict) => (
-							<ConflictCard key={conflict.key} conflict={conflict} choice={picked[conflict.key]} onChoose={(choice) => setPicked((current) => ({ ...current, [conflict.key]: choice }))} />
+							<ConflictCard key={conflict.key} conflict={conflict} direction={direction} choice={picked[conflict.key]} onChoose={(choice) => setPicked((current) => ({ ...current, [conflict.key]: choice }))} />
 						))}
 					</Box>
 				)}
@@ -166,7 +166,7 @@ export function SyncDialog({ project, onClose }: { project: Project; onClose: ()
 	);
 }
 
-function ConflictCard({ conflict, choice, onChoose }: { conflict: SyncConflict; choice: SyncChoice | undefined; onChoose: (choice: SyncChoice) => void }) {
+function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: SyncConflict; direction: SyncDirection; choice: SyncChoice | undefined; onChoose: (choice: SyncChoice) => void }) {
 	const { t } = useTranslation("workspace");
 	const rows = differences(conflict);
 	return (
@@ -204,12 +204,13 @@ function ConflictCard({ conflict, choice, onChoose }: { conflict: SyncConflict; 
 					<FormControlLabel
 						key={value}
 						value={value}
+						disabled={choiceBlocked(direction, value)}
 						control={<Radio size="small" slotProps={{ input: { "data-testid": workspaceTestIds.syncChoice(conflict.key, value) } as never }} />}
 						label={
 							<Box>
 								<Typography variant="body2">{t(`sync.choices.${value}`)}</Typography>
 								<Typography variant="caption" color="text.secondary">
-									{t(`sync.effect.${choiceEffect(conflict, value)}`)}
+									{choiceBlocked(direction, value) ? t("sync.blockedByDirection") : t(`sync.effect.${choiceEffect(conflict, value)}`)}
 								</Typography>
 							</Box>
 						}

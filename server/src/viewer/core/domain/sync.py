@@ -211,10 +211,12 @@ def resolve_conflicts(
     """Setzt die Entscheidungen des Besitzers um: `(Änderungen, offene Konflikte, wegen Richtung übersprungen)`.
 
     Eine Entscheidung, die einen Eintrag löscht, braucht `delete_missing=True`, sonst `DeletionNotConfirmed`.
-    `defer` und fehlende Entscheidungen lassen den Konflikt offen.
+    `defer`, fehlende Entscheidungen und Entscheidungen gegen die Richtung lassen den Konflikt offen.
     """
+    allowed = _allowed_targets(direction)
     intents: list[Intent] = []
     open_conflicts: list[Conflict] = []
+    skipped: list[Intent] = []
     for conflict in conflicts:
         choice = decisions.get(conflict.key, "defer")
         intent = _intent_for(conflict, choice)
@@ -226,13 +228,12 @@ def resolve_conflicts(
                 f"Die Entscheidung für {conflict.label or conflict.key} löscht und braucht delete_missing",
                 details={"key": conflict.key, "choice": choice},
             )
-        intents.append(intent)
-    allowed = _allowed_targets(direction)
-    return (
-        tuple(i for i in intents if i.target in allowed),
-        tuple(open_conflicts),
-        tuple(i for i in intents if i.target not in allowed),
-    )
+        if intent.target in allowed:
+            intents.append(intent)
+        else:
+            skipped.append(intent)
+            open_conflicts.append(conflict)
+    return tuple(intents), tuple(open_conflicts), tuple(skipped)
 
 
 def _intent_for(conflict: Conflict, choice: Choice) -> Intent | None:

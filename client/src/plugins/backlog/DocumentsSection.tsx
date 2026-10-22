@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { DocumentsSection as SharedDocumentsSection, type DocumentsLabels } from "../../shared";
+import { NotesHead } from "./NotesHead";
 import { toWriteError, useAppendNoteMutation, useGetDocumentQuery, usePutDocumentMutation, type ItemOut } from "./api";
 
 function useItemDocument(uid: string, name: string) {
@@ -37,6 +38,8 @@ export function DocumentsSection({ item }: { item: ItemOut }) {
 	};
 
 	return (
+		<>
+		<NotesHead item={item} />
 		<SharedDocumentsSection
 			owner={item.uid}
 			names={[...item.notes, ...item.spec]}
@@ -57,5 +60,6 @@ export function DocumentsSection({ item }: { item: ItemOut }) {
 			errorMessage={(failure) => toWriteError(failure).message}
 			labels={labels}
 		/>
+		</>
 	);
 }

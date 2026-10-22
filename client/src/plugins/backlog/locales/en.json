@@ -121,6 +121,14 @@
 		"currentState": "current state",
 		"toc": "Table of contents"
 	},
+	"notes": {
+		"head": "State",
+		"log": "Log",
+		"noHead": "No state recorded yet.",
+		"stale": "The state is not current: it was not confirmed after the latest log entry.",
+		"missing": "The notes have no state yet.",
+		"peek": "State of the notes"
+	},
 	"graph": {
 		"info": "{{n}} of {{total}} items have dependencies",
 		"hint": "Click selects, ⌘/Ctrl/⇧-click marks more, Esc resets",

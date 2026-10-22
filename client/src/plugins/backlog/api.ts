@@ -6,6 +6,8 @@ export type ItemOut = components["schemas"]["ItemOut"];
 export type ItemSummary = components["schemas"]["ItemSummary"];
 export type RetypeOut = components["schemas"]["RetypeOut"];
 export type DocumentOut = components["schemas"]["ItemDocumentOut"];
+export type NotesStateOut = components["schemas"]["NotesStateOut"];
+export type NotesEntryOut = components["schemas"]["NotesEntryOut"];
 export type ReopenOut = components["schemas"]["ReopenOut"];
 
 /** The error of a write: the code and details the server gave, as an `Error` the forms can show. */
@@ -77,6 +79,14 @@ export const backlogApi = createPluginApi(
 			query: ({ uid, ...body }) => ({ url: `backlog/items/${uid}/notes`, method: "POST", body }),
 			invalidatesTags: ["Items", "Documents"],
 		}),
+		getNotesState: build.query<NotesStateOut, string>({
+			query: (uid) => `backlog/items/${uid}/notes/state`,
+			providesTags: ["Documents"],
+		}),
+		listNotesEntries: build.query<NotesEntryOut[], string>({
+			query: (uid) => `backlog/items/${uid}/notes/entries`,
+			providesTags: ["Documents"],
+		}),
 		getItem: build.query<ItemOut, string>({
 			query: (uid) => `backlog/items/${uid}`,
 			providesTags: ["Items"],
@@ -97,4 +107,6 @@ export const {
 	useGetDocumentQuery,
 	usePutDocumentMutation,
 	useAppendNoteMutation,
+	useGetNotesStateQuery,
+	useListNotesEntriesQuery,
 } = backlogApi;

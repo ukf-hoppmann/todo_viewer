@@ -27,5 +27,13 @@ export const backlogTestIds = {
 	graphInfo: "backlog.graph-info",
 	graphEmpty: "backlog.graph-empty",
 	graphNode: (uid: string) => `backlog.graph-node.${uid}`,
+	/** The notes symbol of a row: `backlog.notes-peek.<item uid>`; its tooltip text is `backlog.notes-peek-text`. */
+	notesPeek: (uid: string) => `backlog.notes-peek.${uid}`,
+	notesPeekText: "backlog.notes-peek-text",
+	notesHead: "backlog.notes-head",
+	notesHeadContent: "backlog.notes-head-content",
+	notesHeadWarning: "backlog.notes-head-warning",
+	notesLogToggle: "backlog.notes-log-toggle",
+	notesLogEntry: (position: number) => `backlog.notes-log-entry.${position}`,
 	graphEdge: (id: string) => `backlog.graph-edge.${id}`,
 } as const;

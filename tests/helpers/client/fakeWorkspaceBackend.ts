@@ -45,6 +45,9 @@ export function fakeWorkspaceBackend(
 		details?: Record<string, ItemOut>;
 		/** The documents of the items by name (`GET backlog/items/{uid}/documents/{name}`). */
 		itemDocuments?: Record<string, DocumentOut>;
+		/** The head of the notes by item uid (`GET backlog/items/{uid}/notes/state`) and the log entries (`…/notes/entries`). */
+		notesStates?: Record<string, { state: string; content: string }>;
+		notesEntries?: Record<string, Array<{ position: number; day: string; topic: string; text: string }>>;
 		/** The sync state by project (`GET core/sync/{project}/status`); an in-sync state without changes if missing. */
 		syncStatus?: Record<string, SyncStatus>;
 		/** The preview of a sync (`GET core/sync/{project}/preview`) and the result of an execute. */
@@ -86,6 +89,15 @@ export function fakeWorkspaceBackend(
 		if (oneDocument && request.method === "GET") {
 			const found = options.itemDocuments?.[oneDocument[2]!];
 			return found ? Response.json(found) : Response.json({ code: "document_not_found", message: "Dokument gibt es nicht", details: {} }, { status: 400 });
+		}
+		const notesPart = /^backlog\/items\/([^/]+)\/notes\/(state|entries)$/.exec(path);
+		if (notesPart && request.method === "GET") {
+			const [, uid, part] = notesPart as unknown as [string, string, string];
+			if (part === "entries") return Response.json(options.notesEntries?.[uid] ?? []);
+			const head = options.notesStates?.[uid];
+			return head
+				? Response.json({ name: "notes.md", content: head.content, stamp: null, state: head.state, checksum: "0", last_entry: null, version: 1, hints: [] })
+				: Response.json({ code: "notes_not_found", message: "Keine Notes", details: {} }, { status: 400 });
 		}
 		const syncMatch = /^core\/sync\/([^/]+)\/(status|preview|execute)$/.exec(path);
 		if (syncMatch) {

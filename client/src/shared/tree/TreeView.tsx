@@ -20,6 +20,8 @@ interface TreeViewProps {
 	onToggle: (id: string) => void;
 	selectedId?: string | null;
 	onSelect: (id: string) => void;
+	/** Something shown at the right of the label at all times, e.g. a small symbol with a tooltip. */
+	trailing?: (node: TreeNode) => ReactNode;
 	/** Buttons shown at the right of a row while the pointer or the focus is on it. */
 	actions?: (node: TreeNode) => ReactNode;
 	/** Whether `source` may be dropped before, after, or into `target`; without it nothing can be dragged. */
@@ -34,7 +36,7 @@ interface TreeViewProps {
  * Keys: arrow down/up move, arrow right opens or goes to the first child, arrow left closes or goes to the
  * parent, Home/End jump, Enter or Space select.
  */
-export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, actions, canDrop, onDrop, ariaLabel }: TreeViewProps) {
+export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, trailing, actions, canDrop, onDrop, ariaLabel }: TreeViewProps) {
 	const rows = useMemo(() => flattenVisible(nodes, expanded), [nodes, expanded]);
 	const lines = useMemo(() => guideLines(rows), [rows]);
 	const [focusId, setFocusId] = useState<string | undefined>();
@@ -243,6 +245,7 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, acti
 						<Typography variant="body1" noWrap color={node.dashed ? "text.secondary" : undefined} sx={{ flexGrow: 1, minWidth: 0, fontSize: "1.1rem" }}>
 							{node.label}
 						</Typography>
+						{trailing?.(node)}
 						{node.progress && <ProgressRing done={node.progress.done} total={node.progress.total} />}
 						{node.count !== undefined && (
 							<Typography variant="caption" color="text.secondary" data-testid={sharedTestIds.treeCount(node.id)} sx={{ flexShrink: 0 }}>

@@ -199,3 +199,15 @@ describe("BacklogPage: drag and drop", () => {
 		await waitFor(() => expect(screen.getByTestId(ids.error).textContent).toContain("Kreis in den Parent-Verweisen"));
 	});
 });
+
+describe("BacklogPage: notes symbol", () => {
+	it("shows the notes symbol only at items that have notes", async () => {
+		await renderPage({ backlog: [item("e1", { type: "Epic", notes_state: "current" }), item("s1", { type: "Story", parent_uid: "e1", notes_state: "stale" }), item("s2", { type: "Story", parent_uid: "e1" })] });
+
+		await waitFor(() => expect(node("e1")).toBeTruthy());
+		expect(within(node("e1")).getByTestId(ids.notesPeek("e1")).getAttribute("data-state")).toBe("current");
+		fireEvent.click(screen.getByTestId(sharedTestIds.treeToggle("e1")));
+		await waitFor(() => expect(within(node("s1")).getByTestId(ids.notesPeek("s1")).getAttribute("data-state")).toBe("stale"));
+		expect(within(node("s2")).queryByTestId(ids.notesPeek("s2"))).toBeNull();
+	});
+});

@@ -95,3 +95,6 @@ export function placementOf(items: readonly IndexItem[], sourceUid: string, targ
 	const index = siblings.findIndex((item) => item.uid === target.uid);
 	return { parent, position: position === "before" ? index : index + 1 };
 }
+
+/** Whether the head of the notes needs a look: it is missing or no longer confirmed against the log. */
+export const needsAttention = (state: string | null | undefined) => state === "stale" || state === "missing";

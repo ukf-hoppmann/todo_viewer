@@ -85,9 +85,10 @@ Hand“). Der Viewer gleicht dann alle
 geändert hat, löscht nie und überträgt keine Konflikte; die bleiben offen (Zahl in
 der Projektkarte, ⚠ in der Sidebar), bis du sie im Sync-Dialog mit Vergleichsansicht
 entscheidest. Die einzige Ausnahme beim Löschen: Einträge, die du im Papierkorb
-**endgültig** löschst, nimmt der Viewer sofort aus den Spiegel-Dateien, sofern dort
+**endgültig** löschst, und Notizen oder Specs, die du in den Papierkorb legst,
+nimmt der Viewer sofort aus den Spiegel-Dateien, sofern dort
 seit dem letzten Sync nichts daran geändert wurde (sonst bleibt es ein Konflikt);
-vorher sichert er die Datenbank (`-purge.db`). Ein Pull wird abgewartet, Dateien mit Git-Merge-Markern oder ein
+vor dem endgültigen Löschen sichert er die Datenbank (`-purge.db`). Ein Pull wird abgewartet, Dateien mit Git-Merge-Markern oder ein
 fehlender Ordner pausieren das Projekt. Beim **Wechsel der Primärquelle** (Einstellungsmenü →
 Projekte) wird vorher synchronisiert und ein Backup der bisherigen
 Primärquelle angelegt; danach bleibt die bisherige Seite als Spiegel, die
@@ -126,7 +127,10 @@ Resolution) zurück nach `TODO.md`.
 Notizen und Specs lassen sich im Dokument-Dialog schreiben: „📝 ＋ Notiz-Eintrag“
 hängt einen datierten Eintrag (Thema, Besprochen, Entschieden, Offen) an,
 „✎ Bearbeiten“ ändert den ganzen Text einer Notiz oder Spec mit
-Markdown-Vorschau, „📐 ＋ Spec anlegen“ legt eine neue Spec an. Hat jemand das
+Markdown-Vorschau, „📐 ＋ Spec anlegen“ legt eine neue Spec an. Das Papierkorb-Symbol
+im Dokument-Dialog legt die Notiz oder Spec nach einer Rückfrage in den Papierkorb
+(bei der Notiz gehen Stand und Kurzfassung des Items mit; Wiederherstellen bringt
+sie zurück). Hat jemand das
 Dokument inzwischen geändert, bleibt der eigene Text stehen; „Aktuellen Stand
 anzeigen“ zeigt die fremde Fassung, erst „Trotzdem speichern“ überschreibt sie.
 „🗑 Löschen“ im Detail-Panel verschiebt einen Eintrag in den Papierkorb. Hat
@@ -247,7 +251,9 @@ Papierkorb nur nach Suche und Projekten. Die Suche gilt für alle Tabs gemeinsam
   gefiltert nach dem Suchtext.
   „Wiederherstellen“ holt ein Item samt Kindern zurück, „Endgültig löschen“
   entfernt es nach einer Bestätigung samt Kindern, Notizen und Specs (beides als
-  Icon-Buttons in der Zeile). Mit den Checkboxen vor den Zeilen und dem Haken oben
+  Icon-Buttons in der Zeile). Gelöschte Notizen und Specs stehen als eigene Zeilen
+  mit Dokument-Symbol dabei; Wiederherstellen ist abgelehnt, wenn es das Dokument
+  wieder gibt oder das Item selbst im Papierkorb liegt. Mit den Checkboxen vor den Zeilen und dem Haken oben
   (alle an/ab) lassen sich mehrere Items wählen und gemeinsam wiederherstellen oder
   nach einer Bestätigung endgültig löschen. Ist ein Item mit seinem Vorfahren gewählt,
   wird nur der Vorfahre angefragt; was nicht klappt, wird mit Grund genannt.

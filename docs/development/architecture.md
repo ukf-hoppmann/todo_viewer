@@ -80,12 +80,13 @@ rebuild (`STORY-084`).
 - An owner MAY mark its mirror entries as ephemeral. For such entries a
   deletion in the database is carried to the files without a conflict, also
   by the automatic sync; a deletion in the files stays a conflict.
-- A deletion the owner performs on purpose (permanent deletion from the trash)
-  MUST be carried to the files of a mirrored project right away, without a
-  conflict, but only if the entry in the files is unchanged since the last
-  sync; if it changed, it stays a conflict. The automatic sync itself still
-  MUST NOT delete anything. The database MUST be backed up before such a
-  deletion.
+- A deletion the owner performs on purpose MUST be carried to the files of a
+  mirrored project right away, without a conflict, but only if the entry in
+  the files is unchanged since the last sync; if it changed, it stays a
+  conflict. Deletions on purpose are the permanent deletion from the trash
+  and moving a document of a backlog item (notes, spec) to the trash
+  (`STORY-094`). The automatic sync itself still MUST NOT delete anything.
+  The database MUST be backed up before a permanent deletion.
 - Database: writes MUST be transactional and MUST abort with
   `version_conflict` instead of overwriting an element that changed since it
   was read. The schema is fixed: no free-form extra fields; fixed value lists

@@ -20,7 +20,7 @@ interface TreeViewProps {
 	onToggle: (id: string) => void;
 	selectedId?: string | null;
 	onSelect: (id: string) => void;
-	/** Something shown at the right of the label at all times, e.g. a small symbol with a tooltip. */
+	/** Something shown at the right of the label while the pointer or the focus is on the row, e.g. a small symbol with a tooltip. */
 	trailing?: (node: TreeNode) => ReactNode;
 	/** Buttons shown at the right of a row while the pointer or the focus is on it. */
 	actions?: (node: TreeNode) => ReactNode;
@@ -245,7 +245,11 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, trai
 						<Typography variant="body1" noWrap color={node.dashed ? "text.secondary" : undefined} sx={{ flexGrow: 1, minWidth: 0, fontSize: "1.1rem" }}>
 							{node.label}
 						</Typography>
-						{trailing?.(node)}
+						{trailing && (
+							<Box className="tree-actions" sx={{ display: "flex", alignItems: "center" }}>
+								{trailing(node)}
+							</Box>
+						)}
 						{node.progress && <ProgressRing done={node.progress.done} total={node.progress.total} />}
 						{node.count !== undefined && (
 							<Typography variant="caption" color="text.secondary" data-testid={sharedTestIds.treeCount(node.id)} sx={{ flexShrink: 0 }}>

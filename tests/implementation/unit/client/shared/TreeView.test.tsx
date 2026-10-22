@@ -271,3 +271,13 @@ describe("TreeView: drag and drop", () => {
 		expect(onDrop).not.toHaveBeenCalled();
 	});
 });
+
+describe("TreeView: trailing", () => {
+	it("shows the trailing content of a row inside a container that appears only while the pointer is on the row", () => {
+		render(<TreeView ariaLabel="Backlog" nodes={buildTree(flat)} expanded={new Set()} onToggle={() => undefined} onSelect={() => undefined} trailing={(node) => <span data-testid={`mark.${node.id}`} />} />);
+
+		const mark = screen.getByTestId("mark.e1");
+		expect(screen.getByTestId(sharedTestIds.treeNode("e1")).contains(mark)).toBe(true);
+		expect(mark.parentElement?.classList.contains("tree-actions")).toBe(true);
+	});
+});

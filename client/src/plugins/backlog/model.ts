@@ -98,3 +98,36 @@ export function placementOf(items: readonly IndexItem[], sourceUid: string, targ
 
 /** Whether the head of the notes needs a look: it is missing or no longer confirmed against the log. */
 export const needsAttention = (state: string | null | undefined) => state === "stale" || state === "missing";
+
+/** One entry of the head of the notes: `- Key: text`, with the bullets below it. */
+export interface HeadSection {
+	key: string;
+	text: string;
+	items: string[];
+}
+
+/** The fixed keys of the head and the id of their translation (`notes.key.<id>`). */
+export const HEAD_KEYS: Record<string, string> = {
+	"Goal/Status": "goalStatus",
+	"Next step": "nextStep",
+	Open: "open",
+	Decided: "decided",
+	References: "references",
+};
+
+/** Splits the head into its entries; empty when the text is not in the form `- Key: text` (then it is shown as it is). */
+export function parseHead(content: string): HeadSection[] {
+	const sections: HeadSection[] = [];
+	for (const raw of content.split("\n")) {
+		const line = raw.trimEnd();
+		const last = sections.at(-1);
+		const top = /^- ([^:\n]{1,40}):\s*(.*)$/.exec(line);
+		const bullet = /^\s+- (.*)$/.exec(line);
+		if (top) sections.push({ key: top[1]!, text: top[2]!, items: [] });
+		else if (!last || !line.trim()) continue;
+		else if (bullet) last.items.push(bullet[1]!);
+		else if (/^\s/.test(line) && last.items.length > 0) last.items[last.items.length - 1] += ` ${line.trim()}`;
+		else last.text = `${last.text} ${line.trim()}`.trim();
+	}
+	return sections;
+}

@@ -3,6 +3,7 @@ import { Box, Tooltip, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useGetNotesStateQuery } from "./api";
+import { HeadSections } from "./HeadSections";
 import { useNotesMarkText } from "./useNotesMarkText";
 import { backlogTestIds as ids } from "./testIds";
 
@@ -20,20 +21,20 @@ export function NotesPeek({ uid, state }: { uid: string; state: string }) {
 		<Tooltip
 			onOpen={() => setAsked(true)}
 			placement="right"
-			slotProps={{ tooltip: { sx: { maxWidth: 440, p: 1 } } }}
+			slotProps={{
+				tooltip: {
+					sx: { maxWidth: 460, p: 1.5, bgcolor: "background.paper", color: "text.primary", border: 1, borderColor: "divider", boxShadow: 4 },
+				},
+			}}
 			title={
-				<Box data-testid={ids.notesPeekText}>
+				<Box data-testid={ids.notesPeekText} sx={{ maxHeight: 380, overflowY: "auto" }}>
 					{mark && (
-						<Typography variant="caption" sx={{ display: "block", fontWeight: "bold", mb: 0.5 }}>
+						<Typography variant="caption" component="div" sx={{ color: "warning.main", fontWeight: "bold", mb: 0.75 }}>
 							{mark}
 						</Typography>
 					)}
 					{!data && asked && <Typography variant="caption">…</Typography>}
-					{data && data.content && (
-						<Typography variant="caption" component="div" sx={{ whiteSpace: "pre-wrap", maxHeight: 320, overflow: "hidden" }}>
-							{data.content}
-						</Typography>
-					)}
+					{data && data.content && <HeadSections content={data.content} compact />}
 				</Box>
 			}
 		>

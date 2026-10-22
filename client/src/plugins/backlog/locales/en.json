@@ -127,7 +127,14 @@
 		"noHead": "No state recorded yet.",
 		"stale": "The state is not current: it was not confirmed after the latest log entry.",
 		"missing": "The notes have no state yet.",
-		"peek": "State of the notes"
+		"peek": "State of the notes",
+		"key": {
+			"goalStatus": "Goal / status",
+			"nextStep": "Next step",
+			"open": "Open",
+			"decided": "Decided",
+			"references": "References"
+		}
 	},
 	"graph": {
 		"info": "{{n}} of {{total}} items have dependencies",

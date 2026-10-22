@@ -5,6 +5,8 @@ export interface TreeNode {
 	label: string;
 	/** A short text next to the label, e.g. the label of the item (`STORY-012`). */
 	badge?: string;
+	/** A color for the badge (any CSS color), e.g. the priority of the item; without it the badge is dimmed. */
+	badgeColor?: string;
 	/** A color for the status dot (any CSS color). */
 	statusColor?: string;
 	/** Its guide line is dashed, the label dimmed and the status dot hollow, e.g. an item that is not required for its parent. */

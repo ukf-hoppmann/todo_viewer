@@ -59,6 +59,7 @@ export function toFlatNodes(items: readonly IndexItem[], extendedMarking = false
 		parentId: item.parent_uid,
 		label: item.title,
 		badge: item.label,
+		badgeColor: item.priority === "Normal" ? undefined : priorityColor(item.priority),
 		statusColor: statusColor(item.status),
 		dashed: item.parent_uid !== null && item.required_for_parent === false,
 		progress: item.progress ?? undefined,

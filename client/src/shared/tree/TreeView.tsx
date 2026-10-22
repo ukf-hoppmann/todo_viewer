@@ -238,7 +238,7 @@ export function TreeView({ nodes, expanded, onToggle, selectedId, onSelect, trai
 							/>
 						)}
 						{node.badge && (
-							<Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+							<Typography variant="caption" sx={{ flexShrink: 0, color: node.badgeColor ?? "text.secondary", ...(node.badgeColor && { fontWeight: 600 }) }}>
 								{node.badge}
 							</Typography>
 						)}

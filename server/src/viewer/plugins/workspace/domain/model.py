@@ -93,6 +93,21 @@ class Element:
     title: str = ""
 
 
+@dataclass(frozen=True)
+class TrashEntry:
+    """Ein Eintrag im Papierkorb. Elemente erscheinen ohne `owner_uid`; ein Plugin kann Einträge beisteuern, die
+    keine Elemente sind (ein gelöschtes Dokument eines Items): `label` und `title` zeigen, was es war, und
+    `owner_uid` nennt das Element, zu dem es gehört."""
+
+    uid: str
+    project_uid: str
+    kind: str
+    label: str
+    title: str
+    deleted_at: datetime | None
+    owner_uid: str | None = None
+
+
 def format_label(prefix: str, number: int) -> str:
     """`STORY` und 12 → `STORY-012`."""
     return f"{prefix}-{number:03d}"

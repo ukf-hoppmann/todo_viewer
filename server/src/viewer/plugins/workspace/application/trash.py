@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 from viewer.core.application.ports import BackupMaker, Clock, Database, EventBus, Transaction
 from viewer.core.domain.errors import BackupFailed, NotFound, VersionConflict
@@ -13,8 +13,9 @@ from viewer.plugins.workspace.application.ports import (
     ProjectStore,
     Purger,
     RestoreGuard,
+    TrashSource,
 )
-from viewer.plugins.workspace.domain.model import Element, NotDeleted, ProjectInTrash
+from viewer.plugins.workspace.domain.model import Element, NotDeleted, ProjectInTrash, TrashEntry
 
 CHANGED_TOPIC = "workspace.element.changed"
 
@@ -59,6 +60,7 @@ class TrashService:
         self._events = events
         self._backups = backups
         self._handlers: dict[str, KindHandlers] = {}
+        self._sources: list[TrashSource] = []
 
     # --- Anmeldung der Plugins (`TrashRegistry`) -----------------------------------------------------------------
 
@@ -71,6 +73,9 @@ class TrashService:
         purger: Purger | None = None,
     ) -> None:
         self._handlers[kind] = KindHandlers(children, restore_guard, purger)
+
+    def register_source(self, source: TrashSource) -> None:
+        self._sources.append(source)
 
     # --- Fälle ---------------------------------------------------------------------------------------------------
 
@@ -94,16 +99,25 @@ class TrashService:
         self._announce("deleted", uids)
         return DeleteOutcome(False, len(descendants), len(uids))
 
-    def list_trash(self, project_uids: Sequence[str] | None, query: str) -> list[Element]:
+    def list_trash(self, project_uids: Sequence[str] | None, query: str) -> list[TrashEntry]:
+        """Elemente und Einträge der Plugins im Papierkorb, neueste zuerst."""
         with self._database.transaction() as tx:
-            return self._elements.list_deleted(tx, project_uids, query)
+            entries = [
+                TrashEntry(e.uid, e.project_uid, e.kind, e.label, e.title, e.deleted_at)
+                for e in self._elements.list_deleted(tx, project_uids, query)
+            ]
+            for source in self._sources:
+                entries.extend(source.list_deleted(tx, project_uids, query))
+        return sorted(entries, key=lambda entry: entry.deleted_at or datetime.min.replace(tzinfo=UTC), reverse=True)
 
     def restore_elements(self, uids: Sequence[str]) -> list[str]:
         """Holt die Elemente und ihre mit ihnen gelöschten Nachkommen zurück. Gibt alle wiederhergestellten `uid`s
         zurück."""
         restored: list[str] = []
+        entries: list[str] = []
         with self._database.transaction() as tx:
-            for root in self._roots(tx, uids):
+            element_uids, own = self._split(tx, uids)
+            for root in self._roots(tx, element_uids):
                 self._ensure_deleted(tx, root)
                 project = self._projects.get(tx, root.project_uid)
                 if project is None or project.deleted_at is not None:
@@ -118,16 +132,22 @@ class TrashService:
                         guard(tx, entry)
                     self._elements.set_deleted(tx, entry.uid, None, now)
                     restored.append(entry.uid)
+            for source, uid in own:
+                source.restore(tx, uid)
+                entries.append(uid)
         self._announce("restored", restored)
-        return restored
+        self._announce("entry_restored", entries)
+        return [*restored, *entries]
 
     def purge_elements(self, uids: Sequence[str]) -> list[str]:
         """Löscht die Elemente aus dem Papierkorb endgültig, mit allen Nachkommen. Gibt die gelöschten `uid`s zurück.
         Vorher wird die Datenbank gesichert (Architektur §2); scheitert das, bleibt alles stehen."""
         self._back_up()
         purged: list[str] = []
+        entries: list[str] = []
         with self._database.transaction() as tx:
-            for root in self._roots(tx, uids):
+            element_uids, own = self._split(tx, uids)
+            for root in self._roots(tx, element_uids):
                 self._ensure_deleted(tx, root)
                 everything = [root, *self._descendants(tx, root, lambda e: True)]
                 for entry in reversed(everything):  # Kinder vor ihren Eltern
@@ -136,8 +156,12 @@ class TrashService:
                         purger(tx, entry.uid)
                     self._elements.delete(tx, entry.uid)
                     purged.append(entry.uid)
+            for source, uid in own:
+                source.purge(tx, uid)
+                entries.append(uid)
         self._announce("purged", purged)
-        return purged
+        self._announce("entry_purged", entries)
+        return [*purged, *entries]
 
     # --- Hilfen --------------------------------------------------------------------------------------------------
 
@@ -148,6 +172,20 @@ class TrashService:
             raise BackupFailed(
                 "Die Datenbank konnte nicht gesichert werden; nichts wurde gelöscht", details={"reason": str(exc)}
             ) from exc
+
+    def _split(self, tx: Transaction, uids: Sequence[str]) -> tuple[list[str], list[tuple[TrashSource, str]]]:
+        """Teilt die gewählten `uid`s in Elemente und Einträge, die ein Plugin hält; unbekannte werfen `NotFound`."""
+        elements: list[str] = []
+        own: list[tuple[TrashSource, str]] = []
+        for uid in dict.fromkeys(uids):
+            if self._elements.get(tx, uid) is not None:
+                elements.append(uid)
+                continue
+            source = next((s for s in self._sources if s.get(tx, uid) is not None), None)
+            if source is None:
+                raise NotFound(f"Element {uid} gibt es nicht", details={"uid": uid})
+            own.append((source, uid))
+        return elements, own
 
     def _require(self, tx: Transaction, uid: str) -> Element:
         element = self._elements.get(tx, uid)

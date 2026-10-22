@@ -13,7 +13,7 @@ from typing import Protocol
 
 from viewer.core.application.ports import Transaction
 from viewer.core.domain.plugin import ElementKind
-from viewer.plugins.workspace.domain.model import Element, Link, LinkView, Project
+from viewer.plugins.workspace.domain.model import Element, Link, LinkView, Project, TrashEntry
 
 
 class ElementRegistry(Protocol):
@@ -86,6 +86,22 @@ RestoreGuard = Callable[[Transaction, Element], None]
 Purger = Callable[[Transaction, str], None]
 
 
+class TrashSource(Protocol):
+    """Einträge im Papierkorb, die ein Plugin selbst hält (keine Elemente). Der Papierkorb listet sie mit und gibt
+    Wiederherstellen und endgültiges Löschen an das Plugin weiter; alle Aufrufe laufen in der Transaktion des
+    Papierkorbs."""
+
+    def list_deleted(self, tx: Transaction, project_uids: Sequence[str] | None, query: str) -> list[TrashEntry]: ...
+
+    def get(self, tx: Transaction, uid: str) -> TrashEntry | None: ...
+
+    def restore(self, tx: Transaction, uid: str) -> None:
+        """Holt den Eintrag zurück; wirft einen `DomainError`, wenn eine Regel des Plugins dagegen spricht."""
+        ...
+
+    def purge(self, tx: Transaction, uid: str) -> None: ...
+
+
 class TrashRegistry(Protocol):
     """Hier melden die Plugins beim Bau an, wie der Papierkorb mit ihren Elementtypen umgehen soll."""
 
@@ -97,6 +113,10 @@ class TrashRegistry(Protocol):
         restore_guard: RestoreGuard | None = None,
         purger: Purger | None = None,
     ) -> None: ...
+
+    def register_source(self, source: TrashSource) -> None:
+        """Meldet Einträge an, die das Plugin selbst im Papierkorb hält."""
+        ...
 
 
 class Links(Protocol):

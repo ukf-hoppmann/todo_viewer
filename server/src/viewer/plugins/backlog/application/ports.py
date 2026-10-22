@@ -121,3 +121,38 @@ class NotesRepository(Protocol):
     def rename(self, tx: Transaction, item_uid: str, new: str) -> None: ...
 
     def delete(self, tx: Transaction, item_uid: str) -> None: ...
+
+
+@dataclass(frozen=True)
+class TrashedDocument:
+    """Ein gelöschtes Dokument als Schnappschuss. `content` ist der ganze Text (eine Notiz mit Titelzeile und Kopf),
+    `summary` die kurz davor gültige Kurzfassung des Items (nur bei Notizen)."""
+
+    uid: str
+    item_uid: str
+    name: str
+    kind: str
+    content: str
+    summary: str | None
+    deleted_at: datetime
+
+
+@dataclass(frozen=True)
+class TrashedListing:
+    """Ein Schnappschuss mit dem, was der Papierkorb zur Anzeige braucht."""
+
+    document: TrashedDocument
+    item_label: str
+    project_uid: str
+
+
+class TrashedDocumentRepository(Protocol):
+    def insert(self, tx: Transaction, document: TrashedDocument) -> None: ...
+
+    def get(self, tx: Transaction, uid: str) -> TrashedDocument | None: ...
+
+    def list_deleted(self, tx: Transaction, project_uids: Sequence[str] | None, query: str) -> list[TrashedListing]:
+        """Die gelöschten Dokumente, neueste zuerst; optional nach Projekten und Text in Label oder Name gefiltert."""
+        ...
+
+    def delete(self, tx: Transaction, uid: str) -> None: ...

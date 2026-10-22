@@ -7,9 +7,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from viewer.core.application.ports import Transaction
-from workspace_env import Env
-
 from viewer.plugins.workspace.domain.model import TrashEntry
+from workspace_env import Env
 
 
 class FakeSource:
@@ -21,7 +20,9 @@ class FakeSource:
         self.purged: list[str] = []
         self.queries: list[tuple[Sequence[str] | None, str]] = []
 
-    def add(self, uid: str, project_uid: str, deleted_at: datetime, label: str = "TASK-001", title: str = "x_spec.md") -> None:
+    def add(
+        self, uid: str, project_uid: str, deleted_at: datetime, label: str = "TASK-001", title: str = "x_spec.md"
+    ) -> None:
         self.entries[uid] = TrashEntry(uid, project_uid, "document", label, title, deleted_at, "owner-1")
 
     def list_deleted(self, tx: Transaction, project_uids: Sequence[str] | None, query: str) -> list[TrashEntry]:

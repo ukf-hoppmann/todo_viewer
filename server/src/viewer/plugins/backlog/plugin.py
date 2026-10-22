@@ -9,6 +9,7 @@ from viewer.core.application.ports import Transaction
 from viewer.core.application.sync import MirrorBinding
 from viewer.core.domain.errors import DomainError
 from viewer.core.domain.plugin import ElementKind
+from viewer.plugins.backlog.application.document_trash import DocumentTrash
 from viewer.plugins.backlog.application.documents import DocumentService
 from viewer.plugins.backlog.application.editing import EditService
 from viewer.plugins.backlog.application.items import ItemService
@@ -61,7 +62,18 @@ def _build(context: PluginContext) -> BacklogServices:
     )
     trashed = SqlTrashedDocumentRepository()
     document_service = DocumentService(
-        items, repository, documents, notes, trashed, workspace.registry, context.database, context.clock, context.events
+        items,
+        repository,
+        documents,
+        notes,
+        trashed,
+        workspace.registry,
+        context.database,
+        context.clock,
+        context.events,
+    )
+    workspace.trash.register_source(
+        DocumentTrash(trashed, documents, notes, repository, workspace.registry, context.clock)
     )
     participant = BacklogParticipant(repository, documents, notes, workspace.registry, context.database, context.clock)
     notes_state = NotesStateService(items, notes, context.database, context.clock, context.events)

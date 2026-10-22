@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 from migration_helpers import ordered, plugin, versions
 from sqlalchemy import text
+from viewer.core.application.plugin import PluginDefinition
 from viewer.core.infrastructure.database import MigrationRunner, SqliteDatabase
 from viewer.plugins.backlog.application.ports import TrashedDocument
 from viewer.plugins.backlog.infrastructure.database.schema import MIGRATIONS
@@ -16,7 +17,7 @@ NOW = "2026-10-22T12:00:00+00:00"
 AT = datetime(2026, 10, 22, 12, tzinfo=UTC)
 
 
-def _defs():  # type: ignore[no-untyped-def]
+def _defs() -> list[PluginDefinition]:
     return ordered(
         plugin("workspace", migrations=WORKSPACE),
         plugin("backlog", requires=("workspace",), migrations=MIGRATIONS),

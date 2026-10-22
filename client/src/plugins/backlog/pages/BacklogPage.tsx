@@ -7,6 +7,7 @@ import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListItemsQuery } from "../api";
 import { ItemDetail } from "../ItemDetail";
 import { collapsibleIds, filterItems, groupByProject, placementOf, projectProgress, toFlatNodes } from "../model";
+import { NotesPeek } from "../NotesPeek";
 import { useBacklogState } from "../state";
 import { backlogTestIds } from "../testIds";
 import { useItemWrite } from "../useItemWrite";
@@ -92,6 +93,10 @@ export default function BacklogPage() {
 								onToggle={state.toggleCollapsed}
 								selectedId={state.selected}
 								onSelect={state.setSelected}
+								trailing={(node) => {
+									const notesState = projectItems.find((item) => item.uid === node.id)?.notes_state;
+									return notesState ? <NotesPeek uid={node.id} state={notesState} /> : null;
+								}}
 							/>
 						</Box>
 					);

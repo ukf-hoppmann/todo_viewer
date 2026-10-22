@@ -121,6 +121,14 @@
 		"currentState": "aktueller Stand",
 		"toc": "Inhaltsverzeichnis"
 	},
+	"notes": {
+		"head": "Stand",
+		"log": "Protokoll",
+		"noHead": "Noch kein Stand eingetragen.",
+		"stale": "Der Stand ist nicht aktuell: Er wurde nach dem letzten Protokolleintrag nicht bestätigt.",
+		"missing": "Die Notizen haben noch keinen Stand.",
+		"peek": "Stand der Notizen"
+	},
 	"graph": {
 		"info": "{{n}} von {{total}} Items haben Abhängigkeiten",
 		"hint": "Klick wählt, ⌘/Strg/⇧-Klick markiert weitere, Esc setzt zurück",

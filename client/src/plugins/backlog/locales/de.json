@@ -127,7 +127,14 @@
 		"noHead": "Noch kein Stand eingetragen.",
 		"stale": "Der Stand ist nicht aktuell: Er wurde nach dem letzten Protokolleintrag nicht bestätigt.",
 		"missing": "Die Notizen haben noch keinen Stand.",
-		"peek": "Stand der Notizen"
+		"peek": "Stand der Notizen",
+		"key": {
+			"goalStatus": "Ziel / Status",
+			"nextStep": "Nächster Schritt",
+			"open": "Offen",
+			"decided": "Beschlossen",
+			"references": "Verweise"
+		}
 	},
 	"graph": {
 		"info": "{{n}} von {{total}} Items haben Abhängigkeiten",

@@ -31,6 +31,8 @@ export const backlogTestIds = {
 	notesPeek: (uid: string) => `backlog.notes-peek.${uid}`,
 	notesPeekText: "backlog.notes-peek-text",
 	notesHead: "backlog.notes-head",
+	/** One entry of the head: `backlog.notes-head-section.<key>`, e.g. `Next step`. */
+	notesHeadSection: (key: string) => `backlog.notes-head-section.${key}`,
 	notesHeadContent: "backlog.notes-head-content",
 	notesHeadWarning: "backlog.notes-head-warning",
 	notesLogToggle: "backlog.notes-log-toggle",

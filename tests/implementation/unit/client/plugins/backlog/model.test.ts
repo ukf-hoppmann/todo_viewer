@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { item } from "../../../../../helpers/client/backlogFixtures";
-import { collapsibleIds, filterItems, groupByProject, placementOf, projectProgress, toFlatNodes } from "../../../../../../client/src/plugins/backlog/model";
+import { collapsibleIds, filterItems, groupByProject, parseHead, placementOf, projectProgress, toFlatNodes } from "../../../../../../client/src/plugins/backlog/model";
 
 const none = { hiddenStatuses: new Set<string>(), hiddenPriorities: new Set<string>(), search: "" };
 
@@ -126,5 +126,28 @@ describe("placementOf", () => {
 
 	it("lets an epic move among the roots", () => {
 		expect(placementOf(items, "e2", "e1", "before")).toEqual({ parent: null, position: 0 });
+	});
+});
+
+describe("parseHead", () => {
+	const head = "- Goal/Status: läuft\n- Next step: weiter\n- Open:\n  - eins\n  - zwei (2026-10-21)\n- Decided:\n  - lang\n    weiter\n- References: Spec A";
+
+	it("splits the head into keys with text and bullets", () => {
+		expect(parseHead(head)).toEqual([
+			{ key: "Goal/Status", text: "läuft", items: [] },
+			{ key: "Next step", text: "weiter", items: [] },
+			{ key: "Open", text: "", items: ["eins", "zwei (2026-10-21)"] },
+			{ key: "Decided", text: "", items: ["lang weiter"] },
+			{ key: "References", text: "Spec A", items: [] },
+		]);
+	});
+
+	it("joins a continuation line to the text of its key", () => {
+		expect(parseHead("- Goal/Status: a\n  b")).toEqual([{ key: "Goal/Status", text: "a b", items: [] }]);
+	});
+
+	it("finds nothing in text that is not in the form of a head", () => {
+		expect(parseHead("Nur ein Absatz.\n\n- ohne Doppelpunkt")).toEqual([]);
+		expect(parseHead("")).toEqual([]);
 	});
 });

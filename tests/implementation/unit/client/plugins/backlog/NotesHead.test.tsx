@@ -26,7 +26,8 @@ describe("NotesHead in the item detail", () => {
 	it("shows the head above the documents and keeps the log folded", async () => {
 		await renderHead("current");
 
-		await waitFor(() => expect(screen.getByTestId(ids.notesHeadContent).textContent).toContain("Goal/Status: läuft"));
+		await waitFor(() => expect(screen.getByTestId(ids.notesHeadContent).textContent).toContain("Ziel / Status"));
+		expect(screen.getByTestId(ids.notesHeadSection("Next step")).textContent).toContain("weiter");
 		expect(screen.queryByTestId(ids.notesHeadWarning)).toBeNull();
 		expect(screen.queryByTestId(ids.notesLogEntry(1))).toBeNull();
 	});
@@ -82,7 +83,7 @@ describe("NotesPeek in the list", () => {
 
 		fireEvent.mouseOver(screen.getByTestId(ids.notesPeek("t1")));
 
-		await waitFor(() => expect(screen.getByTestId(ids.notesPeekText).textContent).toContain("Next step: weiter"));
+		await waitFor(() => expect(screen.getByTestId(ids.notesPeekText).textContent).toContain("weiter"));
 		expect(backend.calls("GET", "notes/state")).toHaveLength(1);
 	});
 });

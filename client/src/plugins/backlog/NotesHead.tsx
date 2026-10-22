@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MarkdownView } from "../../shared";
 import { useGetNotesStateQuery, useListNotesEntriesQuery, type ItemOut } from "./api";
+import { HeadSections } from "./HeadSections";
 import { needsAttention } from "./model";
 import { useNotesMarkText } from "./useNotesMarkText";
 import { backlogTestIds as ids } from "./testIds";
@@ -38,7 +39,7 @@ export function NotesHead({ item }: { item: ItemOut }) {
 			</Box>
 			<Box data-testid={ids.notesHeadContent}>
 				{head?.content ? (
-					<MarkdownView source={head.content} />
+					<HeadSections content={head.content} />
 				) : (
 					<Typography variant="body2" color="text.secondary">
 						{t("notes.noHead")}

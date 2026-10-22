@@ -122,6 +122,14 @@ def create_app(
         "workspace.element.changed",
         lambda event: sync.carry_purged(event.payload["uids"]) if event.payload.get("change") == "purged" else None,
     )
+    # Ebenso ein Dokument, das der Owner in den Papierkorb legt: seine Datei folgt sofort (§2); sonst bliebe sie als
+    # Konflikt `deleted_in_database` stehen.
+    events.subscribe(
+        "backlog.document.changed",
+        lambda event: sync.carry_purged([event.payload["entry_key"]])
+        if event.payload.get("change") == "deleted" and event.payload.get("entry_key")
+        else None,
+    )
 
     mcp = create_mcp_host(host)
 

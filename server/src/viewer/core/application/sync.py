@@ -355,8 +355,9 @@ class SyncService:
         return status
 
     def carry_purged(self, uids: Collection[str]) -> None:
-        """Trägt endgültig gelöschte Elemente in die Dateien aller Spiegel-Projekte (Architektur §2): nur ihre
-        Einträge und Dokumente, nur wo die Datei seit dem letzten Sync unverändert ist; alles andere bleibt offen.
+        """Trägt gewollte Löschungen (endgültig gelöschte Elemente, ein Dokument im Papierkorb) in die Dateien aller
+        Spiegel-Projekte (Architektur §2): nur diese Einträge und ihre Dokumente (`uid` oder `uid/<teil>`), nur wo
+        die Datei seit dem letzten Sync unverändert ist; alles andere bleibt offen.
         Wirft nicht: die Datenbank ist schon geändert, ein Hindernis (Git-Operation, geänderte Datei) lässt den
         Eintrag als Konflikt stehen."""
         purged = frozenset(uids)

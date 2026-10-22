@@ -2,9 +2,9 @@
 
 ## State
 
-Lösch-Befehl für Notiz- und Spec-Dokumente über API, MCP und Harness-Helfer; die Spec STORY-094_spec.md ist vollständig entschieden, bereit für den Umsetzungsplan. Kern: Löschen legt das Dokument in den zentralen Papierkorb (Workspace-Papierkorb bekommt von Plugins beigesteuerte Einträge); mit der Notiz gehen Kopf und Kurzfassung, beim Wiederherstellen kommen sie zurück; Haupt- und Themen-Specs gleich. Spiegel: Datei wird sofort entfernt, konfliktfrei wenn unverändert (Architekturregel §2 dafür erweitert, vom Owner freigegeben). Wiederherstellen wird bei gleichnamigem Dokument oder Item im Papierkorb abgewiesen. Noch kein Code.
+Lösch-Befehl für Notiz- und Spec-Dokumente umgesetzt mit v0.9.5: API, MCP, Harness-Helfer, Oberfläche, zentraler Papierkorb, Spiegel. Status Awaiting confirmation. Offen: Container neu bauen (Backup davor, Migration 4) und in der Oberfläche prüfen; Claude_Harness-Commit d81e215 nicht gepusht.
 
-State confirmed after entry 2026-10-22 — Entscheidung zu den offenen Entwurfsfragen (aeca69f3d479)
+State confirmed after entry 2026-10-22 — Umgesetzt (v0.9.5) (6c5a0b595638)
 
 ## 2026-10-22 — Löschverhalten von Notiz- und Spec-Dokumenten
 
@@ -65,3 +65,20 @@ State confirmed after entry 2026-10-22 — Entscheidung zu den offenen Entwurfsf
 - Spiegel: Ein Dokument, das in den Papierkorb kommt, wird aus den Spiegel-Dateien entfernt, ohne Konflikt, sofern die Datei seit dem letzten Abgleich unverändert ist; sonst bleibt es ein Konflikt. Wiederherstellen schreibt die Datei wieder. Der Owner gibt dafür die Erweiterung der Architekturregel §2 (gewolltes Löschen) frei. Abgelehnt: Formatänderung (Markierung oder Papierkorb-Ordner), weil deutlich aufwendiger (Format v2, Golden Files).
 - Anzeige: Gelöschte Dokumente erscheinen als eigene Einträge im zentralen Papierkorb; der Workspace-Papierkorb bekommt dafür Einträge, die Plugins beisteuern. Abgelehnt: Papierkorb je Item in der Detailansicht.
 - Wiederherstellen wird abgewiesen, wenn inzwischen ein gleichnamiges Dokument existiert (document_exists) oder das Item selbst im Papierkorb liegt.
+
+## 2026-10-22 — Umgesetzt (v0.9.5)
+
+### Discussed
+
+- Umsetzung nach dem Plan in sieben Abschnitten; Server- und Client-Suite grün, Browser-Check mit synthetischen Daten für Löschen, Papierkorb-Zeile und Wiederherstellen einer Spec.
+- Abweichung vom Plan: statt eines neuen Fehlers item_in_trash wird der vorhandene item_deleted des Backlogs wiederverwendet.
+- Nicht in der Oberfläche angesehen: Notiz löschen und wiederherstellen, endgültiges Löschen (nur per Test abgedeckt). Der Container läuft noch ohne Migration 4.
+
+### Decided
+
+- Die Story ist umgesetzt und wartet auf die Bestätigung des Owners.
+
+### Open
+
+- Container neu bauen (geprüftes Backup davor), dann in der Oberfläche prüfen.
+- Die Änderung im Repository Claude_Harness (d81e215) ist lokal committet, nicht gepusht.

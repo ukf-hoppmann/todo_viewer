@@ -117,6 +117,11 @@ def create_app(
     _register_element_kinds(host, database)
     # Ändert sich ein Projekt (Spiegel, Auto-Sync), setzt der Sync seinen Termin neu.
     events.subscribe("workspace.project.changed", lambda event: sync.refresh_auto())
+    # Ein endgültig gelöschtes Element geht sofort aus den Spiegel-Dateien, damit daraus kein Konflikt wird (§2).
+    events.subscribe(
+        "workspace.element.changed",
+        lambda event: sync.carry_purged(event.payload["uids"]) if event.payload.get("change") == "purged" else None,
+    )
 
     mcp = create_mcp_host(host)
 

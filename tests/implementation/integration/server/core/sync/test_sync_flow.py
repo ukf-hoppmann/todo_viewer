@@ -14,7 +14,7 @@ from mirror_plugin.plugin import MIRROR_PLUGIN, MirrorTestServices
 from starlette.testclient import TestClient
 from sync_fakes import FILE, MemoryProjects
 from viewer.app.composition import create_app
-from viewer.core.application.sync import MirrorConfig
+from viewer.core.application.sync import MirrorConfig, SyncChanges
 from viewer.core.domain.events import Event
 from viewer.core.domain.settings import Settings
 
@@ -147,6 +147,45 @@ def test_deletion_needs_decision_and_confirmation(env: Env) -> None:
     assert env.services.titles(P) == {"TASK-001": "Eins"}
     done = env.sync(decisions=[{"uid": U1, "choice": "files"}], delete_missing=True)
     assert done.status_code == 200 and env.services.titles(P) == {}
+
+
+def _purge(env: Env, uid: str) -> None:
+    """Wie das endgültige Löschen im Papierkorb: der Eintrag verschwindet aus der DB, dann kommt das Ereignis."""
+    entry = next(e for e in env.services.participant.load(P) if e.uid == uid)
+    with env.services.database.transaction() as tx:
+        env.services.participant.apply(P, SyncChanges(deleted=(entry,)), tx)
+    env.app.state.events.publish(Event("workspace.element.changed", {"change": "purged", "uids": [uid]}, public=True))
+
+
+def test_purging_an_element_removes_it_from_unchanged_files_without_a_conflict(env: Env) -> None:
+    env.services.seed(P, "task", "Eins", U1)
+    env.services.seed(P, "task", "Zwei", U2)
+    env.sync()
+    _purge(env, U1)
+    assert "Eins" not in env.text and "Zwei" in env.text
+    status = env.client.get(f"/api/core/sync/{P}/status").json()
+    assert (status["state"], status["conflicts"]) == ("in_sync", 0)
+    assert [row[0] for row in env.sql("SELECT uid FROM core_sync_state")] == [U2]
+
+
+def test_purging_an_element_whose_file_entry_changed_leaves_a_conflict(env: Env) -> None:
+    env.services.seed(P, "task", "Eins", U1)
+    env.sync()
+    env.write(env.text.replace("Eins", "Eins geändert"))
+    _purge(env, U1)
+    assert "Eins geändert" in env.text
+    status = env.client.get(f"/api/core/sync/{P}/status").json()
+    assert (status["state"], status["conflicts"]) == ("conflicts", 1)
+
+
+def test_other_events_do_not_delete_anything(env: Env) -> None:
+    env.services.seed(P, "task", "Eins", U1)
+    env.sync()
+    entry = next(e for e in env.services.participant.load(P) if e.uid == U1)
+    with env.services.database.transaction() as tx:
+        env.services.participant.apply(P, SyncChanges(deleted=(entry,)), tx)
+    env.app.state.events.publish(Event("workspace.element.changed", {"change": "deleted", "uids": [U1]}, public=True))
+    assert "Eins" in env.text
 
 
 def test_outdated_token_is_refused_with_409(env: Env) -> None:

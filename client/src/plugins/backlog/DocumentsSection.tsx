@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { DocumentsSection as SharedDocumentsSection, type DocumentsLabels } from "../../shared";
 import { NotesHead } from "./NotesHead";
-import { toWriteError, useAppendNoteMutation, useGetDocumentQuery, usePutDocumentMutation, type ItemOut } from "./api";
+import { toWriteError, useAppendNoteMutation, useDeleteDocumentMutation, useGetDocumentQuery, usePutDocumentMutation, type ItemOut } from "./api";
 
 function useItemDocument(uid: string, name: string) {
 	const { data, refetch } = useGetDocumentQuery({ uid, name });
@@ -13,6 +13,7 @@ export function DocumentsSection({ item }: { item: ItemOut }) {
 	const { t } = useTranslation("backlog");
 	const [put] = usePutDocumentMutation();
 	const [append] = useAppendNoteMutation();
+	const [remove] = useDeleteDocumentMutation();
 	const labels: DocumentsLabels = {
 		none: t("documents.none"),
 		addEntry: t("documents.addEntry"),
@@ -35,6 +36,10 @@ export function DocumentsSection({ item }: { item: ItemOut }) {
 		saveAnyway: t("documents.saveAnyway"),
 		currentState: t("documents.currentState"),
 		toc: t("documents.toc"),
+		delete: t("documents.delete"),
+		deleteTitle: t("documents.deleteTitle"),
+		deleteMessage: (name, notes) => t(notes ? "documents.deleteMessageNotes" : "documents.deleteMessage", { name }),
+		deleteConfirm: t("documents.deleteConfirm"),
 	};
 
 	return (
@@ -50,6 +55,13 @@ export function DocumentsSection({ item }: { item: ItemOut }) {
 			saveDocument={async (name, content, version) => {
 				try {
 					return await put({ uid: item.uid, name, content, version }).unwrap();
+				} catch (failure) {
+					throw toWriteError(failure);
+				}
+			}}
+			deleteDocument={async (name, version) => {
+				try {
+					await remove({ uid: item.uid, name, version }).unwrap();
 				} catch (failure) {
 					throw toWriteError(failure);
 				}

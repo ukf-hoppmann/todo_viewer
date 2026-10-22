@@ -72,6 +72,10 @@ export const backlogApi = createPluginApi(
 			query: ({ uid, name, ...body }) => ({ url: `backlog/items/${uid}/documents/${name}`, method: "PUT", body }),
 			invalidatesTags: ["Items", "Documents"],
 		}),
+		deleteDocument: build.mutation<{ name: string; trash_uid: string }, { uid: string; name: string; version: number }>({
+			query: ({ uid, name, version }) => ({ url: `backlog/items/${uid}/documents/${name}`, method: "DELETE", params: { version } }),
+			invalidatesTags: ["Items", "Documents"],
+		}),
 		appendNote: build.mutation<
 			DocumentOut,
 			{ uid: string; topic: string; discussed: string[]; decided: string[]; open: string[]; summary?: string }
@@ -106,6 +110,7 @@ export const {
 	useReopenAncestorsMutation,
 	useGetDocumentQuery,
 	usePutDocumentMutation,
+	useDeleteDocumentMutation,
 	useAppendNoteMutation,
 	useGetNotesStateQuery,
 	useListNotesEntriesQuery,

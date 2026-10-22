@@ -57,6 +57,7 @@ export const sharedTestIds = {
 	documentDialog: "shared.document-dialog",
 	documentLarge: "shared.document-large",
 	documentEdit: "shared.document-edit",
+	documentDelete: "shared.document-delete",
 	documentClose: "shared.document-close",
 	documentCancel: "shared.document-cancel",
 	documentError: "shared.document-error",

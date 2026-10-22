@@ -70,6 +70,8 @@ export const workspaceTestIds = {
 	trashPurgeSelected: "workspace.trash-purge-selected",
 	trashError: "workspace.trash-error",
 	trashRow: (uid: string) => `workspace.trash-row.${uid}`,
+	/** The mark of a trash row that is a deleted document of an item, not an element. */
+	trashDocument: (uid: string) => `workspace.trash-document.${uid}`,
 	trashSelect: (uid: string) => `workspace.trash-select.${uid}`,
 	trashRestore: (uid: string) => `workspace.trash-restore.${uid}`,
 	trashPurge: (uid: string) => `workspace.trash-purge.${uid}`,

@@ -32,6 +32,12 @@ def add_frontend(app: FastAPI, directory: Path) -> bool:
         if path and candidate.is_file() and candidate.is_relative_to(root):
             headers = {"Cache-Control": IMMUTABLE} if path.startswith("assets/") else {}
             return FileResponse(candidate, headers=headers)
+        if path.startswith("assets/"):
+            # A page from an older build asks for a file that no longer exists: a 404 lets the client notice it.
+            return JSONResponse(
+                {"code": "not_found", "message": f"/{path} gibt es nicht", "details": {"path": f"/{path}"}},
+                status_code=404,
+            )
         return FileResponse(index, headers={"Cache-Control": "no-cache"})
 
     app.add_api_route("/{path:path}", frontend, methods=["GET"], include_in_schema=False)

@@ -77,3 +77,10 @@ def test_the_server_serves_only_the_api_when_there_is_no_build(tmp_path: Path) -
 def test_the_folder_of_the_build_is_configurable() -> None:
     assert load_settings(env={"VIEWER_STATIC_DIR": "/app/client/dist"}).static_dir == "/app/client/dist"
     assert load_settings(env={}).static_dir == "client/dist"
+
+
+def test_a_missing_asset_is_a_404_and_not_the_index_html(web: TestClient) -> None:
+    response = web.get("/assets/Old-abc123.js")
+
+    assert (response.status_code, response.json()["code"]) == (404, "not_found")
+    assert "<html>" not in response.text

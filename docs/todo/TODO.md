@@ -95,28 +95,3 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Verbesserungen am MCP-Server nach einer Prüfung aus
     Claude_Harness heraus: Agenten sollen keine uids mehr abschreiben müssen
     und Fehler früher und lesbarer sehen. Ergänzt STORY-081.
-
-- `STORY-094` **Notiz- und Spec-Dokumente löschen: Lösch-Befehl in API und MCP**
-  - Uid: 564c047d-2845-4699-a295-e8b7f1bf680d.
-  - Type: Story.
-  - Parent: `EPIC-007`.
-  - Required for parent: No.
-  - Status: Awaiting confirmation.
-  - Created: 2026-10-20.
-  - Area: Backend-API.
-  - Priority: Urgent.
-  - Dependencies: None.
-  - Goal: Für Notiz- und Spec-Dokumente eines Items gibt es bisher keinen
-    Lösch-Befehl; nur Ersetzen mit put-doc ist möglich. Man muss ein
-    Dokument deshalb bis auf die Überschrift leeren und kann die Kurzfassung
-    (Summary) nicht entfernen. Es soll ein Lösch-Befehl für Notiz- und
-    Spec-Dokumente (inkl. Themen-Specs) über API, MCP und Harness-Helfer
-    geben, der auch die zugehörige Kurzfassung entfernt, wenn kein Dokument
-    mehr übrig ist.
-  - Completion criteria: Ein Notiz- oder Spec-Dokument lässt sich über API
-    und MCP löschen; die Kurzfassung des Items wird mit dem letzten
-    Notizdokument entfernt; Spiegel und
-    Papierkorb-/Wiederherstellungsverhalten sind geklärt; Tests und Doku
-    (API-Beschreibung, Harness-Skill api.md) sind angepasst.
-  - Summary: Dringend: Notiz- und Spec-Dokumente können bisher nicht
-    gelöscht, nur geleert werden. Ein Lösch-Befehl fehlt.

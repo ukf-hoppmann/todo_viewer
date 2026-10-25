@@ -19,6 +19,8 @@ ENTRY_HEADING = re.compile(r"^## (\d{4}-\d{2}-\d{2}) — (.*)$")
 STATE_HEADING = "## State"
 STAMP_LINE = re.compile(r"^State confirmed after entry (\d{4}-\d{2}-\d{2}) — (.+) \(([0-9a-f]{12})\)$")
 DECIDED_HEADING = "- Decided:"
+#: Die festen Marker des Kopfs in ihrer Reihenfolge (Harness, `format.md`); Marker sind englisch, der Inhalt nicht.
+HEAD_MARKERS = ("- Goal/Status:", "- Next step:", "- Open:", "- Decided:", "- References:")
 #: Ab so vielen Punkten unter `- Decided:` gibt es einen Hinweis (Spec schreiben oder Item teilen?), nie eine
 #: Ablehnung (STORY-051).
 LONG_STATE = 15
@@ -238,6 +240,15 @@ def decided_count(state: str) -> int:
     return count
 
 
+def head_malformed(state: str) -> bool:
+    """Fehlt ein Marker des Kopfs, steht er doppelt oder in falscher Reihenfolge? Ein leerer Kopf zählt nicht (das
+    meldet `missing`)."""
+    if not state.strip():
+        return False
+    found = [marker for line in state.splitlines() for marker in HEAD_MARKERS if line.startswith(marker)]
+    return found != list(HEAD_MARKERS)
+
+
 @dataclass(frozen=True)
 class Hint:
     """Etwas, das der Aufrufer nach dem Schreiben wissen sollte; nie eine Ablehnung. `code` ist stabil."""
@@ -251,6 +262,17 @@ def hints(before: NotesParts | None, after: NotesParts, *, rewritten: bool) -> t
     found: list[Hint] = []
     if state_of(after) != CURRENT:
         found.append(Hint("notes_state_stale", "The notes head is not current: update or confirm it"))
+    if head_malformed(after.state):
+        found.append(
+            Hint(
+                "notes_state_malformed",
+                "The notes head is saved, but its markers are not as required. It needs exactly these top-level "
+                "lines in this order, in English whatever the project language, each starting with '- ' at the "
+                "line start: " + ", ".join(f"'{marker}'" for marker in HEAD_MARKERS) + ". Put the text after the "
+                "colon (or as indented '  - ' points below it, one per line with its date), write the content in "
+                "the project language, then update the head again (put-state).",
+            )
+        )
     if decided_count(after.state) > LONG_STATE:
         found.append(
             Hint("notes_state_long", f"More than {LONG_STATE} decisions in the head: write a spec or split the item?")

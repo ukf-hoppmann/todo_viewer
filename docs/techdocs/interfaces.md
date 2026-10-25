@@ -813,7 +813,11 @@ State confirmed after entry <YYYY-MM-DD> — <Thema> (<Prüfsumme>)
   Kopf), `notes_without_entries`; HTTP 400.
 - **Hinweise** (`hints: [{code, message}]` in schreibenden Antworten auf Notes,
   nie eine Ablehnung): `notes_state_stale` (Kopf danach `stale` oder
-  `missing`), `notes_state_long` (mehr als 15 Punkte unter `- Decided:`),
+  `missing`), `notes_state_malformed` (der Kopf wird gespeichert, aber seine
+  Marker sind nicht genau `- Goal/Status:`, `- Next step:`, `- Open:`,
+  `- Decided:`, `- References:` in dieser Reihenfolge; der Text nennt die
+  erwartete Form, damit der Aufrufer den Kopf korrigieren kann),
+  `notes_state_long` (mehr als 15 Punkte unter `- Decided:`),
   `notes_history_rewritten` (`put_document` hat einen bisherigen Eintrag
   geändert oder entfernt).
   Die Texte der Hinweise und Fehler zu den Notes sind Englisch (sie liest

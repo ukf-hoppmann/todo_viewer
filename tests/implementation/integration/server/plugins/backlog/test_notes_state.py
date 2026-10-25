@@ -7,7 +7,14 @@ from typing import Any
 from workspace_env import Env
 
 BASE = {"title": "Ein Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
-STATE = "- Goal/Status: läuft\n- Next step: weiter"
+
+
+def _head(goal: str, decided: str = "") -> str:
+    return f"- Goal/Status: {goal}\n- Next step: weiter\n- Open: -\n- Decided:{decided or ' -'}\n- References: -"
+
+
+STATE = _head("läuft")
+NEW_STATE = _head("neu")
 
 
 def _create(env: Env, **fields: Any) -> dict[str, Any]:
@@ -52,7 +59,7 @@ def test_replacing_the_state_stamps_it_and_needs_the_current_version(backlog: En
     _note(backlog, item)
 
     stored = _put(backlog, item, STATE, 1).json()
-    stale = _put(backlog, item, "- Goal/Status: alt", 1)
+    stale = _put(backlog, item, _head("alt"), 1)
 
     assert stored["state"] == "current" and stored["content"] == STATE and stored["version"] == 2
     assert stored["stamp"] == {"day": "2026-10-16", "topic": "Thema", "checksum": stored["checksum"]}
@@ -97,13 +104,13 @@ def test_append_note_can_bring_a_new_state(backlog: Env) -> None:
     assert first["notes_state"] == "current" and first["hints"] == []
     assert "State confirmed after entry 2026-10-16 — Thema (" in first["content"]
 
-    refused = _note(backlog, item, "Zweites", state="- Goal/Status: neu")
-    second = _note(backlog, item, "Zweites", state="- Goal/Status: neu", state_version=1).json()
+    refused = _note(backlog, item, "Zweites", state=NEW_STATE)
+    second = _note(backlog, item, "Zweites", state=NEW_STATE, state_version=1).json()
 
     assert (refused.status_code, refused.json()["code"]) == (422, "invalid_input")
     assert second["notes_state"] == "current"
     state = _state(backlog, item).json()
-    assert state["content"] == "- Goal/Status: neu" and state["stamp"]["topic"] == "Zweites"
+    assert state["content"] == NEW_STATE and state["stamp"]["topic"] == "Zweites"
     assert state["version"] == 2
 
 
@@ -130,7 +137,7 @@ def test_a_long_state_gives_a_hint(backlog: Env) -> None:
     _note(backlog, item)
     decided = "".join(f"  - Beschluss {n}\n" for n in range(16))
 
-    stored = _put(backlog, item, f"- Goal/Status: x\n- Decided:\n{decided}- References: -", 1).json()
+    stored = _put(backlog, item, _head("x", f"\n{decided}".rstrip("\n")), 1).json()
 
     assert stored["state"] == "current"
     assert [h["code"] for h in stored["hints"]] == ["notes_state_long"]

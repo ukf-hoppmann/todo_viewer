@@ -241,7 +241,7 @@ def test_stamping_names_the_last_entry_and_the_current_checksum() -> None:
 
 def _decided(count: int) -> str:
     rows = "".join(f"  - Beschluss {n} (2026-10-01)\n" for n in range(count))
-    return f"- Goal/Status: x\n- Decided:\n{rows}- References: Spec\n  - nicht gezählt"
+    return f"- Goal/Status: x\n- Next step: y\n- Open: -\n- Decided:\n{rows}- References: Spec\n  - nicht gezählt"
 
 
 def test_a_long_state_gives_a_hint_from_16_decisions_on() -> None:
@@ -260,8 +260,26 @@ def test_a_stale_or_missing_state_gives_a_hint() -> None:
         "notes_state_stale"
     ]
     assert [h.code for h in hints(None, NotesParts("\n", "- x", None, _entries()), rewritten=False)] == [
-        "notes_state_stale"
+        "notes_state_stale",
+        "notes_state_malformed",
     ]
+
+
+def test_a_head_with_wrong_markers_is_kept_but_gets_a_hint_with_the_expected_form() -> None:
+    def codes(state: str) -> list[str]:
+        return [h.code for h in hints(None, stamped(NotesParts("\n", state, None, _entries())), rewritten=False)]
+
+    valid = "- Goal/Status: a\n- Next step: b\n- Open: -\n- Decided:\n  - c (2026-10-01)\n- References: -"
+    german = "- Ziel: a\n- Nächster Schritt: b\n- Offen: -\n- Beschlossen: -\n- Verweise: -"
+    order = "- Next step: b\n- Goal/Status: a\n- Open: -\n- Decided: -\n- References: -"
+    missing = "- Goal/Status: a\n- Next step: b\n- Open: -\n- Decided: -"
+    unmarked = "Entschieden: a\nOffen: b"
+
+    assert codes(valid) == []
+    assert [codes(text) for text in (german, order, missing, unmarked)] == [["notes_state_malformed"]] * 4
+    found = hints(None, stamped(NotesParts("\n", german, None, _entries())), rewritten=False)
+    message = next(h.message for h in found if h.code == "notes_state_malformed")
+    assert "'- Goal/Status:', '- Next step:', '- Open:', '- Decided:', '- References:'" in message
 
 
 def test_rewriting_an_older_entry_is_noticed_but_appending_is_not() -> None:

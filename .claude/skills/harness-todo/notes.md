@@ -8,29 +8,39 @@ to [SKILL.md](SKILL.md).
 
 1. Read `.claude-harness/config.toml` of the project the work belongs to (with
    subprojects, the session start lists each project and its folder; paths
-   below are relative to that folder). If `[modules].todo` is not `true` or
-   `[todo].backend` is not `"api"`, these rules do not apply — say so and stop.
+   below are relative to that folder). If `[modules].todo` is not `true`,
+   these rules do not apply — say so and stop. If the backend is not `api`
+   (for example in a cloud session), the notes are files: follow
+   [notes-files.md](notes-files.md) instead and ignore the rest of this file.
 2. Write note texts (summary, body) in `[docs].language`; field names, status
    values, and roles stay English.
 3. Work only through
    `python3 ".claude-harness/runtime/scripts/notes_api.py" [--project <name>] <command>`.
    Commands and inputs: [notes-api.md](notes-api.md); read it before the first call. Notes
-   live only in the ToDo-Viewer's database: there are no note files, so
-   nothing is committed, and nothing falls back to files.
+   live in the ToDo-Viewer's database, and you never write note files
+   yourself; nothing falls back to files. If the project's backlog has a
+   mirror in the viewer, the viewer writes the notes into `notes/` below the
+   backlog folder: commit that folder with the rest of the backlog (message
+   `Backlog: …`) as [SKILL.md](SKILL.md) says. How the mirror travels between
+   a cloud session and the viewer: [sync-flow.md](sync-flow.md).
    Notes of another project (`--source <name>`) follow the approval rule of
    the rules of [SKILL.md](SKILL.md) for other projects' backlogs, including `sources`.
 4. If the helper exits with code 3 (server not reachable), tell the user and
-   ask whether to start the server or stop.
-5. Notes are private as long as they live only in the database. Do not treat
-   them as team knowledge and do not copy their content into checked-in files
+   ask whether to start the server or stop. Exit code 4 (project not
+   registered in the viewer) is handled as in [SKILL.md](SKILL.md).
+5. With `api` and no mirror, notes are private as long as they live only in
+   the database. With a mirror they are files in the repository, and in a cloud
+   session on GitHub: they are then not private (see
+   [notes-files.md](notes-files.md)); tell the owner once when you create the
+   first note in a project with a mirror. In both cases do not treat them as
+   team knowledge and do not copy their content into other checked-in files
    (backlog, daily reports, documentation, commit messages).
 
 ## Note, backlog item, or alarm
 
 - **Backlog item:** work with a completion definition. Use [SKILL.md](SKILL.md).
-- **Alarm:** a reminder for you in minutes or a few hours. Set it with the
-  scheduling tools of Claude Code and say that it only fires while this
-  session runs.
+- **Alarm:** a reminder at a fixed time ("at 3 pm", "Thursday at 10"),
+  ringing in the ToDo-Viewer. Rules and helper: [alarms.md](alarms.md).
 - **Note:** a longer horizon, a reminder for later, an open question to
   someone else, an observation ("check the performance when the database
   fills up"), or an idea without an assignment.
@@ -68,12 +78,14 @@ A due note means "look at it". Afterwards the user decides: wait again
   one only when none fits, and keep the tree shallow.
 - The viewer's default review period applies. Set `review_at` only when the
   user asks for another date. Never change the settings.
-- Triggers use concrete times or events only (a time, a status of a linked
-  item, a topic date). Resolve relative statements ("tomorrow morning",
-  "Thursday at 10") into a fixed time with the machine's local time zone as
-  ISO 8601 with offset (`2026-10-09T09:00:00+02:00`), and name the result
-  with weekday, date, and time in your answer. When the wording is ambiguous
-  ("early" can mean 6 or 9 o'clock), ask before creating.
+- Triggers are events only: a status of a linked item or the date of the
+  note's topic. A reminder at a fixed time is an alarm, bound to the note
+  ([alarms.md](alarms.md)). Resolve relative dates for `review_at` or a topic
+  date ("tomorrow morning", "Thursday at 10") into a fixed time with the
+  machine's local time zone as ISO 8601 with offset
+  (`2026-10-09T09:00:00+02:00`), and name the result with weekday, date, and
+  time in your answer. When the wording is ambiguous ("early" can mean 6 or 9
+  o'clock), ask before creating.
 - Links point to items, topics, or other notes, also in other registered
   projects. A link with role `trigger` exists only together with its event
   trigger.
@@ -86,7 +98,8 @@ described; `keep`; `snooze`; `finish` as `done`; `restore`; decide notices
 with `keep`, `detach`, or `acknowledge`.
 
 Ask first: `finish` as `dropped`; deleting a note or topic (no question when
-the request clearly asks for it; a topic with content also needs `--cascade`);
+the request clearly asks for it; for a topic with content the user also
+chooses what happens to its notes, see `topic-delete` in [notes-api.md](notes-api.md));
 notice decisions `drop` and `promote`; `promote` and `demote`; `move` to
 another project.
 
@@ -96,12 +109,12 @@ look for another), or change the viewer's settings.
 ## Sprint reminders
 
 "Remember this for the next sprint" becomes a note in the topic that carries
-the sprint date, with a trigger of kind `topic_due`. If no such topic exists,
+the sprint date, with a trigger of kind `topic_date`. If no such topic exists,
 ask for its name and date.
 
 When the date has passed, the notes fire and the topic has no new date. Ask
 the user for the next date, then set it (`topic-update`) and `snooze` each
-affected note with a new `topic_due` trigger.
+affected note with a new `topic_date` trigger.
 
 ## Converting
 
@@ -117,6 +130,6 @@ affected note with a new `topic_due` trigger.
 
 When a linked item is completed, rejected, deleted, or retyped, the viewer
 leaves a notice on the note until someone decides. When the user asks about a
-note or you work on it, read its open notices (`notices <NOTE> --open`) and
+note or you work on it, read its open notices (`notices <NOTE>`) and
 offer the options keep, detach, drop, or promote. The reverse also exists: an
 item gets a notice when a note that points to it is dropped or promoted.

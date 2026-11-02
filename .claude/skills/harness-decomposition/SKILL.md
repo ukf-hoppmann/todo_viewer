@@ -135,4 +135,5 @@ migration/operations · tests · documentation
 ## Where the plan lives
 
 The sections belong in the implementation plan (plan mode or chat). A
-backlog spec stays without a step sequence.
+backlog spec stays without a step sequence. The plan is not stored in the
+backlog: it is made from the current spec when implementation starts.

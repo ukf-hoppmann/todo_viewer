@@ -9,15 +9,16 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from harness_config import CONFIG_RELATIVE_PATH, ROOT_PROJECT, ConfigError, project_root
 from projects import Project, load_projects
 from worktree import WorktreeError, in_main_checkout
 
-EXIT_ERROR, EXIT_USAGE, EXIT_UNREACHABLE = 1, 2, 3
+EXIT_ERROR, EXIT_USAGE, EXIT_UNREACHABLE, EXIT_NOT_REGISTERED = 1, 2, 3, 4
 TIMEOUT_SECONDS = 15
 CONFLICT_HINT = "read the item again and check the change before retrying; never retry blindly"
 
@@ -97,30 +98,106 @@ def source_folder(project: Project) -> Path:
         return folder.resolve()
 
 
-def source_record(api: Api, folder: Path, project: Project) -> dict[str, Any]:
-    """The ToDo-Viewer source of the project's backlog folder; registers it if missing."""
-    for source in api.call("GET", "/sources"):
-        # A database source has no path of its own; its Markdown folder is sync_path or markdown_path.
-        paths = (source.get("path"), source.get("markdown_path"), source.get("sync_path"))
-        if any(p and Path(p).resolve() == folder for p in paths):
-            return source
-    body = {"path": str(folder)}
-    if project.name != ROOT_PROJECT:
-        # Without a name the server uses the Git repository's, which subprojects share with the root.
-        body["project"] = project.name
-    source = api.call("POST", "/sources", body)
-    print(f"registered backlog {folder} as ToDo-Viewer source {source['id']}", file=sys.stderr)
-    return source
+@dataclass
+class Target:
+    """The viewer project a command works on: its uid goes into every call, labels resolve within it."""
+
+    api: Api
+    uid: str
+    name: str
+
+    def resolve(self, label: str) -> str:
+        """The uid of an element of this project by its label (archived and deleted ones included)."""
+        return self.api.call("GET", f"/workspace/projects/{quote(self.uid)}/labels/{quote(label)}")["uid"]
 
 
-def source_id(api: Api, folder: Path, project: Project) -> str:
-    return source_record(api, folder, project)["id"]
+def _mirror_matches(project: dict[str, Any], folder: Path) -> bool:
+    mirror = project.get("mirror_folder")
+    return bool(mirror) and Path(mirror).resolve() == folder
+
+
+def own_target(api: Api, project: Project) -> Target:
+    """The viewer project whose mirror folder is the project's backlog folder; never registers one."""
+    folder = source_folder(project)
+    for record in api.call("GET", "/workspace/projects"):
+        if _mirror_matches(record, folder):
+            return Target(api, record["uid"], record["name"])
+    option = "" if project.name == ROOT_PROJECT else f" --project {project.name}"
+    raise ApiError(
+        f"backlog {folder} is not registered as a project in the ToDo-Viewer. Tell the user and ask whether to "
+        f"register it; only after a yes run: backlog_api.py{option} register",
+        EXIT_NOT_REGISTERED,
+    )
+
+
+def register_project(api: Api, project: Project) -> dict[str, Any]:
+    """Register the project's backlog folder as a viewer project with a mirror; refused if it already is one."""
+    folder = source_folder(project)
+    for record in api.call("GET", "/workspace/projects"):
+        if _mirror_matches(record, folder):
+            raise ApiError(f"backlog {folder} is already registered as {record['name']!r}", EXIT_USAGE)
+    # The root project is named after its main checkout (not a worktree); subprojects keep their own names.
+    name = folder_name(project.root) if project.name == ROOT_PROJECT else project.name
+    body = {"name": name, "mirror_folder": str(folder), "mirror_enabled": True, "auto_sync": True}
+    return api.call("POST", "/workspace/projects", body)
+
+
+def folder_name(root: Path) -> str:
+    try:
+        return in_main_checkout(root).name
+    except (WorktreeError, OSError):
+        return root.resolve().name
+
+
+def named_target(api: Api, name: str) -> Target:
+    """The viewer project with exactly this name (another project's backlog); never registers one."""
+    records = api.call("GET", "/workspace/projects")
+    found = [r for r in records if r.get("name") == name]
+    if not found:
+        known = ", ".join(str(r.get("name")) for r in records)
+        raise ApiError(f"unknown source {name!r} (known: {known})", EXIT_USAGE)
+    return Target(api, found[0]["uid"], found[0]["name"])
+
+
+def target_for(api: Api, project: Project, source_name: str | None) -> Target:
+    return own_target(api, project) if source_name is None else named_target(api, source_name)
+
+
+def print_projects(api: Api) -> None:
+    """One line per viewer project: its name and its mirror folder, if any."""
+    print("Project | Folder")
+    for record in api.call("GET", "/workspace/projects"):
+        print(f"{record.get('name')} | {record.get('mirror_folder') or '-'}")
+
+
+NO_PARENT = ("", "-", None)
+
+
+def item_fields(target: Target, fields: dict[str, Any]) -> dict[str, Any]:
+    """Backlog item fields as the server takes them: parent and dependencies by uid, required_for_parent as bool."""
+    out = dict(fields)
+    if "parent" in out:
+        out["parent"] = None if out["parent"] in NO_PARENT else target.resolve(out["parent"])
+    if "dependencies" in out:
+        out["dependencies"] = [target.resolve(label) for label in out["dependencies"] or []]
+    flag = out.get("required_for_parent")
+    if isinstance(flag, str):
+        # The backlog format writes Yes/No; the server wants true/false.
+        out["required_for_parent"] = {"yes": True, "no": False}.get(flag.lower(), flag)
+    return out
+
+
+def version_arg(value: str) -> int:
+    try:
+        return int(value)
+    except ValueError:
+        raise ApiError(f"version must be the number from the last answer, got {value!r}", EXIT_USAGE) from None
 
 
 def split_target(args: list[str]) -> tuple[str, str | None, list[str]]:
     """(project, source, remaining arguments) from the leading --project / --source options.
 
-    --source names a ToDo-Viewer source (see the sources command) outside the session's own backlogs.
+    --source names a viewer project (see the sources command) outside the session's own backlogs.
     """
     project_name, source_name = ROOT_PROJECT, None
     rest = list(args)
@@ -133,29 +210,6 @@ def split_target(args: list[str]) -> tuple[str, str | None, list[str]]:
     if source_name is not None and project_name != ROOT_PROJECT:
         raise ApiError("--source and --project exclude each other", EXIT_USAGE)
     return project_name, source_name, rest
-
-
-def _source_folder_of(source: dict[str, Any]) -> str | None:
-    return source.get("path") or source.get("markdown_path") or source.get("sync_path") or None
-
-
-def named_source(api: Api, name: str) -> dict[str, Any]:
-    """The viewer's source whose project name is exactly `name`; never registers a source."""
-    sources = api.call("GET", "/sources")
-    found = [s for s in sources if s.get("project") == name]
-    if not found:
-        known = ", ".join(str(s.get("project")) for s in sources)
-        raise ApiError(f"unknown source {name!r} (known: {known})", EXIT_USAGE)
-    if len(found) > 1:
-        raise ApiError(f"source name {name!r} is ambiguous ({len(found)} sources)", EXIT_USAGE)
-    return found[0]
-
-
-def print_sources(api: Api) -> None:
-    """One line per source the viewer knows: its project name and its Markdown folder, if any."""
-    print("Project | Folder")
-    for source in api.call("GET", "/sources"):
-        print(f"{source.get('project')} | {_source_folder_of(source) or '-'}")
 
 
 def stdin_json(required: bool = True) -> dict[str, Any]:

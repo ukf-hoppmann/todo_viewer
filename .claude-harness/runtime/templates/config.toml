@@ -24,7 +24,7 @@ semver = false
 [todo]
 path = "todo"
 backend = "api"
-api_url = "http://localhost:5411/api/v2"
+api_url = "http://localhost:5411/api"
 
 # Daily development reports, relative to docs.root.
 [daily]

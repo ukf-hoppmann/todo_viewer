@@ -53,6 +53,32 @@
             "type": "command",
             "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/mark_architecture_read.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/mark_active_item.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/mark_notes_state.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/remind_notes.py\"",
+            "timeout": 10
           }
         ]
       }
@@ -63,6 +89,11 @@
           {
             "type": "command",
             "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_backlog.py\"",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_notes_state.py\"",
             "timeout": 30
           },
           {

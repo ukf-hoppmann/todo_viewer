@@ -1,6 +1,6 @@
 ---
 name: harness-todo
-description: Rules for the project backlog and for notes and topics (via the ToDo-Viewer API, or TODO.md, archive.md, per-item notes and specs in files mode). Use when reading, discussing, creating, updating, or archiving backlog items — epics, stories, tasks, their status, notes, or specs — and when the user asks to remember, remind, or note something for later or asks about due notes.
+description: Rules for the project backlog and for notes, topics, and alarms (via the ToDo-Viewer API, or TODO.md, archive.md, per-item notes and specs in files mode). Use when reading, discussing, creating, updating, or archiving backlog items — epics, stories, tasks, their status, notes, or specs — and when the user asks to remember, remind, or note something for later or asks about due notes.
 ---
 
 # Project backlog
@@ -14,7 +14,11 @@ description: Rules for the project backlog and for notes and topics (via the ToD
 2. The backlog folder is `[todo].path` below `[docs].root` (default
    `docs/todo`). Write backlog texts in `[docs].language`; field names stay
    English.
-3. `[todo].backend` decides how you work on it (default `api`):
+3. The backend decides how you work on it (default `api`). It is the one the
+   session start names for the backlog, which can differ from `[todo].backend`:
+   `CLAUDE_HARNESS_TODO_BACKEND` overrides it, and a cloud session
+   (`CLAUDE_CODE_REMOTE=true`) uses `files`. Trust the session start line over
+   the config file:
    - `api`: only through the ToDo-Viewer's HTTP API, using
      `python3 ".claude-harness/runtime/scripts/backlog_api.py" [--project <name>] <command>`
      (`--project` for a subproject's backlog).
@@ -26,7 +30,9 @@ description: Rules for the project backlog and for notes and topics (via the ToD
      describes.
 4. API mode: if the helper exits with code 3 (server not reachable), tell the
    user and ask whether to start the server, work on the files this time, or
-   stop. Do not fall back to the files on your own.
+   stop. Do not fall back to the files on your own. Exit code 4 means the
+   backlog is not registered in the viewer: ask whether to register it and
+   run `register` only after a yes ([api.md](api.md)).
 5. Files mode only (API mode needs no `TODO.md`): if `TODO.md` is missing, tell the user and ask for permission before
    creating anything. The backlog may just live elsewhere — look for it and
    ask. Only after approval, create `TODO.md` and `archive.md` from
@@ -37,8 +43,11 @@ description: Rules for the project backlog and for notes and topics (via the ToD
 Read only what the task needs:
 
 - By default: the overview — API: `index`; files: `TODO.md`.
-- Discussing or deciding something about an item: also its `Notes`.
-- Planning its implementation or asked about its spec: also its `Spec`.
+- Discussing or deciding something about an item: also its notes — first
+  their head (`## State`; API: `state <ID>`) and the spec; the log (API:
+  `entries <ID> --last N`, or `doc`) only when you need the reasons behind a
+  decision.
+- Planning its implementation or asked about its spec: also its spec.
   The spec is the input for a plan; do not write step-by-step plans into it.
 - Overview across `TODO.md` and `archive.md` (e.g. to place new work or to
   look for earlier work): API: `index`; files: run
@@ -51,7 +60,7 @@ Read only what the task needs:
 
 - Refer to items as `Type ID`, e.g. `Story STORY-017`.
 - You may change without asking: notes and specs (add and revise whatever is
-  relevant), `Summary`/`Notes`/`Spec` fields, status up to
+  relevant), the `Summary` field, status up to
   `Awaiting confirmation` and back, wording fixes, archiving closed items.
 - Moving an item to the trash (deleting) needs no extra confirmation when the
   user's request clearly asks for it; otherwise propose it first. Only the
@@ -65,11 +74,39 @@ Read only what the task needs:
 - Only the project owner confirms `Completed` or `Rejected`. Record it in
   `Resolution`; the item then moves unchanged to `archive.md` (API: the
   server moves it).
-- When an item gets notes, it needs a plain-language `Summary` (required with
-  `Notes`). Files: create `items/<ID>/<ID>_notes.md` and add the `Notes`
-  path; API: the first notes entry does both.
-- Record decisions in the item's notes as they happen, dated, under
-  `Discussed` / `Decided` / `Open`.
+- When an item gets notes, it needs a plain-language `Summary`. Files:
+  create `items/<ID>/<ID>_notes.md` (no field points to it); API: the first
+  notes entry creates it.
+- Record discussions in the notes ([format.md](format.md#notes)):
+  - **Where:** in the most specific item they are about. When the
+    discussion is part of task X, it goes into task X. A story's notes only
+    get decisions that affect several children or the story's goal or scope;
+    the affected child gets a reference. Deliberate exceptions are fine.
+  - **What:** a record, not a result list. Per topic: the core question,
+    the options considered with pros and cons, your recommendation, the
+    owner's decision with its reason, and rejected options with theirs.
+    Undecided proposals go under `Open` right away. With several topics,
+    the first entry is a topic plan.
+  - **When:** after every answered question, before asking the next one —
+    not at the end.
+  - **Head:** after every change to the notes, update the head or
+    deliberately confirm that it is still current. A check at the end of
+    your turn blocks while the head of notes you changed is `stale` or
+    `missing` (API: it relies on what the helper reported; files: on the
+    stamp); update it (`put-state`) or confirm it (`confirm-state`, files:
+    `backlog.py --confirm-state`) to continue. The head has exactly the
+    English markers `- Goal/Status:`, `- Next step:`, `- Open:`,
+    `- Decided:`, `- References:` in this order; their content is in the
+    project's language, one point per line with its date
+    ([format.md](format.md#notes)).
+  - **Reminder:** an item you work on (set `In progress`, or its spec read)
+    that gets no notes entry for 5 prompts triggers a short reminder (again
+    after every further 5). It is no block: write the entry if something was
+    clarified, decided, or rejected; otherwise ignore it.
+- Keep the spec current: once something is decided, bring the spec up to
+  date; the notes keep the way there. A discussion ends with the spec. The
+  implementation plan is made only when implementation starts, presented
+  for approval, and not stored in the backlog.
 - Before rejecting a required child, ask in the same question whether it
   becomes `Required for parent: No` (then also adjust the parent's `Goal` and
   `Completion criteria` if they name the child's content) or whether the
@@ -78,6 +115,12 @@ Read only what the task needs:
   own completion criteria: if met, set it to `Awaiting confirmation` and tell
   the owner; otherwise say what is missing. A parent is only completed or
   rejected once every child is closed or reparented.
+- Items in the trash do not count: not as open children, not for progress,
+  not for the completion check. API: `index` leaves them out (`index
+  --with-trash` marks them `(Papierkorb)`), `show` marks deleted children,
+  `trash` lists them. A parent with deleted but unclosed children is not
+  blocked by them: do not report them as open work, only tell the owner
+  that they lie in the trash.
 - New work goes under an existing epic or story whenever one fits — including
   archived ones. Prefer proposing to reopen a closed parent (owner approval,
   reason recorded in its notes) over creating a new epic or story.
@@ -105,11 +148,15 @@ Read only what the task needs:
 ## Notes
 
 Reminders, open questions, observations, and ideas without a completion
-definition are not backlog work; they are notes ([notes.md](notes.md), only
-with `[todo].backend = "api"`; read it when asked to remember, remind, or look
-at due notes). Turning a note into an item and an item back into a note runs
-through it. A backlog item's notes entries
+definition are not backlog work; they are notes. With the `api` backend they
+live in the ToDo-Viewer ([notes.md](notes.md)), with `files` as Markdown files
+below the backlog folder ([notes-files.md](notes-files.md)); read the matching
+file when asked to remember, remind, or look at due notes. Turning a note into
+an item and an item back into a note runs through the viewer ([notes.md](notes.md)).
+A backlog item's notes entries
 (`<ID>_notes.md`) are not those notes; when unclear which is meant, ask.
+A reminder at a fixed time is an alarm in the viewer ([alarms.md](alarms.md),
+only with `api`; read it when asked to remind at a time).
 
 ## Committing backlog changes
 
@@ -118,7 +165,13 @@ through it. A backlog item's notes entries
 - API mode: the server writes into the backlog folder of the main checkout,
   never into a worktree, and does not commit. Commit those files in the main
   checkout on their own (message `Backlog: …`) when the task is done. During
-  a worktree change, do it after `ExitWorktree` and before the merge.
+  a worktree change, do it after `ExitWorktree` and before the merge. With a
+  mirror this includes `notes/` below the backlog folder, which the viewer
+  writes; you still do not read, edit, create, or delete any of these files
+  yourself.
+- Cloud sessions and the local viewer exchange the backlog through Git and the
+  viewer's sync: [sync-flow.md](sync-flow.md) (read it when a cloud session is
+  prepared or its branch comes back).
 
 Field syntax, lifecycle rules, and details: [format.md](format.md). Read it
 when creating items or when a check or the server reports a rule violation.

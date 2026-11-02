@@ -4,7 +4,9 @@ import re
 import sys
 from dataclasses import dataclass, field
 from datetime import date
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+
+import notes_head
 
 TODO_FILE = "TODO.md"
 ARCHIVE_FILE = "archive.md"
@@ -31,21 +33,31 @@ REQUIRED_FIELDS = {
     "Completion criteria",
 }
 KNOWN_FIELDS = REQUIRED_FIELDS | {
+    "Uid",
     "Parent",
     "Required for parent",
     "Resolution",
     "Summary",
-    "Notes",
-    "Spec",
-    # Set by the ToDo-Viewer for items in its trash; they stay in archive.md with any status.
+    # Items in the ToDo-Viewer's trash; they belong in archive.md with any status.
     "Deleted",
 }
+# New entries written without the ToDo-Viewer: no Uid yet, and the import sets Created.
+PLACEHOLDER_OPTIONAL_FIELDS = {"Created"}
+
+FORMAT_PREFIX = "Format:"
+FORMAT_MARKER = "backlog format version 2"
 
 _ID = r"[A-Z][A-Z0-9_-]*-[0-9]{3,}"
-_ITEM_HEADER = re.compile(rf"^- `(?P<identifier>{_ID})` \*\*(?P<title>[^*\r\n].*?)\*\*$")
+# A placeholder stands for an entry the ToDo-Viewer has not given a label yet.
+_PLACEHOLDER_PREFIX = "NEW-"
+_PLACEHOLDER = r"NEW-[a-z0-9][a-z0-9-]*"
+_ANY_ID = rf"{_PLACEHOLDER}|{_ID}"
+_ITEM_HEADER = re.compile(
+    rf"^- `(?P<identifier>{_ID}|{_PLACEHOLDER_PREFIX}[^`\s]*)` \*\*(?P<title>[^*\r\n].*?)\*\*$"
+)
 _FIELD = re.compile(r"^  - (?P<name>[^:\r\n]+):(?P<value>.*)$")
-_REFERENCE = re.compile(rf"`({_ID})`")
-_PATH_REFERENCE = re.compile(r"`([^`]+)`")
+_REFERENCE = re.compile(rf"`({_ANY_ID})`")
+_UID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 _EMPTY_MARKER = "No entries."
 
 
@@ -54,17 +66,16 @@ class BacklogItem:
     identifier: str
     title: str
     source: str
+    uid: str | None
     item_type: str
     status: str
-    created: date
+    created: date | None
     area: str
     priority: str
     dependencies: tuple[str, ...]
     parent: str | None
     required_for_parent: bool | None
     resolution: str | None
-    notes: tuple[str, ...]
-    specs: tuple[str, ...]
     deleted: date | None = None
 
 
@@ -88,6 +99,7 @@ def validate_backlog(todo_dir: Path) -> BacklogReport:
         return report
 
     seen_ids: dict[str, str] = {}
+    seen_uids: dict[str, str] = {}
     files = [todo_file]
     archive_file = todo_dir / ARCHIVE_FILE
     if archive_file.is_file():
@@ -102,9 +114,15 @@ def validate_backlog(todo_dir: Path) -> BacklogReport:
                 )
                 continue
             seen_ids[identifier] = location
-            item = _build_item(identifier, title, path.name, fields, todo_dir, report)
-            if item is not None:
-                report.items.append(item)
+            item = _build_item(identifier, title, path.name, fields, report)
+            if item is None:
+                continue
+            if item.uid is not None:
+                if item.uid in seen_uids:
+                    report.errors.append(f"{identifier} uses the Uid of {seen_uids[item.uid]}")
+                    continue
+                seen_uids[item.uid] = identifier
+            report.items.append(item)
 
     _validate_placement(report)
     _validate_relationships(report, set(seen_ids))
@@ -118,6 +136,7 @@ def _parse_file(path: Path, report: BacklogReport) -> list[tuple[str, str, dict[
     if len(sections) != 1:
         report.errors.append(f"{path.name} requires exactly one '## Work items' section")
         return []
+    _check_format(path.name, lines[: sections[0]], report)
 
     raw: list[tuple[str, str, dict[str, str], int]] = []
     current: tuple[str, str, dict[str, str], int] | None = None
@@ -158,17 +177,39 @@ def _parse_file(path: Path, report: BacklogReport) -> list[tuple[str, str, dict[
     return raw
 
 
+def _check_format(name: str, head: list[str], report: BacklogReport) -> None:
+    # The format line is a paragraph starting with "Format:"; it may wrap over several lines.
+    paragraphs = " ".join(line.strip() if line.strip() else "\n" for line in head).split("\n")
+    formats = [p.strip() for p in paragraphs if p.strip().startswith(FORMAT_PREFIX)]
+    if not formats:
+        report.errors.append(
+            f"{name} has no format line; expected a paragraph "
+            f"'{FORMAT_PREFIX} Claude_Harness {FORMAT_MARKER}' before '## Work items'"
+        )
+    elif not any(FORMAT_MARKER in " ".join(f.split()) for f in formats):
+        report.errors.append(
+            f"{name} uses an unsupported backlog format (only {FORMAT_MARKER} is valid; "
+            f"convert older backlogs): {formats[0]}"
+        )
+
+
 def _build_item(
     identifier: str,
     title: str,
     source: str,
     fields: dict[str, str],
-    todo_dir: Path,
     report: BacklogReport,
 ) -> BacklogItem | None:
     errors: list[str] = []
+    placeholder = identifier.startswith(_PLACEHOLDER_PREFIX)
+    if placeholder and not re.fullmatch(_PLACEHOLDER, identifier):
+        report.errors.append(
+            f"invalid placeholder: {identifier} (use NEW- and a short name of a-z, 0-9, -)"
+        )
+        return None
 
-    missing = sorted(REQUIRED_FIELDS - fields.keys())
+    required = REQUIRED_FIELDS - PLACEHOLDER_OPTIONAL_FIELDS if placeholder else REQUIRED_FIELDS
+    missing = sorted(required - fields.keys())
     if missing:
         report.errors.append(f"{identifier} is missing required fields: {', '.join(missing)}")
         return None
@@ -176,6 +217,17 @@ def _build_item(
     unknown = sorted(fields.keys() - KNOWN_FIELDS)
     if unknown:
         errors.append(f"{identifier} has unknown fields: {', '.join(unknown)}")
+
+    uid: str | None = None
+    if placeholder:
+        if "Uid" in fields:
+            errors.append(f"{identifier} is a new entry and must not contain Uid")
+    elif "Uid" not in fields:
+        errors.append(f"{identifier} is missing required field: Uid")
+    else:
+        uid = _scalar(fields["Uid"]).lower()
+        if not _UID.fullmatch(uid):
+            errors.append(f"{identifier} Uid must be a UUID")
 
     item_type = _scalar(fields["Type"])
     if item_type not in ITEM_TYPES:
@@ -188,11 +240,12 @@ def _build_item(
         errors.append(
             f"{identifier} Priority must be one of {', '.join(sorted(PRIORITIES))}: {priority}"
         )
-    created = date.min
-    try:
-        created = date.fromisoformat(_scalar(fields["Created"]))
-    except ValueError:
-        errors.append(f"{identifier} Created must use YYYY-MM-DD")
+    created: date | None = None
+    if "Created" in fields:
+        try:
+            created = date.fromisoformat(_scalar(fields["Created"]))
+        except ValueError:
+            errors.append(f"{identifier} Created must use YYYY-MM-DD")
 
     deleted: date | None = None
     if "Deleted" in fields:
@@ -234,11 +287,6 @@ def _build_item(
     if status not in CLOSED_STATUSES and resolution is not None:
         errors.append(f"{identifier} with active Status {status} must not contain Resolution")
 
-    notes = _paths(identifier, "Notes", fields.get("Notes"), todo_dir, errors)
-    specs = _paths(identifier, "Spec", fields.get("Spec"), todo_dir, errors)
-    if "Notes" in fields and "Summary" not in fields:
-        errors.append(f"{identifier} has Notes and therefore requires Summary")
-
     if errors:
         report.errors.extend(errors)
         return None
@@ -246,6 +294,7 @@ def _build_item(
         identifier=identifier,
         title=title,
         source=source,
+        uid=uid,
         item_type=item_type,
         status=status,
         created=created,
@@ -255,22 +304,20 @@ def _build_item(
         parent=parent,
         required_for_parent=required_for_parent,
         resolution=resolution,
-        notes=notes,
-        specs=specs,
         deleted=deleted,
     )
 
 
 def _validate_placement(report: BacklogReport) -> None:
+    # In format 2 the file carries no information (the ToDo-Viewer moves entries), so misplaced
+    # entries are notices, not errors.
     for item in report.items:
         if item.deleted is not None:
             if item.source != ARCHIVE_FILE:
-                report.errors.append(f"{item.identifier} is Deleted and belongs in {ARCHIVE_FILE}")
+                report.notices.append(f"{item.identifier} is Deleted; move it to {ARCHIVE_FILE}")
             continue
         if item.source == ARCHIVE_FILE and item.status not in CLOSED_STATUSES:
-            report.errors.append(
-                f"{item.identifier} in {ARCHIVE_FILE} must be Completed or Rejected, is {item.status}"
-            )
+            report.notices.append(f"{item.identifier} is {item.status}; move it to {TODO_FILE}")
         if item.source == TODO_FILE and item.status in CLOSED_STATUSES:
             report.notices.append(
                 f"{item.identifier} is {item.status}; move it to {ARCHIVE_FILE}"
@@ -438,31 +485,6 @@ def _references(identifier: str, name: str, value: str, errors: list[str]) -> tu
     return tuple(references)
 
 
-def _paths(
-    identifier: str,
-    name: str,
-    value: str | None,
-    todo_dir: Path,
-    errors: list[str],
-) -> tuple[str, ...]:
-    if value is None:
-        return ()
-    paths = []
-    for part in (p.strip() for p in _scalar(value).split(",")):
-        match = _PATH_REFERENCE.fullmatch(part)
-        if match is None:
-            errors.append(f"{identifier} {name} must contain backticked relative paths")
-            return ()
-        relative = PurePosixPath(match.group(1))
-        if relative.is_absolute() or ".." in relative.parts:
-            errors.append(f"{identifier} {name} path must stay inside the backlog folder: {relative}")
-        elif not (todo_dir / relative).is_file():
-            errors.append(f"{identifier} {name} file does not exist: {relative}")
-        else:
-            paths.append(str(relative))
-    return tuple(paths)
-
-
 def format_report(report: BacklogReport) -> str:
     lines = [f"error: {e}" for e in report.errors]
     lines += [f"notice: {n}" for n in report.notices]
@@ -511,16 +533,44 @@ def _raw_entries(path: Path) -> list[tuple[str, str]]:
     return [(identifier, "\n".join(lines).rstrip()) for identifier, lines in entries]
 
 
-USAGE = "usage: backlog.py <backlog-folder> [--index | --show <ID> [<ID> ...]]"
+USAGE = "usage: backlog.py <backlog-folder> [--index | --show <ID> [<ID> ...] | --confirm-state <ID>]"
+
+
+def confirm_state(todo_dir: Path, identifier: str) -> int:
+    """Set the stamp line of the item's notes head (skills/todo/format.md, section Notes)."""
+    path = todo_dir / "items" / identifier / f"{identifier}_notes.md"
+    try:
+        with path.open(encoding="utf-8", newline="") as source:
+            text = source.read()
+    except OSError:
+        print(f"no notes file: {path}", file=sys.stderr)
+        return 1
+    try:
+        text = notes_head.confirmed(text)
+    except notes_head.NotesHeadError as error:
+        print(f"{identifier}: {error}", file=sys.stderr)
+        return 1
+    with path.open("w", encoding="utf-8", newline="") as target:
+        target.write(text)
+    stamp = notes_head.split(text).stamp
+    print(f"confirmed {identifier}: {stamp.day} — {stamp.topic} ({stamp.checksum})")
+    return 0
 
 
 def main(argv: list[str]) -> int:
     args = argv[1:]
+    if "--confirm-state" in args:
+        at = args.index("--confirm-state")
+        rest = args[:at] + args[at + 2:]
+        if at + 1 >= len(args) or not re.fullmatch(_ANY_ID, args[at + 1]) or len(rest) != 1:
+            print(USAGE, file=sys.stderr)
+            return 2
+        return confirm_state(Path(rest[0]), args[at + 1])
     identifiers: list[str] | None = None
     if "--show" in args:
         at = args.index("--show")
         args, identifiers = args[:at], args[at + 1:]
-        if not identifiers or not all(re.fullmatch(_ID, i) for i in identifiers):
+        if not identifiers or not all(re.fullmatch(_ANY_ID, i) for i in identifiers):
             print(USAGE, file=sys.stderr)
             return 2
     index = "--index" in args

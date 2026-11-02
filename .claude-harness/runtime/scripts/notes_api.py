@@ -13,8 +13,8 @@ from typing import Any
 from urllib.parse import quote
 
 from viewer_api import (
-    EXIT_USAGE, Api, ApiError, find_project, named_source, print_json, print_sources, source_folder,
-    source_record, split_target, stdin_json,
+    EXIT_USAGE, Api, ApiError, Target, find_project, item_fields, named_target, print_json, print_projects,
+    split_target, stdin_json, target_for, version_arg,
 )
 
 USAGE = """usage: notes_api.py [--project <name> | --source <name>] <command> [arguments]
@@ -24,62 +24,86 @@ USAGE = """usage: notes_api.py [--project <name> | --source <name>] <command> [a
   health                                  server reachable?
   sources                                 the names of all projects the viewer knows, with their folders
 Reading (labels are NOTE-001 / TOPIC-001; the lean index comes first, then the one note you need):
-  index [--topic L] [--status S] [--due] [--archived] [--linked-item ID] [--all-projects]
+  index [--status S] [--due] [--archived] [--query Q] [--all-projects]
                                           lean index: topics and notes without long texts
-  due                                     all due notes of all projects with reason, triggers, actions
+  due                                     all due notes of all projects with reason, triggers, notices
   show <NOTE>                             one note as JSON with its version, triggers, open notices
-  topics [--deleted]                      topics of the project as JSON
-  topic <TOPIC>                           one topic as JSON
-  links <NOTE> | backlinks <NOTE>         links of a note | notes pointing to it
-  notes-of-item <ID> | notes-of-topic <TOPIC>   notes that point to a backlog item | sit in a topic
+  topics                                  topics of the project as JSON
+  topic <TOPIC>                           sub-topics and notes of one topic
+  links <NOTE> | backlinks <NOTE>         links of a note | elements pointing to it
+  notes-of-item <ID>                      notes that point to a backlog item
   docs <NOTE>                             long-form documents of a note
   doc <NOTE> <name>                       print a document: 'version: <v>', blank line, content
-  notices <NOTE|ITEM-ID> [--side note|item] [--open]   notices about changed links of one note (default) or item
+  notices <NOTE> | notices <ID> --side item   open notices of one note | of one backlog item
   trash                                   topics and notes in the trash as JSON
   settings                                max_topic_depth and review_days (read only)
-Writing (JSON on stdin; a note's <version> is the one you read last):
+Writing (JSON on stdin; <version> is the number you read last):
   create                                  {summary, body?, topic?, review_at?, trigger_mode?}
   update <NOTE> <version>                 {summary?, body?, topic?, review_at?, trigger_mode?}; null clears
   keep <NOTE> <version>                   keep it: only the review date moves on
   snooze <NOTE> <version>                 optional {review_at?, trigger?}: wait again
   finish <NOTE> <version> <done|dropped>  close it into the archive
   move <NOTE> <version> <project> [--topic L]   move to another project (new label, old one to the trash)
-  delete <NOTE> | restore <NOTE>          to the trash | back from the trash or archive
-  trigger-add <NOTE>                      {kind: time|event|topic_due, at?, target?, target_project?, target_status?}
-  trigger-remove <NOTE> <trigger-id>
-  link-add <NOTE>                         {kind: item|topic|note, target, target_project?, role?: reference|origin}
-  link-remove <NOTE> <link-id>
+  delete <NOTE> <version>                 to the trash
+  restore <NOTE> <version>                back from the trash or the archive
+  trigger-add <NOTE>                      {kind: event|topic_date, target?, target_project?, status?}
+  trigger-remove <trigger-uid>
+  link-add <NOTE>                         {target, target_project?, role?: reference|origin}
+  link-remove <link-uid>
   put-doc <NOTE> <name> <version|new>    stdin: the complete document text
   note-entry <NOTE>                       dated entry {topic, discussed?, decided?, open?}
-  decide <notice-id>                      {decision: keep|detach|drop|promote|acknowledge, version?, promotion?}
-  promote <NOTE>                          {version, item_type, area, goal, completion_criteria, title?, ...}
+  decide <notice-uid>                     {decision: keep|detach|drop|promote|acknowledge, version?, type?, fields?}
+  promote <NOTE>                          {version, type, fields: {area, goal, completion_criteria, title?, ...}}
   demote <ITEM-ID>                        {version, topic?}: an open item without children becomes a note
   topic-create                            {name, parent?, due_at?}
-  topic-update <TOPIC>                    {name?, due_at?}; due_at null removes the date
-  topic-move <TOPIC>                      {parent}; null moves to the top
-  topic-delete <TOPIC> [--cascade]        to the trash (a topic with content needs --cascade)
-  topic-restore <TOPIC>"""
+  topic-update <TOPIC> <version>          {name?, due_at?}; due_at null removes the date
+  topic-move <TOPIC> <version>            {parent}; null moves to the top
+  topic-archive <TOPIC> <version>         optional {keep_archived?, active_notes?: move|archive, move_to?}
+  topic-reactivate <TOPIC> <version>
+  topic-delete <TOPIC> <version>          to the trash; optional {keep_archived?, active_notes?: move|delete, move_to?}
+  topic-restore <TOPIC>                   back from the trash"""
+
+NOTES_KINDS = ("note", "topic")
+ARCHIVED = "done,dropped,promoted"
+OPEN = "waiting,due,snoozed"
+# Older names of trigger kinds and fields, still accepted.
+TRIGGER_KIND_ALIASES = {"topic_due": "topic_date"}
 
 
 @dataclass
 class Context:
-    api: Api
-    project: str
-    source_id: str
+    target: Target
     positional: list[str]
     options: dict[str, str | bool]
 
-    def path(self, suffix: str) -> str:
-        return f"/projects/{quote(self.project)}{suffix}"
+    @property
+    def api(self) -> Api:
+        return self.target.api
+
+    @property
+    def project(self) -> str:
+        return self.target.uid
+
+    def version(self, at: int = 1) -> int:
+        return version_arg(self.positional[at])
 
     def note(self, suffix: str = "") -> str:
-        return self.path(f"/notes/{quote(self.positional[0])}{suffix}")
+        return f"/notes/notes/{quote(self.positional[0])}{suffix}"
 
     def topic(self, suffix: str = "") -> str:
-        return self.path(f"/topics/{quote(self.positional[0])}{suffix}")
+        return f"/notes/topics/{quote(self.positional[0])}{suffix}"
 
-    def call(self, method: str, path: str, body: Any = None, query: dict[str, str] | None = None) -> None:
-        print_json(self.api.call(method, path, body, query))
+    def get(self, path: str, query: dict[str, str] | None = None) -> Any:
+        return self.api.call("GET", path, query=query if query is not None else {"project": self.project})
+
+    def post(self, path: str, body: dict[str, Any]) -> None:
+        print_json(self.api.call("POST", path, {"project": self.project, **body}))
+
+    def put(self, path: str, body: dict[str, Any]) -> None:
+        print_json(self.api.call("PUT", path, {"project": self.project, **body}))
+
+    def links(self, label: str) -> dict[str, Any]:
+        return self.api.call("GET", f"/workspace/elements/{quote(self.target.resolve(label))}/links")
 
 
 @dataclass
@@ -88,123 +112,177 @@ class Command:
     handler: Callable[[Context], None]
     # Option name -> True for a flag, False for an option with a value.
     options: dict[str, bool] | None = None
+    # Positions of <version> arguments, checked before anything is sent.
+    versions: tuple[int, ...] = ()
 
 
 def _index(ctx: Context) -> None:
-    query: dict[str, str] = {}
-    if not ctx.options.get("--all-projects"):
-        query["project"] = ctx.project
-    for option, name in (("--topic", "topic"), ("--status", "status"), ("--linked-item", "linked_item")):
-        if option in ctx.options:
-            query[name] = str(ctx.options[option])
-    for option, name in (("--due", "due"), ("--archived", "archived")):
-        if ctx.options.get(option):
-            query[name] = "true"
-    index = ctx.api.call("GET", "/notes/index", query=query)
-    show_project = bool(ctx.options.get("--all-projects"))
-    print("Topics: Label | Path | Due at | Due | Notes")
-    for topic in index["topics"]:
-        prefix = f"{topic['project']} " if show_project else ""
-        print(f"{prefix}{topic['label']} | {' / '.join(topic['path'])} | {topic['due_at'] or '-'} "
-              f"| {'yes' if topic['due'] else 'no'} | {topic['note_count']}")
-    print("Notes: Label | Status | Reason | Review at | Topic | Summary")
-    for note in index["notes"]:
-        prefix = f"{note['project']} " if show_project else ""
-        print(f"{prefix}{note['label']} | {note['status']} | {note['reason'] or '-'} | {note['review_at'] or '-'} "
-              f"| {note['topic'] or '-'} | {note['summary']}")
+    query: dict[str, str] = {} if ctx.options.get("--all-projects") else {"projects": ctx.project}
+    statuses = [str(ctx.options["--status"])] if "--status" in ctx.options else []
+    if ctx.options.get("--due"):
+        statuses.append("due")
+    if ctx.options.get("--archived"):
+        statuses.append(ARCHIVED)
+    # Without a filter the server lists every status; the lean index shows open notes only.
+    query["statuses"] = ",".join(statuses) if statuses else OPEN
+    if "--query" in ctx.options:
+        query["query"] = str(ctx.options["--query"])
+    index = ctx.api.call("GET", "/notes/index/lines", query=query)
+    print(f"Topics: {index['topics']}")
+    print(f"Notes: {index['notes']}")
 
 
 def _finish(ctx: Context) -> None:
-    label, version, status = ctx.positional
+    status = ctx.positional[2]
     if status not in ("done", "dropped"):
         raise ApiError("finish needs the status done or dropped", EXIT_USAGE)
-    ctx.call("POST", ctx.path(f"/notes/{quote(label)}/finish"), {"version": version, "status": status})
-
-
-def _snooze(ctx: Context) -> None:
-    ctx.call("POST", ctx.note("/snooze"), {"version": ctx.positional[1], **stdin_json(required=False)})
+    ctx.post(ctx.note("/finish"), {"version": ctx.version(), "status": status})
 
 
 def _move(ctx: Context) -> None:
-    label, version, target = ctx.positional
-    body: dict[str, Any] = {"version": version, "project": target}
+    body: dict[str, Any] = {"version": ctx.version(), "target_project": named_target(ctx.api, ctx.positional[2]).uid}
     if "--topic" in ctx.options:
         body["topic"] = ctx.options["--topic"]
-    ctx.call("POST", ctx.path(f"/notes/{quote(label)}/move"), body)
+    ctx.post(ctx.note("/move"), body)
+
+
+def _delete(ctx: Context) -> None:
+    uid = ctx.target.resolve(ctx.positional[0])
+    print_json(ctx.api.call("DELETE", f"/workspace/elements/{quote(uid)}", query={"version": str(ctx.version())}))
+
+
+def _restore(ctx: Context) -> None:
+    """From the trash through workspace, from the archive through notes."""
+    element = ctx.api.call(
+        "GET", f"/workspace/projects/{quote(ctx.project)}/labels/{quote(ctx.positional[0])}"
+    )
+    if element.get("deleted"):
+        print_json(ctx.api.call("POST", "/workspace/trash/restore", {"uids": [element["uid"]]}))
+    else:
+        ctx.post(ctx.note("/restore"), {"version": ctx.version()})
+
+
+def _untrash(ctx: Context) -> None:
+    print_json(ctx.api.call("POST", "/workspace/trash/restore", {"uids": [ctx.target.resolve(ctx.positional[0])]}))
+
+
+def _trigger_add(ctx: Context) -> None:
+    body = stdin_json()
+    kind = TRIGGER_KIND_ALIASES.get(body.get("kind"), body.get("kind"))
+    if kind == "time":
+        raise ApiError("time triggers are gone: set an alarm instead (alarms_api.py create, see skill todo, "
+                       "alarms.md)", EXIT_USAGE)
+    out: dict[str, Any] = {"kind": kind}
+    status = body.get("status", body.get("target_status"))
+    if status is not None:
+        out["status"] = status
+    if body.get("target") is not None:
+        project = body.get("target_project")
+        # The server resolves labels of the note's own project; another project's item goes by its uid.
+        out["target"] = body["target"] if not project else named_target(ctx.api, project).resolve(body["target"])
+    ctx.post(ctx.note("/triggers"), out)
+
+
+def _link_add(ctx: Context) -> None:
+    body = stdin_json()
+    if not body.get("target"):
+        raise ApiError("link-add needs a target label", EXIT_USAGE)
+    project = body.get("target_project")
+    owner = ctx.target if not project else named_target(ctx.api, project)
+    link = {"from_uid": ctx.target.resolve(ctx.positional[0]), "to_uid": owner.resolve(body["target"]),
+            "role": body.get("role", "reference")}
+    print_json(ctx.api.call("POST", "/workspace/links", link))
+
+
+def _notes_of_item(ctx: Context) -> None:
+    print_json([e for e in ctx.links(ctx.positional[0])["incoming"] if e.get("kind") == "note"])
 
 
 def _doc(ctx: Context) -> None:
-    label, name = ctx.positional
-    document = ctx.api.call("GET", ctx.path(f"/notes/{quote(label)}/documents/{quote(name)}"))
+    document = ctx.get(ctx.note(f"/documents/{quote(ctx.positional[1])}"))
     sys.stdout.write(f"version: {document['version']}\n\n{document['content']}")
 
 
 def _put_doc(ctx: Context) -> None:
-    label, name, version = ctx.positional
-    body = {"content": sys.stdin.read(), "version": None if version == "new" else version}
-    document = ctx.api.call("PUT", ctx.path(f"/notes/{quote(label)}/documents/{quote(name)}"), body)
+    name, version = ctx.positional[1], ctx.positional[2]
+    body = {"project": ctx.project, "content": sys.stdin.read(),
+            "version": None if version == "new" else version_arg(version)}
+    document = ctx.api.call("PUT", ctx.note(f"/documents/{quote(name)}"), body)
     print(f"{document['name']}: saved, version {document['version']}")
 
 
 def _notices(ctx: Context) -> None:
-    query = {"project": ctx.project, "label": ctx.positional[0]}
-    if "--side" in ctx.options:
-        query["side"] = str(ctx.options["--side"])
-    if ctx.options.get("--open"):
-        query["open"] = "true"
-    ctx.call("GET", "/notices", query=query)
+    if ctx.options.get("--side") == "item":
+        print_json(ctx.get(f"/notes/items/{quote(ctx.positional[0])}/notices"))
+    elif ctx.options.get("--side", "note") == "note":
+        print_json(ctx.get(ctx.note()).get("notices", []))
+    else:
+        raise ApiError("--side is note or item", EXIT_USAGE)
 
 
-def _demote(ctx: Context) -> None:
-    ctx.call("POST", f"/items/{quote(ctx.source_id)}/{quote(ctx.positional[0])}/demote", stdin_json())
+def _promote(ctx: Context) -> None:
+    body = stdin_json()
+    body["fields"] = item_fields(ctx.target, body.get("fields") or {})
+    ctx.post(ctx.note("/promote"), body)
 
 
-def _topic_delete(ctx: Context) -> None:
-    query = {"cascade": "true"} if ctx.options.get("--cascade") else None
-    ctx.call("DELETE", ctx.topic(), query=query)
+def _trash(ctx: Context) -> None:
+    elements = ctx.api.call("GET", "/workspace/trash", query={"projects": ctx.project})
+    print_json([e for e in elements if e.get("kind") in NOTES_KINDS])
+
+
+def _topics(ctx: Context) -> None:
+    print_json(ctx.api.call("GET", "/notes/index", query={"projects": ctx.project})["topics"])
 
 
 COMMANDS: dict[str, Command] = {
-    "index": Command(0, _index, {"--topic": False, "--status": False, "--linked-item": False, "--due": True,
-                                 "--archived": True, "--all-projects": True}),
-    "due": Command(0, lambda c: c.call("GET", "/notes/due")),
-    "show": Command(1, lambda c: c.call("GET", c.note())),
-    "topics": Command(0, lambda c: c.call("GET", c.path("/topics"),
-                                          query={"include_deleted": "true"} if c.options.get("--deleted") else None),
-                      {"--deleted": True}),
-    "topic": Command(1, lambda c: c.call("GET", c.topic())),
-    "links": Command(1, lambda c: c.call("GET", c.note("/links"))),
-    "backlinks": Command(1, lambda c: c.call("GET", c.note("/backlinks"))),
-    "notes-of-item": Command(1, lambda c: c.call("GET", c.path(f"/items/{quote(c.positional[0])}/notes"))),
-    "notes-of-topic": Command(1, lambda c: c.call("GET", c.topic("/notes"))),
-    "docs": Command(1, lambda c: c.call("GET", c.note("/documents"))),
+    "index": Command(0, _index, {"--status": False, "--due": True, "--archived": True, "--query": False,
+                                 "--all-projects": True}),
+    "due": Command(0, lambda c: print_json(c.api.call("GET", "/notes/due"))),
+    "show": Command(1, lambda c: print_json(c.get(c.note()))),
+    "topics": Command(0, _topics),
+    "topic": Command(1, lambda c: print_json(c.get(c.topic("/content")))),
+    "links": Command(1, lambda c: print_json(c.links(c.positional[0])["outgoing"])),
+    "backlinks": Command(1, lambda c: print_json(c.links(c.positional[0])["incoming"])),
+    "notes-of-item": Command(1, _notes_of_item),
+    "docs": Command(1, lambda c: print_json(c.get(c.note("/documents")))),
     "doc": Command(2, _doc),
-    "notices": Command(1, _notices, {"--side": False, "--open": True}),
-    "trash": Command(0, lambda c: c.call("GET", c.path("/trash"))),
-    "settings": Command(0, lambda c: c.call("GET", "/notes/settings")),
-    "create": Command(0, lambda c: c.call("POST", c.path("/notes"), stdin_json())),
-    "update": Command(2, lambda c: c.call("PATCH", c.note(), {"version": c.positional[1], **stdin_json()})),
-    "keep": Command(2, lambda c: c.call("POST", c.note("/keep"), {"version": c.positional[1]})),
-    "snooze": Command(2, _snooze),
-    "finish": Command(3, _finish),
-    "move": Command(3, _move, {"--topic": False}),
-    "delete": Command(1, lambda c: c.call("DELETE", c.note())),
-    "restore": Command(1, lambda c: c.call("POST", c.note("/restore"))),
-    "trigger-add": Command(1, lambda c: c.call("POST", c.note("/triggers"), stdin_json())),
-    "trigger-remove": Command(2, lambda c: c.call("DELETE", c.note(f"/triggers/{quote(c.positional[1])}"))),
-    "link-add": Command(1, lambda c: c.call("POST", c.note("/links"), stdin_json())),
-    "link-remove": Command(2, lambda c: c.call("DELETE", c.note(f"/links/{quote(c.positional[1])}"))),
+    "notices": Command(1, _notices, {"--side": False}),
+    "trash": Command(0, _trash),
+    "settings": Command(0, lambda c: print_json(c.api.call("GET", "/notes/settings"))),
+    "create": Command(0, lambda c: c.post("/notes/notes", {"fields": stdin_json()})),
+    "update": Command(2, lambda c: c.put(c.note(), {"version": c.version(), "fields": stdin_json()}), versions=(1,)),
+    "keep": Command(2, lambda c: c.post(c.note("/keep"), {"version": c.version()}), versions=(1,)),
+    "snooze": Command(2, lambda c: c.post(c.note("/snooze"), {"version": c.version(), **stdin_json(required=False)}),
+                      versions=(1,)),
+    "finish": Command(3, _finish, versions=(1,)),
+    "move": Command(3, _move, {"--topic": False}, versions=(1,)),
+    "delete": Command(2, _delete, versions=(1,)),
+    "restore": Command(2, _restore, versions=(1,)),
+    "trigger-add": Command(1, _trigger_add),
+    "trigger-remove": Command(1, lambda c: print_json(c.api.call("DELETE", f"/notes/triggers/{quote(c.positional[0])}"))),
+    "link-add": Command(1, _link_add),
+    "link-remove": Command(1, lambda c: print_json(c.api.call("DELETE", f"/workspace/links/{quote(c.positional[0])}"))),
     "put-doc": Command(3, _put_doc),
-    "note-entry": Command(1, lambda c: c.call("POST", c.note("/notes"), stdin_json())),
-    "decide": Command(1, lambda c: c.call("POST", f"/notices/{quote(c.positional[0])}/decision", stdin_json())),
-    "promote": Command(1, lambda c: c.call("POST", f"/notes/{quote(c.project)}/{quote(c.positional[0])}/promote",
-                                           stdin_json())),
-    "demote": Command(1, _demote),
-    "topic-create": Command(0, lambda c: c.call("POST", c.path("/topics"), stdin_json())),
-    "topic-update": Command(1, lambda c: c.call("PATCH", c.topic(), stdin_json())),
-    "topic-move": Command(1, lambda c: c.call("POST", c.topic("/move"), stdin_json())),
-    "topic-delete": Command(1, _topic_delete, {"--cascade": True}),
-    "topic-restore": Command(1, lambda c: c.call("POST", c.topic("/restore"))),
+    "note-entry": Command(1, lambda c: c.post(c.note("/entries"), stdin_json())),
+    "decide": Command(1, lambda c: print_json(
+        c.api.call("POST", f"/notes/notices/{quote(c.positional[0])}/decide", stdin_json()))),
+    "promote": Command(1, _promote),
+    "demote": Command(1, lambda c: c.post(f"/notes/items/{quote(c.positional[0])}/demote", stdin_json())),
+    "topic-create": Command(0, lambda c: c.post("/notes/topics", stdin_json())),
+    "topic-update": Command(2, lambda c: c.put(c.topic(), {"version": c.version(), "fields": stdin_json()}),
+                            versions=(1,)),
+    "topic-move": Command(2, lambda c: c.post(c.topic("/move"), {"version": c.version(), **stdin_json()}),
+                          versions=(1,)),
+    "topic-archive": Command(2, lambda c: c.post(c.topic("/archive"),
+                                                 {"version": c.version(), **stdin_json(required=False)}),
+                             versions=(1,)),
+    "topic-reactivate": Command(2, lambda c: c.post(c.topic("/reactivate"), {"version": c.version()}),
+                                versions=(1,)),
+    "topic-delete": Command(2, lambda c: c.post(c.topic("/delete"),
+                                                {"version": c.version(), **stdin_json(required=False)}),
+                            versions=(1,)),
+    "topic-restore": Command(1, _untrash),
 }
 
 
@@ -227,6 +305,10 @@ def _split(command: Command, args: list[str]) -> tuple[list[str], dict[str, str 
             options[arg] = value
     if len(positional) != command.positional:
         raise ApiError(USAGE, EXIT_USAGE)
+    if command.handler is _put_doc and positional[2] != "new":
+        version_arg(positional[2])
+    for at in command.versions:
+        version_arg(positional[at])
     return positional, options
 
 
@@ -237,24 +319,19 @@ def run(project_name: str, source_name: str | None, name: str, args: list[str]) 
     command = Command(0, lambda c: None) if name in local else COMMANDS[name]
     positional, options = _split(command, args)
     project = find_project(project_name, "todo")
-    if not project.config.notes_enabled():
+    if not project.config.viewer_notes_enabled():
         raise ApiError(
             f"notes need todo.backend = \"api\" in project {project.name}: they live only in the ToDo-Viewer",
             EXIT_USAGE,
         )
     api = Api(project.config.todo_api_url)
     if name == "health":
-        print_json(api.call("GET", "/health"))
+        print_json(api.call("GET", "/core/health"))
         return
     if name == "sources":
-        print_sources(api)
+        print_projects(api)
         return
-    # The notes of a project are addressed by the project name the viewer knows its backlog by.
-    if source_name is not None:
-        record = named_source(api, source_name)
-    else:
-        record = source_record(api, source_folder(project), project)
-    command.handler(Context(api, record["project"], record["id"], positional, options))
+    command.handler(Context(target_for(api, project, source_name), positional, options))
 
 
 def main(argv: list[str]) -> int:

@@ -3,8 +3,8 @@
 The ToDo-Viewer server stores topics, notes, links, and triggers, decides what
 is due, creates notices when linked items change, and checks all rules. It
 does not know what the user approved: the authority in [notes.md](notes.md)
-applies. The server's own description is its `interfaces.md` ("HTTP API v2:
-Topics, Notes und Links"); this file covers what you need to call the helper.
+applies. The server's own description is its `docs/techdocs/neubau-server.md`
+(plugin `notes`); this file covers what you need to call the helper.
 
 ## Calling the helper
 
@@ -14,14 +14,14 @@ python3 ".claude-harness/runtime/scripts/notes_api.py" [--project <name>] <comma
 
 Run it in the session's project. It takes the server URL (`[todo].api_url`) and
 the project from the harness config (the root project by default, a subproject
-with `--project <name>`); notes belong to that project. There is no path
-argument. `--source <name>` (instead of `--project`) addresses another
-project's notes by the exact name from `sources`; it needs the owner's approval
-(rules in [SKILL.md](SKILL.md)). Without arguments it prints the command list. JSON input goes to
-stdin; use a quoted heredoc:
+with `--project <name>`); notes belong to the viewer project of that backlog
+folder. There is no path argument. `--source <name>` (instead of `--project`)
+addresses another project's notes by the exact name from `sources`; it needs
+the owner's approval (rules in [SKILL.md](SKILL.md)). Without arguments it
+prints the command list. JSON input goes to stdin; use a quoted heredoc:
 
 ```
-python3 ".claude-harness/runtime/scripts/notes_api.py" snooze NOTE-004 3f9a... <<'EOF'
+python3 ".claude-harness/runtime/scripts/notes_api.py" snooze NOTE-004 3 <<'EOF'
 {"review_at": "2026-11-02T09:00:00+01:00"}
 EOF
 ```
@@ -29,31 +29,35 @@ EOF
 ## Objects
 
 - **Label:** `NOTE-001`, `TOPIC-001`, counted per project and type, never
-  reused. Address everything by label.
+  reused. Address everything by label; the helper turns labels into the
+  server's internal ids where it needs them.
 - **Status of a note** (derived by the server): `waiting`, `due`, `snoozed`,
   `done`, `dropped`, `promoted`. `due` only means "look at it". `done`,
-  `dropped`, and `promoted` notes are archived; deleted ones are in the trash.
-  Closed and deleted notes cannot be changed, only read or restored.
+  `dropped`, and `promoted` notes are archived, and so are open notes of an
+  archived topic; deleted ones are in the trash. Archived and deleted notes
+  cannot be changed, only read or restored.
 - **`reason`** of a due note: `trigger`, `notice`, `topic_due`, or
   `review_expired`.
-- **Version:** every note has a `version`. `update`, `keep`, `snooze`,
-  `finish`, `move`, `promote`, and `demote` need the one you read last, else
-  `version_conflict`. Topics, triggers, and links have none.
-- **Times:** ISO 8601 **with** offset (`2026-10-09T09:00:00+02:00`), else 400.
-  The server answers in UTC.
+- **Version:** every note and topic has a `version`, a number. Changing
+  commands need the one you read last, else `version_conflict`. A document
+  write or a notes entry changes it too: read the note again afterwards.
+- **Times:** ISO 8601, preferably with offset (`2026-10-09T09:00:00+02:00`);
+  without one the server takes UTC. It answers in UTC.
 - **Triggers** (`trigger-add`, or `trigger` in `snooze`):
-  - `{"kind": "time", "at": "..."}`.
-  - `{"kind": "event", "target": "STORY-002", "target_status": "Completed"}`
-    plus optional `target_project`. Statuses: `In progress`,
-    `Awaiting confirmation`, `Completed`, `Rejected`. If the item has the
-    status already, the trigger fires at once. The matching `trigger` link is
-    created with it.
-  - `{"kind": "topic_due"}`: needs a topic with a date on the note.
+  - `{"kind": "event", "target": "STORY-002", "status": "Completed"}` plus
+    optional `target_project` (another project's name from `sources`).
+    Statuses: `In progress`, `Awaiting confirmation`, `Completed`,
+    `Rejected`. If the item has the status already, the trigger fires at once.
+    The matching `trigger` link is created with it.
+  - `{"kind": "topic_date"}`: the date of the note's topic; the topic needs a
+    date.
+  - There are no time triggers: a reminder at a fixed time is an alarm
+    (`alarms_api.py`, see [alarms.md](alarms.md)).
   - `trigger_mode` `any` (default) fires on the first trigger, `all` when all
     have arrived. A new `trigger` in `snooze` replaces all old triggers.
-- **Links** (`link-add`): `kind` `item`, `topic`, or `note`, a `target` label,
-  optional `target_project` (another registered project), `role` `reference`
-  (default) or `origin`. The same link twice is `link_exists`.
+- **Links** (`link-add`): a `target` label (item, topic, or note), optional
+  `target_project` (another project's name), `role` `reference` (default) or
+  `origin`. The same link twice is `link_exists`.
 
 ## Commands
 
@@ -61,27 +65,32 @@ EOF
 |---|---|
 | `health` | Server reachable? |
 | `sources` | `Project \| Folder` of every project the viewer knows; the names `--source` accepts |
-| `index [--topic L] [--status S] [--due] [--archived] [--linked-item ID] [--all-projects]` | The lean index: topics (`Label \| Path \| Due at \| Due \| Notes`) and notes (`Label \| Status \| Reason \| Review at \| Topic \| Summary`). Default: open notes of this project. `--topic` includes sub-topics; `--archived` reads the archive; `--linked-item` finds notes linked or triggered by that item; `--all-projects` adds the project in front of each label |
-| `due` | All due notes of all projects with reason, topic path, arrived triggers, and possible actions (JSON) |
-| `show <NOTE>` | One note: body, triggers, open notices, version |
-| `topics [--deleted]`, `topic <TOPIC>` | Topics as JSON |
-| `links <NOTE>`, `backlinks <NOTE>` | Links of a note (with `reachable`), and the notes pointing to it |
-| `notes-of-item <ID>`, `notes-of-topic <TOPIC>` | Notes (all projects) pointing to a backlog item, or sitting in a topic |
+| `index [--status S] [--due] [--archived] [--query Q] [--all-projects]` | The lean index: topics (`Label \| Name \| Due at \| Due \| Notes`) and notes (`Label \| Status \| Reason \| Review at \| Topic \| Summary`). Default: open notes of this project. `--status` takes comma-separated statuses; `--archived` reads the archive; `--all-projects` covers every project |
+| `due` | All due notes of all projects with reason, topic path, triggers, notices, and `due_since` (JSON) |
+| `show <NOTE>` | One note: body, topic path, triggers, open notices, documents, version |
+| `topics`, `topic <TOPIC>` | Topics of the project as JSON; one topic with its sub-topics and notes |
+| `links <NOTE>`, `backlinks <NOTE>` | Links of a note, and the elements pointing to it (each with `link_uid`, `role`, label, kind) |
+| `notes-of-item <ID>` | Notes pointing to a backlog item |
 | `docs <NOTE>`, `doc <NOTE> <name>`, `put-doc <NOTE> <name> <version\|new>`, `note-entry <NOTE>` | Long-form documents of a note: names `<LABEL>_notes.md`, `<LABEL>_spec.md`, `<LABEL>_spec_<topic>.md`. `doc` prints `version: <v>`, a blank line, the text; `put-doc` replaces or (with `new`) creates it from stdin; `note-entry` appends a dated entry (`{topic, discussed?, decided?, open?}`) |
-| `notices <NOTE\|ITEM-ID> [--side note\|item] [--open]` | Notices about changed links of one note (default) or one item (`--side item`) |
+| `notices <NOTE>`, `notices <ID> --side item` | Open notices of one note, or of one backlog item |
 | `create` | New note. stdin: `summary`, optional `body`, `topic`, `review_at`, `trigger_mode` |
 | `update <NOTE> <version>` | stdin: any of `summary`, `body`, `topic`, `review_at`, `trigger_mode`; `null` clears `body`, `topic`, `review_at` |
 | `keep <NOTE> <version>` | The review date moves on, nothing else changes |
 | `snooze <NOTE> <version>` | Wait again with the standard review date; stdin optional: `review_at` and/or `trigger`. Fired triggers are reset |
 | `finish <NOTE> <version> <done\|dropped>` | Close into the archive |
-| `move <NOTE> <version> <project> [--topic L]` | Move to another project: a new note with a new label, the old one goes to the trash |
-| `delete <NOTE>`, `restore <NOTE>` | To the trash; back to waiting with a new review date, also from the archive |
-| `trigger-add <NOTE>`, `trigger-remove <NOTE> <id>` | See triggers above; the answer is the note |
-| `link-add <NOTE>`, `link-remove <NOTE> <id>` | See links above |
-| `decide <notice-id>` | stdin: `{"decision": "keep\|detach\|drop\|promote\|acknowledge", "version"?, "promotion"?}`. Notes: `keep` (review date moves on), `detach` (remove the reference link), `drop`, `promote` (with `promotion`: the fields of `promote` below). Items: only `acknowledge` |
-| `promote <NOTE>` | stdin: `version`, `item_type` (`Task`\|`Story`\|`Epic`), `area`, `goal`, `completion_criteria`, optional `title`, `summary` (default: the note's summary), `parent`, `required_for_parent`, `priority`, `dependencies`. Creates the item in the note's project by the normal rules; the note's body becomes the first notes entry, the note is `promoted` and keeps an `origin` link. An interrupted call can be repeated with the same version |
-| `demote <ITEM-ID>` | stdin: `{"version": <item version>, "topic"?}`. Item to note; see the skill for when it works |
-| `topic-create`, `topic-update <TOPIC>`, `topic-move <TOPIC>`, `topic-delete <TOPIC> [--cascade]`, `topic-restore <TOPIC>` | Topics: `{name, parent?, due_at?}`; `{name?, due_at?}` (`due_at: null` removes the date); `{parent}`; the tree has a maximum depth (`topic_too_deep`) |
+| `move <NOTE> <version> <project> [--topic L]` | Move to another project (name from `sources`): a new note with a new label, the old one goes to the trash |
+| `delete <NOTE> <version>` | To the trash |
+| `restore <NOTE> <version>` | Back from the trash, or from the archive to waiting with a new review date |
+| `trigger-add <NOTE>`, `trigger-remove <trigger-uid>` | See triggers above; the trigger uid is in `show` |
+| `link-add <NOTE>`, `link-remove <link-uid>` | See links above; the link uid is `link_uid` in `links` |
+| `decide <notice-uid>` | stdin: `{"decision": "keep\|detach\|drop\|promote\|acknowledge", "version"?, "type"?, "fields"?}`. Notes: `keep` (review date moves on), `detach` (remove the reference link), `drop`, `promote` (with `type` and `fields` as for `promote`). Items: only `acknowledge`. The notice uid is in `show` or `notices` |
+| `promote <NOTE>` | stdin: `{"version", "type": "Task\|Story\|Epic", "fields": {"area", "goal", "completion_criteria", "title"?, "summary"?, "parent"?, "required_for_parent"?, "priority"?, "dependencies"?}}`. Creates the item in the note's project by the normal rules (IDs in `parent` and `dependencies`); body, notes, and specs move along, the note is `promoted` and keeps an `origin` link. An interrupted call can be repeated |
+| `demote <ITEM-ID>` | stdin: `{"version": <item version>, "topic"?}`. Item to note; see [notes.md](notes.md) for when it works |
+| `topic-create` | stdin: `{name, parent?, due_at?}`; the tree has a maximum depth (`topic_too_deep`) |
+| `topic-update <TOPIC> <version>`, `topic-move <TOPIC> <version>` | stdin: `{name?, due_at?}` (`due_at: null` removes the date); `{parent}` (`null` = top level) |
+| `topic-archive <TOPIC> <version>`, `topic-reactivate <TOPIC> <version>` | Archive a topic with its sub-topics, or bring it back. A topic with content needs a choice on stdin: `keep_archived` (true: its archived notes move to the topic "Archiviert"), `active_notes` `move` (to `move_to`, a topic label or `null` = none) or `archive` |
+| `topic-delete <TOPIC> <version>` | To the trash; a topic with content needs the same choice, with `active_notes` `move` or `delete` (`topic_has_content` or `choice_missing` names what is there) |
+| `topic-restore <TOPIC>` | Back from the trash, with what was deleted with it |
 | `trash` | Topics and notes of the project in the trash |
 | `settings` | `max_topic_depth` and `review_days` (read only) |
 
@@ -95,13 +104,17 @@ settings.
   - `version_conflict`: the note changed since you read it. Read it again,
     check whether your change still fits, then decide — never repeat the call
     blindly.
-  - `note_closed`, `note_deleted`: closed or deleted notes cannot be changed;
-    `restore` first, if that is wanted.
-  - `topic_too_deep`, `topic_loop`, `topic_has_content`, `link_exists`,
-    `link_target_not_found`, `link_project_unknown`, `invalid_value`.
+  - `note_archived`, `note_deleted`: archived or deleted notes cannot be
+    changed; `restore` first, if that is wanted.
+  - `topic_too_deep`, `topic_loop`, `topic_has_content`, `choice_missing`,
+    `topic_archived`, `topic_in_trash`, `trigger_needs_topic_date`,
+    `link_exists`, `same_project`, `not_found`, `invalid_input`.
   - For `promote` and `demote` the backlog rules apply: `parent_closed`
     (`todo` skill: ask once about reopening), `demote_not_open`,
-    `demote_has_children`, `demote_referenced` (`details.items` names the
-    items in the way).
-- Exit 2: wrong call or invalid JSON on stdin, or the module is off.
+    `demote_has_children`, `demote_referenced` (`details` names the items in
+    the way).
+- Exit 2: wrong call, invalid JSON on stdin, a version that is not a number,
+  a time trigger, or the module is off.
 - Exit 3: server not reachable; see step 4 in [notes.md](notes.md).
+- Exit 4: the project is not registered in the viewer; see step 4 in
+  [SKILL.md](SKILL.md).

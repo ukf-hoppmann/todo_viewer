@@ -5,6 +5,11 @@ import { plugin } from "../../../../../../client/src/plugins/workspace";
 import manifest from "../../../../../../client/src/plugins/workspace/plugin.json";
 
 describe("workspace plugin definition", () => {
+	it("puts its settings into the group projects", () => {
+		const settings = (plugin.contributions ?? []).filter((entry) => entry.slot === "core.settings-sections");
+		expect(settings.map((entry) => ("group" in entry ? entry.group : undefined))).toEqual(["projects"]);
+	});
+
 	it("is a valid definition that hangs into the layout plugin and provides the create slot", () => {
 		expect(checkDefinition({ plugin }, "workspace").ok).toBe(true);
 		expect(checkContributions(plugin.contributions ?? [])).toEqual([]);

@@ -40,6 +40,10 @@ export const coreTestIds = {
 	navTab: (ownerId: string, name: string) => `core.nav-tab.${ownerId}.${name}`,
 	/** The entry of one language in the language select: `core.language-option.<language>` (rule 7.2). */
 	languageOption: (language: string) => `core.language-option.${language}`,
+	settingsNav: "core.settings-nav",
+	settingsGroupEmpty: "core.settings-group-empty",
+	/** The entry of one group in the navigation of the settings page: `core.settings-group.<group>` (rule 7.2). */
+	settingsGroup: (group: string) => `core.settings-group.${group}`,
 	/** A section of the settings page: `core.settings-section.<owner id>.<name>` (rule 7.2). */
 	settingsSection: (ownerId: string, name: string) => `core.settings-section.${ownerId}.${name}`,
 	/** A section of the sidebar: `core.sidebar-section.<owner id>.<name>` (rule 7.2). */

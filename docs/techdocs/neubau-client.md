@@ -57,7 +57,7 @@ später aus, startet die Verbindung denselben Test und zeigt das Banner, bis er 
 
 Ein Widget braucht einen Slot, den der Besitzer anbietet und den das beitragende Plugin über `requires` erreicht; der Core
 bietet `core.settings-sections` und `core.sidebar-sections` an. `when` nennt die Hauptrouten (`<owner>/<name>`, z. B. `backlog/main`), auf denen das
-Widget erscheint; ohne `when` überall. Der Besitzer des Slots zeichnet die Widgets mit `useSlot(slot)` in der festen
+Widget erscheint; ohne `when` überall. `group` gilt nur im Slot `core.settings-sections` (siehe unten). Der Besitzer des Slots zeichnet die Widgets mit `useSlot(slot)` in der festen
 Reihenfolge `order`, Plugin-ID, Definition. Die Registry prüft Form, Slot und Besitzer zur Laufzeit; ein fehlerhaftes Plugin
 ist `failed`, die abhängigen sind `blocked`, die App läuft weiter.
 
@@ -77,7 +77,7 @@ Bereiche mit `layout: { header?, sidebar?, detail? }` ein (Standard aus); es sin
 
 Backlog, Abhängigkeiten, Notes, Wecker und Papierkorb nutzen `sidebar` und `detail`; keine Seite baut ihre Aufteilung selbst.
 Die Tabs stehen in der Reihenfolge der Plugin-IDs, der Tab `core/settings` (Einstellungen) zuletzt; seine Seite
-(`core.settings-sections`) zeigt eine Karte je Widget. Das Thema ist fest dunkel in den Farben des alten Viewers
+(`core.settings-sections`) zeigt links eine Navigation der Gruppen und rechts eine Karte je Widget der offenen Gruppe. Die Gruppen sind fest im Core: `projects` („Projekte“, alles Projektspezifische) und `system` („System“: Notes, Wecker, später Auto-Sync); ein Widget wählt seine Gruppe mit `group`, ohne Angabe oder mit unbekanntem Wert landet es in `system`. Die offene Gruppe steht in der URL (`/core/settings?group=system`); ohne gültigen Wert öffnet die erste Gruppe mit Abschnitten. Das Thema ist fest dunkel in den Farben des alten Viewers
 (`core/theme`).
 
 ## Server-Ereignisse (SSE)

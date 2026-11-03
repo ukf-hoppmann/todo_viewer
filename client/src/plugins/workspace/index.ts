@@ -57,7 +57,7 @@ export const plugin = definePlugin({
 		{ slot: "core.sidebar-sections", name: "search", component: SearchSection, order: 0 },
 		{ slot: "core.sidebar-sections", name: "projects", component: ProjectsSection, order: 10 },
 		{ slot: "layout-header-sidebar.header-actions", name: "new", component: NewButton, order: -10 },
-		{ slot: "core.settings-sections", name: "projects", component: ProjectSettings, order: 0 },
+		{ slot: "core.settings-sections", name: "projects", component: ProjectSettings, order: 0, group: "projects" },
 	],
 });
 

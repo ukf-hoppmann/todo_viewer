@@ -53,7 +53,7 @@ export const plugin = definePlugin({
 		{ slot: "backlog.item-detail", name: "demote", component: DemoteAction, order: 1 },
 		{ slot: "core.sidebar-sections", name: "status-filter", component: StatusFilter, order: 20, when: ["notes/main"] },
 		{ slot: "workspace.attention-sources", name: "due", component: NotesAttention },
-		{ slot: "core.settings-sections", name: "settings", component: NotesSettings, order: 10 },
+		{ slot: "core.settings-sections", name: "settings", component: NotesSettings, order: 10, group: "system" },
 	],
 });
 

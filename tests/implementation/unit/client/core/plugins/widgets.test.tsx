@@ -24,6 +24,14 @@ describe("checkContributions: widgets", () => {
 		expect(checkContributions([{ slot: "a.b", name: "x", component: "text" }])).toEqual(["contribution 'x': `component` is no component"]);
 	});
 
+	it("accepts a group in the settings slot and reports a bad group or one in another slot", () => {
+		expect(checkContributions([widget("core.settings-sections", "x", { group: "projects" })])).toEqual([]);
+		expect(checkContributions([widget("core.settings-sections", "x", { group: "Bad_Group" })])).toEqual(["contribution 'x': `group` is not kebab-case"]);
+		expect(checkContributions([widget("layout.header", "x", { group: "projects" })])).toEqual([
+			"contribution 'x': `group` is only allowed in 'core.settings-sections'",
+		]);
+	});
+
 	it("reports a bad order and a bad when", () => {
 		expect(checkContributions([widget("a.b", "x", { order: "first" })])).toEqual(["contribution 'x': `order` is no number"]);
 		expect(checkContributions([widget("a.b", "x", { when: "backlog/main" })])).toEqual([
@@ -93,6 +101,17 @@ describe("checkDefinition: slots, event handlers, frame", () => {
 });
 
 describe("selectSlotEntries", () => {
+	it("hands the group of a widget on to its entry", () => {
+		const active: ActivePlugin[] = [
+			{ id: "a", definition: definePlugin({ i18n, contributions: [widget("core.settings-sections", "one", { group: "projects" }), widget("core.settings-sections", "two")] as Contribution[] }) },
+		];
+
+		expect(selectSlotEntries(active, "core.settings-sections").map((entry) => [entry.name, entry.group])).toEqual([
+			["one", "projects"],
+			["two", undefined],
+		]);
+	});
+
 	const plugin = (id: string, contributions: Contribution[]): ActivePlugin => ({ id, definition: definePlugin({ i18n, contributions }) });
 	const A = () => null;
 	const B = () => null;

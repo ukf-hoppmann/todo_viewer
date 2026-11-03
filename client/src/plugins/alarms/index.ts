@@ -36,7 +36,7 @@ export const plugin = definePlugin({
 		{ slot: "workspace.create-types", name: "alarm", component: CreateAlarm, order: 30 },
 		{ slot: "workspace.detail-sections", name: "set-alarm", component: SetAlarm, order: 0 },
 		{ slot: "workspace.attention-sources", name: "due", component: AlarmAttention },
-		{ slot: "core.settings-sections", name: "settings", component: AlarmSettings, order: 20 },
+		{ slot: "core.settings-sections", name: "settings", component: AlarmSettings, order: 20, group: "system" },
 	],
 });
 

@@ -20,6 +20,11 @@ describe("notes plugin definition", () => {
 		expect(widgets.filter((entry) => entry.slot === "core.settings-sections").map((entry) => entry.name)).toEqual(["settings"]);
 	});
 
+	it("puts its settings into the group system", () => {
+		const settings = (plugin.contributions ?? []).filter((entry) => entry.slot === "core.settings-sections");
+		expect(settings.map((entry) => ("group" in entry ? entry.group : undefined))).toEqual(["system"]);
+	});
+
 	it.each([
 		["workspace.element.changed", ["Notes", "Due"]],
 		["notes.note.changed", ["Notes", "Due"]],

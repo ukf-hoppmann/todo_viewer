@@ -1,4 +1,4 @@
-# NEW-settings-gliedern — Einstellungen übersichtlich gliedern: Gruppen, kompakte Projektliste, Sync-Intervall
+# STORY-096 — Einstellungen übersichtlich gliedern: Gruppen, kompakte Projektliste, Sync-Intervall
 
 ## State
 

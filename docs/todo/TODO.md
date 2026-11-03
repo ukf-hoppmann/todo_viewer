@@ -172,7 +172,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     4. Texte in de/en, Test-IDs nach Client-Regeln, Unit-Tests für die
     reinen Darstellungsfunktionen.
 
-- `NEW-settings-gliedern` **Einstellungen übersichtlich gliedern: Gruppen, kompakte Projektliste, Sync-Intervall**
+- `STORY-096` **Einstellungen übersichtlich gliedern: Gruppen, kompakte Projektliste, Sync-Intervall**
+  - Uid: 7d5433dc-85d6-41e5-a77a-07bab0ff9927.
   - Type: Story.
   - Parent: `EPIC-007`.
   - Required for parent: No.
@@ -199,9 +200,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     „System“ mit Seitennavigation, eine kompakte Projektliste und ein
     Auto-Sync-Intervall, das man in der Oberfläche einstellt.
 
-- `NEW-settings-gruppen` **Einstellungen: Gruppen und Seitennavigation**
+- `TASK-048` **Einstellungen: Gruppen und Seitennavigation**
+  - Uid: cf36a44d-d391-4c4a-8c88-f1a5e7a6e97a.
   - Type: Task.
-  - Parent: `NEW-settings-gliedern`.
+  - Parent: `STORY-096`.
   - Required for parent: Yes.
   - Status: Awaiting confirmation.
   - Created: 2026-11-03.
@@ -218,15 +220,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     3. Texte in de/en, Test-IDs nach Client-Regeln, Tests für Navigation und
     Zuordnung.
 
-- `NEW-settings-projektliste` **Einstellungen: Projektliste kompakt mit Icons und Tooltips**
+- `TASK-049` **Einstellungen: Projektliste kompakt mit Icons und Tooltips**
+  - Uid: c10a31b8-7eef-4f6c-845e-9405c4dbfb03.
   - Type: Task.
-  - Parent: `NEW-settings-gliedern`.
+  - Parent: `STORY-096`.
   - Required for parent: Yes.
   - Status: Awaiting confirmation.
   - Created: 2026-11-03.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-settings-gruppen`.
+  - Dependencies: `TASK-048`.
   - Goal: Die Projekte in der Gruppe „Projekte“ stehen als kompakte Zeilen:
     Name, Status-Chip, Modus (Aus/Manuell/Auto) und Icon-Aktionen mit Tooltip
     (Bearbeiten, Sync). Pfad, Richtung und letzter Sync stehen in einem
@@ -236,9 +239,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     bearbeiten, Sync, Spiegel einrichten) bleiben erreichbar. 3. Texte in
     de/en, Tests für Zeile und Detail.
 
-- `NEW-settings-intervall-server` **Server: Auto-Sync-Intervall zur Laufzeit ändern**
+- `TASK-050` **Server: Auto-Sync-Intervall zur Laufzeit ändern**
+  - Uid: dfd71aab-74fc-4913-892b-3dc2401f22ac.
   - Type: Task.
-  - Parent: `NEW-settings-gliedern`.
+  - Parent: `STORY-096`.
   - Required for parent: Yes.
   - Status: Awaiting confirmation.
   - Created: 2026-11-03.
@@ -256,15 +260,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Neustart des Timers; Techdocs (Konfiguration, Schnittstellen) sind
     nachgezogen.
 
-- `NEW-settings-intervall-ui` **Einstellungen: Auto-Sync-Intervall in der Gruppe „System“**
+- `TASK-051` **Einstellungen: Auto-Sync-Intervall in der Gruppe „System“**
+  - Uid: 6322b1dd-c9b2-43fe-8f63-987f5158981d.
   - Type: Task.
-  - Parent: `NEW-settings-gliedern`.
+  - Parent: `STORY-096`.
   - Required for parent: Yes.
   - Status: Awaiting confirmation.
   - Created: 2026-11-03.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-settings-gruppen`, `NEW-settings-intervall-server`.
+  - Dependencies: `TASK-048`, `TASK-050`.
   - Goal: Ein Abschnitt „Auto-Sync“ in der Gruppe „System“ zeigt das Intervall
     und lässt es ändern; ist es per Umgebung gesetzt, ist das Feld gesperrt und
     nennt den Grund.

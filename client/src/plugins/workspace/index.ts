@@ -4,6 +4,7 @@ import { workspaceApi } from "./api";
 import de from "./locales/de.json";
 import en from "./locales/en.json";
 import { NewButton } from "./NewButton";
+import { AutoSyncSettings } from "./AutoSyncSettings";
 import { ProjectSettings } from "./ProjectSettings";
 import { ProjectsSection } from "./ProjectsSection";
 import { SearchSection } from "./SearchSection";
@@ -48,8 +49,11 @@ export const plugin = definePlugin({
 		"workspace.links.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Links"]));
 		},
+		"core.settings.changed": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["SyncSettings"]));
+		},
 		"core.reconnected": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Projects", "Links", "Trash", "Sync"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Projects", "Links", "Trash", "Sync", "SyncSettings"]));
 		},
 	},
 	contributions: [
@@ -58,6 +62,7 @@ export const plugin = definePlugin({
 		{ slot: "core.sidebar-sections", name: "projects", component: ProjectsSection, order: 10 },
 		{ slot: "layout-header-sidebar.header-actions", name: "new", component: NewButton, order: -10 },
 		{ slot: "core.settings-sections", name: "projects", component: ProjectSettings, order: 0, group: "projects" },
+		{ slot: "core.settings-sections", name: "auto-sync", component: AutoSyncSettings, order: 30, group: "system" },
 	],
 });
 

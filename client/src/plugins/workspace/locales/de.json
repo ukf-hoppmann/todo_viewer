@@ -110,6 +110,14 @@
 		"sync": "Abgleichen …",
 		"check": "Prüfen …"
 	},
+	"autoSync": {
+		"title": "Auto-Sync",
+		"interval": "Takt (Sekunden)",
+		"hint": "Abstand der Prüfungen. 0 schaltet den Auto-Sync ab. Er läuft nur, solange mindestens ein Projekt „Sync automatisch“ hat.",
+		"locked": "Der Takt ist über die Umgebungsvariable AUTO_SYNC_INTERVAL gesetzt und lässt sich hier nicht ändern.",
+		"saved": "Gespeichert; der neue Takt gilt sofort.",
+		"failed": "Der Takt konnte nicht gespeichert werden."
+	},
 	"sync": {
 		"title": "Abgleich: {{name}}",
 		"reload": "Neu laden",

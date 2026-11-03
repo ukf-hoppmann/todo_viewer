@@ -1,5 +1,5 @@
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Radio, RadioGroup, FormControlLabel, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Radio, RadioGroup, FormControlLabel, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconAction } from "../../shared";
@@ -14,7 +14,7 @@ import {
 	type SyncDirection,
 	type SyncResult,
 } from "./api";
-import { choiceBlocked, choiceEffect, decisionsOf, differences, isDeletionConflict, withBulkChoice, type Choices } from "./sync";
+import { choiceBlocked, choiceEffect, decisionsOf, differences, documentContext, isDeletionConflict, lineDiff, originKey, withBulkChoice, type Choices, type DiffLine } from "./sync";
 import { workspaceTestIds } from "./testIds";
 
 const directions: SyncDirection[] = ["both", "to_files", "to_database"];
@@ -167,13 +167,29 @@ export function SyncDialog({ project, onClose }: { project: Project; onClose: ()
 }
 
 function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: SyncConflict; direction: SyncDirection; choice: SyncChoice | undefined; onChoose: (choice: SyncChoice) => void }) {
-	const { t } = useTranslation("workspace");
-	const rows = differences(conflict);
+	const { t, i18n } = useTranslation("workspace");
+	const context = documentContext(conflict);
+	const rows = differences(conflict).filter((row) => !context || (row.name !== "kind" && row.name !== "item"));
+	const renamed = conflict.renamed_to;
 	return (
 		<Box sx={{ border: 1, borderColor: "divider", borderRadius: 1, p: 1, mb: 1 }} data-testid={workspaceTestIds.syncConflict(conflict.key)}>
 			<Typography variant="body2" sx={{ fontWeight: 600 }}>
 				{conflict.label ?? conflict.kind} · {t(`sync.conflict.${conflict.conflict}`)}
 			</Typography>
+			{context && (
+				<Typography variant="caption" color="text.secondary" component="div" data-testid={workspaceTestIds.syncContext(conflict.key)}>
+					{t(`sync.context.${context.kind === "spec" || context.kind === "notes" ? context.kind : "other"}`, { item: context.item ?? "", kind: context.kind })}
+				</Typography>
+			)}
+			<Typography variant="body2" sx={{ mt: 0.5 }} data-testid={workspaceTestIds.syncOrigin(conflict.key)}>
+				{t(`sync.origin.${originKey(conflict)}`)}
+				{conflict.synced_at && ` ${t("sync.lastSynced", { time: new Date(conflict.synced_at).toLocaleString(i18n.language) })}`}
+			</Typography>
+			{renamed && (
+				<Alert severity="info" icon={false} sx={{ my: 0.5, py: 0 }} data-testid={workspaceTestIds.syncRename(conflict.key)}>
+					{t("sync.renamedTo", { label: renamed.label ?? renamed.key, percent: Math.round(renamed.similarity * 100) })}
+				</Alert>
+			)}
 			<Box
 				component="table"
 				sx={{ width: "100%", fontSize: 13, borderCollapse: "collapse", my: 0.5, "& td": { verticalAlign: "top", whiteSpace: "pre-wrap", wordBreak: "break-word", pr: 1 } }}
@@ -189,12 +205,7 @@ function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: Syn
 					{rows.map((row) => (
 						<tr key={row.name} data-testid={workspaceTestIds.syncDifference(conflict.key, row.name)}>
 							<td>{row.name}</td>
-							<td>
-								<Box sx={{ maxHeight: 160, overflow: "auto" }}>{row.database}</Box>
-							</td>
-							<td>
-								<Box sx={{ maxHeight: 160, overflow: "auto" }}>{row.files}</Box>
-							</td>
+							<TextCells conflictKey={conflict.key} row={row} />
 						</tr>
 					))}
 				</tbody>
@@ -208,10 +219,20 @@ function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: Syn
 						control={<Radio size="small" slotProps={{ input: { "data-testid": workspaceTestIds.syncChoice(conflict.key, value) } as never }} />}
 						label={
 							<Box>
-								<Typography variant="body2">{t(`sync.choices.${value}`)}</Typography>
+								<Typography variant="body2">
+									{t(`sync.choices.${value}`)}
+									{conflict.recommendation === value && (
+										<Chip size="small" color="primary" variant="outlined" label={t("sync.recommended")} sx={{ ml: 1 }} data-testid={workspaceTestIds.syncRecommended(conflict.key, value)} />
+									)}
+								</Typography>
 								<Typography variant="caption" color="text.secondary">
 									{choiceBlocked(direction, value) ? t("sync.blockedByDirection") : t(`sync.effect.${choiceEffect(conflict, value)}`)}
 								</Typography>
+								{conflict.recommendation === value && t(`sync.reason.${conflict.reason}`, { defaultValue: "" }) && (
+									<Typography variant="caption" color="primary" component="div">
+										{t(`sync.reason.${conflict.reason}`)}
+									</Typography>
+								)}
 							</Box>
 						}
 						sx={{ alignItems: "flex-start", mb: 0.5 }}
@@ -220,4 +241,42 @@ function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: Syn
 			</RadioGroup>
 		</Box>
 	);
+}
+
+/** The two sides of a row; a text that exists on both sides is shown as a line diff instead of twice in full. */
+function TextCells({ conflictKey, row }: { conflictKey: string; row: { name: string; database: string; files: string } }) {
+	const { t } = useTranslation("workspace");
+	const both = row.database !== "—" && row.files !== "—" && (row.database.includes("\n") || row.files.includes("\n"));
+	const diff = both ? lineDiff(row.database, row.files) : null;
+	if (diff) {
+		return (
+			<td colSpan={2}>
+				<Typography variant="caption" color="text.secondary" component="div">
+					{t("sync.diffLegend")}
+				</Typography>
+				<Box sx={{ maxHeight: 240, overflow: "auto", fontFamily: "monospace", fontSize: 12 }} data-testid={workspaceTestIds.syncDiff(conflictKey, row.name)}>
+					{diff.map((line, index) => (
+						<DiffRow key={index} line={line} skipped={(count) => t("sync.diffSkipped", { count })} />
+					))}
+				</Box>
+			</td>
+		);
+	}
+	return (
+		<>
+			<td>
+				<Box sx={{ maxHeight: 160, overflow: "auto" }}>{row.database}</Box>
+			</td>
+			<td>
+				<Box sx={{ maxHeight: 160, overflow: "auto" }}>{row.files}</Box>
+			</td>
+		</>
+	);
+}
+
+function DiffRow({ line, skipped }: { line: DiffLine; skipped: (count: number) => string }) {
+	if (line.op === "skip") return <Box sx={{ color: "text.disabled", fontStyle: "italic" }}>… {skipped(line.count)}</Box>;
+	const marker = line.op === "add" ? "+ " : line.op === "del" ? "− " : "  ";
+	const color = line.op === "add" ? "success.main" : line.op === "del" ? "error.main" : "text.primary";
+	return <Box sx={{ color, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{marker + line.text}</Box>;
 }

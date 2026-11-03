@@ -10,6 +10,8 @@ import hashlib
 import json
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
+from datetime import datetime
+from difflib import SequenceMatcher
 from typing import Any, Literal
 
 from viewer.core.domain.errors import DomainError
@@ -251,6 +253,86 @@ def _intent_for(conflict: Conflict, choice: Choice) -> Intent | None:
         return Intent("files", "create", db) if choice == "database" else Intent("database", "delete", db)
     assert fl is not None  # deleted_in_database
     return Intent("files", "delete", fl) if choice == "database" else Intent("database", "create", fl)
+
+
+#: Ab dieser Ähnlichkeit gilt ein Eintrag als wahrscheinlich umbenannter Partner eines gelöschten.
+RENAME_SIMILARITY = 0.6
+
+Recommendation = Literal["database", "files", "none"]
+
+
+@dataclass(frozen=True)
+class RenamePartner:
+    key: str
+    label: str | None
+    similarity: float
+
+
+@dataclass(frozen=True)
+class ConflictHint:
+    """Erklärung eines Konflikts, aus vorhandenen Angaben abgeleitet (ändert nichts am Plan).
+
+    `*_changed`: ob die Seite seit dem letzten Abgleich geändert ist; `None`, wenn es sie nicht gibt oder keine
+    Basis. `recommendation` ist nur ein Vorschlag, `reason` sein Begründungscode.
+    """
+
+    database_changed: bool | None
+    files_changed: bool | None
+    synced_at: datetime | None
+    renamed_to: RenamePartner | None
+    recommendation: Recommendation
+    reason: str
+
+
+def explain_conflict(
+    conflict: Conflict, base: Mapping[str, str], candidates: Sequence[MirrorEntry], synced_at: datetime | None
+) -> ConflictHint:
+    """Leitet zu einem Konflikt Herkunft, Umbenennungsverdacht und Empfehlung ab.
+
+    `candidates` sind die Einträge der Seite, auf der `conflict` gelöscht wurde; `synced_at` ist der Zeitpunkt, zu
+    dem der Eintrag zuletzt abgeglichen wurde. Bei einem Löschkonflikt gilt: ist die übrige Seite seit dem Abgleich
+    unverändert, ist die Löschung die naheliegende Entscheidung, sonst ginge eine Änderung verloren.
+    """
+    known = base.get(conflict.key)
+
+    def changed(entry: MirrorEntry | None) -> bool | None:
+        return None if entry is None or known is None else entry.hash != known
+
+    database_changed, files_changed = changed(conflict.database), changed(conflict.files)
+    if conflict.kind in ("both_changed", "both_created"):
+        return ConflictHint(database_changed, files_changed, synced_at, None, "none", conflict.kind)
+    present = conflict.database or conflict.files
+    assert present is not None
+    renamed = _rename_partner(present, candidates)
+    if conflict.kind == "deleted_in_files":
+        keep, delete, other_changed = "database", "files", database_changed
+    else:
+        keep, delete, other_changed = "files", "database", files_changed
+    if other_changed:
+        recommendation, reason = keep, "deleted_other_changed"
+    else:
+        recommendation, reason = delete, "renamed" if renamed else "deleted_other_unchanged"
+    return ConflictHint(database_changed, files_changed, synced_at, renamed, recommendation, reason)  # type: ignore[arg-type]
+
+
+def _rename_partner(entry: MirrorEntry, candidates: Sequence[MirrorEntry]) -> RenamePartner | None:
+    """Der ähnlichste andere Eintrag gleicher Art mit gleichen Verweisen (z. B. am selben Element), ab 0,6."""
+    text = _comparable(entry)
+    best: RenamePartner | None = None
+    for other in candidates:
+        if other.key == entry.key or other.kind != entry.kind or dict(other.refs) != dict(entry.refs):
+            continue
+        matcher = SequenceMatcher(None, text, _comparable(other), autojunk=False)
+        if matcher.real_quick_ratio() < RENAME_SIMILARITY or matcher.quick_ratio() < RENAME_SIMILARITY:
+            continue
+        similarity = matcher.ratio()
+        if similarity >= RENAME_SIMILARITY and (best is None or similarity > best.similarity):
+            best = RenamePartner(other.key, other.label, round(similarity, 3))
+    return best
+
+
+def _comparable(entry: MirrorEntry) -> str:
+    return json.dumps(entry.fields, sort_keys=True, ensure_ascii=False, default=str)
 
 
 def is_purged(key: str, purged: frozenset[str]) -> bool:

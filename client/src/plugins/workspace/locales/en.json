@@ -145,6 +145,32 @@
 			"deleted_in_files": "deleted in the files",
 			"deleted_in_database": "deleted in the database"
 		},
+		"origin": {
+			"both_changed": "Changed on both sides since the last sync.",
+			"both_created": "Created on both sides with different content.",
+			"deleted_in_files": "Deleted or renamed in the files.",
+			"deleted_in_files_unchanged": "Deleted or renamed in the files. The database is unchanged since the last sync.",
+			"deleted_in_files_changed": "Deleted or renamed in the files, but changed in the database since the last sync.",
+			"deleted_in_database": "Deleted in the database.",
+			"deleted_in_database_unchanged": "Deleted in the database. The file is unchanged since the last sync.",
+			"deleted_in_database_changed": "Deleted in the database, but the file changed since the last sync."
+		},
+		"lastSynced": "Last sync of this entry: {{time}}",
+		"context": {
+			"spec": "Spec of {{item}}",
+			"notes": "Notes of {{item}}",
+			"other": "{{kind}} of {{item}}"
+		},
+		"renamedTo": "Probably renamed to {{label}} ({{percent}} % alike).",
+		"recommended": "Recommended",
+		"reason": {
+			"renamed": "The entry lives on under its new name; the old one is superfluous.",
+			"deleted_other_unchanged": "The other side is unchanged since the last sync, so the deletion loses nothing.",
+			"deleted_other_changed": "The other side changed since the last sync; deleting would lose those changes."
+		},
+		"diffLegend": "− only in the database, + only in the files",
+		"diffSkipped_one": "{{count}} unchanged line",
+		"diffSkipped_other": "{{count}} unchanged lines",
 		"database": "Database",
 		"files": "Files",
 		"choices": {

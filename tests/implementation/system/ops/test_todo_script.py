@@ -128,7 +128,7 @@ def test_the_compose_file_has_the_new_service_next_to_the_old_one() -> None:
     ).stdout
     services = json.loads(output)["services"]
 
-    assert set(services) == {"todo-viewer", "todo-viewer-next"}
+    assert set(services) == {"todo-viewer", "todo-viewer-next", "todo-proxy"}
     new = services["todo-viewer-next"]
     assert new["restart"] == "unless-stopped"
     assert new["build"]["dockerfile"] == "server/Dockerfile"
@@ -138,19 +138,32 @@ def test_the_compose_file_has_the_new_service_next_to_the_old_one() -> None:
     assert any(e.startswith("BROWSE_START") or e == "BROWSE_START" for e in new["environment"])
     assert "TZ" in new["environment"]
     assert services["todo-viewer"]["ports"][0]["published"] == "5412"
+    proxy = services["todo-proxy"]
+    assert proxy["image"].startswith("nginx:")
+    assert "todo-viewer-next" in proxy["depends_on"]
+    assert [(p["host_ip"], p["published"], p["target"]) for p in proxy["ports"]] == [("127.0.0.1", "5413", 80)]
+    assert [v["target"] for v in proxy["volumes"]] == ["/etc/nginx/conf.d/default.conf"]
+
+
+def test_the_proxy_forwards_todo_localhost_to_the_new_service_without_buffering() -> None:
+    conf = (ROOT / "nginx" / "todo.localhost.conf").read_text(encoding="utf-8")
+
+    assert "server_name todo.localhost;" in conf
+    assert "http://todo-viewer-next:5411" in conf
+    assert "proxy_buffering off;" in conf
 
 
 @pytest.mark.parametrize(
     ("arguments", "calls"),
     [
-        (["start"], ["compose up -d --build todo-viewer-next"]),
-        (["stop"], ["compose stop todo-viewer-next"]),
-        (["restart"], ["compose restart todo-viewer-next"]),
-        (["down"], ["compose rm -sf todo-viewer-next"]),
-        (["update"], ["compose build --no-cache todo-viewer-next", "compose up -d todo-viewer-next"]),
+        (["start"], ["compose up -d --build todo-viewer-next todo-proxy"]),
+        (["stop"], ["compose stop todo-viewer-next todo-proxy"]),
+        (["restart"], ["compose restart todo-viewer-next todo-proxy"]),
+        (["down"], ["compose rm -sf todo-viewer-next todo-proxy"]),
+        (["update"], ["compose build --no-cache todo-viewer-next", "compose up -d todo-viewer-next todo-proxy"]),
     ],
 )
-def test_the_new_starter_addresses_only_the_new_service(
+def test_the_new_starter_addresses_the_new_service_and_its_proxy(
     docker: Path, tmp_path: Path, arguments: list[str], calls: list[str]
 ) -> None:
     result, seen = todo(docker, tmp_path, *arguments, script="todo.sh")

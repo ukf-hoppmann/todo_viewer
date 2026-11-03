@@ -14,7 +14,9 @@ Markdown-Checklisten werden nicht unterstützt.
 ```
 
 Startet den Neubau (Dienst `todo-viewer-next`): baut das Image (falls nötig), startet den Container im
-Hintergrund und öffnet [http://localhost:5411](http://localhost:5411). Der Container läuft mit
+Hintergrund – zusammen mit dem nginx-Proxy `todo-proxy` (nur `127.0.0.1:5413`, Konfiguration in
+`nginx/todo.localhost.conf`) – und öffnet [http://todo.localhost:5413](http://todo.localhost:5413). Direkt bleibt der
+Viewer unter [http://localhost:5411](http://localhost:5411) erreichbar. Die Container laufen mit
 `restart: unless-stopped` dauerhaft weiter.
 
 ```bash
@@ -23,7 +25,7 @@ Hintergrund und öffnet [http://localhost:5411](http://localhost:5411). Der Cont
 ./todo.sh down      # Container entfernen (configs/ und logs/ bleiben erhalten)
 ./todo.sh update    # nach Code-Änderungen neu bauen (--no-cache) und ersetzen
 ./todo.sh logs      # Live-Log (logs/viewer.log)
-./todo.sh status    # Container und Antwort von /api/core/health
+./todo.sh status    # Container und Antwort von /api/core/health (direkt und über den Proxy)
 ./todo.sh open      # nur den Browser öffnen
 ```
 

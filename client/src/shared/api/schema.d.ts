@@ -1349,16 +1349,34 @@ export interface components {
             database: {
                 [key: string]: unknown;
             } | null;
+            /** Database Changed */
+            database_changed?: boolean | null;
             /** Files */
             files: {
                 [key: string]: unknown;
             } | null;
+            /** Files Changed */
+            files_changed?: boolean | null;
             /** Key */
             key: string;
             /** Kind */
             kind: string;
             /** Label */
             label: string | null;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+            /**
+             * Recommendation
+             * @default none
+             * @enum {string}
+             */
+            recommendation: "database" | "files" | "none";
+            renamed_to?: components["schemas"]["RenameOut"] | null;
+            /** Synced At */
+            synced_at?: string | null;
         };
         /** ContentOut */
         ContentOut: {
@@ -2207,6 +2225,15 @@ export interface components {
              * @default true
              */
             removed: boolean;
+        };
+        /** RenameOut */
+        RenameOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string | null;
+            /** Similarity */
+            similarity: number;
         };
         /** ReopenOut */
         ReopenOut: {

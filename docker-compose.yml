@@ -50,7 +50,20 @@ services:
       # gleicher absoluter Pfad wie auf dem Host, damit die Spiegel-Ordner der Projekte gefunden werden
       - /Users/hoppmann/Documents/GitHub:/Users/hoppmann/Documents/GitHub
 
-# Aufruf im Browser: http://todo.localhost:5412 (alter Viewer)
-# (*.localhost wird von macOS ohne /etc/hosts-Eintrag automatisch auf
-# 127.0.0.1 aufgelöst; Port 80 ist auf dieser Maschine bereits belegt)
-# Neubau: http://localhost:5411 (API unter /api, MCP unter /mcp)
+  # Reverse-Proxy, damit der Neubau ohne Port unter http://todo.localhost erreichbar ist.
+  todo-proxy:
+    image: nginx:1.27-alpine
+    container_name: todo-proxy
+    restart: unless-stopped
+    depends_on:
+      - todo-viewer-next
+    ports:
+      # Nur lokal erreichbar, wie der Viewer selbst. Port 80 gehört my_story_game (Port-Übersicht: Misc, NOTE-001).
+      - "127.0.0.1:5413:80"
+    volumes:
+      - ./nginx/todo.localhost.conf:/etc/nginx/conf.d/default.conf:ro
+
+# Aufruf im Browser:
+#   Neubau:        http://todo.localhost:5413 (über todo-proxy) oder direkt http://localhost:5411 (API unter /api, MCP unter /mcp)
+#   alter Viewer:  http://todo.localhost:5412
+# (*.localhost wird von macOS ohne /etc/hosts-Eintrag automatisch auf 127.0.0.1 aufgelöst)

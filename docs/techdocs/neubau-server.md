@@ -162,6 +162,12 @@ Einträge aus den Dateien ohne `uid` (Platzhalter `NEW-<kurzname>`) sind neu; si
    (Dateien haben Neues), `both_changed`, `conflicts` oder `paused` (Ordner fehlt/gesperrt/unlesbar, Merge-Marker,
    Formatfehler, kein Ordner konfiguriert) mit `reason` und betroffenen Dateien.
 2. `preview(project, direction)` → `token`, `transfers`, `conflicts` (mit beiden Fassungen), `skipped`, `not_imported`.
+   Jeder Konflikt trägt außerdem eine Erklärung, abgeleitet aus Basis-Hash und `synced_at` (`explain_conflict` in
+   `core/domain/sync.py`, nichts wird gespeichert): `database_changed` / `files_changed` (seit dem Abgleich geändert;
+   `null`, wenn die Seite fehlt oder es keine Basis gibt), `synced_at`, `renamed_to` (`key`, `label`, `similarity` ab
+   0,6: ähnlichster Eintrag gleicher Art mit gleichen Verweisen auf der Seite, auf der gelöscht wurde) und
+   `recommendation` (`database`, `files`, `none`) mit `reason` (`deleted_other_unchanged`, `deleted_other_changed`,
+   `renamed`, `both_changed`, `both_created`). Die Empfehlung ist nur ein Vorschlag; entschieden wird weiter je Konflikt.
    `direction`: `both`, `to_database`, `to_files`. Das Token ist zustandslos (SHA-256 über den Plan).
 3. `execute(project, token, direction, decisions, delete_missing)`: weicht der Plan vom Token ab, `sync_preview_stale`.
    Je Konflikt eine Entscheidung `database`, `files` oder `defer`; eine Entscheidung, die löscht, braucht

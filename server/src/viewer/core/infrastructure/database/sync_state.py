@@ -52,3 +52,10 @@ class SqlSyncStateStore:
                 text("SELECT MAX(synced_at) FROM core_sync_state WHERE project_uid = :project"), {"project": project}
             ).scalar()
         return datetime.fromisoformat(value) if value else None
+
+    def synced_times(self, project: str) -> dict[str, datetime]:
+        with self._database.transaction() as tx:
+            rows = tx.connection.execute(
+                text("SELECT uid, synced_at FROM core_sync_state WHERE project_uid = :project"), {"project": project}
+            ).all()
+        return {uid: datetime.fromisoformat(at) for uid, at in rows if at}

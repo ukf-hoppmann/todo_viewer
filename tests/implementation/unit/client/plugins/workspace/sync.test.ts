@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SyncConflict, SyncStatus } from "../../../../../../client/src/plugins/workspace/api";
-import { choiceDeletes, decisionsOf, differences, isDeletionConflict, needsAttention, syncView, withBulkChoice, choiceBlocked } from "../../../../../../client/src/plugins/workspace/sync";
+import { choiceDeletes, decisionsOf, differences, documentContext, isDeletionConflict, lineDiff, needsAttention, originKey, syncView, withBulkChoice, choiceBlocked } from "../../../../../../client/src/plugins/workspace/sync";
 
 const status = (state: SyncStatus["state"], extra: Partial<SyncStatus> = {}): SyncStatus => ({ project: "p", state, conflicts: 0, to_database: 0, to_files: 0, files: [], reason: null, last_sync: null, ...extra });
 const on = { mirror_enabled: true };
@@ -101,5 +101,56 @@ describe("choices against the direction", () => {
 		expect(choiceBlocked("to_database", "database")).toBe(true);
 		expect(choiceBlocked("both", "files")).toBe(false);
 		expect(choiceBlocked("to_files", "defer")).toBe(false);
+	});
+});
+
+describe("originKey", () => {
+	const make = (kind: string, extra: Partial<SyncConflict>) => ({ ...conflict("a", kind, entry({}), null), ...extra }) as SyncConflict;
+
+	it("names the origin of a deletion by whether the other side changed since the last sync", () => {
+		expect(originKey(make("deleted_in_files", { database_changed: false }))).toBe("deleted_in_files_unchanged");
+		expect(originKey(make("deleted_in_files", { database_changed: true }))).toBe("deleted_in_files_changed");
+		expect(originKey(make("deleted_in_database", { files_changed: false }))).toBe("deleted_in_database_unchanged");
+		expect(originKey(make("deleted_in_database", { files_changed: true }))).toBe("deleted_in_database_changed");
+	});
+
+	it("falls back to the kind of the conflict when the server could not tell", () => {
+		expect(originKey(make("deleted_in_files", {}))).toBe("deleted_in_files");
+		expect(originKey(make("both_changed", { database_changed: true, files_changed: true }))).toBe("both_changed");
+		expect(originKey(make("both_created", {}))).toBe("both_created");
+	});
+});
+
+describe("documentContext", () => {
+	it("reads the document kind and the item from either side of a document conflict", () => {
+		const doc = { ...conflict("d", "deleted_in_files", entry({ kind: "spec" }, { item: ["STORY-086"] }), null), kind: "document" } as SyncConflict;
+		expect(documentContext(doc)).toEqual({ kind: "spec", item: "STORY-086" });
+	});
+
+	it("is none for entries that are not documents", () => {
+		expect(documentContext(conflict("a", "both_changed", entry({ title: "T" }), entry({ title: "T" })))).toBeNull();
+	});
+});
+
+describe("lineDiff", () => {
+	it("marks removed and added lines and collapses long unchanged runs", () => {
+		const before = ["a", "b", "c", "d", "e", "f", "g", "h", "old"].join("\n");
+		const after = ["a", "b", "c", "d", "e", "f", "g", "h", "new"].join("\n");
+		expect(lineDiff(before, after, 2)).toEqual([
+			{ op: "skip", count: 6 },
+			{ op: "same", text: "g" },
+			{ op: "same", text: "h" },
+			{ op: "del", text: "old" },
+			{ op: "add", text: "new" },
+		]);
+	});
+
+	it("shows everything when nothing is shared and gives up on texts too long to compare", () => {
+		expect(lineDiff("x", "y")).toEqual([
+			{ op: "del", text: "x" },
+			{ op: "add", text: "y" },
+		]);
+		const long = Array.from({ length: 1200 }, (_, i) => `a${i}`).join("\n");
+		expect(lineDiff(long, long.replace("a5", "z"))).toBeNull();
 	});
 });

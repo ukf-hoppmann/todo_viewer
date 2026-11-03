@@ -145,6 +145,32 @@
 			"deleted_in_files": "in den Dateien gelöscht",
 			"deleted_in_database": "in der Datenbank gelöscht"
 		},
+		"origin": {
+			"both_changed": "Seit dem letzten Abgleich auf beiden Seiten geändert.",
+			"both_created": "Auf beiden Seiten neu angelegt, mit verschiedenem Inhalt.",
+			"deleted_in_files": "In den Dateien gelöscht oder umbenannt.",
+			"deleted_in_files_unchanged": "In den Dateien gelöscht oder umbenannt. Die Datenbank ist seit dem letzten Abgleich unverändert.",
+			"deleted_in_files_changed": "In den Dateien gelöscht oder umbenannt, in der Datenbank aber seit dem letzten Abgleich geändert.",
+			"deleted_in_database": "In der Datenbank gelöscht.",
+			"deleted_in_database_unchanged": "In der Datenbank gelöscht. Die Datei ist seit dem letzten Abgleich unverändert.",
+			"deleted_in_database_changed": "In der Datenbank gelöscht, die Datei aber seit dem letzten Abgleich geändert."
+		},
+		"lastSynced": "Letzter Abgleich dieses Eintrags: {{time}}",
+		"context": {
+			"spec": "Spec zu {{item}}",
+			"notes": "Notizen zu {{item}}",
+			"other": "{{kind}} zu {{item}}"
+		},
+		"renamedTo": "Wahrscheinlich umbenannt in {{label}} ({{percent}} % gleich).",
+		"recommended": "Empfohlen",
+		"reason": {
+			"renamed": "Der Eintrag existiert unter neuem Namen weiter, der alte ist überflüssig.",
+			"deleted_other_unchanged": "Die andere Seite ist seit dem letzten Abgleich unverändert, die Löschung verliert nichts.",
+			"deleted_other_changed": "Die andere Seite wurde seit dem letzten Abgleich geändert; beim Löschen gingen diese Änderungen verloren."
+		},
+		"diffLegend": "− nur in der Datenbank, + nur in den Dateien",
+		"diffSkipped_one": "{{count}} unveränderte Zeile",
+		"diffSkipped_other": "{{count}} unveränderte Zeilen",
 		"database": "Datenbank",
 		"files": "Dateien",
 		"choices": {

@@ -24,6 +24,7 @@ from viewer.core.domain.files import Change, FileSet, MirrorBlocked, matches_any
 from viewer.core.domain.sync import (
     Choice,
     Conflict,
+    ConflictHint,
     Direction,
     Intent,
     MirrorEntry,
@@ -33,6 +34,7 @@ from viewer.core.domain.sync import (
     SyncPreviewStale,
     SyncState,
     compute_plan,
+    explain_conflict,
     is_purged,
     plan_token,
     resolve_conflicts,
@@ -157,6 +159,10 @@ class SyncStateStore(Protocol):
         """Der Zeitpunkt, zu dem zuletzt ein Eintrag des Projekts abgeglichen wurde."""
         ...
 
+    def synced_times(self, project: str) -> dict[str, datetime]:
+        """Der Zeitpunkt des letzten Abgleichs je Eintrag (`uid`)."""
+        ...
+
 
 class Ids(Protocol):
     def new_uid(self) -> str: ...
@@ -188,6 +194,13 @@ class TransferOut:
 
 
 @dataclass(frozen=True)
+class RenameOut:
+    key: str
+    label: str | None
+    similarity: float
+
+
+@dataclass(frozen=True)
 class ConflictOut:
     key: str
     kind: str
@@ -195,6 +208,15 @@ class ConflictOut:
     conflict: str
     database: dict[str, Any] | None
     files: dict[str, Any] | None
+    #: Seit dem letzten Abgleich geändert? `None`: Seite fehlt oder keine Basis.
+    database_changed: bool | None = None
+    files_changed: bool | None = None
+    #: Zeitpunkt, zu dem der Eintrag zuletzt abgeglichen wurde (UTC).
+    synced_at: datetime | None = None
+    renamed_to: RenameOut | None = None
+    #: Vorschlag (`database`, `files`, `none`) und Begründungscode; nie vorausgewählt.
+    recommendation: Literal["database", "files", "none"] = "none"
+    reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -302,7 +324,7 @@ class SyncService:
             token=plan_token(project, direction, plan),
             state=sync_state(plan),
             transfers=[_transfer(i) for i in plan.intents],
-            conflicts=[_conflict(c) for c in plan.conflicts],
+            conflicts=self._conflicts_out(project, snapshot, plan.conflicts),
             skipped=[_transfer(i) for i in plan.skipped],
             not_imported=[TransferOut(e.key, e.kind, e.label, "database", "create") for e in plan.not_imported],
         )
@@ -436,6 +458,19 @@ class SyncService:
         )
         return _Snapshot(config, fileset, raw_files, files, database, base, plan, owner_of)
 
+    def _conflicts_out(self, project: str, snapshot: _Snapshot, conflicts: Sequence[Conflict]) -> list[ConflictOut]:
+        if not conflicts:
+            return []
+        times = self._state.synced_times(project)
+        database = [e for entries in snapshot.database for e in entries]
+        files = [e for entries in snapshot.files for e in entries]
+        out: list[ConflictOut] = []
+        for conflict in conflicts:
+            candidates = {"deleted_in_files": files, "deleted_in_database": database}.get(conflict.kind, [])
+            hint = explain_conflict(conflict, snapshot.base, candidates, times.get(conflict.key))
+            out.append(_conflict(conflict, hint))
+        return out
+
     def _ephemeral(self, snapshot: _Snapshot, intent: Intent) -> bool:
         index = snapshot.owner_of.get(intent.entry.key)
         return index is not None and self._mirrors[index].ephemeral
@@ -467,7 +502,7 @@ class SyncService:
             to_database=len(to_database),
             to_files=len(to_files),
             created=sorted(placeholder_labels.values()),
-            conflicts_left=[_conflict(c) for c in open_conflicts],
+            conflicts_left=self._conflicts_out(project, snapshot, open_conflicts),
         )
 
     def _write_database(
@@ -651,8 +686,9 @@ def _entry_dict(entry: MirrorEntry | None) -> dict[str, Any] | None:
     }
 
 
-def _conflict(conflict: Conflict) -> ConflictOut:
+def _conflict(conflict: Conflict, hint: ConflictHint) -> ConflictOut:
     kind = conflict.database or conflict.files
+    renamed = hint.renamed_to
     return ConflictOut(
         key=conflict.key,
         kind=kind.kind if kind else "",
@@ -660,4 +696,10 @@ def _conflict(conflict: Conflict) -> ConflictOut:
         conflict=conflict.kind,
         database=_entry_dict(conflict.database),
         files=_entry_dict(conflict.files),
+        database_changed=hint.database_changed,
+        files_changed=hint.files_changed,
+        synced_at=hint.synced_at,
+        renamed_to=RenameOut(renamed.key, renamed.label, renamed.similarity) if renamed else None,
+        recommendation=hint.recommendation,
+        reason=hint.reason,
     )

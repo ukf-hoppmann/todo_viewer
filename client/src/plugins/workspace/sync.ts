@@ -104,3 +104,63 @@ export function differences(conflict: SyncConflict): FieldDifference[] {
 		.filter((entry) => database === null || files === null || JSON.stringify(entry.raw[0] ?? null) !== JSON.stringify(entry.raw[1] ?? null))
 		.map(({ name, database: db, files: fl }) => ({ name, database: db, files: fl }));
 }
+
+/** The key of the sentence that says where a conflict comes from; a deletion depends on whether the other side changed since the last sync. */
+export function originKey(conflict: SyncConflict): string {
+	const otherChanged = conflict.conflict === "deleted_in_files" ? conflict.database_changed : conflict.conflict === "deleted_in_database" ? conflict.files_changed : null;
+	if (otherChanged === true || otherChanged === false) return `${conflict.conflict}_${otherChanged ? "changed" : "unchanged"}`;
+	return conflict.conflict;
+}
+
+/** What a document conflict is about (spec or notes of an item), shown in the header instead of the rows `kind` and `item`. */
+export function documentContext(conflict: SyncConflict): { kind: string; item: string | null } | null {
+	if (conflict.kind !== "document") return null;
+	const side = (conflict.database ?? conflict.files) as EntryView;
+	const kind = side?.fields?.kind;
+	if (typeof kind !== "string") return null;
+	return { kind, item: side?.refs?.item?.[0] ?? null };
+}
+
+export type DiffLine = { op: "same" | "add" | "del"; text: string } | { op: "skip"; count: number };
+
+const MAX_DIFF_CELLS = 1_000_000;
+
+/** A line diff of two texts with `context` unchanged lines around each change; `null` if the texts are too long to compare. */
+export function lineDiff(before: string, after: string, context = 2): DiffLine[] | null {
+	const a = before.split("\n");
+	const b = after.split("\n");
+	if (a.length * b.length > MAX_DIFF_CELLS) return null;
+	const lengths = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+	for (let i = a.length - 1; i >= 0; i--) {
+		for (let j = b.length - 1; j >= 0; j--) {
+			lengths[i][j] = a[i] === b[j] ? lengths[i + 1][j + 1] + 1 : Math.max(lengths[i + 1][j], lengths[i][j + 1]);
+		}
+	}
+	const lines: DiffLine[] = [];
+	let i = 0;
+	let j = 0;
+	while (i < a.length || j < b.length) {
+		if (i < a.length && j < b.length && a[i] === b[j]) {
+			lines.push({ op: "same", text: a[i] });
+			i++;
+			j++;
+		} else if (i < a.length && (j === b.length || lengths[i + 1][j] >= lengths[i][j + 1])) lines.push({ op: "del", text: a[i++] });
+		else lines.push({ op: "add", text: b[j++] });
+	}
+	return collapse(lines, context);
+}
+
+function collapse(lines: DiffLine[], context: number): DiffLine[] {
+	const near = lines.map((line, index) => line.op !== "same" || lines.slice(Math.max(0, index - context), index + context + 1).some((other) => other.op !== "same"));
+	const result: DiffLine[] = [];
+	let hidden = 0;
+	lines.forEach((line, index) => {
+		if (near[index]) {
+			if (hidden > 0) result.push({ op: "skip", count: hidden });
+			hidden = 0;
+			result.push(line);
+		} else hidden++;
+	});
+	if (hidden > 0) result.push({ op: "skip", count: hidden });
+	return result;
+}

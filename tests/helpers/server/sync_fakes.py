@@ -159,6 +159,7 @@ class MemoryStateStore:
     def __init__(self) -> None:
         self.hashes: dict[str, dict[str, str]] = {}
         self.synced: dict[str, datetime] = {}
+        self.times: dict[str, dict[str, datetime]] = {}
 
     def last_synced(self, project: str) -> datetime | None:
         return self.synced.get(project)
@@ -170,6 +171,10 @@ class MemoryStateStore:
         self.hashes.setdefault(project, {}).update(hashes)
         if hashes:
             self.synced[project] = at
+            self.times.setdefault(project, {}).update({uid: at for uid in hashes})
+
+    def synced_times(self, project: str) -> dict[str, datetime]:
+        return dict(self.times.get(project, {}))
 
     def forget(self, project: str, uids: Collection[str]) -> None:
         for uid in uids:

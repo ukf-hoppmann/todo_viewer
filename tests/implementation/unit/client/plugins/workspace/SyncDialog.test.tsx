@@ -21,9 +21,9 @@ const preview = (extra: Partial<SyncPreview> = {}): SyncPreview => ({
 		{ key: "u8", kind: "story", label: "STORY-002", target: "database", action: "update" },
 	],
 	conflicts: [
-		{ key: "u1", kind: "task", label: "TASK-001", conflict: "both_changed", database: entry({ status: "Open", title: "T" }), files: entry({ status: "Completed", title: "T" }) },
-		{ key: "u2", kind: "task", label: "TASK-002", conflict: "both_changed", database: entry({ priority: "Normal" }), files: entry({ priority: "Urgent" }) },
-		{ key: "u3", kind: "task", label: "TASK-003", conflict: "deleted_in_files", database: entry({ title: "Weg" }), files: null },
+		{ key: "u1", kind: "task", label: "TASK-001", conflict: "both_changed", database: entry({ status: "Open", title: "T" }), files: entry({ status: "Completed", title: "T" }), recommendation: "none", reason: "both_changed" },
+		{ key: "u2", kind: "task", label: "TASK-002", conflict: "both_changed", database: entry({ priority: "Normal" }), files: entry({ priority: "Urgent" }), recommendation: "none", reason: "both_changed" },
+		{ key: "u3", kind: "task", label: "TASK-003", conflict: "deleted_in_files", database: entry({ title: "Weg" }), files: null, recommendation: "none", reason: "" },
 	],
 	skipped: [],
 	not_imported: [],
@@ -33,11 +33,55 @@ const preview = (extra: Partial<SyncPreview> = {}): SyncPreview => ({
 async function renderDialog(options: Parameters<typeof fakeWorkspaceBackend>[0] = {}, onClose = () => {}) {
 	const backend = fakeWorkspaceBackend({ projects: [mirrored], syncPreview: preview(), ...options });
 	await renderWorkspace(<SyncDialog project={mirrored} onClose={onClose} />, { backend });
-	await screen.findByTestId(ids.syncConflict("u1"));
+	await screen.findByTestId(ids.syncConflict(options.syncPreview?.conflicts[0]?.key ?? "u1"));
 	return backend;
 }
 
 const executeBody = (backend: ReturnType<typeof fakeWorkspaceBackend>) => backend.calls("POST", "core/sync/p1/execute")[0]!.body;
+
+describe("SyncDialog explains a conflict", () => {
+	const spec = (content: string) => ({ label: "STORY-086_spec_nsfw.md", kind: "document", fields: { kind: "spec", content }, refs: { item: ["STORY-086"] } });
+	const renamed = {
+		key: "d1",
+		kind: "document",
+		label: "STORY-086_spec_nsfw.md",
+		conflict: "deleted_in_files",
+		database: spec("# Spec\nzeile eins"),
+		files: null,
+		database_changed: false,
+		files_changed: null,
+		synced_at: "2026-10-22T13:42:00+00:00",
+		renamed_to: { key: "d2", label: "STORY-086_spec_sensibel.md", similarity: 0.95 },
+		recommendation: "files",
+		reason: "renamed",
+	} as const;
+
+	it("shows origin, context, the rename partner and a recommendation that is not preselected", async () => {
+		await renderDialog({ syncPreview: preview({ conflicts: [renamed] }) });
+		const card = await screen.findByTestId(ids.syncConflict("d1"));
+
+		expect(screen.getByTestId(ids.syncOrigin("d1")).textContent).toContain("Die Datenbank ist seit dem letzten Abgleich unverändert.");
+		expect(screen.getByTestId(ids.syncOrigin("d1")).textContent).toContain("Letzter Abgleich dieses Eintrags");
+		expect(screen.getByTestId(ids.syncContext("d1")).textContent).toBe("Spec zu STORY-086");
+		expect(screen.getByTestId(ids.syncRename("d1")).textContent).toContain("STORY-086_spec_sensibel.md (95 % gleich)");
+		expect(screen.getByTestId(ids.syncRecommended("d1", "files"))).toBeTruthy();
+		expect(screen.queryByTestId(ids.syncRecommended("d1", "database"))).toBeNull();
+		expect(card.textContent).toContain("Der Eintrag existiert unter neuem Namen weiter");
+		expect((screen.getByTestId(ids.syncChoice("d1", "files")) as HTMLInputElement).checked).toBe(false);
+		expect(screen.queryByTestId(ids.syncDifference("d1", "kind"))).toBeNull();
+		expect(screen.queryByTestId(ids.syncDifference("d1", "item"))).toBeNull();
+	});
+
+	it("shows a text that exists on both sides as a line diff", async () => {
+		const both = { ...renamed, key: "d3", conflict: "both_changed", database: spec("a\nb\nalt"), files: spec("a\nb\nneu"), renamed_to: null, recommendation: "none", reason: "both_changed" };
+		await renderDialog({ syncPreview: preview({ conflicts: [both as never] }) });
+		const diff = await screen.findByTestId(ids.syncDiff("d3", "content"));
+
+		expect(diff.textContent).toContain("− alt");
+		expect(diff.textContent).toContain("+ neu");
+		expect(diff.textContent).not.toContain("− a\n");
+	});
+});
 
 describe("SyncDialog", () => {
 	it("shows the conflicts first with the fields that differ, then the transfers", async () => {
@@ -94,7 +138,7 @@ describe("SyncDialog", () => {
 
 	it("leaves conflicts out that were not decided and shows the result", async () => {
 		const backend = await renderDialog({
-			syncResult: { project: "p1", state: "conflicts", to_database: 1, to_files: 2, created: ["TASK-004"], conflicts_left: [{ key: "u2", kind: "task", label: "TASK-002", conflict: "both_changed", database: null, files: null }] },
+			syncResult: { project: "p1", state: "conflicts", to_database: 1, to_files: 2, created: ["TASK-004"], conflicts_left: [{ key: "u2", kind: "task", label: "TASK-002", conflict: "both_changed", database: null, files: null, recommendation: "none", reason: "both_changed" }] },
 		});
 
 		fireEvent.click(screen.getByTestId(ids.syncChoice("u1", "database")));

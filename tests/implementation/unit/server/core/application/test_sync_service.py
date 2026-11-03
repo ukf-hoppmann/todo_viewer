@@ -340,6 +340,36 @@ def test_gone_on_both_sides_is_forgotten_without_conflict(rig: Rig) -> None:
     assert rig.state.hashes[P] == {}
 
 
+def test_a_conflict_carries_origin_time_and_a_recommendation(rig: Rig) -> None:
+    make_conflict(rig)
+    conflict = rig.service.preview(P).conflicts[0]
+    assert (conflict.database_changed, conflict.files_changed) == (True, True)
+    assert conflict.synced_at == rig.clock.now()
+    assert (conflict.recommendation, conflict.reason) == ("none", "both_changed")
+
+
+def test_a_file_deleted_in_the_files_with_an_unchanged_database_recommends_the_deletion(rig: Rig) -> None:
+    rig.db.add(U1, "task", "Eins")
+    rig.write("# Items\n\n" + line("TASK-001", U1, "task", "Eins"))
+    rig.sync()
+    rig.write("# Items\n\n")
+    conflict = rig.service.preview(P).conflicts[0]
+    assert conflict.conflict == "deleted_in_files"
+    assert (conflict.database_changed, conflict.files_changed) == (False, None)
+    assert (conflict.recommendation, conflict.reason) == ("files", "deleted_other_unchanged")
+
+
+def test_a_renamed_entry_is_named_as_the_partner_of_the_conflict(rig: Rig) -> None:
+    rig.db.add(U1, "task", "Eine längere Überschrift mit viel Text")
+    rig.write("# Items\n\n" + line("TASK-001", U1, "task", "Eine längere Überschrift mit viel Text"))
+    rig.sync()
+    rig.write("# Items\n\n" + line("TASK-002", U2, "task", "Eine längere Überschrift mit viel Text!"))
+    rig.db.add(U2, "task", "Eine längere Überschrift mit viel Text!", label="TASK-002")
+    conflict = rig.service.preview(P).conflicts[0]
+    assert conflict.renamed_to is not None and conflict.renamed_to.key == U2
+    assert conflict.reason == "renamed" and conflict.recommendation == "files"
+
+
 # --- Token -------------------------------------------------------------------------------------------------------
 
 

@@ -95,3 +95,79 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Verbesserungen am MCP-Server nach einer Prüfung aus
     Claude_Harness heraus: Agenten sollen keine uids mehr abschreiben müssen
     und Fehler früher und lesbarer sehen. Ergänzt STORY-081.
+
+- `STORY-095` **Sync-Konflikte erklären: Herkunft, Umbenennung, Empfehlung**
+  - Uid: 02d22676-5584-4eff-a2cc-7f3fe65e9d5c.
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-11-03.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Im Sync-Dialog ist bei jedem Konflikt erkennbar, woher er kommt
+    (welche Seite sich seit dem letzten Abgleich geändert hat, ob eine Datei
+    wahrscheinlich umbenannt wurde) und welche Entscheidung naheliegt, ohne
+    dass der Viewer selbst entscheidet.
+  - Completion criteria: 1. Jeder Konflikt nennt je Seite, ob sie seit dem
+    letzten Abgleich geändert ist, und den Zeitpunkt dieses Abgleichs.
+    2. Bei einem Löschkonflikt wird ein wahrscheinlicher Umbenennungspartner
+    (gleiche Art, gleiches Element, ähnlicher Inhalt) mit Ähnlichkeit
+    angezeigt, falls es ihn gibt.
+    3. Jeder Konflikt trägt eine Empfehlung mit Begründung in einem Satz;
+    vorausgewählt wird nichts.
+    4. Der Dialog zeigt eine Klartext-Überschrift, die Empfehlung und bei
+    beidseitig vorhandenen Einträgen einen Diff statt zweier Volltexte;
+    interne Feldnamen wie `kind`/`item` stehen als Kontext in der Kopfzeile.
+    5. Die Ableitungen sind reine Funktionen im Core-Domain des Sync, ohne
+    Wissen über Plugin-Inhalte, und durch Unit-Tests abgedeckt.
+  - Summary: Konflikte im Sync-Dialog sind oft unverständlich (z. B. eine
+    umbenannte Spec erscheint als 'in den Dateien gelöscht'). Die Story
+    ergänzt jeden Konflikt um Herkunft, Umbenennungsverdacht und eine
+    Empfehlung.
+
+- `TASK-046` **Server: Konflikte um Herkunft, Umbenennungspartner und Empfehlung ergänzen**
+  - Uid: cf20df9d-07c9-45ef-95a2-3e3d6b46b4ef.
+  - Type: Task.
+  - Parent: `STORY-095`.
+  - Required for parent: Yes.
+  - Status: Open.
+  - Created: 2026-11-03.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Sync-Vorschau liefert zu jedem Konflikt die abgeleiteten
+    Erklärungen aus STORY-095_spec.md, berechnet in core/domain/sync.py.
+  - Completion criteria: 1. `ConflictOut` enthält je Seite
+    `changed_since_sync`, den Zeitpunkt des letzten Abgleichs des Eintrags,
+    einen optionalen Umbenennungspartner (Schlüssel, Label, Ähnlichkeit) und
+    eine Empfehlung (`database`/`files`/`none`) mit Begründungscode.
+    2. Die Ableitungen sind reine Funktionen in `core/domain/sync.py` mit
+    Unit-Tests, u. a. für den Fall umbenannte Spec (Löschung in den Dateien,
+    neuer ähnlicher Eintrag am selben Element).
+    3. OpenAPI und generierte TypeScript-Typen sind aktualisiert; bestehende
+    Sync-Tests laufen grün.
+
+- `TASK-047` **Sync-Dialog: Konflikte erklärt darstellen (Klartext, Empfehlung, Diff)**
+  - Uid: e4a3ddbf-f7b3-4500-aa7c-82c16f59d924.
+  - Type: Task.
+  - Parent: `STORY-095`.
+  - Required for parent: Yes.
+  - Status: Open.
+  - Created: 2026-11-03.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-046`.
+  - Goal: Der Sync-Dialog zeigt die Erklärungen aus dem Server verständlich
+    an, wie in STORY-095_spec.md beschrieben.
+  - Completion criteria: 1. Jede Konfliktkarte hat eine Klartext-Überschrift
+    aus Konfliktart und Herkunft, mit Kontext (Art und Element) statt der
+    Zeilen `kind`/`item`.
+    2. Die empfohlene Option ist als „Empfohlen“ mit Begründung markiert,
+    aber nicht vorausgewählt.
+    3. Ein Umbenennungspartner wird mit Ähnlichkeit genannt; bei beidseitig
+    vorhandenen Texten erscheint ein zeilenweiser Diff statt zweier
+    Volltexte.
+    4. Texte in de/en, Test-IDs nach Client-Regeln, Unit-Tests für die
+    reinen Darstellungsfunktionen.

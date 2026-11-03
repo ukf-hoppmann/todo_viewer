@@ -53,6 +53,8 @@ export function fakeWorkspaceBackend(
 		/** The preview of a sync (`GET core/sync/{project}/preview`) and the result of an execute. */
 		syncPreview?: SyncPreview;
 		syncResult?: SyncResult;
+		/** The interval of the auto sync (`GET/PUT core/settings/sync`); `locked` = the environment sets it. */
+		syncSettings?: { seconds: number; locked?: boolean };
 		/** The areas by project, for `GET backlog/areas`. */
 		areas?: Record<string, string[]>;
 		/** Answers a request itself (return `undefined` to let the fake answer): for errors and special cases. */
@@ -98,6 +100,19 @@ export function fakeWorkspaceBackend(
 			return head
 				? Response.json({ name: "notes.md", content: head.content, stamp: null, state: head.state, checksum: "0", last_entry: null, version: 1, hints: [] })
 				: Response.json({ code: "notes_not_found", message: "Keine Notes", details: {} }, { status: 400 });
+		}
+		if (path === "core/settings/sync") {
+			let seconds = options.syncSettings?.seconds ?? 30;
+			const locked = options.syncSettings?.locked ?? false;
+			if (request.method === "PUT") {
+				if (locked) return Response.json({ code: "setting_locked", message: "Der Takt ist durch die Umgebung gesetzt", details: {} }, { status: 409 });
+				seconds = Number((body as { auto_sync_interval_seconds: number }).auto_sync_interval_seconds);
+				if (seconds !== 0 && (seconds < 1 || seconds > 86400)) {
+					return Response.json({ code: "invalid_input", message: "Der Takt muss 0 oder zwischen 1 und 86400 Sekunden liegen", details: {} }, { status: 422 });
+				}
+				options.syncSettings = { seconds, locked };
+			}
+			return Response.json({ auto_sync_interval_seconds: seconds, locked_by_environment: locked });
 		}
 		const syncMatch = /^core\/sync\/([^/]+)\/(status|preview|execute)$/.exec(path);
 		if (syncMatch) {

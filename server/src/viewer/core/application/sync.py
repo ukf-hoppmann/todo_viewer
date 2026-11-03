@@ -409,9 +409,14 @@ class SyncService:
 
     # --- Auto-Sync-Takt ----------------------------------------------------------------------------------------
 
+    def set_interval(self, seconds: float) -> None:
+        """Neuer Takt (Sekunden, `0` = aus); wirkt sofort, ohne Neustart."""
+        self._interval = seconds
+        self.refresh_auto()
+
     def refresh_auto(self) -> None:
-        """Setzt den Termin neu: läuft nur, solange mindestens ein Projekt Auto-Sync an hat."""
-        if self._projects.auto_sync_projects():
+        """Setzt den Termin neu: läuft nur, solange mindestens ein Projekt Auto-Sync an hat und der Takt nicht 0 ist."""
+        if self._interval > 0 and self._projects.auto_sync_projects():
             self._scheduler.schedule(AUTO_SYNC_OWNER, self._clock.now() + timedelta(seconds=self._interval), self._tick)
         else:
             self._scheduler.schedule(AUTO_SYNC_OWNER, None, self._tick)

@@ -76,9 +76,10 @@ eigenen `BEGIN`, damit auch DDL zurückgerollt wird. Adapter holen die Verbindun
 - **Optimistische Sperre**: `update_with_revision(connection, table, where, expected_revision, values)` ändert die Zeile
   nur bei unveränderter `revision` und erhöht sie; sonst `version_conflict` oder `not_found`.
 - **Core-Tabellen**: `core_migrations`, `core_ui_state(owner, document, updated_at)`,
-  `core_sync_state(project_uid, uid, hash, synced_at)`.
+  `core_sync_state(project_uid, uid, hash, synced_at)`, `core_settings(key, value, updated_at)` (Einstellungen des Core als Schlüssel-Wert-Paare).
 - **UI-Zustand**: `GET/PUT /api/core/ui-state/{owner}` (Besitzer `[a-z][a-z0-9-]{0,63}`, Dokument ein JSON-Objekt bis
   256 KiB). `PUT` ersetzt das Dokument ohne Versions-Token; es gibt keine MCP-Tools dafür.
+- **Takt des Auto-Syncs**: `GET/PUT /api/core/settings/sync` (Operationen `get_sync_settings`, `put_sync_settings`, keine MCP-Tools). `PUT {auto_sync_interval_seconds}` nimmt `0` (aus) oder 1 bis 86400 Sekunden, speichert den Wert in `core_settings` und setzt den Termin des Auto-Syncs sofort neu, ohne Neustart; andere Werte ergeben `invalid_input`. Die Antwort `{auto_sync_interval_seconds, locked_by_environment}` nennt den geltenden Wert; ist `AUTO_SYNC_INTERVAL` in der Umgebung gesetzt, gewinnt sie, `locked_by_environment` ist `true` und `PUT` antwortet 409 `setting_locked`. Der gespeicherte Wert gilt auch nach einem Neustart (Vorrang: Umgebung, gespeicherter Wert, `configs/viewer.json`, Standard 30). Nach jeder Änderung kommt das öffentliche Ereignis `core.settings.changed`.
 - **Browser-Logs**: `POST /api/core/client-log` (Operation `client_log`, kein MCP-Tool) nimmt einen Eintrag des Browser-Loggings
   an (`level` = `debug|info|warn|error`, `origin`, `id`, `time`, `session_id`, `route`, `element`, `action`, `message`,
   `user_message`, `error`, `data`) und schreibt ihn über structlog mit dem Logger `viewer.client` ins `viewer.log`
@@ -180,7 +181,7 @@ Einträge aus den Dateien ohne `uid` (Platzhalter `NEW-<kurzname>`) sind neu; si
    fehl, bleibt die Datenbank richtig und der nächste Lauf holt auf.
 4. `auto(project)`: nur konfliktfreie Änderungen, löscht nur kurzlebige Einträge (siehe oben), sichert vorher die Datenbank, pausiert bei Problemen.
    Der Takt ist ein einzelner Termin `core.sync` im `Scheduler`, alle `auto_sync_interval_seconds` (Standard 30), nur
-   solange mindestens ein Projekt Auto-Sync an hat (`refresh_auto()` setzt ihn neu).
+   solange mindestens ein Projekt Auto-Sync an hat und der Takt nicht `0` ist (`refresh_auto()` setzt ihn neu, `set_interval()` ändert den Takt zur Laufzeit).
 5. Ereignis `core.sync.state` (öffentlich, also per SSE) `{project, state, reason}` nach jedem manuellen Lauf und bei jeder
    Zustandsänderung im Auto-Sync.
 
@@ -298,7 +299,7 @@ Ergänzungen aus dem Spiegel des Backlogs: Weicht in einem Eintrag nur das Label
 | `backup_dir` | `VIEWER_BACKUP_DIR` | Pfad | `configs/backups` | Ordner der Datenbank-Sicherungen |
 | `static_dir` | `VIEWER_STATIC_DIR` | Pfad | `client/dist` | gebautes Frontend, das der Server unter `/` ausliefert (`core/api/frontend.py`); fehlt der Ordner, gibt es nur die API |
 | `sse_keepalive_seconds` | – | Zahl | `15` | Abstand der Keep-alive-Zeilen |
-| `auto_sync_interval_seconds` | `AUTO_SYNC_INTERVAL` | Zahl | `30` | Takt des Auto-Sync in Sekunden |
+| `auto_sync_interval_seconds` | `AUTO_SYNC_INTERVAL` | Zahl | `30` | Takt des Auto-Sync in Sekunden; `0` = aus. Zur Laufzeit in der Oberfläche änderbar (siehe `GET/PUT /api/core/settings/sync`), sofern die Umgebungsvariable nicht gesetzt ist; sie gewinnt |
 | `plugins.<id>` | – | Objekt | `{}` | Einstellungen eines Plugins (`context.settings`) |
 | – | `VIEWER_CONFIG` | Pfad | `configs/viewer.json` | andere Konfigurationsdatei |
 | – | `TZ` | IANA-Name | leer (dann UTC, Warnung im Log) | Zeitzone des Rechners, auf dem der Server läuft; die Wecker rechnen ihre Serientermine darin (`PluginContext.zone`, `core/infrastructure/timezone.py`). `docker-compose.yml` setzt sie auf `${TZ:-Europe/Berlin}`, `todo.sh` gibt die Zone des Macs (Ziel von `/etc/localtime`) weiter; das Image bringt die Zeitzonendaten (`tzdata`) mit. Wird beim Start gelesen |

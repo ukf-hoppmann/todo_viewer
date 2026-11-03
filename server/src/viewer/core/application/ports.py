@@ -58,6 +58,14 @@ class UiStateStore(Protocol):
     def put(self, owner: str, document: dict[str, Any]) -> None: ...
 
 
+class SettingsStore(Protocol):
+    """Einstellungen des Core als Schlüssel-Wert-Paare (Text)."""
+
+    def get(self, key: str) -> str | None: ...
+
+    def put(self, key: str, value: str) -> None: ...
+
+
 class ClientLogWriter(Protocol):
     def write(self, level: str, message: str, fields: Mapping[str, Any]) -> None:
         """Schreibt einen Eintrag des Browsers (`debug`, `info`, `warn`, `error`) ins Log des Servers."""

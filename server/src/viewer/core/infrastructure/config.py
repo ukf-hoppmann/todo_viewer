@@ -40,6 +40,7 @@ def load_settings(path: Path | None = None, env: Mapping[str, str] | None = None
                     "AUTO_SYNC_INTERVAL", data.get("auto_sync_interval_seconds", defaults.auto_sync_interval_seconds)
                 )
             ),
+            auto_sync_interval_from_env="AUTO_SYNC_INTERVAL" in env,
             plugins=plugins,
         )
     except (TypeError, ValueError) as exc:

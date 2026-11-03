@@ -19,6 +19,7 @@ from viewer.core.application.core_plugin import build_core_definition
 from viewer.core.application.plugin import PluginDefinition, PluginHost
 from viewer.core.application.ports import Clock
 from viewer.core.application.sync import MirrorConfig, MirrorProjects, SyncService
+from viewer.core.application.sync_settings import SyncSettingsService
 from viewer.core.domain.errors import PluginSetupError
 from viewer.core.domain.plugin import ElementKind, load_order, validate_plugins
 from viewer.core.domain.settings import Settings
@@ -26,6 +27,7 @@ from viewer.core.infrastructure.client_log import StructlogClientLog
 from viewer.core.infrastructure.clock import SystemClock
 from viewer.core.infrastructure.database import MigrationRunner, SqliteBackupMaker, SqliteDatabase
 from viewer.core.infrastructure.database.core_schema import CORE_MIGRATIONS
+from viewer.core.infrastructure.database.settings import SqlSettingsStore
 from viewer.core.infrastructure.database.sync_state import SqlSyncStateStore
 from viewer.core.infrastructure.database.ui_state import SqlUiStateStore
 from viewer.core.infrastructure.event_bus import InProcessEventBus
@@ -98,7 +100,16 @@ def create_app(
         ids=UuidIds(),
         auto_interval_seconds=settings.auto_sync_interval_seconds,
     )
-    core = build_core_definition(SqlUiStateStore(database, clock), CORE_MIGRATIONS, sync, StructlogClientLog(), clock)
+    sync_settings = SyncSettingsService(
+        SqlSettingsStore(database, clock),
+        sync,
+        events,
+        settings.auto_sync_interval_seconds,
+        settings.auto_sync_interval_from_env,
+    )
+    core = build_core_definition(
+        SqlUiStateStore(database, clock), CORE_MIGRATIONS, sync, StructlogClientLog(), clock, sync_settings
+    )
     definitions = [core, *plugins]
     MigrationRunner(database, backups).run([{d.id: d for d in definitions}[pid] for pid in load_order(definitions)])
     host = PluginHost(
@@ -126,9 +137,11 @@ def create_app(
     # Konflikt `deleted_in_database` stehen.
     events.subscribe(
         "backlog.document.changed",
-        lambda event: sync.carry_purged([event.payload["entry_key"]])
-        if event.payload.get("change") == "deleted" and event.payload.get("entry_key")
-        else None,
+        lambda event: (
+            sync.carry_purged([event.payload["entry_key"]])
+            if event.payload.get("change") == "deleted" and event.payload.get("entry_key")
+            else None
+        ),
     )
 
     mcp = create_mcp_host(host)
@@ -136,6 +149,7 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         scheduler.start(asyncio.get_running_loop())
+        sync_settings.apply_stored()  # der in der Oberfläche gewählte Takt gilt ab dem Start
         sync.refresh_auto()
         try:
             async with mcp.lifespan:

@@ -5,6 +5,11 @@ import { plugin } from "../../../../../../client/src/plugins/alarms";
 import manifest from "../../../../../../client/src/plugins/alarms/plugin.json";
 
 describe("alarms plugin definition", () => {
+	it("puts its settings into the group system", () => {
+		const settings = (plugin.contributions ?? []).filter((entry) => entry.slot === "core.settings-sections");
+		expect(settings.map((entry) => ("group" in entry ? entry.group : undefined))).toEqual(["system"]);
+	});
+
 	it("is valid, needs the layout and the workspace, and hangs into the slots of others", () => {
 		expect(checkDefinition({ plugin }, "alarms").ok).toBe(true);
 		expect(checkContributions(plugin.contributions ?? [])).toEqual([]);

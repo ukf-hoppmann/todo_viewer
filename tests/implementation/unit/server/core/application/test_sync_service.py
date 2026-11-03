@@ -550,6 +550,28 @@ def test_timer_runs_only_while_a_project_has_auto_sync_on(rig: Rig) -> None:
     assert rig.scheduler.appointments["core.sync"] is None
 
 
+def test_a_new_interval_moves_the_appointment_without_a_restart(rig: Rig) -> None:
+    rig.projects.configs[P] = MirrorConfig(FOLDER, auto_sync=True)
+    rig.service.refresh_auto()
+
+    rig.service.set_interval(5)
+
+    appointment = rig.scheduler.appointments["core.sync"]
+    assert appointment is not None and appointment[0] == rig.clock.now() + timedelta(seconds=5)
+
+
+def test_interval_zero_switches_the_timer_off_even_with_auto_sync_on(rig: Rig) -> None:
+    rig.projects.configs[P] = MirrorConfig(FOLDER, auto_sync=True)
+    rig.service.refresh_auto()
+    assert rig.scheduler.appointments["core.sync"] is not None
+
+    rig.service.set_interval(0)
+    assert rig.scheduler.appointments["core.sync"] is None
+
+    rig.service.set_interval(30)
+    assert rig.scheduler.appointments["core.sync"] is not None
+
+
 def test_a_failing_project_does_not_stop_the_tick(rig: Rig) -> None:
     rig.projects.configs["kaputt"] = MirrorConfig(Path("/gibt-es-nicht"), auto_sync=True)
     rig.projects.configs[P] = MirrorConfig(FOLDER, auto_sync=True)

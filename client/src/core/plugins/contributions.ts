@@ -3,6 +3,9 @@ import type { Contribution, MainContribution, WidgetContribution } from "./types
 /** The slot of the main routes (the tabs). */
 export const mainSlot = "core.main";
 
+/** The slot of the sections of the settings page. */
+export const settingsSlot = "core.settings-sections";
+
 /** A contribution to the tabs. */
 export function isMainContribution(contribution: Contribution): contribution is MainContribution {
 	return contribution.slot === mainSlot;

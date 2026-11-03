@@ -106,8 +106,17 @@
 		"neverSynced": "Never synced",
 		"edit": "Edit project",
 		"setup": "Set up the mirror",
+		"details": "Details",
 		"sync": "Sync …",
 		"check": "Check …"
+	},
+	"autoSync": {
+		"title": "Auto sync",
+		"interval": "Interval (seconds)",
+		"hint": "Time between checks. 0 switches the auto sync off. It runs only while at least one project is set to “Sync automatically”.",
+		"locked": "The interval is set by the environment variable AUTO_SYNC_INTERVAL and cannot be changed here.",
+		"saved": "Saved; the new interval applies at once.",
+		"failed": "The interval could not be saved."
 	},
 	"sync": {
 		"title": "Sync: {{name}}",

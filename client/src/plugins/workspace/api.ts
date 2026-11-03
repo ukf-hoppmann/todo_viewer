@@ -17,6 +17,7 @@ export type SyncConflict = components["schemas"]["ConflictOut"];
 export type SyncTransfer = components["schemas"]["TransferOut"];
 export type SyncResult = components["schemas"]["SyncResult"];
 export type SyncChoice = components["schemas"]["Decision"]["choice"];
+export type SyncSettings = components["schemas"]["SyncSettingsOut"];
 export type UpdateProjectBody = components["schemas"]["WorkspaceUpdateProjectBody"];
 
 /**
@@ -100,11 +101,19 @@ export const workspaceApi = createPluginApi(
 			query: ({ project, ...body }) => ({ url: `core/sync/${project}/execute`, method: "POST", body }),
 			invalidatesTags: (_result, _error, { project }) => [{ type: "Sync", id: project }, "Projects", "Trash", "Links"],
 		}),
+		getSyncSettings: build.query<SyncSettings, void>({
+			query: () => "core/settings/sync",
+			providesTags: ["SyncSettings"],
+		}),
+		updateSyncSettings: build.mutation<SyncSettings, { auto_sync_interval_seconds: number }>({
+			query: (body) => ({ url: "core/settings/sync", method: "PUT", body }),
+			invalidatesTags: ["SyncSettings"],
+		}),
 		browseFolders: build.query<FolderListing, string | undefined>({
 			query: (path) => ({ url: "workspace/folders", params: path ? { path } : undefined }),
 		}),
 	}),
-	{ tagTypes: ["Projects", "Links", "Trash", "Sync"] },
+	{ tagTypes: ["Projects", "Links", "Trash", "Sync", "SyncSettings"] },
 );
 
 export const {
@@ -125,6 +134,8 @@ export const {
 	useGetSyncStatusQuery,
 	useGetSyncPreviewQuery,
 	useExecuteSyncMutation,
+	useGetSyncSettingsQuery,
+	useUpdateSyncSettingsMutation,
 } = workspaceApi;
 
 /** The text the server gave for an error of a request, if it gave one. */

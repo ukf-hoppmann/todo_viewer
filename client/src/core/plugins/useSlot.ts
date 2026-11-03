@@ -11,6 +11,8 @@ export interface SlotEntry {
 	ownerId: string;
 	name: string;
 	component: ComponentType;
+	/** The group the widget asked for (`WidgetContribution.group`), if any. */
+	group?: string;
 }
 
 /**
@@ -24,11 +26,11 @@ export function selectSlotEntries(active: readonly ActivePlugin[], slot: string,
 			.filter(isWidgetContribution)
 			.filter((widget) => widget.slot === slot)
 			.filter((widget) => widget.when === undefined || (route !== undefined && widget.when.includes(route)))
-			.map((widget, position) => ({ ownerId: id, name: widget.name, component: widget.component, order: widget.order ?? 0, position })),
+			.map((widget, position) => ({ ownerId: id, name: widget.name, component: widget.component, group: widget.group, order: widget.order ?? 0, position })),
 	);
 	return entries
 		.sort((a, b) => a.order - b.order || a.ownerId.localeCompare(b.ownerId) || a.position - b.position)
-		.map(({ ownerId, name, component }) => ({ ownerId, name, component }));
+		.map(({ ownerId, name, component, group }) => ({ ownerId, name, component, group }));
 }
 
 /** The main route that is open, `<owner id>/<name>`, or nothing at `/`. */

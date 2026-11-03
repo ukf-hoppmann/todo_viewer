@@ -66,6 +66,8 @@ export interface WidgetContribution {
 	order?: number;
 	/** Show the widget only on these main routes (`<owner id>/<name>`); on every route if missing. */
 	when?: readonly string[];
+	/** Only in the slot `core.settings-sections`: the group of the settings page (`projects` or `system`); `system` if missing. */
+	group?: string;
 	title?: undefined;
 	page?: undefined;
 }

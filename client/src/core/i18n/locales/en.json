@@ -71,6 +71,12 @@
 	"settings": {
 		"tab": "Settings",
 		"title": "Settings",
-		"empty": "There are no settings yet."
+		"empty": "There are no settings yet.",
+		"emptyGroup": "There are no settings in this group.",
+		"nav": "Groups",
+		"groups": {
+			"projects": "Projects",
+			"system": "System"
+		}
 	}
 }

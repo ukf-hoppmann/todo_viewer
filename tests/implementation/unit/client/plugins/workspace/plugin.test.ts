@@ -5,6 +5,14 @@ import { plugin } from "../../../../../../client/src/plugins/workspace";
 import manifest from "../../../../../../client/src/plugins/workspace/plugin.json";
 
 describe("workspace plugin definition", () => {
+	it("puts its settings into the groups projects and system", () => {
+		const settings = (plugin.contributions ?? []).filter((entry) => entry.slot === "core.settings-sections");
+		expect(settings.map((entry) => [entry.name, "group" in entry ? entry.group : undefined])).toEqual([
+			["projects", "projects"],
+			["auto-sync", "system"],
+		]);
+	});
+
 	it("is a valid definition that hangs into the layout plugin and provides the create slot", () => {
 		expect(checkDefinition({ plugin }, "workspace").ok).toBe(true);
 		expect(checkContributions(plugin.contributions ?? [])).toEqual([]);
@@ -16,6 +24,7 @@ describe("workspace plugin definition", () => {
 			"core.sidebar-sections",
 			"layout-header-sidebar.header-actions",
 			"core.settings-sections",
+			"core.settings-sections",
 		]);
 	});
 
@@ -24,7 +33,8 @@ describe("workspace plugin definition", () => {
 		["workspace.links.changed", ["Links"]],
 		["workspace.element.changed", ["Trash", "Links"]],
 		["core.sync.state", ["Sync", "Projects"]],
-		["core.reconnected", ["Projects", "Links", "Trash", "Sync"]],
+		["core.settings.changed", ["SyncSettings"]],
+		["core.reconnected", ["Projects", "Links", "Trash", "Sync", "SyncSettings"]],
 	])("reloads what changed on %s", (topic, tags) => {
 		const dispatch = vi.fn();
 		const invalidateTags = vi.fn((tags: string[]) => ({ type: "invalidate", tags }));

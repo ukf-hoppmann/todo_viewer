@@ -71,6 +71,12 @@
 	"settings": {
 		"tab": "Einstellungen",
 		"title": "Einstellungen",
-		"empty": "Es gibt noch keine Einstellungen."
+		"empty": "Es gibt noch keine Einstellungen.",
+		"emptyGroup": "In dieser Gruppe gibt es keine Einstellungen.",
+		"nav": "Gruppen",
+		"groups": {
+			"projects": "Projekte",
+			"system": "System"
+		}
 	}
 }

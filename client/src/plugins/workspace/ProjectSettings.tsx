@@ -1,7 +1,9 @@
+import AddLinkIcon from "@mui/icons-material/AddLink";
 import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SyncIcon from "@mui/icons-material/Sync";
 import SyncProblemIcon from "@mui/icons-material/SyncProblem";
-import { Alert, Box, Button, Chip, MenuItem, Paper, TextField, Typography } from "@mui/material";
+import { Alert, Box, Chip, Collapse, Divider, IconButton, MenuItem, Paper, TextField, Tooltip, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconAction } from "../../shared";
@@ -18,7 +20,10 @@ function modeOf(project: Project): Mode {
 	return project.auto_sync ? "auto" : "manual";
 }
 
-/** The section "Projects" of the settings page: one card per project with its mirror, its state and the sync. */
+/**
+ * The section "Projects" of the settings page: one compact row per project with its state, its mirror mode and the
+ * actions as icons; folder, direction and last sync are in a detail that is closed at first.
+ */
 export function ProjectSettings() {
 	const { t } = useTranslation("workspace");
 	const { data: projects = [] } = useListProjectsQuery();
@@ -30,17 +35,23 @@ export function ProjectSettings() {
 			<Typography variant="body2" color="text.secondary">
 				{t("settings.description")}
 			</Typography>
-			{projects.map((project) => (
-				<SettingsCard key={project.uid} project={project} />
-			))}
+			<Paper variant="outlined">
+				{projects.map((project, index) => (
+					<Box key={project.uid}>
+						{index > 0 && <Divider />}
+						<SettingsRow project={project} />
+					</Box>
+				))}
+			</Paper>
 		</Box>
 	);
 }
 
-function SettingsCard({ project }: { project: Project }) {
+function SettingsRow({ project }: { project: Project }) {
 	const { t, i18n } = useTranslation("workspace");
 	const { data: status } = useGetSyncStatusQuery(project.uid, { skip: !project.mirror_enabled });
 	const [update] = useUpdateProjectMutation();
+	const [expanded, setExpanded] = useState(false);
 	const [editing, setEditing] = useState(false);
 	const [syncing, setSyncing] = useState(false);
 	const [error, setError] = useState<string>();
@@ -72,22 +83,19 @@ function SettingsCard({ project }: { project: Project }) {
 	})();
 
 	return (
-		<Paper variant="outlined" sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1 }} data-testid={workspaceTestIds.settingsProject(project.uid)}>
-			<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-				<Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
+		<Box sx={{ px: 1.5, py: 0.75 }} data-testid={workspaceTestIds.settingsProject(project.uid)}>
+			<Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+				<Typography variant="subtitle1" noWrap sx={{ flexGrow: 1, minWidth: 120 }}>
 					{project.name}
 				</Typography>
 				<Chip size="small" color={needsAttention(view) ? "warning" : view.kind === "in_sync" ? "success" : "default"} label={label} data-testid={workspaceTestIds.settingsState(project.uid)} />
-			</Box>
-			<Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
 				<TextField
 					select
 					size="small"
-					label={t("settings.mode")}
 					value={modeOf(project)}
 					onChange={(event) => void setMode(event.target.value as Mode)}
-					sx={{ minWidth: 220 }}
-					slotProps={{ htmlInput: { "data-testid": workspaceTestIds.settingsMode(project.uid) } }}
+					sx={{ minWidth: 170 }}
+					slotProps={{ htmlInput: { "aria-label": t("settings.mode"), "data-testid": workspaceTestIds.settingsMode(project.uid) } }}
 				>
 					{(["off", "manual", "auto"] as const).map((mode) => (
 						<MenuItem key={mode} value={mode}>
@@ -95,32 +103,45 @@ function SettingsCard({ project }: { project: Project }) {
 						</MenuItem>
 					))}
 				</TextField>
-				<Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, wordBreak: "break-all" }}>
-					{project.mirror_folder ? `${project.mirror_folder} · ${t(`card.directions.${project.sync_direction}`)}` : t("settings.noFolder")}
-				</Typography>
-				<Typography variant="caption" color="text.secondary" data-testid={workspaceTestIds.settingsLast(project.uid)}>
-					{status?.last_sync ? t("settings.lastSync", { time: new Date(status.last_sync).toLocaleString(i18n.language) }) : t("settings.neverSynced")}
-				</Typography>
+				<Box sx={{ display: "flex", alignItems: "center" }}>
+					<IconAction label={t("settings.edit")} icon={EditIcon} onClick={() => setEditing(true)} testId={workspaceTestIds.settingsEdit(project.uid)} />
+					{project.mirror_enabled ? (
+						<IconAction
+							label={view.kind === "paused" ? t("settings.check") : t("settings.sync")}
+							icon={view.kind === "paused" ? SyncProblemIcon : SyncIcon}
+							color="primary"
+							onClick={() => setSyncing(true)}
+							testId={workspaceTestIds.settingsMain(project.uid)}
+						/>
+					) : (
+						<IconAction label={t("settings.setup")} icon={AddLinkIcon} color="primary" onClick={() => setEditing(true)} testId={workspaceTestIds.settingsMain(project.uid)} />
+					)}
+					<Tooltip title={t("settings.details")}>
+						<IconButton
+							size="small"
+							aria-label={t("settings.details")}
+							aria-expanded={expanded}
+							onClick={() => setExpanded((open) => !open)}
+							data-testid={workspaceTestIds.settingsExpand(project.uid)}
+						>
+							<ExpandMoreIcon fontSize="small" sx={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+						</IconButton>
+					</Tooltip>
+				</Box>
 			</Box>
+			<Collapse in={expanded} unmountOnExit>
+				<Box sx={{ display: "flex", gap: 2, alignItems: "baseline", flexWrap: "wrap", pt: 0.5, pb: 0.5 }}>
+					<Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, wordBreak: "break-all" }}>
+						{project.mirror_folder ? `${project.mirror_folder} · ${t(`card.directions.${project.sync_direction}`)}` : t("settings.noFolder")}
+					</Typography>
+					<Typography variant="caption" color="text.secondary" data-testid={workspaceTestIds.settingsLast(project.uid)}>
+						{status?.last_sync ? t("settings.lastSync", { time: new Date(status.last_sync).toLocaleString(i18n.language) }) : t("settings.neverSynced")}
+					</Typography>
+				</Box>
+			</Collapse>
 			{error && <Alert severity="error">{error}</Alert>}
-			<Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end", alignItems: "center" }}>
-				<IconAction label={t("settings.edit")} icon={EditIcon} onClick={() => setEditing(true)} testId={workspaceTestIds.settingsEdit(project.uid)} />
-				{project.mirror_enabled ? (
-					<IconAction
-						label={view.kind === "paused" ? t("settings.check") : t("settings.sync")}
-						icon={view.kind === "paused" ? SyncProblemIcon : SyncIcon}
-						color="primary"
-						onClick={() => setSyncing(true)}
-						testId={workspaceTestIds.settingsMain(project.uid)}
-					/>
-				) : (
-					<Button size="small" variant="contained" onClick={() => setEditing(true)} data-testid={workspaceTestIds.settingsMain(project.uid)}>
-						{t("settings.setup")}
-					</Button>
-				)}
-			</Box>
 			{editing && <ProjectCard project={project} onClose={() => setEditing(false)} />}
 			{syncing && <SyncDialog project={project} onClose={() => setSyncing(false)} />}
-		</Paper>
+		</Box>
 	);
 }

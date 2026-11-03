@@ -1,4 +1,4 @@
-import { mainSlot, parseSlot } from "./contributions";
+import { mainSlot, parseSlot, settingsSlot } from "./contributions";
 
 const kebabCase = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
@@ -33,7 +33,7 @@ function checkWidget(
 	seen: Set<string>,
 	reservedNames: readonly string[],
 ): void {
-	const { slot, name, component, order, when, title, icon, page, layout } = contribution;
+	const { slot, name, component, order, when, group, title, icon, page, layout } = contribution;
 	const problem = (message: string) => problems.push(`${label}: ${message}`);
 	if (!isSlot(slot)) problem(`the slot '${String(slot)}' is not of the form <owner id>.<name>`);
 	else if (slot === mainSlot) problem("a widget cannot hang into 'core.main'");
@@ -46,6 +46,10 @@ function checkWidget(
 		if (!Array.isArray(when) || when.some((route) => typeof route !== "string" || !/^[a-z0-9-]+\/[a-z0-9-]+$/.test(route))) {
 			problem("`when` is no list of main routes (`<owner id>/<name>`)");
 		}
+	}
+	if (group !== undefined) {
+		if (slot !== settingsSlot) problem(`\`group\` is only allowed in '${settingsSlot}'`);
+		else if (typeof group !== "string" || !kebabCase.test(group)) problem("`group` is not kebab-case");
 	}
 	for (const [key, value] of Object.entries({ title, icon, page, layout })) {
 		if (value !== undefined) problem(`\`${key}\` is not allowed in a widget`);

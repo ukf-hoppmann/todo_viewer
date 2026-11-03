@@ -171,3 +171,103 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Volltexte.
     4. Texte in de/en, Test-IDs nach Client-Regeln, Unit-Tests für die
     reinen Darstellungsfunktionen.
+
+- `NEW-settings-gliedern` **Einstellungen übersichtlich gliedern: Gruppen, kompakte Projektliste, Sync-Intervall**
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-03.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Seite „Einstellungen“ ist keine lange Kartenliste mehr, sondern
+    in Gruppen mit Seitennavigation gegliedert: „Projekte“ (alles
+    Projektspezifische, platzsparend dargestellt) und „System“ (Notes, Wecker,
+    Auto-Sync). Das Auto-Sync-Intervall ist dort ohne Neustart einstellbar.
+    Die Sprache bleibt in der Kopfzeile.
+  - Completion criteria: 1. Die Einstellungen haben links eine Navigation mit
+    Unterrouten; rechts steht nur die gewählte Gruppe. 2. „Projekte“ zeigt
+    eine Zeile je Projekt mit Name, Status, Modus und Icon-Aktionen mit
+    Tooltip; Pfad und letzter Sync stehen im eingeklappten Detail. 3. „System“
+    enthält Notes, Wecker und Auto-Sync; neue Abschnitte ordnen sich über ein
+    Gruppenattribut des Slots ein. 4. Das Auto-Sync-Intervall lässt sich in
+    der Oberfläche ändern und gilt ohne Neustart; ist `AUTO_SYNC_INTERVAL`
+    gesetzt, gewinnt die Umgebung und das Feld ist gesperrt. 5. Texte in
+    de/en, Tests und Techdocs sind nachgezogen.
+  - Summary: Die Einstellungen werden aufgeräumt: Gruppen „Projekte“ und
+    „System“ mit Seitennavigation, eine kompakte Projektliste und ein
+    Auto-Sync-Intervall, das man in der Oberfläche einstellt.
+
+- `NEW-settings-gruppen` **Einstellungen: Gruppen und Seitennavigation**
+  - Type: Task.
+  - Parent: `NEW-settings-gliedern`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-03.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Slot `core.settings-sections` bekommt ein Gruppenattribut; die
+    Einstellungsseite zeigt links eine Navigation mit Unterrouten und rechts
+    die Abschnitte der gewählten Gruppe. Die bestehenden Abschnitte werden den
+    Gruppen „Projekte“ und „System“ zugeordnet (Notes und Wecker nach System).
+  - Completion criteria: 1. Jede Gruppe ist über eine eigene Unterroute
+    erreichbar und direkt aufrufbar. 2. Abschnitte ohne Gruppe erscheinen unter
+    „System“ und gehen nicht verloren; die Slot-Prüfung kennt das Attribut.
+    3. Texte in de/en, Test-IDs nach Client-Regeln, Tests für Navigation und
+    Zuordnung.
+
+- `NEW-settings-projektliste` **Einstellungen: Projektliste kompakt mit Icons und Tooltips**
+  - Type: Task.
+  - Parent: `NEW-settings-gliedern`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-03.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `NEW-settings-gruppen`.
+  - Goal: Die Projekte in der Gruppe „Projekte“ stehen als kompakte Zeilen:
+    Name, Status-Chip, Modus (Aus/Manuell/Auto) und Icon-Aktionen mit Tooltip
+    (Bearbeiten, Sync). Pfad, Richtung und letzter Sync stehen in einem
+    aufklappbaren Detail, standardmäßig eingeklappt.
+  - Completion criteria: 1. Bei gleicher Fensterhöhe sind deutlich mehr
+    Projekte sichtbar als bisher. 2. Alle bisherigen Aktionen (Modus ändern,
+    bearbeiten, Sync, Spiegel einrichten) bleiben erreichbar. 3. Texte in
+    de/en, Tests für Zeile und Detail.
+
+- `NEW-settings-intervall-server` **Server: Auto-Sync-Intervall zur Laufzeit ändern**
+  - Type: Task.
+  - Parent: `NEW-settings-gliedern`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-03.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Das Intervall des Auto-Syncs (`auto_sync_interval_seconds`) kann über
+    die API gelesen und geschrieben werden, nach dem Vorbild von
+    `PUT /api/v2/notes/settings`; der Timer übernimmt den neuen Wert ohne
+    Neustart. Die Umgebungsvariable `AUTO_SYNC_INTERVAL` gewinnt weiter.
+  - Completion criteria: 1. Lesen liefert Wert und ob er aus der Umgebung
+    stammt; Schreiben ist dann mit einem Fehler abgelehnt. 2. Der Wert wird in
+    die Konfiguration geschrieben (Bereich geprüft, `0` = Timer aus) und gilt
+    sofort. 3. Tests für Lesen, Schreiben, Sperre durch die Umgebung und
+    Neustart des Timers; Techdocs (Konfiguration, Schnittstellen) sind
+    nachgezogen.
+
+- `NEW-settings-intervall-ui` **Einstellungen: Auto-Sync-Intervall in der Gruppe „System“**
+  - Type: Task.
+  - Parent: `NEW-settings-gliedern`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-03.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `NEW-settings-gruppen`, `NEW-settings-intervall-server`.
+  - Goal: Ein Abschnitt „Auto-Sync“ in der Gruppe „System“ zeigt das Intervall
+    und lässt es ändern; ist es per Umgebung gesetzt, ist das Feld gesperrt und
+    nennt den Grund.
+  - Completion criteria: 1. Ändern und Speichern wirkt ohne Neustart.
+    2. Gesperrt mit Hinweis, wenn der Server meldet, dass die Umgebung den Wert
+    setzt. 3. Texte in de/en, Test-IDs nach Client-Regeln, Tests.

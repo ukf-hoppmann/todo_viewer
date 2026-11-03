@@ -30,15 +30,35 @@ async function renderSettings(options: Parameters<typeof fakeWorkspaceBackend>[0
 }
 
 describe("ProjectSettings", () => {
-	it("shows a card per project with its state, folder, direction and last sync", async () => {
+	it("shows a row per project with its name and state", async () => {
 		await renderSettings();
 
 		await waitFor(() => expect(screen.getByTestId(ids.settingsState("p1")).textContent).toBe("in Sync"));
 		expect(screen.getByTestId(ids.settingsState("p2")).textContent).toBe("braucht dich");
 		expect(screen.getByTestId(ids.settingsState("p0")).textContent).toBe("nicht gespiegelt");
+		expect(screen.getByTestId(ids.settingsProject("p1")).textContent).toContain("Viewer");
+	});
+
+	it("keeps folder, direction and last sync in a detail that is closed at first and opens and closes with the arrow", async () => {
+		await renderSettings();
+		const toggle = (uid: string) => screen.getByTestId(ids.settingsExpand(uid));
+
+		expect(screen.queryByTestId(ids.settingsLast("p1"))).toBeNull();
+		expect(screen.getByTestId(ids.settingsProject("p1")).textContent).not.toContain("/work/viewer");
+		expect(toggle("p1").getAttribute("aria-expanded")).toBe("false");
+
+		fireEvent.click(toggle("p1"));
+		fireEvent.click(toggle("p2"));
+
+		expect(toggle("p1").getAttribute("aria-expanded")).toBe("true");
+		expect(await screen.findByTestId(ids.settingsLast("p1"))).toBeTruthy();
 		expect(screen.getByTestId(ids.settingsProject("p1")).textContent).toContain("/work/viewer");
 		expect(screen.getByTestId(ids.settingsLast("p1")).textContent).toMatch(/^Letzter Sync: /);
 		expect(screen.getByTestId(ids.settingsLast("p2")).textContent).toBe("Noch nie abgeglichen");
+
+		fireEvent.click(toggle("p1"));
+		await waitFor(() => expect(screen.queryByTestId(ids.settingsLast("p1"))).toBeNull());
+		expect(screen.getByTestId(ids.settingsLast("p2"))).toBeTruthy();
 	});
 
 	it("names the paused state with its reason", async () => {
@@ -81,7 +101,7 @@ describe("ProjectSettings", () => {
 	it("has one main action: set up the mirror, or sync", async () => {
 		await renderSettings();
 
-		expect(screen.getByTestId(ids.settingsMain("p0")).textContent).toBe("Spiegel einrichten");
+		expect(screen.getByTestId(ids.settingsMain("p0")).getAttribute("aria-label")).toBe("Spiegel einrichten");
 		expect(screen.getByTestId(ids.settingsMain("p1")).getAttribute("aria-label")).toBe("Abgleichen …");
 		fireEvent.click(screen.getByTestId(ids.settingsMain("p1")));
 		expect(await screen.findByTestId(ids.syncDialog)).toBeTruthy();

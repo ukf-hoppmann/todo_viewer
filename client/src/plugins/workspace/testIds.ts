@@ -42,6 +42,7 @@ export const workspaceTestIds = {
 	settingsLast: (uid: string) => `workspace.settings-last.${uid}`,
 	settingsMain: (uid: string) => `workspace.settings-main.${uid}`,
 	settingsEdit: (uid: string) => `workspace.settings-edit.${uid}`,
+	settingsExpand: (uid: string) => `workspace.settings-expand.${uid}`,
 	syncDialog: "workspace.sync-dialog",
 	syncState: "workspace.sync-state",
 	syncDirection: "workspace.sync-direction",

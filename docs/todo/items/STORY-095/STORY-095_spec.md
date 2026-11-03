@@ -25,10 +25,9 @@ Alles wird aus vorhandenen Daten berechnet: Einträge beider Seiten, Basis-Hash 
 2. **Letzter Abgleich des Eintrags:** `synced_at` aus `core_sync_state`. Dafür braucht der Port
    `SyncStateStore` einen Lesezugriff je Eintrag.
 3. **Umbenennungspartner** (nur bei `deleted_in_files` / `deleted_in_database`): Gesucht wird ein Eintrag auf
-   der Seite, auf der gelöscht wurde. Er muss dieselbe `kind` und dieselben `refs` haben und darf auf der
-   anderen Seite nicht in der Basis stehen. Das heißt, er ist in diesem Lauf neu oder wurde seit dem letzten
-   Abgleich neu angelegt. Infrage kommen auch Einträge, die nicht in Konflikt stehen, sondern als Übertragung
-   geplant oder schon übernommen sind. Die Ähnlichkeit ist `difflib.SequenceMatcher.ratio()` über die
+   der Seite, auf der gelöscht wurde. Er muss dieselbe `kind` und dieselben `refs` haben. Ob er neu ist oder schon
+   früher übernommen wurde, spielt keine Rolle: im Beispiel stand der neue Name schon in der Datenbank und in der
+   Basis. Die Ähnlichkeit ist `difflib.SequenceMatcher.ratio()` über die
    kanonische Feldform. Der Partner gilt ab einer Ähnlichkeit von 0,6. Gibt es mehrere, zählt der ähnlichste.
    Angezeigt werden Schlüssel, Label und Ähnlichkeit.
 4. **Empfehlung** (`database` | `files` | `none`) mit Begründungscode:

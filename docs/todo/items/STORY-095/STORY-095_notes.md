@@ -2,16 +2,16 @@
 
 ## State
 
-- Goal/Status: Konflikte im Sync-Dialog erklären (Herkunft, Umbenennung, Empfehlung); Spec steht, Umsetzung nicht begonnen.
-- Next step: TASK-046 (Server-Ableitung) planen und umsetzen, danach TASK-047 (Dialog).
+- Goal/Status: Konflikte im Sync-Dialog erklären; Server (TASK-046) und Dialog (TASK-047) umgesetzt und getestet, wartet auf Abnahme.
+- Next step: Abnahme durch den Besitzer, Sync-Dialog im laufenden Viewer an einem echten Konflikt ansehen (Container neu bauen).
 - Open:
+  - Test startApp "stores the language …" im Client schlägt fehl, unabhängig vom Sync (2026-11-03)
 - Decided:
   - Der Viewer erklärt und empfiehlt nur, ohne Vorauswahl und ohne automatische Löschung; Architektur §2 bleibt (2026-11-03)
-  - Umbenennungen werden über Ähnlichkeit erkannt, nicht über git (2026-11-03)
-  - Zuschnitt: TASK-046 Server, TASK-047 Dialog (2026-11-03)
-- References: Spec STORY-095_spec.md; TASK-046, TASK-047; Beispiel image_refiner STORY-086_spec_nsfw-papierkorb.md → STORY-086_spec_sensibel-papierkorb.md (Commit 0fcb81ef)
+  - Umbenennungen werden über Ähnlichkeit erkannt (ab 0,6), nicht über git; der Partner muss nicht neu sein (2026-11-03)
+- References: Spec STORY-095_spec.md; TASK-046, TASK-047
 
-State confirmed after entry 2026-11-03 — Anlass und Zuschnitt (0b8d856eff04)
+State confirmed after entry 2026-11-03 — Umsetzung TASK-046 und TASK-047 (8fcba1b1cf2c)
 
 ## 2026-11-03 — Anlass und Zuschnitt
 
@@ -27,3 +27,19 @@ State confirmed after entry 2026-11-03 — Anlass und Zuschnitt (0b8d856eff04)
 
 - Besitzer stimmt dem Vorschlag zu (2026-11-03): Story unter EPIC-007 mit zwei Tasks, TASK-046 (Server-Ableitung) und TASK-047 (Dialog, hängt von TASK-046 ab).
 - Der Viewer empfiehlt nur. Er wählt nichts vor und löscht nichts automatisch.
+
+## 2026-11-03 — Umsetzung TASK-046 und TASK-047
+
+### Discussed
+
+- Server: explain_conflict in core/domain/sync.py (rein), SyncStateStore.synced_times je Eintrag, ConflictOut um database_changed, files_changed, synced_at, renamed_to, recommendation, reason erweitert; OpenAPI-Typen neu erzeugt.
+- Dialog: Herkunftssatz, Kontext statt kind/item-Zeilen, Umbenennungshinweis, Empfehlung als Chip mit Begründung, Zeilen-Diff bei Texten auf beiden Seiten.
+- Der Umbenennungspartner muss nicht neu sein: im Beispiel stand der neue Name schon in der Datenbank und in der Basis. Die Spec war an der Stelle falsch und ist korrigiert.
+
+### Decided
+
+- Ähnlichkeitsschwelle 0,6; die Empfehlung ist nur ein Vorschlag, nichts ist vorausgewählt.
+
+### Open
+
+- Test startApp 'stores the language …' schlägt im Client aktuell fehl; er berührt den Sync nicht und wurde nicht angefasst.

@@ -1,4 +1,4 @@
-"""Migrationen des Core: `core_ui_state` und `core_sync_state` (genutzt von `STORY-065`)."""
+"""Migrationen des Core: `core_ui_state`, `core_sync_state` (genutzt von `STORY-065`) und `core_settings`."""
 
 from __future__ import annotations
 
@@ -21,4 +21,10 @@ def _v1(connection: Any) -> None:
     )
 
 
-CORE_MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1),)
+def _v2(connection: Any) -> None:
+    connection.exec_driver_sql(
+        "CREATE TABLE core_settings ( key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    )
+
+
+CORE_MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2))

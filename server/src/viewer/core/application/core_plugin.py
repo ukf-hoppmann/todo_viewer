@@ -9,6 +9,7 @@ from viewer.core.application.plugin import PluginContext, PluginDefinition
 from viewer.core.application.ports import ClientLogWriter, Clock, UiStateStore
 from viewer.core.application.sync import Preview, SyncResult, SyncService, SyncStatus
 from viewer.core.application.sync_operations import SyncExecuteIn, SyncPreviewIn, SyncStatusIn
+from viewer.core.application.sync_settings import GetSyncSettings, PutSyncSettings, SyncSettingsOut, SyncSettingsService
 from viewer.core.application.ui_state import GetUiState, PutUiState, UiState, UiStateService
 from viewer.core.domain.operations import HttpBinding, Operation
 from viewer.core.domain.plugin import Migration
@@ -29,6 +30,7 @@ class CoreServices:
     ui_state: UiStateService
     sync: SyncService
     client_log: ClientLogService
+    sync_settings: SyncSettingsService
 
 
 def build_core_definition(
@@ -37,12 +39,13 @@ def build_core_definition(
     sync: SyncService,
     client_log: ClientLogWriter,
     clock: Clock,
+    sync_settings: SyncSettingsService,
 ) -> PluginDefinition:
     """Die Operationen des Core. UI-Zustand ist kein MCP-Tool (Einstellungen dürfen nicht als Tool angeboten
     werden); Sync-Status, Vorschau und Ausführen sind es, denn der Harness braucht sie."""
 
     def build(context: PluginContext) -> CoreServices:
-        return CoreServices(UiStateService(store), sync, ClientLogService(client_log, clock))
+        return CoreServices(UiStateService(store), sync, ClientLogService(client_log, clock), sync_settings)
 
     return PluginDefinition(
         id="core",
@@ -75,6 +78,26 @@ def build_core_definition(
                 UiState,
                 lambda services, data: services.ui_state.put(data),
                 HttpBinding("PUT", "/ui-state/{owner}"),
+                mcp=False,
+            ),
+            Operation(
+                "get_sync_settings",
+                "Takt des Auto-Syncs (Sekunden) und ob die Umgebung ihn vorgibt",
+                "read",
+                GetSyncSettings,
+                SyncSettingsOut,
+                lambda services, data: services.sync_settings.get(),
+                HttpBinding("GET", "/settings/sync"),
+                mcp=False,
+            ),
+            Operation(
+                "put_sync_settings",
+                "Takt des Auto-Syncs ändern (0 = aus); wirkt sofort",
+                "write",
+                PutSyncSettings,
+                SyncSettingsOut,
+                lambda services, data: services.sync_settings.put(data),
+                HttpBinding("PUT", "/settings/sync"),
                 mcp=False,
             ),
             Operation(

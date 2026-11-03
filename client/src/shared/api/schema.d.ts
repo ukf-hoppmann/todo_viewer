@@ -368,6 +368,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/core/settings/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Takt des Auto-Syncs (Sekunden) und ob die Umgebung ihn vorgibt */
+        get: operations["core_get_sync_settings"];
+        /** Takt des Auto-Syncs ändern (0 = aus); wirkt sofort */
+        put: operations["core_put_sync_settings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/core/sync/{project}/execute": {
         parameters: {
             query?: never;
@@ -1419,6 +1437,11 @@ export interface components {
             /** User Message */
             user_message?: string | null;
         };
+        /** CorePutSyncSettingsBody */
+        CorePutSyncSettingsBody: {
+            /** Auto Sync Interval Seconds */
+            auto_sync_interval_seconds: number;
+        };
         /** CorePutUiStateBody */
         CorePutUiStateBody: {
             /** Document */
@@ -2283,6 +2306,13 @@ export interface components {
             to_database: number;
             /** To Files */
             to_files: number;
+        };
+        /** SyncSettingsOut */
+        SyncSettingsOut: {
+            /** Auto Sync Interval Seconds */
+            auto_sync_interval_seconds: number;
+            /** Locked By Environment */
+            locked_by_environment: boolean;
         };
         /** SyncStatus */
         SyncStatus: {
@@ -3434,6 +3464,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    core_get_sync_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncSettingsOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    core_put_sync_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorePutSyncSettingsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncSettingsOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
         };

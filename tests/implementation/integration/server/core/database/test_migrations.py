@@ -20,18 +20,23 @@ def test_empty_database_is_migrated_to_the_current_version(runner: MigrationRunn
         ),
     )
     applied = runner.run(defs)
-    assert applied == [("core", 1), ("workspace", 1), ("backlog", 1), ("backlog", 2)]
-    assert versions(database) == {"core": 1, "workspace": 1, "backlog": 2}
-    assert {"core_ui_state", "core_sync_state", "workspace_elements", "backlog_items", "backlog_areas"} <= tables(
-        database
-    )
+    assert applied == [("core", 1), ("core", 2), ("workspace", 1), ("backlog", 1), ("backlog", 2)]
+    assert versions(database) == {"core": 2, "workspace": 1, "backlog": 2}
+    assert {
+        "core_ui_state",
+        "core_sync_state",
+        "core_settings",
+        "workspace_elements",
+        "backlog_items",
+        "backlog_areas",
+    } <= tables(database)
 
 
 def test_second_run_changes_nothing(runner: MigrationRunner, database: SqliteDatabase) -> None:
     defs = ordered(plugin("a", migrations=(mig(1, "CREATE TABLE a_x (id INTEGER)"),)))
     runner.run(defs)
     assert runner.run(defs) == []
-    assert versions(database) == {"core": 1, "a": 1}
+    assert versions(database) == {"core": 2, "a": 1}
 
 
 def test_only_pending_migrations_run_after_an_upgrade(runner: MigrationRunner, database: SqliteDatabase) -> None:
@@ -48,7 +53,7 @@ def test_plugins_run_after_the_plugins_they_require_even_if_listed_first(runner:
         plugin("a", migrations=(mig(1, "CREATE TABLE a_x (id TEXT PRIMARY KEY)"),)),
     )
     assert [d.id for d in defs] == ["core", "a", "b"]
-    assert runner.run(defs) == [("core", 1), ("a", 1), ("b", 1)]
+    assert runner.run(defs) == [("core", 1), ("core", 2), ("a", 1), ("b", 1)]
 
 
 def test_failing_migration_rolls_back_completely_and_keeps_the_previous_version(
@@ -85,7 +90,7 @@ def test_table_without_the_owners_prefix_fails_and_is_rolled_back(
         runner.run(ordered(plugin("a", migrations=(mig(1, "CREATE TABLE fremd_x (id INTEGER)"),))))
     assert "fremd_x" in str(err.value)
     assert "fremd_x" not in tables(database)
-    assert versions(database) == {"core": 1}
+    assert versions(database) == {"core": 2}
 
 
 def test_foreign_key_to_a_plugin_outside_requires_fails(runner: MigrationRunner, database: SqliteDatabase) -> None:
@@ -133,4 +138,4 @@ def test_migrations_table_is_created_by_the_runner_and_visible(
 ) -> None:
     runner.run(ordered())
     with database.transaction() as tx:
-        assert tx.connection.execute(text("SELECT version FROM core_migrations WHERE owner='core'")).scalar() == 1
+        assert tx.connection.execute(text("SELECT version FROM core_migrations WHERE owner='core'")).scalar() == 2

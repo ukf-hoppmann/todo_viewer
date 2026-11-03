@@ -22,6 +22,7 @@ STATUS_BY_CODE: dict[str, int] = {
     "version_conflict": 409,
     "backup_failed": 409,
     "mirror_conflict": 409,
+    "setting_locked": 409,
     "mirror_blocked": 409,
     "sync_preview_stale": 409,
     "deletion_not_confirmed": 422,

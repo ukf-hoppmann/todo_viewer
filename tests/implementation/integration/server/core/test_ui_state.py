@@ -55,4 +55,4 @@ def test_ui_state_routes_are_in_openapi(app: FastAPI) -> None:
 def test_startup_migrates_and_records_versions(settings: Settings) -> None:
     create_app(settings, plugins=[EXAMPLE_PLUGIN])
     rows = dict(sqlite3.connect(settings.db_path).execute("SELECT owner, version FROM core_migrations").fetchall())
-    assert rows == {"core": 1}
+    assert rows == {"core": 2}

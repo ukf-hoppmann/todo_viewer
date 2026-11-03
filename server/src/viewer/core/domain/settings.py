@@ -18,6 +18,8 @@ class Settings:
     static_dir: str = "client/dist"
     sse_keepalive_seconds: float = 15.0
     auto_sync_interval_seconds: float = 30.0
+    #: `AUTO_SYNC_INTERVAL` ist in der Umgebung gesetzt: die Oberfläche darf den Takt dann nicht ändern.
+    auto_sync_interval_from_env: bool = False
     plugins: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
 
     def for_plugin(self, plugin_id: str) -> Mapping[str, Any]:

@@ -95,27 +95,3 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Verbesserungen am MCP-Server nach einer Prüfung aus
     Claude_Harness heraus: Agenten sollen keine uids mehr abschreiben müssen
     und Fehler früher und lesbarer sehen. Ergänzt STORY-081.
-
-- `STORY-097` **Sync: Platzhalter auch im Fließtext durch das vergebene Label ersetzen**
-  - Uid: 33c72624-ae75-4b35-8e23-fa2c67eb161a.
-  - Type: Story.
-  - Parent: `EPIC-007`.
-  - Required for parent: No.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-04.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Wenn der Sync einem neuen Eintrag (Platzhalter NEW-<kurzname>, bei
-    Notizen new-<kurzname>) sein Label gibt, ersetzt er den Platzhalter
-    nicht nur in den Verweisfeldern, sondern auch im Fließtext aller
-    Einträge (Ziel, Kriterien, Zusammenfassung, Notizen, Specs, Notiztexte)
-    in Datenbank und Dateien. Bisher mussten solche Stellen von Hand
-    angepasst werden.
-  - Completion criteria: 1. Nach dem Sync steht in Textfeldern und
-    Dokumenten das vergebene Label statt des Platzhalters, in Datenbank und
-    Dateien.
-    2. Nur ganze IDs werden ersetzt; ähnliche Namen (NEW-route-2) und echte
-    Labels bleiben unverändert.
-    3. Der nächste Sync meldet dafür keinen Konflikt.
-    4. Tests (Unit und Sync-Ablauf) und Techdocs sind ergänzt.

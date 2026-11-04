@@ -3797,3 +3797,30 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Auto-Sync-Intervall, das man in der Oberfläche einstellt.
   - Resolution: Vom Owner am 2026-11-04 bestätigt; Umsetzung gegen Code und
     Tests geprüft (Server- und Client-Tests grün, tsc sauber).
+
+- `STORY-097` **Sync: Platzhalter auch im Fließtext durch das vergebene Label ersetzen**
+  - Uid: 33c72624-ae75-4b35-8e23-fa2c67eb161a.
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-11-04.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Wenn der Sync einem neuen Eintrag (Platzhalter NEW-<kurzname>, bei
+    Notizen new-<kurzname>) sein Label gibt, ersetzt er den Platzhalter
+    nicht nur in den Verweisfeldern, sondern auch im Fließtext aller
+    Einträge (Ziel, Kriterien, Zusammenfassung, Notizen, Specs, Notiztexte)
+    in Datenbank und Dateien. Bisher mussten solche Stellen von Hand
+    angepasst werden.
+  - Completion criteria: 1. Nach dem Sync steht in Textfeldern und
+    Dokumenten das vergebene Label statt des Platzhalters, in Datenbank und
+    Dateien.
+    2. Nur ganze IDs werden ersetzt; ähnliche Namen (NEW-route-2) und echte
+    Labels bleiben unverändert.
+    3. Der nächste Sync meldet dafür keinen Konflikt.
+    4. Tests (Unit und Sync-Ablauf) und Techdocs sind ergänzt.
+  - Resolution: Umgesetzt und vom Owner abgenommen: Der Sync ersetzt
+    Platzhalter beim Vergeben des Labels auch im Fließtext (Felder, Notizen,
+    Specs) in Datenbank und Dateien (v0.9.6).

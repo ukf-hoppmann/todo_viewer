@@ -34,6 +34,10 @@ export const plugin = definePlugin({
 		"workspace.element.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Items"]));
 		},
+		// A sync writes items and documents imported from the mirror files without sending `backlog.*.changed`.
+		"core.sync.state": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Items", "Documents"]));
+		},
 		"core.reconnected": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Items", "Documents"]));
 		},

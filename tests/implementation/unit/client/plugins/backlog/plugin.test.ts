@@ -21,6 +21,7 @@ describe("backlog plugin definition", () => {
 		["workspace.element.changed", ["Items"]],
 		["backlog.item.changed", ["Items"]],
 		["backlog.document.changed", ["Items", "Documents"]],
+		["core.sync.state", ["Items", "Documents"]],
 		["core.reconnected", ["Items", "Documents"]],
 	])("reloads what changed on %s", (topic, tags) => {
 		const dispatch = vi.fn();

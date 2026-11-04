@@ -276,3 +276,19 @@ def test_decision_against_the_direction_leaves_the_conflict_open_and_says_so(env
     assert result["to_database"] == 0
     assert [c["key"] for c in result["conflicts_left"]] == [U1]
     assert env.services.titles(P) == {"TASK-001": "DB"}
+
+
+def test_placeholders_in_the_text_of_entries_become_the_assigned_labels_in_database_and_files(env: Env) -> None:
+    env.services.seed(P, "epic", "Eltern", U1)
+    env.sync()
+    env.write(
+        env.text
+        + "- NEW-a |  | story | Neue Story | parent= | deps=\n"
+        + "- NEW-b |  | task | Siehe NEW-a, nicht NEW-a-2 oder STORY-009 | parent=NEW-a | deps=\n"
+    )
+    result = env.sync()
+    assert result.status_code == 200, result.text
+    assert env.services.titles(P)["TASK-001"] == "Siehe STORY-001, nicht NEW-a-2 oder STORY-009"
+    assert "Siehe STORY-001, nicht NEW-a-2 oder STORY-009" in env.text
+    assert "Siehe NEW-a," not in env.text
+    assert env.client.get(f"/api/core/sync/{P}/status").json()["state"] == "in_sync"

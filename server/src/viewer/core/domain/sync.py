@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import datetime
@@ -87,6 +88,13 @@ class MirrorEntry:
         """Ersetzt Verweise (Platzhalter → Label, altes → aktuelles Label)."""
         refs = {name: tuple(mapping.get(ref, ref) for ref in values) for name, values in self.refs.items()}
         return self if refs == dict(self.refs) else replace(self, refs=refs)
+
+    def map_text(self, mapping: Mapping[str, str]) -> MirrorEntry:
+        """Ersetzt Platzhalter im Fließtext der Felder (nur als ganze ID, siehe `replace_ids`)."""
+        if not mapping:
+            return self
+        fields = _map_strings(self.fields, mapping)
+        return self if fields == dict(self.fields) else replace(self, fields=fields)
 
 
 @dataclass(frozen=True)
@@ -372,6 +380,31 @@ def sync_state(plan: Plan) -> SyncState:
     if to_database:
         return "mirror_changed"
     return "in_sync"
+
+
+def text_labels(labels: Mapping[str, str]) -> dict[str, str]:
+    """Aus `Platzhalter → Label` die Einträge, die im Fließtext vorkommen können (ohne Dokument-Platzhalter `…/…`)."""
+    return {k: v for k, v in labels.items() if "/" not in k and k != v}
+
+
+def replace_ids(text: str, mapping: Mapping[str, str]) -> str:
+    """Ersetzt jede Schlüssel-ID aus `mapping`, wo sie als eigene ID steht. Längere IDs, die nur damit beginnen
+    (`NEW-route-2` bei `NEW-route`), bleiben unverändert."""
+    if not mapping or not any(key in text for key in mapping):
+        return text
+    keys = "|".join(re.escape(k) for k in sorted(mapping, key=len, reverse=True))
+    pattern = rf"(?<![A-Za-z0-9_-])(?:{keys})(?![A-Za-z0-9-])(?!\.[A-Za-z0-9])(?!_(?!notes|spec))"
+    return re.sub(pattern, lambda m: mapping[m.group(0)], text)
+
+
+def _map_strings(value: Any, mapping: Mapping[str, str]) -> Any:
+    if isinstance(value, str):
+        return replace_ids(value, mapping)
+    if isinstance(value, Mapping):
+        return {k: _map_strings(v, mapping) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return type(value)(_map_strings(v, mapping) for v in value)
+    return value
 
 
 def substitute_placeholders(entries: Iterable[MirrorEntry], labels: Mapping[str, str]) -> list[MirrorEntry]:

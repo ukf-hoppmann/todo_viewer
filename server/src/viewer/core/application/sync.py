@@ -39,6 +39,7 @@ from viewer.core.domain.sync import (
     plan_token,
     resolve_conflicts,
     sync_state,
+    text_labels,
 )
 
 log = structlog.get_logger(__name__)
@@ -539,6 +540,7 @@ class SyncService:
                 if missing:
                     raise InvalidInput(f"Kein Label vergeben für: {', '.join(missing)}", details={"missing": missing})
                 placeholder_labels.update({str(e.placeholder): labels[str(e.placeholder)] for e in fresh})
+            in_text = text_labels(placeholder_labels)
             for index, mirror in enumerate(self._mirrors):
                 created: list[MirrorEntry] = []
                 updated: list[MirrorEntry] = []
@@ -549,7 +551,7 @@ class SyncService:
                     if intent.is_deletion:
                         deleted.append(entry)
                         continue
-                    final = entry.map_refs(placeholder_labels)
+                    final = entry.map_refs(placeholder_labels).map_text(in_text)
                     if intent.entry.uid is None:
                         final = replace(final, label=placeholder_labels[str(entry.placeholder)], placeholder=None)
                     (created if intent.action == "create" else updated).append(final)
@@ -572,6 +574,7 @@ class SyncService:
         after = {e.uid: e for e in loaded}
         by_label = {(e.kind, e.label): e for e in loaded}
         raw = {e.key: e for entries in snapshot.raw_files for e in entries}
+        in_text = text_labels(placeholder_labels)
         upserts: dict[int, dict[str, MirrorEntry]] = defaultdict(dict)
         removed: dict[int, list[MirrorEntry]] = defaultdict(list)
         for intent in to_files:
@@ -593,7 +596,12 @@ class SyncService:
                 continue
             uid = str(fresh.uid)
             written = raw.get(intent.entry.key)
-            if intent.entry.uid is None or written is None or _differs_in_display(written, fresh):
+            if (
+                intent.entry.uid is None
+                or written is None
+                or _differs_in_display(written, fresh)
+                or written.map_text(in_text) != written
+            ):
                 # neue Einträge und Einträge mit Platzhalter oder altem Label; `placeholder` nennt, was in den Dateien
                 # ersetzt wird (z. B. Zeile oder Ordner `NEW-<kurzname>`)
                 upserts[index][uid] = replace(fresh, placeholder=intent.entry.placeholder)

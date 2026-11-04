@@ -921,8 +921,11 @@ Platzhalter statt eines Labels:
   Platzhalter nennen. Dokumente liegen in `items/NEW-<kurzname>/`
   (`NEW-<kurzname>_notes.md` …).
 - Beim Sync vergibt die DB `Uid` und das nächste freie Label des Typs,
-  ersetzt den Platzhalter in allen Verweisen, benennt Ordner und Dokumente um
-  und schreibt den Eintrag mit beidem zurück. Bei einem Sync, der nur in die
+  ersetzt den Platzhalter in allen Verweisen und im Fließtext aller Einträge
+  (Felder, Notizen, Specs; nur als ganze ID, `NEW-route-2` bleibt bei
+  `NEW-route`), benennt Ordner und Dokumente um und schreibt den Eintrag mit
+  beidem zurück; Dateien, in denen nur der Text geändert wurde, werden
+  ebenfalls neu geschrieben. Bei einem Sync, der nur in die
   DB schreiben darf, werden neue Einträge nicht übernommen (wie heute bei
   Notes).
 - Eine LLM erzeugt nie selbst eine `Uid` und nie ein Label.

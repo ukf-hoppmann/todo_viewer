@@ -175,7 +175,7 @@ Einträge aus den Dateien ohne `uid` (Platzhalter `NEW-<kurzname>`) sind neu; si
    `delete_missing=true` (sonst `deletion_not_confirmed`). Eine Entscheidung, die gegen die Richtung
    schreiben müsste (`files` bei `to_files`, `database` bei `to_database`), lässt den Konflikt offen und steht in
    `conflicts_left`; der Sync-Dialog sperrt diese Wahl. Reihenfolge: Backup der Datenbank (Grund `sync`) →
-   eine Transaktion für alle Teilnehmer (uid vergeben, Labels vergeben, Platzhalter in allen Verweisen ersetzen, Änderungen
+   eine Transaktion für alle Teilnehmer (uid vergeben, Labels vergeben, Platzhalter in allen Verweisen und im Fließtext der Felder ersetzen (`MirrorEntry.map_text`, `replace_ids`; Dokument-Platzhalter mit `/` ausgenommen), Änderungen
    anwenden) → Dateien schreiben (mit den beim Lesen erfassten Versionen, sonst `mirror_conflict`) → beide Seiten neu
    lesen und die Basis für alle beidseitig gleichen Einträge nachziehen. Schlägt das Schreiben der Dateien nach dem Commit
    fehl, bleibt die Datenbank richtig und der nächste Lauf holt auf.

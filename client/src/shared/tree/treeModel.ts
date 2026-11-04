@@ -104,3 +104,10 @@ export function ancestorsOf(roots: readonly TreeNode[], id: string): string[] {
 export function isInSubtree(roots: readonly TreeNode[], id: string, candidate: string): boolean {
 	return candidate === id || ancestorsOf(roots, candidate).includes(id);
 }
+
+/** The ids of the ancestors of an entry, nearest first, following `parentOf` (a guard stops cycles). */
+export function ancestorChain(parentOf: (id: string) => string | null | undefined, id: string): string[] {
+	const chain: string[] = [];
+	for (let current = parentOf(id); current && !chain.includes(current); current = parentOf(current)) chain.push(current);
+	return chain;
+}

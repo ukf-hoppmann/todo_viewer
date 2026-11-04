@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { PriorityFilter, StatusFilter } from "../../../../../../client/src/plugins/backlog/Filters";
+import { SearchSection } from "../../../../../../client/src/plugins/workspace/SearchSection";
+import { workspaceTestIds } from "../../../../../../client/src/plugins/workspace/testIds";
 import BacklogPage from "../../../../../../client/src/plugins/backlog/pages/BacklogPage";
 import { backlogTestIds as ids } from "../../../../../../client/src/plugins/backlog/testIds";
 import { sharedTestIds } from "../../../../../../client/src/shared";
@@ -87,6 +89,26 @@ describe("BacklogPage: tree", () => {
 
 		await screen.findByTestId(sharedTestIds.treeNode("other"));
 		expect(screen.queryByTestId(ids.project("p1"))).toBeNull();
+	});
+
+	it("keeps a row chosen in the search selected, with its closed ancestors opened, when the search ends", async () => {
+		const found = [...items.filter((entry) => entry.uid !== "t1"), item("t1", { parent_uid: "s2", title: "Nadel im Heuhaufen" })];
+		const backend = fakeWorkspaceBackend({ projects, backlog: found, details: { t1: detail("t1") }, documents: { backlog: { hiddenStatuses: [], collapsed: ["e1", "s2"] }, workspace: { search: "nadel" } } });
+		await renderWorkspace(
+			<>
+				<SearchSection />
+				<BacklogPage />
+			</>,
+			{ backend },
+		);
+
+		fireEvent.click(await screen.findByTestId(sharedTestIds.treeNode("t1")));
+		fireEvent.change(screen.getByTestId(workspaceTestIds.searchInput), { target: { value: "" } });
+
+		await waitFor(() => expect(node("t1").getAttribute("aria-selected")).toBe("true"));
+		expect(node("s2")).toBeTruthy();
+		expect(node("e1").getAttribute("aria-expanded")).toBe("true");
+		expect(node("s2").getAttribute("aria-expanded")).toBe("true");
 	});
 
 	it("shows only the projects that are switched on", async () => {

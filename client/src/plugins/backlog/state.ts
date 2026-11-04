@@ -22,8 +22,10 @@ export function useBacklogState() {
 			setCollapsed((current) => (value ? [...new Set([...current, ...ids])] : current.filter((entry) => !ids.includes(entry)))),
 		[setCollapsed],
 	);
+	/** Opens the given nodes, e.g. the ancestors of a row chosen in a filtered list, so the row is visible when the filter ends. */
+	const expand = useCallback((ids: readonly string[]) => setCollapsed((current) => (ids.some((id) => current.includes(id)) ? current.filter((entry) => !ids.includes(entry)) : current)), [setCollapsed]);
 	return useMemo(
-		() => ({ hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, selected, setSelected, extendedMarking, setExtendedMarking }),
-		[hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, selected, setSelected, extendedMarking, setExtendedMarking],
+		() => ({ hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, expand, selected, setSelected, extendedMarking, setExtendedMarking }),
+		[hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, expand, selected, setSelected, extendedMarking, setExtendedMarking],
 	);
 }

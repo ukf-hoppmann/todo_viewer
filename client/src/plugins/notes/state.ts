@@ -22,6 +22,8 @@ export function useNotesState() {
 			setCollapsed((current) => (value ? [...new Set([...current, ...ids])] : current.filter((entry) => !ids.includes(entry)))),
 		[setCollapsed],
 	);
+	/** Opens the given nodes, e.g. the ancestors of a row chosen in a filtered list, so the row is visible when the filter ends. */
+	const expand = useCallback((ids: readonly string[]) => setCollapsed((current) => (ids.some((id) => current.includes(id)) ? current.filter((entry) => !ids.includes(entry)) : current)), [setCollapsed]);
 	return useMemo(
 		() => ({
 			shownStatuses: STATUSES.filter((status) => shownStatuses.includes(status)) as string[],
@@ -30,6 +32,7 @@ export function useNotesState() {
 			expanded,
 			toggleCollapsed,
 			setAllCollapsed,
+			expand,
 			selected,
 			setSelected,
 			extendedMarking,
@@ -37,6 +40,6 @@ export function useNotesState() {
 			showArchivedTopics,
 			setShowArchivedTopics,
 		}),
-		[shownStatuses, setShownStatuses, collapsed, expanded, toggleCollapsed, setAllCollapsed, selected, setSelected, extendedMarking, setExtendedMarking, showArchivedTopics, setShowArchivedTopics],
+		[shownStatuses, setShownStatuses, collapsed, expanded, toggleCollapsed, setAllCollapsed, expand, selected, setSelected, extendedMarking, setExtendedMarking, showArchivedTopics, setShowArchivedTopics],
 	);
 }

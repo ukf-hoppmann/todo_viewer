@@ -9,7 +9,7 @@ import { Alert, Box, Button, Checkbox, Dialog, DialogContent, DialogTitle, FormC
 import { useMemo, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
-import { buildTree, IconAction, TreeView, type TreeNode } from "../../../shared";
+import { ancestorChain, buildTree, IconAction, TreeView, type TreeNode } from "../../../shared";
 import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListIndexQuery, type IndexedNote, type IndexedTopic } from "../api";
 import { NoteDetail } from "../NoteDetail";
@@ -65,6 +65,12 @@ export default function NotesPage() {
 	const dropOnProject = (event: DragEvent, projectUid: string) => {
 		event.preventDefault();
 		apply(dropChange(allTopics, allNotes, event.dataTransfer.getData("text/plain"), null, "inside", projectUid));
+	};
+	// A chosen row keeps its place when the search ends: its closed topics (also those filtered out now) are opened.
+	const select = (uid: string) => {
+		const parentUids = new Map<string, string | null | undefined>([...allTopics.map((topic) => [topic.uid, topic.parent_uid] as const), ...allNotes.map((note) => [note.uid, note.topic_uid] as const)]);
+		state.expand(ancestorChain((id) => parentUids.get(id), uid));
+		state.setSelected(uid);
 	};
 	const selectedNote = state.selected && allNotes.some((n) => n.uid === state.selected) ? state.selected : undefined;
 	usePageDetail(
@@ -146,7 +152,7 @@ export default function NotesPage() {
 								expanded={new Set(searching ? ids : ids.filter((id) => state.expanded(id)))}
 								onToggle={state.toggleCollapsed}
 								selectedId={state.selected}
-								onSelect={state.setSelected}
+								onSelect={select}
 								actions={topicActions}
 								canDrop={(source, target, position) => dropChange(allTopics, allNotes, source.id, target.id, position) !== null}
 								onDrop={({ sourceId, targetId, position }) => apply(dropChange(allTopics, allNotes, sourceId, targetId, position))}

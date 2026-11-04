@@ -2,7 +2,7 @@ import { Alert, Box, Button, Checkbox, FormControlLabel, LinearProgress, Typogra
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
-import { buildTree, TreeView } from "../../../shared";
+import { ancestorChain, buildTree, TreeView } from "../../../shared";
 import { useProjectSelection, useSearchText } from "../../workspace";
 import { useListItemsQuery } from "../api";
 import { ItemDetail } from "../ItemDetail";
@@ -33,7 +33,13 @@ export default function BacklogPage() {
 	);
 	const groups = useMemo(() => groupByProject(visible, shown), [visible, shown]);
 	const scope = useMemo(() => new Set(marked ? [marked.uid] : []), [marked]);
-	usePageDetail(state.selected && <ItemDetail uid={state.selected} onSelect={state.setSelected} onClose={() => state.setSelected(null)} />);
+	// A chosen row keeps its place when the filter ends: its closed ancestors (also those filtered out now) are opened.
+	const select = (uid: string) => {
+		const parentUids = new Map(items.map((item) => [item.uid, item.parent_uid]));
+		state.expand(ancestorChain((id) => parentUids.get(id), uid));
+		state.setSelected(uid);
+	};
+	usePageDetail(state.selected && <ItemDetail uid={state.selected} onSelect={select} onClose={() => state.setSelected(null)} />);
 
 	return (
 		<Box sx={{ p: 2 }} data-testid={backlogTestIds.page}>
@@ -92,7 +98,7 @@ export default function BacklogPage() {
 								expanded={new Set(projectItems.filter((item) => state.expanded(item.uid)).map((item) => item.uid))}
 								onToggle={state.toggleCollapsed}
 								selectedId={state.selected}
-								onSelect={state.setSelected}
+								onSelect={select}
 								trailing={(node) => {
 									const notesState = projectItems.find((item) => item.uid === node.id)?.notes_state;
 									return notesState ? <NotesPeek uid={node.id} state={notesState} /> : null;

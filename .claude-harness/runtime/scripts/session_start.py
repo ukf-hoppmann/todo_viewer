@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from collections.abc import Callable
 from pathlib import Path, PurePosixPath
 
-from architecture import inherited_files, load_scopes, reset_read, rules_path
+from architecture import inherited_files, inherited_uses, load_scopes, load_uses, reset_read, rules_path
 from backlog import TODO_FILE, validate_backlog
 from cloud_export import copy_problem
+from cloud_sync import sync_branch
+from doclinks import check_project as dead_doc_links
 from techdocs import document_paths
 from harness_config import (
+    CLOUD_ENV,
     CONFIG_RELATIVE_PATH,
     README,
     ROOT_PROJECT,
@@ -35,9 +39,15 @@ TECHDOCS_HINT = (
     "rules in skill claude-harness:techdocs (load it when changing documented behavior, interfaces, "
     "configuration, or architecture, or when reminded)."
 )
+TECHDOCS_LABEL = "Technical docs (for people)"
 ARCHITECTURE_HINT = (
     "(binding; read it before planning, designing, or changing code); "
     "rules in skill claude-harness:architecture."
+)
+INTERFACES_LINE = (
+    "Interface docs and catalog of reusable building blocks (for the AI): rules in skill "
+    "claude-harness:interfaces (load it when designing, using, or changing an interface or a shared "
+    "building block)."
 )
 DECOMPOSITION_LINE = (
     "Decomposition: rules in skill claude-harness:decomposition (load it when planning or "
@@ -76,26 +86,50 @@ def main() -> int:
     if session_id and hook_input.get("source") in ("compact", "clear"):
         # Rules read earlier may no longer be in context.
         reset_read(session_id)
-    try:
-        projects = load_projects(root)
-    except ConfigOutdated as exc:
-        print(outdated_message(exc))
+    projects = _load(root)
+    if isinstance(projects, str):
+        print(projects)
         return 0
-    except ConfigError as exc:
-        print(f"Claude_Harness: invalid configuration — {exc}. Tell the user; do not guess values.")
-        return 0
-    if projects is None:
-        print(
-            f"Claude_Harness: plugin active but no {CONFIG_RELATIVE_PATH} in this project. "
-            "Set it up with /claude-harness:init if the user wants the harness here."
-        )
-        return 0
+    root_project = projects.get(ROOT_PROJECT)
+    sync_lines = cloud_sync_lines(hook_input, root_project.config, projects.session_root) if root_project else []
+    if sync_lines:
+        # A fast-forward may have changed the config and the documents the lines below report on.
+        projects = _load(root)
+        if isinstance(projects, str):
+            print("\n".join([*sync_lines, projects]))
+            return 0
     if projects.has_subprojects():
         lines = _several_projects(projects)
     else:
         lines = _single_project(root, projects)
-    print("\n".join(lines))
+    print("\n".join([*sync_lines, *lines]))
     return 0
+
+
+def _load(root: Path) -> ProjectSet | str:
+    """The projects, or the one line that replaces all others when there are none or the config is unusable."""
+    try:
+        projects = load_projects(root)
+    except ConfigOutdated as exc:
+        return outdated_message(exc)
+    except ConfigError as exc:
+        return f"Claude_Harness: invalid configuration — {exc}. Tell the user; do not guess values."
+    if projects is None:
+        return (
+            f"Claude_Harness: plugin active but no {CONFIG_RELATIVE_PATH} in this project. "
+            "Set it up with /claude-harness:init if the user wants the harness here."
+        )
+    return projects
+
+
+def cloud_sync_lines(
+    hook_input: dict, config: HarnessConfig, session_root: Path, sync: Callable[[Path], str | None] = sync_branch
+) -> list[str]:
+    """At the start of a cloud session with cloud.sync on: bring the branch up to date (cloud_sync.py) first."""
+    if os.environ.get(CLOUD_ENV) != "true" or hook_input.get("source") != "startup" or not config.cloud_sync:
+        return []
+    line = sync(session_root)
+    return [line] if line else []
 
 
 def _single_project(root: Path, projects: ProjectSet) -> list[str]:
@@ -127,7 +161,7 @@ def _single_project(root: Path, projects: ProjectSet) -> list[str]:
     if config.enabled("daily"):
         lines.append(f"Daily reports: {config.daily_path}/; {DAILY_HINT}")
     if config.enabled("techdocs"):
-        lines.append(f"Technical docs: README.md and {config.techdocs_path}/; {TECHDOCS_HINT}")
+        lines.append(f"{TECHDOCS_LABEL}: README.md and {config.techdocs_path}/; {TECHDOCS_HINT}")
         lines += _techdocs_missing(root, config, show)
     if config.part_enabled("architecture"):
         rules = rules_path(config)
@@ -137,6 +171,8 @@ def _single_project(root: Path, projects: ProjectSet) -> list[str]:
             lines.append(f"Architecture rules: {rules} {ARCHITECTURE_HINT}")
             lines += _scope_problems(root, config)
             lines += _inherited_problems(projects, project)
+        lines.append(INTERFACES_LINE)
+    lines += _doclink_problems(root, config)
     if config.part_enabled("decomposition"):
         lines.append(DECOMPOSITION_LINE)
     if config.part_enabled("testing"):
@@ -171,12 +207,13 @@ def _several_projects(projects: ProjectSet) -> list[str]:
     if any(c.enabled("daily") for c in configs):
         lines.append(f"Daily reports: {DAILY_HINT}")
     if any(c.enabled("techdocs") for c in configs):
-        lines.append(f"Technical docs: {TECHDOCS_HINT}")
+        lines.append(f"{TECHDOCS_LABEL}: {TECHDOCS_HINT}")
     if any(c.part_enabled("architecture") for c in configs):
         lines.append(
             "Architecture rules: binding per project; read a project's rules before planning, designing, "
             "or changing its code; rules in skill claude-harness:architecture."
         )
+        lines.append(INTERFACES_LINE)
     if any(c.part_enabled("decomposition") for c in configs):
         lines.append(DECOMPOSITION_LINE)
     if any(c.part_enabled("testing") for c in configs):
@@ -246,6 +283,7 @@ def _project_problems(projects: ProjectSet, project: Project) -> list[str]:
         else:
             problems += _scope_problems(root, config)
             problems += _inherited_problems(projects, project)
+    problems += _doclink_problems(root, config, project.path)
     return problems
 
 
@@ -303,13 +341,23 @@ def _architecture_missing(config: HarnessConfig, show: Show) -> str:
 
 def _scope_problems(root: Path, config: HarnessConfig) -> list[str]:
     _, scope_errors = load_scopes(root, config)
-    if not scope_errors:
-        return []
-    return [f"Architecture scope table has {len(scope_errors)} errors:"] + _limited(scope_errors)
+    _, use_errors = load_uses(root, config)
+    lines: list[str] = []
+    if scope_errors:
+        lines += [f"Architecture scope table has {len(scope_errors)} errors:"] + _limited(scope_errors)
+    if use_errors:
+        lines += [f"Architecture 'Required on use' tables have {len(use_errors)} errors:"] + _limited(use_errors)
+    return lines
 
 
 def _inherited_problems(projects: ProjectSet, project: Project) -> list[str]:
-    return [f"Inherited rules: {error}" for error in inherited_files(projects, project)[1]]
+    errors = inherited_files(projects, project)[1] + inherited_uses(projects, project)[1]
+    return [f"Inherited rules: {error}" for error in errors]
+
+
+def _doclink_problems(root: Path, config: HarnessConfig, prefix: PurePosixPath = PurePosixPath(".")) -> list[str]:
+    dead = dead_doc_links(root, config, prefix=prefix)
+    return [f"Dead links in docs: {len(dead)}"] + _limited(dead) if dead else []
 
 
 def _limited(problems: list[str]) -> list[str]:

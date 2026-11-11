@@ -4,7 +4,9 @@ import json
 import re
 import sys
 
-from architecture import inherited_files, read_files, required_files, rules_path
+from architecture import (
+    Usage, inherited_files, inherited_uses, load_uses, read_files, required_files, rules_path, use_pattern,
+)
 from harness_config import ROOT_PROJECT, ConfigError, project_root
 from projects import Project, ProjectSet, load_projects
 
@@ -61,14 +63,64 @@ def main() -> int:
         return 0
     required = [(project.path / p).as_posix() for p in required_files(project.root, config, rel)]
     required += [p.as_posix() for p in inherited_files(projects, project)[0]]
-    missing = [p for p in required if p not in done]
+    missing = [
+        p if (projects.session_root / p).is_file() else f"{p} (missing)"
+        for p in dict.fromkeys(required) if p not in done
+    ]
     if missing:
         _deny(
             f"before changing {shown_rel}, read the binding architecture rules in full with the Read "
             f"tool: {', '.join(missing)}. Load skill claude-harness:architecture if not loaded "
             "yet, check your plan against the rules, then retry."
         )
+        return 0
+    _check_uses(projects, project, rel, _new_text(hook_input.get("tool_name"), tool_input), done)
     return 0
+
+
+def _new_text(tool: str | None, tool_input: dict) -> str:
+    """The text a write tool puts into the file."""
+    if tool == "Write":
+        texts = [tool_input.get("content")]
+    elif tool == "Edit":
+        texts = [tool_input.get("new_string")]
+    elif tool == "MultiEdit":
+        texts = [e.get("new_string") for e in tool_input.get("edits") or [] if isinstance(e, dict)]
+    elif tool == "NotebookEdit":
+        texts = [tool_input.get("new_source")]
+    else:
+        texts = []
+    return "\n".join(t for t in texts if isinstance(t, str))
+
+
+def _check_uses(projects: ProjectSet, project: Project, rel, text: str, done: set[str]) -> None:
+    """Deny when the new text uses an identifier whose documentation was not read in full."""
+    if not text:
+        return
+    usages = [
+        Usage(u.uses, tuple((project.path / r).as_posix() for r in u.read))
+        for u in load_uses(project.root, project.config, rel)[0]
+    ]
+    usages += inherited_uses(projects, project)[0]
+    needs: dict[str, list[str]] = {}  # doc -> identifiers hit
+    for usage in usages:
+        for identifier in usage.uses:
+            if not use_pattern(identifier).search(text):
+                continue
+            for doc in usage.read:
+                if doc not in done and identifier not in needs.setdefault(doc, []):
+                    needs[doc].append(identifier)
+    needs = {doc: ids for doc, ids in needs.items() if ids}
+    if not needs:
+        return
+    docs = [d if (projects.session_root / d).is_file() else f"{d} (missing)" for d in needs]
+    ids = list(dict.fromkeys(i for found in needs.values() for i in found))
+    shown_rel = project.path / rel
+    detail = "" if len(needs) == 1 else " (" + "; ".join(f"{', '.join(f)}: {d}" for d, f in zip(docs, needs.values())) + ")"
+    _deny(
+        f"before using {', '.join(ids)} in {shown_rel}, read {', '.join(docs)} in full with the Read "
+        f"tool, then retry.{detail}"
+    )
 
 
 def _has_rules(project: Project) -> bool:

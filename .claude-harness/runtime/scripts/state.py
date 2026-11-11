@@ -167,3 +167,33 @@ def architecture_read_file(session_id: str) -> Path:
 
 def semver_reported_file(session_id: str) -> Path:
     return state_dir() / f"semver-reported-{_safe(session_id)}.json"
+
+
+def doclinks_changed_file(session_id: str) -> Path:
+    """JSON list of "<project>\t<path relative to the project>" for documents changed in the session (doclinks)."""
+    return state_dir() / f"doclinks-changed-{_safe(session_id)}.json"
+
+
+def read_changed_docs(session_id: str) -> set[tuple[str, str]]:
+    try:
+        entries = json.loads(doclinks_changed_file(session_id).read_text())
+    except (OSError, ValueError):
+        return set()
+    return {tuple(str(entry).split("\t", 1)) for entry in entries if "\t" in str(entry)}
+
+
+def write_changed_docs(session_id: str, docs: set[tuple[str, str]]) -> None:
+    """Store the changed documents; an empty set removes the file."""
+    path = doclinks_changed_file(session_id)
+    if not docs:
+        path.unlink(missing_ok=True)
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(sorted(f"{project}\t{relative}" for project, relative in docs)))
+
+
+def public_api_file(session_id: str, kind: str, project: str = ROOT_PROJECT) -> Path:
+    """kind: 'changed' (JSON list of changed public API files) or 'reminded'; per project."""
+    if project == ROOT_PROJECT:
+        return state_dir() / f"public-api-{kind}-{_safe(session_id)}"
+    return state_dir() / f"public-api-{kind}-{_safe(project)}--{_safe(session_id)}"

@@ -74,6 +74,12 @@ of these hold:
 - **Decided.** It contains no open decision. Interfaces between sections
   (data formats, signatures, names) are fixed in the plan, not in a section.
 
+Before a section adds a new building block (function, component, helper),
+check the catalogs of reusable building blocks (skill
+`harness-interfaces`, if the project keeps them) and name in the plan
+what is reused. What several owners need goes into the shared layer that the
+architecture names; if it names none, ask the owner before placing it.
+
 Order sections by their dependencies: each section uses only sections that
 are already implemented and tested. There is no fixed direction such as
 bottom-up.

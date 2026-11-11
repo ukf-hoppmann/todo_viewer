@@ -44,6 +44,11 @@ documents = ["architecture", "interfaces", "configuration"]
 # with an approved plan run in a worktree and are merged back by the AI),
 # testing (where tests live and how the test folder is structured). tests: the
 # test folder relative to the project root, next to the source folder.
+# public_api: patterns (like architecture scope paths, relative to the project
+# root) of the files that make up the project's public APIs. A change to a
+# matching file reminds the AI once per session to check the architecture
+# responsibilities, the catalog, the interface docs, and their links. Empty =
+# no reminder.
 [development]
 path = "development"
 architecture = true
@@ -51,6 +56,7 @@ decomposition = true
 worktree = true
 testing = true
 tests = "tests"
+public_api = []
 
 # Release versions (SemVer). file: version file relative to docs.root, holding
 # only MAJOR.MINOR.PATCH. sync: files relative to the project root that must
@@ -64,9 +70,12 @@ paths = ["."]
 # Cloud sessions (claude.ai/code) load the repository but not the plugin. With
 # export = true the project holds a copy of the plugin (skills, scripts, hooks)
 # that /claude-harness:init and /claude-harness:update create and keep current;
-# it must be committed. Root project only.
+# it must be committed. With sync = true a cloud session brings the current
+# branch up to date with origin at startup (fast-forward only; anything else is
+# reported, never overwritten). Root project only.
 [cloud]
 export = false
+sync = true
 
 # Claude_Harness repository, one path per machine (absolute or starting with
 # "~"). The first path that exists here is used to hand harness wishes over to

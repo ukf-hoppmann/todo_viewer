@@ -4,7 +4,7 @@ import json
 import sys
 from pathlib import Path
 
-from architecture import mark_read, rules_path, scopes_dir
+from architecture import counted_reads, mark_read, rules_path, scopes_dir
 from harness_config import ConfigError, project_root
 from projects import load_projects
 
@@ -30,12 +30,14 @@ def main() -> int:
 
     config = project.config
     rel = project.relative(file_path)
-    if rel != rules_path(config) and rel.parent != scopes_dir(config):
+    # Stored relative to the session root, so equally named files of two projects stay apart.
+    shown = project.path / rel
+    is_rules = rel == rules_path(config) or (rel.is_relative_to(scopes_dir(config)) and rel.suffix == ".md")
+    if not is_rules and shown.as_posix() not in counted_reads(projects):
         return 0
     if not _complete_read(project.root / rel, tool_input):
         return 0
-    # Stored relative to the session root, so equally named files of two projects stay apart.
-    mark_read(session_id, project.path / rel)
+    mark_read(session_id, shown)
     return 0
 
 

@@ -43,6 +43,16 @@
             "type": "command",
             "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/mark_techdocs.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/mark_doclinks.py\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/mark_public_api.py\"",
+            "timeout": 10
           }
         ]
       },
@@ -104,6 +114,16 @@
           {
             "type": "command",
             "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_techdocs.py\"",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_doclinks.py\"",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" != \"true\" ] || python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude-harness/runtime/scripts/check_public_api.py\"",
             "timeout": 30
           },
           {

@@ -8,18 +8,42 @@ tests/architecture/test_layers.py". -->
 
 ## Rules
 
-<!-- Numbered sections of rules, e.g. "## 1. Dependency direction". -->
+<!-- Numbered sections of rules, e.g. "## 1. Dependency direction". State
+what is required, not how to do it; link to the interface docs for the how,
+e.g. "Errors MUST be reported through the shared error function (see
+interfaces/core/errors.md)." -->
 
 ## Scopes
 
-<!-- Areas with additional rules in architecture/<Scope>.md. A scope applies
-in addition to this file, never instead of it. Paths: patterns relative to
-the project root in backticks, comma-separated; `*` stays within one path
-part, `**` spans any number of parts. Example row:
-| llm-integration | `src/llm/**`, `src/prompts/*.py` | Model calls and prompts | -->
+<!-- Areas with additional rules in architecture/<Scope>.md. The index
+architecture.md lists what belongs where and what is mandatory; it never says
+how (that is what the interface docs are for, see interfaces.md). A scope
+applies in addition to this file, never instead of it. Scope names may contain
+subfolders separated by '/' (plugins/patient lives in
+architecture/plugins/patient.md); use at most two levels (area, part). A scope
+file X.md may sit next to a folder X/ with its parts. Paths: patterns relative
+to the project root in backticks, comma-separated; `*` stays within one path
+part, `**` spans any number of parts. Optional column "Required reading":
+files (paths relative to the project root in backticks, comma-separated, must
+exist) that must be read in full before changing a file of the scope; keep it
+short. This table is the only list of what is mandatory. Without the column,
+the table has three columns. Start a scope file from scope.md. Example row:
+| llm-integration | `src/llm/**`, `src/prompts/*.py` | `docs/development/interfaces/llm.md` | Model calls and prompts | -->
 
 | Scope | Paths | Covers |
 |---|---|---|
+
+## Required on use
+
+<!-- Optional. Files that must be read in full before new code uses certain
+identifiers (functions, constants) from them; here for the whole project, in a
+scope file only for the paths of the scope. Uses: identifiers in backticks,
+comma-separated (letters, digits, '_', '$', '.'; matched as whole words);
+Read: files relative to the project root in backticks, must exist. Example:
+| `reportError`, `modals.alert` | `docs/development/interfaces/core/errors.md` | -->
+
+| Uses | Read |
+|---|---|
 
 ## Inherited rules
 

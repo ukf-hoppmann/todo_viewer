@@ -17,13 +17,21 @@ def _is_test(path: PurePosixPath) -> bool:
     )
 
 
+def _is_interface_doc(config: HarnessConfig, rel: PurePosixPath) -> bool:
+    """Interface docs for the AI (index and tree) are documentation upkeep while the architecture part is on."""
+    if not config.part_enabled("architecture"):
+        return False
+    base = config.development_path
+    return rel == base / "interfaces.md" or rel.is_relative_to(base / "interfaces")
+
+
 def classify(project: Project, file_path: str) -> str | None:
     """Return 'docs', 'project', or None for files of project that do not matter."""
     rel = project.relative(file_path)
     if rel is None:
         return None
     config = project.config
-    if rel == README or rel.is_relative_to(config.techdocs_path):
+    if rel == README or rel.is_relative_to(config.techdocs_path) or _is_interface_doc(config, rel):
         return "docs"
     if config.is_harness_file(rel) or _is_test(rel):
         return None

@@ -1,7 +1,8 @@
 # Architecture
 
 <!-- Current state only. History belongs in the daily reports, reasons in the
-backlog notes. -->
+backlog notes. An overview: for binding rules link the development docs
+(architecture.md and the scopes) instead of repeating them. -->
 
 ## Overview
 

@@ -16,4 +16,5 @@
 
 ## Documentation
 
-<!-- Links to the technical documents, e.g. docs/techdocs/architecture.md. -->
+<!-- Required: link every existing technical document (architecture,
+interfaces, configuration, operations), e.g. docs/techdocs/configuration.md. -->

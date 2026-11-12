@@ -22,5 +22,5 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 - `NEW-standup` **Neuer Wecker aus der Cloud, Ziel in anderem Projekt**
   - At: 2026-10-21T08:00:00Z.
-  - Target: `Misc:NOTE-003`.
+  - Target: `Misc:MEMO-003`.
   - Status: Pending.

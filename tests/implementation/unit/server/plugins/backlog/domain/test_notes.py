@@ -296,7 +296,9 @@ def test_rewriting_an_older_entry_is_noticed_but_appending_is_not() -> None:
 
 def test_line_endings_and_trailing_blank_lines_do_not_count_as_a_rewrite() -> None:
     before = NotesParts("\n", "", None, (Entry("2026-10-01", "A", "\n- a\n"),))
-    crlf = NotesParts("\n", "", None, (Entry("2026-10-01", "A", "\r\n- a\r\n\r\n"), Entry("2026-10-02", "B", "\n- b\n")))
+    crlf = NotesParts(
+        "\n", "", None, (Entry("2026-10-01", "A", "\r\n- a\r\n\r\n"), Entry("2026-10-02", "B", "\n- b\n"))
+    )
 
     assert not history_rewritten(before, crlf)
 

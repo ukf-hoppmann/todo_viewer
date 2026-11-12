@@ -7,8 +7,8 @@ from collections import Counter
 from viewer.app.import_legacy.mapping import ITEM_KINDS, map_priority, split_label
 from viewer.app.import_legacy.reader import Legacy, LegacyError
 from viewer.plugins.backlog.domain.model import STATUSES as ITEM_STATUSES
-from viewer.plugins.notes.domain.model import STATUSES as NOTE_STATUSES
-from viewer.plugins.notes.domain.model import TRIGGER_MODES
+from viewer.plugins.memos.domain.model import STATUSES as MEMO_STATUSES
+from viewer.plugins.memos.domain.model import TRIGGER_MODES
 
 TRIGGER_KINDS = ("time", "event", "topic_due")
 LINK_ROLES = ("reference", "origin", "trigger")
@@ -54,7 +54,7 @@ def validate(legacy: Legacy) -> None:
         labels[(str(note["project_id"]), str(note["label"]))] += 1
         if note["project_id"] not in known:
             problems.append(f"{note['label']}: das Projekt '{note['project_id']}' gibt es nicht")
-        if note["status"] not in (*NOTE_STATUSES, "due"):
+        if note["status"] not in (*MEMO_STATUSES, "due"):
             problems.append(f"{note['label']}: unbekannter Status '{note['status']}'")
         if note["trigger_mode"] not in TRIGGER_MODES:
             problems.append(f"{note['label']}: unbekannter Auslöser-Modus '{note['trigger_mode']}'")

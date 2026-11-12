@@ -141,7 +141,7 @@ def test_topics_and_notes_keep_their_state(imported: tuple[sqlite3.Connection, R
     topics = {
         r["label"]: r
         for r in rows(
-            db, "SELECT e.label, e.deleted_at, t.* FROM notes_topics t JOIN workspace_elements e ON e.uid = t.uid"
+            db, "SELECT e.label, e.deleted_at, t.* FROM memos_topics t JOIN workspace_elements e ON e.uid = t.uid"
         )
     }
     assert (topics["TOPIC-002"]["parent_uid"], topics["TOPIC-002"]["due_at"]) == ("tp1", "2026-11-30T00:00:00+00:00")
@@ -150,19 +150,19 @@ def test_topics_and_notes_keep_their_state(imported: tuple[sqlite3.Connection, R
         r["label"] + ("@2" if r["project_uid"] == legacy_db.P_TWO else ""): r
         for r in rows(
             db,
-            "SELECT e.label, e.project_uid, e.deleted_at, e.title, n.* FROM notes_notes n "
+            "SELECT e.label, e.project_uid, e.deleted_at, e.title, n.* FROM memos_memos n "
             "JOIN workspace_elements e ON e.uid = n.uid",
         )
     }
-    assert (notes["NOTE-001"]["topic_uid"], notes["NOTE-001"]["body"]) == ("tp1", "Langtext")
-    assert (notes["NOTE-002"]["status"], notes["NOTE-003"]["status"], notes["NOTE-003"]["archived"]) == (
+    assert (notes["MEMO-001"]["topic_uid"], notes["MEMO-001"]["body"]) == ("tp1", "Langtext")
+    assert (notes["MEMO-002"]["status"], notes["MEMO-003"]["status"], notes["MEMO-003"]["archived"]) == (
         "snoozed",
         "done",
         1,
     )
-    assert notes["NOTE-004"]["trigger_mode"] == "all" and notes["NOTE-006"]["deleted_at"] is not None
-    assert notes["NOTE-001"]["title"] == "Kurzfassung NOTE-001" and "NOTE-001@2" in notes
-    assert rows(db, "SELECT note_uid, name FROM notes_documents") == [{"note_uid": "n1", "name": "NOTE-001_notes.md"}]
+    assert notes["MEMO-004"]["trigger_mode"] == "all" and notes["MEMO-006"]["deleted_at"] is not None
+    assert notes["MEMO-001"]["title"] == "Kurzfassung NOTE-001" and "MEMO-001@2" in notes
+    assert rows(db, "SELECT memo_uid, name FROM memos_documents") == [{"memo_uid": "n1", "name": "MEMO-001_notes.md"}]
 
 
 def test_links_triggers_and_time_triggers_as_alarms(imported: tuple[sqlite3.Connection, Report]) -> None:
@@ -177,8 +177,8 @@ def test_links_triggers_and_time_triggers_as_alarms(imported: tuple[sqlite3.Conn
         ("n2", "n1", "reference"),
         ("n2", "tp1", "reference"),
     }
-    triggers = {r["uid"]: r for r in rows(db, "SELECT * FROM notes_triggers")}
-    assert sorted((t["note_uid"], t["kind"], t["target_uid"], t["status"]) for t in triggers.values()) == [
+    triggers = {r["uid"]: r for r in rows(db, "SELECT * FROM memos_triggers")}
+    assert sorted((t["memo_uid"], t["kind"], t["target_uid"], t["status"]) for t in triggers.values()) == [
         ("n4", "event", "s1", "Completed"),
         ("n5", "topic_date", None, None),
     ]
@@ -201,21 +201,21 @@ def test_notices_and_counters(imported: tuple[sqlite3.Connection, Report]) -> No
     db, _ = imported
 
     notices = rows(
-        db, "SELECT side, subject_uid, source_uid, kind, decided_at, decision FROM notes_notices ORDER BY side"
+        db, "SELECT side, subject_uid, source_uid, kind, decided_at, decision FROM memos_hints ORDER BY side"
     )
     assert notices == [
-        {"side": "item", "subject_uid": "s2", "source_uid": "n3", "kind": "note_promoted",
+        {"side": "item", "subject_uid": "s2", "source_uid": "n3", "kind": "memo_promoted",
          "decided_at": "2026-05-04T09:00:00+00:00", "decision": "acknowledge"},
-        {"side": "note", "subject_uid": "n1", "source_uid": "s1", "kind": "item_completed", "decided_at": None,
+        {"side": "memo", "subject_uid": "n1", "source_uid": "s1", "kind": "item_completed", "decided_at": None,
          "decision": None},
     ]  # fmt: skip
     counters = {(r["project_uid"], r["prefix"]): r["last"] for r in rows(db, "SELECT * FROM workspace_label_counters")}
-    assert counters[(legacy_db.P_MAIN, "NOTE")] == 9
+    assert counters[(legacy_db.P_MAIN, "MEMO")] == 9
     assert counters[(legacy_db.P_MAIN, "TOPIC")] == 5
     assert counters[(legacy_db.P_MAIN, "STORY")] == 5
     assert counters[(legacy_db.P_MAIN, "TASK")] == 3
     assert counters[(legacy_db.P_MAIN, "ALARM")] == 1
-    assert counters[(legacy_db.P_TWO, "NOTE")] == 3 and counters[(legacy_db.P_TWO, "TASK")] == 1
+    assert counters[(legacy_db.P_TWO, "MEMO")] == 3 and counters[(legacy_db.P_TWO, "TASK")] == 1
     assert scalar(db, "SELECT COUNT(*) FROM workspace_label_history") == scalar(
         db, "SELECT COUNT(*) FROM workspace_elements"
     )
@@ -235,8 +235,8 @@ def test_the_report_names_numbers_per_type_and_every_deviation(imported: tuple[s
         "Einträge „Übernommene Zusatzfelder“": 2,
         "Zusatzfelder": 3,
         "Topics": 3,
-        "Notes": 7,
-        "Dokumente der Notes": 1,
+        "Memos": 7,
+        "Dokumente der Memos": 1,
         "Verknüpfungen": 6,
         "Auslöser Ereignis": 1,
         "Auslöser Topic-Termin": 1,
@@ -255,7 +255,7 @@ def test_the_report_names_numbers_per_type_and_every_deviation(imported: tuple[s
         "Verknüpfung 5 → p-main:STORY-999 hat kein Ziel",
         "Verknüpfung 8 gibt es schon",
         "Auslöser 5 von NOTE-004 hat kein Ziel",
-        "Dokument NOTE-099_notes.md: die Note gone gibt es nicht",
+        "Dokument NOTE-099_notes.md: das Memo gone gibt es nicht",
         "Hinweis 3 (Projekt nicht erreichbar) entfällt",
         "Zähler 'weird'",
     ):
@@ -379,19 +379,19 @@ def test_the_imported_database_runs_in_the_viewer(legacy: Path, tmp_path: Path) 
 
     with TestClient(create_app(settings)) as client:
         items = client.get("/api/backlog/items").json()
-        index = client.get("/api/notes/index").json()
+        index = client.get("/api/memos/index").json()
         alarms = client.get("/api/alarms/alarms").json()
         item = client.get("/api/backlog/items/s2").json()
-        note = client.get("/api/notes/notes/n4").json()
+        note = client.get("/api/memos/memos/n4").json()
         trash = client.get("/api/workspace/trash").json()
         lines = client.get("/api/backlog/index", params={"projects": legacy_db.P_MAIN}).json()
 
     assert len(items) == 9  # ohne das gelöschte TASK-002
-    assert {n["label"] for n in index["notes"] if n["project_uid"] == legacy_db.P_MAIN} >= {"NOTE-001", "NOTE-004"}
+    assert {n["label"] for n in index["memos"] if n["project_uid"] == legacy_db.P_MAIN} >= {"MEMO-001", "MEMO-004"}
     assert len(alarms) == 2
     assert (item["label"], item["priority"], item["area"]) == ("STORY-002", "Normal", "Client")
     assert note["triggers"][0]["target"]["label"] == "STORY-001" and note["triggers"][0]["arrived"] is True
-    assert {t["label"] for t in trash} == {"TASK-002", "TOPIC-003", "NOTE-006"}
+    assert {t["label"] for t in trash} == {"TASK-002", "TOPIC-003", "MEMO-006"}
     assert "STORY-001 | Story | In progress | Server | Titel STORY-001 | EPIC-001 | -" in lines["text"].splitlines()
 
 
@@ -437,8 +437,8 @@ def test_a_nameless_project_row_with_the_name_of_another_project_is_merged_into_
     db = sqlite3.connect(target)
     try:
         assert scalar(db, "SELECT COUNT(*) FROM workspace_projects WHERE name = 'Viewer'") == 1
-        assert scalar(db, "SELECT project_uid FROM workspace_elements WHERE label = 'NOTE-099'") == legacy_db.P_MAIN
-        counter = "SELECT last FROM workspace_label_counters WHERE project_uid = ? AND prefix = 'NOTE'"
+        assert scalar(db, "SELECT project_uid FROM workspace_elements WHERE label = 'MEMO-099'") == legacy_db.P_MAIN
+        counter = "SELECT last FROM workspace_label_counters WHERE project_uid = ? AND prefix = 'MEMO'"
         assert scalar(db, counter, legacy_db.P_MAIN) >= 99
     finally:
         db.close()

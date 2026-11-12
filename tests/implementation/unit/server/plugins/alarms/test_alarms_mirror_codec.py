@@ -49,7 +49,7 @@ def test_the_example_has_three_alarms_with_their_fields_and_targets() -> None:
     assert first.fields["text"] == "An die Story erinnern" and first.fields["at"] == "2026-10-20T07:00:00Z"
     assert dict(first.refs) == {"target": ("STORY-001",)} and dict(first.extra) == {"created": "2026-10-16"}
     assert second.fields["snoozed_until"] == "2026-10-17T07:00:00Z" and dict(second.refs) == {}
-    assert (new.uid, dict(new.refs), new.extra["created"]) == (None, {"target": ("Misc:NOTE-003",)}, None)
+    assert (new.uid, dict(new.refs), new.extra["created"]) == (None, {"target": ("Misc:MEMO-003",)}, None)
     assert first.source == ("alarms.md", 8) and first.source_lines["target"] == 11
 
 
@@ -79,7 +79,7 @@ def test_a_new_alarm_replaces_its_block_with_uid_label_and_keeps_the_text() -> N
     assert "- `NEW-standup`" not in out
     assert out.endswith(
         "- `ALARM-003` **Neuer Wecker aus der Cloud, Ziel in anderem Projekt**\n  - Uid: u3.\n"
-        "  - At: 2026-10-21T08:00:00Z.\n  - Target: `Misc:NOTE-003`.\n  - Status: Pending.\n  - Created: 2026-10-17.\n"
+        "  - At: 2026-10-21T08:00:00Z.\n  - Target: `Misc:MEMO-003`.\n  - Status: Pending.\n  - Created: 2026-10-17.\n"
     )
     assert out.startswith(CURRENT.files["alarms.md"].text[: CURRENT.files["alarms.md"].text.index("- `ALARM-001`")])
 
@@ -195,14 +195,14 @@ def test_repetition_errors_name_code_and_line(text: str, code: str, line: int) -
 def test_several_targets_without_text_and_a_done_time_round_trip() -> None:
     text = (
         PREAMBLE + "\n- `ALARM-004`\n  - Uid: u4.\n  - At: 2026-10-20T07:00:00Z.\n"
-        "  - Target: `NOTE-001`, `Beispiel:EPIC-005`, `Misc:STORY-022`, `NOTE-001`.\n  - Status: Done.\n"
+        "  - Target: `MEMO-001`, `Beispiel:EPIC-005`, `Misc:STORY-022`, `MEMO-001`.\n  - Status: Done.\n"
         "  - Done at: 2026-10-18T10:00:00Z.\n"
     )
     [entry] = decode(alarms_file(text), "Beispiel")
-    assert entry.refs["target"] == ("NOTE-001", "EPIC-005", "Misc:STORY-022")  # doppelt nur einmal
+    assert entry.refs["target"] == ("MEMO-001", "EPIC-005", "Misc:STORY-022")  # doppelt nur einmal
     assert (entry.fields["text"], entry.fields["done_at"]) == ("", "2026-10-18T10:00:00Z")
     out = written([entry], current=alarms_file(text))
-    assert "- `ALARM-004`\n" in out and "  - Target: `NOTE-001`, `EPIC-005`, `Misc:STORY-022`.\n" in out
+    assert "- `ALARM-004`\n" in out and "  - Target: `MEMO-001`, `EPIC-005`, `Misc:STORY-022`.\n" in out
     assert decode(alarms_file(out), "Beispiel") == [
         replace(entry, source=entry.source, source_lines=entry.source_lines)
     ]

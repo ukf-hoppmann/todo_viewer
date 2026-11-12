@@ -37,11 +37,11 @@ from viewer.core.infrastructure.scheduler import AsyncioScheduler
 from viewer.core.infrastructure.timezone import resolve_zone
 from viewer.plugins.alarms.plugin import plugin as alarms_plugin
 from viewer.plugins.backlog.plugin import plugin as backlog_plugin
-from viewer.plugins.notes.plugin import plugin as notes_plugin
+from viewer.plugins.memos.plugin import plugin as memos_plugin
 from viewer.plugins.workspace.plugin import plugin as workspace_plugin
 
 # Die aktiven Plugins: eine feste Liste im Code (Architektur §1).
-PLUGINS: tuple[PluginDefinition, ...] = (workspace_plugin, backlog_plugin, notes_plugin, alarms_plugin)
+PLUGINS: tuple[PluginDefinition, ...] = (workspace_plugin, backlog_plugin, memos_plugin, alarms_plugin)
 
 
 class WorkspaceMirrorProjects:

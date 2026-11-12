@@ -42,19 +42,19 @@ def test_a_backlog_item_is_closed_when_completed_or_rejected(full: Env) -> None:
     assert _is_open(full, item["uid"])
 
 
-def test_a_note_is_closed_when_finished_and_a_topic_when_archived(full: Env) -> None:
-    note = full.client.post("/api/notes/notes", json={"project": _project(full), "fields": {"summary": "N"}}).json()
-    assert _is_open(full, note["uid"])
+def test_a_memo_is_closed_when_finished_and_a_topic_when_archived(full: Env) -> None:
+    memo = full.client.post("/api/memos/memos", json={"project": _project(full), "fields": {"summary": "N"}}).json()
+    assert _is_open(full, memo["uid"])
     finished = full.client.post(
-        f"/api/notes/notes/{note['uid']}/finish", json={"version": note["version"], "status": "done"}
+        f"/api/memos/memos/{memo['uid']}/finish", json={"version": memo["version"], "status": "done"}
     )
     assert finished.status_code == 200, finished.text
-    assert not _is_open(full, note["uid"])
+    assert not _is_open(full, memo["uid"])
 
-    topic = full.client.post("/api/notes/topics", json={"project": _project(full), "name": "T"}).json()
+    topic = full.client.post("/api/memos/topics", json={"project": _project(full), "name": "T"}).json()
     assert _is_open(full, topic["uid"])
     archived = full.client.post(
-        f"/api/notes/topics/{topic['uid']}/archive", json={"version": 1}
+        f"/api/memos/topics/{topic['uid']}/archive", json={"version": 1}
     )  # neu angelegt: Version 1
     assert archived.status_code == 200, archived.text
     assert not _is_open(full, topic["uid"])

@@ -70,12 +70,12 @@ def process(tmp_path: Path) -> Iterator[str]:
 def test_the_process_answers_health_serves_the_ui_and_speaks_mcp(process: str, tmp_path: Path) -> None:
     assert json.loads(get(process + "/api/core/health")[1]) == {"status": "ok"}
     assert get(process + "/")[1] == "<html>Neubau</html>"
-    assert get(process + "/notes/main")[1] == "<html>Neubau</html>"
+    assert get(process + "/memos/main")[1] == "<html>Neubau</html>"
 
     async def tools() -> set[str]:
         async with Client(process + "/mcp") as client:
             return {tool.name for tool in (await client.list_tools()).tools}
 
     names = asyncio.run(tools())
-    assert {"core_health", "backlog_index_lines", "notes_move_note", "alarms_create_alarm"} <= names
+    assert {"core_health", "backlog_index_lines", "memos_move_memo", "alarms_create_alarm"} <= names
     assert (tmp_path / "configs" / "viewer.db").is_file() and (tmp_path / "logs" / "viewer.log").is_file()

@@ -280,12 +280,15 @@ def test_list_items_get_their_own_lines_and_never_start_a_soft_wrap() -> None:
     assert lines[0] == "  - Completion criteria: 1. Fragen besprochen."
     assert lines[1] == "    2. Die Spec liegt vor und ist freigegeben."
 
-    wrapped = field_lines("Goal", "Ein langer Satz, der ziemlich lang ist und umbrochen werden muss, bis Version 1. 2. wird danach erwähnt")
+    wrapped = field_lines(
+        "Goal",
+        "Ein langer Satz, der ziemlich lang ist und umbrochen werden muss, bis Version 1. 2. wird danach erwähnt",
+    )
     assert not any(line.strip()[:2] == "2." for line in wrapped[1:])
 
 
 def test_a_list_survives_writing_and_reading() -> None:
-    from viewer.plugins.backlog.infrastructure.mirror.syntax import same_text, parse_blocks  # noqa: PLC0415
+    from viewer.plugins.backlog.infrastructure.mirror.syntax import parse_blocks, same_text  # noqa: PLC0415
 
     value = "1. Erstens\n2. Zweitens, mit sehr viel Text " + "x " * 60 + "\n3. Drittens"
     text = "- `TASK-001`  **T**\n" + "\n".join(field_lines("Goal", value)) + "\n"

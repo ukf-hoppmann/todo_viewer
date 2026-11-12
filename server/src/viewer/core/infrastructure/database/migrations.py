@@ -29,6 +29,8 @@ class MigrationRunner:
         """Gibt die angewendeten `(besitzer, version)` zurück."""
         current = self._current_versions()
         for definition in definitions:
+            _inherit_former_versions(current, definition)
+        for definition in definitions:
             newest = max((m.version for m in definition.migrations), default=0)
             if current.get(definition.id, 0) > newest:
                 raise DatabaseTooNew(
@@ -64,6 +66,10 @@ class MigrationRunner:
                         ),
                         {"owner": definition.id, "version": migration.version},
                     )
+                    for former in definition.former_ids:
+                        connection.execute(
+                            text(f"DELETE FROM {MIGRATIONS_TABLE} WHERE owner = :owner"), {"owner": former}
+                        )
             except (SchemaViolation, MigrationFailed):
                 raise
             except Exception as exc:
@@ -99,6 +105,16 @@ class MigrationRunner:
             raise SchemaViolation(
                 f"Schema von '{owner}' verletzt die Regeln: " + "; ".join(problems), details={"problems": problems}
             )
+
+
+def _inherit_former_versions(current: dict[str, int], definition: PluginDefinition) -> None:
+    """Ein umbenanntes Plugin übernimmt den Stand seiner früheren ID, solange es selbst noch keinen hat."""
+    if definition.id in current:
+        return
+    for former in definition.former_ids:
+        if former in current:
+            current[definition.id] = current[former]
+            return
 
 
 def _tables(connection: Connection) -> set[str]:

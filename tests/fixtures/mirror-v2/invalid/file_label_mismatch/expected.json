@@ -1,6 +1,6 @@
 {
   "code": "file_label_mismatch",
-  "file": "notes/NOTE-002.md",
+  "file": "memos/MEMO-002.md",
   "line": 1,
-  "reason": "Datei `NOTE-002.md` enthält `NOTE-005`"
+  "reason": "Datei `MEMO-002.md` enthält `MEMO-005`"
 }

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from migration_helpers import mig, ordered, plugin, tables, versions
 from sqlalchemy import text
+from viewer.core.application.plugin import PluginDefinition
 from viewer.core.domain.errors import DatabaseTooNew, MigrationFailed, SchemaViolation
+from viewer.core.domain.plugin import Migration
 from viewer.core.infrastructure.database import MigrationRunner, SqliteDatabase
 
 
@@ -139,3 +143,52 @@ def test_migrations_table_is_created_by_the_runner_and_visible(
     runner.run(ordered())
     with database.transaction() as tx:
         assert tx.connection.execute(text("SELECT version FROM core_migrations WHERE owner='core'")).scalar() == 2
+
+
+def _renamed_plugin() -> PluginDefinition:
+    """Neue Tabellen gleich unter dem neuen Namen (Version 1); wer vom alten Besitzer kommt, benennt in Version 3 um."""
+
+    def adopt(connection: Any) -> None:
+        if connection.exec_driver_sql("SELECT 1 FROM sqlite_master WHERE name = 'old_x'").first():
+            connection.exec_driver_sql("ALTER TABLE old_x RENAME TO fresh_x")
+
+    return plugin(
+        "fresh",
+        former_ids=("old",),
+        migrations=(mig(1, "CREATE TABLE fresh_x (id INTEGER)"), mig(2, "SELECT 1"), Migration(3, adopt)),
+    )
+
+
+def test_a_renamed_plugin_takes_over_the_migration_state_of_its_former_id(
+    runner: MigrationRunner, database: SqliteDatabase
+) -> None:
+    """`former_ids`: der neue Besitzer erbt den Stand; nur Neues läuft, der alte Eintrag entfällt."""
+    runner.run(ordered(plugin("old", migrations=(mig(1, "CREATE TABLE old_x (id INTEGER)"), mig(2, "SELECT 1")))))
+
+    assert runner.run(ordered(_renamed_plugin())) == [("fresh", 3)]
+
+    assert versions(database) == {"core": 2, "fresh": 3}
+    assert "fresh_x" in tables(database) and "old_x" not in tables(database)
+    assert runner.run(ordered(_renamed_plugin())) == []
+
+
+def test_a_renamed_plugin_on_an_empty_database_runs_all_its_migrations(
+    runner: MigrationRunner, database: SqliteDatabase
+) -> None:
+    assert runner.run(ordered(_renamed_plugin())) == [
+        ("core", 1),
+        ("core", 2),
+        ("fresh", 1),
+        ("fresh", 2),
+        ("fresh", 3),
+    ]
+    assert versions(database) == {"core": 2, "fresh": 3}
+    assert "fresh_x" in tables(database)
+
+
+def test_a_database_newer_than_the_code_is_refused_under_the_former_id_too(runner: MigrationRunner) -> None:
+    runner.run(ordered(plugin("old", migrations=(mig(1, "CREATE TABLE old_x (id INTEGER)"), mig(2, "SELECT 1")))))
+    with pytest.raises(DatabaseTooNew):
+        runner.run(
+            ordered(plugin("fresh", former_ids=("old",), migrations=(mig(1, "CREATE TABLE fresh_x (id INTEGER)"),)))
+        )

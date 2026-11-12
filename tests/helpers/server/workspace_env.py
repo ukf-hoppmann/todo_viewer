@@ -16,8 +16,8 @@ from viewer.plugins.alarms.application.operations import AlarmServices
 from viewer.plugins.alarms.plugin import plugin as alarms_plugin
 from viewer.plugins.backlog.application.operations import BacklogServices
 from viewer.plugins.backlog.plugin import plugin as backlog_plugin
-from viewer.plugins.notes.application.operations import NotesServices
-from viewer.plugins.notes.plugin import plugin as notes_plugin
+from viewer.plugins.memos.application.operations import MemosServices
+from viewer.plugins.memos.plugin import plugin as memos_plugin
 from viewer.plugins.workspace.application.operations import WorkspaceServices
 from viewer.plugins.workspace.plugin import plugin as workspace_plugin
 
@@ -49,9 +49,9 @@ class Env:
         return services
 
     @property
-    def notes(self) -> NotesServices:
-        services = self.app.state.plugin_host.services("notes")
-        assert isinstance(services, NotesServices)
+    def memos(self) -> MemosServices:
+        services = self.app.state.plugin_host.services("memos")
+        assert isinstance(services, MemosServices)
         return services
 
     @property
@@ -80,9 +80,9 @@ def backlog_env(tmp_path: Path, settings: Settings) -> Env:
     return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin])
 
 
-def notes_env(tmp_path: Path, settings: Settings) -> Env:
-    """Eine Umgebung mit den echten Plugins `notes`, `backlog` (das `notes` braucht) und `workspace`."""
-    return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, notes_plugin])
+def memos_env(tmp_path: Path, settings: Settings) -> Env:
+    """Eine Umgebung mit den echten Plugins `memos`, `backlog` (das `memos` braucht) und `workspace`."""
+    return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, memos_plugin])
 
 
 def alarms_env(tmp_path: Path, settings: Settings) -> Env:
@@ -91,5 +91,5 @@ def alarms_env(tmp_path: Path, settings: Settings) -> Env:
 
 
 def full_env(tmp_path: Path, settings: Settings) -> Env:
-    """Eine Umgebung mit allen fachlichen Plugins: `workspace`, `backlog`, `notes` und `alarms`."""
-    return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, notes_plugin, alarms_plugin])
+    """Eine Umgebung mit allen fachlichen Plugins: `workspace`, `backlog`, `memos` und `alarms`."""
+    return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, memos_plugin, alarms_plugin])

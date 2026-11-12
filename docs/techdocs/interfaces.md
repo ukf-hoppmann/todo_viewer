@@ -547,17 +547,17 @@ Grundregeln:
   `workspace_list_projects`). Der Harness braucht also einmal die Projekt-`uid` (Name → `uid` über `workspace_list_projects`,
   das ersetzt `sources`); ein Label eines anderen Projekts löst `workspace_resolve_label` auf.
 - **Version:** jede ändernde Operation verlangt die `version` (Revision) aus der letzten Antwort, sonst
-  `version_conflict`; `backlog_get_item` und `notes_get_note` liefern sie, auch für Archiviertes. Eine Notiz an ein Item
+  `version_conflict`; `backlog_get_item` und `memos_get_memo` liefern sie, auch für Archiviertes. Eine Notiz an ein Item
   (`backlog_append_note`) und jedes Schreiben eines Dokuments zählen als Änderung: danach die Version neu lesen.
 - **Zeiten:** ISO 8601, ohne Zone gilt UTC; der Server antwortet in UTC.
 - **Kompakte Ausgabe:** `backlog_index_lines` → `{text, count}`, `text` mit der Kopfzeile
-  `ID | Type | Status | Area | Title | Parent | Notes` (Zustand des Kopfs der Notes oder `-`) und einer Zeile je Item; `notes_index_lines` → `{topics, notes, …}` als Tabellen
+  `ID | Type | Status | Area | Title | Parent | Notes` (Zustand des Kopfs der Notes oder `-`) und einer Zeile je Item; `memos_index_lines` → `{topics, memos, …}` als Tabellen
   `Label | Name | Due at | Due | Notes` und `Label | Status | Reason | Review at | Topic | Summary`. Beide nehmen dieselben
-  Filter wie `backlog_list_items` bzw. `notes_index` (`projects`, `statuses`, `query`, …; ohne `projects` alle Projekte, das
+  Filter wie `backlog_list_items` bzw. `memos_index` (`projects`, `statuses`, `query`, …; ohne `projects` alle Projekte, das
   ist `--all-projects`).
 - Es gibt **kein Tool zum endgültigen Löschen** und keines, das Einstellungen ändert (`workspace_purge_elements`,
-  `notes_update_notes_settings` und die Projekt-Verwaltung sind HTTP-only); Einstellungen sind nur lesbar
-  (`notes_get_notes_settings`).
+  `memos_update_memos_settings` und die Projekt-Verwaltung sind HTTP-only); Einstellungen sind nur lesbar
+  (`memos_get_memos_settings`).
 
 ### `backlog_api.py` → MCP
 
@@ -584,40 +584,40 @@ Grundregeln:
 
 Neu gegenüber dem alten Helfer: `backlog_move_item` (Parent/Position), `backlog_list_areas`.
 
-### `notes_api.py` → MCP
+### `notes_api.py` → MCP (die Befehle des Harness; die Tools heißen `memos_…`)
 
 | Befehl | Tool | Hinweis |
 |---|---|---|
 | `health`, `sources` | wie oben | |
-| `index` (`--status`, `--due`, `--archived`, `--all-projects`) | `notes_index_lines`; strukturiert `notes_index` | `statuses` komma-getrennt (`due` = fällig; `done,dropped,promoted` = Archiv), ohne `projects` alle Projekte |
-| `index --topic L` / `notes-of-topic` | `notes_topic_content` | Unter-Topics und Notes |
+| `index` (`--status`, `--due`, `--archived`, `--all-projects`) | `memos_index_lines`; strukturiert `memos_index` | `statuses` komma-getrennt (`due` = fällig; `done,dropped,promoted` = Archiv), ohne `projects` alle Projekte |
+| `index --topic L` / `notes-of-topic` | `memos_topic_content` | Unter-Topics und Memos |
 | `index --linked-item ID` / `notes-of-item` / `backlinks` | `workspace_list_links` | `incoming` der Item-`uid` (Rolle `reference`/`origin`/`trigger`) |
-| `due` | `notes_due_notes` | Grund, Topic-Pfad, Auslöser, Hinweise |
-| `show <NOTE>` | `notes_get_note` | Langtext, Auslöser, offene Hinweise, `version` |
-| `topics [--deleted]`, `topic <T>` | `notes_index` (`topics`); gelöschte: `workspace_list_trash` | |
-| `links <NOTE>` | `workspace_list_links` | `outgoing` |
-| `docs`, `doc`, `put-doc`, `note-entry` | `notes_list_note_documents`, `notes_get_note_document`, `notes_put_note_document`, `notes_append_note_entry` | |
-| `notices <NOTE>` | `notes_get_note` (offene Hinweise der Note) | |
-| `notices <ID> --side item` | `notes_list_item_notices` | |
-| `create` | `notes_create_note` | |
-| `update <NOTE> <version>` | `notes_update_note` | |
-| `keep` | `notes_keep_note` | |
-| `snooze` | `notes_snooze_note` | optional `review_at` und `trigger` |
-| `finish <NOTE> <version> <done\|dropped>` | `notes_finish_note` | |
-| `move <NOTE> <version> <project> [--topic L]` | `notes_move_note` (POST `/api/notes/notes/{ref}/move`) | `target_project`, `topic`; Antwort ist die neue Note |
-| `delete <NOTE>` | `workspace_delete_element` | |
-| `restore <NOTE>` | `workspace_restore_elements` (aus dem Papierkorb), `notes_restore_note` (aus dem Archiv) | |
-| `trigger-add` (`event`, `topic_due`) | `notes_add_trigger` | |
+| `due` | `memos_due_memos` | Grund, Topic-Pfad, Auslöser, Hinweise |
+| `show <MEMO>` | `memos_get_memo` | Langtext, Auslöser, offene Hinweise, `version` |
+| `topics [--deleted]`, `topic <T>` | `memos_index` (`topics`); gelöschte: `workspace_list_trash` | |
+| `links <MEMO>` | `workspace_list_links` | `outgoing` |
+| `docs`, `doc`, `put-doc`, `note-entry` | `memos_list_memo_documents`, `memos_get_memo_document`, `memos_put_memo_document`, `memos_append_memo_entry` | |
+| `hints <MEMO>` | `memos_get_memo` (offene Hinweise des Memos) | |
+| `hints <ID> --side item` | `memos_list_item_hints` | |
+| `create` | `memos_create_memo` | |
+| `update <MEMO> <version>` | `memos_update_memo` | |
+| `keep` | `memos_keep_memo` | |
+| `snooze` | `memos_snooze_memo` | optional `review_at` und `trigger` |
+| `finish <MEMO> <version> <done\|dropped>` | `memos_finish_memo` | |
+| `move <MEMO> <version> <project> [--topic L]` | `memos_move_memo` (POST `/api/memos/memos/{ref}/move`) | `target_project`, `topic`; Antwort ist das neue Memo |
+| `delete <MEMO>` | `workspace_delete_element` | |
+| `restore <MEMO>` | `workspace_restore_elements` (aus dem Papierkorb), `memos_restore_memo` (aus dem Archiv) | |
+| `trigger-add` (`event`, `topic_due`) | `memos_add_trigger` | |
 | `trigger-add` mit `kind: time` | `alarms_create_alarm` | Zeit-Auslöser gibt es im Neubau nicht; der Wecker ersetzt sie |
-| `trigger-remove` | `notes_remove_trigger` | |
+| `trigger-remove` | `memos_remove_trigger` | |
 | `link-add`, `link-remove` | `workspace_add_link`, `workspace_remove_link` | `from_uid`, `to_uid`, `role`; Labels über `workspace_resolve_label` |
-| `decide` | `notes_decide_notice` | `keep`, `detach`, `drop`, `promote`, `acknowledge` |
-| `promote`, `demote` | `notes_promote_note`, `notes_demote_item` | |
-| `topic-create`, `topic-update`, `topic-move` | `notes_create_topic`, `notes_update_topic`, `notes_move_topic` | |
-| `topic-delete [--cascade]` | `notes_delete_topic` (Wahl `active_notes`: `move`/`delete`); `notes_archive_topic` | |
-| `topic-restore` | `workspace_restore_elements` (Papierkorb), `notes_reactivate_topic` (Archiv) | |
+| `decide` | `memos_decide_hint` | `keep`, `detach`, `drop`, `promote`, `acknowledge` |
+| `promote`, `demote` | `memos_promote_memo`, `memos_demote_item` | |
+| `topic-create`, `topic-update`, `topic-move` | `memos_create_topic`, `memos_update_topic`, `memos_move_topic` | |
+| `topic-delete [--cascade]` | `memos_delete_topic` (Wahl `active_memos`: `move`/`delete`); `memos_archive_topic` | |
+| `topic-restore` | `workspace_restore_elements` (Papierkorb), `memos_reactivate_topic` (Archiv) | |
 | `trash` | `workspace_list_trash` | |
-| `settings` | `notes_get_notes_settings` | nur lesbar |
+| `settings` | `memos_get_memos_settings` | nur lesbar |
 
 ### Wecker und Sync (neu)
 
@@ -632,7 +632,7 @@ Verknüpfungen: `workspace_add_link`, `workspace_remove_link`, `workspace_list_l
 2. `backlog_index_lines` für den Überblick; `backlog_get_item` für ein Item samt `version`.
 3. `backlog_create_item`; `backlog_update_item` mit `version` (bei `version_conflict` neu lesen und prüfen);
    `backlog_append_note` für den Notiz-Eintrag.
-4. `notes_create_note`, `notes_index_lines`, `workspace_add_link` (Note → Item).
+4. `memos_create_memo`, `memos_index_lines`, `workspace_add_link` (Memo → Item).
 5. `alarms_create_alarm` (`at`, `targets` als Liste, `text` nur ohne Elemente Pflicht), später `alarms_finish_alarm`.
    Ein Wecker erlischt von selbst, wenn keins seiner Elemente mehr offen ist, und wird 24 h nach Erledigt oder
    Erlöschen endgültig gelöscht.
@@ -738,9 +738,10 @@ die Notes mit ab (dasselbe Verfahren).
 
 Gilt für den Neubau (`EPIC-007`). Der alte Viewer liest und schreibt
 weiter die Formate der beiden Abschnitte darüber. Grundsatz: so nah wie
-möglich an Version 1 und am heutigen Notes-Format, damit der Harness wenig
-ändern muss. Neu sind nur die `Uid`, die Platzhalter für neue Backlog-Einträge
-und die Wecker; `counters.md` und Zeit-Auslöser an Notes entfallen.
+möglich an Version 1 und am früheren Notes-Format, damit der Harness wenig
+ändern muss. Neu sind die `Uid`, die Platzhalter für neue Backlog-Einträge
+und die Wecker; `counters.md` und Zeit-Auslöser an Memos entfallen. Die Memos
+(früher Notes) liegen im Ordner `memos/` und heißen `MEMO-xxx`.
 
 ### Ordner eines Projekts
 
@@ -749,7 +750,7 @@ und die Wecker; `counters.md` und Zeit-Auslöser an Notes entfallen.
 | `TODO.md` | aktive Items (nicht abgeschlossen, nicht im Papierkorb) |
 | `archive.md` | Items mit `Completed`/`Rejected` und Items im Papierkorb |
 | `items/<LABEL>/` | `<LABEL>_notes.md` (Aufbau unten), `<LABEL>_spec.md`, `<LABEL>_spec_<thema>.md` (Text unverändert) |
-| `notes/` | Notes, ihre Dokumente und `topics.md` wie heute, ohne `counters.md` |
+| `memos/` | Memos (`MEMO-001.md`), ihre Dokumente (`MEMO-001_notes.md`, `MEMO-001_spec.md`, …) und `topics.md`, ohne `counters.md` |
 | `alarms.md` | alle Wecker |
 
 Andere Dateien werden nicht gelesen. Feldnamen und Werte sind englisch,
@@ -930,12 +931,15 @@ Platzhalter statt eines Labels:
   Notes).
 - Eine LLM erzeugt nie selbst eine `Uid` und nie ein Label.
 
-### Notes und Topics
+### Memos und Topics
 
-Wie im Abschnitt „Dateiformat: Notes-Ordner“ oben, mit diesen Änderungen:
+Wie im Abschnitt „Dateiformat: Notes-Ordner“ oben (dort heißen sie noch Notes: Ordner
+`notes/`, Label `NOTE-001`), mit diesen Änderungen:
 
-- Im Kopf jeder Note steht nach der Überschrift `Uid: <uuid>`; eine neue
-  Note (`new-<kurzname>.md`, erste Zeile `# NEW`) hat keine.
+- Ordner `memos/`, Dateien `MEMO-001.md` und `MEMO-001_notes.md`, `MEMO-001_spec.md`,
+  `MEMO-001_spec_<thema>.md`, Verweise `memo:MEMO-007`.
+- Im Kopf jedes Memos steht nach der Überschrift `Uid: <uuid>`; ein neues
+  Memo (`new-<kurzname>.md`, erste Zeile `# NEW`) hat keines.
 - `topics.md`: jede Zeile trägt `uid=<uuid>` nach dem Namen und
   `archived=<Zeitpunkt>`, wenn das Topic archiviert ist:
   `- TOPIC-001 | <Name> | uid=<uuid> | due=… | created=… | archived=… | deleted=…`.
@@ -959,14 +963,14 @@ Format: Claude_Harness backlog format version 2.
 - `ALARM-001` **Release vorbereiten**
   - Uid: 9b2e4f7a-1c3d-4e5f-8a6b-7c8d9e0f1a2b.
   - At: 2026-10-20T07:00:00Z.
-  - Target: `STORY-012`, `NOTE-004`.
+  - Target: `STORY-012`, `MEMO-004`.
   - Status: Pending.
   - Created: 2026-10-16.
 
 - `ALARM-002`
   - Uid: 1f2e3d4c-5b6a-4978-8a6b-7c8d9e0f1a2b.
   - At: 2026-10-19T07:00:00Z.
-  - Target: `NOTE-010`.
+  - Target: `MEMO-010`.
   - Status: Done.
   - Done at: 2026-10-18T09:00:00Z.
 ```
@@ -1018,7 +1022,7 @@ Datei und Zeile.
 ### Beispiele
 
 `tests/fixtures/mirror-v2/valid/` ist ein vollständiges Projekt mit allen
-Feldern, neuen Einträgen mit Platzhaltern, Notes, Topics und Weckern.
+Feldern, neuen Einträgen mit Platzhaltern, Memos, Topics und Weckern.
 `tests/fixtures/mirror-v2/invalid/<code>/` enthält je Fehlercode ein
 Beispiel. Die Beispiele sind die Golden-Files der Codecs (`STORY-075`,
 `STORY-079`, `STORY-080`).

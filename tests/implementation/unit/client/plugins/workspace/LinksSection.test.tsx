@@ -16,7 +16,7 @@ const element = (uid: string, label: string, title: string, deleted = false): El
 	deleted,
 });
 
-const elements = [element("a", "STORY-001", "Idee"), element("b", "TASK-001", "Umsetzen"), element("c", "TASK-002", "Alt", true), element("d", "NOTE-001", "Notiz")];
+const elements = [element("a", "STORY-001", "Idee"), element("b", "TASK-001", "Umsetzen"), element("c", "TASK-002", "Alt", true), element("d", "MEMO-001", "Notiz")];
 
 afterEach(cleanup);
 
@@ -36,7 +36,7 @@ describe("LinksSection", () => {
 		const outgoing = await screen.findByTestId(ids.link("l1"));
 		expect(outgoing.textContent).toContain("TASK-001 — Umsetzen");
 		expect(outgoing.textContent).toContain("Herkunft");
-		expect(within(screen.getByTestId(ids.linksIncoming)).getByTestId(ids.link("l2")).textContent).toContain("NOTE-001 — Notiz");
+		expect(within(screen.getByTestId(ids.linksIncoming)).getByTestId(ids.link("l2")).textContent).toContain("MEMO-001 — Notiz");
 	});
 
 	it("marks a link to an element in the trash", async () => {

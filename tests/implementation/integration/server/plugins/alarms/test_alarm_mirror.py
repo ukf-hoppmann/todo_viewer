@@ -52,7 +52,7 @@ def test_the_whole_example_project_imports_with_all_plugins_and_settles(full: En
     assert mirror.status()["state"] == "in_sync"
     alarms = mirror.alarms()
     assert sorted(alarms) == ["ALARM-001", "ALARM-002", "ALARM-003"]
-    assert {"ALARM-003", "NOTE-003", "TOPIC-003", "TASK-004"} <= set(result.json()["created"])
+    assert {"ALARM-003", "MEMO-003", "TOPIC-003", "TASK-004"} <= set(result.json()["created"])
     again = mirror.sync()
     assert (again.json()["to_database"], again.json()["to_files"]) == (0, 0)
 
@@ -72,7 +72,7 @@ def test_alarms_are_imported_with_time_status_and_targets(full: Env, tmp_path: P
     assert (second["status"], second["snoozed_until"][:16], second["targets"]) == ("Snoozed", "2026-10-17T07:00", [])
     assert (new["targets"], new["target_text"]) == (
         [],
-        "Misc:NOTE-003",
+        "Misc:MEMO-003",
     )  # ein Ziel, das es hier nicht gibt, bleibt Text
     assert full.app.state.scheduler.pending_at("alarms") == datetime.fromisoformat("2026-10-17T07:00:00+00:00")
 
@@ -88,7 +88,7 @@ def test_a_new_alarm_is_written_back_with_uid_label_and_created_and_keeps_its_fo
 
     assert "- `NEW-standup`" not in text
     assert f"- `ALARM-003` **Neuer Wecker aus der Cloud, Ziel in anderem Projekt**\n  - Uid: {new['uid']}.\n" in text
-    assert "  - Target: `Misc:NOTE-003`.\n" in text and "  - Created: 20" in text
+    assert "  - Target: `Misc:MEMO-003`.\n" in text and "  - Created: 20" in text
 
 
 def test_an_alarm_set_in_the_database_appears_in_the_file_and_comes_back_unchanged(full: Env, tmp_path: Path) -> None:

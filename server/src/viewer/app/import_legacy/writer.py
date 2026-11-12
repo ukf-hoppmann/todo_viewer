@@ -33,6 +33,15 @@ def _bool(value: object) -> int | None:
     return None if value is None else int(bool(value))
 
 
+def _memo_label(label: str) -> str:
+    """Der alte Viewer nannte Memos Notes (`NOTE-001`); im Neubau heißen sie `MEMO-001`."""
+    return "MEMO-" + label[5:] if label.startswith("NOTE-") else label
+
+
+def _hint_kind(cause: str) -> str:
+    return {"note_dropped": "memo_dropped", "note_promoted": "memo_promoted"}.get(cause, cause)
+
+
 class Importer:
     def __init__(self, legacy: Legacy, tx: SqlTransaction, report: Report, now: str) -> None:
         self._legacy = legacy
@@ -69,6 +78,7 @@ class Importer:
     def _element_row(
         self, uid: str, project: str, kind: str, label: str, title: str, created: str, deleted: Any
     ) -> None:
+        label = _memo_label(label)
         self._exec(
             "INSERT INTO workspace_elements(uid, project_uid, kind, label, revision, created_at, updated_at, "
             "deleted_at, title) VALUES (:uid, :project, :kind, :label, 1, :created, :created, :deleted, :title)",
@@ -91,7 +101,7 @@ class Importer:
 
     def _lookup(self, project_id: object, label: object) -> str | None:
         project = self._project.get(str(project_id))
-        return self._element.get((project, str(label))) if project else None
+        return self._element.get((project, _memo_label(str(label)))) if project else None
 
     # --- Projekte -------------------------------------------------------------------------------------------------
 
@@ -268,7 +278,7 @@ class Importer:
                 b=entry.body,
             )
 
-    # --- Notes ----------------------------------------------------------------------------------------------------
+    # --- Memos ----------------------------------------------------------------------------------------------------
 
     def _notes(self) -> None:
         legacy = self._legacy
@@ -288,7 +298,7 @@ class Importer:
             if topic["parent_uid"] and parent is None:
                 self._report.deviation(f"{topic['label']}: das Parent-Topic fehlt, das Topic wird eine Wurzel")
             self._exec(
-                "INSERT INTO notes_topics(uid, name, parent_uid, due_at, archived_at, system) VALUES (:u, :n, :p, :d, "
+                "INSERT INTO memos_topics(uid, name, parent_uid, due_at, archived_at, system) VALUES (:u, :n, :p, :d, "
                 "NULL, 0)",
                 u=topic["uid"],
                 n=topic["name"],
@@ -302,7 +312,7 @@ class Importer:
             self._element_row(
                 str(note["uid"]),
                 project,
-                "note",
+                "memo",
                 str(note["label"]),
                 str(note["summary"]),
                 self._day(note["created"]),
@@ -310,10 +320,10 @@ class Importer:
             )
             note_topic = note["topic_uid"] if note["topic_uid"] in topic_uids else None
             if note["topic_uid"] and note_topic is None:
-                self._report.deviation(f"{note['label']}: das Topic fehlt, die Note liegt ohne Topic")
+                self._report.deviation(f"{note['label']}: das Topic fehlt, das Memo liegt ohne Topic")
             status = "waiting" if note["status"] == "due" else note["status"]
             self._exec(
-                "INSERT INTO notes_notes(uid, summary, body, status, topic_uid, review_at, trigger_mode, archived) "
+                "INSERT INTO memos_memos(uid, summary, body, status, topic_uid, review_at, trigger_mode, archived) "
                 "VALUES (:u, :s, :b, :st, :t, :r, :m, :a)",
                 u=note["uid"],
                 s=note["summary"],
@@ -324,20 +334,20 @@ class Importer:
                 m=note["trigger_mode"],
                 a=int(bool(note["archived"])),
             )
-            self._report.count("Notes")
+            self._report.count("Memos")
         for row in legacy.note_documents:
             uid = str(row["note_uid"])
             if uid not in self._note_uids:
-                self._report.deviation(f"Dokument {row['name']}: die Note {uid} gibt es nicht, es entfällt")
+                self._report.deviation(f"Dokument {row['name']}: das Memo {uid} gibt es nicht, es entfällt")
                 continue
             self._exec(
-                "INSERT INTO notes_documents(note_uid, name, content, revision, updated_at) VALUES (:u, :n, :c, 1, :t)",
+                "INSERT INTO memos_documents(memo_uid, name, content, revision, updated_at) VALUES (:u, :n, :c, 1, :t)",
                 u=uid,
-                n=row["name"],
+                n=str(row["name"]).replace("NOTE-", "MEMO-"),
                 c=row["content"] or "",
                 t=str(self._note_uids[uid]["updated"] or self._now),
             )
-            self._report.count("Dokumente der Notes")
+            self._report.count("Dokumente der Memos")
 
     # --- Verknüpfungen, Auslöser, Wecker --------------------------------------------------------------------------
 
@@ -355,7 +365,7 @@ class Importer:
                 continue
             key = (source, target, str(link["role"]))
             if key in self._link_uids:
-                self._report.deviation(f"Verknüpfung {link['id']} gibt es schon (gleiche Note, Ziel und Rolle)")
+                self._report.deviation(f"Verknüpfung {link['id']} gibt es schon (gleiches Memo, Ziel und Rolle)")
                 links[int(link["id"])] = (self._link_uids[key], target)
                 continue
             uid = stable_uid("link", link["id"])
@@ -376,7 +386,7 @@ class Importer:
     def _trigger(self, trigger: Row, links: Mapping[int, tuple[str, str]]) -> None:
         note = self._note_uids.get(str(trigger["note_uid"]))
         if note is None:
-            self._report.deviation(f"Auslöser {trigger['id']}: die Note fehlt, er entfällt")
+            self._report.deviation(f"Auslöser {trigger['id']}: das Memo fehlt, er entfällt")
             return
         uid = stable_uid("trigger", trigger["id"])
         kind = str(trigger["kind"])
@@ -392,7 +402,7 @@ class Importer:
                 return
             link_uid, target = found
         self._exec(
-            "INSERT INTO notes_triggers(uid, note_uid, kind, target_uid, status, fired_at, already_met, link_uid) "
+            "INSERT INTO memos_triggers(uid, memo_uid, kind, target_uid, status, fired_at, already_met, link_uid) "
             "VALUES (:u, :n, :k, :t, :s, :f, :a, :l)",
             u=uid,
             n=note["uid"],
@@ -411,7 +421,7 @@ class Importer:
         number = max(
             (int(label[6:]) for label in self._labels.get(project, []) if label.startswith("ALARM-")), default=0
         )
-        text = str(note["summary"] or f"Wecker aus Note {note['label']}")
+        text = str(note["summary"] or f"Wecker aus Memo {_memo_label(str(note['label']))}")
         self._element_row(uid, project, "alarm", f"ALARM-{number + 1:03d}", text, self._now, None)
         self._exec(
             "INSERT INTO alarms_alarms(uid, at, text, target_text, status, snoozed_until, done_at) VALUES (:u, :at, "
@@ -441,13 +451,13 @@ class Importer:
                 self._report.deviation(f"Hinweis {notice['id']} hat kein Ziel und entfällt")
                 continue
             self._exec(
-                "INSERT INTO notes_notices(uid, side, subject_uid, source_uid, kind, created_at, decided_at, decision) "
+                "INSERT INTO memos_hints(uid, side, subject_uid, source_uid, kind, created_at, decided_at, decision) "
                 "VALUES (:u, :side, :subject, :source, :kind, :created, :decided, :decision)",
                 u=stable_uid("notice", notice["id"]),
-                side=notice["side"],
+                side="memo" if notice["side"] == "note" else notice["side"],
                 subject=subject,
                 source=source,
-                kind=notice["cause"],
+                kind=_hint_kind(str(notice["cause"])),
                 created=notice["created_at"] or self._now,
                 decided=notice["decided_at"],
                 decision=notice["decision"],
@@ -455,7 +465,7 @@ class Importer:
             self._report.count("Hinweise")
 
     def _counters(self) -> None:
-        legacy_prefix = {"note": "NOTE", "topic": "TOPIC"}
+        legacy_prefix = {"note": "MEMO", "topic": "TOPIC"}
         for project in sorted(set(self._project.values())):
             highest = counters(self._labels.get(project, []))
             for row in self._legacy.counters:

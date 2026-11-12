@@ -1,6 +1,6 @@
 """Ein typischer Ablauf des Harness über MCP, gegen den ganzen Viewer (STORY-081).
 
-Jeder Schritt entspricht einem Befehl von `backlog_api.py` oder `notes_api.py`; die Zuordnung steht in
+Jeder Schritt entspricht einem Befehl von `backlog_api.py` oder `memos_api.py`; die Zuordnung steht in
 `docs/techdocs/interfaces.md`, „MCP-Tools für den Harness“.
 """
 
@@ -138,14 +138,14 @@ async def session(harness: Harness) -> None:
     assert [e["topic"] for e in last] == ["Weiter"]
 
     # Note anlegen, im Index sehen, mit dem Item verknüpfen
-    note = await harness.call("notes_create_note", project=general, fields={"summary": "Passwort-Regeln klären"})
-    assert note["label"] == "NOTE-001"
-    lines = await harness.call("notes_index_lines", projects=general)
-    assert lines["note_count"] == 1 and lines["notes"].splitlines()[1].startswith("NOTE-001 | waiting | - |")
-    await harness.call("workspace_add_link", from_uid=note["uid"], to_uid=story["uid"], role="reference")
+    memo = await harness.call("memos_create_memo", project=general, fields={"summary": "Passwort-Regeln klären"})
+    assert memo["label"] == "MEMO-001"
+    lines = await harness.call("memos_index_lines", projects=general)
+    assert lines["memo_count"] == 1 and lines["memos"].splitlines()[1].startswith("MEMO-001 | waiting | - |")
+    await harness.call("workspace_add_link", from_uid=memo["uid"], to_uid=story["uid"], role="reference")
     links = await harness.call("workspace_list_links", uid=story["uid"])
-    assert [e["uid"] for e in links["incoming"]] == [note["uid"]]
-    assert (await harness.call("notes_get_notes_settings"))["review_days"] == 30
+    assert [e["uid"] for e in links["incoming"]] == [memo["uid"]]
+    assert (await harness.call("memos_get_memos_settings"))["review_days"] == 30
 
     # Wecker stellen und erledigen
     at = (datetime.now(UTC) + timedelta(days=2)).isoformat()

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from viewer.core.domain.sync import MirrorEntry, replace_ids, text_labels
 
-LABELS = {"NEW-route": "STORY-021", "NEW-route-2": "STORY-022", "new-idea": "NOTE-005"}
+LABELS = {"NEW-route": "STORY-021", "NEW-route-2": "STORY-022", "new-idea": "MEMO-005"}
 
 
 def test_whole_ids_are_replaced() -> None:
     assert replace_ids("Siehe NEW-route und `NEW-route`.", LABELS) == "Siehe STORY-021 und `STORY-021`."
-    assert replace_ids("note:new-idea (NEW-route)", LABELS) == "note:NOTE-005 (STORY-021)"
+    assert replace_ids("note:new-idea (NEW-route)", LABELS) == "note:MEMO-005 (STORY-021)"
 
 
 def test_longer_or_embedded_ids_stay_and_the_longest_key_wins() -> None:

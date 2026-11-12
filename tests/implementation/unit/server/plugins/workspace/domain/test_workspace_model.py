@@ -14,8 +14,8 @@ def test_labels_have_three_digits_at_least_and_parse_back() -> None:
     assert format_label("STORY", 12) == "STORY-012"
     assert format_label("TASK", 1234) == "TASK-1234"
     assert parse_label("STORY-012") == ("STORY", 12)
-    assert parse_label(" NOTE-003 ") == ("NOTE", 3)
-    assert parse_label("story-1") is None and parse_label("NEW-x") is None and parse_label("Misc:NOTE-003") is None
+    assert parse_label(" MEMO-003 ") == ("MEMO", 3)
+    assert parse_label("story-1") is None and parse_label("NEW-x") is None and parse_label("Misc:MEMO-003") is None
 
 
 @pytest.mark.parametrize("name", ["", "   ", "x" * 101, "mit\nUmbruch"])

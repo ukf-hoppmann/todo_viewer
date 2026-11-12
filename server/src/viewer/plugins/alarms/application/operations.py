@@ -163,7 +163,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente "
         "(`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Mit `repeat` (`none`, "
         "`daily`, `weekly`, `monthly`, `yearly`) wiederholt er sich; die Termine rechnen in der Zeitzone des Servers. "
-        "Für „Erinner mich“; „Merk dir“ ist eine Note",
+        "Für „Erinner mich“; „Merk dir“ ist ein Memo",
         "write",
         CreateAlarm,
         AlarmOut,

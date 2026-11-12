@@ -62,7 +62,7 @@ rebuild (`STORY-084`).
   a sync participant (database ⇄ entries). The sync is a use case of the core
   over these ports and MUST NOT know SQL, file formats, or plugin domains.
 - Entries MUST be matched by their `uid` only. Labels (`STORY-012`,
-  `NOTE-003`) are for display, are assigned only by the database, are counted
+  `MEMO-003`) are for display, are assigned only by the database, are counted
   per project and prefix, and are never reused. An entry created in the files
   without `uid` is new: the sync assigns `uid` and label, rewrites references
   to its placeholder, and writes both back.

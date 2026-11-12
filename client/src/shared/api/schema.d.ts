@@ -14,7 +14,7 @@ export interface paths {
         /** Wecker als Liste (nach Zeitpunkt); `due_only` zeigt nur die, die sich gemeldet haben. Projekte komma-getrennt */
         get: operations["alarms_list_alarms"];
         put?: never;
-        /** Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente (`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Mit `repeat` (`none`, `daily`, `weekly`, `monthly`, `yearly`) wiederholt er sich; die Termine rechnen in der Zeitzone des Servers. Für „Erinner mich“; „Merk dir“ ist eine Note */
+        /** Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente (`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Mit `repeat` (`none`, `daily`, `weekly`, `monthly`, `yearly`) wiederholt er sich; die Termine rechnen in der Zeitzone des Servers. Für „Erinner mich“; „Merk dir“ ist ein Memo */
         post: operations["alarms_create_alarm"];
         delete?: never;
         options?: never;
@@ -455,15 +455,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/due": {
+    "/api/memos/due": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Die fälligen Notes (Prüfdatum erreicht) mit Zahl; gleiches Ergebnis wie der Zähler der Kopfzeile */
-        get: operations["notes_due_notes"];
+        /** Die fälligen Memos (Prüfdatum erreicht) mit Zahl; gleiches Ergebnis wie der Zähler der Kopfzeile */
+        get: operations["memos_due_memos"];
         put?: never;
         post?: never;
         delete?: never;
@@ -472,41 +472,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/index": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Topics (mit Zählern) und Notes der Projekte als flache Liste; Filter nach Status (wartet, fällig, zurückgestellt, erledigt, verworfen, befördert) und Text. Projekte und Status komma-getrennt */
-        get: operations["notes_index"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/notes/index/lines": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Wie notes_index, aber als kompakter Text für Agenten: Topics `Label | Name | Due at | Due | Notes` und Notes `Label | Status | Reason | Review at | Topic | Summary` */
-        get: operations["notes_index_lines"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/notes/items/{ref}/demote": {
+    "/api/memos/hints/{uid}/decide": {
         parameters: {
             query?: never;
             header?: never;
@@ -515,23 +481,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stuft ein offenes Item (Status Open, ohne Kinder, von dem nichts abhängt) zu einer Note zurück; das Item wird abgelehnt (Rejected), Notizen und Specs wandern an die Note */
-        post: operations["notes_demote_item"];
+        /** Entscheidet einen offenen Hinweis: an einem Memo: keep (Prüfdatum rückt), detach (Verknüpfung zum Item entfernen), drop (Memo verwerfen) oder promote (zum Item befördern); an einem Item acknowledge */
+        post: operations["memos_decide_hint"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/items/{ref}/notices": {
+    "/api/memos/index": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Die offenen Hinweise an ein Item des Backlogs (eine Note, die auf es verweist, wurde verworfen oder befördert) */
-        get: operations["notes_list_item_notices"];
+        /** Topics (mit Zählern) und Memos der Projekte als flache Liste; Filter nach Status (wartet, fällig, zurückgestellt, erledigt, verworfen, befördert) und Text. Projekte und Status komma-getrennt */
+        get: operations["memos_index"];
         put?: never;
         post?: never;
         delete?: never;
@@ -540,7 +506,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes": {
+    "/api/memos/index/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Wie memos_index, aber als kompakter Text für Agenten: Topics `Label | Name | Due at | Due | Memos` und Memos `Label | Status | Reason | Review at | Topic | Summary` */
+        get: operations["memos_index_lines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/memos/items/{ref}/demote": {
         parameters: {
             query?: never;
             header?: never;
@@ -549,25 +532,24 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Legt eine Note an (Status wartet); das Label vergibt der Server. Pflicht: summary; Prüfdatum ohne Angabe heute + Prüf-Intervall */
-        post: operations["notes_create_note"];
+        /** Stuft ein offenes Item (Status Open, ohne Kinder, von dem nichts abhängt) zu einem Memo zurück; das Item wird abgelehnt (Rejected), Notizen und Specs wandern an das Memo */
+        post: operations["memos_demote_item"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}": {
+    "/api/memos/items/{ref}/hints": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Eine Note mit Langtext, Topic-Pfad, Status und Dokumenten; `ref` ist die uid oder ein Label (mit `project`) */
-        get: operations["notes_get_note"];
-        /** Ändert Felder einer Note in Gebrauch mit Versionsprüfung (summary, body, topic, review_at, trigger_mode) */
-        put: operations["notes_update_note"];
+        /** Die offenen Hinweise an ein Item des Backlogs (ein Memo, die auf es verweist, wurde verworfen oder befördert) */
+        get: operations["memos_list_item_hints"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -575,7 +557,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/documents": {
+    "/api/memos/memos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Legt ein Memo an (Status wartet); das Label vergibt der Server. Pflicht: summary; Prüfdatum ohne Angabe heute + Prüf-Intervall */
+        post: operations["memos_create_memo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/memos/memos/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eine Memo mit Langtext, Topic-Pfad, Status und Dokumenten; `ref` ist die uid oder ein Label (mit `project`) */
+        get: operations["memos_get_memo"];
+        /** Ändert Felder eines Memos in Gebrauch mit Versionsprüfung (summary, body, topic, review_at, trigger_mode) */
+        put: operations["memos_update_memo"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/memos/memos/{ref}/documents": {
         parameters: {
             query?: never;
             header?: never;
@@ -583,7 +600,7 @@ export interface paths {
             cookie?: never;
         };
         /** Die Dokumente einer Note (Name, Art, Version) */
-        get: operations["notes_list_note_documents"];
+        get: operations["memos_list_memo_documents"];
         put?: never;
         post?: never;
         delete?: never;
@@ -592,7 +609,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/documents/{name}": {
+    "/api/memos/memos/{ref}/documents/{name}": {
         parameters: {
             query?: never;
             header?: never;
@@ -600,9 +617,9 @@ export interface paths {
             cookie?: never;
         };
         /** Ein Dokument einer Note mit Inhalt und Version */
-        get: operations["notes_get_note_document"];
+        get: operations["memos_get_memo_document"];
         /** Ersetzt ein Dokument in `version` oder legt ein neues an (<LABEL>_notes.md, <LABEL>_spec[_<thema>].md) */
-        put: operations["notes_put_note_document"];
+        put: operations["memos_put_memo_document"];
         post?: never;
         delete?: never;
         options?: never;
@@ -610,7 +627,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/entries": {
+    "/api/memos/memos/{ref}/entries": {
         parameters: {
             query?: never;
             header?: never;
@@ -619,15 +636,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen einer Note */
-        post: operations["notes_append_note_entry"];
+        /** Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen eines Memos */
+        post: operations["memos_append_memo_entry"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/finish": {
+    "/api/memos/memos/{ref}/finish": {
         parameters: {
             query?: never;
             header?: never;
@@ -636,15 +653,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Schließt eine Note als erledigt (done) oder verworfen (dropped) ab; sie liegt dann im Archiv */
-        post: operations["notes_finish_note"];
+        /** Schließt ein Memo als erledigt (done) oder verworfen (dropped) ab; sie liegt dann im Archiv */
+        post: operations["memos_finish_memo"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/keep": {
+    "/api/memos/memos/{ref}/keep": {
         parameters: {
             query?: never;
             header?: never;
@@ -653,15 +670,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Behalten: die Note bleibt, wie sie ist, nur das Prüfdatum rückt um das Prüf-Intervall vor */
-        post: operations["notes_keep_note"];
+        /** Behalten: das Memo bleibt, wie es ist, nur das Prüfdatum rückt um das Prüf-Intervall vor */
+        post: operations["memos_keep_memo"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/move": {
+    "/api/memos/memos/{ref}/move": {
         parameters: {
             query?: never;
             header?: never;
@@ -670,15 +687,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Verschiebt eine Note in ein anderes Projekt: dort entsteht eine neue Note mit neuem Label (Texte, Status, Prüfdatum, Dokumente, Verweise und Ereignis-Auslöser werden übernommen), die alte kommt in den Papierkorb. Antwort ist die neue Note */
-        post: operations["notes_move_note"];
+        /** Verschiebt ein Memo in ein anderes Projekt: dort entsteht eine neue Memo mit neuem Label (Texte, Status, Prüfdatum, Dokumente, Verweise und Ereignis-Auslöser werden übernommen), die alte kommt in den Papierkorb. Antwort ist die neue Memo */
+        post: operations["memos_move_memo"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/promote": {
+    "/api/memos/memos/{ref}/promote": {
         parameters: {
             query?: never;
             header?: never;
@@ -687,15 +704,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Befördert eine Note zu einem Item (Epic, Story oder Task) im selben Projekt: Langtext, Notizen und Specs werden übernommen, die Note ist danach befördert (Archiv) und mit dem Item verknüpft (origin). Pflicht: type und die Felder area, goal, completion_criteria */
-        post: operations["notes_promote_note"];
+        /** Befördert ein Memo zu einem Item (Epic, Story oder Task) im selben Projekt: Langtext, Notizen und Specs werden übernommen, das Memo ist danach befördert (Archiv) und mit dem Item verknüpft (origin). Pflicht: type und die Felder area, goal, completion_criteria */
+        post: operations["memos_promote_memo"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/restore": {
+    "/api/memos/memos/{ref}/restore": {
         parameters: {
             query?: never;
             header?: never;
@@ -704,15 +721,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Holt eine Note aus dem Archiv zurück auf „wartet“ mit neuem Prüfdatum */
-        post: operations["notes_restore_note"];
+        /** Holt ein Memo aus dem Archiv zurück auf „wartet“ mit neuem Prüfdatum */
+        post: operations["memos_restore_memo"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/snooze": {
+    "/api/memos/memos/{ref}/snooze": {
         parameters: {
             query?: never;
             header?: never;
@@ -721,15 +738,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stellt eine Note zurück auf ein neues Prüfdatum (Standard: heute + Prüf-Intervall) */
-        post: operations["notes_snooze_note"];
+        /** Stellt ein Memo zurück auf ein neues Prüfdatum (Standard: heute + Prüf-Intervall) */
+        post: operations["memos_snooze_memo"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notes/{ref}/triggers": {
+    "/api/memos/memos/{ref}/triggers": {
         parameters: {
             query?: never;
             header?: never;
@@ -738,32 +755,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Legt einen Auslöser an: ein Item erreicht einen Status (`event`, mit `target` und `status`) oder der Termin des Topics der Note ist erreicht (`topic_date`). Erreicht er sein Ziel, wird die Note fällig; hat das Item den Status schon, feuert er sofort */
-        post: operations["notes_add_trigger"];
+        /** Legt einen Auslöser an: ein Item erreicht einen Status (`event`, mit `target` und `status`) oder der Termin des Topics des Memos ist erreicht (`topic_date`). Erreicht er sein Ziel, wird das Memo fällig; hat das Item den Status schon, feuert er sofort */
+        post: operations["memos_add_trigger"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/notices/{uid}/decide": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Entscheidet einen offenen Hinweis: an einer Note keep (Prüfdatum rückt), detach (Verknüpfung zum Item entfernen), drop (Note verwerfen) oder promote (zum Item befördern); an einem Item acknowledge */
-        post: operations["notes_decide_notice"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/notes/settings": {
+    "/api/memos/settings": {
         parameters: {
             query?: never;
             header?: never;
@@ -771,9 +771,9 @@ export interface paths {
             cookie?: never;
         };
         /** Prüf-Intervall (Tage) und größte Topic-Tiefe */
-        get: operations["notes_get_notes_settings"];
+        get: operations["memos_get_memos_settings"];
         /** Ändert Prüf-Intervall und größte Topic-Tiefe */
-        put: operations["notes_update_notes_settings"];
+        put: operations["memos_update_memos_settings"];
         post?: never;
         delete?: never;
         options?: never;
@@ -781,7 +781,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/topics": {
+    "/api/memos/topics": {
         parameters: {
             query?: never;
             header?: never;
@@ -791,14 +791,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Legt ein Topic an (unter `parent`, sonst an der Wurzel des Projekts); die Tiefe ist begrenzt (Einstellung) */
-        post: operations["notes_create_topic"];
+        post: operations["memos_create_topic"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/topics/{ref}": {
+    "/api/memos/topics/{ref}": {
         parameters: {
             query?: never;
             header?: never;
@@ -807,7 +807,7 @@ export interface paths {
         };
         get?: never;
         /** Ändert Name und Termin (`due_at`) eines Topics mit Versionsprüfung */
-        put: operations["notes_update_topic"];
+        put: operations["memos_update_topic"];
         post?: never;
         delete?: never;
         options?: never;
@@ -815,7 +815,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/topics/{ref}/archive": {
+    "/api/memos/topics/{ref}/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -824,23 +824,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Archiviert ein Topic samt Unter-Topics. Mit Inhalt braucht es eine Wahl: archivierte Notes behalten, aktive Notes verschieben (`move`) oder mitarchivieren (`archive`) */
-        post: operations["notes_archive_topic"];
+        /** Archiviert ein Topic samt Unter-Topics. Mit Inhalt braucht es eine Wahl: archivierte Memos behalten, aktive Memos verschieben (`move`) oder mitarchivieren (`archive`) */
+        post: operations["memos_archive_topic"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/topics/{ref}/content": {
+    "/api/memos/topics/{ref}/content": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Zahl der Unter-Topics sowie aktiven und archivierten Notes in einem Topic (für den Auswahldialog) */
-        get: operations["notes_topic_content"];
+        /** Zahl der Unter-Topics sowie aktiven und archivierten Memos in einem Topic (für den Auswahldialog) */
+        get: operations["memos_topic_content"];
         put?: never;
         post?: never;
         delete?: never;
@@ -849,7 +849,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/topics/{ref}/delete": {
+    "/api/memos/topics/{ref}/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -858,15 +858,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Legt ein Topic in den Papierkorb. Mit Inhalt braucht es eine Wahl: archivierte Notes behalten, aktive Notes verschieben (`move`) oder mit löschen (`delete`); nicht Gewähltes geht mit in den Papierkorb */
-        post: operations["notes_delete_topic"];
+        /** Legt ein Topic in den Papierkorb. Mit Inhalt braucht es eine Wahl: archivierte Memos behalten, aktive Memos verschieben (`move`) oder mit löschen (`delete`); nicht Gewähltes geht mit in den Papierkorb */
+        post: operations["memos_delete_topic"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/topics/{ref}/move": {
+    "/api/memos/topics/{ref}/move": {
         parameters: {
             query?: never;
             header?: never;
@@ -876,14 +876,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Hängt ein Topic samt Unter-Topics unter einen anderen Parent (oder zur Wurzel), innerhalb der Tiefe */
-        post: operations["notes_move_topic"];
+        post: operations["memos_move_topic"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/topics/{ref}/reactivate": {
+    "/api/memos/topics/{ref}/reactivate": {
         parameters: {
             query?: never;
             header?: never;
@@ -892,15 +892,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Aktiviert ein archiviertes Topic samt Unter-Topics wieder; Notes, die nur seinetwegen archiviert waren, kommen zurück */
-        post: operations["notes_reactivate_topic"];
+        /** Aktiviert ein archiviertes Topic samt Unter-Topics wieder; Memos, die nur seinetwegen archiviert waren, kommen zurück */
+        post: operations["memos_reactivate_topic"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/notes/triggers/{uid}": {
+    "/api/memos/triggers/{uid}": {
         parameters: {
             query?: never;
             header?: never;
@@ -910,8 +910,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Entfernt einen Auslöser einer Note in Gebrauch (mit seiner Verknüpfung) */
-        delete: operations["notes_remove_trigger"];
+        /** Entfernt einen Auslöser eines Memos in Gebrauch (mit seiner Verknüpfung) */
+        delete: operations["memos_remove_trigger"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1479,8 +1479,8 @@ export interface components {
         };
         /** DecisionOut */
         DecisionOut: {
-            note: components["schemas"]["NoteOut"] | null;
-            notice: components["schemas"]["NoteNoticeOut"];
+            hint: components["schemas"]["MemoHintOut"];
+            memo: components["schemas"]["MemoOut"] | null;
         };
         /**
          * DeleteResult
@@ -1498,7 +1498,7 @@ export interface components {
         DemotedOut: {
             /** Item Uid */
             item_uid: string;
-            note: components["schemas"]["NoteOut"];
+            memo: components["schemas"]["MemoOut"];
         };
         /**
          * DocumentDeleted
@@ -1540,14 +1540,14 @@ export interface components {
             /** Version */
             version: number;
         };
-        /** DueNoteOut */
-        DueNoteOut: {
+        /** DueMemoOut */
+        DueMemoOut: {
             /** Due Since */
             due_since: string | null;
+            /** Hints */
+            hints: components["schemas"]["MemoHintOut"][];
             /** Label */
             label: string;
-            /** Notices */
-            notices: components["schemas"]["NoteNoticeOut"][];
             /** Path */
             path: string[];
             /** Project Uid */
@@ -1569,8 +1569,8 @@ export interface components {
         DueOut: {
             /** Count */
             count: number;
-            /** Notes */
-            notes: components["schemas"]["DueNoteOut"][];
+            /** Memos */
+            memos: components["schemas"]["DueMemoOut"][];
         };
         /** ElementOut */
         ElementOut: {
@@ -1818,8 +1818,23 @@ export interface components {
             /** Outgoing */
             outgoing: components["schemas"]["LinkedElement"][];
         };
-        /** NoteIndexOut */
-        NoteIndexOut: {
+        /** MemoHintOut */
+        MemoHintOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decisions */
+            decisions: string[];
+            /** Kind */
+            kind: string;
+            source: components["schemas"]["TargetRef"] | null;
+            /** Uid */
+            uid: string;
+        };
+        /** MemoIndexOut */
+        MemoIndexOut: {
             /** Archived */
             archived: boolean;
             /** Label */
@@ -1839,23 +1854,8 @@ export interface components {
             /** Version */
             version: number;
         };
-        /** NoteNoticeOut */
-        NoteNoticeOut: {
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Decisions */
-            decisions: string[];
-            /** Kind */
-            kind: string;
-            source: components["schemas"]["TargetRef"] | null;
-            /** Uid */
-            uid: string;
-        };
-        /** NoteOut */
-        NoteOut: {
+        /** MemoOut */
+        MemoOut: {
             /** Archived */
             archived: boolean;
             /** Body */
@@ -1864,10 +1864,10 @@ export interface components {
             deleted: boolean;
             /** Documents */
             documents: string[];
+            /** Hints */
+            hints: components["schemas"]["MemoHintOut"][];
             /** Label */
             label: string;
-            /** Notices */
-            notices: components["schemas"]["NoteNoticeOut"][];
             /** Path */
             path: components["schemas"]["TopicRef"][];
             /** Project Uid */
@@ -1893,8 +1893,8 @@ export interface components {
             /** Version */
             version: number;
         };
-        /** NotesAddTriggerBody */
-        NotesAddTriggerBody: {
+        /** MemosAddTriggerBody */
+        MemosAddTriggerBody: {
             /** Kind */
             kind: string;
             /** Project */
@@ -1904,8 +1904,8 @@ export interface components {
             /** Target */
             target?: string | null;
         };
-        /** NotesAppendNoteEntryBody */
-        NotesAppendNoteEntryBody: {
+        /** MemosAppendMemoEntryBody */
+        MemosAppendMemoEntryBody: {
             /** Decided */
             decided?: string[];
             /** Discussed */
@@ -1917,10 +1917,10 @@ export interface components {
             /** Topic */
             topic: string;
         };
-        /** NotesArchiveTopicBody */
-        NotesArchiveTopicBody: {
-            /** Active Notes */
-            active_notes?: string | null;
+        /** MemosArchiveTopicBody */
+        MemosArchiveTopicBody: {
+            /** Active Memos */
+            active_memos?: string | null;
             /**
              * Keep Archived
              * @default false
@@ -1933,8 +1933,8 @@ export interface components {
             /** Version */
             version: number;
         };
-        /** NotesCreateNoteBody */
-        NotesCreateNoteBody: {
+        /** MemosCreateMemoBody */
+        MemosCreateMemoBody: {
             /** Fields */
             fields: {
                 [key: string]: unknown;
@@ -1942,8 +1942,8 @@ export interface components {
             /** Project */
             project: string;
         };
-        /** NotesCreateTopicBody */
-        NotesCreateTopicBody: {
+        /** MemosCreateTopicBody */
+        MemosCreateTopicBody: {
             /** Due At */
             due_at?: string | null;
             /** Name */
@@ -1953,8 +1953,8 @@ export interface components {
             /** Project */
             project: string;
         };
-        /** NotesDecideNoticeBody */
-        NotesDecideNoticeBody: {
+        /** MemosDecideHintBody */
+        MemosDecideHintBody: {
             /** Decision */
             decision: string;
             /** Fields */
@@ -1966,10 +1966,10 @@ export interface components {
             /** Version */
             version?: number | null;
         };
-        /** NotesDeleteTopicBody */
-        NotesDeleteTopicBody: {
-            /** Active Notes */
-            active_notes?: string | null;
+        /** MemosDeleteTopicBody */
+        MemosDeleteTopicBody: {
+            /** Active Memos */
+            active_memos?: string | null;
             /**
              * Keep Archived
              * @default false
@@ -1982,12 +1982,147 @@ export interface components {
             /** Version */
             version: number;
         };
-        /** NotesDemoteItemBody */
-        NotesDemoteItemBody: {
+        /** MemosDemoteItemBody */
+        MemosDemoteItemBody: {
             /** Project */
             project?: string | null;
             /** Topic */
             topic?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MemosFinishMemoBody */
+        MemosFinishMemoBody: {
+            /** Project */
+            project?: string | null;
+            /** Status */
+            status: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * MemosIndexLines
+         * @description Der Index als Text für Agenten: Topics und Memos je als Tabelle mit Kopfzeile.
+         */
+        MemosIndexLines: {
+            /** Memo Count */
+            memo_count: number;
+            /** Memos */
+            memos: string;
+            /** Topic Count */
+            topic_count: number;
+            /** Topics */
+            topics: string;
+        };
+        /** MemosIndexOut */
+        MemosIndexOut: {
+            /** Memos */
+            memos: components["schemas"]["MemoIndexOut"][];
+            /** Topics */
+            topics: components["schemas"]["TopicOut"][];
+        };
+        /** MemosKeepMemoBody */
+        MemosKeepMemoBody: {
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MemosMoveMemoBody */
+        MemosMoveMemoBody: {
+            /** Project */
+            project?: string | null;
+            /** Target Project */
+            target_project: string;
+            /** Topic */
+            topic?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MemosMoveTopicBody */
+        MemosMoveTopicBody: {
+            /** Parent */
+            parent?: string | null;
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MemosPromoteMemoBody */
+        MemosPromoteMemoBody: {
+            /** Fields */
+            fields?: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
+            /** Type */
+            type: string;
+            /** Version */
+            version: number;
+        };
+        /** MemosPutMemoDocumentBody */
+        MemosPutMemoDocumentBody: {
+            /** Content */
+            content: string;
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** MemosReactivateTopicBody */
+        MemosReactivateTopicBody: {
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MemosRestoreMemoBody */
+        MemosRestoreMemoBody: {
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MemosSnoozeMemoBody */
+        MemosSnoozeMemoBody: {
+            /** Project */
+            project?: string | null;
+            /** Review At */
+            review_at?: string | null;
+            /** Trigger */
+            trigger?: {
+                [key: string]: unknown;
+            } | null;
+            /** Version */
+            version: number;
+        };
+        /** MemosUpdateMemoBody */
+        MemosUpdateMemoBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MemosUpdateMemosSettingsBody */
+        MemosUpdateMemosSettingsBody: {
+            /** Max Topic Depth */
+            max_topic_depth?: number | null;
+            /** Review Days */
+            review_days?: number | null;
+        };
+        /** MemosUpdateTopicBody */
+        MemosUpdateTopicBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
             /** Version */
             version: number;
         };
@@ -2001,112 +2136,6 @@ export interface components {
             text: string;
             /** Topic */
             topic: string;
-        };
-        /** NotesFinishNoteBody */
-        NotesFinishNoteBody: {
-            /** Project */
-            project?: string | null;
-            /** Status */
-            status: string;
-            /** Version */
-            version: number;
-        };
-        /**
-         * NotesIndexLines
-         * @description Der Index als Text für Agenten: Topics und Notes je als Tabelle mit Kopfzeile.
-         */
-        NotesIndexLines: {
-            /** Note Count */
-            note_count: number;
-            /** Notes */
-            notes: string;
-            /** Topic Count */
-            topic_count: number;
-            /** Topics */
-            topics: string;
-        };
-        /** NotesIndexOut */
-        NotesIndexOut: {
-            /** Notes */
-            notes: components["schemas"]["NoteIndexOut"][];
-            /** Topics */
-            topics: components["schemas"]["TopicOut"][];
-        };
-        /** NotesKeepNoteBody */
-        NotesKeepNoteBody: {
-            /** Project */
-            project?: string | null;
-            /** Version */
-            version: number;
-        };
-        /** NotesMoveNoteBody */
-        NotesMoveNoteBody: {
-            /** Project */
-            project?: string | null;
-            /** Target Project */
-            target_project: string;
-            /** Topic */
-            topic?: string | null;
-            /** Version */
-            version: number;
-        };
-        /** NotesMoveTopicBody */
-        NotesMoveTopicBody: {
-            /** Parent */
-            parent?: string | null;
-            /** Project */
-            project?: string | null;
-            /** Version */
-            version: number;
-        };
-        /** NotesPromoteNoteBody */
-        NotesPromoteNoteBody: {
-            /** Fields */
-            fields?: {
-                [key: string]: unknown;
-            };
-            /** Project */
-            project?: string | null;
-            /** Type */
-            type: string;
-            /** Version */
-            version: number;
-        };
-        /** NotesPutNoteDocumentBody */
-        NotesPutNoteDocumentBody: {
-            /** Content */
-            content: string;
-            /** Project */
-            project?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** NotesReactivateTopicBody */
-        NotesReactivateTopicBody: {
-            /** Project */
-            project?: string | null;
-            /** Version */
-            version: number;
-        };
-        /** NotesRestoreNoteBody */
-        NotesRestoreNoteBody: {
-            /** Project */
-            project?: string | null;
-            /** Version */
-            version: number;
-        };
-        /** NotesSnoozeNoteBody */
-        NotesSnoozeNoteBody: {
-            /** Project */
-            project?: string | null;
-            /** Review At */
-            review_at?: string | null;
-            /** Trigger */
-            trigger?: {
-                [key: string]: unknown;
-            } | null;
-            /** Version */
-            version: number;
         };
         /**
          * NotesStateOut
@@ -2126,35 +2155,6 @@ export interface components {
             stamp: components["schemas"]["StampOut"] | null;
             /** State */
             state: string;
-            /** Version */
-            version: number;
-        };
-        /** NotesUpdateNoteBody */
-        NotesUpdateNoteBody: {
-            /** Fields */
-            fields: {
-                [key: string]: unknown;
-            };
-            /** Project */
-            project?: string | null;
-            /** Version */
-            version: number;
-        };
-        /** NotesUpdateNotesSettingsBody */
-        NotesUpdateNotesSettingsBody: {
-            /** Max Topic Depth */
-            max_topic_depth?: number | null;
-            /** Review Days */
-            review_days?: number | null;
-        };
-        /** NotesUpdateTopicBody */
-        NotesUpdateTopicBody: {
-            /** Fields */
-            fields: {
-                [key: string]: unknown;
-            };
-            /** Project */
-            project?: string | null;
             /** Version */
             version: number;
         };
@@ -2234,7 +2234,7 @@ export interface components {
         PromotedOut: {
             /** Item Uid */
             item_uid: string;
-            note: components["schemas"]["NoteOut"];
+            memo: components["schemas"]["MemoOut"];
         };
         /** RemoveResult */
         RemoveResult: {
@@ -2377,14 +2377,14 @@ export interface components {
             archived: boolean;
             /** Due At */
             due_at: string | null;
-            /** Due Notes */
-            due_notes: number;
+            /** Due Memos */
+            due_memos: number;
             /** Label */
             label: string;
             /** Name */
             name: string;
-            /** Open Notes */
-            open_notes: number;
+            /** Open Memos */
+            open_memos: number;
             /** Parent Uid */
             parent_uid: string | null;
             /** Project Uid */
@@ -3695,7 +3695,7 @@ export interface operations {
             };
         };
     };
-    notes_due_notes: {
+    memos_due_memos: {
         parameters: {
             query?: {
                 projects?: string | null;
@@ -3726,7 +3726,42 @@ export interface operations {
             };
         };
     };
-    notes_index: {
+    memos_decide_hint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemosDecideHintBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    memos_index: {
         parameters: {
             query?: {
                 projects?: string | null;
@@ -3745,7 +3780,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NotesIndexOut"];
+                    "application/json": components["schemas"]["MemosIndexOut"];
                 };
             };
             /** @description Client Error */
@@ -3759,7 +3794,7 @@ export interface operations {
             };
         };
     };
-    notes_index_lines: {
+    memos_index_lines: {
         parameters: {
             query?: {
                 projects?: string | null;
@@ -3778,7 +3813,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NotesIndexLines"];
+                    "application/json": components["schemas"]["MemosIndexLines"];
                 };
             };
             /** @description Client Error */
@@ -3792,7 +3827,7 @@ export interface operations {
             };
         };
     };
-    notes_demote_item: {
+    memos_demote_item: {
         parameters: {
             query?: never;
             header?: never;
@@ -3803,7 +3838,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesDemoteItemBody"];
+                "application/json": components["schemas"]["MemosDemoteItemBody"];
             };
         };
         responses: {
@@ -3827,7 +3862,7 @@ export interface operations {
             };
         };
     };
-    notes_list_item_notices: {
+    memos_list_item_hints: {
         parameters: {
             query?: {
                 project?: string | null;
@@ -3846,7 +3881,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteNoticeOut"][];
+                    "application/json": components["schemas"]["MemoHintOut"][];
                 };
             };
             /** @description Client Error */
@@ -3860,7 +3895,7 @@ export interface operations {
             };
         };
     };
-    notes_create_note: {
+    memos_create_memo: {
         parameters: {
             query?: never;
             header?: never;
@@ -3869,7 +3904,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesCreateNoteBody"];
+                "application/json": components["schemas"]["MemosCreateMemoBody"];
             };
         };
         responses: {
@@ -3879,7 +3914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */
@@ -3893,7 +3928,7 @@ export interface operations {
             };
         };
     };
-    notes_get_note: {
+    memos_get_memo: {
         parameters: {
             query?: {
                 project?: string | null;
@@ -3912,7 +3947,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */
@@ -3926,7 +3961,7 @@ export interface operations {
             };
         };
     };
-    notes_update_note: {
+    memos_update_memo: {
         parameters: {
             query?: never;
             header?: never;
@@ -3937,7 +3972,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesUpdateNoteBody"];
+                "application/json": components["schemas"]["MemosUpdateMemoBody"];
             };
         };
         responses: {
@@ -3947,7 +3982,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */
@@ -3961,7 +3996,7 @@ export interface operations {
             };
         };
     };
-    notes_list_note_documents: {
+    memos_list_memo_documents: {
         parameters: {
             query?: {
                 project?: string | null;
@@ -3994,7 +4029,7 @@ export interface operations {
             };
         };
     };
-    notes_get_note_document: {
+    memos_get_memo_document: {
         parameters: {
             query?: {
                 project?: string | null;
@@ -4028,7 +4063,7 @@ export interface operations {
             };
         };
     };
-    notes_put_note_document: {
+    memos_put_memo_document: {
         parameters: {
             query?: never;
             header?: never;
@@ -4040,7 +4075,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesPutNoteDocumentBody"];
+                "application/json": components["schemas"]["MemosPutMemoDocumentBody"];
             };
         };
         responses: {
@@ -4064,7 +4099,7 @@ export interface operations {
             };
         };
     };
-    notes_append_note_entry: {
+    memos_append_memo_entry: {
         parameters: {
             query?: never;
             header?: never;
@@ -4075,7 +4110,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesAppendNoteEntryBody"];
+                "application/json": components["schemas"]["MemosAppendMemoEntryBody"];
             };
         };
         responses: {
@@ -4099,7 +4134,7 @@ export interface operations {
             };
         };
     };
-    notes_finish_note: {
+    memos_finish_memo: {
         parameters: {
             query?: never;
             header?: never;
@@ -4110,7 +4145,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesFinishNoteBody"];
+                "application/json": components["schemas"]["MemosFinishMemoBody"];
             };
         };
         responses: {
@@ -4120,7 +4155,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */
@@ -4134,7 +4169,7 @@ export interface operations {
             };
         };
     };
-    notes_keep_note: {
+    memos_keep_memo: {
         parameters: {
             query?: never;
             header?: never;
@@ -4145,7 +4180,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesKeepNoteBody"];
+                "application/json": components["schemas"]["MemosKeepMemoBody"];
             };
         };
         responses: {
@@ -4155,7 +4190,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */
@@ -4169,7 +4204,7 @@ export interface operations {
             };
         };
     };
-    notes_move_note: {
+    memos_move_memo: {
         parameters: {
             query?: never;
             header?: never;
@@ -4180,7 +4215,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesMoveNoteBody"];
+                "application/json": components["schemas"]["MemosMoveMemoBody"];
             };
         };
         responses: {
@@ -4190,7 +4225,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */
@@ -4204,7 +4239,7 @@ export interface operations {
             };
         };
     };
-    notes_promote_note: {
+    memos_promote_memo: {
         parameters: {
             query?: never;
             header?: never;
@@ -4215,7 +4250,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesPromoteNoteBody"];
+                "application/json": components["schemas"]["MemosPromoteMemoBody"];
             };
         };
         responses: {
@@ -4239,7 +4274,7 @@ export interface operations {
             };
         };
     };
-    notes_restore_note: {
+    memos_restore_memo: {
         parameters: {
             query?: never;
             header?: never;
@@ -4250,7 +4285,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesRestoreNoteBody"];
+                "application/json": components["schemas"]["MemosRestoreMemoBody"];
             };
         };
         responses: {
@@ -4260,7 +4295,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */
@@ -4274,7 +4309,7 @@ export interface operations {
             };
         };
     };
-    notes_snooze_note: {
+    memos_snooze_memo: {
         parameters: {
             query?: never;
             header?: never;
@@ -4285,7 +4320,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesSnoozeNoteBody"];
+                "application/json": components["schemas"]["MemosSnoozeMemoBody"];
             };
         };
         responses: {
@@ -4295,7 +4330,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */
@@ -4309,7 +4344,7 @@ export interface operations {
             };
         };
     };
-    notes_add_trigger: {
+    memos_add_trigger: {
         parameters: {
             query?: never;
             header?: never;
@@ -4320,7 +4355,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesAddTriggerBody"];
+                "application/json": components["schemas"]["MemosAddTriggerBody"];
             };
         };
         responses: {
@@ -4330,7 +4365,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */
@@ -4344,42 +4379,7 @@ export interface operations {
             };
         };
     };
-    notes_decide_notice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                uid: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NotesDecideNoticeBody"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DecisionOut"];
-                };
-            };
-            /** @description Client Error */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorBody"];
-                };
-            };
-        };
-    };
-    notes_get_notes_settings: {
+    memos_get_memos_settings: {
         parameters: {
             query?: never;
             header?: never;
@@ -4408,7 +4408,7 @@ export interface operations {
             };
         };
     };
-    notes_update_notes_settings: {
+    memos_update_memos_settings: {
         parameters: {
             query?: never;
             header?: never;
@@ -4417,7 +4417,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesUpdateNotesSettingsBody"];
+                "application/json": components["schemas"]["MemosUpdateMemosSettingsBody"];
             };
         };
         responses: {
@@ -4441,7 +4441,7 @@ export interface operations {
             };
         };
     };
-    notes_create_topic: {
+    memos_create_topic: {
         parameters: {
             query?: never;
             header?: never;
@@ -4450,7 +4450,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesCreateTopicBody"];
+                "application/json": components["schemas"]["MemosCreateTopicBody"];
             };
         };
         responses: {
@@ -4474,7 +4474,7 @@ export interface operations {
             };
         };
     };
-    notes_update_topic: {
+    memos_update_topic: {
         parameters: {
             query?: never;
             header?: never;
@@ -4485,7 +4485,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesUpdateTopicBody"];
+                "application/json": components["schemas"]["MemosUpdateTopicBody"];
             };
         };
         responses: {
@@ -4509,7 +4509,7 @@ export interface operations {
             };
         };
     };
-    notes_archive_topic: {
+    memos_archive_topic: {
         parameters: {
             query?: never;
             header?: never;
@@ -4520,7 +4520,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesArchiveTopicBody"];
+                "application/json": components["schemas"]["MemosArchiveTopicBody"];
             };
         };
         responses: {
@@ -4544,7 +4544,7 @@ export interface operations {
             };
         };
     };
-    notes_topic_content: {
+    memos_topic_content: {
         parameters: {
             query?: {
                 project?: string | null;
@@ -4577,7 +4577,7 @@ export interface operations {
             };
         };
     };
-    notes_delete_topic: {
+    memos_delete_topic: {
         parameters: {
             query?: never;
             header?: never;
@@ -4588,7 +4588,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesDeleteTopicBody"];
+                "application/json": components["schemas"]["MemosDeleteTopicBody"];
             };
         };
         responses: {
@@ -4612,7 +4612,7 @@ export interface operations {
             };
         };
     };
-    notes_move_topic: {
+    memos_move_topic: {
         parameters: {
             query?: never;
             header?: never;
@@ -4623,7 +4623,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesMoveTopicBody"];
+                "application/json": components["schemas"]["MemosMoveTopicBody"];
             };
         };
         responses: {
@@ -4647,7 +4647,7 @@ export interface operations {
             };
         };
     };
-    notes_reactivate_topic: {
+    memos_reactivate_topic: {
         parameters: {
             query?: never;
             header?: never;
@@ -4658,7 +4658,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NotesReactivateTopicBody"];
+                "application/json": components["schemas"]["MemosReactivateTopicBody"];
             };
         };
         responses: {
@@ -4682,7 +4682,7 @@ export interface operations {
             };
         };
     };
-    notes_remove_trigger: {
+    memos_remove_trigger: {
         parameters: {
             query?: never;
             header?: never;
@@ -4699,7 +4699,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOut"];
+                    "application/json": components["schemas"]["MemoOut"];
                 };
             };
             /** @description Client Error */

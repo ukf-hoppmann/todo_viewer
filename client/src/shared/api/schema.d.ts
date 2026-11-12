@@ -14,7 +14,7 @@ export interface paths {
         /** Wecker als Liste (nach Zeitpunkt); `due_only` zeigt nur die, die sich gemeldet haben. Projekte komma-getrennt */
         get: operations["alarms_list_alarms"];
         put?: never;
-        /** Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente (`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Mit `repeat` (`none`, `daily`, `weekly`, `monthly`, `yearly`) wiederholt er sich; die Termine rechnen in der Zeitzone des Servers. Für „Erinner mich“; „Merk dir“ ist eine Note */
+        /** Stellt einen Wecker: er meldet sich zum Zeitpunkt `at`, solange der Viewer läuft. Er erinnert an Elemente (`targets`, dann erlischt er, wenn keins mehr offen ist) oder ist frei mit `text`. Mit `repeat` (`none`, `daily`, `weekly`, `monthly`, `yearly`) wiederholt er sich; die Termine rechnen in der Zeitzone des Servers. Für „Erinner mich“; „Merk dir“ ist ein Memo */
         post: operations["alarms_create_alarm"];
         delete?: never;
         options?: never;

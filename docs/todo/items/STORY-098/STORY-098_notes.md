@@ -2,13 +2,13 @@
 
 ## State
 
-- Goal/Status: 2026-11-12: Eintragstyp Note heißt Memo, Notice heißt Hint; Server, Client, Tests und Neubau-Doku sind im Worktree umgestellt und getestet, die Migration lief gegen eine Kopie der echten Datenbank. Nicht bereitgestellt, nicht gemergt.
-- Next step: 2026-11-12: Name des Hinweises klären; mergen, Version veröffentlichen; Umstellung mit Backup, Neustart, Sync und Harness durch den Owner.
-- Open: 2026-11-12: Name Hint oder anders; Reihenfolge der Umstellung; alte Doku des alten Viewers.
-- Decided: 2026-11-12: Memo statt Note, Hint statt Notice, volle Tiefe inkl. Bestand; API-Pfade nur mit neuem Präfix; Dokumentart notes bleibt; Texte alter Items bleiben.
+- Goal/Status: 2026-11-12: Eintragstyp Note heißt Memo, Notice heißt Hint; Server, Client, Tests und Neubau-Doku sind umgestellt, getestet, als v0.10.0 gemergt. Nicht bereitgestellt.
+- Next step: 2026-11-12: Umstellung der Installation durch den Owner (Backup, Neustart, Sync, Ordner docs/todo/notes entfernen, Harness).
+- Open: 2026-11-12: Reihenfolge der Umstellung; alte Doku des alten Viewers; Name Hint nur bei Überschneidung in der Praxis ändern.
+- Decided: 2026-11-12: Memo statt Note, Hint statt Notice (bleibt vorerst), volle Tiefe inkl. Bestand; API-Pfade nur mit neuem Präfix; Dokumentart notes bleibt; Texte alter Items bleiben.
 - References: STORY-077, STORY-078, STORY-079, docs/techdocs/interfaces.md (Zuordnung der MCP-Tools)
 
-State confirmed after entry 2026-11-12 — Umsetzung im Worktree (Server, Client, Doku) (56b227ebaeb9)
+State confirmed after entry 2026-11-12 — Name des Hinweises: Hint bleibt vorerst (7afd33f32ed7)
 
 ## 2026-11-12 — Namensklärung Note / Memo / Hint
 
@@ -52,3 +52,18 @@ State confirmed after entry 2026-11-12 — Umsetzung im Worktree (Server, Client
 - Name des Hinweises: Hint oder ein anderes Wort (Überschneidung mit den Hints des Backlogs).
 - Reihenfolge der Umstellung: Veröffentlichung, Backup, Neustart des Containers (Migration läuft beim Start), Sync, dann Ordner `docs/todo/notes/` im Repository entfernen und Harness umstellen.
 - Alte Doku des alten Viewers (README, techdocs/architecture, operations, configuration, alter Teil von interfaces) nennt Notes weiter; sie beschreibt `src_old`.
+
+## 2026-11-12 — Name des Hinweises: Hint bleibt vorerst
+
+### Discussed
+
+- Der Memo-Hint (bisher Notice) ist ein gespeicherter Eintrag, der auf eine Entscheidung des Owners wartet. Die Hints im Backlog sind flüchtige, weiche Warnungen in den API-Antworten, vor allem für die AI. Beide erzeugt der Viewer selbst; die Überschneidung wirkt vor allem für die AI und im Code.
+- Alternativen: Advisory (eindeutig, etwas sperrig), Heads-up (umständlich im Code), Alert (kollidiert mit Alarmen).
+
+### Decided
+
+- Hint bleibt vorerst. Der Owner ändert es, sobald sich zeigt, dass die Überschneidung in der Praxis stört.
+
+### Open
+
+- Falls geändert wird: Vorschlag Advisory (deutsch weiter Hinweis); Austausch in Server, Client, Doku und Tabelle `memos_hints` per Migration.

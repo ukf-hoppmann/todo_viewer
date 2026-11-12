@@ -92,6 +92,11 @@ def _fill_old_database(database: SqliteDatabase) -> None:
             "INSERT INTO notes_settings(key, value) VALUES ('review_days', '45')",
         ):
             c.exec_driver_sql(statement)
+        for uid in ("n1", "n1/notes", "n2", "t1", "s1", "s1/notes"):
+            c.execute(
+                text("INSERT INTO core_sync_state(project_uid, uid, hash, synced_at) VALUES (:p, :u, 'h', :n)"),
+                {"p": project, "u": uid, "n": NOW},
+            )
         c.execute(
             text("INSERT INTO core_ui_state(owner, document, updated_at) VALUES ('notes', :d, :n)"),
             {"d": json.dumps({"extended": True}), "n": NOW},
@@ -160,6 +165,17 @@ def test_the_register_knows_the_memos_under_their_new_names(runner: MigrationRun
         "TOPIC-001",
     ]
     assert _rows(database, "SELECT owner FROM core_ui_state") == [("memos",)]
+
+
+def test_the_sync_forgets_the_state_of_memos_and_topics_but_keeps_the_rest(
+    runner: MigrationRunner, database: SqliteDatabase
+) -> None:
+    runner.run(_old_defs())
+    _fill_old_database(database)
+
+    runner.run(_new_defs())
+
+    assert _rows(database, "SELECT uid FROM core_sync_state ORDER BY uid") == [("s1",), ("s1/notes",)]
 
 
 def test_a_new_database_gets_the_memo_tables_directly(runner: MigrationRunner, database: SqliteDatabase) -> None:

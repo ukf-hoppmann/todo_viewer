@@ -129,6 +129,10 @@ def _v3(connection: Any) -> None:
         "UPDATE workspace_label_history SET label = 'MEMO-' || substr(label, 6) WHERE label LIKE 'NOTE-%'",
         "DELETE FROM workspace_element_kinds WHERE kind = 'note'",
         "UPDATE workspace_element_kinds SET owner = 'memos' WHERE owner = 'notes'",
+        # Sync: Die Einträge heißen jetzt anders (Label, Ordner). Ohne gemerkten Stand gelten sie beim nächsten Sync als
+        # neu in der Datenbank und werden in die Dateien geschrieben, statt als Löschung in den Dateien zu gelten.
+        "DELETE FROM core_sync_state WHERE uid IN (SELECT uid FROM memos_memos UNION SELECT uid FROM memos_topics) "
+        "OR EXISTS (SELECT 1 FROM memos_memos m WHERE core_sync_state.uid LIKE m.uid || '/%')",
         # Oberflächenzustand des Plugins (Besitzer = Plugin-ID)
         "UPDATE core_ui_state SET owner = 'memos' WHERE owner = 'notes'",
     ):

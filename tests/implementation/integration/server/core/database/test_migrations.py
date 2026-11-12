@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 from migration_helpers import mig, ordered, plugin, tables, versions
 from sqlalchemy import text
+from viewer.core.application.plugin import PluginDefinition
 from viewer.core.domain.errors import DatabaseTooNew, MigrationFailed, SchemaViolation
 from viewer.core.domain.plugin import Migration
 from viewer.core.infrastructure.database import MigrationRunner, SqliteDatabase
@@ -144,7 +145,7 @@ def test_migrations_table_is_created_by_the_runner_and_visible(
         assert tx.connection.execute(text("SELECT version FROM core_migrations WHERE owner='core'")).scalar() == 2
 
 
-def _renamed_plugin():  # type: ignore[no-untyped-def]
+def _renamed_plugin() -> PluginDefinition:
     """Neue Tabellen gleich unter dem neuen Namen (Version 1); wer vom alten Besitzer kommt, benennt in Version 3 um."""
 
     def adopt(connection: Any) -> None:

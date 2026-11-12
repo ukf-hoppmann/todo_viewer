@@ -7,7 +7,6 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import text
-
 from viewer.core.domain.plugin import Migration
 
 STATUSES = ("waiting", "snoozed", "done", "dropped", "promoted")

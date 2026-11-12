@@ -1,0 +1,202 @@
+{
+	"tab": {
+		"memos": "Memos"
+	},
+	"create": {
+		"memo": "Neues Memo",
+		"topic": "Neues Topic"
+	},
+	"filter": {
+		"status": "Status"
+	},
+	"status": {
+		"waiting": "Wartet",
+		"due": "Fällig",
+		"snoozed": "Zurückgestellt",
+		"done": "Erledigt",
+		"dropped": "Verworfen",
+		"promoted": "Befördert"
+	},
+	"empty": "Keine Memos in den gewählten Projekten und Filtern.",
+	"collapse": {
+		"collapse": "Topics zuklappen",
+		"expand": "Topics aufklappen"
+	},
+	"marking": "Erweiterte Markierung",
+	"archivedTopics": "Archivierte Topics",
+	"project": {
+		"newMemo": "Neues Memo",
+		"newTopic": "Neues Topic"
+	},
+	"field": {
+		"status": "Status",
+		"topic": "Topic",
+		"reviewAt": "Prüf-Datum",
+		"body": "Langtext",
+		"summary": "Kurzfassung",
+		"name": "Name",
+		"dueAt": "Termin",
+		"documents": "Dokumente",
+		"links": "Verknüpfungen",
+		"reason": "Fällig wegen",
+		"triggers": "Auslöser",
+		"hints": "Hinweise"
+	},
+	"detail": {
+		"failed": "Das Memo lässt sich nicht laden.",
+		"deleted": "im Papierkorb",
+		"archivedWithTopic": "mit dem Topic archiviert",
+		"noTopic": "Ohne Topic"
+	},
+	"action": {
+		"edit": "Bearbeiten",
+		"done": "Erledigen",
+		"dropped": "Verwerfen",
+		"snooze": "Zurückstellen",
+		"keep": "Behalten",
+		"delete": "In den Papierkorb",
+		"restore": "Zurückholen",
+		"large": "Großansicht",
+		"promote": "Zu Item befördern …"
+	},
+	"form": {
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"close": "Schließen",
+		"reload": "Aktuellen Stand laden",
+		"conflict": "Das Memo wurde inzwischen geändert.",
+		"reviewHint": "Ohne Datum: heute plus Prüf-Intervall.",
+		"editTitle": "{{label}} bearbeiten",
+		"createTitle": "Memo anlegen"
+	},
+	"topic": {
+		"editTitle": "{{label}} bearbeiten",
+		"createTitle": "Topic anlegen",
+		"newMemo": "Neues Memo in diesem Topic",
+		"newSubtopic": "Neues Unter-Topic",
+		"edit": "Umbenennen / Termin",
+		"move": "Verschieben …",
+		"archive": "Archivieren …",
+		"delete": "Löschen …",
+		"reactivate": "Wieder aktivieren"
+	},
+	"move": {
+		"title": "{{label}} verschieben",
+		"parent": "Neues Parent-Topic",
+		"noTopicHint": "Leer lassen für „Ohne Topic“ (direkt am Projekt)."
+	},
+	"choice": {
+		"deleteTitle": "{{label}} löschen",
+		"archiveTitle": "{{label}} archivieren",
+		"deleteEmpty": "Das Topic ist leer und kommt in den Papierkorb.",
+		"archiveEmpty": "Das Topic ist leer und wird archiviert.",
+		"counts": "Das Topic enthält {{active}} aktive und {{archived}} archivierte Memos sowie {{topics}} Unter-Topics.",
+		"keepArchived": "Archivierte Memos behalten (sie wandern ins Topic „Archiviert“ des Projekts)",
+		"moveActive": "Aktive Memos verschieben",
+		"target": "Zieltopic (leer: ohne Topic)",
+		"deleteRest": "Was nicht gewählt ist, kommt mit dem Topic in den Papierkorb.",
+		"archiveRest": "Was nicht gewählt ist, wird mit dem Topic archiviert.",
+		"ok": "OK"
+	},
+	"snooze": {
+		"title": "{{label}} zurückstellen",
+		"until": "Bis",
+		"hint": "Ohne Datum: heute plus Prüf-Intervall."
+	},
+	"documents": {
+		"none": "Noch keine Notizen oder Specs.",
+		"addEntry": "Notiz-Eintrag anlegen",
+		"addSpec": "Spec anlegen",
+		"topic": "Thema",
+		"discussed": "Besprochen",
+		"decided": "Entschieden",
+		"open": "Offen",
+		"onePerLine": "Ein Stichpunkt pro Zeile",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md oder {{label}}_spec_<thema>.md",
+		"large": "Großansicht",
+		"conflict": "Das Dokument wurde inzwischen geändert.",
+		"showCurrent": "Aktuellen Stand zeigen",
+		"saveAnyway": "Trotzdem speichern",
+		"currentState": "aktueller Stand",
+		"toc": "Inhaltsverzeichnis"
+	},
+	"due": {
+		"reason": {
+			"trigger": "Auslöser",
+			"hint": "Hinweis",
+			"topic_due": "Termin",
+			"review_expired": "Prüfung"
+		}
+	},
+	"settings": {
+		"title": "Memos",
+		"reviewDays": "Prüf-Intervall (Tage)",
+		"reviewDaysHint": "Nach so vielen Tagen kommt ein neues oder behaltenes Memo wieder auf den Tisch.",
+		"maxDepth": "Größte Topic-Tiefe",
+		"maxDepthHint": "Bereits tiefer liegende Topics bleiben, wie sie sind.",
+		"saved": "Gespeichert."
+	},
+	"reason": {
+		"trigger": "ein Auslöser ist eingetreten",
+		"hint": "ein Hinweis wartet auf eine Entscheidung",
+		"topic_due": "der Termin des Topics ist erreicht",
+		"review_expired": "das Prüfdatum ist erreicht"
+	},
+	"itemStatus": {
+		"In progress": "In Arbeit",
+		"Awaiting confirmation": "Wartet auf Bestätigung",
+		"Completed": "Abgeschlossen",
+		"Rejected": "Abgelehnt"
+	},
+	"triggers": {
+		"none": "Keine Auslöser. Das Memo meldet sich zum Prüfdatum.",
+		"add": "Auslöser hinzufügen",
+		"addTitle": "Auslöser für {{label}}",
+		"remove": "Auslöser entfernen",
+		"kind": "Art",
+		"kinds": {
+			"event": "Ein Item erreicht einen Status",
+			"topic_date": "Der Termin des Topics ist erreicht"
+		},
+		"item": "Item",
+		"status": "Status",
+		"searchHint": "Label oder Titel des Items tippen",
+		"event": "{{item}} erreicht „{{status}}“",
+		"topicDate": "Der Termin des Topics ist erreicht",
+		"arrived": "eingetreten",
+		"alreadyMet": "schon erreicht"
+	},
+	"hints": {
+		"none": "Keine offenen Hinweise.",
+		"kind": {
+			"item_completed": "Das verknüpfte Item {{item}} ist abgeschlossen.",
+			"item_rejected": "Das verknüpfte Item {{item}} wurde abgelehnt.",
+			"item_deleted": "Das verknüpfte Item {{item}} liegt im Papierkorb.",
+			"item_retyped": "Das verknüpfte Item {{item}} hat einen neuen Typ und ein neues Label.",
+			"memo_dropped": "Das verweisende Memo {{memo}} wurde verworfen.",
+			"memo_promoted": "Das verweisende Memo {{memo}} wurde befördert."
+		},
+		"decision": {
+			"keep": "Behalten",
+			"detach": "Verknüpfung lösen",
+			"drop": "Memo verwerfen",
+			"promote": "Befördern …",
+			"acknowledge": "Zur Kenntnis genommen"
+		}
+	},
+	"promote": {
+		"title": "{{label}} zu einem Item befördern",
+		"type": "Typ",
+		"itemTitle": "Titel des Items",
+		"area": "Bereich",
+		"goal": "Ziel",
+		"criteria": "Fertigstellungskriterien",
+		"hint": "Langtext, Notizen und Specs wandern an das Item; das Memo ist danach befördert und mit dem Item verknüpft.",
+		"confirm": "Befördern"
+	},
+	"demote": {
+		"button": "Zum Memo zurückstufen",
+		"done": "Zurückgestuft zum Memo {{label}}."
+	}
+}

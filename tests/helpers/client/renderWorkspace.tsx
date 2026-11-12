@@ -9,8 +9,8 @@ import alarmsDe from "../../../client/src/plugins/alarms/locales/de.json";
 import alarmsEn from "../../../client/src/plugins/alarms/locales/en.json";
 import backlogDe from "../../../client/src/plugins/backlog/locales/de.json";
 import backlogEn from "../../../client/src/plugins/backlog/locales/en.json";
-import notesDe from "../../../client/src/plugins/notes/locales/de.json";
-import notesEn from "../../../client/src/plugins/notes/locales/en.json";
+import memosDe from "../../../client/src/plugins/memos/locales/de.json";
+import memosEn from "../../../client/src/plugins/memos/locales/en.json";
 import de from "../../../client/src/plugins/workspace/locales/de.json";
 import en from "../../../client/src/plugins/workspace/locales/en.json";
 import { fakeWorkspaceBackend } from "./fakeWorkspaceBackend";
@@ -41,8 +41,8 @@ export async function renderWorkspace(
 	i18n.addResourceBundle("en", "backlog", backlogEn);
 	i18n.addResourceBundle("de", "alarms", alarmsDe);
 	i18n.addResourceBundle("en", "alarms", alarmsEn);
-	i18n.addResourceBundle("de", "notes", notesDe);
-	i18n.addResourceBundle("en", "notes", notesEn);
+	i18n.addResourceBundle("de", "memos", memosDe);
+	i18n.addResourceBundle("en", "memos", memosEn);
 	const active: ActivePlugin[] = [];
 	for (const type of options.createTypes ?? []) {
 		i18n.addResourceBundle("de", type.ownerId, { create: { [type.name]: type.title } });

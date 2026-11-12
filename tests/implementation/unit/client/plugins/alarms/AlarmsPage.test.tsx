@@ -12,15 +12,15 @@ import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 const projects = [project("p0", "Allgemein", 0, { builtin: true }), project("p1", "Viewer", 1)];
 const story = target("s1", { label: "STORY-001", title: "Eine Story" });
-const note = target("n1", { label: "NOTE-001", title: "Eine Note", kind: "note", open: false });
+const memo = target("n1", { label: "MEMO-001", title: "Ein Memo", kind: "memo", open: false });
 const alarms = [
 	alarm("wait", { at: "2026-10-22T07:00:00Z", targets: [story] }),
 	alarm("fired", { status: "Due", version: 3 }),
 	alarm("snoozed", { status: "Snoozed", snoozed_until: "2026-10-25T07:00:00Z" }),
 	alarm("done", { status: "Done", version: 2, done_at: "2026-10-18T09:00:00Z", purge_at: "2026-10-19T09:00:00Z" }),
-	alarm("foreign", { target_text: "Misc:NOTE-003", at: "2026-10-23T07:00:00Z" }),
+	alarm("foreign", { target_text: "Misc:MEMO-003", at: "2026-10-23T07:00:00Z" }),
 	alarm("other", { project_uid: "p0" }),
-	alarm("multi", { text: "Sachen nachfragen", at: "2026-10-24T07:00:00Z", targets: [story, note] }),
+	alarm("multi", { text: "Sachen nachfragen", at: "2026-10-24T07:00:00Z", targets: [story, memo] }),
 	alarm("about", { text: "", at: "2026-10-24T08:00:00Z", targets: [story] }),
 ];
 
@@ -40,9 +40,9 @@ function StoryView() {
 	return <p data-testid="test.story-view">{`Story ${uid}`}</p>;
 }
 
-function NoteView() {
+function MemoView() {
 	const { uid } = useShownElement();
-	return <p data-testid="test.note-view">{`Note ${uid}`}</p>;
+	return <p data-testid="test.memo-view">{`Memo ${uid}`}</p>;
 }
 
 async function renderPage(options: Parameters<typeof fakeAlarmsBackend>[0] = {}) {
@@ -51,7 +51,7 @@ async function renderPage(options: Parameters<typeof fakeAlarmsBackend>[0] = {})
 		backend,
 		widgets: [
 			{ ownerId: "backlog", slot: "workspace.element-detail", name: "story", component: StoryView },
-			{ ownerId: "notes", slot: "workspace.element-detail", name: "note", component: NoteView },
+			{ ownerId: "memos", slot: "workspace.element-detail", name: "memo", component: MemoView },
 		],
 	});
 	return backend;
@@ -211,7 +211,7 @@ describe("AlarmsPage: the detail of a reminder", () => {
 		expect(within(detail).getByTestId("test.story-view")).toBeTruthy();
 
 		fireEvent.click(within(detail).getByTestId(ids.targetCard("n1")));
-		expect((await within(detail).findByTestId("test.note-view")).textContent).toBe("Note n1");
+		expect((await within(detail).findByTestId("test.memo-view")).textContent).toBe("Memo n1");
 		expect(within(detail).queryByTestId("test.story-view")).toBeNull();
 	});
 

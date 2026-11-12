@@ -38,7 +38,7 @@ describe("heading", () => {
 	it("is the text, or the title of the first element of a reminder without text", () => {
 		expect(heading(alarm("a", { text: "Telefonieren" }))).toBe("Telefonieren");
 		expect(heading(alarm("a", { text: "", targets: [target("n10", { title: "Note zehn" }), target("s")] }))).toBe("Note zehn");
-		expect(heading(alarm("a", { text: "", target_text: "Misc:NOTE-003" }))).toBe("Misc:NOTE-003");
+		expect(heading(alarm("a", { text: "", target_text: "Misc:MEMO-003" }))).toBe("Misc:MEMO-003");
 	});
 });
 
@@ -65,8 +65,8 @@ describe("time inputs", () => {
 describe("notificationBody", () => {
 	it("is the heading with the labels of the elements", () => {
 		expect(notificationBody(alarm("a", { text: "Anrufen" }))).toBe("Anrufen");
-		expect(notificationBody(alarm("a", { text: "Nachfragen", targets: [target("story-001"), target("note-002")] }))).toBe("Nachfragen (STORY-001, NOTE-002)");
-		expect(notificationBody(alarm("a", { text: "", targets: [target("note-010", { title: "Note zehn" })] }))).toBe("Note zehn (NOTE-010)");
+		expect(notificationBody(alarm("a", { text: "Nachfragen", targets: [target("story-001"), target("memo-002")] }))).toBe("Nachfragen (STORY-001, MEMO-002)");
+		expect(notificationBody(alarm("a", { text: "", targets: [target("memo-010", { title: "Memo zehn" })] }))).toBe("Memo zehn (MEMO-010)");
 	});
 });
 

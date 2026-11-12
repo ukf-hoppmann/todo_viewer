@@ -1,4 +1,4 @@
-"""Dokumente einer Note: Namen, Art und Format des datierten Notiz-Eintrags."""
+"""Dokumente eines Memos: Namen, Art und Format des datierten Notiz-Eintrags."""
 
 from __future__ import annotations
 

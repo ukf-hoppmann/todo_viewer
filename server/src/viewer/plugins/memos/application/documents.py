@@ -1,4 +1,4 @@
-"""Dokumente einer Note: Notizen und Specs."""
+"""Dokumente eines Memos: Notizen und Specs."""
 
 from __future__ import annotations
 

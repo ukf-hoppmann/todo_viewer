@@ -599,7 +599,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Die Dokumente einer Note (Name, Art, Version) */
+        /** Die Dokumente eines Memos (Name, Art, Version) */
         get: operations["memos_list_memo_documents"];
         put?: never;
         post?: never;
@@ -616,7 +616,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Ein Dokument einer Note mit Inhalt und Version */
+        /** Ein Dokument eines Memos mit Inhalt und Version */
         get: operations["memos_get_memo_document"];
         /** Ersetzt ein Dokument in `version` oder legt ein neues an (<LABEL>_notes.md, <LABEL>_spec[_<thema>].md) */
         put: operations["memos_put_memo_document"];

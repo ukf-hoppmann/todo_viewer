@@ -855,7 +855,7 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "list_memo_documents",
-        "Die Dokumente einer Note (Name, Art, Version)",
+        "Die Dokumente eines Memos (Name, Art, Version)",
         "read",
         ListMemoDocuments,
         list[DocumentInfo],
@@ -864,7 +864,7 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "get_memo_document",
-        "Ein Dokument einer Note mit Inhalt und Version",
+        "Ein Dokument eines Memos mit Inhalt und Version",
         "read",
         GetMemoDocument,
         DocumentOut,

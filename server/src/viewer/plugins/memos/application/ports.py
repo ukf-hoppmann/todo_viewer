@@ -61,7 +61,7 @@ class TopicRepository(Protocol):
 
 @dataclass(frozen=True)
 class Document:
-    """Ein Dokument einer Note; `revision` ist seine Version."""
+    """Ein Dokument eines Memos; `revision` ist seine Version."""
 
     memo_uid: str
     name: str

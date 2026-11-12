@@ -1,4 +1,4 @@
-# NOTE-002
+# MEMO-002
 Uid: a687e6a8-8ba5-4c2c-8091-72f4753b0f5d
 Summary: Sammelstelle für Ideen und Anforderungen zum Rewrite (EPIC-007)
 Status: waiting

@@ -158,13 +158,13 @@ class HarnessConfig:
     def enabled(self, module: str) -> bool:
         return self.modules.get(module, False)
 
-    def notes_enabled(self) -> bool:
-        """Notes are part of the todo module: in the ToDo-Viewer (api) or as files below the backlog folder (files)."""
+    def memos_enabled(self) -> bool:
+        """Memos are part of the todo module: in the ToDo-Viewer (api) or as files below the backlog folder (files)."""
         return self.enabled("todo")
 
-    def viewer_notes_enabled(self) -> bool:
-        """The ToDo-Viewer's notes and alarms (notes_api.py, alarms_api.py) need the API backend."""
-        return self.notes_enabled() and self.todo_backend == "api"
+    def viewer_memos_enabled(self) -> bool:
+        """The ToDo-Viewer's memos and alarms (memos_api.py, alarms_api.py) need the API backend."""
+        return self.memos_enabled() and self.todo_backend == "api"
 
     def part_enabled(self, part: str) -> bool:
         return self.enabled("development") and self.development_parts.get(part, True)
@@ -295,7 +295,7 @@ def parse_config(data: dict[str, Any], *, subproject: bool = False) -> HarnessCo
         for name, value in raw_modules.items():
             if name == "notes":
                 errors.append(
-                    "unknown module 'notes': notes are part of todo now (active with todo and "
+                    "unknown module 'notes': memos are part of todo now (active with todo and "
                     "todo.backend = \"api\"); remove modules.notes"
                 )
             elif name not in KNOWN_MODULES:

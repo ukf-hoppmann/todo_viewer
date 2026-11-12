@@ -6,10 +6,10 @@ from pathlib import PurePath
 
 from harness_config import ConfigError, project_root
 from projects import load_projects
-from notes_format import NOTES_DIR
+from memos_format import MEMOS_DIR
 from state import (
     dirty_marker,
-    notes_folder_marker,
+    memos_folder_marker,
     read_changed_notes,
     edit_notes_marks,
     read_names,
@@ -41,8 +41,8 @@ def main() -> int:
         # The marker lists the projects whose backlog changed in this session.
         marker = dirty_marker(session_id)
         write_names(marker, read_names(marker) | {project.name})
-        if is_notes_folder_file(relative.relative_to(project.config.todo_path)):
-            folder_marker = notes_folder_marker(session_id)
+        if is_memos_folder_file(relative.relative_to(project.config.todo_path)):
+            folder_marker = memos_folder_marker(session_id)
             write_names(folder_marker, read_names(folder_marker) | {project.name})
         if is_notes_file(relative.relative_to(project.config.todo_path)):
             notes = read_changed_notes(session_id) | {(project.name, relative.as_posix())}
@@ -62,9 +62,9 @@ def _restart_count(session_id: str, project: str, identifier: str) -> None:
         pass
 
 
-def is_notes_folder_file(path: PurePath) -> bool:
-    """A file of the notes folder (`notes/…`) below the backlog folder: notes kept as files, not item notes."""
-    return len(path.parts) >= 2 and path.parts[0] == NOTES_DIR
+def is_memos_folder_file(path: PurePath) -> bool:
+    """A file of the memos folder (`memos/…`) below the backlog folder: memos kept as files, not item notes."""
+    return len(path.parts) >= 2 and path.parts[0] == MEMOS_DIR
 
 
 def is_notes_file(path: PurePath) -> bool:

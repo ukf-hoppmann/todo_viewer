@@ -8,13 +8,13 @@ from pathlib import Path
 import notes_head
 from backlog import BacklogItem, validate_backlog
 from harness_config import ROOT_PROJECT, ConfigError, project_root
-from notes_format import NOTES_DIR, check_notes_folder
+from memos_format import MEMOS_DIR, check_memos_folder
 from notes_hint import child_in_progress_hint
 from projects import load_projects
 from state import (
     delivered_notices_file,
     dirty_marker,
-    notes_folder_marker,
+    memos_folder_marker,
     read_changed_notes,
     read_names,
     write_changed_notes,
@@ -101,14 +101,14 @@ def _check_notes(project, relatives: set[str], items: list[BacklogItem]) -> tupl
     return errors, notices, again
 
 
-def _check_notes_folder(project) -> tuple[list[str], list[str]]:
-    """Errors and notices for the notes kept as files (`<backlog folder>/notes/`), format version 2."""
-    findings = check_notes_folder(project.root / project.config.todo_path / NOTES_DIR)
+def _check_memos_folder(project) -> tuple[list[str], list[str]]:
+    """Errors and notices for the memos kept as files (`<backlog folder>/memos/`), format version 2."""
+    findings = check_memos_folder(project.root / project.config.todo_path / MEMOS_DIR)
     errors = [str(f) for f in findings if f.error]
     if errors:
         errors.append(
-            f"{NOTES_DIR}/: fix the lines above (format: skills/todo/notes-files.md; "
-            f"check again with notes_files.py {project.path / project.config.todo_path} --check)"
+            f"{MEMOS_DIR}/: fix the lines above (format: skills/todo/memos-files.md; "
+            f"check again with memos_files.py {project.path / project.config.todo_path} --check)"
         )
     return errors, [str(f) for f in findings if not f.error]
 
@@ -131,7 +131,7 @@ def main() -> int:
         return 0
     delivered = _load_delivered(session_id)
     changed_notes = read_changed_notes(session_id)
-    folder_marker = notes_folder_marker(session_id)
+    folder_marker = memos_folder_marker(session_id)
     folder_changed = read_names(folder_marker)
     folder_again: set[str] = set()
     still_dirty: set[str] = set()
@@ -144,7 +144,7 @@ def main() -> int:
         report = validate_backlog(project.root / project.config.todo_path)
         notes_errors, notes_notices, again = _check_notes(project, {r for p, r in changed_notes if p == name}, report.items)
         notes_again |= {(name, relative) for relative in again}
-        folder_errors, folder_notices = _check_notes_folder(project) if name in folder_changed else ([], [])
+        folder_errors, folder_notices = _check_memos_folder(project) if name in folder_changed else ([], [])
         if folder_errors:
             folder_again.add(name)
         errors = report.errors + notes_errors + folder_errors

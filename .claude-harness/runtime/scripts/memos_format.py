@@ -1,9 +1,9 @@
-"""Format check of the notes folder kept as files (todo module, backend files).
+"""Format check of the memos folder kept as files (todo module, backend files).
 
 The format is the ToDo-Viewer's file format version 2; the rules and the error codes follow the viewer's decoder
-(`plugins/notes/infrastructure/mirror/decode.py` and `syntax.py`), which aborts the whole sync on the first error. This
+(`plugins/memos/infrastructure/mirror/decode.py` and `syntax.py`), which aborts the whole sync on the first error. This
 reports the first error of each file plus the errors across files, so a typo is found when it is written. The examples
-the two sides share are in tests/fixtures/notes-format. Pure functions; nothing is written.
+the two sides share are in tests/fixtures/memos-format. Pure functions; nothing is written.
 """
 
 from __future__ import annotations
@@ -13,13 +13,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-NOTES_DIR = "notes"
+MEMOS_DIR = "memos"
 TOPICS_FILE = "topics.md"
 COUNTERS_FILE = "counters.md"
 
-# NOTE-001.md and new-<name>.md; documents are NOTE-001_notes.md, NOTE-001_spec.md, new-<name>_spec_<topic>.md.
-_NOTE_FILE = re.compile(r"^(?P<stem>NOTE-[0-9]+|new-[A-Za-z0-9-]+)\.md$")
-_DOCUMENT_FILE = re.compile(r"^(?P<stem>NOTE-[0-9]+|new-[A-Za-z0-9-]+)_(?P<suffix>notes|spec(?:_[A-Za-z0-9-]+)?)\.md$")
+# MEMO-001.md and new-<name>.md; documents are MEMO-001_notes.md, MEMO-001_spec.md, new-<name>_spec_<topic>.md.
+_MEMO_FILE = re.compile(r"^(?P<stem>MEMO-[0-9]+|new-[A-Za-z0-9-]+)\.md$")
+_DOCUMENT_FILE = re.compile(r"^(?P<stem>MEMO-[0-9]+|new-[A-Za-z0-9-]+)_(?P<suffix>notes|spec(?:_[A-Za-z0-9-]+)?)\.md$")
 _PLACEHOLDER = re.compile(r"^new-[a-z0-9]+(-[a-z0-9]+)*$")
 HEADER_KEYS = ("Uid", "Summary", "Status", "Topic", "Review", "Mode", "Created", "Updated", "Archived", "Deleted")
 SECTIONS = ("Triggers", "Links")
@@ -59,7 +59,7 @@ class _Invalid(Exception):
 
 @dataclass
 class _Entry:
-    """What the cross-file checks need of a note or a topic."""
+    """What the cross-file checks need of a memo or a topic."""
 
     kind: str
     label: str | None
@@ -69,13 +69,13 @@ class _Entry:
     line: int
 
 
-def check_notes_folder(notes_dir: Path) -> list[Finding]:
+def check_memos_folder(memos_dir: Path) -> list[Finding]:
     """Errors (sorted by file) followed by notices (sorted by file). A missing folder has no findings."""
-    if not notes_dir.is_dir():
+    if not memos_dir.is_dir():
         return []
     findings: list[Finding] = []
     texts: dict[str, str] = {}
-    for path in sorted(notes_dir.glob("*.md")):
+    for path in sorted(memos_dir.glob("*.md")):
         if path.is_file():
             _read(path, texts, findings)
     for name, text in texts.items():
@@ -87,16 +87,16 @@ def check_notes_folder(notes_dir: Path) -> list[Finding]:
     entries: list[_Entry] = []
     if TOPICS_FILE in texts and _shown(TOPICS_FILE) not in marked:
         entries += _guard(findings, TOPICS_FILE, lambda: _topics(texts[TOPICS_FILE]))
-    notes = sorted(n for n in texts if _NOTE_FILE.match(n) and _shown(n) not in marked)
-    for name in notes:
-        entries += _guard(findings, name, lambda name=name: [_note(name, texts[name])])
+    memos = sorted(n for n in texts if _MEMO_FILE.match(n) and _shown(n) not in marked)
+    for name in memos:
+        entries += _guard(findings, name, lambda name=name: [_memo(name, texts[name])])
     findings += _duplicates(entries)
-    findings += _notices(texts, notes)
+    findings += _notices(texts, memos)
     return sorted(findings, key=lambda f: (not f.error, f.file, f.line))
 
 
 def _shown(name: str) -> str:
-    return f"{NOTES_DIR}/{name}"
+    return f"{MEMOS_DIR}/{name}"
 
 
 def _read(path: Path, texts: dict[str, str], findings: list[Finding]) -> None:
@@ -188,11 +188,11 @@ def _topics(text: str) -> list[_Entry]:
     return entries
 
 
-# --- notes ---------------------------------------------------------------------------------------------------------
+# --- memos ---------------------------------------------------------------------------------------------------------
 
 
-def _note(name: str, text: str) -> _Entry:
-    stem = _NOTE_FILE.match(name)["stem"]
+def _memo(name: str, text: str) -> _Entry:
+    stem = _MEMO_FILE.match(name)["stem"]
     lines = text.split("\n")
     is_new = stem.startswith("new-")
     expected = "# NEW" if is_new else f"# {stem}"
@@ -245,7 +245,7 @@ def _note(name: str, text: str) -> _Entry:
     if not is_new and uid is None:
         raise _Invalid("missing_field", f"`{stem}` has no `Uid`", 1)
     if is_new and uid is not None:
-        raise _Invalid("invalid_value", "a new note has no `Uid`", line_of("Uid"))
+        raise _Invalid("invalid_value", "a new memo has no `Uid`", line_of("Uid"))
     status = get("Status")
     if status not in FILE_STATUSES:
         reason = "is derived and never stored in a file" if status == "due" else "does not exist"
@@ -257,7 +257,7 @@ def _note(name: str, text: str) -> _Entry:
     for key in ("Review", "Deleted", "Created", "Updated"):
         if get(key) and not _valid_time(get(key)):
             raise _Invalid("invalid_value", f"{key} `{get(key)}` is not a time (UTC with Z)", line_of(key))
-    return _Entry("note", None if is_new else stem, stem if is_new else None, uid, _shown(name), 1)
+    return _Entry("memo", None if is_new else stem, stem if is_new else None, uid, _shown(name), 1)
 
 
 def _trigger(raw: str, line: int) -> None:
@@ -313,20 +313,20 @@ def _duplicates(entries: list[_Entry]) -> list[Finding]:
     return findings
 
 
-def _notices(texts: dict[str, str], notes: list[str]) -> list[Finding]:
-    """Files the viewer does not read, and documents that belong to no note. The viewer ignores both silently."""
-    stems = {_NOTE_FILE.match(n)["stem"] for n in texts if _NOTE_FILE.match(n)}
+def _notices(texts: dict[str, str], memos: list[str]) -> list[Finding]:
+    """Files the viewer does not read, and documents that belong to no memo. The viewer ignores both silently."""
+    stems = {_MEMO_FILE.match(n)["stem"] for n in texts if _MEMO_FILE.match(n)}
     findings: list[Finding] = []
     for name in sorted(texts):
-        if name in (TOPICS_FILE, COUNTERS_FILE) or name.startswith(".") or _NOTE_FILE.match(name):
+        if name in (TOPICS_FILE, COUNTERS_FILE) or name.startswith(".") or _MEMO_FILE.match(name):
             continue
         document = _DOCUMENT_FILE.match(name)
         if document is None:
             findings.append(
-                Finding(_shown(name), 1, "ignored_file", "the viewer does not read this file (NOTE-<n>.md, new-<name>.md, documents, topics.md)", False)
+                Finding(_shown(name), 1, "ignored_file", "the viewer does not read this file (MEMO-<n>.md, new-<name>.md, documents, topics.md)", False)
             )
         elif document["stem"] not in stems:
             findings.append(
-                Finding(_shown(name), 1, "document_without_note", f"no note `{document['stem']}.md`; the viewer ignores the document", False)
+                Finding(_shown(name), 1, "document_without_memo", f"no memo `{document['stem']}.md`; the viewer ignores the document", False)
             )
     return findings

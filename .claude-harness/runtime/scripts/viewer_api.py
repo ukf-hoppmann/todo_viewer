@@ -1,4 +1,4 @@
-"""Shared client for the ToDo-Viewer's HTTP API: used by backlog_api.py and notes_api.py.
+"""Shared client for the ToDo-Viewer's HTTP API: used by backlog_api.py and memos_api.py.
 
 The project and the server come from the harness config of the session's project, never from arguments.
 """

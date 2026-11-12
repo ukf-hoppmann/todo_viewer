@@ -1,8 +1,8 @@
-"""Work on notes and topics through the ToDo-Viewer's HTTP API (part of the todo module).
+"""Work on memos and topics through the ToDo-Viewer's HTTP API (part of the todo module).
 
-Usage: notes_api.py [--project <name>] <command> [arguments]; see USAGE.
+Usage: memos_api.py [--project <name>] <command> [arguments]; see USAGE.
 The project and the server come from the harness config of the session's project, never from a path argument.
-Notes live only in the viewer's database: there is no file access, and no command removes anything for good.
+Memos live only in the viewer's database: there is no file access, and no command removes anything for good.
 """
 from __future__ import annotations
 
@@ -17,53 +17,53 @@ from viewer_api import (
     split_target, stdin_json, target_for, version_arg,
 )
 
-USAGE = """usage: notes_api.py [--project <name> | --source <name>] <command> [arguments]
+USAGE = """usage: memos_api.py [--project <name> | --source <name>] <command> [arguments]
   --project <name>                        a registered subproject; default: the root project
-  --source <name>                         another project's notes by its exact name from 'sources'
-                                          (only with the owner's explicit approval, see skill todo, notes.md)
+  --source <name>                         another project's memos by its exact name from 'sources'
+                                          (only with the owner's explicit approval, see skill todo, memos.md)
   health                                  server reachable?
   sources                                 the names of all projects the viewer knows, with their folders
-Reading (labels are NOTE-001 / TOPIC-001; the lean index comes first, then the one note you need):
+Reading (labels are MEMO-001 / TOPIC-001; the lean index comes first, then the one memo you need):
   index [--status S] [--due] [--archived] [--query Q] [--all-projects]
-                                          lean index: topics and notes without long texts
-  due                                     all due notes of all projects with reason, triggers, notices
-  show <NOTE>                             one note as JSON with its version, triggers, open notices
+                                          lean index: topics and memos without long texts
+  due                                     all due memos of all projects with reason, triggers, hints
+  show <MEMO>                             one memo as JSON with its version, triggers, open hints
   topics                                  topics of the project as JSON
-  topic <TOPIC>                           sub-topics and notes of one topic
-  links <NOTE> | backlinks <NOTE>         links of a note | elements pointing to it
-  notes-of-item <ID>                      notes that point to a backlog item
-  docs <NOTE>                             long-form documents of a note
-  doc <NOTE> <name>                       print a document: 'version: <v>', blank line, content
-  notices <NOTE> | notices <ID> --side item   open notices of one note | of one backlog item
-  trash                                   topics and notes in the trash as JSON
+  topic <TOPIC>                           sub-topics and memos of one topic
+  links <MEMO> | backlinks <MEMO>         links of a memo | elements pointing to it
+  memos-of-item <ID>                      memos that point to a backlog item
+  docs <MEMO>                             long-form documents of a memo
+  doc <MEMO> <name>                       print a document: 'version: <v>', blank line, content
+  hints <MEMO> | hints <ID> --side item   open hints of one memo | of one backlog item
+  trash                                   topics and memos in the trash as JSON
   settings                                max_topic_depth and review_days (read only)
 Writing (JSON on stdin; <version> is the number you read last):
   create                                  {summary, body?, topic?, review_at?, trigger_mode?}
-  update <NOTE> <version>                 {summary?, body?, topic?, review_at?, trigger_mode?}; null clears
-  keep <NOTE> <version>                   keep it: only the review date moves on
-  snooze <NOTE> <version>                 optional {review_at?, trigger?}: wait again
-  finish <NOTE> <version> <done|dropped>  close it into the archive
-  move <NOTE> <version> <project> [--topic L]   move to another project (new label, old one to the trash)
-  delete <NOTE> <version>                 to the trash
-  restore <NOTE> <version>                back from the trash or the archive
-  trigger-add <NOTE>                      {kind: event|topic_date, target?, target_project?, status?}
+  update <MEMO> <version>                 {summary?, body?, topic?, review_at?, trigger_mode?}; null clears
+  keep <MEMO> <version>                   keep it: only the review date moves on
+  snooze <MEMO> <version>                 optional {review_at?, trigger?}: wait again
+  finish <MEMO> <version> <done|dropped>  close it into the archive
+  move <MEMO> <version> <project> [--topic L]   move to another project (new label, old one to the trash)
+  delete <MEMO> <version>                 to the trash
+  restore <MEMO> <version>                back from the trash or the archive
+  trigger-add <MEMO>                      {kind: event|topic_date, target?, target_project?, status?}
   trigger-remove <trigger-uid>
-  link-add <NOTE>                         {target, target_project?, role?: reference|origin}
+  link-add <MEMO>                         {target, target_project?, role?: reference|origin}
   link-remove <link-uid>
-  put-doc <NOTE> <name> <version|new>    stdin: the complete document text
-  note-entry <NOTE>                       dated entry {topic, discussed?, decided?, open?}
-  decide <notice-uid>                     {decision: keep|detach|drop|promote|acknowledge, version?, type?, fields?}
-  promote <NOTE>                          {version, type, fields: {area, goal, completion_criteria, title?, ...}}
-  demote <ITEM-ID>                        {version, topic?}: an open item without children becomes a note
+  put-doc <MEMO> <name> <version|new>    stdin: the complete document text
+  memo-entry <MEMO>                       dated entry {topic, discussed?, decided?, open?}
+  decide <hint-uid>                     {decision: keep|detach|drop|promote|acknowledge, version?, type?, fields?}
+  promote <MEMO>                          {version, type, fields: {area, goal, completion_criteria, title?, ...}}
+  demote <ITEM-ID>                        {version, topic?}: an open item without children becomes a memo
   topic-create                            {name, parent?, due_at?}
   topic-update <TOPIC> <version>          {name?, due_at?}; due_at null removes the date
   topic-move <TOPIC> <version>            {parent}; null moves to the top
-  topic-archive <TOPIC> <version>         optional {keep_archived?, active_notes?: move|archive, move_to?}
+  topic-archive <TOPIC> <version>         optional {keep_archived?, active_memos?: move|archive, move_to?}
   topic-reactivate <TOPIC> <version>
-  topic-delete <TOPIC> <version>          to the trash; optional {keep_archived?, active_notes?: move|delete, move_to?}
+  topic-delete <TOPIC> <version>          to the trash; optional {keep_archived?, active_memos?: move|delete, move_to?}
   topic-restore <TOPIC>                   back from the trash"""
 
-NOTES_KINDS = ("note", "topic")
+MEMO_KINDS = ("memo", "topic")
 ARCHIVED = "done,dropped,promoted"
 OPEN = "waiting,due,snoozed"
 # Older names of trigger kinds and fields, still accepted.
@@ -87,11 +87,11 @@ class Context:
     def version(self, at: int = 1) -> int:
         return version_arg(self.positional[at])
 
-    def note(self, suffix: str = "") -> str:
-        return f"/notes/notes/{quote(self.positional[0])}{suffix}"
+    def memo(self, suffix: str = "") -> str:
+        return f"/memos/memos/{quote(self.positional[0])}{suffix}"
 
     def topic(self, suffix: str = "") -> str:
-        return f"/notes/topics/{quote(self.positional[0])}{suffix}"
+        return f"/memos/topics/{quote(self.positional[0])}{suffix}"
 
     def get(self, path: str, query: dict[str, str] | None = None) -> Any:
         return self.api.call("GET", path, query=query if query is not None else {"project": self.project})
@@ -123,27 +123,27 @@ def _index(ctx: Context) -> None:
         statuses.append("due")
     if ctx.options.get("--archived"):
         statuses.append(ARCHIVED)
-    # Without a filter the server lists every status; the lean index shows open notes only.
+    # Without a filter the server lists every status; the lean index shows open memos only.
     query["statuses"] = ",".join(statuses) if statuses else OPEN
     if "--query" in ctx.options:
         query["query"] = str(ctx.options["--query"])
-    index = ctx.api.call("GET", "/notes/index/lines", query=query)
+    index = ctx.api.call("GET", "/memos/index/lines", query=query)
     print(f"Topics: {index['topics']}")
-    print(f"Notes: {index['notes']}")
+    print(f"Memos: {index['memos']}")
 
 
 def _finish(ctx: Context) -> None:
     status = ctx.positional[2]
     if status not in ("done", "dropped"):
         raise ApiError("finish needs the status done or dropped", EXIT_USAGE)
-    ctx.post(ctx.note("/finish"), {"version": ctx.version(), "status": status})
+    ctx.post(ctx.memo("/finish"), {"version": ctx.version(), "status": status})
 
 
 def _move(ctx: Context) -> None:
     body: dict[str, Any] = {"version": ctx.version(), "target_project": named_target(ctx.api, ctx.positional[2]).uid}
     if "--topic" in ctx.options:
         body["topic"] = ctx.options["--topic"]
-    ctx.post(ctx.note("/move"), body)
+    ctx.post(ctx.memo("/move"), body)
 
 
 def _delete(ctx: Context) -> None:
@@ -152,14 +152,14 @@ def _delete(ctx: Context) -> None:
 
 
 def _restore(ctx: Context) -> None:
-    """From the trash through workspace, from the archive through notes."""
+    """From the trash through workspace, from the archive through memos."""
     element = ctx.api.call(
         "GET", f"/workspace/projects/{quote(ctx.project)}/labels/{quote(ctx.positional[0])}"
     )
     if element.get("deleted"):
         print_json(ctx.api.call("POST", "/workspace/trash/restore", {"uids": [element["uid"]]}))
     else:
-        ctx.post(ctx.note("/restore"), {"version": ctx.version()})
+        ctx.post(ctx.memo("/restore"), {"version": ctx.version()})
 
 
 def _untrash(ctx: Context) -> None:
@@ -178,9 +178,9 @@ def _trigger_add(ctx: Context) -> None:
         out["status"] = status
     if body.get("target") is not None:
         project = body.get("target_project")
-        # The server resolves labels of the note's own project; another project's item goes by its uid.
+        # The server resolves labels of the memo's own project; another project's item goes by its uid.
         out["target"] = body["target"] if not project else named_target(ctx.api, project).resolve(body["target"])
-    ctx.post(ctx.note("/triggers"), out)
+    ctx.post(ctx.memo("/triggers"), out)
 
 
 def _link_add(ctx: Context) -> None:
@@ -194,12 +194,12 @@ def _link_add(ctx: Context) -> None:
     print_json(ctx.api.call("POST", "/workspace/links", link))
 
 
-def _notes_of_item(ctx: Context) -> None:
-    print_json([e for e in ctx.links(ctx.positional[0])["incoming"] if e.get("kind") == "note"])
+def _memos_of_item(ctx: Context) -> None:
+    print_json([e for e in ctx.links(ctx.positional[0])["incoming"] if e.get("kind") == "memo"])
 
 
 def _doc(ctx: Context) -> None:
-    document = ctx.get(ctx.note(f"/documents/{quote(ctx.positional[1])}"))
+    document = ctx.get(ctx.memo(f"/documents/{quote(ctx.positional[1])}"))
     sys.stdout.write(f"version: {document['version']}\n\n{document['content']}")
 
 
@@ -207,69 +207,69 @@ def _put_doc(ctx: Context) -> None:
     name, version = ctx.positional[1], ctx.positional[2]
     body = {"project": ctx.project, "content": sys.stdin.read(),
             "version": None if version == "new" else version_arg(version)}
-    document = ctx.api.call("PUT", ctx.note(f"/documents/{quote(name)}"), body)
+    document = ctx.api.call("PUT", ctx.memo(f"/documents/{quote(name)}"), body)
     print(f"{document['name']}: saved, version {document['version']}")
 
 
-def _notices(ctx: Context) -> None:
+def _hints(ctx: Context) -> None:
     if ctx.options.get("--side") == "item":
-        print_json(ctx.get(f"/notes/items/{quote(ctx.positional[0])}/notices"))
-    elif ctx.options.get("--side", "note") == "note":
-        print_json(ctx.get(ctx.note()).get("notices", []))
+        print_json(ctx.get(f"/memos/items/{quote(ctx.positional[0])}/hints"))
+    elif ctx.options.get("--side", "memo") == "memo":
+        print_json(ctx.get(ctx.memo()).get("hints", []))
     else:
-        raise ApiError("--side is note or item", EXIT_USAGE)
+        raise ApiError("--side is memo or item", EXIT_USAGE)
 
 
 def _promote(ctx: Context) -> None:
     body = stdin_json()
     body["fields"] = item_fields(ctx.target, body.get("fields") or {})
-    ctx.post(ctx.note("/promote"), body)
+    ctx.post(ctx.memo("/promote"), body)
 
 
 def _trash(ctx: Context) -> None:
     elements = ctx.api.call("GET", "/workspace/trash", query={"projects": ctx.project})
-    print_json([e for e in elements if e.get("kind") in NOTES_KINDS])
+    print_json([e for e in elements if e.get("kind") in MEMO_KINDS])
 
 
 def _topics(ctx: Context) -> None:
-    print_json(ctx.api.call("GET", "/notes/index", query={"projects": ctx.project})["topics"])
+    print_json(ctx.api.call("GET", "/memos/index", query={"projects": ctx.project})["topics"])
 
 
 COMMANDS: dict[str, Command] = {
     "index": Command(0, _index, {"--status": False, "--due": True, "--archived": True, "--query": False,
                                  "--all-projects": True}),
-    "due": Command(0, lambda c: print_json(c.api.call("GET", "/notes/due"))),
-    "show": Command(1, lambda c: print_json(c.get(c.note()))),
+    "due": Command(0, lambda c: print_json(c.api.call("GET", "/memos/due"))),
+    "show": Command(1, lambda c: print_json(c.get(c.memo()))),
     "topics": Command(0, _topics),
     "topic": Command(1, lambda c: print_json(c.get(c.topic("/content")))),
     "links": Command(1, lambda c: print_json(c.links(c.positional[0])["outgoing"])),
     "backlinks": Command(1, lambda c: print_json(c.links(c.positional[0])["incoming"])),
-    "notes-of-item": Command(1, _notes_of_item),
-    "docs": Command(1, lambda c: print_json(c.get(c.note("/documents")))),
+    "memos-of-item": Command(1, _memos_of_item),
+    "docs": Command(1, lambda c: print_json(c.get(c.memo("/documents")))),
     "doc": Command(2, _doc),
-    "notices": Command(1, _notices, {"--side": False}),
+    "hints": Command(1, _hints, {"--side": False}),
     "trash": Command(0, _trash),
-    "settings": Command(0, lambda c: print_json(c.api.call("GET", "/notes/settings"))),
-    "create": Command(0, lambda c: c.post("/notes/notes", {"fields": stdin_json()})),
-    "update": Command(2, lambda c: c.put(c.note(), {"version": c.version(), "fields": stdin_json()}), versions=(1,)),
-    "keep": Command(2, lambda c: c.post(c.note("/keep"), {"version": c.version()}), versions=(1,)),
-    "snooze": Command(2, lambda c: c.post(c.note("/snooze"), {"version": c.version(), **stdin_json(required=False)}),
+    "settings": Command(0, lambda c: print_json(c.api.call("GET", "/memos/settings"))),
+    "create": Command(0, lambda c: c.post("/memos/memos", {"fields": stdin_json()})),
+    "update": Command(2, lambda c: c.put(c.memo(), {"version": c.version(), "fields": stdin_json()}), versions=(1,)),
+    "keep": Command(2, lambda c: c.post(c.memo("/keep"), {"version": c.version()}), versions=(1,)),
+    "snooze": Command(2, lambda c: c.post(c.memo("/snooze"), {"version": c.version(), **stdin_json(required=False)}),
                       versions=(1,)),
     "finish": Command(3, _finish, versions=(1,)),
     "move": Command(3, _move, {"--topic": False}, versions=(1,)),
     "delete": Command(2, _delete, versions=(1,)),
     "restore": Command(2, _restore, versions=(1,)),
     "trigger-add": Command(1, _trigger_add),
-    "trigger-remove": Command(1, lambda c: print_json(c.api.call("DELETE", f"/notes/triggers/{quote(c.positional[0])}"))),
+    "trigger-remove": Command(1, lambda c: print_json(c.api.call("DELETE", f"/memos/triggers/{quote(c.positional[0])}"))),
     "link-add": Command(1, _link_add),
     "link-remove": Command(1, lambda c: print_json(c.api.call("DELETE", f"/workspace/links/{quote(c.positional[0])}"))),
     "put-doc": Command(3, _put_doc),
-    "note-entry": Command(1, lambda c: c.post(c.note("/entries"), stdin_json())),
+    "memo-entry": Command(1, lambda c: c.post(c.memo("/entries"), stdin_json())),
     "decide": Command(1, lambda c: print_json(
-        c.api.call("POST", f"/notes/notices/{quote(c.positional[0])}/decide", stdin_json()))),
+        c.api.call("POST", f"/memos/hints/{quote(c.positional[0])}/decide", stdin_json()))),
     "promote": Command(1, _promote),
-    "demote": Command(1, lambda c: c.post(f"/notes/items/{quote(c.positional[0])}/demote", stdin_json())),
-    "topic-create": Command(0, lambda c: c.post("/notes/topics", stdin_json())),
+    "demote": Command(1, lambda c: c.post(f"/memos/items/{quote(c.positional[0])}/demote", stdin_json())),
+    "topic-create": Command(0, lambda c: c.post("/memos/topics", stdin_json())),
     "topic-update": Command(2, lambda c: c.put(c.topic(), {"version": c.version(), "fields": stdin_json()}),
                             versions=(1,)),
     "topic-move": Command(2, lambda c: c.post(c.topic("/move"), {"version": c.version(), **stdin_json()}),
@@ -319,9 +319,9 @@ def run(project_name: str, source_name: str | None, name: str, args: list[str]) 
     command = Command(0, lambda c: None) if name in local else COMMANDS[name]
     positional, options = _split(command, args)
     project = find_project(project_name, "todo")
-    if not project.config.viewer_notes_enabled():
+    if not project.config.viewer_memos_enabled():
         raise ApiError(
-            f"notes need todo.backend = \"api\" in project {project.name}: they live only in the ToDo-Viewer",
+            f"memos need todo.backend = \"api\" in project {project.name}: they live only in the ToDo-Viewer",
             EXIT_USAGE,
         )
     api = Api(project.config.todo_api_url)

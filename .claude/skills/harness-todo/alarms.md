@@ -1,15 +1,15 @@
 # Alarms
 
 An alarm is a reminder at a fixed time: it rings in the ToDo-Viewer at `at`,
-as long as the viewer runs. It is not work and not a note: no review date, no
+as long as the viewer runs. It is not work and not a memo: no review date, no
 completion criteria. Only with the `api` backend.
 
 ## When an alarm
 
 - "Remind me at 3 pm", "on Thursday at 10 about STORY-012": an alarm, bound to
-  the items or notes it is about (`targets`) or free with a `text`.
+  the items or memos it is about (`targets`) or free with a `text`.
 - A thought for later without a fixed time, or a reminder tied to an event:
-  a note ([notes.md](notes.md)).
+  a memo ([memos.md](memos.md)).
 - Something you yourself should do later in this session: the scheduling
   tools of Claude Code, not an alarm.
 - When it is doubtful which one is meant, ask once and briefly.
@@ -28,7 +28,7 @@ Without arguments it prints the command list.
 |---|---|
 | `list [--due] [--all-projects]` | Alarms of the project (`--due`: only those ringing now) |
 | `show <ALARM>` | One alarm: `at`, `status`, `targets` (each with label, title, `open`), `version` |
-| `create` | stdin: `{"at": "...", "targets": ["STORY-012", "other:NOTE-003"]}` or `{"at": "...", "text": "..."}`; `text` is required only without targets. A target of another project is written `project:LABEL` (name from `sources`) |
+| `create` | stdin: `{"at": "...", "targets": ["STORY-012", "other:MEMO-003"]}` or `{"at": "...", "text": "..."}`; `text` is required only without targets. A target of another project is written `project:LABEL` (name from `sources`) |
 | `update <ALARM> <version>` | stdin: any of `at`, `text`, `targets` (`[]` detaches all); a new `at` makes it wait again |
 | `snooze <ALARM> <version> [--until T]` | Ring again later; default in one hour |
 | `finish <ALARM> <version>`, `reopen <ALARM> <version>` | Done, or undo that |

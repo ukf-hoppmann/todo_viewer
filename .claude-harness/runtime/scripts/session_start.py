@@ -30,9 +30,9 @@ MAX_REPORTED = 5
 
 # Skill pointers; with several projects each appears once (architecture rule 7).
 TODO_HINT = "rules in skill claude-harness:todo (load it only when working with the backlog)."
-NOTES_HINT = (
+MEMOS_HINT = (
     "rules in skill claude-harness:todo (load it when asked to remember, remind, or look at "
-    "due notes)."
+    "due memos)."
 )
 DAILY_HINT = "rules in skill claude-harness:daily (load it when reminded or asked about daily reports)."
 TECHDOCS_HINT = (
@@ -152,12 +152,12 @@ def _single_project(root: Path, projects: ProjectSet) -> list[str]:
         else:
             lines.append(f"Backlog: {config.todo_path}/{TODO_FILE}{_backend_note(config)}; {TODO_HINT}")
             lines += _backlog_problems(root, config)
-    if config.viewer_notes_enabled():
-        # Static line: hooks do not use the network, so due notes are not looked up here.
-        lines.append(f"Notes: via ToDo-Viewer API ({config.todo_api_url}); {NOTES_HINT}")
-    elif config.notes_enabled():
-        # Not looked up either: the folder is created by the first note.
-        lines.append(f"Notes: {config.todo_path}/notes/ as files; {NOTES_HINT}")
+    if config.viewer_memos_enabled():
+        # Static line: hooks do not use the network, so due memos are not looked up here.
+        lines.append(f"Memos: via ToDo-Viewer API ({config.todo_api_url}); {MEMOS_HINT}")
+    elif config.memos_enabled():
+        # Not looked up either: the folder is created by the first memo.
+        lines.append(f"Memos: {config.todo_path}/memos/ as files; {MEMOS_HINT}")
     if config.enabled("daily"):
         lines.append(f"Daily reports: {config.daily_path}/; {DAILY_HINT}")
     if config.enabled("techdocs"):
@@ -202,8 +202,8 @@ def _several_projects(projects: ProjectSet) -> list[str]:
     configs = [p.config for p in projects.projects]
     if any(c.enabled("todo") for c in configs):
         lines.append(f"Backlog: {TODO_HINT}")
-    if any(c.notes_enabled() for c in configs):
-        lines.append(f"Notes: {NOTES_HINT}")
+    if any(c.memos_enabled() for c in configs):
+        lines.append(f"Memos: {MEMOS_HINT}")
     if any(c.enabled("daily") for c in configs):
         lines.append(f"Daily reports: {DAILY_HINT}")
     if any(c.enabled("techdocs") for c in configs):

@@ -107,7 +107,7 @@ def run(project_name: str, source_name: str | None, name: str, args: list[str]) 
         raise ApiError(USAGE, EXIT_USAGE)
     positional, options = _split(name, args)
     project = find_project(project_name, "todo")
-    if not project.config.viewer_notes_enabled():
+    if not project.config.viewer_memos_enabled():
         raise ApiError(
             f"alarms need todo.backend = \"api\" in project {project.name}: they live only in the ToDo-Viewer",
             EXIT_USAGE,

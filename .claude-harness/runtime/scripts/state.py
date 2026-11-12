@@ -54,9 +54,9 @@ def write_names(path: Path, names: set[str]) -> None:
     path.write_text(json.dumps(sorted(names)))
 
 
-def notes_folder_marker(session_id: str) -> Path:
+def memos_folder_marker(session_id: str) -> Path:
     """JSON list of the projects whose notes folder (below the backlog folder) changed in the session."""
-    return state_dir() / f"backlog-notes-folder-{_safe(session_id)}"
+    return state_dir() / f"backlog-memos-folder-{_safe(session_id)}"
 
 
 def notes_changed_file(session_id: str) -> Path:

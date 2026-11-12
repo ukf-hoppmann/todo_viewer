@@ -1,6 +1,6 @@
 ---
 name: harness-todo
-description: Rules for the project backlog and for notes, topics, and alarms (via the ToDo-Viewer API, or TODO.md, archive.md, per-item notes and specs in files mode). Use when reading, discussing, creating, updating, or archiving backlog items — epics, stories, tasks, their status, notes, or specs — and when the user asks to remember, remind, or note something for later or asks about due notes.
+description: Rules for the project backlog and for memos, topics, and alarms (via the ToDo-Viewer API, or TODO.md, archive.md, per-item notes and specs in files mode). Use when reading, discussing, creating, updating, or archiving backlog items — epics, stories, tasks, their status, notes, or specs — and when the user asks to remember, remind, or note something for later or asks about due memos.
 ---
 
 # Project backlog
@@ -145,16 +145,16 @@ Read only what the task needs:
 - Reuse existing areas before inventing new ones. Files: new IDs take the
   next free number of their type; API: the server assigns them.
 
-## Notes
+## Memos
 
 Reminders, open questions, observations, and ideas without a completion
-definition are not backlog work; they are notes. With the `api` backend they
-live in the ToDo-Viewer ([notes.md](notes.md)), with `files` as Markdown files
-below the backlog folder ([notes-files.md](notes-files.md)); read the matching
-file when asked to remember, remind, or look at due notes. Turning a note into
-an item and an item back into a note runs through the viewer ([notes.md](notes.md)).
-A backlog item's notes entries
-(`<ID>_notes.md`) are not those notes; when unclear which is meant, ask.
+definition are not backlog work; they are memos (`MEMO-001`). With the `api`
+backend they live in the ToDo-Viewer ([memos.md](memos.md)), with `files` as
+Markdown files below the backlog folder ([memos-files.md](memos-files.md));
+read the matching file when asked to remember, remind, or look at due memos.
+Turning a memo into an item and an item back into a memo runs through the
+viewer ([memos.md](memos.md)). The notes of a backlog item (`<ID>_notes.md`,
+its discussion log) are not memos; when unclear which is meant, ask.
 A reminder at a fixed time is an alarm in the viewer ([alarms.md](alarms.md),
 only with `api`; read it when asked to remind at a time).
 
@@ -166,7 +166,7 @@ only with `api`; read it when asked to remind at a time).
   never into a worktree, and does not commit. Commit those files in the main
   checkout on their own (message `Backlog: …`) when the task is done. During
   a worktree change, do it after `ExitWorktree` and before the merge. With a
-  mirror this includes `notes/` below the backlog folder, which the viewer
+  mirror this includes `memos/` below the backlog folder, which the viewer
   writes; you still do not read, edit, create, or delete any of these files
   yourself.
 - Cloud sessions and the local viewer exchange the backlog through Git and the

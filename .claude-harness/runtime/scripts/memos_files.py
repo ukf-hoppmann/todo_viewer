@@ -1,8 +1,8 @@
-"""Index of the notes kept as files in a backlog folder (todo module, backend files).
+"""Index of the memos kept as files in a backlog folder (todo module, backend files).
 
-The format is the ToDo-Viewer's file format version 2 (notes/NOTE-001.md, notes/new-<name>.md, notes/topics.md); the
-viewer owns labels, uids and triggers. --index and --due read only the head lines of each note, never the long text, and
-do not validate the format; --check does (notes_format.py). The counterpart for backlog items is backlog.py.
+The format is the ToDo-Viewer's file format version 2 (memos/MEMO-001.md, memos/new-<name>.md, memos/topics.md); the
+viewer owns labels, uids and triggers. --index and --due read only the head lines of each memo, never the long text, and
+do not validate the format; --check does (memos_format.py). The counterpart for backlog items is backlog.py.
 """
 
 from __future__ import annotations
@@ -13,14 +13,14 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
-from notes_format import check_notes_folder
+from memos_format import check_memos_folder
 
-NOTES_DIR = "notes"
+MEMOS_DIR = "memos"
 TOPICS_FILE = "topics.md"
-USAGE = "usage: notes_files.py <backlog folder> [--index | --due [--today YYYY-MM-DD] | --check]"
+USAGE = "usage: memos_files.py <backlog folder> [--index | --due [--today YYYY-MM-DD] | --check]"
 
-# NOTE-001.md and new-<name>.md; the documents (NOTE-001_notes.md, ...), topics.md and counters.md do not match.
-_NOTE_FILE = re.compile(r"^(NOTE-[0-9]+|new-[A-Za-z0-9-]+)\.md$")
+# MEMO-001.md and new-<name>.md; the documents (MEMO-001_notes.md, ...), topics.md and counters.md do not match.
+_MEMO_FILE = re.compile(r"^(MEMO-[0-9]+|new-[A-Za-z0-9-]+)\.md$")
 _FIELD = re.compile(r"^(?P<name>[A-Z][A-Za-z]*):[ \t]*(?P<value>.*?)[ \t]*$")
 _TOPIC_LINE = re.compile(r"^[ \t]*- (?P<label>\S+) \| (?P<rest>.*)$")
 _DAY = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}")
@@ -36,7 +36,7 @@ class Topic:
 
 
 @dataclass
-class Note:
+class Memo:
     file: str
     fields: dict[str, str] = field(default_factory=dict)
 
@@ -45,14 +45,14 @@ class Note:
 
 
 @dataclass
-class NotesReport:
-    notes: list[Note] = field(default_factory=list)
+class MemosReport:
+    memos: list[Memo] = field(default_factory=list)
     topics: list[Topic] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
 
-    def topic_of(self, note: Note) -> Topic | None:
-        """The note's topic: by label, or by name for a topic without a label (new:<name>)."""
-        reference = note.value("Topic")
+    def topic_of(self, memo: Memo) -> Topic | None:
+        """The memo's topic: by label, or by name for a topic without a label (new:<name>)."""
+        reference = memo.value("Topic")
         if not reference:
             return None
         if reference.startswith(_NEW_TOPIC):
@@ -61,41 +61,41 @@ class NotesReport:
         return next((t for t in self.topics if t.label == reference), Topic(reference, reference))
 
 
-def read_notes(backlog: Path) -> NotesReport:
-    """Reads the head of every active note below <backlog>/notes; notes in the trash or archive are left out."""
-    report = NotesReport()
-    folder = backlog / NOTES_DIR
+def read_memos(backlog: Path) -> MemosReport:
+    """Reads the head of every active memo below <backlog>/memos; memos in the trash or archive are left out."""
+    report = MemosReport()
+    folder = backlog / MEMOS_DIR
     if not folder.is_dir():
         return report
     report.topics = _read_topics(folder / TOPICS_FILE, report)
-    for path in sorted(p for p in folder.iterdir() if _NOTE_FILE.match(p.name)):
-        note = _read_note(path, report)
-        if note is None or note.value("Deleted") or note.value("Archived").lower() == "true":
+    for path in sorted(p for p in folder.iterdir() if _MEMO_FILE.match(p.name)):
+        memo = _read_memo(path, report)
+        if memo is None or memo.value("Deleted") or memo.value("Archived").lower() == "true":
             continue
-        if not note.value("Summary"):
+        if not memo.value("Summary"):
             report.problems.append(f"{path.name}: no Summary line")
             continue
-        report.notes.append(note)
+        report.memos.append(memo)
     return report
 
 
-def _read_note(path: Path, report: NotesReport) -> Note | None:
+def _read_memo(path: Path, report: MemosReport) -> Memo | None:
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as error:
         report.problems.append(f"{path.name}: cannot be read ({error.__class__.__name__})")
         return None
-    note = Note(path.name)
+    memo = Memo(path.name)
     for line in text.splitlines()[1:]:
         if not line.strip():
             break
         match = _FIELD.match(line)
         if match:
-            note.fields[match["name"]] = match["value"]
-    return note
+            memo.fields[match["name"]] = match["value"]
+    return memo
 
 
-def _read_topics(path: Path, report: NotesReport) -> list[Topic]:
+def _read_topics(path: Path, report: MemosReport) -> list[Topic]:
     if not path.is_file():
         return []
     try:
@@ -115,53 +115,53 @@ def _read_topics(path: Path, report: NotesReport) -> list[Topic]:
     return topics
 
 
-def format_index(report: NotesReport) -> str:
+def format_index(report: MemosReport) -> str:
     rows = [
         " | ".join(
             [n.file, n.value("Status") or "-", n.value("Review") or "-", _topic_name(report, n), n.value("Summary")]
         )
-        for n in report.notes
+        for n in report.memos
     ]
     return "\n".join(["File | Status | Review | Topic | Summary", *rows]) if rows else ""
 
 
-def due_reasons(report: NotesReport, note: Note, today: date) -> list[str]:
-    """Why an open note is due: its review day or its topic's day has come. Events need the viewer."""
-    if note.value("Status") not in _OPEN_STATUSES:
+def due_reasons(report: MemosReport, memo: Memo, today: date) -> list[str]:
+    """Why an open memo is due: its review day or its topic's day has come. Events need the viewer."""
+    if memo.value("Status") not in _OPEN_STATUSES:
         return []
     reasons = []
-    review = _day(note.value("Review"))
+    review = _day(memo.value("Review"))
     if review and review <= today.isoformat():
         reasons.append(f"review {review}")
-    topic = report.topic_of(note)
+    topic = report.topic_of(memo)
     topic_due = _day(topic.due) if topic else ""
     if topic_due and topic_due <= today.isoformat():
         reasons.append(f"topic due {topic_due}")
     return reasons
 
 
-def format_due(report: NotesReport, today: date) -> str:
+def format_due(report: MemosReport, today: date) -> str:
     rows = []
-    for note in report.notes:
-        reasons = due_reasons(report, note, today)
+    for memo in report.memos:
+        reasons = due_reasons(report, memo, today)
         if reasons:
             rows.append(
                 " | ".join(
                     [
-                        note.file,
-                        note.value("Status"),
+                        memo.file,
+                        memo.value("Status"),
                         ", ".join(reasons),
-                        note.value("Review") or "-",
-                        _topic_name(report, note),
-                        note.value("Summary"),
+                        memo.value("Review") or "-",
+                        _topic_name(report, memo),
+                        memo.value("Summary"),
                     ]
                 )
             )
     return "\n".join(["File | Status | Reason | Review | Topic | Summary", *rows]) if rows else ""
 
 
-def _topic_name(report: NotesReport, note: Note) -> str:
-    topic = report.topic_of(note)
+def _topic_name(report: MemosReport, memo: Memo) -> str:
+    topic = report.topic_of(memo)
     return topic.name if topic else "-"
 
 
@@ -192,11 +192,11 @@ def main(argv: list[str]) -> int:
         print(USAGE, file=sys.stderr)
         return 2
     if check:
-        findings = check_notes_folder(Path(args[0]) / NOTES_DIR)
+        findings = check_memos_folder(Path(args[0]) / MEMOS_DIR)
         for finding in findings:
             print(finding)
         return 1 if any(f.error for f in findings) else 0
-    report = read_notes(Path(args[0]))
+    report = read_memos(Path(args[0]))
     output = format_due(report, today) if due else format_index(report)
     if output:
         print(output)

@@ -128,6 +128,7 @@ def _v3(connection: Any) -> None:
         "UPDATE workspace_label_counters SET prefix = 'MEMO' WHERE prefix = 'NOTE'",
         "UPDATE workspace_label_history SET label = 'MEMO-' || substr(label, 6) WHERE label LIKE 'NOTE-%'",
         "DELETE FROM workspace_element_kinds WHERE kind = 'note'",
+        "UPDATE workspace_element_kinds SET owner = 'memos' WHERE owner = 'notes'",
         # Oberflächenzustand des Plugins (Besitzer = Plugin-ID)
         "UPDATE core_ui_state SET owner = 'memos' WHERE owner = 'notes'",
     ):

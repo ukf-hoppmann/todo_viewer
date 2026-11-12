@@ -46,6 +46,9 @@ class PluginDefinition:
     operations: tuple[Operation, ...] = ()
     mirror: Callable[[Any], MirrorBinding] | None = None
     subscriptions: tuple[Subscription, ...] = field(default=())
+    #: Frühere IDs des Plugins nach einer Umbenennung: Der Migrationsstand der alten ID gilt für die neue, der alte
+    #: Eintrag entfällt mit der ersten neuen Migration. Die Migrationen benennen die Tabellen selbst um.
+    former_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

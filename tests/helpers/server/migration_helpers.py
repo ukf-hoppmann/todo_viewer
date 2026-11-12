@@ -27,8 +27,13 @@ def mig(version: int, *statements: str) -> Migration:
     return Migration(version, apply)
 
 
-def plugin(plugin_id: str, requires: tuple[str, ...] = (), migrations: tuple[Migration, ...] = ()) -> PluginDefinition:
-    return PluginDefinition(plugin_id, lambda c: None, requires=requires, migrations=migrations)
+def plugin(
+    plugin_id: str,
+    requires: tuple[str, ...] = (),
+    migrations: tuple[Migration, ...] = (),
+    former_ids: tuple[str, ...] = (),
+) -> PluginDefinition:
+    return PluginDefinition(plugin_id, lambda c: None, requires=requires, migrations=migrations, former_ids=former_ids)
 
 
 def ordered(*defs: PluginDefinition) -> list[PluginDefinition]:

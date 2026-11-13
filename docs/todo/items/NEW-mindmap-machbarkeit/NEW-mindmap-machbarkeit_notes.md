@@ -5,14 +5,17 @@
 - Goal/Status: Nur Planung, Umsetzung später in kleinen Schritten; Grundmodell, Zuordnung und Ansichten sind abgestimmt, für Maps an Elementen ist „Fokus statt eigener Map“ vorgeschlagen.
 - Next step: Offene Fragen mit dem Owner klären, dann das Konzept als Spec schreiben; daraus entsteht später mindestens ein Epic.
 - Open:
-  - „Anker“ an einem Item ohne eigenen Knoten: Knoten zeigen, an dem es hängt, oder erst „Erstelle“ verlangen? (2026-11-13)
   - Übertragen technisch: Platzierungen (Knoten, Parent, Stelle) statt eines Parent-Felds, von Anfang an im Datenmodell? Vorschlag, noch nicht bestätigt (2026-11-13)
   - Ein Knoten höchstens einmal je Baum; Summen zählen jedes Item nur einmal? Vorschlag, noch nicht bestätigt (2026-11-13)
   - Getrennte Aktionen „hier entfernen“ und „Knoten löschen“ für übertragene Äste? Vorschlag, noch nicht bestätigt (2026-11-13)
   - Wie die KI Knoten vorschlägt: nur im Gespräch oder als sichtbarer Vorschlag in der Oberfläche (2026-11-13)
   - Abgeschlossene Items: nur im Fortschritt zählen oder auch zeigen (2026-11-13)
   - Überführen eines Ideen-Knotens ins Backlog: Typwahl, Umgang mit Knoten tiefer als drei Ebenen (2026-11-13)
-  - Verhältnis zu Memos und Topics: Idee auch zu einem Memo machen? (2026-11-13)
+  - Verhältnis zu Memos und Topics: Topics sind selbst ein Baum; bleiben sie daneben, und lassen sich Memos wie Items an Knoten hängen? (2026-11-13)
+  - Markdown-Spiegel: Braucht die Mindmap ein Dateiformat, damit sie über Git mitgeht und die KI in Cloud-Sitzungen zuordnen kann? (2026-11-13)
+  - Freie Maps: gehören sie zu einem Projekt oder stehen sie darüber, und wo findet man sie? (2026-11-13)
+  - Feld Area: bleibt es neben der Mindmap bestehen? (2026-11-13)
+  - Eigene Markierung für Ideen-Knoten (z. B. verworfen, später)? (2026-11-13)
   - Runde Anordnung bei großen Maps: ELK `radial` oder eigene Anordnung, im Prototyp prüfen (2026-11-13)
 - Decided:
   - Die Mindmap ist ein eigenes Datenmodell und nur ein Gerippe; sie verlinkt Backlog-Items, ähnlich dem Feld Area (2026-11-13)
@@ -30,10 +33,11 @@
   - Mischung: ein Baum je Projekt mit Fokus auf beliebigem Knoten, dazu freie Maps (2026-11-13)
   - Am Item drei getrennte Aktionen: „Gehe hin“ (Map an der Stelle öffnen), „Erstelle“ (neuen Knoten anlegen), „Anker“ (Element als Wurzel öffnen); kein stilles Anlegen von Knoten (2026-11-13)
   - Umsetzung in einem eigenen neuen Branch, weil großer experimenteller Umbau (2026-11-13)
+  - „Anker“ wird an einem Item erst angeboten, nachdem mit „Erstelle“ ein eigener Knoten angelegt wurde (2026-11-13)
   - Äste werden nie kopiert; es gibt „umhängen“ (aus A weg, in B drin) und „übertragen“ (derselbe Ast in A und B) (2026-11-13)
 - References: Graph-Seite `client/src/plugins/backlog/` (`graphModel.ts`, React Flow, ELK); `workspace_links`, `ElementDetail`, `DocumentsSection`; Story STORY-086 (Umwandeln)
 
-State confirmed after entry 2026-11-13 — Äste zwischen Bäumen: umhängen und übertragen (7c3eb63965dc)
+State confirmed after entry 2026-11-13 — Anker erst nach Erstellen, Sammlung der offenen Grundsatzfragen (d8faac48b51a)
 
 ## 2026-11-13 — Idee, Grundmodell und erste Entscheidungen
 
@@ -165,3 +169,21 @@ State confirmed after entry 2026-11-13 — Äste zwischen Bäumen: umhängen und
 - Platzierungen statt Parent-Feld von Anfang an: Vorschlag, wartet auf den Owner.
 - Ein Knoten höchstens einmal je Baum und Summen ohne Doppelzählung: Vorschlag, wartet auf den Owner.
 - Zwei Aktionen „hier entfernen“ und „Knoten löschen“: Vorschlag, wartet auf den Owner.
+
+## 2026-11-13 — Anker erst nach Erstellen, Sammlung der offenen Grundsatzfragen
+
+### Discussed
+
+- Open vom 2026-11-13 („Anker“ an einem Item ohne eigenen Knoten) geklärt: erst nach „Erstelle“.
+- Der Owner fragt, welche grundsätzlichen Fragen noch offen sind. Zusammenstellung, getrennt nach Einfluss auf das Datenmodell:
+  - Datenmodell: die drei Vorschläge zu Platzierungen (noch unbeantwortet); Markdown-Spiegel für die Mindmap; Verhältnis zu Topics und Memos; Zugehörigkeit der freien Maps.
+  - Später entscheidbar: Form der KI-Vorschläge, Anzeige abgeschlossener Items, Überführen einer Idee ins Backlog, Zukunft des Felds Area, Markierung für Ideen-Knoten, Qualität der runden Anordnung.
+- Neu aufgenommen: Markdown-Spiegel (Cloud-Sitzungen arbeiten auf den Dateien; ohne Dateiformat kann die KI dort nicht zuordnen), Zugehörigkeit freier Maps, Feld Area, Markierung für Ideen-Knoten.
+
+### Decided
+
+- „Anker“ erst nach „Erstelle“ (Owner).
+
+### Open
+
+- Die oben genannten Grundsatzfragen; sie stehen im Kopf.

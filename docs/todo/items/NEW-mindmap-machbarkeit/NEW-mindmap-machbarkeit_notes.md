@@ -6,7 +6,9 @@
 - Next step: Offene Fragen mit dem Owner klären, dann das Konzept als Spec schreiben; daraus entsteht später mindestens ein Epic.
 - Open:
   - „Anker“ an einem Item ohne eigenen Knoten: Knoten zeigen, an dem es hängt, oder erst „Erstelle“ verlangen? (2026-11-13)
-  - Ast aus einer freien Map in den Projektbaum verschieben (nicht kopieren)? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - Übertragen technisch: Platzierungen (Knoten, Parent, Stelle) statt eines Parent-Felds, von Anfang an im Datenmodell? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - Ein Knoten höchstens einmal je Baum; Summen zählen jedes Item nur einmal? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - Getrennte Aktionen „hier entfernen“ und „Knoten löschen“ für übertragene Äste? Vorschlag, noch nicht bestätigt (2026-11-13)
   - Wie die KI Knoten vorschlägt: nur im Gespräch oder als sichtbarer Vorschlag in der Oberfläche (2026-11-13)
   - Abgeschlossene Items: nur im Fortschritt zählen oder auch zeigen (2026-11-13)
   - Überführen eines Ideen-Knotens ins Backlog: Typwahl, Umgang mit Knoten tiefer als drei Ebenen (2026-11-13)
@@ -28,9 +30,10 @@
   - Mischung: ein Baum je Projekt mit Fokus auf beliebigem Knoten, dazu freie Maps (2026-11-13)
   - Am Item drei getrennte Aktionen: „Gehe hin“ (Map an der Stelle öffnen), „Erstelle“ (neuen Knoten anlegen), „Anker“ (Element als Wurzel öffnen); kein stilles Anlegen von Knoten (2026-11-13)
   - Umsetzung in einem eigenen neuen Branch, weil großer experimenteller Umbau (2026-11-13)
+  - Äste werden nie kopiert; es gibt „umhängen“ (aus A weg, in B drin) und „übertragen“ (derselbe Ast in A und B) (2026-11-13)
 - References: Graph-Seite `client/src/plugins/backlog/` (`graphModel.ts`, React Flow, ELK); `workspace_links`, `ElementDetail`, `DocumentsSection`; Story STORY-086 (Umwandeln)
 
-State confirmed after entry 2026-11-13 — Aktionen am Item, Mischung bestätigt, eigener Branch (50f52bdec624)
+State confirmed after entry 2026-11-13 — Äste zwischen Bäumen: umhängen und übertragen (7c3eb63965dc)
 
 ## 2026-11-13 — Idee, Grundmodell und erste Entscheidungen
 
@@ -142,3 +145,23 @@ State confirmed after entry 2026-11-13 — Aktionen am Item, Mischung bestätigt
 
 - „Anker“ an einem Item, das keinen eigenen Knoten hat: den Knoten zeigen, an dem es (auch geerbt) hängt, oder die Aktion erst nach „Erstelle“ anbieten.
 - Ast aus freier Map in den Projektbaum verschieben statt kopieren: weiter offen.
+
+## 2026-11-13 — Äste zwischen Bäumen: umhängen und übertragen
+
+### Discussed
+
+- Open vom 2026-11-13 (verschieben statt kopieren): Der Owner will nichts kopieren, aber verlinken. Wird ein Ast immer nur verschoben, schrumpft der Planungsbaum in dem Maß, wie der Umsetzungsbaum wächst. Deshalb beides: umhängen (aus A weg, in B drin) und übertragen (in A und B). Frage: Geht das Verlinken eines Astes in einen anderen Baum auf Datenbankebene?
+- Einschätzung: Ja. Der Knoten bleibt ein einziger Datensatz und bekommt mehrere Platzierungen (Knoten, Parent, Stelle) statt eines Parent-Felds. Der Ast steht dann in beiden Bäumen und ist überall derselbe: eine Änderung, eine Notiz oder ein neuer Unterknoten erscheint an beiden Stellen. Workflowy kennt das als gespiegelte Punkte.
+- Folgen: Kreise müssen verhindert werden (wie schon bei Topics); die Regel „ein Knoten je Item“ bleibt gültig, weil das Item an einem Knoten hängt und nur der Knoten mehrfach erscheint; in der Gesamtansicht kann ein Item über zwei Wege unter derselben Wurzel liegen, daher müssen Summen jedes Item nur einmal zählen; „entfernen“ braucht zwei Aktionen (nur hier herausnehmen oder den Knoten löschen); im Fokus folgt der Pfad nach oben dem Weg, über den man gekommen ist; übertragene Äste sollten sichtbar markiert sein; das Markdown-Format des Spiegels wird etwas aufwendiger.
+- Erwogen und nicht empfohlen: ein Verweis-Knoten, der nur auf den Ast in seinem Ursprungsbaum zeigt. Der Baum bliebe einfacher, aber es gäbe ein Original und einen Verweis; wird das Original entfernt, hängt der Verweis in der Luft. Die Platzierungen sind gleichberechtigt und passen zu „in A und B“.
+- Empfehlung: Platzierungen von Anfang an ins Datenmodell nehmen, weil ein späterer Wechsel vom Parent-Feld ein Umbau wäre; die Bedienung für „übertragen“ kann später kommen. Zur Vereinfachung: ein Knoten höchstens einmal je Baum.
+
+### Decided
+
+- Nichts wird kopiert; es gibt „umhängen“ und „übertragen“ (Owner).
+
+### Open
+
+- Platzierungen statt Parent-Feld von Anfang an: Vorschlag, wartet auf den Owner.
+- Ein Knoten höchstens einmal je Baum und Summen ohne Doppelzählung: Vorschlag, wartet auf den Owner.
+- Zwei Aktionen „hier entfernen“ und „Knoten löschen“: Vorschlag, wartet auf den Owner.

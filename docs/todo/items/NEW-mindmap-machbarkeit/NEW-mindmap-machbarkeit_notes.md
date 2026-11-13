@@ -5,8 +5,7 @@
 - Goal/Status: Nur Planung, Umsetzung später in kleinen Schritten; Grundmodell, Zuordnung und Ansichten sind abgestimmt, für Maps an Elementen ist „Fokus statt eigener Map“ vorgeschlagen.
 - Next step: Offene Fragen mit dem Owner klären, dann das Konzept als Spec schreiben; daraus entsteht später mindestens ein Epic.
 - Open:
-  - Mischung aus einem Baum je Projekt mit Fokus auf beliebigem Knoten und freien Maps für Ideen außerhalb der Projektstruktur? Vorschlag, noch nicht bestätigt (2026-11-13)
-  - „Zur Mindmap“ an einem Item: Fokus auf seinen Knoten, bei Bedarf wird ein eigener Unterknoten angelegt? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - „Anker“ an einem Item ohne eigenen Knoten: Knoten zeigen, an dem es hängt, oder erst „Erstelle“ verlangen? (2026-11-13)
   - Ast aus einer freien Map in den Projektbaum verschieben (nicht kopieren)? Vorschlag, noch nicht bestätigt (2026-11-13)
   - Wie die KI Knoten vorschlägt: nur im Gespräch oder als sichtbarer Vorschlag in der Oberfläche (2026-11-13)
   - Abgeschlossene Items: nur im Fortschritt zählen oder auch zeigen (2026-11-13)
@@ -26,9 +25,12 @@
   - Zwei Ansichten: Einzelansicht (eine Map) und Gesamtansicht mit gemeinsamer Wurzel, Projekte als erste Knoten, gefiltert über die Projektauswahl (2026-11-13)
   - Anordnung umschaltbar zwischen rund und Baum zur Seite (2026-11-13)
   - Vorerst wird nur geplant; aus dem Task entsteht später mindestens ein Epic (2026-11-13)
+  - Mischung: ein Baum je Projekt mit Fokus auf beliebigem Knoten, dazu freie Maps (2026-11-13)
+  - Am Item drei getrennte Aktionen: „Gehe hin“ (Map an der Stelle öffnen), „Erstelle“ (neuen Knoten anlegen), „Anker“ (Element als Wurzel öffnen); kein stilles Anlegen von Knoten (2026-11-13)
+  - Umsetzung in einem eigenen neuen Branch, weil großer experimenteller Umbau (2026-11-13)
 - References: Graph-Seite `client/src/plugins/backlog/` (`graphModel.ts`, React Flow, ELK); `workspace_links`, `ElementDetail`, `DocumentsSection`; Story STORY-086 (Umwandeln)
 
-State confirmed after entry 2026-11-13 — Doppelte Orte: Fokus statt eigener Map, Vergleich mit anderen Werkzeugen (20dcfa4b09e9)
+State confirmed after entry 2026-11-13 — Aktionen am Item, Mischung bestätigt, eigener Branch (50f52bdec624)
 
 ## 2026-11-13 — Idee, Grundmodell und erste Entscheidungen
 
@@ -120,3 +122,23 @@ State confirmed after entry 2026-11-13 — Doppelte Orte: Fokus statt eigener Ma
 - Open vom 2026-11-13 (Map mit Anker als eigene Map je Element, Regel je Map) ersetzt durch: Mischung aus Projektbaum mit Fokus und freien Maps; wartet auf den Owner.
 - „Zur Mindmap“ am Item als Fokus mit bei Bedarf angelegtem Unterknoten; wartet auf den Owner.
 - Ast aus freier Map in den Projektbaum verschieben; wartet auf den Owner.
+
+## 2026-11-13 — Aktionen am Item, Mischung bestätigt, eigener Branch
+
+### Discussed
+
+- Open vom 2026-11-13 (Mischung aus Projektbaum und freien Maps) geklärt: Der Owner bestätigt die Mischung, damit man flexibel gestalten kann.
+- Open vom 2026-11-13 („Zur Mindmap“ als Fokus mit bei Bedarf angelegtem Unterknoten): Der Owner will das trennen statt einer Aktion, die still einen Knoten anlegt. Drei Aktionen: „Gehe hin“ öffnet die Mindmap an der Stelle des Items; „Erstelle“ legt einen neuen Knoten für das Item an; „Anker“ öffnet das Element als Wurzel.
+- Rückfrage des Owners, was „Gerippe als Raster“ beim User Story Mapping heißt: Dort hat die Fläche zwei feste Achsen. Oben steht eine Zeile mit den Schritten des Nutzers in zeitlicher Reihenfolge, unter jedem Schritt stapeln sich die Stories nach Wichtigkeit, waagrechte Linien trennen Lieferstufen. Es gibt nur eine Ebene unter dem Gerüst und die Position trägt Bedeutung. Ein Baum hat beliebige Tiefe und keine Bedeutung der Reihenfolge.
+- Umsetzung: Der Owner legt fest, dass der Umbau groß und experimentell ist und deshalb in einem neuen Branch laufen muss.
+
+### Decided
+
+- Mischung aus einem Baum je Projekt mit Fokus und freien Maps (Owner).
+- Drei getrennte Aktionen am Item: „Gehe hin“, „Erstelle“, „Anker“ (Owner). Verworfen: eine Aktion „Zur Mindmap“, die bei Bedarf selbst einen Unterknoten anlegt.
+- Umsetzung in einem eigenen neuen Branch (Owner).
+
+### Open
+
+- „Anker“ an einem Item, das keinen eigenen Knoten hat: den Knoten zeigen, an dem es (auch geerbt) hängt, oder die Aktion erst nach „Erstelle“ anbieten.
+- Ast aus freier Map in den Projektbaum verschieben statt kopieren: weiter offen.

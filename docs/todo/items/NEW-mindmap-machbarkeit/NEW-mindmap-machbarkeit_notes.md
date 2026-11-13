@@ -2,11 +2,12 @@
 
 ## State
 
-- Goal/Status: Ideensammlung läuft; Grundmodell, Zuordnung und Ansichten sind mit dem Owner abgestimmt, das allgemeine Modell (Map an beliebigem Element) ist vorgeschlagen.
-- Next step: Offene Fragen mit dem Owner klären, dann das Konzept als Spec schreiben.
+- Goal/Status: Nur Planung, Umsetzung später in kleinen Schritten; Grundmodell, Zuordnung und Ansichten sind abgestimmt, für Maps an Elementen ist „Fokus statt eigener Map“ vorgeschlagen.
+- Next step: Offene Fragen mit dem Owner klären, dann das Konzept als Spec schreiben; daraus entsteht später mindestens ein Epic.
 - Open:
-  - Map mit Anker (Projekt oder Element) als ein gemeinsames Modell, Projekt-Map zuerst, Element-Maps als zweiter Schritt? Vorschlag, noch nicht bestätigt (2026-11-13)
-  - Folge daraus: „höchstens ein Knoten je Item“ gilt je Map, nicht insgesamt? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - Mischung aus einem Baum je Projekt mit Fokus auf beliebigem Knoten und freien Maps für Ideen außerhalb der Projektstruktur? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - „Zur Mindmap“ an einem Item: Fokus auf seinen Knoten, bei Bedarf wird ein eigener Unterknoten angelegt? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - Ast aus einer freien Map in den Projektbaum verschieben (nicht kopieren)? Vorschlag, noch nicht bestätigt (2026-11-13)
   - Wie die KI Knoten vorschlägt: nur im Gespräch oder als sichtbarer Vorschlag in der Oberfläche (2026-11-13)
   - Abgeschlossene Items: nur im Fortschritt zählen oder auch zeigen (2026-11-13)
   - Überführen eines Ideen-Knotens ins Backlog: Typwahl, Umgang mit Knoten tiefer als drei Ebenen (2026-11-13)
@@ -24,9 +25,10 @@
   - Die KI ordnet neue Items zu und schlägt Knoten vor; neue Knoten legt sie erst nach Bestätigung an (2026-11-13)
   - Zwei Ansichten: Einzelansicht (eine Map) und Gesamtansicht mit gemeinsamer Wurzel, Projekte als erste Knoten, gefiltert über die Projektauswahl (2026-11-13)
   - Anordnung umschaltbar zwischen rund und Baum zur Seite (2026-11-13)
+  - Vorerst wird nur geplant; aus dem Task entsteht später mindestens ein Epic (2026-11-13)
 - References: Graph-Seite `client/src/plugins/backlog/` (`graphModel.ts`, React Flow, ELK); `workspace_links`, `ElementDetail`, `DocumentsSection`; Story STORY-086 (Umwandeln)
 
-State confirmed after entry 2026-11-13 — Zuordnung bestätigt, Ansichten, Map an beliebigem Element (bd2b27b59a95)
+State confirmed after entry 2026-11-13 — Doppelte Orte: Fokus statt eigener Map, Vergleich mit anderen Werkzeugen (20dcfa4b09e9)
 
 ## 2026-11-13 — Idee, Grundmodell und erste Entscheidungen
 
@@ -91,3 +93,30 @@ State confirmed after entry 2026-11-13 — Zuordnung bestätigt, Ansichten, Map 
 - Map mit Anker als gemeinsames Modell und die Reihenfolge (Projekt-Map zuerst): Vorschlag, wartet auf den Owner.
 - „Höchstens ein Knoten je Item“ je Map statt insgesamt: Vorschlag, wartet auf den Owner.
 - Qualität der runden Anordnung bei großen Maps: im Prototyp prüfen.
+
+## 2026-11-13 — Doppelte Orte: Fokus statt eigener Map, Vergleich mit anderen Werkzeugen
+
+### Discussed
+
+- Frage des Owners: Lassen sich doppelte Orte vermeiden, wenn ein Anker nur die Map ab einem Knoten zeigt? Beispiel: Wurzel → Umbau UI → Builder → ButtonX und → Processmanager → Forms → FormX → ElementY. Jeder Knoten kann Einträge haben oder leer sein (Forms leer, FormX wieder mit Einträgen). Eingeklappt gilt die Summe, je weiter aufgeklappt, desto feiner. Forms wäre dann der Anker, von dem aus geplant wird. Daneben könnten eigenständige Bäume sinnvoll sein, oder eine Mischung.
+- Einschätzung: Ja, der Fokus löst die doppelten Orte für alles, was in die Projektstruktur gehört. Es gibt je Projekt einen Baum; ein Anker ist nur eine Ansicht ab einem Knoten, mit Pfad zurück nach oben. Summen laufen auch über leere Knoten nach oben.
+- „Zur Mindmap“ an einem Item wird damit zu: Fokus auf den Knoten des Items. Hängt es dort nicht allein, wird unter seinem wirksamen Knoten ein Unterknoten mit seinem Namen angelegt und das Item eigens dorthin gehängt; nach der Vererbungsregel zählen es und seine Kinder dann dort.
+- Folge: Der Vorschlag „höchstens ein Knoten je Item je Map“ aus dem vorigen Eintrag entfällt; die Regel kann wieder insgesamt gelten, was einfacher ist.
+- Eigenständige Bäume bleiben nötig für das, was noch keinen Platz in einem Projekt hat: freies Brainstorming, eine Map zu einem Memo, Themen über Projekte hinweg. Empfehlung: Mischung. Ein Baum je Projekt mit Fokus, dazu freie Maps mit eigener Wurzel (wahlweise an ein Memo gehängt). Brücke: ein Ast einer freien Map wird in den Projektbaum verschoben, nicht kopiert, damit nichts doppelt steht.
+- Andere Werkzeuge (aus dem Wissen der KI, nicht frisch recherchiert):
+  - Gliederungswerkzeuge wie Workflowy und Dynalist: ein einziger Baum, jeder Punkt lässt sich als Wurzel öffnen. Das ist genau der Fokus.
+  - Mindmap-Programme wie XMind, MindManager, Freeplane: Fokus auf einen Ast („nur diesen Zweig zeigen“) und zusätzlich verknüpfte Teil-Maps, in die ein großer Ast ausgelagert wird. Dort gibt es also beides.
+  - User Story Mapping (StoriesOnBoard, Miro): ein Gerüst aus Aktivitäten, unter dem die Stories hängen. Das ist dem Gerippe mit verlinkten Items am nächsten, aber als Raster, nicht als Baum.
+  - Mindmap-Erweiterungen für Jira: jedes Ticket ist ein Knoten. Das ist die volle Darstellung, die hier vermieden werden soll.
+  - Ein Werkzeug, das ein freies Themen-Gerippe mit geerbter Zuordnung und Summen am Knoten verbindet, ist der KI nicht bekannt.
+- Der Owner hält fest: Es wird vorerst nur geplant, damit sichtbar ist, was es gibt und wohin es gehen soll; umgesetzt wird später in vielen kleinen Schritten, aus dem Task entsteht später mindestens ein Epic.
+
+### Decided
+
+- Vorerst nur Planung; später mindestens ein Epic aus diesem Task (Owner).
+
+### Open
+
+- Open vom 2026-11-13 (Map mit Anker als eigene Map je Element, Regel je Map) ersetzt durch: Mischung aus Projektbaum mit Fokus und freien Maps; wartet auf den Owner.
+- „Zur Mindmap“ am Item als Fokus mit bei Bedarf angelegtem Unterknoten; wartet auf den Owner.
+- Ast aus freier Map in den Projektbaum verschieben; wartet auf den Owner.

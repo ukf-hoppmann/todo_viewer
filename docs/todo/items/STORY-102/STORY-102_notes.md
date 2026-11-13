@@ -1,4 +1,4 @@
-# NEW-mm-freie-maps — Freie Maps und Äste zwischen Bäumen umhängen und übertragen
+# STORY-102 — Freie Maps und Äste zwischen Bäumen umhängen und übertragen
 
 ## State
 
@@ -15,7 +15,7 @@
   - Platzierungen sind gleichberechtigt: Wird der Ast aus einem Baum entfernt, bleibt er im anderen vollwertig (2026-11-13)
   - Verworfen: Verweis-Knoten auf ein Original, weil der Verweis ins Leere zeigt, sobald das Original entfernt wird (2026-11-13)
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
-- References: Konzept `NEW-mindmap_spec.md` im Epic `NEW-mindmap`; Ideensammlung `NEW-mindmap-machbarkeit`
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
 State confirmed after entry 2026-11-13 — Übertragene Äste bleiben gemeinsam (dcfdb4975d58)
 
@@ -23,7 +23,7 @@ State confirmed after entry 2026-11-13 — Übertragene Äste bleiben gemeinsam 
 
 ### Discussed
 
-- Die Punkte stammen aus der Ideensammlung im Task `NEW-mindmap-machbarkeit`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
+- Die Punkte stammen aus der Ideensammlung im Task `TASK-064`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
 - Folgen des Übertragens: Summen ohne Doppelzählung, zwei Aktionen zum Entfernen, im Fokus folgt der Pfad dem Weg, über den man kam, übertragene Äste sind markiert.
 
 ### Decided

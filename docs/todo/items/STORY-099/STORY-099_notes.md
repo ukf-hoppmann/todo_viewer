@@ -1,4 +1,4 @@
-# NEW-mm-geruest — Mindmap-Gerüst: Themenbaum je Projekt anlegen, ordnen und mit Notizen versehen
+# STORY-099 — Mindmap-Gerüst: Themenbaum je Projekt anlegen, ordnen und mit Notizen versehen
 
 ## State
 
@@ -14,7 +14,7 @@
   - Umhängen innerhalb eines Baums ist immer möglich; Kreise werden verhindert (2026-11-13)
   - Knoten können Notizen bekommen, um Allgemeines zum Thema festzuhalten (2026-11-13)
   - Beim Öffnen sind zwei Ebenen offen, tiefere eingeklappt (2026-11-13)
-- References: Konzept `NEW-mindmap_spec.md` im Epic `NEW-mindmap`; Ideensammlung `NEW-mindmap-machbarkeit`
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
 State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung (5ab3c9d663bd)
 
@@ -22,7 +22,7 @@ State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der
 
 ### Discussed
 
-- Die Punkte stammen aus der Ideensammlung im Task `NEW-mindmap-machbarkeit`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
+- Die Punkte stammen aus der Ideensammlung im Task `TASK-064`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
 - Geplante Wiederverwendung: Ein Knoten wird ein Element des Workspace und bekommt so Verknüpfungen (`workspace_links`) und Papierkorb; die Notizen nutzen den gemeinsamen Baustein `DocumentsSection`; die Darstellung nutzt React Flow und ELK wie der Abhängigkeiten-Graph.
 
 ### Decided

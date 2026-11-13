@@ -1,4 +1,4 @@
-# NEW-mm-spiegel — Mindmap im Markdown-Spiegel: Dateiformat und Sync
+# STORY-105 — Mindmap im Markdown-Spiegel: Dateiformat und Sync
 
 ## State
 
@@ -9,7 +9,7 @@
 - Decided:
   - Der Spiegel wird mitgeplant; wenn er umsetzbar ist, wird er gebaut, sonst entfällt er, der Owner hätte ihn lieber (2026-11-13)
   - Gebaut wird er erst nach der ersten lauffähigen Fassung der Mindmap (2026-11-13)
-- References: Konzept `NEW-mindmap_spec.md` im Epic `NEW-mindmap`; Ideensammlung `NEW-mindmap-machbarkeit`
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
 State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung (423e4bda98d6)
 
@@ -17,7 +17,7 @@ State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der
 
 ### Discussed
 
-- Die Punkte stammen aus der Ideensammlung im Task `NEW-mindmap-machbarkeit`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
+- Die Punkte stammen aus der Ideensammlung im Task `TASK-064`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
 - Grund: Cloud-Sitzungen arbeiten nur auf den Dateien; ohne Format kann die KI dort Items nicht zuordnen.
 
 ### Decided

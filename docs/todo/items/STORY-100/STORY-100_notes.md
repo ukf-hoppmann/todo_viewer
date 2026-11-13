@@ -1,4 +1,4 @@
-# NEW-mm-zuordnung — Items und Memos an Knoten hängen: Anzahl, Fortschritt und Zustand am Thema
+# STORY-100 — Items und Memos an Knoten hängen: Anzahl, Fortschritt und Zustand am Thema
 
 ## State
 
@@ -16,7 +16,7 @@
   - Memos lassen sich an Knoten verlinken und stehen nur im Detail, ohne eigene Zahl am Knoten (2026-11-13)
   - Was die KI nicht zuordnen kann, landet in einem Sammelknoten „Nicht zugeordnet“ (2026-11-13)
   - Verworfen: strikte Vererbung vom Wurzel-Item ohne Ausnahme; sie verhindert das Planen unterhalb eines Epic-Knotens (2026-11-13)
-- References: Konzept `NEW-mindmap_spec.md` im Epic `NEW-mindmap`; Ideensammlung `NEW-mindmap-machbarkeit`
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
 State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung (0125fb929825)
 
@@ -24,7 +24,7 @@ State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der
 
 ### Discussed
 
-- Die Punkte stammen aus der Ideensammlung im Task `NEW-mindmap-machbarkeit`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
+- Die Punkte stammen aus der Ideensammlung im Task `TASK-064`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
 - Geplante Wiederverwendung: Verknüpfungen über `workspace_links` mit einer eigenen Rolle; die Regel „höchstens ein Knoten je Item“ liegt in der Domain.
 
 ### Decided

@@ -1,4 +1,4 @@
-# NEW-mindmap — Mindmap: Themen-Gerippe zum Brainstormen und als Übersicht des Backlogs
+# EPIC-008 — Mindmap: Themen-Gerippe zum Brainstormen und als Übersicht des Backlogs
 
 ## State
 
@@ -16,7 +16,7 @@
   - Der Viewer bekommt keine eigene LLM-Anbindung; die KI arbeitet über API und MCP (2026-11-13)
   - Die Umsetzung läuft in einem eigenen neuen Branch, weil es ein großer experimenteller Umbau ist, und in vielen kleinen Schritten (2026-11-13)
   - Der Markdown-Spiegel wird mitgeplant und ist für das Epic nicht Pflicht (2026-11-13)
-- References: Spec `NEW-mindmap_spec.md`; Ideensammlung `NEW-mindmap-machbarkeit`; Stories `NEW-mm-geruest`, `NEW-mm-zuordnung`, `NEW-mm-ansichten`, `NEW-mm-freie-maps`, `NEW-mm-ueberfuehren`, `NEW-mm-ki`, `NEW-mm-spiegel`
+- References: Spec `EPIC-008_spec.md`; Ideensammlung `TASK-064`; Stories `STORY-099`, `STORY-100`, `STORY-101`, `STORY-102`, `STORY-103`, `STORY-104`, `STORY-105`
 
 State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung (7b9693bf6c7d)
 
@@ -24,7 +24,7 @@ State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der
 
 ### Discussed
 
-- Die Punkte stammen aus der Ideensammlung im Task `NEW-mindmap-machbarkeit`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
+- Die Punkte stammen aus der Ideensammlung im Task `TASK-064`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
 
 ### Decided
 

@@ -1,4 +1,4 @@
-# NEW-mm-ki — KI ordnet neue Items der Mindmap zu und schlägt Knoten vor
+# STORY-104 — KI ordnet neue Items der Mindmap zu und schlägt Knoten vor
 
 ## State
 
@@ -12,7 +12,7 @@
   - Die KI darf Knoten und Unterknoten vorschlagen und legt sie nach Bestätigung an; ohne Bestätigung erfindet sie keine Themen (2026-11-13)
   - Clustern läuft über gespeicherte Knoten, nicht über eine Berechnung bei jedem Öffnen; der Viewer braucht keine eigene LLM-Anbindung (2026-11-13)
   - Verworfen: Clustern über Textähnlichkeit der Titel, zu schwach bei kurzen Titeln (2026-11-13)
-- References: Konzept `NEW-mindmap_spec.md` im Epic `NEW-mindmap`; Ideensammlung `NEW-mindmap-machbarkeit`; Story STORY-092
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-092
 
 State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung (257f7b0d6577)
 
@@ -20,7 +20,7 @@ State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der
 
 ### Discussed
 
-- Die Punkte stammen aus der Ideensammlung im Task `NEW-mindmap-machbarkeit`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
+- Die Punkte stammen aus der Ideensammlung im Task `TASK-064`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
 - Ein Startvorschlag ohne KI wäre aus Area, gemeinsamem Epic und Abhängigkeitsgruppen (`connectedComponents`) möglich; er ist nicht Teil dieser Story, solange der Owner ihn nicht wünscht.
 
 ### Decided

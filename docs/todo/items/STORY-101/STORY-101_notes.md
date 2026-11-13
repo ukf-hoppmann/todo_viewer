@@ -1,4 +1,4 @@
-# NEW-mm-ansichten — Mindmap-Ansichten: Fokus auf einen Knoten, Einzel- und Gesamtansicht, runde Anordnung, Abhängigkeiten
+# STORY-101 — Mindmap-Ansichten: Fokus auf einen Knoten, Einzel- und Gesamtansicht, runde Anordnung, Abhängigkeiten
 
 ## State
 
@@ -15,7 +15,7 @@
   - Verworfen: mehrere Maps nebeneinander, weil das vor allem rund unübersichtlich wird (2026-11-13)
   - Die Anordnung ist umschaltbar zwischen rund (Mitte mit Ästen ringsum) und Baum zur Seite (2026-11-13)
   - Abhängigkeiten werden nur zwischen Themen gezeigt (eine Linie, sobald ein Item aus A eines aus B braucht), an- und abschaltbar, standardmäßig aus (2026-11-13)
-- References: Konzept `NEW-mindmap_spec.md` im Epic `NEW-mindmap`; Ideensammlung `NEW-mindmap-machbarkeit`
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
 State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung (eb5c7a59da10)
 
@@ -23,7 +23,7 @@ State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der
 
 ### Discussed
 
-- Die Punkte stammen aus der Ideensammlung im Task `NEW-mindmap-machbarkeit`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
+- Die Punkte stammen aus der Ideensammlung im Task `TASK-064`; dort steht der Weg zu den Entscheidungen mit Optionen und Gründen.
 - Vergleich: Workflowy und Dynalist öffnen jeden Punkt als Wurzel (Fokus); XMind, MindManager und Freeplane kennen Fokus und ausgelagerte Teil-Maps.
 
 ### Decided

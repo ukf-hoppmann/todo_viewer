@@ -1,17 +1,17 @@
-# NEW-mindmap-machbarkeit — Mindmap: Machbarkeit prüfen und Ideen sammeln
+# TASK-064 — Mindmap: Machbarkeit prüfen und Ideen sammeln
 
 ## State
 
-- Goal/Status: Ideensammlung abgeschlossen; Konzept steht als Spec im Epic `NEW-mindmap`, Stories und Tasks sind angelegt. Wartet auf die Bestätigung des Owners.
-- Next step: Bestätigung durch den Owner; die weitere Arbeit läuft im Epic `NEW-mindmap`.
+- Goal/Status: Ideensammlung abgeschlossen; Konzept steht als Spec im Epic `EPIC-008`, Stories und Tasks sind angelegt. Wartet auf die Bestätigung des Owners.
+- Next step: Bestätigung durch den Owner; die weitere Arbeit läuft im Epic `EPIC-008`.
 - Open:
   - Die verbliebenen offenen Fragen stehen in den Notizen des Epics und der Stories (2026-11-13)
 - Decided:
-  - Aus der Ideensammlung wird das Epic `NEW-mindmap` mit sieben Stories und zwölf Tasks (2026-11-13)
+  - Aus der Ideensammlung wird das Epic `EPIC-008` mit sieben Stories und zwölf Tasks (2026-11-13)
   - Alle Entscheidungen sind in die Notizen des Epics und der passenden Stories übertragen; dieses Protokoll bleibt als Herleitung (2026-11-13)
   - Übertragen von Ästen nur zwischen Bäumen, Umhängen auch innerhalb; Platzierungen gleichberechtigt (2026-11-13)
   - Verlinkte Memos stehen nur im Detail; der Aufbau der Mindmap-Seite wird später geklärt (2026-11-13)
-- References: Epic `NEW-mindmap` mit Spec `NEW-mindmap_spec.md`; Stories `NEW-mm-geruest`, `NEW-mm-zuordnung`, `NEW-mm-ansichten`, `NEW-mm-freie-maps`, `NEW-mm-ueberfuehren`, `NEW-mm-ki`, `NEW-mm-spiegel`
+- References: Epic `EPIC-008` mit Spec `EPIC-008_spec.md`; Stories `STORY-099`, `STORY-100`, `STORY-101`, `STORY-102`, `STORY-103`, `STORY-104`, `STORY-105`
 
 State confirmed after entry 2026-11-13 — Letzte Entscheidungen und Übergabe an das Epic (3e570d07b601)
 
@@ -192,7 +192,7 @@ State confirmed after entry 2026-11-13 — Letzte Entscheidungen und Übergabe a
 ### Discussed
 
 - Open vom 2026-11-13 (derselbe Ast zweimal im selben Baum) geklärt: Übertragen nur zwischen Bäumen, Umhängen auch innerhalb.
-- Open vom 2026-11-13 (gleichberechtigt oder Verweis) geklärt: gleichberechtigt. Der Owner begründet es damit, dass sich die Äste dann unterschiedlich entwickeln können. Das trifft technisch nicht zu: Der Ast ist an beiden Stellen derselbe Datensatz. Die Rückfrage dazu steht in der Story `NEW-mm-freie-maps`.
+- Open vom 2026-11-13 (gleichberechtigt oder Verweis) geklärt: gleichberechtigt. Der Owner begründet es damit, dass sich die Äste dann unterschiedlich entwickeln können. Das trifft technisch nicht zu: Der Ast ist an beiden Stellen derselbe Datensatz. Die Rückfrage dazu steht in der Story `STORY-102`.
 - Open vom 2026-11-13 (Auswahl der Maps, Memos am Knoten): Der Owner bestätigt den festgehaltenen Stand; der genaue Aufbau der Mindmap-Seite wird noch geklärt und danach, wo man die Maps findet.
 - Auftrag des Owners: ein neues Epic anlegen, Stories und Tasks planen und die Entscheidungen an die passenden Stellen übertragen.
 - Schnitt: sieben Stories nach Fähigkeit (Gerüst, Zuordnung, Ansichten, freie Maps und Äste, Überführen, KI, Spiegel). Notizen an Knoten und Abhängigkeiten zwischen Themen sind Tasks statt eigener Stories, damit das Epic nicht über acht Stories wächst. Überführen, KI und Spiegel haben noch keine Tasks, weil dort Fragen offen sind.
@@ -201,7 +201,7 @@ State confirmed after entry 2026-11-13 — Letzte Entscheidungen und Übergabe a
 
 - Übertragen nur zwischen Bäumen, Umhängen auch innerhalb (Owner).
 - Platzierungen gleichberechtigt (Owner).
-- Epic `NEW-mindmap` mit Stories und Tasks angelegt, Konzept als Spec im Epic (Auftrag des Owners).
+- Epic `EPIC-008` mit Stories und Tasks angelegt, Konzept als Spec im Epic (Auftrag des Owners).
 
 ### Open
 

@@ -1,7 +1,7 @@
-# NEW-mindmap — Konzept: Mindmap als Themen-Gerippe
+# EPIC-008 — Konzept: Mindmap als Themen-Gerippe
 
 Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
-`NEW-mindmap-machbarkeit`; die Einzelheiten je Fähigkeit stehen in den Notizen der Stories.
+`TASK-064`; die Einzelheiten je Fähigkeit stehen in den Notizen der Stories.
 
 ## Zweck
 

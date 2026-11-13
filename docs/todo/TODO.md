@@ -9,7 +9,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
-- `NEW-mindmap` **Mindmap: Themen-Gerippe zum Brainstormen und als Übersicht des Backlogs**
+- `EPIC-008` **Mindmap: Themen-Gerippe zum Brainstormen und als Übersicht des Backlogs**
+  - Uid: 039478f4-0b3b-4807-8fd3-36fec9a4d372.
   - Type: Epic.
   - Status: Open.
   - Created: 2026-11-13.
@@ -38,9 +39,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Backlog-Einträge und Memos daran hängen und so schnell sehen, was es gibt
     und was kommt. Sie ist nur ein Gerippe und verlinkt; kopiert wird nichts.
 
-- `NEW-mm-geruest` **Mindmap-Gerüst: Themenbaum je Projekt anlegen, ordnen und mit Notizen versehen**
+- `STORY-099` **Mindmap-Gerüst: Themenbaum je Projekt anlegen, ordnen und mit Notizen versehen**
+  - Uid: e4a5ac91-95ba-44d0-aa9a-5ac0fffa6326.
   - Type: Story.
-  - Parent: `NEW-mindmap`.
+  - Parent: `EPIC-008`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
@@ -64,9 +66,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Der Grundbaustein: ein Themenbaum je Projekt, in dem man frei
     Knoten sammelt und ordnet und Notizen dazu schreibt.
 
-- `NEW-mm-t-modell` **Mindmap-Server: Knoten, Platzierungen und Projektbaum mit API und MCP**
+- `TASK-052` **Mindmap-Server: Knoten, Platzierungen und Projektbaum mit API und MCP**
+  - Uid: 26d4cdfa-7632-4e6d-bacf-2a17a04a7334.
   - Type: Task.
-  - Parent: `NEW-mm-geruest`.
+  - Parent: `STORY-099`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
@@ -83,15 +86,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     3. Die Operationen sind über API und MCP erreichbar und melden Ereignisse.
     4. Domain- und API-Tests sind grün, die Schnittstellen sind dokumentiert.
 
-- `NEW-mm-t-seite` **Mindmap-Seite: Projektbaum anzeigen, Knoten anlegen, umbenennen, löschen, ein- und ausklappen**
+- `TASK-053` **Mindmap-Seite: Projektbaum anzeigen, Knoten anlegen, umbenennen, löschen, ein- und ausklappen**
+  - Uid: e642fa32-c332-4e52-8174-05648be29c84.
   - Type: Task.
-  - Parent: `NEW-mm-geruest`.
+  - Parent: `STORY-099`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-t-modell`.
+  - Dependencies: `TASK-052`.
   - Goal: Ein neues Client-Plugin zeigt den Themenbaum des gewählten Projekts
     als Mindmap in der Anordnung zur Seite und erlaubt das Anlegen, Umbenennen
     und Löschen von Knoten sowie das Ein- und Ausklappen.
@@ -102,15 +106,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Ebenen offen.
     3. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
 
-- `NEW-mm-t-umhaengen` **Mindmap: Knoten per Ziehen umhängen und umordnen**
+- `TASK-054` **Mindmap: Knoten per Ziehen umhängen und umordnen**
+  - Uid: 0d9f9111-7e91-4adf-b97d-7c979ac15544.
   - Type: Task.
-  - Parent: `NEW-mm-geruest`.
+  - Parent: `STORY-099`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-t-seite`.
+  - Dependencies: `TASK-053`.
   - Goal: In der Map lässt sich ein Knoten samt Ast per Ziehen unter einen
     anderen Knoten hängen oder unter seinen Geschwistern umordnen.
   - Completion criteria: 1. Ziehen auf einen Knoten hängt den Ast darunter;
@@ -119,15 +124,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Servers steht als Meldung über der Map.
     3. UI-Tests sind grün.
 
-- `NEW-mm-t-notizen` **Mindmap: Notizen an Knoten**
+- `TASK-055` **Mindmap: Notizen an Knoten**
+  - Uid: 6fc3d1ab-41db-4b13-9e39-eb5f4c2572c7.
   - Type: Task.
-  - Parent: `NEW-mm-geruest`.
+  - Parent: `STORY-099`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-t-seite`.
+  - Dependencies: `TASK-053`.
   - Goal: Ein Knoten hat im Detail den Abschnitt „Dokumente“ und kann Notizen
     tragen, gespeichert und gelesen wie bei Items.
   - Completion criteria: 1. Der Server speichert Dokumente eines Knotens; das
@@ -135,15 +141,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     2. Ein Knoten mit Notizen ist in der Map erkennbar.
     3. API- und UI-Tests sind grün.
 
-- `NEW-mm-zuordnung` **Items und Memos an Knoten hängen: Anzahl, Fortschritt und Zustand am Thema**
+- `STORY-100` **Items und Memos an Knoten hängen: Anzahl, Fortschritt und Zustand am Thema**
+  - Uid: 36fb7560-506d-49a0-9d0b-bcbc5b35015f.
   - Type: Story.
-  - Parent: `NEW-mindmap`.
+  - Parent: `EPIC-008`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-geruest`.
+  - Dependencies: `STORY-099`.
   - Goal: Backlog-Items und Memos lassen sich an Knoten hängen. Ein Knoten
     zeigt Anzahl und Fortschritt seiner Items samt Unterknoten und einen
     daraus abgeleiteten Zustand; die Items selbst stehen nur im Detail. So
@@ -162,9 +169,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Backlog-Einträge und Memos an Themen hängen. Das Thema zeigt nur
     eine Zahl und den Fortschritt, damit die Map übersichtlich bleibt.
 
-- `NEW-mm-t-zuordnung-server` **Mindmap-Server: Items und Memos zuordnen, Vererbung, Summen und Zustand**
+- `TASK-056` **Mindmap-Server: Items und Memos zuordnen, Vererbung, Summen und Zustand**
+  - Uid: b8dc196f-65c2-4f22-a846-46d853a2ec75.
   - Type: Task.
-  - Parent: `NEW-mm-zuordnung`.
+  - Parent: `STORY-100`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
@@ -183,15 +191,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     3. Die Antwort des Baums enthält je Knoten Anzahl, Fortschritt und Zustand
     sowie die Zahl der nicht zugeordneten Items.
 
-- `NEW-mm-t-zuordnung-client` **Mindmap: Zahl, Fortschrittsring, Zustand und Filter am Knoten, Items und Memos im Detail**
+- `TASK-057` **Mindmap: Zahl, Fortschrittsring, Zustand und Filter am Knoten, Items und Memos im Detail**
+  - Uid: 0401cbeb-4e8c-42db-b37a-57b857f6772e.
   - Type: Task.
-  - Parent: `NEW-mm-zuordnung`.
+  - Parent: `STORY-100`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-t-zuordnung-server`.
+  - Dependencies: `TASK-056`.
   - Goal: Die Map zeigt an jedem Knoten Anzahl, Fortschrittsring und Zustand,
     bietet einen Filter über die Zustände und listet im Detail die Items und
     Memos des Knotens; Items lassen sich in der Oberfläche zuordnen und lösen.
@@ -203,15 +212,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     und lösen.
     4. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
 
-- `NEW-mm-ansichten` **Mindmap-Ansichten: Fokus auf einen Knoten, Einzel- und Gesamtansicht, runde Anordnung, Abhängigkeiten**
+- `STORY-101` **Mindmap-Ansichten: Fokus auf einen Knoten, Einzel- und Gesamtansicht, runde Anordnung, Abhängigkeiten**
+  - Uid: 3366e17a-d7f3-4810-85c4-adf6817191fe.
   - Type: Story.
-  - Parent: `NEW-mindmap`.
+  - Parent: `EPIC-008`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-zuordnung`.
+  - Dependencies: `STORY-100`.
   - Goal: Man kann jeden Knoten als Wurzel öffnen und von dort weiterplanen,
     von einem Item aus zur Map springen, alle Projekte unter einer gemeinsamen
     Wurzel sehen, zwischen runder und seitlicher Anordnung wechseln und
@@ -232,9 +242,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     alle Projekte zusammen sehen, rund oder zur Seite anordnen und
     Abhängigkeiten zwischen Themen einblenden.
 
-- `NEW-mm-t-fokus` **Mindmap: Fokus auf einen Knoten und die Aktionen „Gehe hin“, „Erstelle“, „Anker“ am Item**
+- `TASK-058` **Mindmap: Fokus auf einen Knoten und die Aktionen „Gehe hin“, „Erstelle“, „Anker“ am Item**
+  - Uid: 44aae02d-c3c4-48b7-81d2-4ad27c9d5398.
   - Type: Task.
-  - Parent: `NEW-mm-ansichten`.
+  - Parent: `STORY-101`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
@@ -250,15 +261,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     dorthin; „Anker“ gibt es nur mit eigenem Knoten.
     3. UI-Tests sind grün.
 
-- `NEW-mm-t-gesamt` **Mindmap: Gesamtansicht mit gemeinsamer Wurzel über die gewählten Projekte**
+- `TASK-059` **Mindmap: Gesamtansicht mit gemeinsamer Wurzel über die gewählten Projekte**
+  - Uid: 9d65405e-bef7-4405-b7d3-693fbbfc7615.
   - Type: Task.
-  - Parent: `NEW-mm-ansichten`.
+  - Parent: `STORY-101`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-t-fokus`.
+  - Dependencies: `TASK-058`.
   - Goal: Neben der Einzelansicht gibt es eine Gesamtansicht mit einer
     gemeinsamen Wurzel, unter der die in der Seitenleiste gewählten Projekte
     die ersten Knoten sind.
@@ -267,9 +279,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     2. Die Summen an der gemeinsamen Wurzel zählen jedes Item einmal.
     3. UI-Tests sind grün.
 
-- `NEW-mm-t-rund` **Mindmap: runde Anordnung, umschaltbar zur Anordnung zur Seite**
+- `TASK-060` **Mindmap: runde Anordnung, umschaltbar zur Anordnung zur Seite**
+  - Uid: a52f7b44-3538-457d-8e85-46d493bdd7d9.
   - Type: Task.
-  - Parent: `NEW-mm-ansichten`.
+  - Parent: `STORY-101`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
@@ -286,9 +299,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     3. Eine Map mit vielen Knoten bleibt in der runden Anordnung ohne
     Überlappung lesbar.
 
-- `NEW-mm-t-abhaengigkeiten` **Mindmap: Abhängigkeiten zwischen Themen ein- und ausblenden**
+- `TASK-061` **Mindmap: Abhängigkeiten zwischen Themen ein- und ausblenden**
+  - Uid: c9b91950-7822-42e1-9b52-d0d3d0176a6f.
   - Type: Task.
-  - Parent: `NEW-mm-ansichten`.
+  - Parent: `STORY-101`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
@@ -302,15 +316,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     getestet.
     2. Der Schalter ist standardmäßig aus und sein Zustand bleibt gespeichert.
 
-- `NEW-mm-freie-maps` **Freie Maps und Äste zwischen Bäumen umhängen und übertragen**
+- `STORY-102` **Freie Maps und Äste zwischen Bäumen umhängen und übertragen**
+  - Uid: 5e2233a4-bac0-482b-8890-66e0855fa8e0.
   - Type: Story.
-  - Parent: `NEW-mindmap`.
+  - Parent: `EPIC-008`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-geruest`, `NEW-mm-zuordnung`.
+  - Dependencies: `STORY-099`, `STORY-100`.
   - Goal: Neben dem Projektbaum kann ein Projekt freie Maps haben, etwa zum
     Brainstormen vor der Umsetzung, und ein Memo seine eigene Map. Äste lassen
     sich zwischen Bäumen umhängen (aus A weg, in B drin) oder übertragen
@@ -329,9 +344,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     andere Map zu hängen oder ihn in beiden zu führen, damit die Planungs-Map
     nicht schrumpft, wenn die Umsetzungs-Map wächst.
 
-- `NEW-mm-t-freie-maps` **Mindmap: freie Maps je Projekt und die Map eines Memos**
+- `TASK-062` **Mindmap: freie Maps je Projekt und die Map eines Memos**
+  - Uid: 57a6b175-25bd-4d1e-8f8b-7fc05a044760.
   - Type: Task.
-  - Parent: `NEW-mm-freie-maps`.
+  - Parent: `STORY-102`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
@@ -347,15 +363,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Mindmap-Seite; die Map eines Memos öffnet man aus dem Memo.
     3. API- und UI-Tests sind grün.
 
-- `NEW-mm-t-uebertragen` **Mindmap: Äste zwischen Bäumen umhängen und übertragen**
+- `TASK-063` **Mindmap: Äste zwischen Bäumen umhängen und übertragen**
+  - Uid: fa9495d7-cad8-4d2e-8db0-98fdf2a6d88d.
   - Type: Task.
-  - Parent: `NEW-mm-freie-maps`.
+  - Parent: `STORY-102`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-t-freie-maps`.
+  - Dependencies: `TASK-062`.
   - Goal: Ein Ast lässt sich in einen anderen Baum umhängen oder dorthin
     übertragen, sodass er in beiden steht; übertragene Äste sind markiert und
     lassen sich nur hier entfernen oder ganz löschen.
@@ -366,15 +383,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     löschen“.
     3. Summen zählen jedes Item einmal; Domain-, API- und UI-Tests sind grün.
 
-- `NEW-mm-ueberfuehren` **Ideen-Knoten ins Backlog überführen**
+- `STORY-103` **Ideen-Knoten ins Backlog überführen**
+  - Uid: 688f456a-295f-453d-a6cd-39d7bb6c6aa8.
   - Type: Story.
-  - Parent: `NEW-mindmap`.
+  - Parent: `EPIC-008`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-zuordnung`.
+  - Dependencies: `STORY-100`.
   - Goal: Aus einem Knoten ohne Items lässt sich direkt ein Backlog-Item
     anlegen. Der Knoten bleibt stehen, das neue Item hängt daran, und der
     Knoten wechselt dadurch seinen Zustand von Idee zu geplant.
@@ -390,15 +408,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     machen. Die Idee bleibt in der Map stehen und zeigt dann, dass sie
     eingeplant ist.
 
-- `NEW-mm-ki` **KI ordnet neue Items der Mindmap zu und schlägt Knoten vor**
+- `STORY-104` **KI ordnet neue Items der Mindmap zu und schlägt Knoten vor**
+  - Uid: 5b8e795e-adf2-49e3-9cb8-6a2de4a49101.
   - Type: Story.
-  - Parent: `NEW-mindmap`.
+  - Parent: `EPIC-008`.
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-zuordnung`.
+  - Dependencies: `STORY-100`.
   - Goal: Wenn die KI ein Item anlegt, überlegt sie, an welchen Knoten es
     gehört, und hängt es dorthin. Passt keiner, schlägt sie einen Knoten oder
     Unterknoten vor und legt ihn nach Bestätigung an. So wird die Map nebenbei
@@ -413,15 +432,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Die KI sortiert neue Backlog-Einträge selbst in die Map ein und
     darf neue Themen vorschlagen, legt sie aber erst an, wenn du zustimmst.
 
-- `NEW-mm-spiegel` **Mindmap im Markdown-Spiegel: Dateiformat und Sync**
+- `STORY-105` **Mindmap im Markdown-Spiegel: Dateiformat und Sync**
+  - Uid: fad60a4f-0990-4d9f-8036-b123bb43a596.
   - Type: Story.
-  - Parent: `NEW-mindmap`.
+  - Parent: `EPIC-008`.
   - Required for parent: No.
   - Status: Open.
   - Created: 2026-11-13.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-mm-zuordnung`, `NEW-mm-freie-maps`.
+  - Dependencies: `STORY-100`, `STORY-102`.
   - Goal: Die Mindmap geht wie Backlog und Memos als Markdown über den Sync
     mit, damit sie über Git zwischen Rechnern wandert und die KI auch in
     Cloud-Sitzungen, die nur auf den Dateien arbeiten, zuordnen kann.
@@ -433,7 +453,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Die Map auch als Dateien speichern, damit sie über Git mitgeht
     und die KI in der Cloud damit arbeiten kann. Gewünscht, aber kein Muss.
 
-- `NEW-mindmap-machbarkeit` **Mindmap: Machbarkeit prüfen und Ideen sammeln**
+- `TASK-064` **Mindmap: Machbarkeit prüfen und Ideen sammeln**
+  - Uid: 35c27972-ff20-497b-bcb3-4f9d60903207.
   - Type: Task.
   - Parent: None.
   - Status: Awaiting confirmation.

@@ -2,45 +2,18 @@
 
 ## State
 
-- Goal/Status: Nur Planung, Umsetzung später in kleinen Schritten; Grundmodell, Zuordnung und Ansichten sind abgestimmt, für Maps an Elementen ist „Fokus statt eigener Map“ vorgeschlagen.
-- Next step: Offene Fragen mit dem Owner klären, dann das Konzept als Spec schreiben; daraus entsteht später mindestens ein Epic.
+- Goal/Status: Ideensammlung abgeschlossen; Konzept steht als Spec im Epic `NEW-mindmap`, Stories und Tasks sind angelegt. Wartet auf die Bestätigung des Owners.
+- Next step: Bestätigung durch den Owner; die weitere Arbeit läuft im Epic `NEW-mindmap`.
 - Open:
-  - Darf derselbe Ast auch innerhalb eines Baums an zwei Stellen stehen, oder nur in verschiedenen Bäumen? Dem Owner neu erklärt, Antwort offen (2026-11-13)
-  - Gleichberechtigte Platzierungen statt Original mit Verweis? Dem Owner neu erklärt, Antwort offen (2026-11-13)
-  - Wo man freie Maps in der Oberfläche auswählt: Auswahl oben auf der Mindmap-Seite (Projektbaum und freie Maps des Projekts)? Vorschlag, noch nicht bestätigt (2026-11-13)
-  - Getrennte Aktionen „hier entfernen“ und „Knoten löschen“ für übertragene Äste? Vorschlag, noch nicht bestätigt (2026-11-13)
-  - Wie die KI Knoten vorschlägt: nur im Gespräch oder als sichtbarer Vorschlag in der Oberfläche (2026-11-13)
-  - Abgeschlossene Items: nur im Fortschritt zählen oder auch zeigen (2026-11-13)
-  - Überführen eines Ideen-Knotens ins Backlog: Typwahl, Umgang mit Knoten tiefer als drei Ebenen (2026-11-13)
-  - Zählen verlinkte Memos am Knoten mit (eigene Zahl) oder stehen sie nur im Detail? (2026-11-13)
-  - Feld Area: bleibt es neben der Mindmap bestehen? (2026-11-13)
-  - Eigene Markierung für Ideen-Knoten (z. B. verworfen, später)? (2026-11-13)
-  - Runde Anordnung bei großen Maps: ELK `radial` oder eigene Anordnung, im Prototyp prüfen (2026-11-13)
+  - Die verbliebenen offenen Fragen stehen in den Notizen des Epics und der Stories (2026-11-13)
 - Decided:
-  - Die Mindmap ist ein eigenes Datenmodell und nur ein Gerippe; sie verlinkt Backlog-Items, ähnlich dem Feld Area (2026-11-13)
-  - Ein Epic ist in der Regel ein Knoten, aber nicht zwingend; ein Knoten kann mehrere Epics tragen (2026-11-13)
-  - Items sind keine eigenen Knoten; ein Knoten zeigt Anzahl und Fortschritt, die Items stehen im Detail (2026-11-13)
-  - Ob ein Knoten nur Idee oder schon im Backlog ist, ergibt sich aus den verlinkten Items; keine zwei Arten von Mindmap (2026-11-13)
-  - Zuordnung: alles erbt vom Parent, außer ein Item ist eigens angehängt; dann zählen es und seine Kinder zum neuen Knoten (2026-11-13)
-  - Ein Item hängt zunächst an genau einem Knoten; gespeichert als Verknüpfung mit Regel, nicht als Liste (2026-11-13)
-  - Knoten können Notizen bekommen (2026-11-13)
-  - Abhängigkeiten zwischen Themen sind an- und abschaltbar (2026-11-13)
-  - Die KI ordnet neue Items zu und schlägt Knoten vor; neue Knoten legt sie erst nach Bestätigung an (2026-11-13)
-  - Zwei Ansichten: Einzelansicht (eine Map) und Gesamtansicht mit gemeinsamer Wurzel, Projekte als erste Knoten, gefiltert über die Projektauswahl (2026-11-13)
-  - Anordnung umschaltbar zwischen rund und Baum zur Seite (2026-11-13)
-  - Vorerst wird nur geplant; aus dem Task entsteht später mindestens ein Epic (2026-11-13)
-  - Mischung: ein Baum je Projekt mit Fokus auf beliebigem Knoten, dazu freie Maps (2026-11-13)
-  - Am Item drei getrennte Aktionen: „Gehe hin“ (Map an der Stelle öffnen), „Erstelle“ (neuen Knoten anlegen), „Anker“ (Element als Wurzel öffnen); kein stilles Anlegen von Knoten (2026-11-13)
-  - Umsetzung in einem eigenen neuen Branch, weil großer experimenteller Umbau (2026-11-13)
-  - „Anker“ wird an einem Item erst angeboten, nachdem mit „Erstelle“ ein eigener Knoten angelegt wurde (2026-11-13)
-  - Platzierungen (Knoten, Parent, Stelle) werden von Anfang an im Datenmodell geplant (2026-11-13)
-  - Topics bleiben unverändert und gehören nicht in die Mindmap; Memos lassen sich an Knoten verlinken; die Mindmap zu einem Memo lebt allein in diesem Memo (2026-11-13)
-  - Der Markdown-Spiegel für die Mindmap wird mitgeplant und nach der ersten lauffähigen Fassung gebaut, wenn umsetzbar; sonst ohne (2026-11-13)
-  - Freie Maps gehören zu einem Projekt; Übergreifendes kommt ins Projekt „Allgemein“ (2026-11-13)
-  - Äste werden nie kopiert; es gibt „umhängen“ (aus A weg, in B drin) und „übertragen“ (derselbe Ast in A und B) (2026-11-13)
-- References: Graph-Seite `client/src/plugins/backlog/` (`graphModel.ts`, React Flow, ELK); `workspace_links`, `ElementDetail`, `DocumentsSection`; Story STORY-086 (Umwandeln)
+  - Aus der Ideensammlung wird das Epic `NEW-mindmap` mit sieben Stories und zwölf Tasks (2026-11-13)
+  - Alle Entscheidungen sind in die Notizen des Epics und der passenden Stories übertragen; dieses Protokoll bleibt als Herleitung (2026-11-13)
+  - Übertragen von Ästen nur zwischen Bäumen, Umhängen auch innerhalb; Platzierungen gleichberechtigt (2026-11-13)
+  - Verlinkte Memos stehen nur im Detail; der Aufbau der Mindmap-Seite wird später geklärt (2026-11-13)
+- References: Epic `NEW-mindmap` mit Spec `NEW-mindmap_spec.md`; Stories `NEW-mm-geruest`, `NEW-mm-zuordnung`, `NEW-mm-ansichten`, `NEW-mm-freie-maps`, `NEW-mm-ueberfuehren`, `NEW-mm-ki`, `NEW-mm-spiegel`
 
-State confirmed after entry 2026-11-13 — Grundsatzfragen: Platzierungen, Memos, Spiegel, freie Maps (b0d717a90ead)
+State confirmed after entry 2026-11-13 — Letzte Entscheidungen und Übergabe an das Epic (3e570d07b601)
 
 ## 2026-11-13 — Idee, Grundmodell und erste Entscheidungen
 
@@ -213,3 +186,23 @@ State confirmed after entry 2026-11-13 — Grundsatzfragen: Platzierungen, Memos
 - Gleichberechtigte Platzierungen statt Original mit Verweis: neu erklärt, wartet auf den Owner.
 - Auswahl der Maps oben auf der Mindmap-Seite: Vorschlag, wartet auf den Owner.
 - Ob verlinkte Memos am Knoten mitzählen.
+
+## 2026-11-13 — Letzte Entscheidungen und Übergabe an das Epic
+
+### Discussed
+
+- Open vom 2026-11-13 (derselbe Ast zweimal im selben Baum) geklärt: Übertragen nur zwischen Bäumen, Umhängen auch innerhalb.
+- Open vom 2026-11-13 (gleichberechtigt oder Verweis) geklärt: gleichberechtigt. Der Owner begründet es damit, dass sich die Äste dann unterschiedlich entwickeln können. Das trifft technisch nicht zu: Der Ast ist an beiden Stellen derselbe Datensatz. Die Rückfrage dazu steht in der Story `NEW-mm-freie-maps`.
+- Open vom 2026-11-13 (Auswahl der Maps, Memos am Knoten): Der Owner bestätigt den festgehaltenen Stand; der genaue Aufbau der Mindmap-Seite wird noch geklärt und danach, wo man die Maps findet.
+- Auftrag des Owners: ein neues Epic anlegen, Stories und Tasks planen und die Entscheidungen an die passenden Stellen übertragen.
+- Schnitt: sieben Stories nach Fähigkeit (Gerüst, Zuordnung, Ansichten, freie Maps und Äste, Überführen, KI, Spiegel). Notizen an Knoten und Abhängigkeiten zwischen Themen sind Tasks statt eigener Stories, damit das Epic nicht über acht Stories wächst. Überführen, KI und Spiegel haben noch keine Tasks, weil dort Fragen offen sind.
+
+### Decided
+
+- Übertragen nur zwischen Bäumen, Umhängen auch innerhalb (Owner).
+- Platzierungen gleichberechtigt (Owner).
+- Epic `NEW-mindmap` mit Stories und Tasks angelegt, Konzept als Spec im Epic (Auftrag des Owners).
+
+### Open
+
+- Nichts mehr in diesem Task; die offenen Fragen stehen im Epic und in den Stories.

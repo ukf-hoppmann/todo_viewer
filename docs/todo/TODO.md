@@ -9,6 +9,31 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `NEW-mindmap-machbarkeit` **Mindmap: Machbarkeit prüfen und Ideen sammeln**
+  - Type: Task.
+  - Parent: None.
+  - Status: In progress.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Klären, ob und wie eine Mindmap als eigenes Datenmodell in den
+    Viewer passt: ein Gerüst aus Themenknoten zum Brainstormen, in das
+    Backlog-Items verlinkt werden können, sodass sie zugleich eine
+    übersichtliche Darstellung des Backlogs ist. Ideen und Entscheidungen
+    werden in den Notizen gesammelt.
+  - Completion criteria: 1. Die Notizen halten die besprochenen Ideen, die
+    Entscheidungen des Owners und die offenen Fragen fest.
+    2. Ein Konzept (Spec) beschreibt Datenmodell, Zuordnung von Items,
+    Darstellung und die Rolle der KI und nennt, welche vorhandenen
+    Bausteine genutzt werden.
+    3. Der Owner hat entschieden, ob daraus ein Epic mit Stories wird oder
+    die Idee verworfen wird.
+  - Summary: Idee einer Mindmap: Themen sammeln und ordnen, unabhängig vom
+    Backlog, und Backlog-Einträge an die Themen hängen, um einen
+    schnellen Überblick zu bekommen, was es gibt und was kommt. Erst
+    einmal nur Machbarkeit und Ideensammlung.
+
 - `STORY-086` **Baum: Umwandeln-Dialog beim Ziehen**
   - Uid: 9ccc4f8d-f897-4fdd-bc8d-a67da5569d3f.
   - Type: Story.

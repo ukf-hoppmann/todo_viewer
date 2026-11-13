@@ -2,28 +2,31 @@
 
 ## State
 
-- Goal/Status: Ideensammlung läuft; Grundmodell (eigenes Gerüst aus Themenknoten, Items werden verlinkt) ist mit dem Owner abgestimmt, Details offen.
+- Goal/Status: Ideensammlung läuft; Grundmodell, Zuordnung und Ansichten sind mit dem Owner abgestimmt, das allgemeine Modell (Map an beliebigem Element) ist vorgeschlagen.
 - Next step: Offene Fragen mit dem Owner klären, dann das Konzept als Spec schreiben.
 - Open:
-  - Zuordnung: nächste ausdrückliche Zuordnung gewinnt (eigene, sonst die des Parents)? Vorschlag, noch nicht bestätigt (2026-11-13)
-  - Projektübergreifende Ansicht: Projekt-Maps nebeneinander über die Projektauswahl statt eigener globaler Map? Vorschlag, noch nicht bestätigt (2026-11-13)
-  - „Ein Knoten je Item“ als Regel über der Verknüpfungstabelle statt als Liste mit list[0]? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - Map mit Anker (Projekt oder Element) als ein gemeinsames Modell, Projekt-Map zuerst, Element-Maps als zweiter Schritt? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - Folge daraus: „höchstens ein Knoten je Item“ gilt je Map, nicht insgesamt? Vorschlag, noch nicht bestätigt (2026-11-13)
   - Wie die KI Knoten vorschlägt: nur im Gespräch oder als sichtbarer Vorschlag in der Oberfläche (2026-11-13)
   - Abgeschlossene Items: nur im Fortschritt zählen oder auch zeigen (2026-11-13)
   - Überführen eines Ideen-Knotens ins Backlog: Typwahl, Umgang mit Knoten tiefer als drei Ebenen (2026-11-13)
   - Verhältnis zu Memos und Topics: Idee auch zu einem Memo machen? (2026-11-13)
+  - Runde Anordnung bei großen Maps: ELK `radial` oder eigene Anordnung, im Prototyp prüfen (2026-11-13)
 - Decided:
-  - Die Mindmap ist ein eigenes Datenmodell und nur ein Gerüst; Backlog-Items werden hineinverlinkt, ähnlich dem Feld Area (2026-11-13)
+  - Die Mindmap ist ein eigenes Datenmodell und nur ein Gerippe; sie verlinkt Backlog-Items, ähnlich dem Feld Area (2026-11-13)
+  - Ein Epic ist in der Regel ein Knoten, aber nicht zwingend; ein Knoten kann mehrere Epics tragen (2026-11-13)
   - Items sind keine eigenen Knoten; ein Knoten zeigt Anzahl und Fortschritt, die Items stehen im Detail (2026-11-13)
   - Ob ein Knoten nur Idee oder schon im Backlog ist, ergibt sich aus den verlinkten Items; keine zwei Arten von Mindmap (2026-11-13)
+  - Zuordnung: alles erbt vom Parent, außer ein Item ist eigens angehängt; dann zählen es und seine Kinder zum neuen Knoten (2026-11-13)
+  - Ein Item hängt zunächst an genau einem Knoten; gespeichert als Verknüpfung mit Regel, nicht als Liste (2026-11-13)
   - Knoten können Notizen bekommen (2026-11-13)
   - Abhängigkeiten zwischen Themen sind an- und abschaltbar (2026-11-13)
   - Die KI ordnet neue Items zu und schlägt Knoten vor; neue Knoten legt sie erst nach Bestätigung an (2026-11-13)
-  - Ein Item hängt zunächst an genau einem Knoten; mehrere bleiben später möglich (2026-11-13)
-  - Vererbung „alles unter einem Epic gehört zum Knoten des Epics“ ohne Ausnahme ist verworfen (2026-11-13)
+  - Zwei Ansichten: Einzelansicht (eine Map) und Gesamtansicht mit gemeinsamer Wurzel, Projekte als erste Knoten, gefiltert über die Projektauswahl (2026-11-13)
+  - Anordnung umschaltbar zwischen rund und Baum zur Seite (2026-11-13)
 - References: Graph-Seite `client/src/plugins/backlog/` (`graphModel.ts`, React Flow, ELK); `workspace_links`, `ElementDetail`, `DocumentsSection`; Story STORY-086 (Umwandeln)
 
-State confirmed after entry 2026-11-13 — Idee, Grundmodell und erste Entscheidungen (6427b6a7d072)
+State confirmed after entry 2026-11-13 — Zuordnung bestätigt, Ansichten, Map an beliebigem Element (bd2b27b59a95)
 
 ## 2026-11-13 — Idee, Grundmodell und erste Entscheidungen
 
@@ -60,3 +63,31 @@ State confirmed after entry 2026-11-13 — Idee, Grundmodell und erste Entscheid
 - Abgeschlossene Items: nur im Fortschritt zählen oder auch zeigen.
 - Überführen eines Ideen-Knotens ins Backlog: Typwahl und Knoten tiefer als drei Ebenen.
 - Verhältnis zu Memos und Topics.
+
+## 2026-11-13 — Zuordnung bestätigt, Ansichten, Map an beliebigem Element
+
+### Discussed
+
+- Open vom 2026-11-13 (Zuordnung) geklärt: Der Owner bestätigt „alles erbt, wenn nicht eigens anders angehängt; dann zählen das Element und seine Kinder zum neuen Knoten“.
+- Open vom 2026-11-13 (Liste oder Verknüpfungstabelle) geklärt: Der Owner stimmt der Verknüpfung mit Regel zu.
+- Epics und Knoten: Der Owner stellt klar, dass ein Epic nicht zwingend ein Knoten ist. Beim Brainstormen denkt man größer, z. B. Knoten „Usermanagement“ mit drei Epics (Tool entscheiden, anbinden, Regeln festlegen). Die Map ist nur Gerippe und verlinkt. Das Modell deckt das ab, weil ein Knoten beliebig viele Items tragen kann.
+- Open vom 2026-11-13 (projektübergreifende Ansicht): Der Owner will nicht mehrere Maps nebeneinander, weil das vor allem bei runder Anordnung unübersichtlich wird. Stattdessen Einzelansicht und eine Gesamtansicht mit einer gemeinsamen Wurzel, unter der die Projekte die ersten Knoten sind; Projekte lassen sich wie im Backlog hinzu- und wegschalten.
+- Anordnung: Der Owner möchte nicht zwingend links-rechts oder oben-unten, sondern gern rund, am besten umschaltbar (zwei Beispielbilder: Mitte mit Ästen ringsum, und Baum nach rechts). Einschätzung: Beide Anordnungen entstehen aus demselben Baum; ELK bietet `radial`, `mrtree` und `layered`. Offen ist, wie gut `radial` bei großen Maps aussieht.
+- Allgemeineres Modell (Idee des Owners): von einer Story, einem Epic, Task oder Memo aus „zur Mindmap“ gehen; das Element ist dann die Wurzel und man baut darauf auf. Beim Memo speist sich die Map nur aus dem einen Memo.
+- Einschätzung dazu: sinnvoll und umsetzbar, wenn es ein Modell bleibt. Vorschlag: Eine Map hat einen Anker, entweder ein Projekt oder ein Element; alle Elemente haben im Workspace eine `uid`, an der der Anker hängen kann. Die Gesamtansicht ist dann nur eine Darstellung mit künstlicher Wurzel über den Projekt-Maps. Vorteil für die Übersicht: Feinplanung wandert in die Map des Elements, die Projekt-Map bleibt grob; vom Knoten aus öffnet man die Map eines verlinkten Items.
+- Risiken des allgemeinen Modells: mehr Umfang, und derselbe Gedanke kann an zwei Stellen stehen (Unterknoten in der Projekt-Map oder eigene Map der Story). Empfehlung: den Anker von Anfang an im Datenmodell vorsehen, aber zuerst nur die Projekt-Map bauen und Element-Maps als zweiten Schritt.
+- Folge für die Regel „ein Knoten je Item“: Ein Task kann in der Projekt-Map an einem Knoten hängen und in der Map seiner Story an einem anderen. Die Regel müsste also je Map gelten.
+
+### Decided
+
+- Zuordnung mit Vererbung und ausdrücklicher Ausnahme wie oben (Owner).
+- Verknüpfung mit Regel statt Liste mit list[0] (Owner).
+- Ein Epic ist in der Regel ein Knoten, aber nicht zwingend; ein Knoten kann mehrere Epics tragen (Owner).
+- Einzelansicht und Gesamtansicht mit gemeinsamer Wurzel statt mehrerer Maps nebeneinander (Owner). Verworfen: Projekt-Maps nebeneinander wie im Baum, weil unübersichtlich.
+- Anordnung umschaltbar zwischen rund und Baum zur Seite (Owner).
+
+### Open
+
+- Map mit Anker als gemeinsames Modell und die Reihenfolge (Projekt-Map zuerst): Vorschlag, wartet auf den Owner.
+- „Höchstens ein Knoten je Item“ je Map statt insgesamt: Vorschlag, wartet auf den Owner.
+- Qualität der runden Anordnung bei großen Maps: im Prototyp prüfen.

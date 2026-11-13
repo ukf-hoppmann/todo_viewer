@@ -5,15 +5,14 @@
 - Goal/Status: Nur Planung, Umsetzung später in kleinen Schritten; Grundmodell, Zuordnung und Ansichten sind abgestimmt, für Maps an Elementen ist „Fokus statt eigener Map“ vorgeschlagen.
 - Next step: Offene Fragen mit dem Owner klären, dann das Konzept als Spec schreiben; daraus entsteht später mindestens ein Epic.
 - Open:
-  - Übertragen technisch: Platzierungen (Knoten, Parent, Stelle) statt eines Parent-Felds, von Anfang an im Datenmodell? Vorschlag, noch nicht bestätigt (2026-11-13)
-  - Ein Knoten höchstens einmal je Baum; Summen zählen jedes Item nur einmal? Vorschlag, noch nicht bestätigt (2026-11-13)
+  - Darf derselbe Ast auch innerhalb eines Baums an zwei Stellen stehen, oder nur in verschiedenen Bäumen? Dem Owner neu erklärt, Antwort offen (2026-11-13)
+  - Gleichberechtigte Platzierungen statt Original mit Verweis? Dem Owner neu erklärt, Antwort offen (2026-11-13)
+  - Wo man freie Maps in der Oberfläche auswählt: Auswahl oben auf der Mindmap-Seite (Projektbaum und freie Maps des Projekts)? Vorschlag, noch nicht bestätigt (2026-11-13)
   - Getrennte Aktionen „hier entfernen“ und „Knoten löschen“ für übertragene Äste? Vorschlag, noch nicht bestätigt (2026-11-13)
   - Wie die KI Knoten vorschlägt: nur im Gespräch oder als sichtbarer Vorschlag in der Oberfläche (2026-11-13)
   - Abgeschlossene Items: nur im Fortschritt zählen oder auch zeigen (2026-11-13)
   - Überführen eines Ideen-Knotens ins Backlog: Typwahl, Umgang mit Knoten tiefer als drei Ebenen (2026-11-13)
-  - Verhältnis zu Memos und Topics: Topics sind selbst ein Baum; bleiben sie daneben, und lassen sich Memos wie Items an Knoten hängen? (2026-11-13)
-  - Markdown-Spiegel: Braucht die Mindmap ein Dateiformat, damit sie über Git mitgeht und die KI in Cloud-Sitzungen zuordnen kann? (2026-11-13)
-  - Freie Maps: gehören sie zu einem Projekt oder stehen sie darüber, und wo findet man sie? (2026-11-13)
+  - Zählen verlinkte Memos am Knoten mit (eigene Zahl) oder stehen sie nur im Detail? (2026-11-13)
   - Feld Area: bleibt es neben der Mindmap bestehen? (2026-11-13)
   - Eigene Markierung für Ideen-Knoten (z. B. verworfen, später)? (2026-11-13)
   - Runde Anordnung bei großen Maps: ELK `radial` oder eigene Anordnung, im Prototyp prüfen (2026-11-13)
@@ -34,10 +33,14 @@
   - Am Item drei getrennte Aktionen: „Gehe hin“ (Map an der Stelle öffnen), „Erstelle“ (neuen Knoten anlegen), „Anker“ (Element als Wurzel öffnen); kein stilles Anlegen von Knoten (2026-11-13)
   - Umsetzung in einem eigenen neuen Branch, weil großer experimenteller Umbau (2026-11-13)
   - „Anker“ wird an einem Item erst angeboten, nachdem mit „Erstelle“ ein eigener Knoten angelegt wurde (2026-11-13)
+  - Platzierungen (Knoten, Parent, Stelle) werden von Anfang an im Datenmodell geplant (2026-11-13)
+  - Topics bleiben unverändert und gehören nicht in die Mindmap; Memos lassen sich an Knoten verlinken; die Mindmap zu einem Memo lebt allein in diesem Memo (2026-11-13)
+  - Der Markdown-Spiegel für die Mindmap wird mitgeplant und nach der ersten lauffähigen Fassung gebaut, wenn umsetzbar; sonst ohne (2026-11-13)
+  - Freie Maps gehören zu einem Projekt; Übergreifendes kommt ins Projekt „Allgemein“ (2026-11-13)
   - Äste werden nie kopiert; es gibt „umhängen“ (aus A weg, in B drin) und „übertragen“ (derselbe Ast in A und B) (2026-11-13)
 - References: Graph-Seite `client/src/plugins/backlog/` (`graphModel.ts`, React Flow, ELK); `workspace_links`, `ElementDetail`, `DocumentsSection`; Story STORY-086 (Umwandeln)
 
-State confirmed after entry 2026-11-13 — Anker erst nach Erstellen, Sammlung der offenen Grundsatzfragen (d8faac48b51a)
+State confirmed after entry 2026-11-13 — Grundsatzfragen: Platzierungen, Memos, Spiegel, freie Maps (b0d717a90ead)
 
 ## 2026-11-13 — Idee, Grundmodell und erste Entscheidungen
 
@@ -187,3 +190,26 @@ State confirmed after entry 2026-11-13 — Anker erst nach Erstellen, Sammlung d
 ### Open
 
 - Die oben genannten Grundsatzfragen; sie stehen im Kopf.
+
+## 2026-11-13 — Grundsatzfragen: Platzierungen, Memos, Spiegel, freie Maps
+
+### Discussed
+
+- Platzierungen: Der Owner will sie direkt mitplanen. Die Punkte „höchstens einmal je Baum“ und „keine Verweis-Knoten“ hat er nicht verstanden; sie werden mit Beispielen neu erklärt.
+- Topics und Memos: Der Owner sieht Memos anders als den Backlog. Topics sind Hüllen zum Sortieren der Memos, keine Umsetzungsstruktur, und gehören nicht in die Mindmap. Eine Mindmap zu einem Memo lebt allein in diesem Memo. Dem Vorschlag, Topics unverändert zu lassen und Memos an Knoten verlinken zu können, stimmt er zu.
+- Spiegel: mitplanen; wenn umsetzbar gern mit, sonst ohne, lieber mit. Reihenfolge wie vorgeschlagen: nach der ersten lauffähigen Fassung.
+- Freie Maps: einem Projekt zugeordnet, Übergreifendes im Projekt „Allgemein“. Die Frage „wo findet man sie“ war unklar gestellt; gemeint ist die Auswahl in der Oberfläche.
+
+### Decided
+
+- Platzierungen von Anfang an im Datenmodell (Owner).
+- Topics bleiben außen vor; Memos lassen sich an Knoten verlinken; die Map eines Memos lebt in dem Memo (Owner).
+- Spiegel mitplanen, Bau nach der ersten lauffähigen Fassung, wenn umsetzbar (Owner).
+- Freie Maps gehören zu einem Projekt, Übergreifendes zu „Allgemein“ (Owner).
+
+### Open
+
+- Derselbe Ast zweimal im selben Baum oder nur in verschiedenen Bäumen: neu erklärt, wartet auf den Owner.
+- Gleichberechtigte Platzierungen statt Original mit Verweis: neu erklärt, wartet auf den Owner.
+- Auswahl der Maps oben auf der Mindmap-Seite: Vorschlag, wartet auf den Owner.
+- Ob verlinkte Memos am Knoten mitzählen.

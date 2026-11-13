@@ -2,10 +2,9 @@
 
 ## State
 
-- Goal/Status: Geplant; zwei Tasks angelegt. Eine Rückfrage an den Owner ist offen (siehe Open).
-- Next step: Rückfrage zum getrennten Weiterentwickeln übertragener Äste klären.
+- Goal/Status: Geplant; zwei Tasks angelegt.
+- Next step: Nach Gerüst und Zuordnung mit dem Task zu den freien Maps beginnen.
 - Open:
-  - Der Owner erwartet, dass sich übertragene Äste in beiden Bäumen unterschiedlich entwickeln können. Mit einem gemeinsamen Knoten ist der Ast aber überall derselbe; getrennte Entwicklung hieße trennen, also doch kopieren. Rückfrage gestellt (2026-11-13)
   - Wo man zwischen Projektbaum und freien Maps wählt, hängt am Aufbau der Mindmap-Seite (2026-11-13)
 - Decided:
   - Projektbaum und freie Maps werden gemischt, damit man flexibel gestalten kann (2026-11-13)
@@ -15,9 +14,10 @@
   - Übertragen geht nur zwischen Bäumen; innerhalb eines Baums gibt es nur Umhängen (2026-11-13)
   - Platzierungen sind gleichberechtigt: Wird der Ast aus einem Baum entfernt, bleibt er im anderen vollwertig (2026-11-13)
   - Verworfen: Verweis-Knoten auf ein Original, weil der Verweis ins Leere zeigt, sobald das Original entfernt wird (2026-11-13)
+  - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `NEW-mindmap_spec.md` im Epic `NEW-mindmap`; Ideensammlung `NEW-mindmap-machbarkeit`
 
-State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung (b860d4b71d39)
+State confirmed after entry 2026-11-13 — Übertragene Äste bleiben gemeinsam (dcfdb4975d58)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -40,3 +40,17 @@ State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der
 
 - Der Owner erwartet, dass sich übertragene Äste in beiden Bäumen unterschiedlich entwickeln können. Mit einem gemeinsamen Knoten ist der Ast aber überall derselbe; getrennte Entwicklung hieße trennen, also doch kopieren. Rückfrage gestellt
 - Wo man zwischen Projektbaum und freien Maps wählt, hängt am Aufbau der Mindmap-Seite
+
+## 2026-11-13 — Übertragene Äste bleiben gemeinsam
+
+### Discussed
+
+- Open vom 2026-11-13 (getrennte Entwicklung übertragener Äste) geklärt. Zur Wahl standen: gemeinsam (ein Ast, überall gleich) oder zusätzlich eine Aktion „trennen“, die eine eigenständige Kopie erzeugt.
+
+### Decided
+
+- Start mit „gemeinsam“; wenn sich zeigt, dass getrennte Entwicklung gebraucht wird, wird umgebaut (Owner).
+
+### Open
+
+- Wo man zwischen Projektbaum und freien Maps wählt, hängt weiter am Aufbau der Mindmap-Seite.

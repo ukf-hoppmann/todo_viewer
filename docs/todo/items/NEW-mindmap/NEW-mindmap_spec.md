@@ -60,6 +60,7 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - **Übertragen:** derselbe Ast in A und B; nur zwischen Bäumen. Der Ast ist ein gemeinsamer Datensatz, eine
   Änderung wirkt an beiden Stellen. Übertragene Äste sind markiert.
 - „Hier entfernen“ nimmt den Ast aus einem Baum, „Knoten löschen“ überall.
+- Ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht; bei Bedarf wird umgebaut.
 
 ## Ins Backlog und Rolle der KI
 
@@ -83,7 +84,6 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 ## Offen
 
 - Aufbau der Mindmap-Seite.
-- Ob sich übertragene Äste getrennt weiterentwickeln sollen (das wäre trennen, also kopieren).
 - Runde Anordnung bei großen Maps (Prototyp).
 - Form der KI-Vorschläge; abgeschlossene Items zeigen; Typwahl und tiefe Knoten beim Überführen; Zukunft des
   Felds Area; Markierung für Ideen-Knoten; Dateiformat für Platzierungen.

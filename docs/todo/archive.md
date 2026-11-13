@@ -3824,3 +3824,43 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Resolution: Umgesetzt und vom Owner abgenommen: Der Sync ersetzt
     Platzhalter beim Vergeben des Labels auch im Fließtext (Felder, Notizen,
     Specs) in Datenbank und Dateien (v0.9.6).
+
+- `STORY-098` **Note heißt Memo: Umbenennung des Eintragstyps, damit „Note“ nur noch die Item-Notiz meint**
+  - Uid: af351412-f693-47b6-a5ef-cf3a0825b4bc.
+  - Type: Story.
+  - Parent: `EPIC-007`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-11-12.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Eintragstyp Note heißt in allen Schichten Memo (Plugin-ID
+    memos, Tabellen memos_*, Routen /api/memos/..., Label MEMO-xxx,
+    Mirror-Ordner memos/, Client, Tests, Doku), und Notice heißt Hint (UI
+    deutsch: Hinweis). Das Wort Note kommt danach nur noch für die Notiz zu
+    einem Backlog-Item vor. Bestandsdaten (Datenbank, Mirror-Dateien,
+    Verweise in Texten) werden mitumgestellt.
+  - Completion criteria: 1. Eine Migration benennt Plugin-Besitzer,
+    Tabellen, Elementtyp, Label-Präfix, Zähler, Labels und Label-Historie
+    von notes/NOTE auf memos/MEMO um und ist mit einer Datenbank im alten
+    Stand getestet.
+    2. Alle Routen liegen unter /api/memos/...; unter /api/notes/ gibt es
+    keine Memo-Routen mehr.
+    3. Der Markdown-Spiegel schreibt und liest MEMO-xxx.md und
+    MEMO-xxx_notes.md im Ordner memos/; ein Bestandsspiegel mit NOTE-Dateien
+    wird beim ersten Sync umgestellt.
+    4. Client, Texte (de, en) und Test-IDs sprechen von Memo und Hint;
+    „Note“ taucht nur in den Item-Notizen auf.
+    5. Verweise NOTE-xxx in Backlog-Einträgen, Memo-Texten und Doku (ohne
+    alte Tagesberichte) sind auf MEMO-xxx umgestellt.
+    6. Alle Tests (Server, Client, Architektur) laufen; Techdocs,
+    Architektur-Docs und Interface-Doku sind angepasst.
+    7. Eine Zuordnung alt → neu (Routen, Labels, Ordner, Typnamen) liegt für
+    die Umstellung des Harness bereit.
+  - Summary: Der Eintrag mit Wiedervorlage (bisher Note, NOTE-001) und die
+    Notiz zu einem Backlog-Item (<ID>_notes.md) tragen denselben Namen und
+    werden von der KI verwechselt. Der Eintrag heißt künftig Memo
+    (MEMO-001), der Hinweis (Notice) künftig Hint; „Note“ bleibt allein die
+    Item-Notiz.
+  - Resolution: Confirmed by the project owner on 2026-11-12.

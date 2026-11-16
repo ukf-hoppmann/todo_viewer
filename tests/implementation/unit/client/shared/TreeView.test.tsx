@@ -281,3 +281,26 @@ describe("TreeView: trailing", () => {
 		expect(mark.parentElement?.classList.contains("tree-actions")).toBe(true);
 	});
 });
+
+describe("TreeView: drawing", () => {
+	it("draws only the row that lost and the row that got the selection when a row is chosen", () => {
+		const drawn: string[] = [];
+		const nodes = buildTree(flat);
+		const open = new Set(["e1", "s1"]);
+		const trailing = (node: TreeNode) => {
+			drawn.push(node.id);
+			return null;
+		};
+		function Stable() {
+			const [selected, setSelected] = useState<string | null>(null);
+			return <TreeView ariaLabel="Backlog" nodes={nodes} expanded={open} onToggle={() => undefined} selectedId={selected} onSelect={setSelected} trailing={trailing} />;
+		}
+		render(<Stable />);
+		fireEvent.click(node("s1"));
+		drawn.length = 0;
+
+		fireEvent.click(node("s2"));
+
+		expect(drawn.sort()).toEqual(["s1", "s2"]);
+	});
+});

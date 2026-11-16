@@ -622,7 +622,8 @@ Neu gegenüber dem alten Helfer: `backlog_move_item` (Parent/Position), `backlog
 ### Wecker und Sync (neu)
 
 `alarms_list_alarms`, `alarms_get_alarm`, `alarms_create_alarm`, `alarms_update_alarm`, `alarms_snooze_alarm`,
-`alarms_finish_alarm`, `alarms_reopen_alarm` (Löschen und Zurückholen über `workspace_*`); `core_sync_status`, `core_sync_preview`,
+`alarms_finish_alarm`, `alarms_reopen_alarm` (Löschen und Zurückholen über `workspace_*`);
+Themenbaum: `mindmap_get_tree`, `mindmap_get_node`, `mindmap_create_node`, `mindmap_update_node`, `mindmap_move_node` (Löschen und Zurückholen eines Knotens samt Ast über `workspace_*`); `core_sync_status`, `core_sync_preview`,
 `core_sync_execute` für den Abgleich mit dem Markdown-Spiegel; Suche über alle Elemente: `workspace_search_elements`;
 Verknüpfungen: `workspace_add_link`, `workspace_remove_link`, `workspace_list_links`.
 

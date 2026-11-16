@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt, wartet auf Bestätigung des Owners (2026-11-16); `TASK-052` (Server), `TASK-053` (Seite), `TASK-054` (Ziehen) und `TASK-055` (Notizen) sind abgeschlossen und in `todo_mindmap`.
-- Next step: Owner prüft die Story und bestätigt sie; danach Archivierung.
+- Goal/Status: Abgeschlossen: vom Owner bestätigt (2026-11-16), nach `todo_mindmap` gemergt; `TASK-052` (Server), `TASK-053` (Seite), `TASK-054` (Ziehen) und `TASK-055` (Notizen) sind abgeschlossen und in `todo_mindmap`.
+- Next step: keiner; Markierungen für Ideen-Knoten sind eine eigene, noch offene Story.
 - Open:
   - Ob Ideen-Knoten eine Markierung bekommen („verworfen“, „später“): der Owner will mit Markierungen planen, Form und Story offen (2026-11-16)
 - Decided:
@@ -18,7 +18,7 @@
   - Plan freigegeben; ein Task je Session auf eigenem `claude/…`-Branch, gemergt nach `todo_mindmap`, nacheinander (2026-11-16)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-16 — Kriterien geprüft (a343a7d99343)
+State confirmed after entry 2026-11-16 — Bestätigung und Merge (fc75d84abfe3)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -114,3 +114,9 @@ State confirmed after entry 2026-11-16 — Kriterien geprüft (a343a7d99343)
 ### Open
 
 - Markierungen für Ideen-Knoten („verworfen“, „später“): Form und Story offen, kein Teil dieser Story
+
+## 2026-11-16 — Bestätigung und Merge
+
+### Decided
+
+- Der Owner hat `STORY-099` bestätigt; sie ist `Completed` und nach `todo_mindmap` gemergt

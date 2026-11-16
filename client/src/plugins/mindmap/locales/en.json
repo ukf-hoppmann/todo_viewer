@@ -4,7 +4,7 @@
 	},
 	"page": {
 		"chooseProject": "Mark a project on the left to see its mind map.",
-		"hint": "Double click renames · click opens the detail"
+		"hint": "Double click renames · click opens the detail · drag moves or reorders"
 	},
 	"node": {
 		"new": "New topic"

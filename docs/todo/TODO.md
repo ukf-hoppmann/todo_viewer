@@ -66,24 +66,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Der Grundbaustein: ein Themenbaum je Projekt, in dem man frei
     Knoten sammelt und ordnet und Notizen dazu schreibt.
 
-- `TASK-054` **Mindmap: Knoten per Ziehen umhängen und umordnen**
-  - Uid: 0d9f9111-7e91-4adf-b97d-7c979ac15544.
-  - Type: Task.
-  - Parent: `STORY-099`.
-  - Required for parent: Yes.
-  - Status: Open.
-  - Created: 2026-11-13.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: `TASK-053`.
-  - Goal: In der Map lässt sich ein Knoten samt Ast per Ziehen unter einen
-    anderen Knoten hängen oder unter seinen Geschwistern umordnen.
-  - Completion criteria: 1. Ziehen auf einen Knoten hängt den Ast darunter;
-    die Reihenfolge der Geschwister lässt sich ändern.
-    2. Was die Struktur verbietet, wird nicht angeboten; eine Ablehnung des
-    Servers steht als Meldung über der Map.
-    3. UI-Tests sind grün.
-
 - `TASK-055` **Mindmap: Notizen an Knoten**
   - Uid: 6fc3d1ab-41db-4b13-9e39-eb5f4c2572c7.
   - Type: Task.

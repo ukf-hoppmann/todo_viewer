@@ -9,5 +9,6 @@ export const mindmapTestIds = {
 	toggle: (id: string) => `mindmap.toggle.${id}`,
 	add: (id: string) => `mindmap.add.${id}`,
 	remove: (id: string) => `mindmap.remove.${id}`,
+	dropLine: (id: string, zone: "before" | "after") => `mindmap.drop-line.${id}.${zone}`,
 	detail: "mindmap.detail",
 } as const;

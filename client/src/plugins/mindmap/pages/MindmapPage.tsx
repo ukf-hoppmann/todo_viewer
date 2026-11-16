@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
-import { errorMessage, useCreateNodeMutation, useGetTreeQuery, useUpdateNodeMutation, type NodeOut } from "../api";
-import { isOpen, shownProject, toggledFold, visibleNodes } from "../domain/tree";
+import { errorMessage, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type NodeOut } from "../api";
+import { dropPlacement, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import { MapActionsContext, type MapActions } from "../mapActions";
 import { layoutTree } from "../mindmapLayout";
 import { MindmapNode, type TopicNode } from "../MindmapNode";
@@ -25,7 +25,8 @@ type Structure = Array<{ id: string; parentId: string | null }>;
 /**
  * The topic tree of one project as a mind map to the side: the project is the root, every node hangs right of its
  * parent. Which project: the marked one, else the only visible one. Nodes are added, renamed and moved to the trash
- * in the map; a click opens title and text in the detail column. What is folded is kept in the UI state of the
+ * in the map; a click opens title and text in the detail column. Dragging a node onto another one moves it with its
+ * branch (below the target or next to it); only places `dropPlacement` allows are offered. What is folded is kept in the UI state of the
  * server; before the first choice two levels are open.
  */
 export default function MindmapPage() {
@@ -37,6 +38,10 @@ export default function MindmapPage() {
 	const { fold, setFold, selected, setSelected } = useMindmapState();
 	const [createNode] = useCreateNodeMutation();
 	const [updateNode] = useUpdateNodeMutation();
+	const [moveNode] = useMoveNodeMutation();
+	// The drag in progress: the dragged node and the place it is over, if that place is offered.
+	const [drag, setDrag] = useState<{ source: string; over?: { id: string; zone: DropZone } }>();
+	const dragSource = useRef<string | undefined>(undefined);
 	const { requestDelete, dialog: deleteDialog, failed: deleteFailed } = useDeleteElement();
 	const [editing, setEditing] = useState<string | null>(null);
 	const [error, setError] = useState<string>();
@@ -76,7 +81,46 @@ export default function MindmapPage() {
 	const actions: MapActions = useMemo(() => {
 		const fail = (failure: unknown) => setError(errorMessage(failure, t("error.failed")));
 		const depthOf = (id: string) => latest.current.shown.find((entry) => entry.id === id)?.depth ?? 0;
+		const placementOf = (id: string, zone: DropZone) => {
+			const { rootId: root, nodes: all } = latest.current;
+			const source = dragSource.current;
+			return root && source ? dropPlacement(root, all, source, id, zone) : null;
+		};
+		const endDrag = () => {
+			dragSource.current = undefined;
+			setDrag(undefined);
+		};
 		return {
+			dragStart: (id) => {
+				dragSource.current = id;
+				setDrag({ source: id });
+			},
+			dragEnd: endDrag,
+			dragOver: (id, zone) => {
+				const allowed = placementOf(id, zone) !== null;
+				// dragover fires continuously: the state object is kept while nothing changed, so nothing is drawn again.
+				setDrag((current) => {
+					if (!current) return current;
+					if (!allowed) return current.over?.id === id ? { source: current.source } : current;
+					return current.over?.id === id && current.over.zone === zone ? current : { source: current.source, over: { id, zone } };
+				});
+				return allowed;
+			},
+			dragLeave: (id) => setDrag((current) => (current?.over?.id === id ? { source: current.source } : current)),
+			drop: (id, zone) => {
+				const placement = placementOf(id, zone);
+				const node = latest.current.nodes.find((entry) => entry.uid === dragSource.current);
+				endDrag();
+				if (!placement || !node) return;
+				setError(undefined);
+				moveNode({ uid: node.uid, version: node.version, ...placement })
+					.unwrap()
+					.then(() => {
+						// The moved branch must be visible: a closed target it was hung below is opened.
+						if (zone === "inside") setFold((current) => (isOpen(current, id, depthOf(id)) ? current : toggledFold(current, id, depthOf(id))));
+					})
+					.catch(fail);
+			},
 			toggle: (id) => setFold((current) => toggledFold(current, id, depthOf(id))),
 			add: (id) => {
 				const { rootId: root } = latest.current;
@@ -108,7 +152,7 @@ export default function MindmapPage() {
 				void requestDelete(node.uid, node.version);
 			},
 		};
-	}, [createNode, updateNode, requestDelete, setFold, t]);
+	}, [createNode, updateNode, moveNode, requestDelete, setFold, t]);
 
 	// A double click renames and must not open the detail in between (the map would shift under the pointer): a click
 	// selects only after the time a double click may take.
@@ -142,13 +186,15 @@ export default function MindmapPage() {
 							open: entry.open,
 							selected: entry.id === selected,
 							editing: entry.id === editing,
+							dragging: entry.id === drag?.source,
+							drop: drag?.over?.id === entry.id ? drag.over.zone : undefined,
 						},
 						draggable: false,
 						connectable: false,
 					},
 				];
 			}),
-		[shown, layout, project?.name, selected, editing],
+		[shown, layout, project?.name, selected, editing, drag],
 	);
 	const edges: Edge[] = useMemo(
 		() =>

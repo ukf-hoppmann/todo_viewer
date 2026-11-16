@@ -8,6 +8,27 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `TASK-054` **Mindmap: Knoten per Ziehen umhängen und umordnen**
+  - Uid: 0d9f9111-7e91-4adf-b97d-7c979ac15544.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-053`.
+  - Goal: In der Map lässt sich ein Knoten samt Ast per Ziehen unter einen
+    anderen Knoten hängen oder unter seinen Geschwistern umordnen.
+  - Completion criteria: 1. Ziehen auf einen Knoten hängt den Ast darunter;
+    die Reihenfolge der Geschwister lässt sich ändern.
+    2. Was die Struktur verbietet, wird nicht angeboten; eine Ablehnung des
+    Servers steht als Meldung über der Map.
+    3. UI-Tests sind grün.
+  - Summary: Themen in der Map mit der Maus an eine andere Stelle ziehen:
+    unter ein anderes Thema oder in eine andere Reihenfolge.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
 - `TASK-053` **Mindmap-Seite: Projektbaum anzeigen, Knoten anlegen, umbenennen, löschen, ein- und ausklappen**
   - Uid: e642fa32-c332-4e52-8174-05648be29c84.
   - Type: Task.

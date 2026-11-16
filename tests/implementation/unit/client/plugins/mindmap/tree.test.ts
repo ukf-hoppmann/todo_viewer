@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultOpen, isOpen, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
+import { defaultOpen, dropPlacement, isOpen, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
 import { node } from "../../../../../helpers/client/mindmapFixtures";
 
 const nodes = [node("a"), node("b", null, 1), node("a1", "a"), node("a2", "a", 1), node("a11", "a1"), node("a111", "a11")];
@@ -62,5 +62,46 @@ describe("shownProject", () => {
 		expect(shownProject([p1], undefined)).toBe(p1);
 		expect(shownProject([p1, p2], undefined)).toBeUndefined();
 		expect(shownProject([], undefined)).toBeUndefined();
+	});
+});
+
+describe("dropPlacement", () => {
+	// p1: a (a1 (a11 (a111)), a2), b
+	it("hangs a node below the target, at the end of its children", () => {
+		expect(dropPlacement("p1", nodes, "b", "a", "inside")).toEqual({ parent: "a", position: 2 });
+		expect(dropPlacement("p1", nodes, "a2", "a11", "inside")).toEqual({ parent: "a11", position: 1 });
+	});
+
+	it("hangs a node below the root with an empty parent", () => {
+		expect(dropPlacement("p1", nodes, "a11", "p1", "inside")).toEqual({ parent: null, position: 2 });
+	});
+
+	it("places a node before or after the target among the target's siblings, counted without the node itself", () => {
+		expect(dropPlacement("p1", nodes, "b", "a1", "before")).toEqual({ parent: "a", position: 0 });
+		expect(dropPlacement("p1", nodes, "b", "a1", "after")).toEqual({ parent: "a", position: 1 });
+		expect(dropPlacement("p1", nodes, "a11", "b", "after")).toEqual({ parent: null, position: 2 });
+		expect(dropPlacement("p1", nodes, "a", "b", "after")).toEqual({ parent: null, position: 1 });
+		expect(dropPlacement("p1", nodes, "b", "a", "before")).toEqual({ parent: null, position: 0 });
+	});
+
+	it("offers nothing for the node itself, its own branch, the root as source and unknown nodes", () => {
+		expect(dropPlacement("p1", nodes, "a", "a", "inside")).toBeNull();
+		expect(dropPlacement("p1", nodes, "a", "a11", "inside")).toBeNull();
+		expect(dropPlacement("p1", nodes, "a", "a111", "after")).toBeNull();
+		expect(dropPlacement("p1", nodes, "p1", "a", "inside")).toBeNull();
+		expect(dropPlacement("p1", nodes, "zz", "a", "inside")).toBeNull();
+		expect(dropPlacement("p1", nodes, "a", "zz", "inside")).toBeNull();
+	});
+
+	it("offers no place next to the root", () => {
+		expect(dropPlacement("p1", nodes, "a", "p1", "before")).toBeNull();
+		expect(dropPlacement("p1", nodes, "a", "p1", "after")).toBeNull();
+	});
+
+	it("offers nothing where the node already stands", () => {
+		expect(dropPlacement("p1", nodes, "a2", "a", "inside")).toBeNull();
+		expect(dropPlacement("p1", nodes, "a1", "a2", "before")).toBeNull();
+		expect(dropPlacement("p1", nodes, "a2", "a1", "after")).toBeNull();
+		expect(dropPlacement("p1", nodes, "a1", "a", "inside")).toEqual({ parent: "a", position: 1 });
 	});
 });

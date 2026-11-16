@@ -61,6 +61,39 @@ export function visibleNodes<T extends PlacedNode>(rootId: string, nodes: readon
 	return shown;
 }
 
+/** Where a dragged node lands relative to the node it is dropped on. */
+export type DropZone = "before" | "after" | "inside";
+
+/** A place in the tree: `parent` empty means under the root; `position` counts the siblings without the moved node. */
+export interface Placement {
+	parent: string | null;
+	position: number;
+}
+
+/**
+ * Where `sourceId` lands when it is dropped on `targetId` in `zone`, or `null` when the drop is not offered: the
+ * root cannot be moved, a node cannot land on itself or in its own branch, nothing stands next to the root, and a
+ * place the node already has changes nothing. "inside" appends to the children of the target.
+ */
+export function dropPlacement(rootId: string, nodes: readonly PlacedNode[], sourceId: string, targetId: string, zone: DropZone): Placement | null {
+	const byId = new Map(nodes.map((node) => [node.uid, node]));
+	const source = byId.get(sourceId);
+	const target = byId.get(targetId);
+	if (!source || sourceId === targetId || (!target && targetId !== rootId)) return null;
+	const seen = new Set<string>();
+	for (let current = target; current && !seen.has(current.uid); current = current.parent_uid ? byId.get(current.parent_uid) : undefined) {
+		if (current.uid === sourceId) return null;
+		seen.add(current.uid);
+	}
+	if (zone !== "inside" && !target) return null;
+	const parent = zone === "inside" ? (target ? target.uid : null) : target!.parent_uid || null;
+	const siblings = nodes.filter((node) => (node.parent_uid || null) === parent).sort((a, b) => a.position - b.position);
+	const others = siblings.filter((node) => node.uid !== sourceId);
+	const position = zone === "inside" ? others.length : others.findIndex((node) => node.uid === targetId) + (zone === "after" ? 1 : 0);
+	if (siblings.findIndex((node) => node.uid === sourceId) === position) return null;
+	return { parent, position };
+}
+
 /** The project whose tree the page shows: the marked one, else the only visible one, else none. */
 export function shownProject<P>(visible: readonly P[], marked: P | undefined): P | undefined {
 	return marked ?? (visible.length === 1 ? visible[0] : undefined);

@@ -2,11 +2,10 @@
 
 ## State
 
-- Goal/Status: Umgesetzt und geprüft (Typen, Client-Tests 1240 grün); wartet auf Bestätigung des Owners. Im Browser nicht ausprobiert (2026-11-16)
-- Next step: Der Owner bestätigt oder verlangt Änderungen; danach `TASK-055`.
+- Goal/Status: Abgeschlossen: vom Owner bestätigt (2026-11-16), nach `todo_mindmap` gemergt
+- Next step: `TASK-055` (Notizen an Knoten) startet in einer neuen Session.
 - Open:
   - Lint meldet 5 Fehler in `core/ui-state/usePersistentState.ts`; sie bestanden vorher und gehören nicht zu diesem Task (2026-11-16)
-  - Der Ablauf ist noch nicht im Browser geprüft, weil die Sitzung keinen laufenden Viewer hatte (2026-11-16)
 - Decided:
   - Ziehen per HTML5-Drag-and-drop am Knoten (2026-11-16)
   - Ablegezonen wie im Baum: oberes Viertel davor, unteres Viertel danach, Mitte darunter (2026-11-16)

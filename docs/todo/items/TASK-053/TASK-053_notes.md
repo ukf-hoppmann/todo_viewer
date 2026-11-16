@@ -2,17 +2,19 @@
 
 ## State
 
-- Goal/Status: Umsetzung vorgeplant; wartet auf `TASK-052` und auf vier Antworten des Owners.
-- Next step: Die offenen Punkte klären, `TASK-052` umsetzen, dann den Umsetzungsplan zur Freigabe vorlegen.
+- Goal/Status: Vorgeplant; `TASK-052` ist abgeschlossen und in `todo_mindmap`, die Bedienung ist entschieden.
+- Next step: Frage zur Detailspalte klären, dann den Umsetzungsplan zur Freigabe vorlegen.
 - Open:
-  - Welches Projekt die Seite zeigt; Vorschlag: das markierte, sonst das einzige sichtbare, sonst ein Hinweis (2026-11-16)
-  - Was „zwei Ebenen offen“ heißt; Vorschlag: Wurzel, Ebene 1 und Ebene 2 sind zu sehen, ab Ebene 2 ist zugeklappt (2026-11-16)
-  - Bedienung in der Map; Vorschlag: Symbole am Knoten beim Überfahren (Unterknoten anlegen, Papierkorb), Umbenennen per Doppelklick direkt im Knoten, keine Detailspalte vor `TASK-055` (2026-11-16)
-  - Der ELK-Lader aus `backlog/graphLayout.ts` wird von zwei Plugins gebraucht; Vorschlag: nach `shared` verschieben (2026-11-16)
+  - Ob die schließbare Detailspalte schon in diesem Task Titel und Text des gewählten Knotens zeigt (Vorschlag: ja, sonst lässt sich der Text nirgends bearbeiten) oder erst mit `TASK-055` kommt (2026-11-16)
 - Decided:
-- References: Konzept `EPIC-008_spec.md`; Notizen `STORY-099`; Server `TASK-052`
+  - Die Seite zeigt das markierte Projekt, sonst das einzige sichtbare, sonst einen Hinweis „Projekt wählen“ (2026-11-16)
+  - „Zwei Ebenen offen“: Wurzel, Ebene 1 und Ebene 2 sind zu sehen, ab Ebene 2 ist zugeklappt; gespeichert werden nur Abweichungen je Knoten (2026-11-16)
+  - Bedienung: Symbole am Knoten beim Überfahren (Unterknoten anlegen, Papierkorb), Umbenennen per Doppelklick im Knoten (2026-11-16)
+  - Der ELK-Lader zieht aus `backlog/graphLayout.ts` nach `shared` (2026-11-16)
+  - Die API-Typen (`schema.d.ts`) werden in diesem Task neu erzeugt; in `todo_mindmap` fehlen die Mindmap-Operationen darin noch (2026-11-16)
+- References: Konzept `EPIC-008_spec.md`; Notizen `STORY-099`; Server `TASK-052`, Schnittstelle in `docs/techdocs/neubau-server.md` (Abschnitt „Plugin `mindmap`“)
 
-State confirmed after entry 2026-11-16 — Vorplanung der Umsetzung (8f3b6c923db2)
+State confirmed after entry 2026-11-16 — Entscheidungen des Owners, Prüfung von TASK-052 (1e2484abbc5f)
 
 ## 2026-11-16 — Vorplanung der Umsetzung
 
@@ -30,3 +32,22 @@ State confirmed after entry 2026-11-16 — Vorplanung der Umsetzung (8f3b6c923db
 - Was „zwei Ebenen offen“ heißt
 - Bedienung in der Map
 - ELK-Lader nach `shared` verschieben
+
+## 2026-11-16 — Entscheidungen des Owners, Prüfung von TASK-052
+
+### Discussed
+
+- Prüfung von `TASK-052` in `todo_mindmap`: im Archiv `Completed`, Plugin `mindmap` auf dem Server vorhanden, 42 Tests des Plugins grün. Der Typen-Vergleich (`test_openapi_types.py`) wurde ohne `client/node_modules` übersprungen; `client/src/shared/api/schema.d.ts` enthält die Mindmap-Operationen noch nicht.
+- Papierkorb läuft über `workspace` (`workspace_delete_element` mit `cascade`); das passt zu `useDeleteElement`.
+- `STORY-099` hat inzwischen den Seitenaufbau wie im Backlog entschieden (Sidebar, Baum, schließbare Detailspalte). Der Vorschlag „keine Detailspalte vor `TASK-055`“ passt dazu nur halb: Ohne Detail lässt sich der Text eines Knotens nicht bearbeiten.
+- `todo_mindmap` wurde in den Branch der Session gemergt; er enthält zusätzlich vier Commits (Baum zeichnet nur geänderte Zeilen, Tagesbericht), die weder in `main` noch in `todo_mindmap` liegen.
+
+### Decided
+
+- Der Owner nimmt alle vier Vorschläge an: Projektwahl, zwei Ebenen, Bedienung, ELK-Lader nach `shared`
+- Die API-Typen werden in diesem Task neu erzeugt
+
+### Open
+
+- Detailspalte mit Titel und Text schon in diesem Task oder erst mit `TASK-055`
+

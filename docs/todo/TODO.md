@@ -105,6 +105,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     legen; der Klappzustand bleibt erhalten, beim ersten Öffnen sind zwei
     Ebenen offen.
     3. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
+  - Summary: Die Seite, auf der man den Themenbaum eines Projekts als Mindmap
+    sieht und Knoten anlegt, umbenennt, löscht und auf- und zuklappt.
 
 - `TASK-054` **Mindmap: Knoten per Ziehen umhängen und umordnen**
   - Uid: 0d9f9111-7e91-4adf-b97d-7c979ac15544.

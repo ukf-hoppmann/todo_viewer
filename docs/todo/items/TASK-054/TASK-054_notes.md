@@ -2,16 +2,16 @@
 
 ## State
 
-- Goal/Status: Umsetzung vorgeplant; noch nicht begonnen, weil `TASK-052` und `TASK-053` offen sind und es das Plugin `mindmap` noch nicht gibt.
-- Next step: Der Owner entscheidet die drei offenen Punkte; danach Spec schreiben. Umsetzung erst nach `TASK-053`.
+- Goal/Status: Umsetzung vorgeplant; `TASK-052` und `TASK-053` sind abgeschlossen, der Branch enthält `todo_mindmap`. Die Annahmen der Vorplanung sind am Code geprüft.
+- Next step: Der Owner entscheidet die drei offenen Punkte; danach Spec schreiben und umsetzen.
 - Open:
   - Technik des Ziehens: HTML5-Drag-and-drop am Knoten (Vorschlag) oder das Verschieben von React Flow (2026-11-16)
   - Ablegezonen am Zielknoten: oberes Viertel davor, unteres Viertel danach, Mitte darunter, wie im Baum (Vorschlag) (2026-11-16)
   - Ablegen auf einen eingeklappten Knoten klappt ihn auf (Vorschlag) (2026-11-16)
 - Decided:
-- References: Notizen `STORY-099`; Konzept `EPIC-008_spec.md`; Vorbilder `client/src/shared/tree/treeModel.ts` (`dropPosition`, `isInSubtree`), `client/src/plugins/backlog/model.ts` (`placementOf`)
+- References: Notizen `STORY-099`; Konzept `EPIC-008_spec.md`; Vorbilder `client/src/shared/tree/treeModel.ts` (`dropPosition`, `isInSubtree`), `client/src/plugins/backlog/model.ts` (`placementOf`); Server `move_node` in `docs/techdocs/neubau-server.md` (Abschnitt „Plugin `mindmap`“)
 
-State confirmed after entry 2026-11-16 — Vorplanung der Umsetzung (365d5f41ec25)
+State confirmed after entry 2026-11-16 — Stand nach TASK-053 geprüft (5fcd274f6007)
 
 ## 2026-11-16 — Vorplanung der Umsetzung
 
@@ -34,3 +34,16 @@ State confirmed after entry 2026-11-16 — Vorplanung der Umsetzung (365d5f41ec2
 - Technik des Ziehens: HTML5-Drag-and-drop am Knoten (Vorschlag) oder das Verschieben von React Flow
 - Ablegezonen am Zielknoten wie im Baum (Vorschlag)
 - Ablegen auf einen eingeklappten Knoten klappt ihn auf (Vorschlag)
+
+## 2026-11-16 — Stand nach TASK-053 geprüft
+
+### Discussed
+
+- `origin/todo_mindmap` (mit `TASK-052` und `TASK-053`) ist in den Arbeitsbranch gemergt, ohne Konflikte.
+- Server: `move_node` (POST `/api/mindmap/nodes/{ref}/move` mit `version`, `parent` (leer: unter die Wurzel), `position`) gibt es. Die Stelle zählt unter den lebenden Geschwistern ohne den gezogenen Knoten, wie bei `placementOf`. Ablehnungen kommen mit `code`, etwa `mindmap_loop`.
+- Client: Dem Plugin fehlt nur die Mutation fürs Umhängen in `api.ts`. Die Seite hat schon die Fehlerleiste über der Map (`mindmap.error`), sie zeigt die Meldung des Servers; `tree.ts` in `domain/` nimmt die Regel fürs Ablegen auf; die Aktionen der Knoten laufen über `MapActions`. Die Knoten sind in React Flow als nicht ziehbar gesetzt, was zu HTML5-Drag-and-drop passt.
+- Die Seite passt ihren Ausschnitt nach jeder Änderung der Struktur neu ein; das gilt dann auch nach dem Umhängen.
+
+### Open
+
+- Unverändert die drei Punkte vom 2026-11-16 (Technik des Ziehens, Ablegezonen, eingeklapptes Ziel)

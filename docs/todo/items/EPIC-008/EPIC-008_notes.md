@@ -3,9 +3,9 @@
 ## State
 
 - Goal/Status: Geplant; Konzept steht in der Spec, Stories und Tasks sind angelegt, Branch `todo_mindmap` ist der Ausgangspunkt der Umsetzung.
-- Next step: Umsetzungsplan für `STORY-099` vorlegen und freigeben lassen; Stories zu Area-Ersatz und Markierungen mit dem Owner anlegen.
+- Next step: `TASK-052` in eigener Session umsetzen und nach `todo_mindmap` mergen, dann `TASK-053`.
 - Open:
-  - Wie genau Area durch die Mindmap ersetzt wird (eigene Story, noch nicht angelegt) (2026-11-16)
+  - Wie genau Area durch die Mindmap ersetzt wird (`STORY-106`) (2026-11-16)
 - Decided:
   - Die Mindmap ist ein eigenes Datenmodell und nur ein Gerippe; sie verlinkt Items und Memos, ähnlich dem Feld Area, und kopiert nichts (2026-11-13)
   - Es gibt nur ein Modell: Ob ein Knoten bloße Idee oder schon im Backlog ist, ergibt sich aus dem, was daran hängt (2026-11-13)
@@ -17,9 +17,10 @@
   - Der Seitenaufbau folgt zunächst dem Backlog (Sidebar, Baum, Detailspalte); die Detailspalte ist schließbar; spätere Anpassung ist möglich (2026-11-16)
   - Die Mindmap ersetzt das Feld Area (2026-11-16)
   - Der Branch heißt `todo_mindmap`, zweigt von `main` ab und enthält die Planung per Merge aus `claude/nice-volta-6mvn99` (2026-11-16)
+  - Jeder Task läuft in eigener Session auf eigenem `claude/…`-Branch und wird nach `todo_mindmap` gemergt; Plan für `STORY-099` freigegeben (2026-11-16)
 - References: Spec `EPIC-008_spec.md`; Ideensammlung `TASK-064`; Stories `STORY-099`, `STORY-100`, `STORY-101`, `STORY-102`, `STORY-103`, `STORY-104`, `STORY-105`
 
-State confirmed after entry 2026-11-16 — Seitenaufbau, Area, Branch (d6499e99d67c)
+State confirmed after entry 2026-11-16 — Umsetzungsplan freigegeben, Sessions (58a563812b5a)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -61,3 +62,20 @@ State confirmed after entry 2026-11-16 — Seitenaufbau, Area, Branch (d6499e99d
 
 - Open from 2026-11-13 (Aufbau der Mindmap-Seite, Area, Branch) resolved: siehe oben
 - Wie Area ersetzt wird und wann (eigene Story, vom Owner freizugeben)
+
+## 2026-11-16 — Umsetzungsplan freigegeben, Sessions
+
+### Discussed
+
+- Plan für `STORY-099`: Server-Plugin `mindmap` (`TASK-052`), Seite (`TASK-053`), Ziehen (`TASK-054`), Notizen (`TASK-055`); die Tasks bauen aufeinander auf.
+- Wo die Sessions arbeiten: eigene `claude/…`-Branches oder direkt auf `todo_mindmap`.
+
+### Decided
+
+- Der Umsetzungsplan für `STORY-099` ist vom Owner freigegeben
+- Jeder Task läuft in einer eigenen neuen Session auf einem eigenen `claude/…`-Branch; gemergt wird immer nach `todo_mindmap`
+- Die Tasks laufen nacheinander; die nächste Session startet erst, wenn die vorige gemergt ist
+
+### Open
+
+- Wo die Dokument-Logik für Knoten liegt (gemeinsamer Baustein im Workspace oder `requires: backlog`): vor `TASK-055` klären

@@ -12,7 +12,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 - `EPIC-008` **Mindmap: Themen-Gerippe zum Brainstormen und als Übersicht des Backlogs**
   - Uid: 039478f4-0b3b-4807-8fd3-36fec9a4d372.
   - Type: Epic.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
@@ -44,7 +44,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Type: Story.
   - Parent: `EPIC-008`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
@@ -71,7 +71,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Type: Task.
   - Parent: `STORY-099`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-11-13.
   - Area: Backend-API.
   - Priority: Normal.

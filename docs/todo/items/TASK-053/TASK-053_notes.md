@@ -2,10 +2,13 @@
 
 ## State
 
-- Goal/Status: Entscheidungen vollständig; Umsetzungsplan liegt dem Owner zur Freigabe vor.
-- Next step: Nach der Freigabe umsetzen, beginnend mit dem Neuerzeugen der API-Typen.
+- Goal/Status: Umgesetzt auf `claude/compassionate-pascal-a4c5ds`; wartet auf die Bestätigung des Owners.
+- Next step: Owner prüft die Seite; nach der Bestätigung Merge nach `todo_mindmap`, dann `TASK-054`.
 - Open:
+  - Der Lint meldet 5 Fehler in `core/ui-state/usePersistentState.ts` (bestanden vorher); `npm run build` bricht daran ab, `vite build` allein läuft (2026-11-16)
+  - Die Map passt ihren Ausschnitt nach jedem Anlegen, Klappen und Löschen neu ein; ob das beim Arbeiten stört, zeigt der Gebrauch (2026-11-16)
 - Decided:
+  - Ein Klick öffnet das Detail erst nach 250 ms, damit ein Doppelklick (Umbenennen) die Spalte nicht öffnet (2026-11-16)
   - Die schließbare Detailspalte kommt schon in diesem Task: ein Klick auf einen Knoten zeigt Titel und Text zum Bearbeiten; `TASK-055` ergänzt die Dokumente (2026-11-16)
   - Die Seite zeigt das markierte Projekt, sonst das einzige sichtbare, sonst einen Hinweis „Projekt wählen“ (2026-11-16)
   - „Zwei Ebenen offen“: Wurzel, Ebene 1 und Ebene 2 sind zu sehen, ab Ebene 2 ist zugeklappt; gespeichert werden nur Abweichungen je Knoten (2026-11-16)
@@ -14,7 +17,7 @@
   - Die API-Typen (`schema.d.ts`) werden in diesem Task neu erzeugt; in `todo_mindmap` fehlen die Mindmap-Operationen darin noch (2026-11-16)
 - References: Konzept `EPIC-008_spec.md`; Notizen `STORY-099`; Server `TASK-052`, Schnittstelle in `docs/techdocs/neubau-server.md` (Abschnitt „Plugin `mindmap`“)
 
-State confirmed after entry 2026-11-16 — Detailspalte (3d433817b113)
+State confirmed after entry 2026-11-16 — Umsetzung (6bd0eeb1e701)
 
 ## 2026-11-16 — Vorplanung der Umsetzung
 
@@ -60,4 +63,23 @@ State confirmed after entry 2026-11-16 — Detailspalte (3d433817b113)
 ### Decided
 
 - Der Owner entscheidet: Detailspalte schon in `TASK-053`
+
+## 2026-11-16 — Umsetzung
+
+### Discussed
+
+- Plan vom Owner freigegeben und in zehn Abschnitten umgesetzt; Beschreibung in `docs/techdocs/neubau-client.md` (Abschnitt „Plugin `mindmap`“).
+- ELK `layered` mit `considerModelOrder` und `forceNodeModelOrder` hält die Reihenfolge der Geschwister; der Test dazu ist grün, eine Alternative war nicht nötig.
+- Prüfung im Browser (Chromium, echter Server auf einer Wegwerf-Datenbank): anlegen in drei Ebenen, umbenennen, zuklappen, neu laden (Klappzustand bleibt), Detail mit Text, Blatt und Ast in den Papierkorb; keine Konsolenfehler.
+- Dabei gefunden und behoben: neue Knoten lagen außerhalb des Ausschnitts (Map passt jetzt neu ein); der Doppelklick öffnete zwischendurch die Detailspalte und verschob die Map (Klick wirkt jetzt verzögert).
+- Kriterien: 1. Hauptroute zeigt den Baum des gewählten Projekts: erfüllt. 2. Anlegen, Umbenennen, Papierkorb, Klappzustand, zwei Ebenen: erfüllt. 3. UI-Tests grün (32 neue, 1227 gesamt), Ablauf im Browser geprüft: erfüllt.
+
+### Decided
+
+- Klick wirkt nach 250 ms (Entscheidung der Umsetzung, siehe Kopf)
+
+### Open
+
+- Lint-Fehler in `usePersistentState.ts` und abbrechendes `npm run build`
+- Neu-Einpassen der Map im Gebrauch beobachten
 

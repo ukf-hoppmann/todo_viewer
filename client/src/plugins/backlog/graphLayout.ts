@@ -1,15 +1,8 @@
-import type { ELK } from "elkjs/lib/elk.bundled.js";
+import { loadElk } from "../../shared";
 import { connectedComponents, type DependencyGraph } from "./graphModel";
 
 export const NODE_WIDTH = 200;
 export const NODE_HEIGHT = 50;
-
-// ELK is large: it is imported when the first layout is asked for, not with the page.
-let elkPromise: Promise<ELK> | null = null;
-function loadElk(): Promise<ELK> {
-	elkPromise ??= import("elkjs/lib/elk.bundled.js").then(({ default: ElkConstructor }) => new ElkConstructor());
-	return elkPromise;
-}
 
 /** Vertical gap between unrelated subgraphs. */
 const COMPONENT_GAP = 60;

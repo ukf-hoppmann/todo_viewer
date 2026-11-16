@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt auf `claude/compassionate-pascal-a4c5ds`; wartet auf die Bestätigung des Owners.
-- Next step: Owner prüft die Seite; nach der Bestätigung Merge nach `todo_mindmap`, dann `TASK-054`.
+- Goal/Status: Abgeschlossen: vom Owner bestätigt (2026-11-16), nach `todo_mindmap` gemergt.
+- Next step: `TASK-054` (Ziehen) startet in einer neuen Session.
 - Open:
   - Der Lint meldet 5 Fehler in `core/ui-state/usePersistentState.ts` (bestanden vorher); `npm run build` bricht daran ab, `vite build` allein läuft (2026-11-16)
   - Die Map passt ihren Ausschnitt nach jedem Anlegen, Klappen und Löschen neu ein; ob das beim Arbeiten stört, zeigt der Gebrauch (2026-11-16)
@@ -17,7 +17,7 @@
   - Die API-Typen (`schema.d.ts`) werden in diesem Task neu erzeugt; in `todo_mindmap` fehlen die Mindmap-Operationen darin noch (2026-11-16)
 - References: Konzept `EPIC-008_spec.md`; Notizen `STORY-099`; Server `TASK-052`, Schnittstelle in `docs/techdocs/neubau-server.md` (Abschnitt „Plugin `mindmap`“)
 
-State confirmed after entry 2026-11-16 — Umsetzung (6bd0eeb1e701)
+State confirmed after entry 2026-11-16 — Bestätigung und Merge (a6877d2413ff)
 
 ## 2026-11-16 — Vorplanung der Umsetzung
 
@@ -82,4 +82,10 @@ State confirmed after entry 2026-11-16 — Umsetzung (6bd0eeb1e701)
 
 - Lint-Fehler in `usePersistentState.ts` und abbrechendes `npm run build`
 - Neu-Einpassen der Map im Gebrauch beobachten
+
+## 2026-11-16 — Bestätigung und Merge
+
+### Decided
+
+- Der Owner bestätigt `TASK-053` als `Completed`; der Branch `claude/compassionate-pascal-a4c5ds` wird nach `todo_mindmap` gemergt
 

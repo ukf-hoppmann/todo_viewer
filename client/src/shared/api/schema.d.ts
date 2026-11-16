@@ -952,6 +952,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mindmap/nodes/{ref}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Dokumente eines Knotens (Name, Art, Version) */
+        get: operations["mindmap_list_node_documents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/documents/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ein Dokument eines Knotens mit Inhalt und Version */
+        get: operations["mindmap_get_node_document"];
+        /** Ersetzt ein Dokument eines Knotens in `version` oder legt ein neues an (<LABEL>_notes.md, <LABEL>_spec[_<thema>].md) */
+        put: operations["mindmap_put_node_document"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen eines Knotens */
+        post: operations["mindmap_append_node_entry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mindmap/nodes/{ref}/move": {
         parameters: {
             query?: never;
@@ -2195,6 +2247,19 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** MindmapAppendNodeEntryBody */
+        MindmapAppendNodeEntryBody: {
+            /** Decided */
+            decided?: string[];
+            /** Discussed */
+            discussed?: string[];
+            /** Open */
+            open?: string[];
+            /** Project */
+            project?: string | null;
+            /** Topic */
+            topic: string;
+        };
         /** MindmapCreateNodeBody */
         MindmapCreateNodeBody: {
             /** Parent */
@@ -2221,6 +2286,15 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** MindmapPutNodeDocumentBody */
+        MindmapPutNodeDocumentBody: {
+            /** Content */
+            content: string;
+            /** Project */
+            project?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** MindmapUpdateNodeBody */
         MindmapUpdateNodeBody: {
             /** Project */
@@ -2234,6 +2308,8 @@ export interface components {
         };
         /** NodeOut */
         NodeOut: {
+            /** Documents */
+            documents: string[];
             /** Label */
             label: string;
             /** Parent Uid */
@@ -4938,6 +5014,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_list_node_documents: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentInfo"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_get_node_document: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_put_node_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapPutNodeDocumentBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_append_node_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapAppendNodeEntryBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
                 };
             };
             /** @description Client Error */

@@ -11,4 +11,5 @@ export const mindmapTestIds = {
 	remove: (id: string) => `mindmap.remove.${id}`,
 	dropLine: (id: string, zone: "before" | "after") => `mindmap.drop-line.${id}.${zone}`,
 	detail: "mindmap.detail",
+	notesMark: (id: string) => `mindmap.notes-mark.${id}`,
 } as const;

@@ -183,6 +183,7 @@ export default function MindmapPage() {
 							title: entry.node?.title ?? project?.name ?? "",
 							isRoot: entry.node === undefined,
 							hasChildren: entry.hasChildren,
+							hasNotes: (entry.node?.documents.length ?? 0) > 0,
 							open: entry.open,
 							selected: entry.id === selected,
 							editing: entry.id === editing,

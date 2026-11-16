@@ -7,21 +7,46 @@
 		"hint": "Double click renames · click opens the detail · drag moves or reorders"
 	},
 	"node": {
-		"new": "New topic"
+		"new": "New topic",
+		"hasNotes": "This node has notes"
 	},
 	"action": {
 		"add": "Add child node",
 		"remove": "Move to trash",
 		"expand": "Expand",
 		"collapse": "Collapse",
-		"close": "Close"
+		"close": "Close",
+		"edit": "Edit"
 	},
 	"field": {
 		"title": "Title",
-		"text": "Text"
+		"text": "Text",
+		"documents": "Documents"
 	},
 	"error": {
 		"failed": "The change failed",
 		"titleEmpty": "The title must not be empty"
+	},
+	"form": {
+		"cancel": "Cancel",
+		"save": "Save"
+	},
+	"documents": {
+		"none": "No notes or specs yet.",
+		"addEntry": "Add notes entry",
+		"addSpec": "Add spec",
+		"topic": "Topic",
+		"discussed": "Discussed",
+		"decided": "Decided",
+		"open": "Open",
+		"onePerLine": "One bullet per line",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md or {{label}}_spec_<topic>.md",
+		"large": "Large view",
+		"conflict": "The document has changed in the meantime.",
+		"showCurrent": "Show current state",
+		"saveAnyway": "Save anyway",
+		"currentState": "current state",
+		"toc": "Table of contents"
 	}
 }

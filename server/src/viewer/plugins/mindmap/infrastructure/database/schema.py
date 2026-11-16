@@ -46,4 +46,18 @@ def _v1(connection: Any) -> None:
         connection.execute(text("INSERT INTO mindmap_tree_kinds(code) VALUES (:c)"), {"c": code})
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1),)
+def _v2(connection: Any) -> None:
+    """Dokumente eines Knotens (Notizen und Specs); die Art folgt aus dem Namen und dem Label des Knotens."""
+    connection.exec_driver_sql(
+        """CREATE TABLE mindmap_documents (
+            node_uid TEXT NOT NULL REFERENCES mindmap_nodes(uid) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            content TEXT NOT NULL,
+            revision INTEGER NOT NULL DEFAULT 1,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (node_uid, name)
+        )"""
+    )
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2))

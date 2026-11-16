@@ -270,3 +270,117 @@ describe("MindmapPage: detail column", () => {
 		expect(screen.getByTestId(ids.node("p1")).dataset.selected).toBe("false");
 	});
 });
+
+/** Fires a drag event on a node whose box is 40 high: `offsetY` 2 is the upper quarter, 20 the middle, 38 the lower quarter. */
+function dragEvent(type: "dragover" | "drop", target: HTMLElement, offsetY: number) {
+	vi.spyOn(target, "getBoundingClientRect").mockReturnValue({ top: 0, height: 40, bottom: 40, left: 0, right: 100, width: 100, x: 0, y: 0, toJSON: () => ({}) });
+	const dataTransfer = { setData: () => {}, getData: () => "", effectAllowed: "", dropEffect: "" };
+	const event = Object.assign(new Event(type, { bubbles: true, cancelable: true }), { clientY: offsetY, dataTransfer });
+	fireEvent(target, event);
+	return event;
+}
+const startDrag = (id: string) => fireEvent.dragStart(screen.getByTestId(ids.node(id)), { dataTransfer: { setData: () => {}, effectAllowed: "" } });
+
+describe("MindmapPage: moving by dragging", () => {
+	it("hangs a node with its branch below the node it is dropped on", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+
+		startDrag("a1");
+		expect(dragEvent("dragover", screen.getByTestId(ids.node("b")), 20).defaultPrevented).toBe(true);
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBe("inside");
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 20);
+
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "a", "b", "a1"]));
+		expect(backend.calls("POST", "mindmap/nodes/a1/move")[0]!.body).toEqual({ version: 1, parent: "b", position: 0 });
+		expect(document.querySelector("[data-flow-edge='b->a1']")).toBeTruthy();
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBeUndefined();
+	});
+
+	it("changes the order of the siblings: the upper quarter places before, the lower quarter after the target", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+
+		startDrag("b");
+		dragEvent("dragover", screen.getByTestId(ids.node("a")), 2);
+		expect(screen.getByTestId(ids.dropLine("a", "before"))).toBeTruthy();
+		dragEvent("drop", screen.getByTestId(ids.node("a")), 2);
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "b", "a", "a1"]));
+		expect(backend.calls("POST", "mindmap/nodes/b/move")[0]!.body).toEqual({ version: 1, parent: null, position: 0 });
+
+		startDrag("b");
+		dragEvent("dragover", screen.getByTestId(ids.node("a")), 38);
+		expect(screen.getByTestId(ids.dropLine("a", "after"))).toBeTruthy();
+		dragEvent("drop", screen.getByTestId(ids.node("a")), 38);
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "a", "a1", "b"]));
+		expect(backend.calls("POST", "mindmap/nodes/b/move")[1]!.body).toEqual({ version: 2, parent: null, position: 1 });
+	});
+
+	it("hangs a node below the root with an empty parent", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+
+		startDrag("a1");
+		dragEvent("drop", screen.getByTestId(ids.node("p1")), 20);
+
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "a", "b", "a1", "a11"]));
+		expect(backend.calls("POST", "mindmap/nodes/a1/move")[0]!.body).toEqual({ version: 1, parent: null, position: 2 });
+	});
+
+	it("opens a closed node when something is dropped on it", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+		expect(shownIds()).not.toContain("a11");
+
+		startDrag("b");
+		dragEvent("drop", screen.getByTestId(ids.node("a1")), 20);
+
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "a", "a1", "a11", "b"]));
+	});
+
+	it("does not offer what the structure forbids: the own branch, the node itself, a place next to the root", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+
+		startDrag("a");
+		for (const [target, offset] of [["a1", 20], ["a", 20], ["p1", 2], ["b", 2]] as const) {
+			const over = dragEvent("dragover", screen.getByTestId(ids.node(target)), offset);
+			expect(over.defaultPrevented).toBe(false);
+			expect(screen.getByTestId(ids.node(target)).dataset.drop).toBeUndefined();
+			dragEvent("drop", screen.getByTestId(ids.node(target)), offset);
+		}
+
+		expect(backend.calls("POST", "/move")).toHaveLength(0);
+		expect(screen.getByTestId(ids.node("p1")).getAttribute("draggable")).toBe("false");
+		expect(screen.getByTestId(ids.node("a")).getAttribute("draggable")).toBe("true");
+	});
+
+	it("marks the dragged node and removes every mark when the drag ends or leaves", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+
+		startDrag("a1");
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 20);
+		fireEvent.dragLeave(screen.getByTestId(ids.node("b")));
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBeUndefined();
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 20);
+		fireEvent.dragEnd(screen.getByTestId(ids.node("a1")));
+
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBeUndefined();
+		expect(dragEvent("dragover", screen.getByTestId(ids.node("b")), 20).defaultPrevented).toBe(false);
+	});
+
+	it("shows the message of the server above the map when it refuses the move, and leaves the tree as it is", async () => {
+		await renderPage({
+			respond: ({ method, path }) =>
+				method === "POST" && path === "mindmap/nodes/a1/move" ? Response.json({ code: "mindmap_loop", message: "Ein Knoten kann nicht unter sich selbst hängen", details: {} }, { status: 400 }) : undefined,
+		});
+		await screen.findByTestId(ids.node("a1"));
+
+		startDrag("a1");
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 20);
+
+		expect((await screen.findByTestId(ids.error)).textContent).toContain("Ein Knoten kann nicht unter sich selbst hängen");
+		expect(shownIds()).toEqual(["p1", "a", "a1", "b"]);
+	});
+});

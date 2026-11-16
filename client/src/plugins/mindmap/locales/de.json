@@ -4,7 +4,7 @@
 	},
 	"page": {
 		"chooseProject": "Markiere links ein Projekt, um seine Mindmap zu sehen.",
-		"hint": "Doppelklick benennt um · Klick öffnet das Detail"
+		"hint": "Doppelklick benennt um · Klick öffnet das Detail · Ziehen hängt um oder ordnet um"
 	},
 	"node": {
 		"new": "Neues Thema"

@@ -2,16 +2,19 @@
 
 ## State
 
-- Goal/Status: Umsetzung vorgeplant; `TASK-052` und `TASK-053` sind abgeschlossen, der Branch enthält `todo_mindmap`. Die Annahmen der Vorplanung sind am Code geprüft.
-- Next step: Der Owner entscheidet die drei offenen Punkte; danach Spec schreiben und umsetzen.
+- Goal/Status: Umgesetzt und geprüft (Typen, Client-Tests 1240 grün); wartet auf Bestätigung des Owners. Im Browser nicht ausprobiert (2026-11-16)
+- Next step: Der Owner bestätigt oder verlangt Änderungen; danach `TASK-055`.
 - Open:
-  - Technik des Ziehens: HTML5-Drag-and-drop am Knoten (Vorschlag) oder das Verschieben von React Flow (2026-11-16)
-  - Ablegezonen am Zielknoten: oberes Viertel davor, unteres Viertel danach, Mitte darunter, wie im Baum (Vorschlag) (2026-11-16)
-  - Ablegen auf einen eingeklappten Knoten klappt ihn auf (Vorschlag) (2026-11-16)
+  - Lint meldet 5 Fehler in `core/ui-state/usePersistentState.ts`; sie bestanden vorher und gehören nicht zu diesem Task (2026-11-16)
+  - Der Ablauf ist noch nicht im Browser geprüft, weil die Sitzung keinen laufenden Viewer hatte (2026-11-16)
 - Decided:
-- References: Notizen `STORY-099`; Konzept `EPIC-008_spec.md`; Vorbilder `client/src/shared/tree/treeModel.ts` (`dropPosition`, `isInSubtree`), `client/src/plugins/backlog/model.ts` (`placementOf`); Server `move_node` in `docs/techdocs/neubau-server.md` (Abschnitt „Plugin `mindmap`“)
+  - Ziehen per HTML5-Drag-and-drop am Knoten (2026-11-16)
+  - Ablegezonen wie im Baum: oberes Viertel davor, unteres Viertel danach, Mitte darunter (2026-11-16)
+  - Ein eingeklapptes Ziel klappt beim Ablegen „darunter“ auf (2026-11-16)
+  - Die Regel liegt als reine Funktion `dropPlacement` in `domain/tree.ts`; der Server prüft trotzdem selbst, seine Ablehnung steht über der Map (2026-11-16)
+- References: Notizen `STORY-099`; Konzept `EPIC-008_spec.md`; Doku `docs/techdocs/neubau-client.md` (Abschnitt „Plugin `mindmap`“)
 
-State confirmed after entry 2026-11-16 — Stand nach TASK-053 geprüft (5fcd274f6007)
+State confirmed after entry 2026-11-16 — Entscheidungen und Umsetzung (e950f7cfeff1)
 
 ## 2026-11-16 — Vorplanung der Umsetzung
 
@@ -47,3 +50,22 @@ State confirmed after entry 2026-11-16 — Stand nach TASK-053 geprüft (5fcd274
 ### Open
 
 - Unverändert die drei Punkte vom 2026-11-16 (Technik des Ziehens, Ablegezonen, eingeklapptes Ziel)
+
+## 2026-11-16 — Entscheidungen und Umsetzung
+
+### Discussed
+
+- Der Owner hat die drei Vorschläge angenommen: HTML5-Drag-and-drop, Zonen wie im Baum, eingeklapptes Ziel aufklappen.
+- Umgesetzt mit Test zuerst für die Regel (`dropPlacement`, 6 Fälle), dann die Mutation `moveNode`, das Ziehen im Knoten und die Verdrahtung in der Seite. Die Stelle zählt wie im Server ohne den gezogenen Knoten.
+- Die Fake-Datenbank der Tests (`fakeMindmapBackend`) kennt jetzt das Umhängen und nummeriert die Geschwister neu.
+- Geprüft: `tsc -b` ohne Fehler; alle Client-Tests grün (109 Dateien, 1240 Tests), darunter 7 neue Seitentests und 6 neue Regeltests; Lint ohne Befund in den geänderten Dateien. Nicht geprüft: Ablauf im Browser mit echtem Zeiger.
+
+### Decided
+
+- Siehe Kopf: die drei Vorschläge sind angenommen.
+
+### Open from 2026-11-16 (Vorplanung) resolved: Technik des Ziehens, Ablegezonen und eingeklapptes Ziel sind entschieden.
+
+### Open
+
+- Ablauf im Browser prüfen

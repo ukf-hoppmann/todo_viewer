@@ -9,7 +9,7 @@ type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respon
 
 /**
  * The workspace fake plus the `mindmap` API. It keeps the nodes: `GET mindmap/trees/{project}` lists those of the
- * project, creating and updating change them, and `DELETE workspace/elements/{uid}` removes a node (with its branch
+ * project, creating, updating and moving change them, and `DELETE workspace/elements/{uid}` removes a node (with its branch
  * when `cascade` is set; without it a node with children answers `has_children`).
  */
 export function fakeMindmapBackend(options: Options = {}) {
@@ -58,6 +58,20 @@ export function fakeMindmapBackend(options: Options = {}) {
 				};
 				nodes = nodes.map((entry) => (entry.uid === changed.uid ? changed : entry));
 				return Response.json(changed);
+			}
+			const moved = /^mindmap\/nodes\/([^/]+)\/move$/.exec(path);
+			if (moved && method === "POST") {
+				const found = nodes.find((entry) => entry.uid === moved[1]);
+				if (!found) return Response.json({ code: "not_found", message: "Knoten gibt es nicht", details: {} }, { status: 404 });
+				const parent = (body.parent as string | null | undefined) ?? null;
+				const siblingsOf = (uid: string | null) => nodes.filter((entry) => (entry.parent_uid ?? null) === uid && entry.uid !== found.uid).sort((a, b) => a.position - b.position);
+				const target = siblingsOf(parent);
+				const changed: NodeOut = { ...found, parent_uid: parent, version: found.version + 1 };
+				target.splice(Math.min((body.position as number | undefined) ?? target.length, target.length), 0, changed);
+				const placed = new Map([...siblingsOf(found.parent_uid ?? null), ...target].map((entry) => [entry.uid, entry]));
+				const positions = new Map([...siblingsOf(found.parent_uid ?? null).map((entry, index) => [entry.uid, index] as const), ...target.map((entry, index) => [entry.uid, index] as const)]);
+				nodes = nodes.map((entry) => (placed.has(entry.uid) ? { ...placed.get(entry.uid)!, position: positions.get(entry.uid)! } : entry));
+				return Response.json(nodes.find((entry) => entry.uid === found.uid));
 			}
 			const element = /^workspace\/elements\/([^/]+)$/.exec(path);
 			if (element && method === "DELETE" && nodes.some((entry) => entry.uid === element[1])) {

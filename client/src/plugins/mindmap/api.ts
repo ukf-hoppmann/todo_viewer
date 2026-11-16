@@ -12,7 +12,8 @@ export function errorMessage(error: unknown, fallback: string): string {
 
 /**
  * The API of the plugin (`mindmap.api`): `getTree` reads the topic tree of a project (the project is the root),
- * `createNode` and `updateNode` write a node. Moving to the trash goes through `workspace`. The tag `Tree` is what
+ * `createNode` and `updateNode` write a node, `moveNode` hangs a node with its branch under another parent (empty:
+ * under the root) or to another place among its siblings. Moving to the trash goes through `workspace`. The tag `Tree` is what
  * server events invalidate.
  */
 export const mindmapApi = createPluginApi(
@@ -30,8 +31,12 @@ export const mindmapApi = createPluginApi(
 			query: ({ uid, ...body }) => ({ url: `mindmap/nodes/${uid}`, method: "PUT", body }),
 			invalidatesTags: ["Tree"],
 		}),
+		moveNode: build.mutation<NodeOut, { uid: string; version: number; parent: string | null; position: number }>({
+			query: ({ uid, ...body }) => ({ url: `mindmap/nodes/${uid}/move`, method: "POST", body }),
+			invalidatesTags: ["Tree"],
+		}),
 	}),
 	{ tagTypes: ["Tree"] },
 );
 
-export const { useGetTreeQuery, useCreateNodeMutation, useUpdateNodeMutation } = mindmapApi;
+export const { useGetTreeQuery, useCreateNodeMutation, useUpdateNodeMutation, useMoveNodeMutation } = mindmapApi;

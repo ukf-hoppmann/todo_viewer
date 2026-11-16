@@ -1,5 +1,5 @@
 import { Alert, Box, Typography } from "@mui/material";
-import { Background, Controls, ReactFlow, type Edge } from "@xyflow/react";
+import { Background, Controls, ReactFlow, type Edge, type ReactFlowInstance } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,8 @@ import { mindmapTestIds } from "../testIds";
 
 const NODE_TYPES = { topic: MindmapNode };
 const NO_NODES: readonly NodeOut[] = [];
+const DOUBLE_CLICK_MS = 250;
+const FIT = { maxZoom: 1, padding: 0.15 };
 const EDGE_STYLE = { stroke: "#5b8cff", strokeOpacity: 0.7 };
 
 type Structure = Array<{ id: string; parentId: string | null }>;
@@ -54,6 +56,17 @@ export default function MindmapPage() {
 			cancelled = true;
 		};
 	}, [structureKey]);
+
+	// When nodes appear or go (created, folded, deleted) or the detail column opens or closes (the map changes its
+	// width), the map is fitted again, so no node is outside the view.
+	const flow = useRef<ReactFlowInstance<TopicNode, Edge> | null>(null);
+	const layoutKey = layout?.key;
+	const detailOpen = Boolean(selected && nodes.some((node) => node.uid === selected));
+	useEffect(() => {
+		if (layoutKey === undefined) return;
+		const timer = setTimeout(() => void flow.current?.fitView({ ...FIT, duration: 200 }), 50);
+		return () => clearTimeout(timer);
+	}, [layoutKey, detailOpen]);
 
 	// The actions read the newest data through a ref, so the nodes of the map keep the same handlers.
 	const latest = useRef({ shown, nodes, fold, rootId });
@@ -96,6 +109,16 @@ export default function MindmapPage() {
 			},
 		};
 	}, [createNode, updateNode, requestDelete, setFold, t]);
+
+	// A double click renames and must not open the detail in between (the map would shift under the pointer): a click
+	// selects only after the time a double click may take.
+	const pendingClick = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+	useEffect(() => () => clearTimeout(pendingClick.current), []);
+	const onNodeClick = (id: string) => {
+		clearTimeout(pendingClick.current);
+		if (id === rootId) return;
+		pendingClick.current = setTimeout(() => setSelected((current) => (current === id ? null : id)), DOUBLE_CLICK_MS);
+	};
 
 	const open = selected ? nodes.find((node) => node.uid === selected) : undefined;
 	const close = useCallback(() => setSelected(null), [setSelected]);
@@ -166,12 +189,15 @@ export default function MindmapPage() {
 							nodeTypes={NODE_TYPES}
 							colorMode="dark"
 							fitView
+							fitViewOptions={FIT}
+							onInit={(instance) => {
+								flow.current = instance;
+							}}
 							minZoom={0.1}
 							nodesConnectable={false}
 							zoomOnDoubleClick={false}
-							onNodeClick={(_, node) => {
-								if (node.id !== project.uid) setSelected(node.id === selected ? null : node.id);
-							}}
+							onNodeClick={(_, node) => onNodeClick(node.id)}
+							onNodeDoubleClick={() => clearTimeout(pendingClick.current)}
 						>
 							<Background />
 							<Controls showInteractive={false} />

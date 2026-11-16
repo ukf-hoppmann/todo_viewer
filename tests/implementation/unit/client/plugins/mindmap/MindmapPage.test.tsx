@@ -22,12 +22,13 @@ vi.mock("@xyflow/react", () => {
 			edges: Array<{ id: string }>;
 			nodeTypes: Record<string, (props: { data: unknown }) => ReactNode>;
 			onNodeClick: (event: unknown, node: { id: string }) => void;
+			onNodeDoubleClick: (event: unknown, node: { id: string }) => void;
 		}) => (
 			<div data-testid="flow">
 				{props.nodes.map((entry) => {
 					const Node = props.nodeTypes[entry.type]!;
 					return (
-						<div key={entry.id} data-flow-node={entry.id} data-x={entry.position.x} onClick={(event) => props.onNodeClick(event, entry)}>
+						<div key={entry.id} data-flow-node={entry.id} data-x={entry.position.x} onClick={(event) => props.onNodeClick(event, entry)} onDoubleClick={(event) => props.onNodeDoubleClick(event, entry)}>
 							<Node data={entry.data} />
 						</div>
 					);
@@ -186,6 +187,21 @@ describe("MindmapPage: creating and renaming", () => {
 		fireEvent.keyDown(screen.getByTestId(ids.titleInput("a")), { key: "Enter" });
 
 		expect((await screen.findByTestId(ids.error)).textContent).toContain("Der Knoten wurde inzwischen geändert");
+	});
+});
+
+describe("MindmapPage: double click", () => {
+	it("renames without opening the detail column", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.node("a"));
+
+		fireEvent.click(screen.getByTestId(ids.node("a")));
+		fireEvent.click(screen.getByTestId(ids.node("a")));
+		fireEvent.doubleClick(screen.getByTestId(ids.node("a")));
+
+		await screen.findByTestId(ids.titleInput("a"));
+		await new Promise((resolve) => setTimeout(resolve, 400));
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
 	});
 });
 

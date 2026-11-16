@@ -1,0 +1,87 @@
+"""Migration 1 von `mindmap`: ein leerer Stand wird auf die aktuelle Version gebracht, die Regeln stehen im Schema."""
+
+from __future__ import annotations
+
+import pytest
+from migration_helpers import ordered, plugin, versions
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
+from viewer.core.application.plugin import PluginDefinition
+from viewer.core.infrastructure.database import MigrationRunner, SqliteDatabase
+from viewer.plugins.mindmap.infrastructure.database.schema import MIGRATIONS
+from viewer.plugins.workspace.infrastructure.database.schema import MIGRATIONS as WORKSPACE
+
+NOW = "2026-10-16T12:00:00+00:00"
+
+
+def _defs() -> list[PluginDefinition]:
+    return ordered(
+        plugin("workspace", migrations=WORKSPACE), plugin("mindmap", requires=("workspace",), migrations=MIGRATIONS)
+    )
+
+
+def _prepare(runner: MigrationRunner, database: SqliteDatabase) -> str:
+    """Bringt die Datenbank auf die aktuelle Version und legt einen Baum mit zwei Knoten an. Gibt die Projekt-uid."""
+    assert ("mindmap", len(MIGRATIONS)) in runner.run(_defs())
+    with database.engine.begin() as connection:
+        project: str = connection.execute(text("SELECT uid FROM workspace_projects")).scalar_one()
+        connection.execute(
+            text(
+                "INSERT INTO workspace_element_kinds(kind, owner, label_prefix) "
+                "VALUES ('mindmap_node', 'mindmap', 'NODE')"
+            )
+        )
+        for uid, label in (("n1", "NODE-001"), ("n2", "NODE-002")):
+            connection.execute(
+                text(
+                    "INSERT INTO workspace_elements(uid, project_uid, kind, label, created_at, updated_at) "
+                    "VALUES (:u, :p, 'mindmap_node', :l, :n, :n)"
+                ),
+                {"u": uid, "p": project, "l": label, "n": NOW},
+            )
+            connection.execute(text("INSERT INTO mindmap_nodes(uid, title) VALUES (:u, 'T')"), {"u": uid})
+        connection.execute(
+            text("INSERT INTO mindmap_trees(uid, project_uid, kind) VALUES ('t1', :p, 'project')"), {"p": project}
+        )
+    return project
+
+
+def test_an_empty_database_gets_the_current_version_and_the_tables(
+    runner: MigrationRunner, database: SqliteDatabase
+) -> None:
+    runner.run(_defs())
+
+    assert versions(database)["mindmap"] == len(MIGRATIONS)
+    with database.engine.begin() as connection:
+        tables = {r[0] for r in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'table'"))}
+        kinds = {r[0] for r in connection.execute(text("SELECT code FROM mindmap_tree_kinds"))}
+    assert {"mindmap_tree_kinds", "mindmap_trees", "mindmap_nodes", "mindmap_placements"} <= tables
+    assert kinds == {"project"}
+    assert runner.run(_defs()) == []  # ein zweiter Lauf tut nichts
+
+
+def test_a_node_stands_at_most_once_per_tree_and_its_parent_in_the_same_tree(
+    runner: MigrationRunner, database: SqliteDatabase
+) -> None:
+    _prepare(runner, database)
+    insert = "INSERT INTO mindmap_placements(tree_uid, node_uid, parent_uid, position) VALUES ('t1', :n, :p, 0)"
+    with database.engine.begin() as connection:
+        connection.execute(text(insert), {"n": "n1", "p": None})
+    with pytest.raises(IntegrityError), database.engine.begin() as connection:
+        connection.execute(text(insert), {"n": "n1", "p": None})  # derselbe Knoten, derselbe Baum
+    with pytest.raises(IntegrityError), database.engine.begin() as connection:
+        connection.execute(text(insert), {"n": "n2", "p": "unbekannt"})  # Parent steht nicht im Baum
+    with pytest.raises(IntegrityError), database.engine.begin() as connection:
+        connection.execute(text(insert), {"n": "n2", "p": "n2"})  # nicht unter sich selbst
+    with database.engine.begin() as connection:
+        connection.execute(text(insert), {"n": "n2", "p": "n1"})
+
+
+def test_a_project_has_one_project_tree(runner: MigrationRunner, database: SqliteDatabase) -> None:
+    project = _prepare(runner, database)
+    with pytest.raises(IntegrityError), database.engine.begin() as connection:
+        connection.execute(
+            text("INSERT INTO mindmap_trees(uid, project_uid, kind) VALUES ('t2', :p, 'project')"), {"p": project}
+        )
+    with pytest.raises(IntegrityError), database.engine.begin() as connection:
+        connection.execute(text("INSERT INTO mindmap_trees(uid, project_uid, kind) VALUES ('t3', 'x', 'project')"))

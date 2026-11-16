@@ -52,7 +52,8 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - **Abhängigkeiten:** nur zwischen Themen zusammengefasst, an- und abschaltbar, standardmäßig aus.
 - **Am Item:** „Gehe hin“ (Map an seiner Stelle), „Erstelle“ (eigener Knoten), „Anker“ (als Wurzel öffnen, erst
   nach „Erstelle“).
-- Der genaue Aufbau der Seite (Auswahl der Maps, Schalter) ist noch offen.
+- Aufbau zunächst wie im Backlog: Sidebar, Baum zur Seite, Detailspalte; die Detailspalte ist schließbar. Auswahl der Maps und Schalter kommen mit den späteren Stories; der Aufbau darf dann angepasst werden.
+- Die Mindmap ersetzt das Feld Area; wie, regelt eine eigene Story.
 
 ## Äste zwischen Bäumen
 
@@ -83,7 +84,5 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 
 ## Offen
 
-- Aufbau der Mindmap-Seite.
 - Runde Anordnung bei großen Maps (Prototyp).
-- Form der KI-Vorschläge; abgeschlossene Items zeigen; Typwahl und tiefe Knoten beim Überführen; Zukunft des
-  Felds Area; Markierung für Ideen-Knoten; Dateiformat für Platzierungen.
+- Form der KI-Vorschläge; abgeschlossene Items zeigen; Typwahl und tiefe Knoten beim Überführen; Markierung für Ideen-Knoten; Dateiformat für Platzierungen.

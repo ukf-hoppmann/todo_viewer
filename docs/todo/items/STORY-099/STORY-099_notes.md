@@ -2,10 +2,10 @@
 
 ## State
 
-- Goal/Status: Geplant; vier Tasks angelegt.
-- Next step: Mit dem Task zum Datenmodell beginnen.
+- Goal/Status: In Arbeit; Plan freigegeben, `TASK-052` startet.
+- Next step: `TASK-052` in eigener Session, danach `TASK-053`, `TASK-054`, `TASK-055`.
 - Open:
-  - Ob Ideen-Knoten eine eigene Markierung bekommen, etwa „verworfen“ oder „später“ (2026-11-13)
+  - Ob Ideen-Knoten eine Markierung bekommen („verworfen“, „später“): der Owner will mit Markierungen planen, Form und Story offen (2026-11-16)
 - Decided:
   - Knoten sind leicht: Titel, optionaler Text, beliebige Tiefe; leere Knoten sind erlaubt (2026-11-13)
   - Je Projekt ein Baum mit dem Projekt als Wurzel (2026-11-13)
@@ -14,9 +14,11 @@
   - Umhängen innerhalb eines Baums ist immer möglich; Kreise werden verhindert (2026-11-13)
   - Knoten können Notizen bekommen, um Allgemeines zum Thema festzuhalten (2026-11-13)
   - Beim Öffnen sind zwei Ebenen offen, tiefere eingeklappt (2026-11-13)
+  - Seitenaufbau wie im Backlog: Sidebar, Baum zur Seite, Detailspalte; die Detailspalte ist schließbar (2026-11-16)
+  - Plan freigegeben; ein Task je Session auf eigenem `claude/…`-Branch, gemergt nach `todo_mindmap`, nacheinander (2026-11-16)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung (5ab3c9d663bd)
+State confirmed after entry 2026-11-16 — Umsetzungsplan freigegeben, Sessions (8dcf2985c4a7)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -38,3 +40,36 @@ State confirmed after entry 2026-11-13 — Übernahme der Entscheidungen aus der
 ### Open
 
 - Ob Ideen-Knoten eine eigene Markierung bekommen, etwa „verworfen“ oder „später“
+
+## 2026-11-16 — Seitenaufbau
+
+### Discussed
+
+- Varianten A (wie Backlog), B (Mindmap vorn, Detail schwebend), C (Reiter für Maps); A nutzt das vorhandene Seitengerüst.
+- Markierungen für Ideen-Knoten: „verworfen“ und „später“ blenden alte Ideen aus oder dimmen sie.
+
+### Decided
+
+- Seitenaufbau wie im Backlog, Detailspalte schließbar
+- Markierungen werden mitgeplant
+
+### Open
+
+- Open from 2026-11-13 (Markierung für Ideen-Knoten) teilweise geklärt: wird geplant; Form und Story offen
+
+## 2026-11-16 — Umsetzungsplan freigegeben, Sessions
+
+### Discussed
+
+- Plan für `STORY-099`: Server-Plugin `mindmap` (`TASK-052`), Seite (`TASK-053`), Ziehen (`TASK-054`), Notizen (`TASK-055`); die Tasks bauen aufeinander auf.
+- Wo die Sessions arbeiten: eigene `claude/…`-Branches oder direkt auf `todo_mindmap`.
+
+### Decided
+
+- Der Umsetzungsplan für `STORY-099` ist vom Owner freigegeben
+- Jeder Task läuft in einer eigenen neuen Session auf einem eigenen `claude/…`-Branch; gemergt wird immer nach `todo_mindmap`
+- Die Tasks laufen nacheinander; die nächste Session startet erst, wenn die vorige gemergt ist
+
+### Open
+
+- Wo die Dokument-Logik für Knoten liegt (gemeinsamer Baustein im Workspace oder `requires: backlog`): vor `TASK-055` klären

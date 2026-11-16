@@ -123,6 +123,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     2. Was die Struktur verbietet, wird nicht angeboten; eine Ablehnung des
     Servers steht als Meldung über der Map.
     3. UI-Tests sind grün.
+  - Summary: Themen in der Map mit der Maus an eine andere Stelle ziehen:
+    unter ein anderes Thema oder in eine andere Reihenfolge.
 
 - `TASK-055` **Mindmap: Notizen an Knoten**
   - Uid: 6fc3d1ab-41db-4b13-9e39-eb5f4c2572c7.

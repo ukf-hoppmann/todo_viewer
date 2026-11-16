@@ -4,10 +4,13 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Connection, Row, text
+from sqlalchemy import Connection, Row, bindparam, text
 
 from viewer.core.application.ports import Transaction
+from viewer.core.domain.errors import VersionConflict
 from viewer.core.infrastructure.database import SqlTransaction
+from viewer.plugins.mindmap.application.ports import Document
+from viewer.plugins.mindmap.domain.documents import NOTES, document_kind
 from viewer.plugins.mindmap.domain.model import Node, Placement, Tree
 
 _NODE = """
@@ -125,5 +128,78 @@ class SqlMindmapRepository:
         return [row.node_uid for row in rows]
 
     def delete_node(self, tx: Transaction, uid: str) -> None:
+        _conn(tx).execute(text("DELETE FROM mindmap_documents WHERE node_uid = :u"), {"u": uid})
         _conn(tx).execute(text("DELETE FROM mindmap_placements WHERE node_uid = :u"), {"u": uid})
         _conn(tx).execute(text("DELETE FROM mindmap_nodes WHERE uid = :u"), {"u": uid})
+
+
+class SqlDocumentRepository:
+    def list_for(self, tx: Transaction, node_uid: str) -> list[Document]:
+        rows = _conn(tx).execute(
+            text(
+                "SELECT d.*, e.label FROM mindmap_documents d JOIN workspace_elements e ON e.uid = d.node_uid "
+                "WHERE d.node_uid = :u"
+            ),
+            {"u": node_uid},
+        )
+        return sorted((self._document(row) for row in rows), key=lambda d: (d.kind != NOTES, d.name))
+
+    def names_of(self, tx: Transaction, node_uids: Sequence[str]) -> dict[str, list[str]]:
+        if not node_uids:
+            return {}
+        query = text(
+            "SELECT d.node_uid, d.name, e.label FROM mindmap_documents d "
+            "JOIN workspace_elements e ON e.uid = d.node_uid WHERE d.node_uid IN :uids"
+        ).bindparams(bindparam("uids", expanding=True))
+        found: dict[str, list[tuple[bool, str]]] = {}
+        for row in _conn(tx).execute(query, {"uids": list(node_uids)}):
+            found.setdefault(row.node_uid, []).append((document_kind(row.label, row.name) != NOTES, row.name))
+        return {uid: [name for _, name in sorted(pairs)] for uid, pairs in found.items()}
+
+    def get(self, tx: Transaction, node_uid: str, name: str) -> Document | None:
+        row = (
+            _conn(tx)
+            .execute(
+                text(
+                    "SELECT d.*, e.label FROM mindmap_documents d JOIN workspace_elements e ON e.uid = d.node_uid "
+                    "WHERE d.node_uid = :u AND d.name = :n"
+                ),
+                {"u": node_uid, "n": name},
+            )
+            .first()
+        )
+        return self._document(row) if row else None
+
+    @staticmethod
+    def _document(row: Row[Any]) -> Document:
+        kind = document_kind(row.label, row.name) or "spec"
+        return Document(row.node_uid, row.name, kind, row.content, row.revision, datetime.fromisoformat(row.updated_at))
+
+    def insert(self, tx: Transaction, document: Document) -> None:
+        _conn(tx).execute(
+            text(
+                "INSERT INTO mindmap_documents(node_uid, name, content, revision, updated_at) "
+                "VALUES (:u, :n, :c, :r, :t)"
+            ),
+            {
+                "u": document.node_uid,
+                "n": document.name,
+                "c": document.content,
+                "r": document.revision,
+                "t": document.updated_at.isoformat(),
+            },
+        )
+
+    def update(self, tx: Transaction, node_uid: str, name: str, content: str, expected: int, at: datetime) -> int:
+        result = _conn(tx).execute(
+            text(
+                "UPDATE mindmap_documents SET content = :c, revision = revision + 1, updated_at = :t "
+                "WHERE node_uid = :u AND name = :n AND revision = :r"
+            ),
+            {"c": content, "t": at.isoformat(), "u": node_uid, "n": name, "r": expected},
+        )
+        if result.rowcount != 1:
+            raise VersionConflict(
+                "Das Dokument wurde inzwischen geändert", details={"name": name, "expected": expected}
+            )
+        return expected + 1

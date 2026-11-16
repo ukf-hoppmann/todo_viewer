@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DeleteIcon from "@mui/icons-material/DeleteOutlined";
+import NotesIcon from "@mui/icons-material/StickyNote2Outlined";
 import { Box, InputBase, Typography } from "@mui/material";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { memo, useRef, type DragEvent } from "react";
@@ -12,20 +13,20 @@ import { useMapActions } from "./mapActions";
 import { NODE_HEIGHT, NODE_WIDTH } from "./mindmapLayout";
 import { mindmapTestIds } from "./testIds";
 
-export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone };
+export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; hasNotes?: boolean; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone };
 export type TopicNode = Node<TopicData, "topic">;
 
 const HIDDEN_HANDLE = { opacity: 0, pointerEvents: "none" } as const;
 
 /**
- * A node of the mind map: the title (an input while it is renamed), at the right edge the arrow that folds its
+ * A node of the mind map: the title (an input while it is renamed), a mark when the node has notes, at the right edge the arrow that folds its
  * children, and above it, while pointer or focus are on the node, the actions "add child" and "trash". The root is
  * the project: it cannot be renamed or deleted. A node is dragged onto another one to move it with its branch: the
  * upper quarter of the target places it before, the lower quarter after, the middle below the target; the page says
  * whether a place is offered and marks it (`drop`).
  */
 export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNode>) {
-	const { id, title, isRoot, hasChildren, open, selected, editing, dragging, drop } = data;
+	const { id, title, isRoot, hasChildren, hasNotes, open, selected, editing, dragging, drop } = data;
 	const { t } = useTranslation("mindmap");
 	const actions = useMapActions();
 	// Esc ends the edit; the blur that follows must not save it.
@@ -115,6 +116,15 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 				<Typography variant="body2" noWrap sx={{ flexGrow: 1, minWidth: 0, fontWeight: isRoot ? 600 : 400 }}>
 					{title}
 				</Typography>
+			)}
+			{hasNotes && !editing && (
+				<NotesIcon
+					fontSize="small"
+					color="action"
+					titleAccess={t("node.hasNotes")}
+					data-testid={mindmapTestIds.notesMark(id)}
+					sx={{ flexShrink: 0 }}
+				/>
 			)}
 			{hasChildren && !editing && (
 				<Box className="nodrag nopan" sx={{ flexShrink: 0 }} onClick={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>

@@ -302,7 +302,17 @@ def test_changes_are_announced_as_node_events(mindmap: Env) -> None:
 def test_the_operations_are_published_as_http_routes_and_mcp_tools(mindmap: Env) -> None:
     host = mindmap.app.state.plugin_host
     names = {op.name for op in host.plugins[-1].definition.operations}
-    assert names == {"get_tree", "get_node", "create_node", "update_node", "move_node"}
+    assert names == {
+        "get_tree",
+        "get_node",
+        "create_node",
+        "update_node",
+        "move_node",
+        "list_node_documents",
+        "get_node_document",
+        "put_node_document",
+        "append_node_entry",
+    }
     assert all(host.operation("mindmap", name).mcp for name in names)
     paths = mindmap.client.get("/openapi.json").json()["paths"]
     assert {"/api/mindmap/trees/{project}", "/api/mindmap/nodes", "/api/mindmap/nodes/{ref}/move"} <= set(paths)

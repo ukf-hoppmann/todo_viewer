@@ -19,12 +19,17 @@ describe("mindmap plugin definition", () => {
 		expect(routes[0]).toMatchObject({ name: "main", title: "tab.mindmap", layout: { sidebar: true, detail: true } });
 	});
 
-	it.each(["mindmap.node.changed", "workspace.element.changed", "core.reconnected"])("reloads the tree on %s", (topic) => {
+	it.each([
+		["mindmap.node.changed", ["Tree"]],
+		["workspace.element.changed", ["Tree"]],
+		["mindmap.document.changed", ["Tree", "Documents"]],
+		["core.reconnected", ["Tree", "Documents"]],
+	])("reloads on %s", (topic, tags) => {
 		const dispatch = vi.fn();
-		const invalidateTags = vi.fn((tags: string[]) => ({ type: "invalidate", tags }));
+		const invalidateTags = vi.fn((names: string[]) => ({ type: "invalidate", tags: names }));
 
 		plugin.eventHandlers![topic]!({}, { dispatch, api: { util: { invalidateTags } } as never });
 
-		expect(dispatch).toHaveBeenCalledWith({ type: "invalidate", tags: ["Tree"] });
+		expect(dispatch).toHaveBeenCalledWith({ type: "invalidate", tags });
 	});
 });

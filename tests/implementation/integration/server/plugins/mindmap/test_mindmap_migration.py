@@ -55,7 +55,13 @@ def test_an_empty_database_gets_the_current_version_and_the_tables(
     with database.engine.begin() as connection:
         tables = {r[0] for r in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'table'"))}
         kinds = {r[0] for r in connection.execute(text("SELECT code FROM mindmap_tree_kinds"))}
-    assert {"mindmap_tree_kinds", "mindmap_trees", "mindmap_nodes", "mindmap_placements"} <= tables
+    assert {
+        "mindmap_tree_kinds",
+        "mindmap_trees",
+        "mindmap_nodes",
+        "mindmap_placements",
+        "mindmap_documents",
+    } <= tables
     assert kinds == {"project"}
     assert runner.run(_defs()) == []  # ein zweiter Lauf tut nichts
 
@@ -85,3 +91,16 @@ def test_a_project_has_one_project_tree(runner: MigrationRunner, database: Sqlit
         )
     with pytest.raises(IntegrityError), database.engine.begin() as connection:
         connection.execute(text("INSERT INTO mindmap_trees(uid, project_uid, kind) VALUES ('t3', 'x', 'project')"))
+
+
+def test_a_document_belongs_to_one_node_and_is_named_once(runner: MigrationRunner, database: SqliteDatabase) -> None:
+    _prepare(runner, database)
+    insert = (
+        "INSERT INTO mindmap_documents(node_uid, name, content, updated_at) VALUES (:n, 'NODE-001_notes.md', 'x', :t)"
+    )
+    with database.engine.begin() as connection:
+        connection.execute(text(insert), {"n": "n1", "t": NOW})
+    with pytest.raises(IntegrityError), database.engine.begin() as connection:
+        connection.execute(text(insert), {"n": "n1", "t": NOW})  # derselbe Name am selben Knoten
+    with pytest.raises(IntegrityError), database.engine.begin() as connection:
+        connection.execute(text(insert), {"n": "unbekannt", "t": NOW})  # Knoten gibt es nicht

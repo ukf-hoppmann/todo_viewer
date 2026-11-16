@@ -1,12 +1,13 @@
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { DetailPanel, InlineField } from "../../shared";
+import { DetailPanel, DetailSection, InlineField } from "../../shared";
+import { DocumentsSection } from "./DocumentsSection";
 import { errorMessage, useUpdateNodeMutation, type NodeOut } from "./api";
 import { mindmapTestIds } from "./testIds";
 
 /**
- * The detail of a node in the detail column: its label, and title and text as fields that save at once (a rejected
- * save shows the message of the server at the field). An empty text removes it.
+ * The detail of a node in the detail column: its label, title and text as fields that save at once (a rejected
+ * save shows the message of the server at the field; an empty text removes it), and the section "Documents".
  */
 export function NodeDetail({ node, onClose }: { node: NodeOut; onClose: () => void }) {
 	const { t } = useTranslation("mindmap");
@@ -33,6 +34,9 @@ export function NodeDetail({ node, onClose }: { node: NodeOut; onClose: () => vo
 						}}
 					/>
 					<InlineField kind="text" id="text" label={t("field.text")} value={node.text ?? ""} multiline onSave={(text) => save({ text })} />
+					<DetailSection id="documents" title={t("field.documents")}>
+						<DocumentsSection node={node} />
+					</DetailSection>
 				</Box>
 			</DetailPanel>
 		</Box>

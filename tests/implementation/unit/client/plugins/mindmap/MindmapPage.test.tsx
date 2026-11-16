@@ -384,3 +384,56 @@ describe("MindmapPage: moving by dragging", () => {
 		expect(shownIds()).toEqual(["p1", "a", "a1", "b"]);
 	});
 });
+
+describe("MindmapPage: notes at a node", () => {
+	it("marks a node that has documents and no other", async () => {
+		await renderPage({ nodes: [node("a", null, 0, { documents: ["NODE-a_notes.md"] }), node("b", null, 1)] });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(screen.getByTestId(ids.notesMark("a"))).toBeTruthy();
+		expect(screen.queryByTestId(ids.notesMark("b"))).toBeNull();
+	});
+
+	it("lists the documents of the node in its detail", async () => {
+		await renderPage({ nodes: [node("a", null, 0, { documents: ["NODE-a_notes.md", "NODE-a_spec.md"] })] });
+		await screen.findByTestId(ids.node("a"));
+
+		fireEvent.click(flowNode("a"));
+
+		await screen.findByTestId(ids.detail);
+		expect(screen.getByTestId(sharedTestIds.document("NODE-a_notes.md"))).toBeTruthy();
+		expect(screen.getByTestId(sharedTestIds.document("NODE-a_spec.md"))).toBeTruthy();
+	});
+
+	it("appends an entry to the notes and then marks the node in the map", async () => {
+		const backend = await renderPage({ nodes: [node("a")] });
+		await screen.findByTestId(ids.node("a"));
+		expect(screen.queryByTestId(ids.notesMark("a"))).toBeNull();
+
+		fireEvent.click(flowNode("a"));
+		await screen.findByTestId(ids.detail);
+		fireEvent.click(screen.getByTestId(sharedTestIds.documentsAddEntry));
+		fireEvent.change(await screen.findByTestId(sharedTestIds.entryField("topic")), { target: { value: "Treffen" } });
+		fireEvent.change(screen.getByTestId(sharedTestIds.entryField("discussed")), { target: { value: "a\n\nb" } });
+		fireEvent.click(screen.getByTestId(sharedTestIds.entrySave));
+
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/a/entries")).toHaveLength(1));
+		expect(backend.calls("POST", "mindmap/nodes/a/entries")[0]!.body).toEqual({ topic: "Treffen", discussed: ["a", "b"], decided: [], open: [] });
+		await waitFor(() => expect(screen.getByTestId(ids.notesMark("a"))).toBeTruthy());
+		expect(screen.getByTestId(sharedTestIds.document("NODE-a_notes.md"))).toBeTruthy();
+	});
+
+	it("creates a spec named after the label of the node", async () => {
+		const backend = await renderPage({ nodes: [node("a")] });
+		await screen.findByTestId(ids.node("a"));
+
+		fireEvent.click(flowNode("a"));
+		await screen.findByTestId(ids.detail);
+		fireEvent.click(screen.getByTestId(sharedTestIds.documentsAddSpec));
+		expect(((await screen.findByTestId(sharedTestIds.specName)) as HTMLInputElement).value).toBe("NODE-a_spec.md");
+		fireEvent.click(screen.getByTestId(sharedTestIds.specSave));
+
+		await waitFor(() => expect(backend.calls("PUT", "mindmap/nodes/a/documents/NODE-a_spec.md")).toHaveLength(1));
+		expect(backend.calls("PUT", "mindmap/nodes/a/documents/NODE-a_spec.md")[0]!.body).toEqual({ content: "# NODE-a — Thema a\n" });
+	});
+});

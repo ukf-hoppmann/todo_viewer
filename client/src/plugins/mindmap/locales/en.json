@@ -1,0 +1,27 @@
+{
+	"tab": {
+		"mindmap": "Mind map"
+	},
+	"page": {
+		"chooseProject": "Mark a project on the left to see its mind map.",
+		"hint": "Double click renames · click opens the detail"
+	},
+	"node": {
+		"new": "New topic"
+	},
+	"action": {
+		"add": "Add child node",
+		"remove": "Move to trash",
+		"expand": "Expand",
+		"collapse": "Collapse",
+		"close": "Close"
+	},
+	"field": {
+		"title": "Title",
+		"text": "Text"
+	},
+	"error": {
+		"failed": "The change failed",
+		"titleEmpty": "The title must not be empty"
+	}
+}

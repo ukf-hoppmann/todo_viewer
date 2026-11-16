@@ -11,6 +11,8 @@ import backlogDe from "../../../client/src/plugins/backlog/locales/de.json";
 import backlogEn from "../../../client/src/plugins/backlog/locales/en.json";
 import memosDe from "../../../client/src/plugins/memos/locales/de.json";
 import memosEn from "../../../client/src/plugins/memos/locales/en.json";
+import mindmapDe from "../../../client/src/plugins/mindmap/locales/de.json";
+import mindmapEn from "../../../client/src/plugins/mindmap/locales/en.json";
 import de from "../../../client/src/plugins/workspace/locales/de.json";
 import en from "../../../client/src/plugins/workspace/locales/en.json";
 import { fakeWorkspaceBackend } from "./fakeWorkspaceBackend";
@@ -43,6 +45,8 @@ export async function renderWorkspace(
 	i18n.addResourceBundle("en", "alarms", alarmsEn);
 	i18n.addResourceBundle("de", "memos", memosDe);
 	i18n.addResourceBundle("en", "memos", memosEn);
+	i18n.addResourceBundle("de", "mindmap", mindmapDe);
+	i18n.addResourceBundle("en", "mindmap", mindmapEn);
 	const active: ActivePlugin[] = [];
 	for (const type of options.createTypes ?? []) {
 		i18n.addResourceBundle("de", type.ownerId, { create: { [type.name]: type.title } });

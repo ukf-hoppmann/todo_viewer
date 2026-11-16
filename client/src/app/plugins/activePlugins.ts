@@ -10,6 +10,7 @@ export const activePluginIds: readonly string[] = [
 	"workspace",
 	"backlog",
 	"memos",
+	"mindmap",
 	"alarms",
 	...(import.meta.env.DEV ? ["example"] : []),
 ];

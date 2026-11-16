@@ -66,26 +66,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Der Grundbaustein: ein Themenbaum je Projekt, in dem man frei
     Knoten sammelt und ordnet und Notizen dazu schreibt.
 
-- `TASK-053` **Mindmap-Seite: Projektbaum anzeigen, Knoten anlegen, umbenennen, löschen, ein- und ausklappen**
-  - Uid: e642fa32-c332-4e52-8174-05648be29c84.
-  - Type: Task.
-  - Parent: `STORY-099`.
-  - Required for parent: Yes.
-  - Status: Open.
-  - Created: 2026-11-13.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: `TASK-052`.
-  - Goal: Ein neues Client-Plugin zeigt den Themenbaum des gewählten Projekts
-    als Mindmap in der Anordnung zur Seite und erlaubt das Anlegen, Umbenennen
-    und Löschen von Knoten sowie das Ein- und Ausklappen.
-  - Completion criteria: 1. Die Hauptroute zeigt den Baum eines Projekts; die
-    Projektauswahl der Seitenleiste bestimmt, welches.
-    2. Knoten lassen sich in der Map anlegen, umbenennen und in den Papierkorb
-    legen; der Klappzustand bleibt erhalten, beim ersten Öffnen sind zwei
-    Ebenen offen.
-    3. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
-
 - `TASK-054` **Mindmap: Knoten per Ziehen umhängen und umordnen**
   - Uid: 0d9f9111-7e91-4adf-b97d-7c979ac15544.
   - Type: Task.

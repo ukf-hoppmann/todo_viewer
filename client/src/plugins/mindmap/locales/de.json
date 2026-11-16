@@ -1,0 +1,52 @@
+{
+	"tab": {
+		"mindmap": "Mindmap"
+	},
+	"page": {
+		"chooseProject": "Markiere links ein Projekt, um seine Mindmap zu sehen.",
+		"hint": "Doppelklick benennt um · Klick öffnet das Detail · Ziehen hängt um oder ordnet um"
+	},
+	"node": {
+		"new": "Neues Thema",
+		"hasNotes": "Dieser Knoten hat Notizen"
+	},
+	"action": {
+		"add": "Unterknoten anlegen",
+		"remove": "In den Papierkorb legen",
+		"expand": "Aufklappen",
+		"collapse": "Zuklappen",
+		"close": "Schließen",
+		"edit": "Bearbeiten"
+	},
+	"field": {
+		"title": "Titel",
+		"text": "Text",
+		"documents": "Dokumente"
+	},
+	"error": {
+		"failed": "Die Änderung ist fehlgeschlagen",
+		"titleEmpty": "Der Titel darf nicht leer sein"
+	},
+	"form": {
+		"cancel": "Abbrechen",
+		"save": "Speichern"
+	},
+	"documents": {
+		"none": "Noch keine Notizen oder Specs.",
+		"addEntry": "Notiz-Eintrag anlegen",
+		"addSpec": "Spec anlegen",
+		"topic": "Thema",
+		"discussed": "Besprochen",
+		"decided": "Entschieden",
+		"open": "Offen",
+		"onePerLine": "Ein Stichpunkt pro Zeile",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md oder {{label}}_spec_<thema>.md",
+		"large": "Großansicht",
+		"conflict": "Das Dokument wurde inzwischen geändert.",
+		"showCurrent": "Aktuellen Stand zeigen",
+		"saveAnyway": "Trotzdem speichern",
+		"currentState": "aktueller Stand",
+		"toc": "Inhaltsverzeichnis"
+	}
+}

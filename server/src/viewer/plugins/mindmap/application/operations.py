@@ -6,15 +6,19 @@ Knoten in den Papierkorb legen und wiederherstellen gehen über `workspace` (`wo
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 
 from viewer.core.domain.operations import HttpBinding, Operation
+from viewer.plugins.mindmap.application.documents import DocumentService
+from viewer.plugins.mindmap.application.ports import Document
 from viewer.plugins.mindmap.application.service import MindmapService, NodeView, TreeView
 
 
 class MindmapServices:
-    def __init__(self, mindmap: MindmapService) -> None:
+    def __init__(self, mindmap: MindmapService, documents: DocumentService) -> None:
         self.mindmap = mindmap
+        self.documents = documents
 
 
 @dataclass(frozen=True)
@@ -32,6 +36,8 @@ class NodeOut:
     position: int
     #: Versionstoken für schreibende Operationen.
     version: int
+    #: Die Namen der Dokumente des Knotens, die Notiz zuerst; leer, wenn er keine hat.
+    documents: list[str]
 
 
 @dataclass(frozen=True)
@@ -91,13 +97,84 @@ class MoveNode:
     project: str | None = None
 
 
+@dataclass(frozen=True)
+class DocumentInfo:
+    name: str
+    kind: str
+    version: int
+    updated_at: datetime
+
+
+@dataclass(frozen=True)
+class DocumentOut:
+    name: str
+    kind: str
+    content: str
+    version: int
+    updated_at: datetime
+
+
+@dataclass(frozen=True)
+class ListNodeDocuments:
+    ref: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class GetNodeDocument:
+    ref: str
+    name: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class PutNodeDocument:
+    ref: str
+    name: str
+    content: str
+    #: Die Version, die ersetzt wird; ohne Angabe wird ein neues Dokument angelegt.
+    version: int | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class AppendNodeEntry:
+    ref: str
+    topic: str
+    discussed: list[str] = field(default_factory=list)
+    decided: list[str] = field(default_factory=list)
+    open: list[str] = field(default_factory=list)
+    project: str | None = None
+
+
+def _document_info(document: Document) -> DocumentInfo:
+    return DocumentInfo(document.name, document.kind, document.revision, document.updated_at)
+
+
+def _document_out(document: Document) -> DocumentOut:
+    return DocumentOut(document.name, document.kind, document.content, document.revision, document.updated_at)
+
+
 def node_out(view: NodeView) -> NodeOut:
     n, p = view.node, view.placement
-    return NodeOut(n.uid, n.project_uid, n.label, n.title, n.text, p.tree_uid, p.parent_uid, p.position, n.revision)
+    return NodeOut(
+        n.uid,
+        n.project_uid,
+        n.label,
+        n.title,
+        n.text,
+        p.tree_uid,
+        p.parent_uid,
+        p.position,
+        n.revision,
+        list(view.documents),
+    )
 
 
 def tree_out(view: TreeView) -> TreeOut:
-    nodes = [node_out(NodeView(node, placement)) for node, placement in view.nodes]
+    nodes = [
+        node_out(NodeView(node, placement, tuple(view.documents.get(node.uid, ())))) for node, placement in view.nodes
+    ]
     return TreeOut(view.project_uid, view.tree.uid if view.tree else None, nodes)
 
 
@@ -157,5 +234,42 @@ OPERATIONS: tuple[Operation, ...] = (
             )
         ),
         HttpBinding("POST", "/nodes/{ref}/move"),
+    ),
+    Operation(
+        "list_node_documents",
+        "Die Dokumente eines Knotens (Name, Art, Version)",
+        "read",
+        ListNodeDocuments,
+        list[DocumentInfo],
+        lambda s, d: [_document_info(doc) for doc in s.documents.list_documents(d.ref, d.project)],
+        HttpBinding("GET", "/nodes/{ref}/documents"),
+    ),
+    Operation(
+        "get_node_document",
+        "Ein Dokument eines Knotens mit Inhalt und Version",
+        "read",
+        GetNodeDocument,
+        DocumentOut,
+        lambda s, d: _document_out(s.documents.get_document(d.ref, d.project, d.name)),
+        HttpBinding("GET", "/nodes/{ref}/documents/{name}"),
+    ),
+    Operation(
+        "put_node_document",
+        "Ersetzt ein Dokument eines Knotens in `version` oder legt ein neues an (<LABEL>_notes.md, "
+        "<LABEL>_spec[_<thema>].md)",
+        "write",
+        PutNodeDocument,
+        DocumentOut,
+        lambda s, d: _document_out(s.documents.put_document(d.ref, d.project, d.name, d.content, d.version)),
+        HttpBinding("PUT", "/nodes/{ref}/documents/{name}"),
+    ),
+    Operation(
+        "append_node_entry",
+        "Hängt einen datierten Eintrag (Thema, Discussed, Decided, Open) an die Notizen eines Knotens",
+        "write",
+        AppendNodeEntry,
+        DocumentOut,
+        lambda s, d: _document_out(s.documents.append_note(d.ref, d.project, d.topic, d.discussed, d.decided, d.open)),
+        HttpBinding("POST", "/nodes/{ref}/entries"),
     ),
 )

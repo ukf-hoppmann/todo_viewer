@@ -8,6 +8,98 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `STORY-099` **Mindmap-Gerüst: Themenbaum je Projekt anlegen, ordnen und mit Notizen versehen**
+  - Uid: e4a5ac91-95ba-44d0-aa9a-5ac0fffa6326.
+  - Type: Story.
+  - Parent: `EPIC-008`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Auf einer eigenen Seite hat jedes Projekt einen Themenbaum mit dem
+    Projekt als Wurzel. Man legt Knoten an, benennt sie um, hängt sie um,
+    klappt sie ein und aus, legt sie in den Papierkorb und schreibt Notizen
+    dazu. Das ist das reine Brainstorming-Werkzeug ohne Bezug zum Backlog.
+  - Completion criteria: 1. Knoten haben Titel und optionalen Text, beliebige
+    Tiefe und dürfen leer sein; ihre Lage steht als Platzierung (Knoten,
+    Parent, Stelle), nicht als Parent-Feld.
+    2. Anlegen, Umbenennen, Umhängen, Löschen in den Papierkorb und
+    Wiederherstellen gehen über API, MCP und Oberfläche; ein Knoten kann nicht
+    unter sich selbst landen.
+    3. Die Seite zeigt den Baum eines Projekts in der Anordnung zur Seite,
+    beim Öffnen sind zwei Ebenen offen.
+    4. Ein Knoten hat den Abschnitt „Dokumente“ mit Notizen wie ein Item.
+    5. Domain-, API- und UI-Tests sind grün.
+  - Summary: Der Grundbaustein: ein Themenbaum je Projekt, in dem man frei
+    Knoten sammelt und ordnet und Notizen dazu schreibt.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
+- `TASK-055` **Mindmap: Notizen an Knoten**
+  - Uid: 6fc3d1ab-41db-4b13-9e39-eb5f4c2572c7.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-053`.
+  - Goal: Ein Knoten hat im Detail den Abschnitt „Dokumente“ und kann Notizen
+    tragen, gespeichert und gelesen wie bei Items.
+  - Completion criteria: 1. Der Server speichert Dokumente eines Knotens; das
+    Detail des Knotens nutzt `DocumentsSection`.
+    2. Ein Knoten mit Notizen ist in der Map erkennbar.
+    3. API- und UI-Tests sind grün.
+  - Summary: Knoten bekommen den Abschnitt „Dokumente“ mit Notizen wie ein
+    Item; in der Map sieht man, welche Knoten Notizen tragen.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
+- `TASK-054` **Mindmap: Knoten per Ziehen umhängen und umordnen**
+  - Uid: 0d9f9111-7e91-4adf-b97d-7c979ac15544.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-053`.
+  - Goal: In der Map lässt sich ein Knoten samt Ast per Ziehen unter einen
+    anderen Knoten hängen oder unter seinen Geschwistern umordnen.
+  - Completion criteria: 1. Ziehen auf einen Knoten hängt den Ast darunter;
+    die Reihenfolge der Geschwister lässt sich ändern.
+    2. Was die Struktur verbietet, wird nicht angeboten; eine Ablehnung des
+    Servers steht als Meldung über der Map.
+    3. UI-Tests sind grün.
+  - Summary: Themen in der Map mit der Maus an eine andere Stelle ziehen:
+    unter ein anderes Thema oder in eine andere Reihenfolge.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
+- `TASK-053` **Mindmap-Seite: Projektbaum anzeigen, Knoten anlegen, umbenennen, löschen, ein- und ausklappen**
+  - Uid: e642fa32-c332-4e52-8174-05648be29c84.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-052`.
+  - Goal: Ein neues Client-Plugin zeigt den Themenbaum des gewählten Projekts
+    als Mindmap in der Anordnung zur Seite und erlaubt das Anlegen, Umbenennen
+    und Löschen von Knoten sowie das Ein- und Ausklappen.
+  - Completion criteria: 1. Die Hauptroute zeigt den Baum eines Projekts; die
+    Projektauswahl der Seitenleiste bestimmt, welches.
+    2. Knoten lassen sich in der Map anlegen, umbenennen und in den Papierkorb
+    legen; der Klappzustand bleibt erhalten, beim ersten Öffnen sind zwei
+    Ebenen offen.
+    3. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
+  - Summary: Die Seite, auf der man den Themenbaum eines Projekts als Mindmap
+    sieht und Knoten anlegt, umbenennt, löscht und auf- und zuklappt.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
 - `TASK-052` **Mindmap-Server: Knoten, Platzierungen und Projektbaum mit API und MCP**
   - Uid: 26d4cdfa-7632-4e6d-bacf-2a17a04a7334.
   - Type: Task.

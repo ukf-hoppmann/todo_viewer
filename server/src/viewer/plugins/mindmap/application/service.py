@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from viewer.core.application.ports import Database, EventBus, Transaction
 from viewer.core.domain.errors import InvalidInput, NotFound
 from viewer.core.domain.events import Event
-from viewer.plugins.mindmap.application.ports import MindmapRepository
+from viewer.plugins.mindmap.application.ports import DocumentRepository, MindmapRepository
 from viewer.plugins.mindmap.domain import tree as rules
 from viewer.plugins.mindmap.domain.model import TREE_PROJECT, MindmapViolation, Node, Placement, Tree
 from viewer.plugins.workspace import ElementRegistry, Projects
@@ -31,12 +31,16 @@ class TreeView:
     tree: Tree | None
     #: Die lebenden Knoten mit ihrer Platzierung, nach Eltern vor Kindern und Stelle geordnet.
     nodes: list[tuple[Node, Placement]]
+    #: Die Namen der Dokumente je Knoten (nur Knoten mit Dokumenten).
+    documents: dict[str, list[str]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
 class NodeView:
     node: Node
     placement: Placement
+    #: Die Namen der Dokumente des Knotens, die Notiz zuerst.
+    documents: tuple[str, ...] = ()
 
 
 def title_of(value: object) -> str:
@@ -51,6 +55,7 @@ class MindmapService:
     def __init__(
         self,
         repository: MindmapRepository,
+        documents: DocumentRepository,
         registry: ElementRegistry,
         projects: Projects,
         database: Database,
@@ -58,6 +63,7 @@ class MindmapService:
         new_uid: Callable[[], str],
     ) -> None:
         self._repository = repository
+        self._documents = documents
         self._registry = registry
         self._projects = projects
         self._database = database
@@ -72,7 +78,8 @@ class MindmapService:
             tree = self._repository.tree_of_project(tx, project_uid)
             if tree is None:
                 return TreeView(project_uid, None, [])
-            return TreeView(project_uid, tree, self._ordered(tx, tree))
+            ordered = self._ordered(tx, tree)
+            return TreeView(project_uid, tree, ordered, self._documents.names_of(tx, [n.uid for n, _ in ordered]))
 
     def get_node(self, ref: str, project_uid: str | None, tree_uid: str | None = None) -> NodeView:
         with self._database.transaction() as tx:
@@ -216,6 +223,10 @@ class MindmapService:
             return None
         return self._resolve(tx, str(parent), project_uid).uid
 
+    def resolve(self, tx: Transaction, ref: str, project_uid: str | None) -> Node:
+        """Der Knoten zu `uid` oder Label (mit Projekt)."""
+        return self._resolve(tx, ref, project_uid)
+
     def _resolve(self, tx: Transaction, ref: str, project_uid: str | None) -> Node:
         node = self._repository.get_node(tx, ref)
         if node is None and project_uid is not None and _LABEL.match(ref.strip()):
@@ -247,7 +258,7 @@ class MindmapService:
         live = {n.uid for n in self._repository.nodes_in_tree(tx, tree.uid)}
         placement = rules.find(rules.compacted(placements, live | {node.uid}), node.uid)
         assert placement is not None
-        return NodeView(node, placement)
+        return NodeView(node, placement, tuple(self._documents.names_of(tx, [node.uid]).get(node.uid, ())))
 
     def _changed(self, uid: str, project_uid: str, change: str, tree_uid: str | None = None) -> None:
         payload: dict[str, object] = {"uid": uid, "project_uid": project_uid, "change": change}

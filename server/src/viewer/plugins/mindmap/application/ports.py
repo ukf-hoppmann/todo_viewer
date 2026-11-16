@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 
 from viewer.core.application.ports import Transaction
@@ -42,4 +44,34 @@ class MindmapRepository(Protocol):
 
     def delete_node(self, tx: Transaction, uid: str) -> None:
         """Entfernt den Knoten und seine Platzierungen (Papierkorb: endgültiges Löschen)."""
+        ...
+
+
+@dataclass(frozen=True)
+class Document:
+    """Ein Dokument eines Knotens; `revision` ist seine Version."""
+
+    node_uid: str
+    name: str
+    kind: str
+    content: str
+    revision: int
+    updated_at: datetime
+
+
+class DocumentRepository(Protocol):
+    def list_for(self, tx: Transaction, node_uid: str) -> list[Document]:
+        """Die Dokumente des Knotens, die Notiz zuerst."""
+        ...
+
+    def names_of(self, tx: Transaction, node_uids: Sequence[str]) -> dict[str, list[str]]:
+        """Die Namen der Dokumente je Knoten (nur Knoten mit Dokumenten), die Notiz zuerst."""
+        ...
+
+    def get(self, tx: Transaction, node_uid: str, name: str) -> Document | None: ...
+
+    def insert(self, tx: Transaction, document: Document) -> None: ...
+
+    def update(self, tx: Transaction, node_uid: str, name: str, content: str, expected: int, at: datetime) -> int:
+        """Ersetzt den Inhalt, wenn die Revision `expected` ist (sonst `version_conflict`); gibt die neue zurück."""
         ...

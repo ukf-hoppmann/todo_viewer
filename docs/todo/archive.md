@@ -27,6 +27,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     selben Baum ab.
     3. Die Operationen sind über API und MCP erreichbar und melden Ereignisse.
     4. Domain- und API-Tests sind grün, die Schnittstellen sind dokumentiert.
+  - Summary: Der Server speichert jetzt Mindmap-Knoten und ihre Platzierungen
+    je Projekt und stellt sie über API und MCP bereit.
   - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
 
 - `STORY-028` **Architekturregeln: Primärquelle und Spiegel statt genau einem Backend**

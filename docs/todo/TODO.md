@@ -212,11 +212,13 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     und lösen.
     4. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
 
-- `NEW-mindmap-markierungen` **Mindmap: Markierungen „verworfen“ und „später“ an Ideen-Knoten**
+- `TASK-065` **Mindmap: Markierungen „verworfen“ und „später“ an Ideen-Knoten**
+  - Uid: ea634e30-aae8-49b4-a5ab-8b77aa40bf03.
   - Type: Task.
   - Parent: `STORY-100`.
   - Required for parent: No.
   - Status: Open.
+  - Created: 2026-11-16.
   - Area: Web-UI.
   - Priority: Normal.
   - Dependencies: `TASK-056`.
@@ -560,11 +562,13 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Claude_Harness heraus: Agenten sollen keine uids mehr abschreiben müssen
     und Fehler früher und lesbarer sehen. Ergänzt STORY-081.
 
-- `NEW-area-ersetzen` **Area durch die Mindmap ersetzen**
+- `STORY-106` **Area durch die Mindmap ersetzen**
+  - Uid: 2583a192-6eb8-481d-8637-86eb8408fa9a.
   - Type: Story.
   - Parent: `EPIC-008`.
   - Required for parent: No.
   - Status: Open.
+  - Created: 2026-11-16.
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: `STORY-100`.

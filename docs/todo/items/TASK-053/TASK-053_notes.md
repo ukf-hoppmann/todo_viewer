@@ -2,11 +2,11 @@
 
 ## State
 
-- Goal/Status: Vorgeplant; `TASK-052` ist abgeschlossen und in `todo_mindmap`, die Bedienung ist entschieden.
-- Next step: Frage zur Detailspalte klären, dann den Umsetzungsplan zur Freigabe vorlegen.
+- Goal/Status: Entscheidungen vollständig; Umsetzungsplan liegt dem Owner zur Freigabe vor.
+- Next step: Nach der Freigabe umsetzen, beginnend mit dem Neuerzeugen der API-Typen.
 - Open:
-  - Ob die schließbare Detailspalte schon in diesem Task Titel und Text des gewählten Knotens zeigt (Vorschlag: ja, sonst lässt sich der Text nirgends bearbeiten) oder erst mit `TASK-055` kommt (2026-11-16)
 - Decided:
+  - Die schließbare Detailspalte kommt schon in diesem Task: ein Klick auf einen Knoten zeigt Titel und Text zum Bearbeiten; `TASK-055` ergänzt die Dokumente (2026-11-16)
   - Die Seite zeigt das markierte Projekt, sonst das einzige sichtbare, sonst einen Hinweis „Projekt wählen“ (2026-11-16)
   - „Zwei Ebenen offen“: Wurzel, Ebene 1 und Ebene 2 sind zu sehen, ab Ebene 2 ist zugeklappt; gespeichert werden nur Abweichungen je Knoten (2026-11-16)
   - Bedienung: Symbole am Knoten beim Überfahren (Unterknoten anlegen, Papierkorb), Umbenennen per Doppelklick im Knoten (2026-11-16)
@@ -14,7 +14,7 @@
   - Die API-Typen (`schema.d.ts`) werden in diesem Task neu erzeugt; in `todo_mindmap` fehlen die Mindmap-Operationen darin noch (2026-11-16)
 - References: Konzept `EPIC-008_spec.md`; Notizen `STORY-099`; Server `TASK-052`, Schnittstelle in `docs/techdocs/neubau-server.md` (Abschnitt „Plugin `mindmap`“)
 
-State confirmed after entry 2026-11-16 — Entscheidungen des Owners, Prüfung von TASK-052 (1e2484abbc5f)
+State confirmed after entry 2026-11-16 — Detailspalte (3d433817b113)
 
 ## 2026-11-16 — Vorplanung der Umsetzung
 
@@ -50,4 +50,14 @@ State confirmed after entry 2026-11-16 — Entscheidungen des Owners, Prüfung v
 ### Open
 
 - Detailspalte mit Titel und Text schon in diesem Task oder erst mit `TASK-055`
+
+## 2026-11-16 — Detailspalte
+
+### Discussed
+
+- Optionen: Detailspalte mit Titel und Text schon jetzt, oder erst mit `TASK-055`. Für jetzt spricht, dass der Text eines Knotens sonst nirgends zu bearbeiten ist und der Seitenaufbau aus `STORY-099` die Spalte vorsieht.
+
+### Decided
+
+- Der Owner entscheidet: Detailspalte schon in `TASK-053`
 

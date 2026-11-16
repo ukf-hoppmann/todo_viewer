@@ -1,0 +1,272 @@
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { mindmapApi } from "../../../../../../client/src/plugins/mindmap/api";
+import { mindmapTestIds as ids } from "../../../../../../client/src/plugins/mindmap/testIds";
+import { sharedTestIds } from "../../../../../../client/src/shared";
+import { fakeMindmapBackend } from "../../../../../helpers/client/fakeMindmapBackend";
+import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
+import { node } from "../../../../../helpers/client/mindmapFixtures";
+import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
+
+// jsdom has no layout: React Flow is replaced by a list of the nodes it is given and a record of its edges.
+vi.mock("@xyflow/react", () => {
+	const Handle = () => null;
+	return {
+		Handle,
+		Position: { Left: "left", Right: "right" },
+		Background: () => null,
+		Controls: () => null,
+		ReactFlow: (props: {
+			nodes: Array<{ id: string; type: string; data: unknown; position: { x: number; y: number } }>;
+			edges: Array<{ id: string }>;
+			nodeTypes: Record<string, (props: { data: unknown }) => ReactNode>;
+			onNodeClick: (event: unknown, node: { id: string }) => void;
+			onNodeDoubleClick: (event: unknown, node: { id: string }) => void;
+		}) => (
+			<div data-testid="flow">
+				{props.nodes.map((entry) => {
+					const Node = props.nodeTypes[entry.type]!;
+					return (
+						<div key={entry.id} data-flow-node={entry.id} data-x={entry.position.x} onClick={(event) => props.onNodeClick(event, entry)} onDoubleClick={(event) => props.onNodeDoubleClick(event, entry)}>
+							<Node data={entry.data} />
+						</div>
+					);
+				})}
+				{props.edges.map((edge) => (
+					<span key={edge.id} data-flow-edge={edge.id} />
+				))}
+			</div>
+		),
+	};
+});
+vi.mock("@xyflow/react/dist/style.css", () => ({}));
+
+const { default: MindmapPage } = await import("../../../../../../client/src/plugins/mindmap/pages/MindmapPage");
+
+afterEach(cleanup);
+
+const projects = [project("p0", "Allgemein", 0, { builtin: true }), project("p1", "Viewer", 1)];
+const nodes = [node("a"), node("b", null, 1), node("a1", "a"), node("a11", "a1")];
+const marked = { workspace: { marked: "p1" } };
+
+async function renderPage(options: Parameters<typeof fakeMindmapBackend>[0] = {}) {
+	const backend = fakeMindmapBackend({ projects, nodes, documents: marked, ...options });
+	await renderWorkspace(<MindmapPage />, { backend });
+	return backend;
+}
+/** What the server event `mindmap.node.changed` does: the plugin reloads the tree. */
+const serverEvent = (backend: ReturnType<typeof fakeMindmapBackend>) => backend.store.dispatch(mindmapApi.util.invalidateTags(["Tree"]) as never);
+const shownIds = () => [...document.querySelectorAll("[data-flow-node]")].map((entry) => entry.getAttribute("data-flow-node"));
+const flowNode = (id: string) => document.querySelector(`[data-flow-node='${id}']`) as HTMLElement;
+
+describe("MindmapPage: showing the tree", () => {
+	it("shows the marked project as the root and two levels of its tree, connected by edges", async () => {
+		await renderPage();
+
+		await screen.findByTestId(ids.node("a1"));
+		expect(shownIds()).toEqual(["p1", "a", "a1", "b"]);
+		expect(screen.getByTestId(ids.node("p1")).textContent).toContain("Viewer");
+		expect(screen.getByTestId(ids.node("a")).textContent).toContain("Thema a");
+		expect(document.querySelector("[data-flow-edge='a->a1']")).toBeTruthy();
+		expect(Number(flowNode("a").dataset.x)).toBeGreaterThan(Number(flowNode("p1").dataset.x));
+	});
+
+	it("asks to choose a project when none is marked and several are visible", async () => {
+		const backend = await renderPage({ documents: {} });
+
+		expect((await screen.findByTestId(ids.chooseProject)).textContent).toContain("Projekt");
+		expect(backend.calls("GET", "mindmap/trees")).toHaveLength(0);
+	});
+
+	it("shows the only visible project without a mark", async () => {
+		await renderPage({ documents: { workspace: { hidden: ["p0"] } } });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(shownIds()[0]).toBe("p1");
+	});
+
+	it("shows only the root of a project without nodes", async () => {
+		await renderPage({ nodes: [] });
+
+		await screen.findByTestId(ids.node("p1"));
+		expect(shownIds()).toEqual(["p1"]);
+	});
+});
+
+describe("MindmapPage: folding", () => {
+	it("opens and closes a node and keeps the choice in the UI state of the server", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+
+		fireEvent.click(screen.getByTestId(ids.toggle("a1")));
+		await screen.findByTestId(ids.node("a11"));
+		fireEvent.click(screen.getByTestId(ids.toggle("a")));
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "a", "b"]));
+
+		const { flushUiState } = await import("../../../../../../client/src/core/ui-state/uiState");
+		await waitFor(async () => {
+			await flushUiState(backend.store);
+			expect((backend.documents.get("mindmap") as { fold?: unknown }).fold).toEqual({ a1: "open", a: "closed" });
+		});
+	});
+
+	it("starts with the stored fold state", async () => {
+		await renderPage({ documents: { ...marked, mindmap: { fold: { a: "closed" } } } });
+
+		await screen.findByTestId(ids.node("b"));
+		expect(shownIds()).toEqual(["p1", "a", "b"]);
+		expect(screen.queryByTestId(ids.toggle("b"))).toBeNull();
+	});
+});
+
+describe("MindmapPage: creating and renaming", () => {
+	it("adds a child, opens it for naming and saves the name on Enter", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+
+		fireEvent.click(screen.getByTestId(ids.add("b")));
+		const input = (await screen.findByTestId(ids.titleInput("new1"))) as HTMLInputElement;
+		expect(backend.calls("POST", "mindmap/nodes")[0]!.body).toEqual({ project: "p1", title: "Neues Thema", parent: "b" });
+		fireEvent.change(input, { target: { value: "Import" } });
+		fireEvent.keyDown(input, { key: "Enter" });
+
+		await waitFor(() => expect(screen.getByTestId(ids.node("new1")).textContent).toContain("Import"));
+		expect(backend.calls("PUT", "mindmap/nodes/new1")[0]!.body).toEqual({ version: 1, title: "Import" });
+		expect(screen.queryByTestId(ids.titleInput("new1"))).toBeNull();
+	});
+
+	it("adds a node under the root without a parent and opens a closed parent for the new child", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+
+		fireEvent.click(screen.getByTestId(ids.add("p1")));
+		await screen.findByTestId(ids.titleInput("new1"));
+		expect(backend.calls("POST", "mindmap/nodes")[0]!.body).toEqual({ project: "p1", title: "Neues Thema" });
+
+		fireEvent.click(screen.getByTestId(ids.add("a1")));
+		await screen.findByTestId(ids.titleInput("new2"));
+		expect(shownIds()).toContain("a11");
+	});
+
+	it("renames by double click; Esc leaves the title as it is", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("a"));
+
+		fireEvent.doubleClick(screen.getByTestId(ids.node("a")));
+		fireEvent.change(screen.getByTestId(ids.titleInput("a")), { target: { value: "Anders" } });
+		fireEvent.keyDown(screen.getByTestId(ids.titleInput("a")), { key: "Escape" });
+		expect(screen.queryByTestId(ids.titleInput("a"))).toBeNull();
+		expect(backend.calls("PUT", "mindmap/nodes")).toHaveLength(0);
+
+		fireEvent.doubleClick(screen.getByTestId(ids.node("a")));
+		fireEvent.change(screen.getByTestId(ids.titleInput("a")), { target: { value: "Neu benannt" } });
+		fireEvent.blur(screen.getByTestId(ids.titleInput("a")));
+		await waitFor(() => expect(screen.getByTestId(ids.node("a")).textContent).toContain("Neu benannt"));
+	});
+
+	it("does not rename the root and offers it no trash", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.node("p1"));
+
+		fireEvent.doubleClick(screen.getByTestId(ids.node("p1")));
+
+		expect(screen.queryByTestId(ids.titleInput("p1"))).toBeNull();
+		expect(screen.queryByTestId(ids.remove("p1"))).toBeNull();
+	});
+
+	it("shows the message of the server above the map when a write fails", async () => {
+		await renderPage({
+			respond: ({ method, path }) =>
+				method === "PUT" && path === "mindmap/nodes/a" ? Response.json({ code: "version_conflict", message: "Der Knoten wurde inzwischen geändert", details: {} }, { status: 409 }) : undefined,
+		});
+		await screen.findByTestId(ids.node("a"));
+
+		fireEvent.doubleClick(screen.getByTestId(ids.node("a")));
+		fireEvent.change(screen.getByTestId(ids.titleInput("a")), { target: { value: "X" } });
+		fireEvent.keyDown(screen.getByTestId(ids.titleInput("a")), { key: "Enter" });
+
+		expect((await screen.findByTestId(ids.error)).textContent).toContain("Der Knoten wurde inzwischen geändert");
+	});
+});
+
+describe("MindmapPage: double click", () => {
+	it("renames without opening the detail column", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.node("a"));
+
+		fireEvent.click(screen.getByTestId(ids.node("a")));
+		fireEvent.click(screen.getByTestId(ids.node("a")));
+		fireEvent.doubleClick(screen.getByTestId(ids.node("a")));
+
+		await screen.findByTestId(ids.titleInput("a"));
+		await new Promise((resolve) => setTimeout(resolve, 400));
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
+	});
+});
+
+describe("MindmapPage: trash", () => {
+	it("puts a node without children into the trash at once", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("b"));
+
+		fireEvent.click(screen.getByTestId(ids.remove("b")));
+
+		await waitFor(() => expect(backend.calls("DELETE", "workspace/elements/b")).toHaveLength(1));
+		expect(backend.calls("DELETE", "workspace/elements/b")[0]!.query.get("version")).toBe("1");
+		serverEvent(backend);
+		await waitFor(() => expect(shownIds()).not.toContain("b"));
+	});
+
+	it("asks before a node with children goes to the trash with its branch", async () => {
+		const backend = await renderPage();
+		await screen.findByTestId(ids.node("a"));
+
+		fireEvent.click(screen.getByTestId(ids.remove("a")));
+		fireEvent.click(await screen.findByTestId(sharedTestIds.confirmDialogConfirm));
+
+		await waitFor(() => expect(backend.calls("DELETE", "workspace/elements/a")).toHaveLength(2));
+		expect(backend.calls("DELETE", "workspace/elements/a")[1]!.query.get("cascade")).toBe("true");
+		serverEvent(backend);
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "b"]));
+	});
+});
+
+describe("MindmapPage: detail column", () => {
+	it("opens the clicked node with title and text, saves both and closes", async () => {
+		const backend = await renderPage({ nodes: [node("a", null, 0, { text: "Alter Text" }), node("b", null, 1)] });
+		await screen.findByTestId(ids.node("a"));
+		expect(screen.queryByTestId(ids.detail)).toBeNull();
+
+		fireEvent.click(flowNode("a"));
+		const detail = await screen.findByTestId(ids.detail);
+		expect(detail.textContent).toContain("NODE-a");
+		const text = screen.getByTestId(sharedTestIds.inlineFieldInput("text")) as HTMLTextAreaElement;
+		expect(text.value).toBe("Alter Text");
+
+		fireEvent.change(text, { target: { value: "Neuer Text" } });
+		fireEvent.blur(text);
+		await waitFor(() => expect(backend.calls("PUT", "mindmap/nodes/a")[0]!.body).toEqual({ version: 1, text: "Neuer Text" }));
+
+		const title = screen.getByTestId(sharedTestIds.inlineFieldInput("title")) as HTMLInputElement;
+		fireEvent.change(title, { target: { value: "Titel neu" } });
+		fireEvent.blur(title);
+		await waitFor(() => expect(backend.calls("PUT", "mindmap/nodes/a")[1]!.body).toEqual({ version: 2, title: "Titel neu" }));
+		await waitFor(() => expect(screen.getByTestId(ids.node("a")).textContent).toContain("Titel neu"));
+
+		fireEvent.click(screen.getByTestId(sharedTestIds.detailAction("close")));
+		await waitFor(() => expect(screen.queryByTestId(ids.detail)).toBeNull());
+	});
+
+	it("does not open a detail for the root and marks the selected node", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.node("a"));
+
+		fireEvent.click(flowNode("p1"));
+		fireEvent.click(flowNode("b"));
+
+		await screen.findByTestId(ids.detail);
+		expect(screen.getByTestId(ids.node("b")).dataset.selected).toBe("true");
+		expect(screen.getByTestId(ids.node("p1")).dataset.selected).toBe("false");
+	});
+});

@@ -8,6 +8,7 @@ export { EditForm, type EditFormLabels } from "./EditForm";
 export { EntityPicker } from "./EntityPicker";
 export { entityText, type Entity } from "./entityText";
 export { FilterSection, type FilterOption } from "./FilterSection";
+export { loadElk } from "./graph/elk";
 export { IconAction } from "./IconAction";
 export { InlineField, type FieldOption, type InlineFieldProps } from "./InlineField";
 export { LargeView } from "./markdown/LargeView";

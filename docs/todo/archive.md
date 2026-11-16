@@ -8,6 +8,50 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `TASK-053` **Mindmap-Seite: Projektbaum anzeigen, Knoten anlegen, umbenennen, löschen, ein- und ausklappen**
+  - Uid: e642fa32-c332-4e52-8174-05648be29c84.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-052`.
+  - Goal: Ein neues Client-Plugin zeigt den Themenbaum des gewählten Projekts
+    als Mindmap in der Anordnung zur Seite und erlaubt das Anlegen, Umbenennen
+    und Löschen von Knoten sowie das Ein- und Ausklappen.
+  - Completion criteria: 1. Die Hauptroute zeigt den Baum eines Projekts; die
+    Projektauswahl der Seitenleiste bestimmt, welches.
+    2. Knoten lassen sich in der Map anlegen, umbenennen und in den Papierkorb
+    legen; der Klappzustand bleibt erhalten, beim ersten Öffnen sind zwei
+    Ebenen offen.
+    3. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
+  - Summary: Die Seite, auf der man den Themenbaum eines Projekts als Mindmap
+    sieht und Knoten anlegt, umbenennt, löscht und auf- und zuklappt.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
+- `TASK-052` **Mindmap-Server: Knoten, Platzierungen und Projektbaum mit API und MCP**
+  - Uid: 26d4cdfa-7632-4e6d-bacf-2a17a04a7334.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Ein neues Server-Plugin speichert Knoten und ihre Platzierungen,
+    führt je Projekt einen Baum und bietet Anlegen, Lesen, Ändern, Umhängen,
+    Papierkorb und Wiederherstellen über API und MCP.
+  - Completion criteria: 1. Knoten und Platzierungen liegen in eigenen
+    Tabellen; ein Knoten ist ein Element des Workspace.
+    2. Die Domain weist Kreise, fremde Projekte und einen Knoten zweimal im
+    selben Baum ab.
+    3. Die Operationen sind über API und MCP erreichbar und melden Ereignisse.
+    4. Domain- und API-Tests sind grün, die Schnittstellen sind dokumentiert.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
 - `STORY-028` **Architekturregeln: Primärquelle und Spiegel statt genau einem Backend**
   - Uid: 010ef637-220f-49da-beab-0b7a96c81684.
   - Type: Story.

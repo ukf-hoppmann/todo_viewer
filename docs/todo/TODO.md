@@ -12,7 +12,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 - `EPIC-008` **Mindmap: Themen-Gerippe zum Brainstormen und als Übersicht des Backlogs**
   - Uid: 039478f4-0b3b-4807-8fd3-36fec9a4d372.
   - Type: Epic.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
@@ -44,7 +44,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Type: Story.
   - Parent: `EPIC-008`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: In progress.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
@@ -65,46 +65,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     5. Domain-, API- und UI-Tests sind grün.
   - Summary: Der Grundbaustein: ein Themenbaum je Projekt, in dem man frei
     Knoten sammelt und ordnet und Notizen dazu schreibt.
-
-- `TASK-052` **Mindmap-Server: Knoten, Platzierungen und Projektbaum mit API und MCP**
-  - Uid: 26d4cdfa-7632-4e6d-bacf-2a17a04a7334.
-  - Type: Task.
-  - Parent: `STORY-099`.
-  - Required for parent: Yes.
-  - Status: Open.
-  - Created: 2026-11-13.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Ein neues Server-Plugin speichert Knoten und ihre Platzierungen,
-    führt je Projekt einen Baum und bietet Anlegen, Lesen, Ändern, Umhängen,
-    Papierkorb und Wiederherstellen über API und MCP.
-  - Completion criteria: 1. Knoten und Platzierungen liegen in eigenen
-    Tabellen; ein Knoten ist ein Element des Workspace.
-    2. Die Domain weist Kreise, fremde Projekte und einen Knoten zweimal im
-    selben Baum ab.
-    3. Die Operationen sind über API und MCP erreichbar und melden Ereignisse.
-    4. Domain- und API-Tests sind grün, die Schnittstellen sind dokumentiert.
-
-- `TASK-053` **Mindmap-Seite: Projektbaum anzeigen, Knoten anlegen, umbenennen, löschen, ein- und ausklappen**
-  - Uid: e642fa32-c332-4e52-8174-05648be29c84.
-  - Type: Task.
-  - Parent: `STORY-099`.
-  - Required for parent: Yes.
-  - Status: Open.
-  - Created: 2026-11-13.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: `TASK-052`.
-  - Goal: Ein neues Client-Plugin zeigt den Themenbaum des gewählten Projekts
-    als Mindmap in der Anordnung zur Seite und erlaubt das Anlegen, Umbenennen
-    und Löschen von Knoten sowie das Ein- und Ausklappen.
-  - Completion criteria: 1. Die Hauptroute zeigt den Baum eines Projekts; die
-    Projektauswahl der Seitenleiste bestimmt, welches.
-    2. Knoten lassen sich in der Map anlegen, umbenennen und in den Papierkorb
-    legen; der Klappzustand bleibt erhalten, beim ersten Öffnen sind zwei
-    Ebenen offen.
-    3. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
 
 - `TASK-054` **Mindmap: Knoten per Ziehen umhängen und umordnen**
   - Uid: 0d9f9111-7e91-4adf-b97d-7c979ac15544.
@@ -213,6 +173,28 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     3. Im Detail eines Knotens und eines Items lässt sich die Zuordnung setzen
     und lösen.
     4. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
+
+- `TASK-065` **Mindmap: Markierungen „verworfen“ und „später“ an Ideen-Knoten**
+  - Uid: ea634e30-aae8-49b4-a5ab-8b77aa40bf03.
+  - Type: Task.
+  - Parent: `STORY-100`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-11-16.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-056`.
+  - Goal: Ideen-Knoten lassen sich als „verworfen“ oder „später“ markieren,
+    damit alte Ideen als Spur stehen bleiben, aber nicht mehr stören. Die
+    Markierung gehört zum Knoten, nicht zu seinen Items.
+  - Completion criteria: 1. Ein Knoten trägt höchstens eine Markierung
+    (keine, verworfen, später); setzen und löschen gehen über API, MCP und
+    Oberfläche.
+    2. Markierte Knoten sind sichtbar abgesetzt, und der Zustandsfilter kann
+    sie ausblenden.
+    3. Die Markierung ändert die Summen der Items nicht.
+    4. Die offene Form (feste Werte oder frei) ist vor der Umsetzung mit dem
+    Owner geklärt; Domain-, API- und UI-Tests sind grün.
 
 - `STORY-101` **Mindmap-Ansichten: Fokus auf einen Knoten, Einzel- und Gesamtansicht, runde Anordnung, Abhängigkeiten**
   - Uid: 3366e17a-d7f3-4810-85c4-adf6817191fe.
@@ -541,3 +523,26 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Verbesserungen am MCP-Server nach einer Prüfung aus
     Claude_Harness heraus: Agenten sollen keine uids mehr abschreiben müssen
     und Fehler früher und lesbarer sehen. Ergänzt STORY-081.
+
+- `STORY-106` **Area durch die Mindmap ersetzen**
+  - Uid: 2583a192-6eb8-481d-8637-86eb8408fa9a.
+  - Type: Story.
+  - Parent: `EPIC-008`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-11-16.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-100`.
+  - Goal: Die Einordnung eines Items nach Themen läuft über die Knoten der
+    Mindmap und nicht mehr über das Feld Area. Bestehende Areas gehen ohne
+    Verlust in Knoten über.
+  - Completion criteria: 1. Die Art des Ersatzes (Feld entfällt oder wird aus
+    dem Knoten abgeleitet) ist mit dem Owner geklärt und in der Spec
+    festgehalten.
+    2. Bestehende Areas werden einmalig in Knoten umgewandelt und die Items
+    zugeordnet, ohne dass etwas verloren geht.
+    3. Anzeige, Filter, API, MCP und Markdown-Spiegel kommen ohne Area aus
+    oder zeigen den abgeleiteten Wert.
+    4. Die Dokumentation und die Harness-Regeln sind angepasst.
+    5. Domain-, API- und UI-Tests sind grün.

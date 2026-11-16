@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: In Arbeit; `TASK-052` (Server), `TASK-053` (Seite), `TASK-054` (Ziehen) und `TASK-055` (Notizen) sind abgeschlossen und in `todo_mindmap`.
-- Next step: alle Tasks sind abgeschlossen; Kriterien der Story prüfen und dem Owner melden.
+- Goal/Status: Abgeschlossen: vom Owner bestätigt (2026-11-16), nach `todo_mindmap` gemergt; `TASK-052` (Server), `TASK-053` (Seite), `TASK-054` (Ziehen) und `TASK-055` (Notizen) sind abgeschlossen und in `todo_mindmap`.
+- Next step: keiner; Markierungen für Ideen-Knoten sind eine eigene, noch offene Story.
 - Open:
   - Ob Ideen-Knoten eine Markierung bekommen („verworfen“, „später“): der Owner will mit Markierungen planen, Form und Story offen (2026-11-16)
 - Decided:
@@ -18,7 +18,7 @@
   - Plan freigegeben; ein Task je Session auf eigenem `claude/…`-Branch, gemergt nach `todo_mindmap`, nacheinander (2026-11-16)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-16 — TASK-055 abgeschlossen (0d698fd4b61f)
+State confirmed after entry 2026-11-16 — Bestätigung und Merge (fc75d84abfe3)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -96,3 +96,27 @@ State confirmed after entry 2026-11-16 — TASK-055 abgeschlossen (0d698fd4b61f)
 
 - Ort der Dokument-Logik: eigene Tabelle `mindmap_documents` im Plugin `mindmap` (Open from 2026-11-16 (Ort der Dokument-Logik) resolved)
 - `TASK-055` ist `Completed` und nach `todo_mindmap` gemergt
+
+## 2026-11-16 — Kriterien geprüft
+
+### Discussed
+
+- Kriterium 1 (Knoten, Platzierung): erfüllt; Titel, optionaler Text, beliebige Tiefe, leere Knoten, Lage nur als Platzierung (`TASK-052`, Tests `test_tree_rules.py`, `test_mindmap_migration.py`).
+- Kriterium 2 (Anlegen, Umbenennen, Umhängen, Papierkorb, Wiederherstellen über API, MCP, Oberfläche; keine Schleife): erfüllt. Anlegen, Ändern und Umhängen sind eigene Operationen, Papierkorb und Wiederherstellen laufen über `workspace` (API, MCP und die Papierkorb-Seite); Kreise lehnt der Server ab (`mindmap_loop`) und die Map bietet sie nicht an (`TASK-054`). Im Browser geprüft: Knoten in der Map in den Papierkorb legen, auf der Papierkorb-Seite zurückholen, er steht wieder in der Map.
+- Kriterium 3 (Seite, zwei Ebenen offen): erfüllt (`TASK-053`).
+- Kriterium 4 (Abschnitt „Dokumente“): erfüllt (`TASK-055`).
+- Kriterium 5 (Tests): Server 1153 und Client 1245 grün; ausgenommen `test_client_log.py::test_browser_entry_lands_in_the_server_log`, der schon vorher fehlschlug und die Mindmap nicht betrifft.
+
+### Decided
+
+- `STORY-099` steht auf `Awaiting confirmation`
+
+### Open
+
+- Markierungen für Ideen-Knoten („verworfen“, „später“): Form und Story offen, kein Teil dieser Story
+
+## 2026-11-16 — Bestätigung und Merge
+
+### Decided
+
+- Der Owner hat `STORY-099` bestätigt; sie ist `Completed` und nach `todo_mindmap` gemergt

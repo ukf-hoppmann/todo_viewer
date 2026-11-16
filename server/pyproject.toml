@@ -87,4 +87,10 @@ layers = [
     "application",
     "domain",
 ]
-containers = ["viewer.plugins.workspace", "viewer.plugins.backlog", "viewer.plugins.memos", "viewer.plugins.alarms"]
+containers = [
+    "viewer.plugins.workspace",
+    "viewer.plugins.backlog",
+    "viewer.plugins.memos",
+    "viewer.plugins.alarms",
+    "viewer.plugins.mindmap",
+]

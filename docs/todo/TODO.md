@@ -82,6 +82,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Detail des Knotens nutzt `DocumentsSection`.
     2. Ein Knoten mit Notizen ist in der Map erkennbar.
     3. API- und UI-Tests sind grün.
+  - Summary: Knoten bekommen den Abschnitt „Dokumente“ mit Notizen wie ein
+    Item; in der Map sieht man, welche Knoten Notizen tragen.
 
 - `STORY-100` **Items und Memos an Knoten hängen: Anzahl, Fortschritt und Zustand am Thema**
   - Uid: 36fb7560-506d-49a0-9d0b-bcbc5b35015f.

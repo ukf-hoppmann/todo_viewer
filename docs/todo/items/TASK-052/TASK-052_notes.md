@@ -2,10 +2,9 @@
 
 ## State
 
-- Goal/Status: Umgesetzt auf dem Branch `claude/task-052-mindmap-server`; Tests, Lint, Typen und Schichtregeln sind grün, die Schnittstelle ist in `docs/techdocs/neubau-server.md` beschrieben. Wartet auf den Merge nach `todo_mindmap` durch den Owner.
-- Next step: Owner merged den Branch nach `todo_mindmap`; danach startet `TASK-053`.
+- Goal/Status: Abgeschlossen: vom Owner bestätigt (2026-11-16), nach `todo_mindmap` gemergt.
+- Next step: `TASK-053` (Mindmap-Seite) startet in einer neuen Session.
 - Open:
-  - Papierkorb und Wiederherstellen laufen über die Operationen von `workspace`, nicht über eigene Operationen von `mindmap`; der Owner bestätigt das oder will eigene Operationen (2026-11-16)
   - Wie ein Kind behandelt wird, das in mehreren Bäumen steht, wenn der Parent gelöscht wird: erst mit `STORY-102` zu klären (2026-11-16)
 - Decided:
   - Plugin `mindmap` mit Elementtyp `mindmap_node` (Label `NODE`), Tabellen mit Präfix `mindmap_`: Bäume, Knoten, Platzierungen (2026-11-16)
@@ -13,10 +12,11 @@
   - Der Projektbaum entsteht beim ersten Knoten; Baumart als Nachschlagetabelle, damit freie Maps ohne Umbau folgen können (2026-11-16)
   - Ein Ast geht mit all seinen Kindern zusammen in den Papierkorb und kommt mit ihnen zurück; ein Knoten kommt nicht zurück, solange sein Parent im Papierkorb liegt (2026-11-16)
   - Stellen: Gelöschte Geschwister behalten ihre Stelle, Leser sehen lückenlose Stellen unter den sichtbaren Geschwistern (2026-11-16)
+  - Papierkorb und Wiederherstellen über die Operationen von `workspace` statt eigener Operationen; mit der Bestätigung des Tasks vom Owner angenommen (2026-11-16)
   - Ereignis `mindmap.node.changed` mit `created`, `updated`, `moved`, `deleted`, `restored` (2026-11-16)
 - References: Story `STORY-099`, Epic `EPIC-008` mit Spec `EPIC-008_spec.md`; Schnittstelle `docs/techdocs/neubau-server.md` (Abschnitt „Plugin `mindmap`“); Tests unter `tests/implementation/{unit,integration}/server/plugins/mindmap/`
 
-State confirmed after entry 2026-11-16 — Umsetzung und Entscheidungen (c6da8f29b593)
+State confirmed after entry 2026-11-16 — Bestätigung und Merge (5083f0877576)
 
 ## 2026-11-16 — Umsetzung und Entscheidungen
 
@@ -36,5 +36,11 @@ State confirmed after entry 2026-11-16 — Umsetzung und Entscheidungen (c6da8f2
 
 ### Open
 
-- Ob der Owner eigene Operationen `mindmap_delete_node` und `mindmap_restore_node` will (dann wäre eine kleine Erweiterung der öffentlichen Schnittstelle von `workspace` nötig, die den Papierkorb-Dienst für Plugins freigibt).
+- (erledigt mit der Bestätigung) Ob der Owner eigene Operationen `mindmap_delete_node` und `mindmap_restore_node` will (dann wäre eine kleine Erweiterung der öffentlichen Schnittstelle von `workspace` nötig, die den Papierkorb-Dienst für Plugins freigibt).
 - Kind in mehreren Bäumen beim Löschen des Parents (`STORY-102`).
+
+## 2026-11-16 — Bestätigung und Merge
+
+### Decided
+
+- Der Owner bestätigt `TASK-052` als `Completed`; der Branch `claude/task-052-mindmap-server` ist nach `todo_mindmap` gemergt. Damit gilt die Lösung ohne eigene Papierkorb-Operationen.

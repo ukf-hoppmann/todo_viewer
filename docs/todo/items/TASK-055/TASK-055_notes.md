@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt, wartet auf Bestätigung des Owners (2026-11-16); Branch `claude/happy-clarke-ssdvig`, noch nicht nach `todo_mindmap` gemergt.
-- Next step: Owner prüft und bestätigt; danach Merge nach `todo_mindmap`.
+- Goal/Status: Abgeschlossen: vom Owner bestätigt (2026-11-16), nach `todo_mindmap` gemergt.
+- Next step: keiner; `STORY-099` prüft, ob ihre Kriterien erfüllt sind.
 - Open:
   - `test_client_log.py::test_browser_entry_lands_in_the_server_log` schlägt auch ohne diese Änderung fehl; der Lint meldet weiter die Fehler in `usePersistentState.ts` und `backlog/domain/editing.py` (2026-11-16)
 - Decided:
@@ -13,7 +13,7 @@
   - Knoten im Papierkorb lassen sich lesen, aber nicht beschreiben (`mindmap_node_deleted`); einen Papierkorb für einzelne Dokumente gibt es nicht (2026-11-16)
 - References: Notizen `STORY-099`; Vorbild `server/src/viewer/plugins/memos/application/documents.py`; Baustein `client/src/shared/documents/DocumentsSection.tsx`; Schnittstelle in `docs/techdocs/neubau-server.md` (Plugin `mindmap`, Dokumente)
 
-State confirmed after entry 2026-11-16 — Umgesetzt (ea8d09042952)
+State confirmed after entry 2026-11-16 — Bestätigung und Merge (43f182f75c82)
 
 ## 2026-11-16 — Ort der Dokument-Logik
 
@@ -45,3 +45,9 @@ State confirmed after entry 2026-11-16 — Umgesetzt (ea8d09042952)
 ### Open
 
 - Der Test `test_client_log.py::test_browser_entry_lands_in_the_server_log` und die Lint-Fehler in `usePersistentState.ts` und `backlog/domain/editing.py` bestanden vorher
+
+## 2026-11-16 — Bestätigung und Merge
+
+### Decided
+
+- Der Owner hat `TASK-055` bestätigt; es ist `Completed` und nach `todo_mindmap` gemergt

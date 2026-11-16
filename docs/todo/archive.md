@@ -8,6 +8,26 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `TASK-055` **Mindmap: Notizen an Knoten**
+  - Uid: 6fc3d1ab-41db-4b13-9e39-eb5f4c2572c7.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-053`.
+  - Goal: Ein Knoten hat im Detail den Abschnitt „Dokumente“ und kann Notizen
+    tragen, gespeichert und gelesen wie bei Items.
+  - Completion criteria: 1. Der Server speichert Dokumente eines Knotens; das
+    Detail des Knotens nutzt `DocumentsSection`.
+    2. Ein Knoten mit Notizen ist in der Map erkennbar.
+    3. API- und UI-Tests sind grün.
+  - Summary: Knoten bekommen den Abschnitt „Dokumente“ mit Notizen wie ein
+    Item; in der Map sieht man, welche Knoten Notizen tragen.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
 - `TASK-054` **Mindmap: Knoten per Ziehen umhängen und umordnen**
   - Uid: 0d9f9111-7e91-4adf-b97d-7c979ac15544.
   - Type: Task.

@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: In Arbeit; `TASK-052` (Server) und `TASK-053` (Seite) sind abgeschlossen und in `todo_mindmap`.
-- Next step: `TASK-054` (Ziehen) in eigener Session, danach `TASK-055`.
+- Goal/Status: In Arbeit; `TASK-052` (Server), `TASK-053` (Seite), `TASK-054` (Ziehen) und `TASK-055` (Notizen) sind abgeschlossen und in `todo_mindmap`.
+- Next step: alle Tasks sind abgeschlossen; Kriterien der Story prüfen und dem Owner melden.
 - Open:
   - Ob Ideen-Knoten eine Markierung bekommen („verworfen“, „später“): der Owner will mit Markierungen planen, Form und Story offen (2026-11-16)
 - Decided:
@@ -18,7 +18,7 @@
   - Plan freigegeben; ein Task je Session auf eigenem `claude/…`-Branch, gemergt nach `todo_mindmap`, nacheinander (2026-11-16)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-16 — TASK-053 abgeschlossen (f31fe6c2d81a)
+State confirmed after entry 2026-11-16 — TASK-055 abgeschlossen (0d698fd4b61f)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -85,3 +85,14 @@ State confirmed after entry 2026-11-16 — TASK-053 abgeschlossen (f31fe6c2d81a)
 
 - `TASK-053` ist `Completed` und nach `todo_mindmap` gemergt
 
+
+## 2026-11-16 — TASK-055 abgeschlossen
+
+### Discussed
+
+- Die Notizen an Knoten sind umgesetzt und vom Owner bestätigt; Einzelheiten und Entscheidungen stehen in den Notizen von `TASK-055`.
+
+### Decided
+
+- Ort der Dokument-Logik: eigene Tabelle `mindmap_documents` im Plugin `mindmap` (Open from 2026-11-16 (Ort der Dokument-Logik) resolved)
+- `TASK-055` ist `Completed` und nach `todo_mindmap` gemergt

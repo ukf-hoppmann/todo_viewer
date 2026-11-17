@@ -40,6 +40,9 @@ class NodeOut:
     version: int
     #: Die Namen der Dokumente des Knotens, die Notiz zuerst; leer, wenn er keine hat.
     documents: list[str]
+    #: Die Markierung des Knotens (`discarded` oder `later`); leer, wenn er keine trägt. Sie gilt nur für ihn selbst
+    #: und ändert weder Summen noch Zustand.
+    mark: str | None = None
 
 
 @dataclass(frozen=True)
@@ -108,6 +111,8 @@ class UpdateNode:
     title: str | None = None
     #: Neuer Text; ohne Angabe bleibt er, ein leerer Text löscht ihn.
     text: str | None = None
+    #: Neue Markierung (`discarded` oder `later`); ohne Angabe bleibt sie, eine leere löscht sie.
+    mark: str | None = None
     project: str | None = None
 
 
@@ -195,6 +200,7 @@ def node_out(view: NodeView) -> NodeOut:
         p.position,
         n.revision,
         list(view.documents),
+        n.mark,
     )
 
 
@@ -361,11 +367,12 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "update_node",
-        "Ändert Titel oder Text eines Knotens mit Versionsprüfung; ein leerer `text` löscht den Text",
+        "Ändert Titel, Text oder Markierung eines Knotens mit Versionsprüfung; ein leerer `text` löscht den Text, "
+        "`mark` ist `discarded` oder `later`, ein leerer Wert nimmt sie weg",
         "write",
         UpdateNode,
         NodeOut,
-        lambda s, d: _detail(s, s.mindmap.update_node(d.ref, d.project, d.version, d.title, d.text)),
+        lambda s, d: _detail(s, s.mindmap.update_node(d.ref, d.project, d.version, d.title, d.text, d.mark)),
         HttpBinding("PUT", "/nodes/{ref}"),
     ),
     Operation(

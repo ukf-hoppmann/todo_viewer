@@ -1029,7 +1029,7 @@ export interface paths {
         };
         /** Ein Knoten mit seiner Lage; `ref` ist die uid oder ein Label (mit `project`) */
         get: operations["mindmap_get_node"];
-        /** Ändert Titel oder Text eines Knotens mit Versionsprüfung; ein leerer `text` löscht den Text */
+        /** Ändert Titel, Text oder Markierung eines Knotens mit Versionsprüfung; ein leerer `text` löscht den Text, `mark` ist `discarded` oder `later`, ein leerer Wert nimmt sie weg */
         put: operations["mindmap_update_node"];
         post?: never;
         delete?: never;
@@ -2458,6 +2458,8 @@ export interface components {
         };
         /** MindmapUpdateNodeBody */
         MindmapUpdateNodeBody: {
+            /** Mark */
+            mark?: string | null;
             /** Project */
             project?: string | null;
             /** Text */
@@ -2504,6 +2506,8 @@ export interface components {
             documents: string[];
             /** Label */
             label: string;
+            /** Mark */
+            mark?: string | null;
             /** Parent Uid */
             parent_uid: string | null;
             /** Position */
@@ -2850,6 +2854,8 @@ export interface components {
             done: number;
             /** Label */
             label: string;
+            /** Mark */
+            mark?: string | null;
             /** Parent Uid */
             parent_uid: string | null;
             /** Position */

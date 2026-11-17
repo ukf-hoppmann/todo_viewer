@@ -129,7 +129,9 @@ def test_a_reader_sees_gapless_positions_among_the_living() -> None:
     assert tree.compacted(sample(), {"a", "e"}) == tree.children_of(sample(), None)
 
 
-@pytest.mark.parametrize(("value", "expected"), [("discarded", "discarded"), ("later", "later"), ("", None), (None, None)])
+@pytest.mark.parametrize(
+    ("value", "expected"), [("discarded", "discarded"), ("later", "later"), ("", None), (None, None)]
+)
 def test_a_mark_is_one_of_the_fixed_values_or_none(value: str | None, expected: str | None) -> None:
     assert tree.check_mark(value) == expected
 

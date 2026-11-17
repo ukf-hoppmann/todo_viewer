@@ -108,10 +108,17 @@ class MindmapService:
         return str(element.uid)
 
     def update_node(
-        self, ref: str, project_uid: str | None, version: int, title: object | None, text: str | None
+        self,
+        ref: str,
+        project_uid: str | None,
+        version: int,
+        title: object | None,
+        text: str | None,
+        mark: str | None = None,
     ) -> str:
-        if title is None and text is None:
-            raise InvalidInput("Nichts zu ändern: title oder text angeben", details={"field": "title"})
+        if title is None and text is None and mark is None:
+            raise InvalidInput("Nichts zu ändern: title, text oder mark angeben", details={"field": "title"})
+        checked = rules.check_mark(mark)  # vor dem Zugriff: ein ungültiger Wert ändert nichts
         with self._database.transaction() as tx:
             node = self._resolve(tx, ref, project_uid)
             self.require_alive(node)
@@ -120,6 +127,8 @@ class MindmapService:
                 updated = replace(updated, title=title_of(title))
             if text is not None:
                 updated = replace(updated, text=text or None)  # "" löscht den Text
+            if mark is not None:
+                updated = replace(updated, mark=checked)  # "" löscht die Markierung
             self._registry.bump_revision(tx, node.uid, version)
             self._repository.update_node(tx, updated)
             if updated.title != node.title:

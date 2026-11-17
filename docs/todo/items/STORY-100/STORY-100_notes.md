@@ -3,12 +3,12 @@
 ## State
 
 - Goal/Status: Geplant; drei Tasks (TASK-056, TASK-057, TASK-065); offene Punkte werden der Reihe nach geklärt (2026-11-17).
-- Next step: Sammelknoten „Nicht zugeordnet“ klären; danach Löschen von Knoten, Kriterium 1 (2026-11-17)
+- Next step: Kriterien 1, 2, 5 und Goal anpassen (nach Zustimmung des Owners); danach Spec nachziehen (2026-11-17)
 - Open:
-  - Sammelknoten „Nicht zugeordnet“: gespeichert oder berechnet, umbenennbar, je Projekt (2026-11-17)
-  - Löschen eines Knotens: Rückfall der eigens angehängten Items (2026-11-17)
-  - Kriterium 1 an „genau einen Knoten, sonst Nicht zugeordnet“ angleichen (2026-11-17)
+  - Kriterien 1, 2 und 5 und das Goal an die Entscheidungen vom 2026-11-17 angleichen: Seitenansicht statt Sammelknoten, Papierkorb, Löschen von Knoten (2026-11-17)
 - Decided:
+  - „Nicht zugeordnet“ ist kein Knoten, sondern eine berechnete Seitenansicht je Projekt (wie „Entfernt“ im Formular-Editor): sie listet Items ohne Knoten; per Drag-and-drop ordnet man sie Knoten zu; die Seitenansicht lässt sich ausschalten; sie zählt nicht im Baum (2026-11-17)
+  - Wird ein Knoten gelöscht, fallen seine Items an den Parent-Knoten zurück, sonst in „Nicht zugeordnet“; Ergebnis, als wäre der Knoten nie da gewesen (2026-11-17)
   - Ein Memo darf an mehrere Knoten verlinkt sein; wandert der Knoten in den Papierkorb, ruht der Link und kommt mit der Wiederherstellung zurück; das Memo bleibt unverändert (2026-11-17)
   - Items im Papierkorb zählen nie (weder Zahl, Ring, Zustand noch Detail); archivierte Items folgen als Completed/Rejected den bestehenden Regeln (2026-11-17)
   - Markierung „verworfen“/„später“ (TASK-065) ist vom abgeleiteten Zustand getrennt: eigene Eigenschaft des Knotens, ändert weder Zustand noch Summen, nur der Filter kann markierte Knoten ausblenden; gilt nicht für Unterknoten; feste Form bleibt in TASK-065 zu klären (2026-11-17)
@@ -21,11 +21,11 @@
   - Der Zustand eines Knotens ist abgeleitet: Idee (keine Items), geplant, in Arbeit, erledigt; ein Filter darüber zeigt, was es gibt und was kommt (2026-11-13)
   - Summen laufen auch über leere Knoten nach oben; jedes Item zählt einmal (2026-11-13)
   - Memos lassen sich an Knoten verlinken und stehen nur im Detail, ohne eigene Zahl am Knoten (2026-11-13)
-  - Was die KI nicht zuordnen kann, landet in einem Sammelknoten „Nicht zugeordnet“ (2026-11-13)
+  - Was die KI nicht zuordnen kann, landet in „Nicht zugeordnet“ (Seitenansicht, siehe 2026-11-17) (2026-11-13)
   - Verworfen: strikte Vererbung vom Wurzel-Item ohne Ausnahme; sie verhindert das Planen unterhalb eines Epic-Knotens (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-17 — Memo-Links an Knoten (5e4e9c6d3d52)
+State confirmed after entry 2026-11-17 — „Nicht zugeordnet“ und Löschen von Knoten (875695d98238)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -138,3 +138,21 @@ State confirmed after entry 2026-11-17 — Memo-Links an Knoten (5e4e9c6d3d52)
 ### Open
 
 - Sammelknoten; Löschen von Knoten (Items); Kriterium 1.
+
+## 2026-11-17 — „Nicht zugeordnet“ und Löschen von Knoten
+
+### Discussed
+
+- Frage: Wie ist „Nicht zugeordnet“ beschaffen? Optionen: (a) berechnet je Projekt, fest; (b) gespeicherter Knoten; (c) ein Korb über alle Projekte. Empfehlung: (a).
+- Der Owner präzisiert (a): kein Knoten, sondern eine Ansicht an der Seite, ähnlich „Entfernt“ im Formular-Editor; dort Drag-and-drop in Knoten; ausschaltbar.
+- Frage: Was geschieht mit eigens angehängten Items beim Löschen eines Knotens? Der Owner entscheidet: Rückfall an den Parent-Knoten, sonst „Nicht zugeordnet“, als wäre der Knoten nie da gewesen.
+
+### Decided
+
+- Seitenansicht statt Sammelknoten; je Projekt berechnet; Drag-and-drop zum Zuordnen; ausschaltbar; nicht im Baum gezählt.
+- Löschen eines Knotens: Items fallen an den Parent-Knoten, sonst in „Nicht zugeordnet“.
+- Verworfen: gespeicherter Knoten; ein Korb über alle Projekte.
+
+### Open
+
+- Kriterien 1, 2, 5 und Goal an die Entscheidungen angleichen (ändert die Bedeutung, daher mit dem Owner).

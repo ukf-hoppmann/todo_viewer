@@ -78,7 +78,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Type: Task.
   - Parent: `STORY-100`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-11-13.
   - Area: Backend-API.
   - Priority: Normal.
@@ -100,7 +100,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     5. Wird ein Knoten gelöscht, fallen seine Items an den Parent-Knoten
     zurück, sonst nach „Nicht zugeordnet“; Memos lassen sich an mehrere Knoten
     verlinken, der Link ruht im Papierkorb.
-
+  - Summary: Der Server hängt Items und Memos an Knoten, berechnet Anzahl, Fortschritt
+    und Zustand je Knoten samt Unterknoten und liefert die Items ohne Knoten mit dem
+    Baum. Ein Item hängt an höchstens einem Knoten, Kinder erben, ein gelöschter
+    Knoten gibt seine Items an den Parent-Knoten zurück.
 - `TASK-057` **Mindmap: Zahl, Fortschrittsring, Zustand und Filter am Knoten, Items und Memos im Detail**
   - Uid: 0401cbeb-4e8c-42db-b37a-57b857f6772e.
   - Type: Task.

@@ -127,3 +127,16 @@ def test_a_reader_sees_gapless_positions_among_the_living() -> None:
     result = tree.compacted(sample(), ALL - {"b"})
     assert {(p.node_uid, p.position) for p in result} == {("a", 0), ("e", 1), ("c", 0), ("d", 0)}
     assert tree.compacted(sample(), {"a", "e"}) == tree.children_of(sample(), None)
+
+
+@pytest.mark.parametrize(("value", "expected"), [("discarded", "discarded"), ("later", "later"), ("", None), (None, None)])
+def test_a_mark_is_one_of_the_fixed_values_or_none(value: str | None, expected: str | None) -> None:
+    assert tree.check_mark(value) == expected
+
+
+@pytest.mark.parametrize("value", ["Discarded", "done", "verworfen", " later"])
+def test_every_other_mark_is_refused_with_its_code(value: str) -> None:
+    with pytest.raises(MindmapViolation) as error:
+        tree.check_mark(value)
+    assert error.value.code == "mindmap_mark_invalid"
+    assert error.value.details["allowed"] == ["discarded", "later"]

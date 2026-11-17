@@ -7,7 +7,7 @@ from typing import Any
 from sqlalchemy import text
 
 from viewer.core.domain.plugin import Migration
-from viewer.plugins.mindmap.domain.model import TREE_KINDS
+from viewer.plugins.mindmap.domain.model import NODE_MARKS, TREE_KINDS
 
 
 def _v1(connection: Any) -> None:
@@ -60,4 +60,13 @@ def _v2(connection: Any) -> None:
     )
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2))
+def _v3(connection: Any) -> None:
+    """Markierungen „verworfen“ und „später“ (`TASK-065`): eine feste Liste und eine Spalte am Knoten; leer heißt
+    „keine“. Bestehende Knoten behalten alles und tragen keine Markierung."""
+    connection.exec_driver_sql("CREATE TABLE mindmap_marks (code TEXT PRIMARY KEY)")
+    for code in NODE_MARKS:
+        connection.execute(text("INSERT INTO mindmap_marks(code) VALUES (:c)"), {"c": code})
+    connection.exec_driver_sql("ALTER TABLE mindmap_nodes ADD COLUMN mark TEXT REFERENCES mindmap_marks(code)")
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3))

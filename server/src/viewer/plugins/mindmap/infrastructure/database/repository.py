@@ -14,7 +14,7 @@ from viewer.plugins.mindmap.domain.documents import NOTES, document_kind
 from viewer.plugins.mindmap.domain.model import Node, Placement, Tree
 
 _NODE = """
-SELECT e.uid, e.project_uid, e.label, e.revision, e.deleted_at, n.title, n.text
+SELECT e.uid, e.project_uid, e.label, e.revision, e.deleted_at, n.title, n.text, n.mark
 FROM mindmap_nodes n JOIN workspace_elements e ON e.uid = n.uid
 """
 
@@ -32,6 +32,7 @@ def _node(row: Row[Any]) -> Node:
         label=row.label,
         title=row.title,
         text=row.text,
+        mark=row.mark,
         revision=row.revision,
         deleted_at=datetime.fromisoformat(deleted) if deleted else None,
     )
@@ -69,14 +70,14 @@ class SqlMindmapRepository:
 
     def insert_node(self, tx: Transaction, node: Node) -> None:
         _conn(tx).execute(
-            text("INSERT INTO mindmap_nodes(uid, title, text) VALUES (:u, :t, :x)"),
-            {"u": node.uid, "t": node.title, "x": node.text},
+            text("INSERT INTO mindmap_nodes(uid, title, text, mark) VALUES (:u, :t, :x, :m)"),
+            {"u": node.uid, "t": node.title, "x": node.text, "m": node.mark},
         )
 
     def update_node(self, tx: Transaction, node: Node) -> None:
         _conn(tx).execute(
-            text("UPDATE mindmap_nodes SET title = :t, text = :x WHERE uid = :u"),
-            {"u": node.uid, "t": node.title, "x": node.text},
+            text("UPDATE mindmap_nodes SET title = :t, text = :x, mark = :m WHERE uid = :u"),
+            {"u": node.uid, "t": node.title, "x": node.text, "m": node.mark},
         )
 
     def get_node(self, tx: Transaction, uid: str) -> Node | None:

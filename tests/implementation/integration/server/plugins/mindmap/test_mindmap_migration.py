@@ -104,3 +104,49 @@ def test_a_document_belongs_to_one_node_and_is_named_once(runner: MigrationRunne
         connection.execute(text(insert), {"n": "n1", "t": NOW})  # derselbe Name am selben Knoten
     with pytest.raises(IntegrityError), database.engine.begin() as connection:
         connection.execute(text(insert), {"n": "unbekannt", "t": NOW})  # Knoten gibt es nicht
+
+
+def test_the_marks_are_a_fixed_list_and_a_node_has_none_at_first(runner: MigrationRunner, database: SqliteDatabase) -> None:
+    _prepare(runner, database)
+
+    with database.engine.begin() as connection:
+        marks = {r[0] for r in connection.execute(text("SELECT code FROM mindmap_marks"))}
+        current = connection.execute(text("SELECT mark FROM mindmap_nodes WHERE uid = 'n1'")).scalar_one()
+    assert marks == {"discarded", "later"}
+    assert current is None
+
+
+def test_a_node_carries_one_mark_of_the_list_and_nothing_else(runner: MigrationRunner, database: SqliteDatabase) -> None:
+    _prepare(runner, database)
+    update = "UPDATE mindmap_nodes SET mark = :m WHERE uid = 'n1'"
+    with database.engine.begin() as connection:
+        connection.execute(text(update), {"m": "later"})
+        connection.execute(text(update), {"m": "discarded"})  # ersetzt die erste
+        connection.execute(text(update), {"m": None})  # keine
+    with pytest.raises(IntegrityError), database.engine.begin() as connection:
+        connection.execute(text(update), {"m": "verworfen"})
+
+
+def test_version_2_data_survives_the_upgrade_to_the_marks(runner: MigrationRunner, database: SqliteDatabase) -> None:
+    defs = _defs()
+    old = [plugin("workspace", migrations=WORKSPACE), plugin("mindmap", requires=("workspace",), migrations=MIGRATIONS[:2])]
+    runner.run(ordered(*old))
+    with database.engine.begin() as connection:
+        project: str = connection.execute(text("SELECT uid FROM workspace_projects")).scalar_one()
+        connection.execute(
+            text("INSERT INTO workspace_element_kinds(kind, owner, label_prefix) VALUES ('mindmap_node', 'mindmap', 'NODE')")
+        )
+        connection.execute(
+            text(
+                "INSERT INTO workspace_elements(uid, project_uid, kind, label, created_at, updated_at) "
+                "VALUES ('n1', :p, 'mindmap_node', 'NODE-001', :n, :n)"
+            ),
+            {"p": project, "n": NOW},
+        )
+        connection.execute(text("INSERT INTO mindmap_nodes(uid, title, text) VALUES ('n1', 'Alt', 'Text')"))
+
+    assert ("mindmap", 3) in runner.run(defs)
+
+    with database.engine.begin() as connection:
+        row = connection.execute(text("SELECT title, text, mark FROM mindmap_nodes WHERE uid = 'n1'")).one()
+    assert tuple(row) == ("Alt", "Text", None)

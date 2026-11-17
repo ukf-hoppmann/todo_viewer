@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Collection, Sequence
 
-from viewer.plugins.mindmap.domain.model import MindmapViolation, Placement
+from viewer.plugins.mindmap.domain.model import NODE_MARKS, MindmapViolation, Placement
 
 
 def children_of(placements: Sequence[Placement], parent_uid: str | None) -> list[Placement]:
@@ -126,3 +126,17 @@ def compacted(placements: Sequence[Placement], live: Collection[str]) -> list[Pl
         for position, p in enumerate(children_of(visible, parent)):
             result.append(Placement(p.tree_uid, p.node_uid, p.parent_uid, position))
     return result
+
+
+def check_mark(value: str | None) -> str | None:
+    """Die Markierung eines Knotens: einer der festen Werte, oder leer für „keine“ (dann `None`)."""
+    if value is None or value == "":
+        return None
+    if value not in NODE_MARKS:
+        raise MindmapViolation(
+            "mindmap_mark_invalid",
+            f"Unbekannte Markierung '{value}'",
+            field="mark",
+            allowed=list(NODE_MARKS),
+        )
+    return value

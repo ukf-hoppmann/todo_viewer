@@ -16,6 +16,12 @@ from viewer.core.domain.errors import DomainError
 TREE_PROJECT = "project"
 TREE_KINDS = (TREE_PROJECT,)
 
+#: Die Markierungen eines Knotens (`TASK-065`): feste Werte, keine Freitexte. Ein Knoten trägt höchstens eine; ohne
+#: Markierung steht `None`. Sie ändert weder Summen noch Zustand und gilt nur für den Knoten selbst.
+MARK_DISCARDED = "discarded"
+MARK_LATER = "later"
+NODE_MARKS = (MARK_DISCARDED, MARK_LATER)
+
 
 class MindmapViolation(DomainError):
     """Eine Regel der Mindmap ist verletzt; `code` nennt sie."""
@@ -35,6 +41,8 @@ class Node:
     text: str | None
     revision: int
     deleted_at: datetime | None = None
+    #: Eine der `NODE_MARKS` oder `None`.
+    mark: str | None = None
 
 
 @dataclass(frozen=True)

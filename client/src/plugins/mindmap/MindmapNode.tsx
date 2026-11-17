@@ -7,13 +7,13 @@ import { Box, InputBase, Typography } from "@mui/material";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { memo, useRef, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { dropPosition, IconAction } from "../../shared";
-import type { DropZone } from "./domain/tree";
+import { dropPosition, IconAction, ProgressRing } from "../../shared";
+import { nodeLook, type DropZone } from "./domain/tree";
 import { useMapActions } from "./mapActions";
 import { NODE_HEIGHT, NODE_WIDTH } from "./mindmapLayout";
 import { mindmapTestIds } from "./testIds";
 
-export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; hasNotes?: boolean; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone };
+export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; hasNotes?: boolean; state?: string; total?: number; done?: number; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone };
 export type TopicNode = Node<TopicData, "topic">;
 
 const HIDDEN_HANDLE = { opacity: 0, pointerEvents: "none" } as const;
@@ -23,12 +23,14 @@ const HIDDEN_HANDLE = { opacity: 0, pointerEvents: "none" } as const;
  * children, and above it, while pointer or focus are on the node, the actions "add child" and "trash". The root is
  * the project: it cannot be renamed or deleted. A node is dragged onto another one to move it with its branch: the
  * upper quarter of the target places it before, the lower quarter after, the middle below the target; the page says
- * whether a place is offered and marks it (`drop`).
+ * whether a place is offered and marks it (`drop`). A node with items shows a progress ring and their count; an
+ * idea is dashed and hollow, a finished node dimmed (`nodeLook`).
  */
 export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNode>) {
-	const { id, title, isRoot, hasChildren, hasNotes, open, selected, editing, dragging, drop } = data;
+	const { id, title, isRoot, hasChildren, hasNotes, state = "idea", total = 0, done = 0, open, selected, editing, dragging, drop } = data;
 	const { t } = useTranslation("mindmap");
 	const actions = useMapActions();
+	const look = isRoot ? { dashed: false, hollow: false, dimmed: false, counts: false } : nodeLook(state, total);
 	// Esc ends the edit; the blur that follows must not save it.
 	const cancelled = useRef(false);
 	const zoneOf = (event: DragEvent<HTMLElement>): DropZone => {
@@ -40,6 +42,7 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 			title={title}
 			data-testid={mindmapTestIds.node(id)}
 			data-selected={selected}
+			data-state={isRoot ? undefined : state}
 			data-drop={drop}
 			className={isRoot ? undefined : "nodrag nopan"}
 			draggable={!isRoot && !editing}
@@ -72,9 +75,9 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 				borderRadius: isRoot ? 1 : 4,
 				border: "2px solid",
 				borderColor: selected || isRoot || drop === "inside" ? "primary.main" : "divider",
-				borderStyle: drop === "inside" ? "dashed" : "solid",
-				bgcolor: selected || drop === "inside" ? "action.selected" : "background.paper",
-				opacity: dragging ? 0.5 : 1,
+				borderStyle: drop === "inside" || look.dashed ? "dashed" : "solid",
+				bgcolor: selected || drop === "inside" ? "action.selected" : look.hollow ? "transparent" : "background.paper",
+				opacity: dragging ? 0.5 : look.dimmed ? 0.55 : 1,
 				cursor: isRoot ? "default" : "pointer",
 				"& .mindmap-node-actions": { visibility: "hidden" },
 				"&:hover .mindmap-node-actions, &:focus-within .mindmap-node-actions": { visibility: "visible" },
@@ -116,6 +119,17 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 				<Typography variant="body2" noWrap sx={{ flexGrow: 1, minWidth: 0, fontWeight: isRoot ? 600 : 400 }}>
 					{title}
 				</Typography>
+			)}
+			{look.counts && !editing && (
+				<Box
+					title={t("node.progress", { done, total })}
+					sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}
+				>
+					<ProgressRing done={done} total={total} />
+					<Typography variant="caption" color="text.secondary" data-testid={mindmapTestIds.count(id)}>
+						{total}
+					</Typography>
+				</Box>
 			)}
 			{hasNotes && !editing && (
 				<NotesIcon

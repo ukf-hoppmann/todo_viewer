@@ -12,4 +12,7 @@ export const mindmapTestIds = {
 	dropLine: (id: string, zone: "before" | "after") => `mindmap.drop-line.${id}.${zone}`,
 	detail: "mindmap.detail",
 	notesMark: (id: string) => `mindmap.notes-mark.${id}`,
+	count: (id: string) => `mindmap.count.${id}`,
+	stateFilter: "mindmap.state-filter",
+	unassignedSwitch: "mindmap.unassigned-switch",
 } as const;

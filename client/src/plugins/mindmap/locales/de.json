@@ -8,7 +8,8 @@
 	},
 	"node": {
 		"new": "Neues Thema",
-		"hasNotes": "Dieser Knoten hat Notizen"
+		"hasNotes": "Dieser Knoten hat Notizen",
+		"progress": "{{done}} von {{total}} erledigt"
 	},
 	"action": {
 		"add": "Unterknoten anlegen",
@@ -48,5 +49,15 @@
 		"saveAnyway": "Trotzdem speichern",
 		"currentState": "aktueller Stand",
 		"toc": "Inhaltsverzeichnis"
+	},
+	"filter": {
+		"state": "Zustand",
+		"unassigned": "Nicht zugeordnet anzeigen"
+	},
+	"state": {
+		"idea": "Idee",
+		"planned": "Geplant",
+		"in_progress": "In Arbeit",
+		"done": "Erledigt"
 	}
 }

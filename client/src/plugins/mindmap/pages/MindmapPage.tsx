@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
-import { errorMessage, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type NodeOut } from "../api";
-import { dropPlacement, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
+import { errorMessage, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type TreeNodeOut } from "../api";
+import { dropPlacement, filterByState, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import { MapActionsContext, type MapActions } from "../mapActions";
 import { layoutTree } from "../mindmapLayout";
 import { MindmapNode, type TopicNode } from "../MindmapNode";
@@ -16,7 +16,7 @@ import { useMindmapState } from "../state";
 import { mindmapTestIds } from "../testIds";
 
 const NODE_TYPES = { topic: MindmapNode };
-const NO_NODES: readonly NodeOut[] = [];
+const NO_NODES: readonly TreeNodeOut[] = [];
 const DOUBLE_CLICK_MS = 250;
 const FIT = { maxZoom: 1, padding: 0.15 };
 const EDGE_STYLE = { stroke: "#5b8cff", strokeOpacity: 0.7 };
@@ -37,7 +37,7 @@ export default function MindmapPage() {
 	const statuses = useShownStatuses();
 	const { currentData: tree } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: !project });
 	const nodes = tree?.nodes ?? NO_NODES;
-	const { fold, setFold, selected, setSelected } = useMindmapState();
+	const { fold, setFold, selected, setSelected, hiddenStates } = useMindmapState();
 	const [createNode] = useCreateNodeMutation();
 	const [updateNode] = useUpdateNodeMutation();
 	const [moveNode] = useMoveNodeMutation();
@@ -49,7 +49,8 @@ export default function MindmapPage() {
 	const [error, setError] = useState<string>();
 	const rootId = project?.uid;
 
-	const shown = useMemo(() => (rootId ? visibleNodes(rootId, nodes, fold) : []), [rootId, nodes, fold]);
+	// The filter hides nodes by their state; a hidden node takes its branch from the map. Moving still sees all nodes.
+	const shown = useMemo(() => (rootId ? visibleNodes(rootId, filterByState(nodes, hiddenStates), fold) : []), [rootId, nodes, fold, hiddenStates]);
 
 	// The layout depends only on which nodes hang where, not on their titles: renaming keeps every node in place.
 	const structureKey = JSON.stringify(shown.map(({ id, parentId }) => ({ id, parentId })));
@@ -186,6 +187,9 @@ export default function MindmapPage() {
 							isRoot: entry.node === undefined,
 							hasChildren: entry.hasChildren,
 							hasNotes: (entry.node?.documents.length ?? 0) > 0,
+							state: entry.node?.state,
+							total: entry.node?.total,
+							done: entry.node?.done,
 							open: entry.open,
 							selected: entry.id === selected,
 							editing: entry.id === editing,

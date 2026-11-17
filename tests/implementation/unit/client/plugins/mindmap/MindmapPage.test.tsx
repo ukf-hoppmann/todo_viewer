@@ -437,3 +437,55 @@ describe("MindmapPage: notes at a node", () => {
 		expect(backend.calls("PUT", "mindmap/nodes/a/documents/NODE-a_spec.md")[0]!.body).toEqual({ content: "# NODE-a — Thema a\n" });
 	});
 });
+
+describe("MindmapPage: count, ring and state", () => {
+	const stated = [
+		node("a", null, 0, { total: 4, done: 1, state: "in_progress" }),
+		node("b", null, 1, { total: 2, done: 2, state: "done" }),
+		node("c", null, 2),
+		node("a1", "a", 0, { total: 1, done: 0, state: "planned" }),
+	];
+
+	it("shows count and progress ring at a node with items, nothing at a node without", async () => {
+		await renderPage({ nodes: stated });
+
+		const a = await screen.findByTestId(ids.node("a"));
+		expect(screen.getByTestId(ids.count("a")).textContent).toBe("4");
+		expect(a.querySelector(`[data-testid='${sharedTestIds.progressRing}']`)?.getAttribute("aria-label")).toBe("1/4");
+		expect(screen.getByTestId(ids.count("b")).textContent).toBe("2");
+		expect(screen.queryByTestId(ids.count("c"))).toBeNull();
+		expect(screen.getByTestId(ids.node("c")).querySelector(`[data-testid='${sharedTestIds.progressRing}']`)).toBeNull();
+	});
+
+	it("draws an idea dashed and hollow and a finished node dimmed", async () => {
+		await renderPage({ nodes: stated });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(screen.getByTestId(ids.node("c")).dataset.state).toBe("idea");
+		expect(getComputedStyle(screen.getByTestId(ids.node("c"))).borderStyle).toBe("dashed");
+		expect(getComputedStyle(screen.getByTestId(ids.node("a"))).borderStyle).toBe("solid");
+		expect(getComputedStyle(screen.getByTestId(ids.node("b"))).opacity).toBe("0.55");
+		expect(getComputedStyle(screen.getByTestId(ids.node("a"))).opacity).toBe("1");
+	});
+
+	it("asks the server for the counts by the status filter of the backlog", async () => {
+		const backend = await renderPage({ nodes: stated });
+		await screen.findByTestId(ids.node("a"));
+
+		expect(backend.calls("GET", "mindmap/trees")[0]!.query.get("statuses")).toBe("Open,In progress,Awaiting confirmation");
+	});
+
+	it("asks without a filter once the backlog lets every status pass", async () => {
+		const backend = await renderPage({ nodes: stated, documents: { ...marked, backlog: { hiddenStatuses: [] } } });
+		await screen.findByTestId(ids.node("a"));
+
+		expect(backend.calls("GET", "mindmap/trees")[0]!.query.get("statuses")).toBeNull();
+	});
+
+	it("hides the nodes of a hidden state with their branch", async () => {
+		await renderPage({ nodes: stated, documents: { ...marked, mindmap: { hiddenStates: ["in_progress", "idea"] } } });
+
+		await screen.findByTestId(ids.node("b"));
+		expect(shownIds()).toEqual(["p1", "b"]);
+	});
+});

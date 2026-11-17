@@ -8,7 +8,8 @@
 	},
 	"node": {
 		"new": "New topic",
-		"hasNotes": "This node has notes"
+		"hasNotes": "This node has notes",
+		"progress": "{{done}} of {{total}} done"
 	},
 	"action": {
 		"add": "Add child node",
@@ -48,5 +49,15 @@
 		"saveAnyway": "Save anyway",
 		"currentState": "current state",
 		"toc": "Table of contents"
+	},
+	"filter": {
+		"state": "State",
+		"unassigned": "Show unassigned"
+	},
+	"state": {
+		"idea": "Idea",
+		"planned": "Planned",
+		"in_progress": "In progress",
+		"done": "Done"
 	}
 }

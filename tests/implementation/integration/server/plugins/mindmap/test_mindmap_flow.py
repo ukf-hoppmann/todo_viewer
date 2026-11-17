@@ -51,7 +51,7 @@ def _delete(env: Env, node: dict[str, Any], cascade: bool = True) -> Any:
 
 
 def test_a_project_without_nodes_has_an_empty_tree(mindmap: Env) -> None:
-    assert _tree(mindmap) == {"project_uid": _project(mindmap), "tree_uid": None, "nodes": []}
+    assert _tree(mindmap) == {"project_uid": _project(mindmap), "tree_uid": None, "nodes": [], "unassigned": []}
 
 
 def test_the_first_node_creates_the_project_tree_and_gets_a_label(mindmap: Env) -> None:
@@ -312,6 +312,13 @@ def test_the_operations_are_published_as_http_routes_and_mcp_tools(mindmap: Env)
         "get_node_document",
         "put_node_document",
         "append_node_entry",
+        "assign_item",
+        "unassign_item",
+        "link_memo",
+        "unlink_memo",
+        "get_node_content",
+        "get_item_node",
+        "list_memo_nodes",
     }
     assert all(host.operation("mindmap", name).mcp for name in names)
     paths = mindmap.client.get("/openapi.json").json()["paths"]

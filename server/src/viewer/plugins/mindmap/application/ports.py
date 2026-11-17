@@ -75,3 +75,25 @@ class DocumentRepository(Protocol):
     def update(self, tx: Transaction, node_uid: str, name: str, content: str, expected: int, at: datetime) -> int:
         """Ersetzt den Inhalt, wenn die Revision `expected` ist (sonst `version_conflict`); gibt die neue zurück."""
         ...
+
+
+@dataclass(frozen=True)
+class BacklogItem:
+    """Ein Item des Backlogs, so viel die Mindmap davon braucht."""
+
+    uid: str
+    project_uid: str
+    label: str
+    type: str
+    title: str
+    status: str
+    parent_uid: str | None
+    deleted: bool
+
+
+class BacklogItems(Protocol):
+    """Lesender Zugriff auf die Items des Plugins `backlog` (Adapter in `infrastructure/backlog_gateway.py`)."""
+
+    def list_items(self, tx: Transaction, project_uid: str) -> list[BacklogItem]:
+        """Alle Items des Projekts, auch die im Papierkorb."""
+        ...

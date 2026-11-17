@@ -97,5 +97,6 @@ def full_env(tmp_path: Path, settings: Settings) -> Env:
 
 
 def mindmap_env(tmp_path: Path, settings: Settings) -> Env:
-    """Eine Umgebung mit dem echten Plugin `mindmap` (und `workspace`)."""
-    return Env(tmp_path, settings, plugins=[workspace_plugin, mindmap_plugin])
+    """Eine Umgebung mit dem echten Plugin `mindmap` und den Plugins, die es braucht (`workspace`, `backlog`), dazu
+    `memos` für die Memo-Links."""
+    return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, memos_plugin, mindmap_plugin])

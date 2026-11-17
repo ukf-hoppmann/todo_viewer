@@ -10,15 +10,17 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from viewer.core.domain.operations import HttpBinding, Operation
+from viewer.plugins.mindmap.application.assignments import AssignmentService, ItemNode, NodeContent, TreeStats
 from viewer.plugins.mindmap.application.documents import DocumentService
-from viewer.plugins.mindmap.application.ports import Document
+from viewer.plugins.mindmap.application.ports import BacklogItem, Document
 from viewer.plugins.mindmap.application.service import MindmapService, NodeView, TreeView
 
 
 class MindmapServices:
-    def __init__(self, mindmap: MindmapService, documents: DocumentService) -> None:
+    def __init__(self, mindmap: MindmapService, documents: DocumentService, assignments: AssignmentService) -> None:
         self.mindmap = mindmap
         self.documents = documents
+        self.assignments = assignments
 
 
 @dataclass(frozen=True)
@@ -41,18 +43,43 @@ class NodeOut:
 
 
 @dataclass(frozen=True)
+class TreeNodeOut(NodeOut):
+    """Ein Knoten im Baum mit den Zahlen über sich und seine Unterknoten (jedes Item zählt genau einmal)."""
+
+    #: Anzahl der zählenden Items: nicht im Papierkorb und vom Statusfilter durchgelassen.
+    total: int = 0
+    #: Davon erledigt (`Completed`): der Fortschritt ist `done` von `total`.
+    done: int = 0
+    #: `idea`, `planned`, `in_progress` oder `done`; unabhängig vom Statusfilter, `Rejected` zählt nicht.
+    state: str = "idea"
+
+
+@dataclass(frozen=True)
+class ItemRefOut:
+    uid: str
+    label: str
+    type: str
+    title: str
+    status: str
+
+
+@dataclass(frozen=True)
 class TreeOut:
     project_uid: str
     #: Leer, solange im Projekt noch kein Knoten angelegt ist.
     tree_uid: str | None
     #: Die Knoten, Eltern vor Kindern und je Parent nach Stelle; Knoten im Papierkorb fehlen.
-    nodes: list[NodeOut]
+    nodes: list[TreeNodeOut]
+    #: Die Items ohne Knoten, die der Statusfilter durchlässt (die Seitenansicht „Nicht zugeordnet“).
+    unassigned: list[ItemRefOut]
 
 
 @dataclass(frozen=True)
 class GetTree:
     #: `uid` des Projekts.
     project: str
+    #: Statusfilter des Backlogs, kommagetrennt (`Open,In progress`); ohne Angabe zählen alle Items.
+    statuses: str | None = None
 
 
 @dataclass(frozen=True)
@@ -171,11 +198,123 @@ def node_out(view: NodeView) -> NodeOut:
     )
 
 
-def tree_out(view: TreeView) -> TreeOut:
-    nodes = [
-        node_out(NodeView(node, placement, tuple(view.documents.get(node.uid, ())))) for node, placement in view.nodes
-    ]
-    return TreeOut(view.project_uid, view.tree.uid if view.tree else None, nodes)
+def _item_ref(item: BacklogItem) -> ItemRefOut:
+    return ItemRefOut(item.uid, item.label, item.type, item.title, item.status)
+
+
+def tree_out(view: TreeView, stats: TreeStats) -> TreeOut:
+    nodes: list[TreeNodeOut] = []
+    for node, placement in view.nodes:
+        base = node_out(NodeView(node, placement, tuple(view.documents.get(node.uid, ()))))
+        counted = stats.stats.get(node.uid)
+        nodes.append(
+            TreeNodeOut(
+                **vars(base),
+                total=counted.total if counted else 0,
+                done=counted.done if counted else 0,
+                state=counted.state if counted else "idea",
+            )
+        )
+    return TreeOut(
+        view.project_uid, view.tree.uid if view.tree else None, nodes, [_item_ref(i) for i in stats.unassigned]
+    )
+
+
+def _statuses(value: str | None) -> list[str]:
+    return [part.strip() for part in (value or "").split(",") if part.strip()]
+
+
+@dataclass(frozen=True)
+class MemoRefOut:
+    uid: str
+    label: str
+    title: str
+
+
+@dataclass(frozen=True)
+class NodeContentOut:
+    """Das Detail eines Knotens: die Items, deren wirksamer Knoten er ist (nach Statusfilter, ohne Unterknoten),
+    und seine Memos. Memos zählen nicht in der Zahl."""
+
+    node_uid: str
+    items: list[ItemRefOut]
+    memos: list[MemoRefOut]
+
+
+@dataclass(frozen=True)
+class ItemNodeOut:
+    item_uid: str
+    #: Der wirksame Knoten; leer, wenn das Item nirgends zugeordnet ist („Nicht zugeordnet“).
+    node_uid: str | None
+    #: Wahr, wenn das Item eigens an den Knoten gehängt ist; falsch, wenn es ihn von seinem Parent erbt.
+    explicit: bool
+
+
+@dataclass(frozen=True)
+class AssignItem:
+    #: Knoten (uid oder Label).
+    node: str
+    #: Item (uid oder Label).
+    item: str
+    #: Hängt das Item schon an einem anderen Knoten, wird abgewiesen; mit `replace` ersetzt dieser Knoten den alten.
+    replace: bool = False
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class UnassignItem:
+    item: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class LinkMemo:
+    node: str
+    memo: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class UnlinkMemo:
+    node: str
+    memo: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class GetNodeContent:
+    ref: str
+    statuses: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class GetItemNode:
+    item: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class ListMemoNodes:
+    memo: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class Done:
+    ok: bool = True
+
+
+def _content_out(content: NodeContent) -> NodeContentOut:
+    return NodeContentOut(
+        content.node.uid,
+        [_item_ref(i) for i in content.items],
+        [MemoRefOut(m.uid, m.label, m.title) for m in content.memos],
+    )
+
+
+def _item_node_out(found: ItemNode) -> ItemNodeOut:
+    return ItemNodeOut(found.item.uid, found.node.uid if found.node else None, found.explicit)
 
 
 def _detail(services: MindmapServices, uid: str) -> NodeOut:
@@ -186,11 +325,13 @@ OPERATIONS: tuple[Operation, ...] = (
     Operation(
         "get_tree",
         "Der Themenbaum eines Projekts (das Projekt ist die Wurzel): alle Knoten mit Parent und Stelle, Eltern vor "
-        "Kindern. Knoten im Papierkorb fehlen",
+        "Kindern, je Knoten Anzahl, Fortschritt und Zustand über ihn und seine Unterknoten, dazu die Items ohne "
+        "Knoten. "
+        "Knoten im Papierkorb fehlen. `statuses` ist der Statusfilter des Backlogs für die Zahlen",
         "read",
         GetTree,
         TreeOut,
-        lambda s, d: tree_out(s.mindmap.get_tree(d.project)),
+        lambda s, d: tree_out(s.mindmap.get_tree(d.project), s.assignments.stats(d.project, _statuses(d.statuses))),
         HttpBinding("GET", "/trees/{project}"),
     ),
     Operation(
@@ -271,5 +412,70 @@ OPERATIONS: tuple[Operation, ...] = (
         DocumentOut,
         lambda s, d: _document_out(s.documents.append_note(d.ref, d.project, d.topic, d.discussed, d.decided, d.open)),
         HttpBinding("POST", "/nodes/{ref}/entries"),
+    ),
+    Operation(
+        "assign_item",
+        "Hängt ein Item (Epic, Story oder Task) an einen Knoten. Seine Kinder erben den Knoten, wenn sie nicht eigens "
+        "angehängt sind. Ein Item hängt an höchstens einem Knoten: ein zweiter wird mit mindmap_item_assigned "
+        "abgewiesen, außer `replace` ist gesetzt",
+        "write",
+        AssignItem,
+        NodeOut,
+        lambda s, d: _detail(s, s.assignments.assign_item(d.item, d.node, d.project, d.replace).uid),
+        HttpBinding("POST", "/nodes/{node}/items"),
+    ),
+    Operation(
+        "unassign_item",
+        "Löst die eigene Zuordnung eines Items; es erbt danach den Knoten seines Parents oder ist nicht zugeordnet",
+        "write",
+        UnassignItem,
+        Done,
+        lambda s, d: (s.assignments.unassign_item(d.item, d.project), Done())[1],
+        HttpBinding("DELETE", "/items/{item}/node"),
+    ),
+    Operation(
+        "link_memo",
+        "Verlinkt ein Memo mit einem Knoten; ein Memo darf an mehrere Knoten hängen und zählt nicht in der Zahl",
+        "write",
+        LinkMemo,
+        NodeOut,
+        lambda s, d: _detail(s, s.assignments.link_memo(d.memo, d.node, d.project).uid),
+        HttpBinding("POST", "/nodes/{node}/memos"),
+    ),
+    Operation(
+        "unlink_memo",
+        "Löst den Link zwischen einem Memo und einem Knoten",
+        "write",
+        UnlinkMemo,
+        Done,
+        lambda s, d: (s.assignments.unlink_memo(d.memo, d.node, d.project), Done())[1],
+        HttpBinding("DELETE", "/nodes/{node}/memos/{memo}"),
+    ),
+    Operation(
+        "get_node_content",
+        "Das Detail eines Knotens: seine Items (wirksamer Knoten, nach `statuses`) und seine verlinkten Memos",
+        "read",
+        GetNodeContent,
+        NodeContentOut,
+        lambda s, d: _content_out(s.assignments.node_content(d.ref, d.project, _statuses(d.statuses))),
+        HttpBinding("GET", "/nodes/{ref}/content"),
+    ),
+    Operation(
+        "get_item_node",
+        "Der wirksame Knoten eines Items und ob es eigens angehängt ist oder erbt",
+        "read",
+        GetItemNode,
+        ItemNodeOut,
+        lambda s, d: _item_node_out(s.assignments.item_node(d.item, d.project)),
+        HttpBinding("GET", "/items/{item}/node"),
+    ),
+    Operation(
+        "list_memo_nodes",
+        "Die Knoten, mit denen ein Memo verlinkt ist (Knoten im Papierkorb fehlen)",
+        "read",
+        ListMemoNodes,
+        list[NodeOut],
+        lambda s, d: [_detail(s, n.uid) for n in s.assignments.memo_nodes(d.memo, d.project)],
+        HttpBinding("GET", "/memos/{memo}/nodes"),
     ),
 )

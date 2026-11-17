@@ -114,7 +114,7 @@ class MindmapService:
             raise InvalidInput("Nichts zu ändern: title oder text angeben", details={"field": "title"})
         with self._database.transaction() as tx:
             node = self._resolve(tx, ref, project_uid)
-            self._require_alive(node)
+            self.require_alive(node)
             updated = node
             if title is not None:
                 updated = replace(updated, title=title_of(title))
@@ -140,7 +140,7 @@ class MindmapService:
         ihn unter demselben Parent um."""
         with self._database.transaction() as tx:
             node = self._resolve(tx, ref, project_uid)
-            self._require_alive(node)
+            self.require_alive(node)
             tree = self._tree_of_node(tx, node, tree_uid)
             rules.check_project(tree.project_uid, node.project_uid)
             placements = self._repository.placements(tx, tree.uid)
@@ -188,7 +188,8 @@ class MindmapService:
             raise NotFound(f"Projekt {project_uid} gibt es nicht", details={"project": project_uid})
 
     @staticmethod
-    def _require_alive(node: Node) -> None:
+    def require_alive(node: Node) -> None:
+        """Ein Knoten im Papierkorb nimmt nichts an."""
         if node.deleted_at is not None:
             raise MindmapViolation("mindmap_node_deleted", f"{node.label} liegt im Papierkorb", node=node.label)
 

@@ -8,6 +8,33 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `TASK-065` **Mindmap: Markierungen „verworfen“ und „später“ an Ideen-Knoten**
+  - Uid: ea634e30-aae8-49b4-a5ab-8b77aa40bf03.
+  - Type: Task.
+  - Parent: `STORY-100`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-11-16.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-056`, `TASK-057`.
+  - Goal: Ideen-Knoten lassen sich als „verworfen“ oder „später“ markieren,
+    damit alte Ideen als Spur stehen bleiben, aber nicht mehr stören. Die
+    Markierung gehört zum Knoten, nicht zu seinen Items.
+  - Completion criteria: 1. Ein Knoten trägt höchstens eine Markierung
+    (keine, verworfen, später); setzen und löschen gehen über API, MCP und
+    Oberfläche.
+    2. Markierte Knoten sind sichtbar abgesetzt, und der Zustandsfilter kann
+    sie ausblenden.
+    3. Die Markierung gilt nur für den Knoten selbst, nicht für Unterknoten,
+    und ändert weder die Summen der Items noch den Zustand.
+    4. Die Werte sind fest (keine, verworfen, später), nicht frei;
+    Domain-, API- und UI-Tests sind grün.
+  - Summary: Ideen-Knoten lassen sich als „verworfen“ oder „später“ markieren.
+    Die Markierung setzt den Knoten ab und lässt sich ausblenden, ändert aber
+    keine Zahlen.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
+
 - `TASK-057` **Mindmap: Zahl, Fortschrittsring, Zustand und Filter am Knoten, Items und Memos im Detail**
   - Uid: 0401cbeb-4e8c-42db-b37a-57b857f6772e.
   - Type: Task.

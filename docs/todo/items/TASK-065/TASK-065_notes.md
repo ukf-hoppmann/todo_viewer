@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt und im Browser geprüft; wartet auf die Bestätigung des Owners (2026-11-17).
-- Next step: Owner bestätigt `Completed`; danach ist `STORY-100` zu prüfen (2026-11-17)
+- Goal/Status: Umgesetzt, im Browser geprüft und vom Owner bestätigt (2026-11-17).
+- Next step: STORY-100 gegen ihre Kriterien prüfen (2026-11-17)
 - Open:
 - Decided:
   - Speicherung als Nachschlagetabelle `mindmap_marks` und Spalte `mindmap_nodes.mark` (Migration 3); gespeichert englisch `discarded`, `later` (2026-11-17)
@@ -12,7 +12,7 @@
   - Filter „Markierung“ neben den Zuständen, standardmäßig alles sichtbar; ein ausgeblendeter Knoten nimmt seinen Ast mit (2026-11-17)
 - References: Spec TASK-065_spec.md; Story-Spec STORY-100_spec.md; Doku neubau-server.md und neubau-client.md, Abschnitt Plugin `mindmap`
 
-State confirmed after entry 2026-11-17 — Plan und Umsetzung (2f5bca4e85cf)
+State confirmed after entry 2026-11-17 — Bestätigung (60dd95a61fb5)
 
 ## 2026-11-17 — Plan und Umsetzung
 
@@ -32,3 +32,9 @@ State confirmed after entry 2026-11-17 — Plan und Umsetzung (2f5bca4e85cf)
 - Server: Unit- und Integrationstests der Mindmap (141 inklusive OpenAPI-Typen) grün; `mypy` und `lint-imports` ohne Fehler; `ruff` auf den geänderten Teilen ohne Fehler.
 - Client: 1307 Tests grün; ESLint meldet nur die 5 Fehler in `usePersistentState.ts`, die schon vorher bestanden.
 - Browser (lokaler Server, Beispieldaten, Chromium): Markierung im Detail setzen, wechseln und löschen; Symbole in der Map; Filter blendet Verworfen samt Ast und Später aus und wieder ein; Zustand und Zahl eines markierten Knotens bleiben unverändert. Keine Konsolenfehler.
+
+## 2026-11-17 — Bestätigung
+
+### Decided
+
+- Der Owner hat den Task bestätigt (`Completed`); er ist archiviert. Das Ausblenden markierter Knoten samt Ast bleibt wie umgesetzt.

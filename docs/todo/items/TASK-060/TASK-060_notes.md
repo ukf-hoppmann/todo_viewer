@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Spec steht; Prototyp fertig, Algorithmus gewählt (eigene Berechnung); Umsetzung beginnt.
-- Next step: Umsetzung nach dem Plan: §2 Layout-Funktion (Test zuerst), §3 Zustand und Umschalter, §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
+- Goal/Status: Plan §1 (Prototyp) erledigt und committet; §2 bis §6 noch nicht begonnen, kein Code geändert (2026-11-17)
+- Next step: weiter mit §2 (Test zuerst), dann Umsetzung nach dem Plan: §2 Layout-Funktion (Test zuerst), §3 Zustand und Umschalter, §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
 - Open:
   - Gerade oder gekrümmte Kanten in der runden Anordnung: in der Umsetzung am Bild entscheiden (2026-11-17)
   - Drag-and-drop-Zonen vor/nach links der Wurzel: am Bild prüfen, sonst nur „innerhalb“ (2026-11-17)
@@ -14,7 +14,7 @@
   - Runde Anordnung als eigene Berechnung, Ergebnis des Prototyps in den Notizen von `STORY-101` (2026-11-17)
 - References: Spec `TASK-060_spec.md`; Story-Spec `STORY-101_spec.md`
 
-State confirmed after entry 2026-11-17 — Prototyp und Plan (2ef4c59032e5)
+State confirmed after entry 2026-11-17 — Stand zum Weitermachen (4a760ecc451c)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -47,3 +47,30 @@ State confirmed after entry 2026-11-17 — Prototyp und Plan (2ef4c59032e5)
 - Gerade oder gekrümmte Kanten in der runden Anordnung
 - Zonen vor/nach beim Ziehen links der Wurzel
 - Open from 2026-11-17 (Welcher Algorithmus) resolved: eigene Berechnung
+
+## 2026-11-17 — Stand zum Weitermachen
+
+### Discussed
+
+- Erledigt: Plan §1 (Prototyp); Ergebnis und Messwerte in den Notizen von `STORY-101`; `TASK-060` steht auf `In progress`. Es gibt keinen Code im Repository, nur Notizen und Status; alles ist auf `todo_mindmap` committet und gepusht (Commit `2c05502`). Es gibt keinen eigenen Branch für den Task; die Arbeit läuft direkt auf `todo_mindmap`, das Mergen nach `main` entscheidet der Owner.
+- Offen, in dieser Reihenfolge (Plan, im Chat freigegeben, nicht im Backlog gespeichert):
+  - §2 `layoutTree(nodes, mode: "side" | "round")` in `client/src/plugins/mindmap/mindmapLayout.ts`, Test zuerst in `tests/implementation/unit/client/plugins/mindmap/mindmapLayout.test.ts` (keine Überlappung bei einer festen großen Map, Wurzel in der Mitte, Geschwister im Uhrzeigersinn, Anordnung zur Seite unverändert).
+  - §3 UI-State `layout` (`"side"` Standard) in `state.ts` und eine Sektion der Seitenleiste (`core.sidebar-sections`, `when: ["mindmap/main"]`) mit Test nach dem Muster von `MapFilters.test.tsx`; Test-IDs und Texte `de`/`en`.
+  - §4 `MindmapPage.tsx`: Modus an `layoutTree` und in den Layout-Schlüssel; `MindmapNode.tsx`: Anschlüsse links und rechts je als Ziel und Quelle mit fester ID, Kante nach Lage des Kindes zum Elternknoten.
+  - §5 Drag-and-drop in beiden Anordnungen prüfen (Playwright), sonst nur „innerhalb“.
+  - §6 Integration: Tests, Lint, Typprüfung, Techdocs; danach `Awaiting confirmation`.
+- Der Prototyp lag im Scratchpad der Session und ist nicht gesichert. Er ist kein Teil des Repositorys; die Berechnung steht zum Nachbauen hier:
+  1. Teilbaum-Blattzahl berechnen (Blatt = 1).
+  2. Wurzel in die Mitte; Winkel von -90° im Uhrzeigersinn, je Teilbaum ein Sektor nach Blattzahl, der Knoten liegt auf der Mittellinie seines Sektors.
+  3. Knoten nach Tiefe, dann nach Winkel durchgehen; Start-Radius = Radius des Elternknotens + 300 (erste Ebene) bzw. + 260; in 10-px-Schritten nach außen, bis das Rechteck (190 × 36, mit 8 px Abstand) kein bereits gesetztes berührt.
+  4. Ergebnis ist die linke obere Ecke (Mitte minus halbe Größe).
+- Hinweis für die Seite: Die Pläne `TASK-059` und `TASK-058` ändern dieselbe Seite; `TASK-058` ist gemergt, `TASK-059` noch nicht.
+
+### Decided
+
+- Kein eigener Branch für `TASK-060`; weiter auf `todo_mindmap`
+
+### Open
+
+- Gerade oder gekrümmte Kanten in der runden Anordnung
+- Zonen vor/nach beim Ziehen links der Wurzel

@@ -329,3 +329,140 @@ def test_a_project_without_nodes_lists_all_its_items_as_unassigned(mindmap: Env)
         "nodes": [],
         "unassigned": [{"uid": task["uid"], "label": task["label"], "type": "Task", "title": "Item", "status": "Open"}],
     }
+
+
+# --- Knoten löschen und wiederherstellen ---------------------------------------------------------------------------
+
+
+def test_items_of_a_deleted_node_fall_back_to_the_parent_node(mindmap: Env) -> None:
+    top = _node(mindmap, "Oben")
+    child = _node(mindmap, "Kind", parent=top)
+    task = _item(mindmap)
+    _assign(mindmap, child, task)
+
+    assert _delete(mindmap, child).status_code == 200
+
+    assert _stats(mindmap) == {"Oben": (1, 0, "planned")}
+    assert _item_node(mindmap, task) == {"item_uid": task["uid"], "node_uid": top["uid"], "explicit": False}
+
+
+def test_items_of_a_deleted_top_node_become_unassigned(mindmap: Env) -> None:
+    node = _node(mindmap)
+    task = _item(mindmap)
+    _assign(mindmap, node, task)
+
+    _delete(mindmap, node)
+
+    assert _tree(mindmap)["nodes"] == []
+    assert _unassigned(mindmap) == [task["label"]]
+
+
+def test_a_deleted_node_gives_its_item_back_to_the_node_of_the_item_parent(mindmap: Env) -> None:
+    top, other = _node(mindmap, "Oben"), _node(mindmap, "Anderes")
+    epic = _item(mindmap, "Epic")
+    story = _item(mindmap, "Story", parent=epic)
+    _assign(mindmap, top, epic)
+    _assign(mindmap, other, story)
+
+    _delete(mindmap, other)
+
+    assert _item_node(mindmap, story)["node_uid"] == top["uid"]  # als wäre die Zuordnung nie da gewesen
+
+
+def test_restoring_the_node_restores_the_assignment(mindmap: Env) -> None:
+    top = _node(mindmap, "Oben")
+    child = _node(mindmap, "Kind", parent=top)
+    task = _item(mindmap)
+    _assign(mindmap, child, task)
+    _delete(mindmap, child)
+
+    restored = _restore(mindmap, child)
+
+    assert restored.status_code == 200, restored.text
+    assert _stats(mindmap) == {"Oben": (1, 0, "planned"), "Kind": (1, 0, "planned")}
+    assert _item_node(mindmap, task) == {"item_uid": task["uid"], "node_uid": child["uid"], "explicit": True}
+
+
+def test_a_branch_with_its_items_goes_to_the_trash_and_comes_back_together(mindmap: Env) -> None:
+    top = _node(mindmap, "Oben")
+    child = _node(mindmap, "Kind", parent=top)
+    task = _item(mindmap)
+    _assign(mindmap, child, task)
+    _delete(mindmap, top)
+
+    assert _unassigned(mindmap) == [task["label"]]
+    _restore(mindmap, top)
+    assert _unassigned(mindmap) == []
+    assert _stats(mindmap)["Oben"][0] == 1
+
+
+# --- Memos --------------------------------------------------------------------------------------------------------
+
+
+def test_a_memo_can_be_linked_to_several_nodes_and_does_not_count(mindmap: Env) -> None:
+    one, two = _node(mindmap, "Eins"), _node(mindmap, "Zwei")
+    memo = _memo(mindmap)
+
+    for node in (one, two):
+        response = mindmap.client.post(f"{API}/nodes/{node['uid']}/memos", json={"memo": memo["uid"]})
+        assert response.status_code == 200, response.text
+
+    assert _stats(mindmap) == {"Eins": (0, 0, "idea"), "Zwei": (0, 0, "idea")}
+    for node in (one, two):
+        content = mindmap.client.get(f"{API}/nodes/{node['uid']}/content").json()
+        assert [m["label"] for m in content["memos"]] == [memo["label"]]
+    nodes = mindmap.client.get(f"{API}/memos/{memo['uid']}/nodes").json()
+    assert sorted(n["title"] for n in nodes) == ["Eins", "Zwei"]
+
+
+def test_linking_a_memo_twice_changes_nothing_and_it_can_be_unlinked(mindmap: Env) -> None:
+    node = _node(mindmap)
+    memo = _memo(mindmap)
+    url = f"{API}/nodes/{node['uid']}/memos"
+    mindmap.client.post(url, json={"memo": memo["uid"]})
+    assert mindmap.client.post(url, json={"memo": memo["uid"]}).status_code == 200
+
+    assert mindmap.client.delete(f"{url}/{memo['uid']}").status_code == 200
+
+    assert mindmap.client.get(f"{API}/nodes/{node['uid']}/content").json()["memos"] == []
+    assert mindmap.client.delete(f"{url}/{memo['uid']}").status_code == 404
+
+
+def test_a_memo_link_rests_in_the_trash_with_the_node_and_returns_with_it(mindmap: Env) -> None:
+    node = _node(mindmap)
+    memo = _memo(mindmap)
+    mindmap.client.post(f"{API}/nodes/{node['uid']}/memos", json={"memo": memo["uid"]})
+
+    _delete(mindmap, node)
+    assert mindmap.client.get(f"{API}/memos/{memo['uid']}/nodes").json() == []
+    assert mindmap.client.get(f"/api/memos/memos/{memo['uid']}").json()["summary"] == "Idee"  # das Memo bleibt
+
+    _restore(mindmap, node)
+    assert [n["uid"] for n in mindmap.client.get(f"{API}/memos/{memo['uid']}/nodes").json()] == [node["uid"]]
+
+
+def test_an_item_cannot_be_linked_as_a_memo(mindmap: Env) -> None:
+    node = _node(mindmap)
+    task = _item(mindmap)
+
+    response = mindmap.client.post(f"{API}/nodes/{node['uid']}/memos", json={"memo": task["uid"]})
+
+    assert response.status_code == 422
+
+
+def test_the_content_of_a_node_lists_only_its_own_items_by_the_status_filter(mindmap: Env) -> None:
+    top = _node(mindmap, "Oben")
+    child = _node(mindmap, "Kind", parent=top)
+    a, b, deeper = _item(mindmap), _item(mindmap), _item(mindmap)
+    _assign(mindmap, top, a)
+    _assign(mindmap, top, b)
+    _assign(mindmap, child, deeper)
+    _status(mindmap, b, "Completed")
+
+    def labels(statuses: str | None = None) -> list[str]:
+        params = {"statuses": statuses} if statuses else {}
+        body = mindmap.client.get(f"{API}/nodes/{top['uid']}/content", params=params).json()
+        return [i["label"] for i in body["items"]]
+
+    assert labels() == [a["label"], b["label"]]
+    assert labels("Open") == [a["label"]]

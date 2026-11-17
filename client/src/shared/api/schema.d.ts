@@ -917,6 +917,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mindmap/items/{item}/node": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Der wirksame Knoten eines Items und ob es eigens angehängt ist oder erbt */
+        get: operations["mindmap_get_item_node"];
+        put?: never;
+        post?: never;
+        /** Löst die eigene Zuordnung eines Items; es erbt danach den Knoten seines Parents oder ist nicht zugeordnet */
+        delete: operations["mindmap_unassign_item"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/memos/{memo}/nodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Knoten, mit denen ein Memo verlinkt ist (Knoten im Papierkorb fehlen) */
+        get: operations["mindmap_list_memo_nodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mindmap/nodes": {
         parameters: {
             query?: never;
@@ -934,6 +969,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mindmap/nodes/{node}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hängt ein Item (Epic, Story oder Task) an einen Knoten. Seine Kinder erben den Knoten, wenn sie nicht eigens angehängt sind. Ein Item hängt an höchstens einem Knoten: ein zweiter wird mit mindmap_item_assigned abgewiesen, außer `replace` ist gesetzt */
+        post: operations["mindmap_assign_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{node}/memos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verlinkt ein Memo mit einem Knoten; ein Memo darf an mehrere Knoten hängen und zählt nicht in der Zahl */
+        post: operations["mindmap_link_memo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{node}/memos/{memo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Löst den Link zwischen einem Memo und einem Knoten */
+        delete: operations["mindmap_unlink_memo"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mindmap/nodes/{ref}": {
         parameters: {
             query?: never;
@@ -945,6 +1031,23 @@ export interface paths {
         get: operations["mindmap_get_node"];
         /** Ändert Titel oder Text eines Knotens mit Versionsprüfung; ein leerer `text` löscht den Text */
         put: operations["mindmap_update_node"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Das Detail eines Knotens: seine Items (wirksamer Knoten, nach `statuses`) und seine verlinkten Memos */
+        get: operations["mindmap_get_node_content"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -1028,7 +1131,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Der Themenbaum eines Projekts (das Projekt ist die Wurzel): alle Knoten mit Parent und Stelle, Eltern vor Kindern. Knoten im Papierkorb fehlen */
+        /** Der Themenbaum eines Projekts (das Projekt ist die Wurzel): alle Knoten mit Parent und Stelle, Eltern vor Kindern, je Knoten Anzahl, Fortschritt und Zustand über ihn und seine Unterknoten, dazu die Items ohne Knoten. Knoten im Papierkorb fehlen. `statuses` ist der Statusfilter des Backlogs für die Zahlen */
         get: operations["mindmap_get_tree"];
         put?: never;
         post?: never;
@@ -1115,7 +1218,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Verknüpft zwei Elemente (Rolle reference oder origin; 'trigger' legt nur ein Auslöser der Notes an) */
+        /** Verknüpft zwei Elemente (Rolle reference oder origin; 'trigger' legt nur ein Auslöser der Notes an, 'node' die Mindmap) */
         post: operations["workspace_add_link"];
         delete?: never;
         options?: never;
@@ -1133,7 +1236,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Entfernt eine Verknüpfung (nicht die Rolle 'trigger') */
+        /** Entfernt eine Verknüpfung (nicht die Rollen 'trigger' und 'node') */
         delete: operations["workspace_remove_link"];
         options?: never;
         head?: never;
@@ -1661,6 +1764,14 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** Done */
+        Done: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+        };
         /** DueMemoOut */
         DueMemoOut: {
             /** Due Since */
@@ -1840,6 +1951,15 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** ItemNodeOut */
+        ItemNodeOut: {
+            /** Explicit */
+            explicit: boolean;
+            /** Item Uid */
+            item_uid: string;
+            /** Node Uid */
+            node_uid: string | null;
+        };
         /** ItemOut */
         ItemOut: {
             /** Area */
@@ -1890,6 +2010,19 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** ItemRefOut */
+        ItemRefOut: {
+            /** Label */
+            label: string;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+            /** Type */
+            type: string;
+            /** Uid */
+            uid: string;
+        };
         /** ItemSummary */
         ItemSummary: {
             /** Deleted */
@@ -1926,7 +2059,7 @@ export interface components {
              * Role
              * @enum {string}
              */
-            role: "reference" | "origin" | "trigger";
+            role: "reference" | "origin" | "trigger" | "node";
             /** Title */
             title: string;
             /** Uid */
@@ -2013,6 +2146,15 @@ export interface components {
             uid: string;
             /** Version */
             version: number;
+        };
+        /** MemoRefOut */
+        MemoRefOut: {
+            /** Label */
+            label: string;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
         };
         /** MemosAddTriggerBody */
         MemosAddTriggerBody: {
@@ -2260,6 +2402,18 @@ export interface components {
             /** Topic */
             topic: string;
         };
+        /** MindmapAssignItemBody */
+        MindmapAssignItemBody: {
+            /** Item */
+            item: string;
+            /** Project */
+            project?: string | null;
+            /**
+             * Replace
+             * @default false
+             */
+            replace: boolean;
+        };
         /** MindmapCreateNodeBody */
         MindmapCreateNodeBody: {
             /** Parent */
@@ -2272,6 +2426,13 @@ export interface components {
             text?: string | null;
             /** Title */
             title: string;
+        };
+        /** MindmapLinkMemoBody */
+        MindmapLinkMemoBody: {
+            /** Memo */
+            memo: string;
+            /** Project */
+            project?: string | null;
         };
         /** MindmapMoveNodeBody */
         MindmapMoveNodeBody: {
@@ -2305,6 +2466,19 @@ export interface components {
             title?: string | null;
             /** Version */
             version: number;
+        };
+        /**
+         * NodeContentOut
+         * @description Das Detail eines Knotens: die Items, deren wirksamer Knoten er ist (nach Statusfilter, ohne Unterknoten),
+         *     und seine Memos. Memos zählen nicht in der Zahl.
+         */
+        NodeContentOut: {
+            /** Items */
+            items: components["schemas"]["ItemRefOut"][];
+            /** Memos */
+            memos: components["schemas"]["MemoRefOut"][];
+            /** Node Uid */
+            node_uid: string;
         };
         /** NodeOut */
         NodeOut: {
@@ -2644,14 +2818,57 @@ export interface components {
             /** Uid */
             uid: string;
         };
+        /**
+         * TreeNodeOut
+         * @description Ein Knoten im Baum mit den Zahlen über sich und seine Unterknoten (jedes Item zählt genau einmal).
+         */
+        TreeNodeOut: {
+            /** Documents */
+            documents: string[];
+            /**
+             * Done
+             * @default 0
+             */
+            done: number;
+            /** Label */
+            label: string;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Position */
+            position: number;
+            /** Project Uid */
+            project_uid: string;
+            /**
+             * State
+             * @default idea
+             */
+            state: string;
+            /** Text */
+            text: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /** Tree Uid */
+            tree_uid: string;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
         /** TreeOut */
         TreeOut: {
             /** Nodes */
-            nodes: components["schemas"]["NodeOut"][];
+            nodes: components["schemas"]["TreeNodeOut"][];
             /** Project Uid */
             project_uid: string;
             /** Tree Uid */
             tree_uid: string | null;
+            /** Unassigned */
+            unassigned: components["schemas"]["ItemRefOut"][];
         };
         /** TriggerOut */
         TriggerOut: {
@@ -2686,7 +2903,7 @@ export interface components {
              * Role
              * @enum {string}
              */
-            role: "reference" | "origin" | "trigger";
+            role: "reference" | "origin" | "trigger" | "node";
             /** To Uid */
             to_uid: string;
         };
@@ -4925,6 +5142,105 @@ export interface operations {
             };
         };
     };
+    mindmap_get_item_node: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                item: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemNodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_unassign_item: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                item: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Done"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_list_memo_nodes: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                memo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     mindmap_create_node: {
         parameters: {
             query?: never;
@@ -4945,6 +5261,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_assign_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapAssignItemBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_link_memo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapLinkMemoBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_unlink_memo: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                node: string;
+                memo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Done"];
                 };
             };
             /** @description Client Error */
@@ -5014,6 +5434,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_get_node_content: {
+        parameters: {
+            query?: {
+                statuses?: string | null;
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeContentOut"];
                 };
             };
             /** @description Client Error */
@@ -5202,7 +5656,9 @@ export interface operations {
     };
     mindmap_get_tree: {
         parameters: {
-            query?: never;
+            query?: {
+                statuses?: string | null;
+            };
             header?: never;
             path: {
                 project: string;

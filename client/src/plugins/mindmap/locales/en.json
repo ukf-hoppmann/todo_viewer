@@ -4,6 +4,7 @@
 	},
 	"page": {
 		"chooseProject": "Mark a project on the left to see its mind map.",
+		"path": "Path to the focus",
 		"hint": "Double click renames · click opens the detail · drag moves or reorders"
 	},
 	"node": {
@@ -14,6 +15,7 @@
 	"action": {
 		"add": "Add child node",
 		"remove": "Move to trash",
+		"openAsRoot": "Open as root",
 		"expand": "Expand",
 		"collapse": "Collapse",
 		"close": "Close",
@@ -91,7 +93,10 @@
 		"node": "Node",
 		"unassigned": "Unassigned",
 		"inherited": "inherited",
-		"release": "Release assignment"
+		"release": "Release assignment",
+		"goto": "Go there",
+		"create": "Create",
+		"anchor": "Anchor"
 	},
 	"mark": {
 		"none": "None",

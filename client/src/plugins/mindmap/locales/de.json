@@ -4,6 +4,7 @@
 	},
 	"page": {
 		"chooseProject": "Markiere links ein Projekt, um seine Mindmap zu sehen.",
+		"path": "Pfad zum Fokus",
 		"hint": "Doppelklick benennt um · Klick öffnet das Detail · Ziehen hängt um oder ordnet um"
 	},
 	"node": {
@@ -14,6 +15,7 @@
 	"action": {
 		"add": "Unterknoten anlegen",
 		"remove": "In den Papierkorb legen",
+		"openAsRoot": "Als Wurzel öffnen",
 		"expand": "Aufklappen",
 		"collapse": "Zuklappen",
 		"close": "Schließen",
@@ -91,7 +93,10 @@
 		"node": "Knoten",
 		"unassigned": "Nicht zugeordnet",
 		"inherited": "geerbt",
-		"release": "Zuordnung lösen"
+		"release": "Zuordnung lösen",
+		"goto": "Gehe hin",
+		"create": "Erstelle",
+		"anchor": "Anker"
 	},
 	"mark": {
 		"none": "Keine",

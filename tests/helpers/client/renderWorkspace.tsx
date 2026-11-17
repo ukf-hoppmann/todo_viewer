@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import type { ComponentType, ReactElement } from "react";
 import { I18nextProvider } from "react-i18next";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useLocation } from "react-router";
 import { initI18n, PluginRegistryProvider, StoreProvider } from "../../../client/src/core";
 import { SubLayout } from "../../../client/src/core/navigation/SubLayout";
 import type { ActivePlugin, PluginRegistry, WidgetContribution } from "../../../client/src/core/plugins/types";
@@ -25,12 +25,21 @@ export interface CreateType {
 	form: ComponentType;
 }
 
+/** Shows the current address (path and query) of the router, so a test can see where the app navigated to. */
+export const locationTestId = "test.location";
+function LocationProbe() {
+	const { pathname, search } = useLocation();
+	return <span data-testid={locationTestId}>{pathname + search}</span>;
+}
+
 /** Renders a component of the workspace plugin with store, texts, router and the widgets of the test plugins. */
 export async function renderWorkspace(
 	ui: ReactElement,
 	options: {
 		backend?: ReturnType<typeof fakeWorkspaceBackend>;
 		createTypes?: CreateType[];
+		/** The addresses the router starts with (the last one is current); default `/`. The current address is shown under `locationTestId`. */
+		initialEntries?: string[];
 		/** Widgets of other slots, e.g. `backlog.item-detail`. */
 		widgets?: Array<{ ownerId: string; slot: string; name: string; component: ComponentType }>;
 	} = {},
@@ -62,10 +71,11 @@ export async function renderWorkspace(
 		<I18nextProvider i18n={i18n}>
 			<StoreProvider store={backend.store}>
 				<PluginRegistryProvider registry={registry}>
-					<MemoryRouter>
+					<MemoryRouter initialEntries={options.initialEntries}>
 						{/* Pages fill the detail column of their route (`usePageDetail`); other components ignore it. */}
 						<SubLayout ownerId="test" layout={{ detail: true }}>
 							{ui}
+							<LocationProbe />
 						</SubLayout>
 					</MemoryRouter>
 				</PluginRegistryProvider>

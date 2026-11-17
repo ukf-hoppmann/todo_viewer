@@ -126,3 +126,27 @@ export function filterByState<T extends { state: string }>(nodes: readonly T[], 
 export function canDropItem(rootId: string, nodes: readonly PlacedNode[], targetId: string): boolean {
 	return targetId !== rootId && nodes.some((node) => node.uid === targetId);
 }
+
+/** The marks a node can carry (`TASK-065`); no mark is `null`. They change neither counts nor state. */
+export const NODE_MARKS = ["discarded", "later"] as const;
+
+/** How a mark shows: a symbol, a struck-through title, and dimming. */
+export interface MarkLook {
+	icon: "discarded" | "later" | undefined;
+	strike: boolean;
+	dimmed: boolean;
+}
+
+export function markLook(mark: string | null | undefined): MarkLook {
+	if (mark === "discarded") return { icon: "discarded", strike: true, dimmed: true };
+	if (mark === "later") return { icon: "later", strike: false, dimmed: false };
+	return { icon: undefined, strike: false, dimmed: false };
+}
+
+/**
+ * The nodes whose mark is not hidden; a node without a mark always stays. Like `filterByState`, a hidden node takes
+ * its branch from the map, but the mark belongs to that node alone.
+ */
+export function filterByMark<T extends { mark?: string | null }>(nodes: readonly T[], hiddenMarks: readonly string[]): T[] {
+	return hiddenMarks.length === 0 ? [...nodes] : nodes.filter((node) => !node.mark || !hiddenMarks.includes(node.mark));
+}

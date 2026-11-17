@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canDropItem, defaultOpen, dropPlacement, filterByState, isOpen, nodeLook, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
+import { canDropItem, defaultOpen, dropPlacement, filterByMark, filterByState, isOpen, markLook, nodeLook, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
 import { node } from "../../../../../helpers/client/mindmapFixtures";
 
 const nodes = [node("a"), node("b", null, 1), node("a1", "a"), node("a2", "a", 1), node("a11", "a1"), node("a111", "a11")];
@@ -157,5 +157,48 @@ describe("canDropItem", () => {
 	it("does not offer the root (the project) or a node that is not there", () => {
 		expect(canDropItem("p1", all, "p1")).toBe(false);
 		expect(canDropItem("p1", all, "gone")).toBe(false);
+	});
+});
+
+describe("markLook", () => {
+	it("shows nothing for a node without a mark", () => {
+		expect(markLook(null)).toEqual({ icon: undefined, strike: false, dimmed: false });
+	});
+
+	it("strikes a discarded node through and dims it", () => {
+		expect(markLook("discarded")).toEqual({ icon: "discarded", strike: true, dimmed: true });
+	});
+
+	it("marks a node for later with its own symbol, without striking it through", () => {
+		expect(markLook("later")).toEqual({ icon: "later", strike: false, dimmed: false });
+	});
+
+	it("treats an unknown mark like none", () => {
+		expect(markLook("other")).toEqual({ icon: undefined, strike: false, dimmed: false });
+	});
+});
+
+describe("filterByMark", () => {
+	const marked = [
+		{ ...node("a"), mark: "discarded" },
+		{ ...node("a1", "a"), mark: null },
+		{ ...node("b", null, 1), mark: "later" },
+		{ ...node("c", null, 2), mark: null },
+	];
+
+	it("keeps everything while no mark is hidden", () => {
+		expect(filterByMark(marked, []).map((entry) => entry.uid)).toEqual(["a", "a1", "b", "c"]);
+	});
+
+	it("drops the nodes of a hidden mark, never a node without a mark", () => {
+		expect(filterByMark(marked, ["later"]).map((entry) => entry.uid)).toEqual(["a", "a1", "c"]);
+		expect(filterByMark(marked, ["discarded", "later"]).map((entry) => entry.uid)).toEqual(["a1", "c"]);
+	});
+
+	it("takes the branch of a hidden node from the map; the mark itself stays on the node alone", () => {
+		const kept = filterByMark(marked, ["discarded"]);
+
+		expect(kept.find((entry) => entry.uid === "a1")?.mark).toBeNull();
+		expect(visibleNodes("p1", kept, { a: "open" }).map((entry) => entry.id)).toEqual(["p1", "b", "c"]);
 	});
 });

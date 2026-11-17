@@ -7,7 +7,8 @@ import { detail } from "../../../../../helpers/client/backlogFixtures";
 import { fakeMindmapBackend } from "../../../../../helpers/client/fakeMindmapBackend";
 import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
 import { itemRef, node, nodeItem } from "../../../../../helpers/client/mindmapFixtures";
-import { locationTestId, renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
+import { locationTestId } from "../../../../../helpers/client/locationTestId";
+import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 afterEach(cleanup);
 

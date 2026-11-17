@@ -7,7 +7,8 @@ import { sharedTestIds } from "../../../../../../client/src/shared";
 import { fakeMindmapBackend } from "../../../../../helpers/client/fakeMindmapBackend";
 import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
 import { itemRef, node } from "../../../../../helpers/client/mindmapFixtures";
-import { locationTestId, renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
+import { locationTestId } from "../../../../../helpers/client/locationTestId";
+import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 // jsdom has no layout: React Flow is replaced by a list of the nodes it is given and a record of its edges.
 vi.mock("@xyflow/react", () => {

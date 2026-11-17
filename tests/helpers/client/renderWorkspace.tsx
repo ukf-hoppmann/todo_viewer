@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import type { ComponentType, ReactElement } from "react";
 import { I18nextProvider } from "react-i18next";
-import { MemoryRouter, useLocation } from "react-router";
+import { MemoryRouter } from "react-router";
 import { initI18n, PluginRegistryProvider, StoreProvider } from "../../../client/src/core";
 import { SubLayout } from "../../../client/src/core/navigation/SubLayout";
 import type { ActivePlugin, PluginRegistry, WidgetContribution } from "../../../client/src/core/plugins/types";
@@ -16,6 +16,7 @@ import mindmapEn from "../../../client/src/plugins/mindmap/locales/en.json";
 import de from "../../../client/src/plugins/workspace/locales/de.json";
 import en from "../../../client/src/plugins/workspace/locales/en.json";
 import { fakeWorkspaceBackend } from "./fakeWorkspaceBackend";
+import { LocationProbe } from "./LocationProbe";
 
 /** A plugin of the test that hangs a create form into `workspace.create-types`; its title is `create.<name>`. */
 export interface CreateType {
@@ -25,20 +26,13 @@ export interface CreateType {
 	form: ComponentType;
 }
 
-/** Shows the current address (path and query) of the router, so a test can see where the app navigated to. */
-export const locationTestId = "test.location";
-function LocationProbe() {
-	const { pathname, search } = useLocation();
-	return <span data-testid={locationTestId}>{pathname + search}</span>;
-}
-
 /** Renders a component of the workspace plugin with store, texts, router and the widgets of the test plugins. */
 export async function renderWorkspace(
 	ui: ReactElement,
 	options: {
 		backend?: ReturnType<typeof fakeWorkspaceBackend>;
 		createTypes?: CreateType[];
-		/** The addresses the router starts with (the last one is current); default `/`. The current address is shown under `locationTestId`. */
+		/** The addresses the router starts with (the last one is current); default `/`. The current address is shown under `locationTestId` (`locationTestId.ts`). */
 		initialEntries?: string[];
 		/** Widgets of other slots, e.g. `backlog.item-detail`. */
 		widgets?: Array<{ ownerId: string; slot: string; name: string; component: ComponentType }>;

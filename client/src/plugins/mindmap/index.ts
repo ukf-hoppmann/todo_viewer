@@ -14,7 +14,8 @@ import { MapFilters } from "./MapFilters";
  * the trash in the map, title, text and documents (notes, specs) are edited in the detail column. What the user folded and the selected node
  * are kept in the UI state of the server under the owner `mindmap`. A node shows the count and progress of its items
  * (with its sub-nodes) and its state; the sidebar filters the nodes by state and shows the status filter of the
- * backlog, by which the server counts.
+ * backlog, by which the server counts. The view can start at a node (the focus, `?focus=<uid>` in the address, with the
+ * path back above the map); the detail of an item offers "Gehe hin", "Erstelle" and "Anker".
  */
 export const plugin = definePlugin({
 	i18n: { de, en },

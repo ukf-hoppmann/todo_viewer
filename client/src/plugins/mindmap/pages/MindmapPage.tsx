@@ -7,7 +7,7 @@ import { usePageDetail } from "../../../core";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
 import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
-import { canDropItem, dropPlacement, filterByState, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
+import { canDropItem, dropPlacement, filterByMark, filterByState, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import { MapActionsContext, type MapActions } from "../mapActions";
 import { layoutTree } from "../mindmapLayout";
 import { MindmapNode, type TopicNode } from "../MindmapNode";
@@ -40,7 +40,7 @@ export default function MindmapPage() {
 	const { currentData: tree } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: !project });
 	const nodes = tree?.nodes ?? NO_NODES;
 	const unassigned = tree?.unassigned ?? NO_ITEMS;
-	const { fold, setFold, selected, setSelected, hiddenStates, showUnassigned } = useMindmapState();
+	const { fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned } = useMindmapState();
 	const [createNode] = useCreateNodeMutation();
 	const [updateNode] = useUpdateNodeMutation();
 	const [moveNode] = useMoveNodeMutation();
@@ -54,8 +54,8 @@ export default function MindmapPage() {
 	const [error, setError] = useState<string>();
 	const rootId = project?.uid;
 
-	// The filter hides nodes by their state; a hidden node takes its branch from the map. Moving still sees all nodes.
-	const shown = useMemo(() => (rootId ? visibleNodes(rootId, filterByState(nodes, hiddenStates), fold) : []), [rootId, nodes, fold, hiddenStates]);
+	// The filters hide nodes by their state and mark; a hidden node takes its branch from the map. Moving still sees all nodes.
+	const shown = useMemo(() => (rootId ? visibleNodes(rootId, filterByMark(filterByState(nodes, hiddenStates), hiddenMarks), fold) : []), [rootId, nodes, fold, hiddenStates, hiddenMarks]);
 
 	// The layout depends only on which nodes hang where, not on their titles: renaming keeps every node in place.
 	const structureKey = JSON.stringify(shown.map(({ id, parentId }) => ({ id, parentId })));
@@ -213,6 +213,7 @@ export default function MindmapPage() {
 							hasChildren: entry.hasChildren,
 							hasNotes: (entry.node?.documents.length ?? 0) > 0,
 							state: entry.node?.state,
+							mark: entry.node?.mark,
 							total: entry.node?.total,
 							done: entry.node?.done,
 							open: entry.open,

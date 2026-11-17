@@ -22,7 +22,8 @@
 	"field": {
 		"title": "Titel",
 		"text": "Text",
-		"documents": "Dokumente"
+		"documents": "Dokumente",
+		"mark": "Markierung"
 	},
 	"error": {
 		"failed": "Die Änderung ist fehlgeschlagen",
@@ -52,7 +53,8 @@
 	},
 	"filter": {
 		"state": "Zustand",
-		"unassigned": "Nicht zugeordnet anzeigen"
+		"unassigned": "Nicht zugeordnet anzeigen",
+		"mark": "Markierung"
 	},
 	"state": {
 		"idea": "Idee",
@@ -90,5 +92,10 @@
 		"unassigned": "Nicht zugeordnet",
 		"inherited": "geerbt",
 		"release": "Zuordnung lösen"
+	},
+	"mark": {
+		"none": "Keine",
+		"discarded": "Verworfen",
+		"later": "Später"
 	}
 }

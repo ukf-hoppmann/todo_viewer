@@ -22,7 +22,8 @@
 	"field": {
 		"title": "Title",
 		"text": "Text",
-		"documents": "Documents"
+		"documents": "Documents",
+		"mark": "Mark"
 	},
 	"error": {
 		"failed": "The change failed",
@@ -52,7 +53,8 @@
 	},
 	"filter": {
 		"state": "State",
-		"unassigned": "Show unassigned"
+		"unassigned": "Show unassigned",
+		"mark": "Mark"
 	},
 	"state": {
 		"idea": "Idea",
@@ -90,5 +92,10 @@
 		"unassigned": "Unassigned",
 		"inherited": "inherited",
 		"release": "Release assignment"
+	},
+	"mark": {
+		"none": "None",
+		"discarded": "Discarded",
+		"later": "Later"
 	}
 }

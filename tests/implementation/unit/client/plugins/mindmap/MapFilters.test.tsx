@@ -16,7 +16,7 @@ async function renderFilters(documents: Record<string, Record<string, unknown>> 
 }
 const stored = async (backend: Awaited<ReturnType<typeof renderFilters>>) => {
 	await flushUiState(backend.store);
-	return backend.documents.get("mindmap") as { hiddenStates?: string[]; showUnassigned?: boolean } | undefined;
+	return backend.documents.get("mindmap") as { hiddenStates?: string[]; hiddenMarks?: string[]; showUnassigned?: boolean } | undefined;
 };
 
 describe("MapFilters: the sidebar section of the mind map", () => {
@@ -49,5 +49,21 @@ describe("MapFilters: the sidebar section of the mind map", () => {
 		fireEvent.click(screen.getByTestId(ids.unassignedSwitch));
 
 		await waitFor(async () => expect((await stored(backend))?.showUnassigned).toBe(false));
+	});
+
+	it("offers the two marks, shown at the start, and keeps a hidden one in the UI state", async () => {
+		const backend = await renderFilters();
+		await screen.findByTestId(ids.stateFilter);
+		expect(screen.getByTestId(ids.stateFilter).textContent).toContain("Verworfen");
+		expect(screen.getByTestId(ids.stateFilter).textContent).toContain("Später");
+		for (const mark of ["discarded", "later"]) {
+			expect((screen.getByTestId(sharedTestIds.filterOption(mark)) as HTMLInputElement).checked).toBe(true);
+		}
+
+		fireEvent.click(screen.getByTestId(sharedTestIds.filterOption("later")));
+
+		await waitFor(async () => expect((await stored(backend))?.hiddenMarks).toEqual(["later"]));
+		expect((screen.getByTestId(sharedTestIds.filterOption("later")) as HTMLInputElement).checked).toBe(false);
+		expect((await stored(backend))?.hiddenStates ?? []).toEqual([]);
 	});
 });

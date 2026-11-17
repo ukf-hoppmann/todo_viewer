@@ -117,6 +117,7 @@ export function fakeMindmapBackend(options: Options = {}) {
 					total: 0,
 					done: 0,
 					state: "idea",
+					mark: null,
 				};
 				nodes = [...nodes, node];
 				return Response.json(node);
@@ -160,6 +161,7 @@ export function fakeMindmapBackend(options: Options = {}) {
 					...found,
 					...(typeof body.title === "string" ? { title: body.title } : {}),
 					...(typeof body.text === "string" ? { text: body.text === "" ? null : body.text } : {}),
+					...(typeof body.mark === "string" ? { mark: body.mark === "" ? null : body.mark } : {}),
 					version: found.version + 1,
 				};
 				nodes = nodes.map((entry) => (entry.uid === changed.uid ? changed : entry));

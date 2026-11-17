@@ -584,3 +584,57 @@ describe("MindmapPage: the side view Nicht zugeordnet", () => {
 		expect(backend.calls("POST", "mindmap/nodes/b/items")).toHaveLength(0);
 	});
 });
+
+describe("MindmapPage: marks", () => {
+	const withMarks = [
+		node("a", null, 0, { mark: "discarded", total: 2, done: 1, state: "in_progress" }),
+		node("b", null, 1, { mark: "later" }),
+		node("c", null, 2),
+		node("a1", "a", 0, { total: 1, state: "planned" }),
+	];
+
+	it("sets a discarded node apart: symbol, struck-through title, dimmed; its count and state stay", async () => {
+		await renderPage({ nodes: withMarks });
+
+		await screen.findByTestId(ids.node("a"));
+		const a = screen.getByTestId(ids.node("a"));
+		expect(a.dataset.mark).toBe("discarded");
+		expect(screen.getByTestId(ids.mark("a")).getAttribute("data-mark")).toBe("discarded");
+		expect(getComputedStyle(a.querySelector("[class*='MuiTypography-body2']")!).textDecoration).toContain("line-through");
+		expect(getComputedStyle(a).opacity).toBe("0.45");
+		expect(a.dataset.state).toBe("in_progress");
+		expect(screen.getByTestId(ids.count("a")).textContent).toBe("2");
+	});
+
+	it("marks a node for later with its own symbol and does not strike its title through", async () => {
+		await renderPage({ nodes: withMarks });
+
+		await screen.findByTestId(ids.node("b"));
+		expect(screen.getByTestId(ids.node("b")).dataset.mark).toBe("later");
+		expect(screen.getByTestId(ids.mark("b")).getAttribute("data-mark")).toBe("later");
+		expect(getComputedStyle(screen.getByTestId(ids.node("b")).querySelector("[class*='MuiTypography-body2']")!).textDecoration).not.toContain("line-through");
+	});
+
+	it("shows nothing for a node without a mark, and nothing for the root", async () => {
+		await renderPage({ nodes: withMarks });
+
+		await screen.findByTestId(ids.node("c"));
+		expect(screen.getByTestId(ids.node("c")).dataset.mark).toBeUndefined();
+		expect(screen.queryByTestId(ids.mark("c"))).toBeNull();
+		expect(screen.queryByTestId(ids.mark("p1"))).toBeNull();
+	});
+
+	it("hides the nodes of a hidden mark; the children of a hidden node go with it, but carry no mark", async () => {
+		await renderPage({ nodes: withMarks, documents: { ...marked, mindmap: { hiddenMarks: ["discarded"] } } });
+
+		await screen.findByTestId(ids.node("b"));
+		expect(shownIds()).toEqual(["p1", "b", "c"]);
+	});
+
+	it("shows everything by default, marked nodes included", async () => {
+		await renderPage({ nodes: withMarks });
+
+		await screen.findByTestId(ids.node("b"));
+		expect(shownIds()).toEqual(["p1", "a", "a1", "b", "c"]);
+	});
+});

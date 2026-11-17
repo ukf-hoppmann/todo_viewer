@@ -1,19 +1,21 @@
 import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import BlockIcon from "@mui/icons-material/Block";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DeleteIcon from "@mui/icons-material/DeleteOutlined";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import NotesIcon from "@mui/icons-material/StickyNote2Outlined";
 import { Box, InputBase, Typography } from "@mui/material";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { memo, useRef, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { dropPosition, IconAction, ProgressRing } from "../../shared";
-import { nodeLook, type DropZone } from "./domain/tree";
+import { markLook, nodeLook, type DropZone } from "./domain/tree";
 import { useMapActions } from "./mapActions";
 import { NODE_HEIGHT, NODE_WIDTH } from "./mindmapLayout";
 import { mindmapTestIds } from "./testIds";
 
-export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; hasNotes?: boolean; state?: string; total?: number; done?: number; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone };
+export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; hasNotes?: boolean; state?: string; mark?: string | null; total?: number; done?: number; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone };
 export type TopicNode = Node<TopicData, "topic">;
 
 const HIDDEN_HANDLE = { opacity: 0, pointerEvents: "none" } as const;
@@ -24,12 +26,14 @@ const HIDDEN_HANDLE = { opacity: 0, pointerEvents: "none" } as const;
  * the project: it cannot be renamed or deleted. A node is dragged onto another one to move it with its branch: the
  * upper quarter of the target places it before, the lower quarter after, the middle below the target; the page says
  * whether a place is offered and marks it (`drop`). A node with items shows a progress ring and their count; an
- * idea is dashed and hollow, a finished node dimmed (`nodeLook`).
+ * idea is dashed and hollow, a finished node dimmed (`nodeLook`). A marked node ("verworfen", "später") carries a
+ * symbol; a discarded one is also struck through and dimmed more (`markLook`).
  */
 export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNode>) {
-	const { id, title, isRoot, hasChildren, hasNotes, state = "idea", total = 0, done = 0, open, selected, editing, dragging, drop } = data;
+	const { id, title, isRoot, hasChildren, hasNotes, state = "idea", mark = null, total = 0, done = 0, open, selected, editing, dragging, drop } = data;
 	const { t } = useTranslation("mindmap");
 	const actions = useMapActions();
+	const marked = isRoot ? markLook(null) : markLook(mark);
 	const look = isRoot ? { dashed: false, hollow: false, dimmed: false, counts: false } : nodeLook(state, total);
 	// Esc ends the edit; the blur that follows must not save it.
 	const cancelled = useRef(false);
@@ -43,6 +47,7 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 			data-testid={mindmapTestIds.node(id)}
 			data-selected={selected}
 			data-state={isRoot ? undefined : state}
+			data-mark={marked.icon}
 			data-drop={drop}
 			className={isRoot ? undefined : "nodrag nopan"}
 			draggable={!isRoot && !editing}
@@ -77,7 +82,7 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 				borderColor: selected || isRoot || drop === "inside" ? "primary.main" : "divider",
 				borderStyle: drop === "inside" || look.dashed ? "dashed" : "solid",
 				bgcolor: selected || drop === "inside" ? "action.selected" : look.hollow ? "transparent" : "background.paper",
-				opacity: dragging ? 0.5 : look.dimmed ? 0.55 : 1,
+				opacity: dragging ? 0.5 : marked.dimmed ? 0.45 : look.dimmed ? 0.55 : 1,
 				cursor: isRoot ? "default" : "pointer",
 				"& .mindmap-node-actions": { visibility: "hidden" },
 				"&:hover .mindmap-node-actions, &:focus-within .mindmap-node-actions": { visibility: "visible" },
@@ -116,9 +121,18 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 					inputProps={{ "data-testid": mindmapTestIds.titleInput(id), "aria-label": t("field.title") }}
 				/>
 			) : (
-				<Typography variant="body2" noWrap sx={{ flexGrow: 1, minWidth: 0, fontWeight: isRoot ? 600 : 400 }}>
+				<Typography variant="body2" noWrap sx={{ flexGrow: 1, minWidth: 0, fontWeight: isRoot ? 600 : 400, textDecoration: marked.strike ? "line-through" : "none" }}>
 					{title}
 				</Typography>
+			)}
+			{marked.icon && !editing && (
+				<Box sx={{ display: "flex", flexShrink: 0 }} data-testid={mindmapTestIds.mark(id)} data-mark={marked.icon}>
+					{marked.icon === "discarded" ? (
+						<BlockIcon fontSize="small" color="error" titleAccess={t("mark.discarded")} />
+					) : (
+						<ScheduleIcon fontSize="small" color="info" titleAccess={t("mark.later")} />
+					)}
+				</Box>
 			)}
 			{look.counts && !editing && (
 				<Box

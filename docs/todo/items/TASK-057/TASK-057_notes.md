@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt und im Browser geprüft; wartet auf die Bestätigung des Owners (2026-11-17).
-- Next step: Owner bestätigt `Completed`; danach TASK-065 (Markierungen) (2026-11-17)
+- Goal/Status: Umgesetzt, im Browser geprüft und vom Owner bestätigt (2026-11-17).
+- Next step: TASK-065 (Markierungen) in eigener Session (2026-11-17)
 - Open:
 - Decided:
   - Ein Zustandsfilter blendet einen Knoten samt Ast aus; Umhängen sieht weiter alle Knoten (2026-11-17)
@@ -14,7 +14,7 @@
   - Memos werden im Knoten-Detail verlinkt, nicht im Memo-Detail (2026-11-17)
 - References: Spec TASK-057_spec.md; Story-Spec STORY-100_spec.md; Doku neubau-client.md, Abschnitt Plugin `mindmap`
 
-State confirmed after entry 2026-11-17 — Plan und Umsetzung (ea1d34805d6a)
+State confirmed after entry 2026-11-17 — Bestätigung (5a3348807789)
 
 ## 2026-11-17 — Plan und Umsetzung
 
@@ -34,3 +34,9 @@ State confirmed after entry 2026-11-17 — Plan und Umsetzung (ea1d34805d6a)
 
 - Server mit Beispieldaten (Epic, Story, Tasks, vier Knoten, zwei lose Items), Chromium über Playwright. Geprüft: Ring und Zahl am Knoten, Idee gestrichelt, Ziehen eines losen Items auf „Ideen“ (Knoten wechselt von Idee zu Geplant, Item verlässt die Liste), Detail mit geerbten und eigenen Items, Zustandsfilter, Statusfilter „Completed“ ändert die Zahlen (Import 3 → 4, Anzeige 1 → 2), Schalter der Seitenansicht, Knoten im Item-Detail setzen. Keine Konsolenfehler.
 - Tests: Client 1288 grün, Server-Tests der Mindmap 118 grün. Der ESLint-Fehler in `usePersistentState.ts` und zwei E501 in `ruff` bestehen schon ohne diese Änderung.
+
+## 2026-11-17 — Bestätigung
+
+### Decided
+
+- Der Owner hat den Task bestätigt (`Completed`); er ist archiviert.

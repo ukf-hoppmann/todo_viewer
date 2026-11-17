@@ -8,6 +8,32 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `TASK-057` **Mindmap: Zahl, Fortschrittsring, Zustand und Filter am Knoten, Items und Memos im Detail**
+  - Uid: 0401cbeb-4e8c-42db-b37a-57b857f6772e.
+  - Type: Task.
+  - Parent: `STORY-100`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-056`.
+  - Goal: Die Map zeigt an jedem Knoten Anzahl, Fortschrittsring und Zustand,
+    bietet einen Filter über die Zustände und listet im Detail die Items und
+    Memos des Knotens; Items lassen sich in der Oberfläche zuordnen und lösen.
+  - Completion criteria: 1. Ideen-Knoten sind gestrichelt und hohl, Knoten mit
+    Items zeigen Ring und Zahl, erledigte sind gedimmt.
+    2. Der Filter blendet Knoten nach Zustand aus; die Seitenansicht „Nicht
+    zugeordnet“ listet Items ohne Knoten, lässt sich ausschalten, und Items
+    lassen sich von dort per Drag-and-drop einem Knoten zuordnen.
+    3. Im Detail eines Knotens und eines Items lässt sich die Zuordnung setzen
+    und lösen.
+    4. Zahl, Ring und Detail folgen dem Statusfilter des Backlogs.
+    5. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
+  - Summary: Die Mindmap zeigt an jedem Thema Zahl, Fortschritt und Zustand.
+    Items lassen sich per Ziehen oder im Detail zuordnen und lösen.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
+
 - `TASK-056` **Mindmap-Server: Items und Memos zuordnen, Vererbung, Summen und Zustand**
   - Uid: b8dc196f-65c2-4f22-a846-46d853a2ec75.
   - Type: Task.

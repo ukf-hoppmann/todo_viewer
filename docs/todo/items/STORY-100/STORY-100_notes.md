@@ -3,10 +3,10 @@
 ## State
 
 - Goal/Status: Geplant; drei Tasks (TASK-056, TASK-057, TASK-065); offene Punkte werden der Reihe nach geklärt (2026-11-17).
-- Next step: TASK-057 (Kriterium 2 nennt noch den Sammelknoten) anpassen; Spec bei Umsetzungsbeginn schreiben (2026-11-17)
+- Next step: Spec bei Umsetzungsbeginn schreiben; danach mit TASK-056 beginnen (2026-11-17)
 - Open:
-  - TASK-057 Kriterium 2: „Sammelknoten“ durch Seitenansicht ersetzen (2026-11-17)
 - Decided:
+  - TASK-057 Kriterium 2 auf die Seitenansicht umgestellt (2026-11-17)
   - Goal und Kriterien 1, 2, 5 an die Entscheidungen vom 2026-11-17 angepasst (Seitenansicht, Papierkorb, Löschen von Knoten) (2026-11-17)
   - „Nicht zugeordnet“ ist kein Knoten, sondern eine berechnete Seitenansicht je Projekt (wie „Entfernt“ im Formular-Editor): sie listet Items ohne Knoten; per Drag-and-drop ordnet man sie Knoten zu; die Seitenansicht lässt sich ausschalten; sie zählt nicht im Baum (2026-11-17)
   - Wird ein Knoten gelöscht, fallen seine Items an den Parent-Knoten zurück, sonst in „Nicht zugeordnet“; Ergebnis, als wäre der Knoten nie da gewesen (2026-11-17)
@@ -26,7 +26,7 @@
   - Verworfen: strikte Vererbung vom Wurzel-Item ohne Ausnahme; sie verhindert das Planen unterhalb eines Epic-Knotens (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-17 — Goal und Kriterien angepasst (65cf35e36edd)
+State confirmed after entry 2026-11-17 — TASK-057 an die Seitenansicht angepasst (a37873406fa4)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -171,3 +171,13 @@ State confirmed after entry 2026-11-17 — Goal und Kriterien angepasst (65cf35e
 ### Open
 
 - TASK-057 Kriterium 2 nennt noch den Sammelknoten.
+
+## 2026-11-17 — TASK-057 an die Seitenansicht angepasst
+
+### Decided
+
+- Der Owner stimmte zu: Kriterium 2 von `TASK-057` nennt statt des Sammelknotens die Seitenansicht „Nicht zugeordnet“ mit Ausschalter und Drag-and-drop.
+
+### Open
+
+- Open from 2026-11-17 (Goal und Kriterien angepasst) resolved: TASK-057 ist angepasst. Keine offenen Punkte mehr.

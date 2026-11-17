@@ -110,8 +110,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Memos des Knotens; Items lassen sich in der Oberfläche zuordnen und lösen.
   - Completion criteria: 1. Ideen-Knoten sind gestrichelt und hohl, Knoten mit
     Items zeigen Ring und Zahl, erledigte sind gedimmt.
-    2. Der Filter blendet Knoten nach Zustand aus; der Sammelknoten „Nicht
-    zugeordnet“ zeigt seine Zahl.
+    2. Der Filter blendet Knoten nach Zustand aus; die Seitenansicht „Nicht
+    zugeordnet“ listet Items ohne Knoten, lässt sich ausschalten, und Items
+    lassen sich von dort per Drag-and-drop einem Knoten zuordnen.
     3. Im Detail eines Knotens und eines Items lässt sich die Zuordnung setzen
     und lösen.
     4. UI-Tests sind grün und der Ablauf ist im Browser geprüft.

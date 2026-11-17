@@ -87,6 +87,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     legt unter ihm einen Knoten mit dem Namen des Items an und hängt es eigens
     dorthin; „Anker“ gibt es nur mit eigenem Knoten.
     3. UI-Tests sind grün.
+  - Summary: Eine Map ab einem beliebigen Knoten öffnen, mit Pfad zurück, und vom Item aus zur Map springen, dort einen Knoten anlegen oder ihn als Wurzel öffnen.
 
 - `TASK-059` **Mindmap: Gesamtansicht mit gemeinsamer Wurzel über die gewählten Projekte**
   - Uid: 9d65405e-bef7-4405-b7d3-693fbbfc7615.
@@ -105,6 +106,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     wegschalten wirkt sofort.
     2. Die Summen an der gemeinsamen Wurzel zählen jedes Item einmal.
     3. UI-Tests sind grün.
+  - Summary: Alle gewählten Projekte unter einer gemeinsamen Wurzel in einer Map sehen; umschaltbar zur Einzelansicht.
 
 - `TASK-060` **Mindmap: runde Anordnung, umschaltbar zur Anordnung zur Seite**
   - Uid: a52f7b44-3538-457d-8e85-46d493bdd7d9.
@@ -125,6 +127,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     2. Beide Anordnungen sind umschaltbar und die Wahl bleibt gespeichert.
     3. Eine Map mit vielen Knoten bleibt in der runden Anordnung ohne
     Überlappung lesbar.
+  - Summary: Die Map rund um die Wurzel anordnen oder zur Seite; ein Prototyp mit großer Map klärt vorher, ob ELK genügt.
 
 - `TASK-061` **Mindmap: Abhängigkeiten zwischen Themen ein- und ausblenden**
   - Uid: c9b91950-7822-42e1-9b52-d0d3d0176a6f.
@@ -142,6 +145,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     und ihren wirksamen Knoten zusammengefasst; die reine Funktion ist
     getestet.
     2. Der Schalter ist standardmäßig aus und sein Zustand bleibt gespeichert.
+  - Summary: Linien zwischen Themen zeigen, deren Items voneinander abhängen; ein Schalter, standardmäßig aus.
 
 - `STORY-102` **Freie Maps und Äste zwischen Bäumen umhängen und übertragen**
   - Uid: 5e2233a4-bac0-482b-8890-66e0855fa8e0.

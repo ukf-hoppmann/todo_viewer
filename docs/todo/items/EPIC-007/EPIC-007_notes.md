@@ -2,17 +2,16 @@
 
 ## State
 
-- Goal/Status: Alle Abschlusskriterien geprüft; `Awaiting confirmation`, der Owner bestätigt (2026-11-17).
-- Next step: Owner bestätigt das Epic. Die Doku, die noch den alten Viewer beschreibt, wird umgestellt (2026-11-17).
+- Goal/Status: Vom Owner bestätigt und archiviert (2026-11-17).
+- Next step: Keiner; das Epic ist abgeschlossen (2026-11-17).
 - Open:
-  - README und Techdocs (`architecture.md`, `configuration.md`, `interfaces.md`) beschreiben teils noch den alten Viewer und verweisen auf `src_old/` (2026-11-17)
 - Decided:
   - `src_old/` ist nach der Abnahme des Neubaus durch den Owner entfernt worden, samt Dockerfile, `todo_old.sh`, `scripts/check.sh`, Root-`pyproject.toml` und dem alten Compose-Dienst (2026-11-17)
   - Die Architekturscopes `legacy`, `backend` und `web` entfallen; Regel 0 gilt nur noch für `reference/` (2026-11-17)
   - `STORY-086` und `STORY-092` sind in das neue Epic „Nachbesserungen am Neubau“ umgehängt (2026-11-17)
 - References: Spec `EPIC-007_spec.md`; Stories `STORY-060` bis `STORY-092`; neues Epic `NEW-nachbesserungen-neubau`
 
-State confirmed after entry 2026-11-17 — Abschlusskriterien geprüft (1df955cbfabe)
+State confirmed after entry 2026-11-17 — Bestätigung (b6af08403f35)
 
 ## 2026-10-16 — Architektur-Grundsatzfragen
 
@@ -163,3 +162,17 @@ State confirmed after entry 2026-11-17 — Abschlusskriterien geprüft (1df955cb
 ### Open
 
 - Doku zum alten Viewer auf den Neubau umstellen
+
+## 2026-11-17 — Bestätigung
+
+### Discussed
+
+- README, `architecture.md`, `configuration.md`, `operations.md` und `interfaces.md` beschreiben jetzt den Neubau; die Abschnitte zur alten HTTP-API v2, den alten Dateiformaten und zu `src_old/` entfielen.
+
+### Decided
+
+- Vom Projekteigner am 2026-11-17 bestätigt (`Completed`, archiviert)
+
+### Open
+
+- Open from 2026-11-17 (Doku zum alten Viewer) resolved: umgestellt

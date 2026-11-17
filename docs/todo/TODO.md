@@ -331,27 +331,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Bestätigung, nach dem Live-Gang. Ziehen zwischen Projekten gibt es
     nicht.
 
-- `EPIC-007` **Neuentwicklung als eigenständiges Tool**
-  - Uid: c3a3ff5a-e320-4b04-af05-30257804a721.
-  - Type: Epic.
-  - Status: Awaiting confirmation.
-  - Created: 2026-10-10.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Das ToDo-Viewer wird von Grund auf neu entwickelt, mit einer
-    tragfähigen Architektur und einem relationalen Datenmodell in der
-    Datenbank. Es wird ein eigenständiges Produkt, das der KI eine API
-    bietet und nicht mehr als Teil des KI-Harness entsteht.
-  - Completion criteria: 1. Die Architektur ist dokumentiert und vom
-    Projektinhaber freigegeben. 2. Das relationale Datenmodell ist
-    umgesetzt. 3. Die neue Version deckt den Funktionsumfang von v0.8.7 ab,
-    die API für die KI eingeschlossen. 4. Bestehende Backlogs lassen sich in
-    die neue Datenbank übernehmen. 5. Das Tool läuft und ist dokumentiert,
-    ohne Harness-Bezug. 6. Der Cutover ist erfolgt und der Altcode entfernt.
-  - Summary: Kompletter Neubau des ToDo-Viewers mit besserer Architektur und
-    relationaler Datenstruktur, als eigenständiges Tool mit API für die KI.
-
 - `STORY-092` **MCP-Server fehlerarm für Agenten: Projektbindung, Labels, typisierte Felder**
   - Uid: 203401d1-c591-4737-9d56-60aea47a3fec.
   - Type: Story.

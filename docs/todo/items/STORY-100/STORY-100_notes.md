@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Alle drei Tasks sind vom Owner bestätigt; die Kriterien sind geprüft und erfüllt; wartet auf die Bestätigung des Owners (2026-11-17).
-- Next step: Owner bestätigt `Completed`; danach ist `EPIC-008` mit `STORY-101` weiterzuführen (2026-11-17)
+- Goal/Status: Alle Tasks bestätigt, Kriterien geprüft; vom Owner bestätigt und archiviert (2026-11-17).
+- Next step: `EPIC-008` mit `STORY-101` weiterführen (2026-11-17)
 - Open:
 - Decided:
   - Markierungen haben feste Werte (keine, verworfen, später); TASK-065 hängt zusätzlich an TASK-057; Umsetzung der Tasks nacheinander in eigenen Sessions (2026-11-17)
@@ -28,7 +28,7 @@
   - Verworfen: strikte Vererbung vom Wurzel-Item ohne Ausnahme; sie verhindert das Planen unterhalb eines Epic-Knotens (2026-11-13)
 - References: Spec STORY-100_spec.md, Task-Specs TASK-056/057/065; Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-17 — Prüfung der Kriterien (952533ef3557)
+State confirmed after entry 2026-11-17 — Bestätigung (b2f548fab1d6)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -231,3 +231,9 @@ State confirmed after entry 2026-11-17 — Prüfung der Kriterien (952533ef3557)
 ### Decided
 
 - Alle sechs Kriterien erfüllt; die Story steht auf `Awaiting confirmation`.
+
+## 2026-11-17 — Bestätigung
+
+### Decided
+
+- Der Owner hat die Story bestätigt (`Completed`); sie ist archiviert. Die Arbeit lief direkt auf `todo_mindmap`, ein Zurückmergen ist nicht nötig.

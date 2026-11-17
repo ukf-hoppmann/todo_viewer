@@ -59,5 +59,10 @@
 		"planned": "Planned",
 		"in_progress": "In progress",
 		"done": "Done"
+	},
+	"unassigned": {
+		"title": "Unassigned",
+		"empty": "Every item hangs on a node.",
+		"hint": "Drag an item onto a node to assign it."
 	}
 }

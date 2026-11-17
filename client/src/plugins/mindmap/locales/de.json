@@ -59,5 +59,10 @@
 		"planned": "Geplant",
 		"in_progress": "In Arbeit",
 		"done": "Erledigt"
+	},
+	"unassigned": {
+		"title": "Nicht zugeordnet",
+		"empty": "Alle Items hängen an einem Knoten.",
+		"hint": "Ziehe ein Item auf einen Knoten, um es zuzuordnen."
 	}
 }

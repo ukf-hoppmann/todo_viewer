@@ -13,6 +13,8 @@ export const mindmapTestIds = {
 	detail: "mindmap.detail",
 	notesMark: (id: string) => `mindmap.notes-mark.${id}`,
 	count: (id: string) => `mindmap.count.${id}`,
+	unassigned: "mindmap.unassigned",
+	unassignedItem: (id: string) => `mindmap.unassigned-item.${id}`,
 	stateFilter: "mindmap.state-filter",
 	unassignedSwitch: "mindmap.unassigned-switch",
 } as const;

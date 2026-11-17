@@ -6,17 +6,19 @@ import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
-import { errorMessage, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type TreeNodeOut } from "../api";
-import { dropPlacement, filterByState, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
+import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
+import { canDropItem, dropPlacement, filterByState, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import { MapActionsContext, type MapActions } from "../mapActions";
 import { layoutTree } from "../mindmapLayout";
 import { MindmapNode, type TopicNode } from "../MindmapNode";
 import { NodeDetail } from "../NodeDetail";
+import { UnassignedPanel } from "../UnassignedPanel";
 import { useMindmapState } from "../state";
 import { mindmapTestIds } from "../testIds";
 
 const NODE_TYPES = { topic: MindmapNode };
 const NO_NODES: readonly TreeNodeOut[] = [];
+const NO_ITEMS: readonly ItemRefOut[] = [];
 const DOUBLE_CLICK_MS = 250;
 const FIT = { maxZoom: 1, padding: 0.15 };
 const EDGE_STYLE = { stroke: "#5b8cff", strokeOpacity: 0.7 };
@@ -37,13 +39,16 @@ export default function MindmapPage() {
 	const statuses = useShownStatuses();
 	const { currentData: tree } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: !project });
 	const nodes = tree?.nodes ?? NO_NODES;
-	const { fold, setFold, selected, setSelected, hiddenStates } = useMindmapState();
+	const unassigned = tree?.unassigned ?? NO_ITEMS;
+	const { fold, setFold, selected, setSelected, hiddenStates, showUnassigned } = useMindmapState();
 	const [createNode] = useCreateNodeMutation();
 	const [updateNode] = useUpdateNodeMutation();
 	const [moveNode] = useMoveNodeMutation();
-	// The drag in progress: the dragged node and the place it is over, if that place is offered.
+	const [assignItem] = useAssignItemMutation();
+	// The drag in progress: the dragged node (or an item of the side view) and the place it is over, if that place is offered.
 	const [drag, setDrag] = useState<{ source: string; over?: { id: string; zone: DropZone } }>();
 	const dragSource = useRef<string | undefined>(undefined);
+	const dragsItem = useRef(false);
 	const { requestDelete, dialog: deleteDialog, failed: deleteFailed } = useDeleteElement();
 	const [editing, setEditing] = useState<string | null>(null);
 	const [error, setError] = useState<string>();
@@ -84,6 +89,10 @@ export default function MindmapPage() {
 	const actions: MapActions = useMemo(() => {
 		const fail = (failure: unknown) => setError(errorMessage(failure, t("error.failed")));
 		const depthOf = (id: string) => latest.current.shown.find((entry) => entry.id === id)?.depth ?? 0;
+		const itemAllowed = (id: string) => {
+			const { rootId: root, nodes: all } = latest.current;
+			return Boolean(root) && canDropItem(root!, all, id);
+		};
 		const placementOf = (id: string, zone: DropZone) => {
 			const { rootId: root, nodes: all } = latest.current;
 			const source = dragSource.current;
@@ -91,6 +100,7 @@ export default function MindmapPage() {
 		};
 		const endDrag = () => {
 			dragSource.current = undefined;
+			dragsItem.current = false;
 			setDrag(undefined);
 		};
 		return {
@@ -98,19 +108,34 @@ export default function MindmapPage() {
 				dragSource.current = id;
 				setDrag({ source: id });
 			},
+			dragStartItem: (uid) => {
+				dragSource.current = uid;
+				dragsItem.current = true;
+				setDrag({ source: uid });
+			},
 			dragEnd: endDrag,
 			dragOver: (id, zone) => {
-				const allowed = placementOf(id, zone) !== null;
+				const allowed = dragsItem.current ? itemAllowed(id) : placementOf(id, zone) !== null;
+				const place = dragsItem.current ? "inside" : zone;
 				// dragover fires continuously: the state object is kept while nothing changed, so nothing is drawn again.
 				setDrag((current) => {
 					if (!current) return current;
 					if (!allowed) return current.over?.id === id ? { source: current.source } : current;
-					return current.over?.id === id && current.over.zone === zone ? current : { source: current.source, over: { id, zone } };
+					return current.over?.id === id && current.over.zone === place ? current : { source: current.source, over: { id, zone: place } };
 				});
 				return allowed;
 			},
 			dragLeave: (id) => setDrag((current) => (current?.over?.id === id ? { source: current.source } : current)),
 			drop: (id, zone) => {
+				if (dragsItem.current) {
+					const item = dragSource.current;
+					const allowed = itemAllowed(id);
+					endDrag();
+					if (!item || !allowed) return;
+					setError(undefined);
+					assignItem({ node: id, item }).unwrap().catch(fail);
+					return;
+				}
 				const placement = placementOf(id, zone);
 				const node = latest.current.nodes.find((entry) => entry.uid === dragSource.current);
 				endDrag();
@@ -155,7 +180,7 @@ export default function MindmapPage() {
 				void requestDelete(node.uid, node.version);
 			},
 		};
-	}, [createNode, updateNode, moveNode, requestDelete, setFold, t]);
+	}, [createNode, updateNode, moveNode, assignItem, requestDelete, setFold, t]);
 
 	// A double click renames and must not open the detail in between (the map would shift under the pointer): a click
 	// selects only after the time a double click may take.
@@ -232,32 +257,35 @@ export default function MindmapPage() {
 			<Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
 				{t("page.hint")}
 			</Typography>
-			<Box sx={{ flexGrow: 1, minHeight: 300, border: 1, borderColor: "divider" }} data-testid={mindmapTestIds.map}>
-				<MapActionsContext.Provider value={actions}>
-					{layout && (
-						<ReactFlow
-							key={project.uid}
-							nodes={flowNodes}
-							edges={edges}
-							nodeTypes={NODE_TYPES}
-							colorMode="dark"
-							fitView
-							fitViewOptions={FIT}
-							onInit={(instance) => {
-								flow.current = instance;
-							}}
-							minZoom={0.1}
-							nodesConnectable={false}
-							zoomOnDoubleClick={false}
-							onNodeClick={(_, node) => onNodeClick(node.id)}
-							onNodeDoubleClick={() => clearTimeout(pendingClick.current)}
-						>
-							<Background />
-							<Controls showInteractive={false} />
-						</ReactFlow>
-					)}
-				</MapActionsContext.Provider>
-			</Box>
+			<MapActionsContext.Provider value={actions}>
+				<Box sx={{ flexGrow: 1, minHeight: 300, display: "flex" }}>
+					<Box sx={{ flexGrow: 1, minWidth: 0, border: 1, borderColor: "divider" }} data-testid={mindmapTestIds.map}>
+						{layout && (
+							<ReactFlow
+								key={project.uid}
+								nodes={flowNodes}
+								edges={edges}
+								nodeTypes={NODE_TYPES}
+								colorMode="dark"
+								fitView
+								fitViewOptions={FIT}
+								onInit={(instance) => {
+									flow.current = instance;
+								}}
+								minZoom={0.1}
+								nodesConnectable={false}
+								zoomOnDoubleClick={false}
+								onNodeClick={(_, node) => onNodeClick(node.id)}
+								onNodeDoubleClick={() => clearTimeout(pendingClick.current)}
+							>
+								<Background />
+								<Controls showInteractive={false} />
+							</ReactFlow>
+						)}
+					</Box>
+					{showUnassigned && <UnassignedPanel items={unassigned} />}
+				</Box>
+			</MapActionsContext.Provider>
 			{deleteDialog}
 		</Box>
 	);

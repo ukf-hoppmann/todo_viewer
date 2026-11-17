@@ -6,7 +6,7 @@ import { mindmapTestIds as ids } from "../../../../../../client/src/plugins/mind
 import { sharedTestIds } from "../../../../../../client/src/shared";
 import { fakeMindmapBackend } from "../../../../../helpers/client/fakeMindmapBackend";
 import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
-import { node } from "../../../../../helpers/client/mindmapFixtures";
+import { itemRef, node } from "../../../../../helpers/client/mindmapFixtures";
 import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 // jsdom has no layout: React Flow is replaced by a list of the nodes it is given and a record of its edges.
@@ -487,5 +487,100 @@ describe("MindmapPage: count, ring and state", () => {
 
 		await screen.findByTestId(ids.node("b"));
 		expect(shownIds()).toEqual(["p1", "b"]);
+	});
+});
+
+describe("MindmapPage: the side view Nicht zugeordnet", () => {
+	const loose = [itemRef("x1"), itemRef("x2", { status: "In progress" })];
+	const startItemDrag = (uid: string) => fireEvent.dragStart(screen.getByTestId(ids.unassignedItem(uid)), { dataTransfer: { setData: () => {}, effectAllowed: "" } });
+
+	it("lists the items without a node next to the map and keeps them out of the tree", async () => {
+		await renderPage({ unassigned: loose });
+
+		const panel = await screen.findByTestId(ids.unassigned);
+		await screen.findByTestId(ids.unassignedItem("x1"));
+		expect(panel.textContent).toContain("Nicht zugeordnet");
+		expect(screen.getByTestId(ids.unassignedItem("x1")).textContent).toContain("TASK-x1");
+		expect(screen.getByTestId(ids.unassignedItem("x2")).textContent).toContain("Aufgabe x2");
+		await screen.findByTestId(ids.node("b"));
+		expect(shownIds()).toEqual(["p1", "a", "a1", "b"]);
+	});
+
+	it("is not there while it is switched off", async () => {
+		await renderPage({ unassigned: loose, documents: { ...marked, mindmap: { showUnassigned: false } } });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(screen.queryByTestId(ids.unassigned)).toBeNull();
+	});
+
+	it("assigns an item to the node it is dropped on, and the item leaves the list", async () => {
+		const backend = await renderPage({ unassigned: loose });
+		await screen.findByTestId(ids.unassignedItem("x1"));
+		await screen.findByTestId(ids.node("b"));
+
+		startItemDrag("x1");
+		expect(dragEvent("dragover", screen.getByTestId(ids.node("b")), 20).defaultPrevented).toBe(true);
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBe("inside");
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 20);
+
+		await waitFor(() => expect(screen.queryByTestId(ids.unassignedItem("x1"))).toBeNull());
+		expect(backend.calls("POST", "mindmap/nodes/b/items")[0]!.body).toEqual({ item: "x1" });
+		expect(screen.getByTestId(ids.unassignedItem("x2"))).toBeTruthy();
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBeUndefined();
+	});
+
+	it("takes an item on any zone of a node as a drop on the node, never above or below it", async () => {
+		const backend = await renderPage({ unassigned: loose });
+		await screen.findByTestId(ids.unassignedItem("x1"));
+		await screen.findByTestId(ids.node("b"));
+
+		startItemDrag("x1");
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 2);
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBe("inside");
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 2);
+
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/b/items")).toHaveLength(1));
+	});
+
+	it("offers no drop on the root (the project)", async () => {
+		const backend = await renderPage({ unassigned: loose });
+		await screen.findByTestId(ids.unassignedItem("x1"));
+		await screen.findByTestId(ids.node("b"));
+
+		startItemDrag("x1");
+		expect(dragEvent("dragover", screen.getByTestId(ids.node("p1")), 20).defaultPrevented).toBe(false);
+		dragEvent("drop", screen.getByTestId(ids.node("p1")), 20);
+
+		expect(backend.calls("POST", "mindmap/nodes")).toHaveLength(0);
+		expect(screen.getByTestId(ids.unassignedItem("x1"))).toBeTruthy();
+	});
+
+	it("shows the message of the server when the assignment is rejected", async () => {
+		await renderPage({
+			unassigned: loose,
+			respond: ({ method, path }) =>
+				method === "POST" && path === "mindmap/nodes/b/items" ? Response.json({ code: "mindmap_other_project", message: "Item und Knoten stehen in verschiedenen Projekten", details: {} }, { status: 400 }) : undefined,
+		});
+		await screen.findByTestId(ids.unassignedItem("x1"));
+		await screen.findByTestId(ids.node("b"));
+
+		startItemDrag("x1");
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 20);
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 20);
+
+		expect((await screen.findByTestId(ids.error)).textContent).toContain("verschiedenen Projekten");
+		expect(screen.getByTestId(ids.unassignedItem("x1"))).toBeTruthy();
+	});
+
+	it("still moves nodes by dragging while the side view is on", async () => {
+		const backend = await renderPage({ unassigned: loose });
+		await screen.findByTestId(ids.node("a1"));
+
+		startDrag("a1");
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 20);
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 20);
+
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/a1/move")).toHaveLength(1));
+		expect(backend.calls("POST", "mindmap/nodes/b/items")).toHaveLength(0);
 	});
 });

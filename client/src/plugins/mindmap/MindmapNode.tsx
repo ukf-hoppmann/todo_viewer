@@ -1,4 +1,5 @@
 import AddIcon from "@mui/icons-material/Add";
+import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import BlockIcon from "@mui/icons-material/Block";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -171,6 +172,7 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 					onDoubleClick={(event) => event.stopPropagation()}
 					sx={{ position: "absolute", right: 8, bottom: "100%", display: "flex", bgcolor: "background.paper", border: 1, borderBottom: 0, borderColor: "divider", borderRadius: "8px 8px 0 0" }}
 				>
+					{!isRoot && <IconAction label={t("action.openAsRoot")} icon={CenterFocusStrongIcon} onClick={() => actions.openAsRoot(id)} testId={mindmapTestIds.openAsRoot(id)} />}
 					<IconAction label={t("action.add")} icon={AddIcon} onClick={() => actions.add(id)} testId={mindmapTestIds.add(id)} />
 					{!isRoot && <IconAction label={t("action.remove")} icon={DeleteIcon} onClick={() => actions.remove(id)} testId={mindmapTestIds.remove(id)} />}
 				</Box>

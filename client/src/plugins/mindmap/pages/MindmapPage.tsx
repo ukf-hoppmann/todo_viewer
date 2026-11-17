@@ -1,4 +1,4 @@
-import { Alert, Box, Typography } from "@mui/material";
+import { Alert, Box, Breadcrumbs, Link, Typography } from "@mui/material";
 import { Background, Controls, ReactFlow, type Edge, type ReactFlowInstance } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -7,10 +7,11 @@ import { usePageDetail } from "../../../core";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
 import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
-import { canDropItem, dropPlacement, filterByMark, filterByState, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
+import { canDropItem, dropPlacement, filterByMark, filterByState, focusPath, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import { MapActionsContext, type MapActions } from "../mapActions";
 import { layoutTree } from "../mindmapLayout";
 import { MindmapNode, type TopicNode } from "../MindmapNode";
+import { useMapNavigation } from "../navigation";
 import { NodeDetail } from "../NodeDetail";
 import { UnassignedPanel } from "../UnassignedPanel";
 import { useMindmapState } from "../state";
@@ -53,9 +54,19 @@ export default function MindmapPage() {
 	const [editing, setEditing] = useState<string | null>(null);
 	const [error, setError] = useState<string>();
 	const rootId = project?.uid;
+	const { focus, openFocus } = useMapNavigation();
+
+	// The focus from the address counts once the tree is loaded and only if it is a node of this tree; else the whole tree is shown.
+	// `path` runs from the root to the focus (the root alone, and so no focus, for the root itself).
+	const path = useMemo(() => (rootId && tree ? focusPath(rootId, nodes, focus) : null), [rootId, tree, nodes, focus]);
+	const focusId = path && path.length > 1 ? path[path.length - 1] : undefined;
+	const waitsForTree = Boolean(focus) && !tree;
 
 	// The filters hide nodes by their state and mark; a hidden node takes its branch from the map. Moving still sees all nodes.
-	const shown = useMemo(() => (rootId ? visibleNodes(rootId, filterByMark(filterByState(nodes, hiddenStates), hiddenMarks), fold) : []), [rootId, nodes, fold, hiddenStates, hiddenMarks]);
+	const shown = useMemo(
+		() => (rootId && !waitsForTree ? visibleNodes(rootId, filterByMark(filterByState(nodes, hiddenStates), hiddenMarks), fold, focusId) : []),
+		[rootId, waitsForTree, nodes, fold, hiddenStates, hiddenMarks, focusId],
+	);
 
 	// The layout depends only on which nodes hang where, not on their titles: renaming keeps every node in place.
 	const structureKey = JSON.stringify(shown.map(({ id, parentId }) => ({ id, parentId })));
@@ -179,8 +190,9 @@ export default function MindmapPage() {
 				setError(undefined);
 				void requestDelete(node.uid, node.version);
 			},
+			openAsRoot: (id) => openFocus(id),
 		};
-	}, [createNode, updateNode, moveNode, assignItem, requestDelete, setFold, t]);
+	}, [createNode, updateNode, moveNode, assignItem, requestDelete, setFold, openFocus, t]);
 
 	// A double click renames and must not open the detail in between (the map would shift under the pointer): a click
 	// selects only after the time a double click may take.
@@ -254,6 +266,22 @@ export default function MindmapPage() {
 				<Alert severity="error" sx={{ mb: 1 }} onClose={error ? () => setError(undefined) : undefined} data-testid={mindmapTestIds.error}>
 					{message}
 				</Alert>
+			)}
+			{focusId && path && (
+				<Breadcrumbs aria-label={t("page.path")} sx={{ mb: 1 }} data-testid={mindmapTestIds.path}>
+					{path.map((id, index) => {
+						const title = id === rootId ? project.name : (nodes.find((node) => node.uid === id)?.title ?? "");
+						return index === path.length - 1 ? (
+							<Typography key={id} color="text.primary" data-testid={mindmapTestIds.pathEntry(id)}>
+								{title}
+							</Typography>
+						) : (
+							<Link key={id} component="button" type="button" underline="hover" onClick={() => openFocus(id === rootId ? undefined : id)} data-testid={mindmapTestIds.pathEntry(id)}>
+								{title}
+							</Link>
+						);
+					})}
+				</Breadcrumbs>
 			)}
 			<Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
 				{t("page.hint")}

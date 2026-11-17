@@ -7,7 +7,7 @@ import { sharedTestIds } from "../../../../../../client/src/shared";
 import { fakeMindmapBackend } from "../../../../../helpers/client/fakeMindmapBackend";
 import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
 import { itemRef, node } from "../../../../../helpers/client/mindmapFixtures";
-import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
+import { locationTestId, renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 // jsdom has no layout: React Flow is replaced by a list of the nodes it is given and a record of its edges.
 vi.mock("@xyflow/react", () => {
@@ -50,11 +50,12 @@ const projects = [project("p0", "Allgemein", 0, { builtin: true }), project("p1"
 const nodes = [node("a"), node("b", null, 1), node("a1", "a"), node("a11", "a1")];
 const marked = { workspace: { marked: "p1" } };
 
-async function renderPage(options: Parameters<typeof fakeMindmapBackend>[0] = {}) {
+async function renderPage(options: Parameters<typeof fakeMindmapBackend>[0] = {}, address = "/mindmap/main") {
 	const backend = fakeMindmapBackend({ projects, nodes, documents: marked, ...options });
-	await renderWorkspace(<MindmapPage />, { backend });
+	await renderWorkspace(<MindmapPage />, { backend, initialEntries: [address] });
 	return backend;
 }
+const location = () => screen.getByTestId(locationTestId).textContent;
 /** What the server event `mindmap.node.changed` does: the plugin reloads the tree. */
 const serverEvent = (backend: ReturnType<typeof fakeMindmapBackend>) => backend.store.dispatch(mindmapApi.util.invalidateTags(["Tree"]) as never);
 const shownIds = () => [...document.querySelectorAll("[data-flow-node]")].map((entry) => entry.getAttribute("data-flow-node"));
@@ -636,5 +637,103 @@ describe("MindmapPage: marks", () => {
 
 		await screen.findByTestId(ids.node("b"));
 		expect(shownIds()).toEqual(["p1", "a", "a1", "b", "c"]);
+	});
+});
+
+describe("MindmapPage: focus", () => {
+	it("shows only the branch from the focus in the address, with the path above the map", async () => {
+		await renderPage({}, "/mindmap/main?focus=a");
+
+		await screen.findByTestId(ids.node("a1"));
+		expect(shownIds()).toEqual(["a", "a1", "a11"]);
+		expect(document.querySelector("[data-flow-edge='p1->a']")).toBeNull();
+		const path = screen.getByTestId(ids.path);
+		expect(path.textContent).toContain("Viewer");
+		expect(path.textContent).toContain("Thema a");
+		expect(screen.getByTestId(ids.pathEntry("p1")).tagName).toBe("BUTTON");
+		expect(screen.getByTestId(ids.pathEntry("a")).tagName).not.toBe("BUTTON");
+	});
+
+	it("counts the depth from the focus: two levels below it are open", async () => {
+		await renderPage({}, "/mindmap/main?focus=a1");
+
+		await screen.findByTestId(ids.node("a11"));
+		expect(shownIds()).toEqual(["a1", "a11"]);
+		expect([...screen.getByTestId(ids.path).querySelectorAll("[data-testid^='mindmap.path-entry.']")].map((entry) => entry.getAttribute("data-testid"))).toEqual([
+			"mindmap.path-entry.p1",
+			"mindmap.path-entry.a",
+			"mindmap.path-entry.a1",
+		]);
+	});
+
+	it("shows the whole tree and no path without a focus", async () => {
+		await renderPage();
+
+		await screen.findByTestId(ids.node("a1"));
+		expect(shownIds()).toEqual(["p1", "a", "a1", "b"]);
+		expect(screen.queryByTestId(ids.path)).toBeNull();
+	});
+
+	it("falls back to the project root for an unknown focus, the root itself or the focus of another tree", async () => {
+		for (const address of ["/mindmap/main?focus=nowhere", "/mindmap/main?focus=p1", "/mindmap/main?focus="]) {
+			cleanup();
+			await renderPage({}, address);
+			await screen.findByTestId(ids.node("a1"));
+
+			expect(shownIds()).toEqual(["p1", "a", "a1", "b"]);
+			expect(screen.queryByTestId(ids.path)).toBeNull();
+		}
+	});
+
+	it("goes back to a node of the path with a click on its entry, to the whole map with a click on the project", async () => {
+		await renderPage({}, "/mindmap/main?focus=a11");
+		await screen.findByTestId(ids.pathEntry("a1"));
+
+		fireEvent.click(screen.getByTestId(ids.pathEntry("a")));
+		await waitFor(() => expect(location()).toBe("/mindmap/main?focus=a"));
+		await waitFor(() => expect(shownIds()).toEqual(["a", "a1", "a11"]));
+
+		fireEvent.click(screen.getByTestId(ids.pathEntry("p1")));
+		await waitFor(() => expect(location()).toBe("/mindmap/main"));
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "a", "a1", "b"]));
+		expect(screen.queryByTestId(ids.path)).toBeNull();
+	});
+
+	it("opens a node as the root of the view; the root of the project has no such action", async () => {
+		await renderPage();
+		await screen.findByTestId(ids.node("a1"));
+		expect(screen.queryByTestId(ids.openAsRoot("p1"))).toBeNull();
+
+		fireEvent.click(screen.getByTestId(ids.openAsRoot("a")));
+
+		await waitFor(() => expect(location()).toBe("/mindmap/main?focus=a"));
+		await waitFor(() => expect(shownIds()).toEqual(["a", "a1", "a11"]));
+	});
+
+	it("treats the focus node like any other node: it can be renamed and gets children", async () => {
+		const backend = await renderPage({}, "/mindmap/main?focus=a");
+		await screen.findByTestId(ids.node("a1"));
+
+		fireEvent.doubleClick(screen.getByTestId(ids.node("a")));
+		fireEvent.change(screen.getByTestId(ids.titleInput("a")), { target: { value: "Anders" } });
+		fireEvent.keyDown(screen.getByTestId(ids.titleInput("a")), { key: "Enter" });
+		await waitFor(() => expect(backend.calls("PUT", "mindmap/nodes/a")).toHaveLength(1));
+
+		fireEvent.click(screen.getByTestId(ids.add("a")));
+		await screen.findByTestId(ids.titleInput("new1"));
+		expect(backend.calls("POST", "mindmap/nodes")[0]!.body).toEqual({ project: "p1", title: "Neues Thema", parent: "a" });
+	});
+
+	it("shows the whole tree when the focus node goes to the trash", async () => {
+		const backend = await renderPage({}, "/mindmap/main?focus=a");
+		await screen.findByTestId(ids.node("a1"));
+
+		fireEvent.click(screen.getByTestId(ids.remove("a")));
+		fireEvent.click(await screen.findByTestId(sharedTestIds.confirmDialogConfirm));
+		await waitFor(() => expect(backend.calls("DELETE", "workspace/elements/a")).toHaveLength(2));
+		serverEvent(backend);
+
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "b"]));
+		expect(screen.queryByTestId(ids.path)).toBeNull();
 	});
 });

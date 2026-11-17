@@ -10,6 +10,8 @@ export interface MapActions {
 	commitTitle: (id: string, title: string) => void;
 	cancelRename: () => void;
 	remove: (id: string) => void;
+	/** Opens the map with the node `id` as the root of the view (the focus). */
+	openAsRoot: (id: string) => void;
 	/** A drag of the node `id` begins or ends. */
 	dragStart: (id: string) => void;
 	/** A drag of the item `uid` from the side view begins (it ends with `dragEnd`). */
@@ -23,7 +25,7 @@ export interface MapActions {
 }
 
 const idle = () => undefined;
-export const MapActionsContext = createContext<MapActions>({ toggle: idle, add: idle, startRename: idle, commitTitle: idle, cancelRename: idle, remove: idle, dragStart: idle, dragStartItem: idle, dragEnd: idle, dragOver: () => false, dragLeave: idle, drop: idle });
+export const MapActionsContext = createContext<MapActions>({ toggle: idle, add: idle, startRename: idle, commitTitle: idle, cancelRename: idle, remove: idle, openAsRoot: idle, dragStart: idle, dragStartItem: idle, dragEnd: idle, dragOver: () => false, dragLeave: idle, drop: idle });
 
 export function useMapActions(): MapActions {
 	return useContext(MapActionsContext);

@@ -93,7 +93,13 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Zustand ist mit Tests abgedeckt, auch für leere Knoten und eigens
     angehängte Kinder.
     3. Die Antwort des Baums enthält je Knoten Anzahl, Fortschritt und Zustand
-    sowie die Zahl der nicht zugeordneten Items.
+    sowie die Items ohne Knoten.
+    4. Zählende Items folgen dem Statusfilter des Backlogs; Items im Papierkorb
+    zählen nie; der Zustand folgt der Regel der Story-Spec und ist vom Filter
+    unabhängig.
+    5. Wird ein Knoten gelöscht, fallen seine Items an den Parent-Knoten
+    zurück, sonst nach „Nicht zugeordnet“; Memos lassen sich an mehrere Knoten
+    verlinken, der Link ruht im Papierkorb.
 
 - `TASK-057` **Mindmap: Zahl, Fortschrittsring, Zustand und Filter am Knoten, Items und Memos im Detail**
   - Uid: 0401cbeb-4e8c-42db-b37a-57b857f6772e.
@@ -115,7 +121,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     lassen sich von dort per Drag-and-drop einem Knoten zuordnen.
     3. Im Detail eines Knotens und eines Items lässt sich die Zuordnung setzen
     und lösen.
-    4. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
+    4. Zahl, Ring und Detail folgen dem Statusfilter des Backlogs.
+    5. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
 
 - `TASK-065` **Mindmap: Markierungen „verworfen“ und „später“ an Ideen-Knoten**
   - Uid: ea634e30-aae8-49b4-a5ab-8b77aa40bf03.
@@ -135,7 +142,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Oberfläche.
     2. Markierte Knoten sind sichtbar abgesetzt, und der Zustandsfilter kann
     sie ausblenden.
-    3. Die Markierung ändert die Summen der Items nicht.
+    3. Die Markierung gilt nur für den Knoten selbst, nicht für Unterknoten,
+    und ändert weder die Summen der Items noch den Zustand.
     4. Die offene Form (feste Werte oder frei) ist vor der Umsetzung mit dem
     Owner geklärt; Domain-, API- und UI-Tests sind grün.
 

@@ -3,9 +3,10 @@
 ## State
 
 - Goal/Status: Geplant; drei Tasks (TASK-056, TASK-057, TASK-065); offene Punkte werden der Reihe nach geklärt (2026-11-17).
-- Next step: Spec bei Umsetzungsbeginn schreiben; danach mit TASK-056 beginnen (2026-11-17)
+- Next step: Mit TASK-056 beginnen; Form der Markierungen vor TASK-065 klären (2026-11-17)
 - Open:
 - Decided:
+  - Spec der Story und Task-Specs geschrieben; Kriterien in TASK-056, TASK-057 und TASK-065 um die Entscheidungen ergänzt (2026-11-17)
   - TASK-057 Kriterium 2 auf die Seitenansicht umgestellt (2026-11-17)
   - Goal und Kriterien 1, 2, 5 an die Entscheidungen vom 2026-11-17 angepasst (Seitenansicht, Papierkorb, Löschen von Knoten) (2026-11-17)
   - „Nicht zugeordnet“ ist kein Knoten, sondern eine berechnete Seitenansicht je Projekt (wie „Entfernt“ im Formular-Editor): sie listet Items ohne Knoten; per Drag-and-drop ordnet man sie Knoten zu; die Seitenansicht lässt sich ausschalten; sie zählt nicht im Baum (2026-11-17)
@@ -24,9 +25,9 @@
   - Memos lassen sich an Knoten verlinken und stehen nur im Detail, ohne eigene Zahl am Knoten (2026-11-13)
   - Was die KI nicht zuordnen kann, landet in „Nicht zugeordnet“ (Seitenansicht, siehe 2026-11-17) (2026-11-13)
   - Verworfen: strikte Vererbung vom Wurzel-Item ohne Ausnahme; sie verhindert das Planen unterhalb eines Epic-Knotens (2026-11-13)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
+- References: Spec STORY-100_spec.md, Task-Specs TASK-056/057/065; Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-17 — TASK-057 an die Seitenansicht angepasst (a37873406fa4)
+State confirmed after entry 2026-11-17 — Spec und Verteilung auf die Tasks (627d4a4e4bba)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -181,3 +182,14 @@ State confirmed after entry 2026-11-17 — TASK-057 an die Seitenansicht angepas
 ### Open
 
 - Open from 2026-11-17 (Goal und Kriterien angepasst) resolved: TASK-057 ist angepasst. Keine offenen Punkte mehr.
+
+## 2026-11-17 — Spec und Verteilung auf die Tasks
+
+### Decided
+
+- Der Owner beauftragte die Spec der Story und die Übertragung des Task-Relevanten in die Tasks. `STORY-100_spec.md` bündelt die Regeln; `TASK-056`, `TASK-057` und `TASK-065` bekamen je eine eigene Spec. Neue Kriterien: `TASK-056` Nr. 4 und 5 (Statusfilter, Papierkorb, Zustand, Löschen, Memo-Links), `TASK-057` Nr. 4 (Statusfilter), `TASK-065` Nr. 3 (nur Knoten selbst).
+- Die Spec von `EPIC-008` verweist jetzt für Zuordnung und Zustand auf `STORY-100_spec.md`.
+
+### Open
+
+- Feste Werte oder frei für die Markierungen; vor `TASK-065` zu klären.

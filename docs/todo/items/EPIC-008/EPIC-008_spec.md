@@ -38,9 +38,10 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - Ein Epic ist in der Regel ein Knoten, aber nicht zwingend; ein Knoten kann mehrere Epics tragen.
 - Summen laufen über Unterknoten und leere Knoten nach oben. Jedes Item zählt genau einmal, auch wenn sein Ast
   über zwei Wege unter derselben Wurzel liegt.
-- Zustand eines Knotens, abgeleitet: Idee (keine Items), geplant, in Arbeit, erledigt. Ein Filter darüber.
+- Zustand eines Knotens, abgeleitet: Idee (keine Items), geplant, in Arbeit, erledigt. Ein Filter darüber. Regel und Zählung: `STORY-100_spec.md`.
 - Memos lassen sich verlinken und stehen nur im Detail.
-- Items ohne Knoten stehen im Sammelknoten „Nicht zugeordnet“.
+- Items ohne Knoten stehen in der Seitenansicht „Nicht zugeordnet“ (kein Knoten, ausschaltbar, Drag-and-drop in den
+  Baum). Einzelheiten: `STORY-100_spec.md`.
 
 ## Darstellung
 
@@ -85,4 +86,4 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 ## Offen
 
 - Runde Anordnung bei großen Maps (Prototyp).
-- Form der KI-Vorschläge; abgeschlossene Items zeigen; Typwahl und tiefe Knoten beim Überführen; Markierung für Ideen-Knoten; Dateiformat für Platzierungen.
+- Form der KI-Vorschläge; Typwahl und tiefe Knoten beim Überführen; feste Werte der Markierung für Ideen-Knoten; Dateiformat für Platzierungen.

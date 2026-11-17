@@ -2,6 +2,7 @@ import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { DetailPanel, DetailSection, InlineField } from "../../shared";
 import { DocumentsSection } from "./DocumentsSection";
+import { NodeContentSection } from "./NodeContentSection";
 import { errorMessage, useUpdateNodeMutation, type NodeOut } from "./api";
 import { mindmapTestIds } from "./testIds";
 
@@ -34,6 +35,9 @@ export function NodeDetail({ node, onClose }: { node: NodeOut; onClose: () => vo
 						}}
 					/>
 					<InlineField kind="text" id="text" label={t("field.text")} value={node.text ?? ""} multiline onSave={(text) => save({ text })} />
+					<DetailSection id="content" title={t("content.title")}>
+						<NodeContentSection node={node} />
+					</DetailSection>
 					<DetailSection id="documents" title={t("field.documents")}>
 						<DocumentsSection node={node} />
 					</DetailSection>

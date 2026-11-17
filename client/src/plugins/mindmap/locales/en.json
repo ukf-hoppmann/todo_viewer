@@ -64,5 +64,24 @@
 		"title": "Unassigned",
 		"empty": "Every item hangs on a node.",
 		"hint": "Drag an item onto a node to assign it."
+	},
+	"content": {
+		"title": "Items and memos",
+		"noItems": "No items",
+		"noMemos": "No memos",
+		"items": "Items",
+		"memos": "Memos",
+		"inherited": "inherited",
+		"assignItem": "Assign item",
+		"linkMemo": "Link memo",
+		"noMatch": "Nothing found",
+		"assign": "Assign",
+		"link": "Link",
+		"unassign": "Release {{label}} from this node",
+		"unlink": "Unlink {{label}}",
+		"replaceTitle": "Take it from another node?",
+		"replaceMessage": "{{label}} already hangs on another node. Move it to this node?",
+		"replace": "Move",
+		"cancel": "Cancel"
 	}
 }

@@ -64,5 +64,24 @@
 		"title": "Nicht zugeordnet",
 		"empty": "Alle Items hängen an einem Knoten.",
 		"hint": "Ziehe ein Item auf einen Knoten, um es zuzuordnen."
+	},
+	"content": {
+		"title": "Items und Memos",
+		"noItems": "Keine Items",
+		"noMemos": "Keine Memos",
+		"items": "Items",
+		"memos": "Memos",
+		"inherited": "geerbt",
+		"assignItem": "Item zuordnen",
+		"linkMemo": "Memo verlinken",
+		"noMatch": "Nichts gefunden",
+		"assign": "Zuordnen",
+		"link": "Verlinken",
+		"unassign": "Zuordnung von {{label}} lösen",
+		"unlink": "Link zu {{label}} lösen",
+		"replaceTitle": "Anderem Knoten entziehen?",
+		"replaceMessage": "{{label}} hängt schon an einem anderen Knoten. Zu diesem Knoten umhängen?",
+		"replace": "Umhängen",
+		"cancel": "Abbrechen"
 	}
 }

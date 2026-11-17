@@ -69,26 +69,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     alle Projekte zusammen sehen, rund oder zur Seite anordnen und
     Abhängigkeiten zwischen Themen einblenden.
 
-- `TASK-058` **Mindmap: Fokus auf einen Knoten und die Aktionen „Gehe hin“, „Erstelle“, „Anker“ am Item**
-  - Uid: 44aae02d-c3c4-48b7-81d2-4ad27c9d5398.
-  - Type: Task.
-  - Parent: `STORY-101`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-13.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Jeder Knoten lässt sich als Wurzel öffnen, mit Pfad zurück. Im
-    Detail eines Items führen „Gehe hin“, „Erstelle“ und „Anker“ zur Map.
-  - Completion criteria: 1. Der Fokus steht in der Adresse und zeigt einen
-    Pfad bis zur Wurzel.
-    2. „Gehe hin“ öffnet die Map am wirksamen Knoten des Items; „Erstelle“
-    legt unter ihm einen Knoten mit dem Namen des Items an und hängt es eigens
-    dorthin; „Anker“ gibt es nur mit eigenem Knoten.
-    3. UI-Tests sind grün.
-  - Summary: Eine Map ab einem beliebigen Knoten öffnen, mit Pfad zurück, und vom Item aus zur Map springen, dort einen Knoten anlegen oder ihn als Wurzel öffnen.
-
 - `TASK-059` **Mindmap: Gesamtansicht mit gemeinsamer Wurzel über die gewählten Projekte**
   - Uid: 9d65405e-bef7-4405-b7d3-693fbbfc7615.
   - Type: Task.

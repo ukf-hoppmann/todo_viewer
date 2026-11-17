@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt auf Branch `claude/task-058-mindmap-fokus`, Tests grün, Techdocs nachgezogen; wartet auf Bestätigung und Merge nach `todo_mindmap` (2026-11-17).
-- Next step: Owner bestätigt; danach Merge von `claude/task-058-mindmap-fokus` nach `todo_mindmap` (kein Release, keine Versionserhöhung).
+- Goal/Status: Abgeschlossen: vom Owner bestätigt und nach `todo_mindmap` gemergt (2026-11-17).
+- Next step: Nächster Task der Story: `TASK-060` (runde Anordnung).
 - Open:
   - Lint: fünf Fehler in `core/ui-state/usePersistentState.ts` (react-hooks/refs) bestanden schon vor dem Task; `npm run build` bricht daran ab, `vite build` läuft (2026-11-17)
 - Decided:
@@ -14,7 +14,7 @@
   - „Anker“ blendet ein ausgeblendetes Projekt des Items ebenfalls ein und markiert es, wie „Gehe hin“ (2026-11-17)
 - References: Spec `TASK-058_spec.md`; Story-Spec `STORY-101_spec.md`; Notizen `STORY-101`
 
-State confirmed after entry 2026-11-17 — Umsetzung (58a904e78d98)
+State confirmed after entry 2026-11-17 — Bestätigung (4f5c86a3f22d)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -67,3 +67,9 @@ State confirmed after entry 2026-11-17 — Umsetzung (58a904e78d98)
 
 - Lint-Altlast in `usePersistentState.ts`, nicht Teil dieses Tasks.
 - Bestätigung durch den Owner, danach Merge.
+
+## 2026-11-17 — Bestätigung
+
+### Decided
+
+- Der Owner hat den Task bestätigt (`Completed`) und den Merge von `claude/task-058-mindmap-fokus` nach `todo_mindmap` verlangt; kein Release, keine Versionserhöhung.

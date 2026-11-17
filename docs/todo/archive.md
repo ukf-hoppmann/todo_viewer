@@ -8,6 +8,27 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `TASK-058` **Mindmap: Fokus auf einen Knoten und die Aktionen „Gehe hin“, „Erstelle“, „Anker“ am Item**
+  - Uid: 44aae02d-c3c4-48b7-81d2-4ad27c9d5398.
+  - Type: Task.
+  - Parent: `STORY-101`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Jeder Knoten lässt sich als Wurzel öffnen, mit Pfad zurück. Im
+    Detail eines Items führen „Gehe hin“, „Erstelle“ und „Anker“ zur Map.
+  - Completion criteria: 1. Der Fokus steht in der Adresse und zeigt einen
+    Pfad bis zur Wurzel.
+    2. „Gehe hin“ öffnet die Map am wirksamen Knoten des Items; „Erstelle“
+    legt unter ihm einen Knoten mit dem Namen des Items an und hängt es eigens
+    dorthin; „Anker“ gibt es nur mit eigenem Knoten.
+    3. UI-Tests sind grün.
+  - Summary: Eine Map ab einem beliebigen Knoten öffnen, mit Pfad zurück, und vom Item aus zur Map springen, dort einen Knoten anlegen oder ihn als Wurzel öffnen.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
+
 - `STORY-100` **Items und Memos an Knoten hängen: Anzahl, Fortschritt und Zustand am Thema**
   - Uid: 36fb7560-506d-49a0-9d0b-bcbc5b35015f.
   - Type: Story.

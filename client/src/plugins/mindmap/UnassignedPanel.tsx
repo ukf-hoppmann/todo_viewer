@@ -15,7 +15,7 @@ export function UnassignedPanel({ items }: { items: readonly ItemRefOut[] }) {
 	return (
 		<Box
 			data-testid={mindmapTestIds.unassigned}
-			sx={{ width: 260, flexShrink: 0, ml: 1, border: 1, borderColor: "divider", display: "flex", flexDirection: "column", minHeight: 0 }}
+			sx={{ width: 220, flexShrink: 0, ml: 1, border: 1, borderColor: "divider", display: "flex", flexDirection: "column", minHeight: 0 }}
 		>
 			<Box sx={{ p: 1, borderBottom: 1, borderColor: "divider" }}>
 				<Typography variant="subtitle2">

@@ -78,7 +78,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Type: Task.
   - Parent: `STORY-100`.
   - Required for parent: Yes.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
@@ -95,6 +95,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     und lösen.
     4. Zahl, Ring und Detail folgen dem Statusfilter des Backlogs.
     5. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
+  - Summary: Die Mindmap zeigt an jedem Thema Zahl, Fortschritt und Zustand.
+    Items lassen sich per Ziehen oder im Detail zuordnen und lösen.
 
 - `TASK-065` **Mindmap: Markierungen „verworfen“ und „später“ an Ideen-Knoten**
   - Uid: ea634e30-aae8-49b4-a5ab-8b77aa40bf03.

@@ -123,7 +123,7 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 			{look.counts && !editing && (
 				<Box
 					title={t("node.progress", { done, total })}
-					sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}
+					sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0, mr: 1 }}
 				>
 					<ProgressRing done={done} total={total} />
 					<Typography variant="caption" color="text.secondary" data-testid={mindmapTestIds.count(id)}>

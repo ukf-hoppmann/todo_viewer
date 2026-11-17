@@ -86,4 +86,4 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 ## Offen
 
 - Runde Anordnung bei großen Maps (Prototyp).
-- Form der KI-Vorschläge; Typwahl und tiefe Knoten beim Überführen; feste Werte der Markierung für Ideen-Knoten; Dateiformat für Platzierungen.
+- Form der KI-Vorschläge; Typwahl und tiefe Knoten beim Überführen; Markierung für Ideen-Knoten (Werte entschieden: fest); Dateiformat für Platzierungen.

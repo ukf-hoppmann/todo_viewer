@@ -65,6 +65,3 @@ weder Zustand noch Summen; der Filter kann markierte Knoten ausblenden. Sie gilt
 - Domain-, API- und UI-Tests sind Teil jedes Tasks; die Regeln liegen in reinen Funktionen der Domain.
 - Abhängigkeit: `STORY-099` (Gerüst) ist abgeschlossen.
 
-## Offen
-
-- Feste Werte oder frei für die Markierungen: vor Umsetzung von `TASK-065` mit dem Owner klären.

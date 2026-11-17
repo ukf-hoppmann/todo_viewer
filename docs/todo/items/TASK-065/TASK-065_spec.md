@@ -10,6 +10,6 @@ Fachliche Regeln: Abschnitt „Markierung“ in `STORY-100_spec.md`.
   Summen noch den abgeleiteten Zustand.
 - Markierte Knoten sind sichtbar abgesetzt; der Filter kann sie ausblenden.
 
-## Offen
+## Werte
 
-- Feste Werte oder frei: vor der Umsetzung mit dem Owner klären.
+Feste Werte: keine, verworfen, später; keine freien Texte.

@@ -3,9 +3,10 @@
 ## State
 
 - Goal/Status: Geplant; drei Tasks (TASK-056, TASK-057, TASK-065); offene Punkte werden der Reihe nach geklärt (2026-11-17).
-- Next step: Mit TASK-056 beginnen; Form der Markierungen vor TASK-065 klären (2026-11-17)
+- Next step: Umsetzung in Reihenfolge TASK-056, TASK-057, TASK-065, je in eigener Session (2026-11-17)
 - Open:
 - Decided:
+  - Markierungen haben feste Werte (keine, verworfen, später); TASK-065 hängt zusätzlich an TASK-057; Umsetzung der Tasks nacheinander in eigenen Sessions (2026-11-17)
   - Spec der Story und Task-Specs geschrieben; Kriterien in TASK-056, TASK-057 und TASK-065 um die Entscheidungen ergänzt (2026-11-17)
   - TASK-057 Kriterium 2 auf die Seitenansicht umgestellt (2026-11-17)
   - Goal und Kriterien 1, 2, 5 an die Entscheidungen vom 2026-11-17 angepasst (Seitenansicht, Papierkorb, Löschen von Knoten) (2026-11-17)
@@ -27,7 +28,7 @@
   - Verworfen: strikte Vererbung vom Wurzel-Item ohne Ausnahme; sie verhindert das Planen unterhalb eines Epic-Knotens (2026-11-13)
 - References: Spec STORY-100_spec.md, Task-Specs TASK-056/057/065; Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-17 — Spec und Verteilung auf die Tasks (627d4a4e4bba)
+State confirmed after entry 2026-11-17 — Markierungen fest, Reihenfolge der Tasks (a00c788852ce)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -193,3 +194,19 @@ State confirmed after entry 2026-11-17 — Spec und Verteilung auf die Tasks (62
 ### Open
 
 - Feste Werte oder frei für die Markierungen; vor `TASK-065` zu klären.
+
+## 2026-11-17 — Markierungen fest, Reihenfolge der Tasks
+
+### Discussed
+
+- Frage: Feste Werte oder freie Markierungen? Feste Werte sind filterbar und einheitlich dargestellt; freie Texte würden Filter und Darstellung verkomplizieren. Empfehlung: fest.
+- `TASK-065` braucht fachlich die Oberfläche aus `TASK-057`.
+
+### Decided
+
+- Feste Werte: keine, verworfen, später. Verworfen: freie Markierungen.
+- `TASK-065` hängt zusätzlich an `TASK-057`; Reihenfolge `TASK-056`, `TASK-057`, `TASK-065`. Der Owner will jeden Task in einer eigenen Session umsetzen lassen.
+
+### Open
+
+- Keine.

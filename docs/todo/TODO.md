@@ -133,7 +133,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Created: 2026-11-16.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `TASK-056`.
+  - Dependencies: `TASK-056`, `TASK-057`.
   - Goal: Ideen-Knoten lassen sich als „verworfen“ oder „später“ markieren,
     damit alte Ideen als Spur stehen bleiben, aber nicht mehr stören. Die
     Markierung gehört zum Knoten, nicht zu seinen Items.
@@ -144,8 +144,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     sie ausblenden.
     3. Die Markierung gilt nur für den Knoten selbst, nicht für Unterknoten,
     und ändert weder die Summen der Items noch den Zustand.
-    4. Die offene Form (feste Werte oder frei) ist vor der Umsetzung mit dem
-    Owner geklärt; Domain-, API- und UI-Tests sind grün.
+    4. Die Werte sind fest (keine, verworfen, später), nicht frei;
+    Domain-, API- und UI-Tests sind grün.
 
 - `STORY-101` **Mindmap-Ansichten: Fokus auf einen Knoten, Einzel- und Gesamtansicht, runde Anordnung, Abhängigkeiten**
   - Uid: 3366e17a-d7f3-4810-85c4-adf6817191fe.

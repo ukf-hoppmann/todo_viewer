@@ -51,18 +51,24 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Dependencies: `STORY-099`.
   - Goal: Backlog-Items und Memos lassen sich an Knoten hängen. Ein Knoten
     zeigt Anzahl und Fortschritt seiner Items samt Unterknoten und einen
-    daraus abgeleiteten Zustand; die Items selbst stehen nur im Detail. So
-    wird der Themenbaum zur Übersicht des Backlogs.
+    daraus abgeleiteten Zustand; die Items selbst stehen nur im Detail. Items
+    ohne Knoten stehen in einer Seitenansicht und werden von dort in den Baum
+    gezogen. So wird der Themenbaum zur Übersicht des Backlogs.
   - Completion criteria: 1. Ein Item hängt an höchstens einem Knoten; Kinder
     erben den Knoten ihres Parents, außer sie sind eigens angehängt, dann
-    zählen sie und ihre Kinder zum neuen Knoten.
+    zählen sie und ihre Kinder zum neuen Knoten. Wird ein Knoten gelöscht,
+    fallen seine Items an den Parent-Knoten zurück, sonst in „Nicht
+    zugeordnet“.
     2. Ein Knoten zeigt Anzahl und Fortschrittsring über sich und seine
-    Unterknoten; jedes Item zählt genau einmal, auch über leere Knoten hinweg.
+    Unterknoten; jedes Item zählt genau einmal, auch über leere Knoten hinweg; Items im
+    Papierkorb zählen nie.
     3. Der Zustand Idee, geplant, in Arbeit oder erledigt ergibt sich aus den
     Items und ist filterbar.
     4. Das Detail eines Knotens listet seine Items und verlinkten Memos; Memos
     zählen nicht in der Zahl.
-    5. Items ohne Knoten stehen in einem Sammelknoten „Nicht zugeordnet“.
+    5. Items ohne Knoten stehen in einer Seitenansicht „Nicht zugeordnet“. Sie
+    lässt sich ausschalten. Von dort ordnet man Items per Drag-and-drop einem
+    Knoten zu.
     6. Domain-, API- und UI-Tests sind grün.
   - Summary: Backlog-Einträge und Memos an Themen hängen. Das Thema zeigt nur
     eine Zahl und den Fortschritt, damit die Map übersichtlich bleibt.

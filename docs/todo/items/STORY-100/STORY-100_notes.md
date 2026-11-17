@@ -3,10 +3,11 @@
 ## State
 
 - Goal/Status: Geplant; drei Tasks (TASK-056, TASK-057, TASK-065); offene Punkte werden der Reihe nach geklärt (2026-11-17).
-- Next step: Kriterien 1, 2, 5 und Goal anpassen (nach Zustimmung des Owners); danach Spec nachziehen (2026-11-17)
+- Next step: TASK-057 (Kriterium 2 nennt noch den Sammelknoten) anpassen; Spec bei Umsetzungsbeginn schreiben (2026-11-17)
 - Open:
-  - Kriterien 1, 2 und 5 und das Goal an die Entscheidungen vom 2026-11-17 angleichen: Seitenansicht statt Sammelknoten, Papierkorb, Löschen von Knoten (2026-11-17)
+  - TASK-057 Kriterium 2: „Sammelknoten“ durch Seitenansicht ersetzen (2026-11-17)
 - Decided:
+  - Goal und Kriterien 1, 2, 5 an die Entscheidungen vom 2026-11-17 angepasst (Seitenansicht, Papierkorb, Löschen von Knoten) (2026-11-17)
   - „Nicht zugeordnet“ ist kein Knoten, sondern eine berechnete Seitenansicht je Projekt (wie „Entfernt“ im Formular-Editor): sie listet Items ohne Knoten; per Drag-and-drop ordnet man sie Knoten zu; die Seitenansicht lässt sich ausschalten; sie zählt nicht im Baum (2026-11-17)
   - Wird ein Knoten gelöscht, fallen seine Items an den Parent-Knoten zurück, sonst in „Nicht zugeordnet“; Ergebnis, als wäre der Knoten nie da gewesen (2026-11-17)
   - Ein Memo darf an mehrere Knoten verlinkt sein; wandert der Knoten in den Papierkorb, ruht der Link und kommt mit der Wiederherstellung zurück; das Memo bleibt unverändert (2026-11-17)
@@ -25,7 +26,7 @@
   - Verworfen: strikte Vererbung vom Wurzel-Item ohne Ausnahme; sie verhindert das Planen unterhalb eines Epic-Knotens (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-17 — „Nicht zugeordnet“ und Löschen von Knoten (875695d98238)
+State confirmed after entry 2026-11-17 — Goal und Kriterien angepasst (65cf35e36edd)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -156,3 +157,17 @@ State confirmed after entry 2026-11-17 — „Nicht zugeordnet“ und Löschen v
 ### Open
 
 - Kriterien 1, 2, 5 und Goal an die Entscheidungen angleichen (ändert die Bedeutung, daher mit dem Owner).
+
+## 2026-11-17 — Goal und Kriterien angepasst
+
+### Discussed
+
+- Goal und Kriterien 1, 2 und 5 nannten noch den Sammelknoten und nicht den Papierkorb und das Löschen von Knoten.
+
+### Decided
+
+- Der Owner stimmte dem Vorschlag zu: Goal um die Seitenansicht ergänzt; Kriterium 1 um den Rückfall beim Löschen; Kriterium 2 um „Papierkorb zählt nie“; Kriterium 5 als Seitenansicht mit Ausschalter und Drag-and-drop.
+
+### Open
+
+- TASK-057 Kriterium 2 nennt noch den Sammelknoten.

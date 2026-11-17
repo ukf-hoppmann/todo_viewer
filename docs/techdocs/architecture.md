@@ -145,7 +145,7 @@ wiederherstellen oder endgültig löschen, Notizen und Specs schreiben. Ein Pyth
 
 | Entscheidung | Kurzbegründung | Referenz |
 |---|---|---|
-| Onion-Architektur, Schichtregeln per `import-linter` | Fachregeln unabhängig von HTTP und Dateiformat; anderer Speicher = neuer Adapter + eine Zeile in `bootstrap.py` | `pyproject.toml`, [Architekturregeln](../development/architecture/backend.md) |
+| Onion-Architektur, Schichtregeln per `import-linter` | Fachregeln unabhängig von HTTP und Dateiformat; anderer Speicher = neuer Adapter + eine Zeile in `bootstrap.py` | `pyproject.toml`, [Architekturregeln](../development/architecture.md) |
 | Konstruktor-Injection ohne DI-Framework | Einfach nachvollziehbar, Services mit In-Memory-Fakes testbar | `src_old/backend/todo_viewer/bootstrap.py` |
 | Atomares Schreiben mit Konflikterkennung | Parallele Änderungen (z. B. durch Agenten) werden nicht überschrieben | [Architekturregeln](../development/architecture.md) |
 | Contract-Suite für die Speicher-Ports | Jeder Speicher-Adapter (Markdown, Datenbank und ein In-Memory-Fake) besteht dieselben Tests | `src_old/backend/tests/contract/`, `src_old/backend/tests/fakes.py` |

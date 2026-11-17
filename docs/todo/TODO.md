@@ -334,7 +334,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 - `EPIC-007` **Neuentwicklung als eigenständiges Tool**
   - Uid: c3a3ff5a-e320-4b04-af05-30257804a721.
   - Type: Epic.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-10-10.
   - Area: Backend-API.
   - Priority: Normal.

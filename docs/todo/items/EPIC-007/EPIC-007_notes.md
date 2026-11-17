@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Neubau umgesetzt und umgestiegen; der Altcode `src_old/` ist entfernt (2026-11-17). Abschluss des Epics steht beim Owner aus.
-- Next step: Owner prüft die Abschlusskriterien; danach `Awaiting confirmation`. Die Doku, die noch den alten Viewer beschreibt, wird umgestellt (2026-11-17).
+- Goal/Status: Alle Abschlusskriterien geprüft; `Awaiting confirmation`, der Owner bestätigt (2026-11-17).
+- Next step: Owner bestätigt das Epic. Die Doku, die noch den alten Viewer beschreibt, wird umgestellt (2026-11-17).
 - Open:
   - README und Techdocs (`architecture.md`, `configuration.md`, `interfaces.md`) beschreiben teils noch den alten Viewer und verweisen auf `src_old/` (2026-11-17)
 - Decided:
@@ -12,7 +12,7 @@
   - `STORY-086` und `STORY-092` sind in das neue Epic „Nachbesserungen am Neubau“ umgehängt (2026-11-17)
 - References: Spec `EPIC-007_spec.md`; Stories `STORY-060` bis `STORY-092`; neues Epic `NEW-nachbesserungen-neubau`
 
-State confirmed after entry 2026-11-17 — Altcode entfernt, Stories umgehängt (78ecec91b348)
+State confirmed after entry 2026-11-17 — Abschlusskriterien geprüft (1df955cbfabe)
 
 ## 2026-10-16 — Architektur-Grundsatzfragen
 
@@ -148,3 +148,18 @@ State confirmed after entry 2026-11-17 — Altcode entfernt, Stories umgehängt 
 ### Open
 
 - README und Techdocs beschreiben teils noch den alten Viewer und müssen auf den Neubau umgestellt werden
+
+## 2026-11-17 — Abschlusskriterien geprüft
+
+### Discussed
+
+- Kriterien 1 bis 5 durch die abgeschlossenen Stories belegt (Architektur freigegeben, relationales Datenmodell, Funktionsumfang samt KI-Schnittstelle, Datenübernahme `import_legacy`, Betrieb und Doku des Neubaus); Kriterium 6 durch `STORY-084` (Umstieg) und die Entfernung von `src_old/`.
+- Offen bleibt nur die Umstellung von README und Techdocs, die teils noch den alten Viewer beschreiben; sie gehört nicht zu den Kriterien.
+
+### Decided
+
+- `EPIC-007` steht auf `Awaiting confirmation`; bestätigen kann nur der Owner
+
+### Open
+
+- Doku zum alten Viewer auf den Neubau umstellen

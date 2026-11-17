@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Geplant; drei Tasks (TASK-056, TASK-057, TASK-065); offene Punkte werden der Reihe nach geklärt (2026-11-17).
-- Next step: Umsetzung in Reihenfolge TASK-056, TASK-057, TASK-065, je in eigener Session (2026-11-17)
+- Goal/Status: Alle drei Tasks sind vom Owner bestätigt; die Kriterien sind geprüft und erfüllt; wartet auf die Bestätigung des Owners (2026-11-17).
+- Next step: Owner bestätigt `Completed`; danach ist `EPIC-008` mit `STORY-101` weiterzuführen (2026-11-17)
 - Open:
 - Decided:
   - Markierungen haben feste Werte (keine, verworfen, später); TASK-065 hängt zusätzlich an TASK-057; Umsetzung der Tasks nacheinander in eigenen Sessions (2026-11-17)
@@ -28,7 +28,7 @@
   - Verworfen: strikte Vererbung vom Wurzel-Item ohne Ausnahme; sie verhindert das Planen unterhalb eines Epic-Knotens (2026-11-13)
 - References: Spec STORY-100_spec.md, Task-Specs TASK-056/057/065; Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-17 — Markierungen fest, Reihenfolge der Tasks (a00c788852ce)
+State confirmed after entry 2026-11-17 — Prüfung der Kriterien (952533ef3557)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -210,3 +210,24 @@ State confirmed after entry 2026-11-17 — Markierungen fest, Reihenfolge der Ta
 ### Open
 
 - Keine.
+
+## 2026-11-17 — Prüfung der Kriterien
+
+### Discussed
+
+- `TASK-056`, `TASK-057` und `TASK-065` sind vom Owner bestätigt und archiviert. Die Kriterien der Story wurden einzeln gegen Tests und Browserprüfung gelegt.
+- Kriterium 1 (höchstens ein Knoten, Vererbung, Löschen): `test_a_second_node_for_an_item_is_refused_unless_replacing_is_explicit`, `test_children_inherit_the_node_of_their_parent`, `test_an_item_attached_on_its_own_takes_its_children_along`, `test_a_trashed_node_hands_its_items_to_the_nearest_living_ancestor`, `test_a_trashed_node_without_a_parent_node_leaves_the_item_unassigned`, `test_the_result_returns_when_the_node_comes_back` (Domain) und die Integrationstests zu Löschen und Wiederherstellen eines Knotens.
+- Kriterium 2 (Zahl und Ring, jedes Item einmal, Papierkorb): `test_every_item_counts_exactly_once_also_across_empty_nodes`, `test_trashed_items_never_count_and_do_not_show_as_unassigned`; in der Oberfläche Ring und Zahl am Knoten, im Browser geprüft (Zahlen folgen dem Statusfilter).
+- Kriterium 3 (Zustand, filterbar): `test_the_state_follows_the_table_of_the_story_spec`, `test_rejected_items_count_in_the_number_but_not_in_the_state`; Zustandsfilter in der Seitenleiste, im Browser geprüft.
+- Kriterium 4 (Detail mit Items und Memos, Memos zählen nicht): `test_a_memo_can_be_linked_to_several_nodes_and_does_not_count`, `NodeContentSection`-Tests; im Browser geprüft.
+- Kriterium 5 (Seitenansicht, ausschaltbar, Drag-and-drop): Tests der Seitenansicht und im Browser geprüft (Item auf „Ideen“ gezogen, Knoten wechselt von Idee zu Geplant).
+- Kriterium 6 (Domain-, API- und UI-Tests): Server komplett 1237 grün (1 übersprungen: der Image-Test, braucht Docker), Client 1307 grün.
+- Zusätzlich umgesetzt: Markierungen „verworfen“ und „später“ (`TASK-065`), die nicht zu den Kriterien der Story gehören.
+
+### Open
+
+- Der ESLint-Fehler in `core/ui-state/usePersistentState.ts` (5 Meldungen) und zwei E501 in `ruff` bestehen schon vor der Story und gehören nicht hierher.
+
+### Decided
+
+- Alle sechs Kriterien erfüllt; die Story steht auf `Awaiting confirmation`.

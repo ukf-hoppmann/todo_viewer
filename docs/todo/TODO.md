@@ -39,6 +39,19 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Backlog-Einträge und Memos daran hängen und so schnell sehen, was es gibt
     und was kommt. Sie ist nur ein Gerippe und verlinkt; kopiert wird nichts.
 
+- `NEW-nachbesserungen-neubau` **Nachbesserungen am Neubau**
+  - Type: Epic.
+  - Status: Open.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Folgearbeiten am ToDo-Viewer, die beim Neubau (`EPIC-007`) bewusst
+    zurückgestellt wurden und nach dem Umstieg und der Entfernung des Altcodes
+    anstehen.
+  - Completion criteria: 1. Die Stories des Epics sind abgeschlossen oder
+    verworfen.
+  - Summary: Sammelstelle für Verbesserungen, die nach dem Neubau folgen.
+
 - `STORY-101` **Mindmap-Ansichten: Fokus auf einen Knoten, Einzel- und Gesamtansicht, runde Anordnung, Abhängigkeiten**
   - Uid: 3366e17a-d7f3-4810-85c4-adf6817191fe.
   - Type: Story.
@@ -287,7 +300,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 - `STORY-086` **Baum: Umwandeln-Dialog beim Ziehen**
   - Uid: 9ccc4f8d-f897-4fdd-bc8d-a67da5569d3f.
   - Type: Story.
-  - Parent: `EPIC-007`.
+  - Parent: `NEW-nachbesserungen-neubau`.
   - Required for parent: No.
   - Status: Open.
   - Created: 2026-10-17.
@@ -342,7 +355,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 - `STORY-092` **MCP-Server fehlerarm für Agenten: Projektbindung, Labels, typisierte Felder**
   - Uid: 203401d1-c591-4737-9d56-60aea47a3fec.
   - Type: Story.
-  - Parent: `EPIC-007`.
+  - Parent: `NEW-nachbesserungen-neubau`.
   - Required for parent: No.
   - Status: Open.
   - Created: 2026-10-19.

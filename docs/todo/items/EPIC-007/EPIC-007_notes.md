@@ -1,5 +1,19 @@
 # EPIC-007 — Neuentwicklung als eigenständiges Tool
 
+## State
+
+- Goal/Status: Neubau umgesetzt und umgestiegen; der Altcode `src_old/` ist entfernt (2026-11-17). Abschluss des Epics steht beim Owner aus.
+- Next step: Owner prüft die Abschlusskriterien; danach `Awaiting confirmation`. Die Doku, die noch den alten Viewer beschreibt, wird umgestellt (2026-11-17).
+- Open:
+  - README und Techdocs (`architecture.md`, `configuration.md`, `interfaces.md`) beschreiben teils noch den alten Viewer und verweisen auf `src_old/` (2026-11-17)
+- Decided:
+  - `src_old/` ist nach der Abnahme des Neubaus durch den Owner entfernt worden, samt Dockerfile, `todo_old.sh`, `scripts/check.sh`, Root-`pyproject.toml` und dem alten Compose-Dienst (2026-11-17)
+  - Die Architekturscopes `legacy`, `backend` und `web` entfallen; Regel 0 gilt nur noch für `reference/` (2026-11-17)
+  - `STORY-086` und `STORY-092` sind in das neue Epic „Nachbesserungen am Neubau“ umgehängt (2026-11-17)
+- References: Spec `EPIC-007_spec.md`; Stories `STORY-060` bis `STORY-092`; neues Epic `NEW-nachbesserungen-neubau`
+
+State confirmed after entry 2026-11-17 — Altcode entfernt, Stories umgehängt (78ecec91b348)
+
 ## 2026-10-16 — Architektur-Grundsatzfragen
 
 ### Discussed
@@ -115,3 +129,22 @@
 
 - Der Projektinhaber prüft die Items mit `Awaiting confirmation` und die Fragen 13 bis 35 in `STORY-060`; neu seit dem letzten Stand: Fragen 29 bis 35 (Notes, Wecker, Datenübernahme).
 - Vor dem Umstieg (`STORY-084`): erst `import_legacy --dry-run` auf einer Kopie der echten Datenbank, Markdown-primäre Projekte vorher im alten Viewer in ihre Datenbank spiegeln, `server/constraints.txt` bei Abhängigkeits-Updates pflegen.
+
+## 2026-11-17 — Altcode entfernt, Stories umgehängt
+
+### Discussed
+
+- Die Prüfung der Abschlusskriterien ergab: Kriterium 6 (Cutover, Altcode entfernt) fehlte, weil `src_old/` noch im Repository lag; `STORY-086` und `STORY-092` waren optionale, noch offene Kinder.
+- Folgen des Löschens: Root-`Dockerfile`, `todo_old.sh`, `scripts/check.sh`, Root-`pyproject.toml`, der alte Compose-Dienst `todo-viewer` (Port 5412), ihre Tests und die Architekturscopes `legacy`, `backend`, `web` dienten nur dem alten Viewer.
+- Der Test, der die Kopie des alten Schemas mit `src_old/…/schema.py` verglich, entfällt mit der Quelle; die Datenübernahme `import_legacy` bleibt.
+- Wohin mit den beiden Stories: neues Epic (empfohlen), ohne Parent oder unter `EPIC-008`.
+
+### Decided
+
+- `src_old/` und alles, was nur ihm diente, ist entfernt; die Git-Historie behält es
+- Architekturscopes `legacy`, `backend`, `web` entfallen, Regel 0 gilt nur noch für `reference/`
+- `STORY-086` und `STORY-092` hängen unter dem neuen Epic „Nachbesserungen am Neubau“ (Platzhalter `NEW-nachbesserungen-neubau`)
+
+### Open
+
+- README und Techdocs beschreiben teils noch den alten Viewer und müssen auf den Neubau umgestellt werden

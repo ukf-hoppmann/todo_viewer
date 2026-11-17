@@ -8,6 +8,39 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `TASK-056` **Mindmap-Server: Items und Memos zuordnen, Vererbung, Summen und Zustand**
+  - Uid: b8dc196f-65c2-4f22-a846-46d853a2ec75.
+  - Type: Task.
+  - Parent: `STORY-100`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Server verknüpft Items und Memos mit Knoten, berechnet den
+    wirksamen Knoten jedes Items nach der Vererbungsregel und liefert je
+    Knoten Anzahl, Fortschritt und Zustand.
+  - Completion criteria: 1. Zuordnen und Lösen gehen über API und MCP; ein
+    zweiter Knoten für dasselbe Item wird abgewiesen oder ersetzt den ersten
+    ausdrücklich.
+    2. Die reine Funktion für wirksamen Knoten, Summen ohne Doppelzählung und
+    Zustand ist mit Tests abgedeckt, auch für leere Knoten und eigens
+    angehängte Kinder.
+    3. Die Antwort des Baums enthält je Knoten Anzahl, Fortschritt und Zustand
+    sowie die Items ohne Knoten.
+    4. Zählende Items folgen dem Statusfilter des Backlogs; Items im Papierkorb
+    zählen nie; der Zustand folgt der Regel der Story-Spec und ist vom Filter
+    unabhängig.
+    5. Wird ein Knoten gelöscht, fallen seine Items an den Parent-Knoten
+    zurück, sonst nach „Nicht zugeordnet“; Memos lassen sich an mehrere Knoten
+    verlinken, der Link ruht im Papierkorb.
+  - Summary: Der Server hängt Items und Memos an Knoten, berechnet Anzahl, Fortschritt
+    und Zustand je Knoten samt Unterknoten und liefert die Items ohne Knoten mit dem
+    Baum. Ein Item hängt an höchstens einem Knoten, Kinder erben, ein gelöschter
+    Knoten gibt seine Items an den Parent-Knoten zurück.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
+
 - `STORY-099` **Mindmap-Gerüst: Themenbaum je Projekt anlegen, ordnen und mit Notizen versehen**
   - Uid: e4a5ac91-95ba-44d0-aa9a-5ac0fffa6326.
   - Type: Story.

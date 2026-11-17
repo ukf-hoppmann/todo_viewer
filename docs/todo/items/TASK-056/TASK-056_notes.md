@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt und geprüft (Domain, Zuordnen/Lösen über API und MCP, Baum-Antwort, Löschregel, Memo-Links); wartet auf Bestätigung des Owners (2026-11-17).
-- Next step: Owner bestätigt; danach TASK-057 (Oberfläche) und TASK-065 (Markierungen) in eigenen Sessions (2026-11-17)
+- Goal/Status: Umgesetzt, geprüft und vom Owner bestätigt (2026-11-17).
+- Next step: TASK-057 (Oberfläche) und TASK-065 (Markierungen) in eigenen Sessions (2026-11-17)
 - Open:
 - Decided:
   - Ein zweiter Knoten für ein Item wird mit `mindmap_item_assigned` abgewiesen; nur mit `replace` ersetzt er den ersten ausdrücklich (2026-11-17)
@@ -14,7 +14,7 @@
   - Zählende Items folgen dem Statusfilter (`statuses`); `Rejected` zählt in der Zahl mit, wenn der Filter es durchlässt, aber nie im Zustand (2026-11-17)
 - References: Spec TASK-056_spec.md; Story-Spec STORY-100_spec.md; Doku neubau-server.md, Abschnitt Plugin `mindmap`
 
-State confirmed after entry 2026-11-17 — Plan und Umsetzung (00e468fecc48)
+State confirmed after entry 2026-11-17 — Bestätigung (cf9ad7f15b8a)
 
 ## 2026-11-17 — Plan und Umsetzung
 
@@ -35,3 +35,9 @@ State confirmed after entry 2026-11-17 — Plan und Umsetzung (00e468fecc48)
 ### Open
 
 - Ausnahme vom Versionstoken (siehe oben) bestätigen lassen.
+
+## 2026-11-17 — Bestätigung
+
+### Decided
+
+- Der Owner hat den Task bestätigt (`Completed`). Die Ausnahme vom Versionstoken wurde dabei nicht beanstandet; sie bleibt wie umgesetzt.

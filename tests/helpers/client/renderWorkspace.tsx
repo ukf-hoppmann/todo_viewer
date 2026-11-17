@@ -11,9 +11,12 @@ import backlogDe from "../../../client/src/plugins/backlog/locales/de.json";
 import backlogEn from "../../../client/src/plugins/backlog/locales/en.json";
 import memosDe from "../../../client/src/plugins/memos/locales/de.json";
 import memosEn from "../../../client/src/plugins/memos/locales/en.json";
+import mindmapDe from "../../../client/src/plugins/mindmap/locales/de.json";
+import mindmapEn from "../../../client/src/plugins/mindmap/locales/en.json";
 import de from "../../../client/src/plugins/workspace/locales/de.json";
 import en from "../../../client/src/plugins/workspace/locales/en.json";
 import { fakeWorkspaceBackend } from "./fakeWorkspaceBackend";
+import { LocationProbe } from "./LocationProbe";
 
 /** A plugin of the test that hangs a create form into `workspace.create-types`; its title is `create.<name>`. */
 export interface CreateType {
@@ -29,6 +32,8 @@ export async function renderWorkspace(
 	options: {
 		backend?: ReturnType<typeof fakeWorkspaceBackend>;
 		createTypes?: CreateType[];
+		/** The addresses the router starts with (the last one is current); default `/`. The current address is shown under `locationTestId` (`locationTestId.ts`). */
+		initialEntries?: string[];
 		/** Widgets of other slots, e.g. `backlog.item-detail`. */
 		widgets?: Array<{ ownerId: string; slot: string; name: string; component: ComponentType }>;
 	} = {},
@@ -43,6 +48,8 @@ export async function renderWorkspace(
 	i18n.addResourceBundle("en", "alarms", alarmsEn);
 	i18n.addResourceBundle("de", "memos", memosDe);
 	i18n.addResourceBundle("en", "memos", memosEn);
+	i18n.addResourceBundle("de", "mindmap", mindmapDe);
+	i18n.addResourceBundle("en", "mindmap", mindmapEn);
 	const active: ActivePlugin[] = [];
 	for (const type of options.createTypes ?? []) {
 		i18n.addResourceBundle("de", type.ownerId, { create: { [type.name]: type.title } });
@@ -58,10 +65,11 @@ export async function renderWorkspace(
 		<I18nextProvider i18n={i18n}>
 			<StoreProvider store={backend.store}>
 				<PluginRegistryProvider registry={registry}>
-					<MemoryRouter>
+					<MemoryRouter initialEntries={options.initialEntries}>
 						{/* Pages fill the detail column of their route (`usePageDetail`); other components ignore it. */}
 						<SubLayout ownerId="test" layout={{ detail: true }}>
 							{ui}
+							<LocationProbe />
 						</SubLayout>
 					</MemoryRouter>
 				</PluginRegistryProvider>

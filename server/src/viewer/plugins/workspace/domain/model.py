@@ -13,8 +13,8 @@ from viewer.core.domain.errors import DomainError, InvalidInput
 BUILTIN_PROJECT = "Allgemein"
 SYNC_DIRECTIONS = ("both", "to_files", "to_database")
 SyncDirection = Literal["both", "to_files", "to_database"]
-LinkRole = Literal["reference", "origin", "trigger"]
-LINK_ROLES = ("reference", "origin", "trigger")
+LinkRole = Literal["reference", "origin", "trigger", "node"]
+LINK_ROLES = ("reference", "origin", "trigger", "node")
 
 _LABEL = re.compile(r"^([A-Z]+)-(\d+)$")
 
@@ -57,6 +57,10 @@ class LinkExists(DomainError):
 
 class TriggerLinkReserved(DomainError):
     code = "trigger_link_reserved"
+
+
+class NodeLinkReserved(DomainError):
+    code = "node_link_reserved"
 
 
 @dataclass(frozen=True)

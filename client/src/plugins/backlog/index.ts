@@ -58,4 +58,6 @@ export const plugin = definePlugin({
 
 export type { ItemOut } from "./api";
 export { useItemDetail } from "./itemDetailContext";
+export { StatusFilter } from "./Filters";
+export { shownStatusesParam, useShownStatuses } from "./state";
 export { backlogTestIds } from "./testIds";

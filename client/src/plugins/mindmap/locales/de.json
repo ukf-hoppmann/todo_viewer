@@ -1,0 +1,106 @@
+{
+	"tab": {
+		"mindmap": "Mindmap"
+	},
+	"page": {
+		"chooseProject": "Markiere links ein Projekt, um seine Mindmap zu sehen.",
+		"path": "Pfad zum Fokus",
+		"hint": "Doppelklick benennt um · Klick öffnet das Detail · Ziehen hängt um oder ordnet um"
+	},
+	"node": {
+		"new": "Neues Thema",
+		"hasNotes": "Dieser Knoten hat Notizen",
+		"progress": "{{done}} von {{total}} erledigt"
+	},
+	"action": {
+		"add": "Unterknoten anlegen",
+		"remove": "In den Papierkorb legen",
+		"openAsRoot": "Als Wurzel öffnen",
+		"expand": "Aufklappen",
+		"collapse": "Zuklappen",
+		"close": "Schließen",
+		"edit": "Bearbeiten"
+	},
+	"field": {
+		"title": "Titel",
+		"text": "Text",
+		"documents": "Dokumente",
+		"mark": "Markierung"
+	},
+	"error": {
+		"failed": "Die Änderung ist fehlgeschlagen",
+		"titleEmpty": "Der Titel darf nicht leer sein"
+	},
+	"form": {
+		"cancel": "Abbrechen",
+		"save": "Speichern"
+	},
+	"documents": {
+		"none": "Noch keine Notizen oder Specs.",
+		"addEntry": "Notiz-Eintrag anlegen",
+		"addSpec": "Spec anlegen",
+		"topic": "Thema",
+		"discussed": "Besprochen",
+		"decided": "Entschieden",
+		"open": "Offen",
+		"onePerLine": "Ein Stichpunkt pro Zeile",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md oder {{label}}_spec_<thema>.md",
+		"large": "Großansicht",
+		"conflict": "Das Dokument wurde inzwischen geändert.",
+		"showCurrent": "Aktuellen Stand zeigen",
+		"saveAnyway": "Trotzdem speichern",
+		"currentState": "aktueller Stand",
+		"toc": "Inhaltsverzeichnis"
+	},
+	"filter": {
+		"state": "Zustand",
+		"unassigned": "Nicht zugeordnet anzeigen",
+		"mark": "Markierung"
+	},
+	"state": {
+		"idea": "Idee",
+		"planned": "Geplant",
+		"in_progress": "In Arbeit",
+		"done": "Erledigt"
+	},
+	"unassigned": {
+		"title": "Nicht zugeordnet",
+		"empty": "Alle Items hängen an einem Knoten.",
+		"hint": "Ziehe ein Item auf einen Knoten, um es zuzuordnen."
+	},
+	"content": {
+		"title": "Items und Memos",
+		"noItems": "Keine Items",
+		"noMemos": "Keine Memos",
+		"items": "Items",
+		"memos": "Memos",
+		"inherited": "geerbt",
+		"assignItem": "Item zuordnen",
+		"linkMemo": "Memo verlinken",
+		"noMatch": "Nichts gefunden",
+		"assign": "Zuordnen",
+		"link": "Verlinken",
+		"unassign": "Zuordnung von {{label}} lösen",
+		"unlink": "Link zu {{label}} lösen",
+		"replaceTitle": "Anderem Knoten entziehen?",
+		"replaceMessage": "{{label}} hängt schon an einem anderen Knoten. Zu diesem Knoten umhängen?",
+		"replace": "Umhängen",
+		"cancel": "Abbrechen"
+	},
+	"itemNode": {
+		"title": "Mindmap-Knoten",
+		"node": "Knoten",
+		"unassigned": "Nicht zugeordnet",
+		"inherited": "geerbt",
+		"release": "Zuordnung lösen",
+		"goto": "Gehe hin",
+		"create": "Erstelle",
+		"anchor": "Anker"
+	},
+	"mark": {
+		"none": "Keine",
+		"discarded": "Verworfen",
+		"later": "Später"
+	}
+}

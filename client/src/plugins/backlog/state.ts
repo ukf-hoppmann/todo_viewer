@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { usePersistentState } from "../../core";
-import { DEFAULT_HIDDEN_STATUSES } from "./constants";
+import { DEFAULT_HIDDEN_STATUSES, STATUSES } from "./constants";
 
 const OWNER = "backlog";
 
@@ -28,4 +28,19 @@ export function useBacklogState() {
 		() => ({ hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, expand, selected, setSelected, extendedMarking, setExtendedMarking }),
 		[hiddenStatuses, setHiddenStatuses, hiddenPriorities, setHiddenPriorities, collapsed, expanded, toggleCollapsed, setAllCollapsed, expand, selected, setSelected, extendedMarking, setExtendedMarking],
 	);
+}
+
+/**
+ * The status filter of the backlog as the server takes it (`statuses` of the mind map): the statuses that pass,
+ * comma-separated. Empty when all pass, and also when none does (the server reads empty as "all").
+ */
+export function shownStatusesParam(hidden: readonly string[]): string {
+	const shown = STATUSES.filter((status) => !hidden.includes(status));
+	return shown.length === STATUSES.length || shown.length === 0 ? "" : shown.join(",");
+}
+
+/** For other plugins: the status filter of the backlog as the `statuses` parameter (see `shownStatusesParam`). */
+export function useShownStatuses(): string {
+	const [hidden] = usePersistentState<string[]>(OWNER, "hiddenStatuses", [...DEFAULT_HIDDEN_STATUSES]);
+	return shownStatusesParam(hidden);
 }

@@ -3,7 +3,7 @@
 ## State
 
 - Goal/Status: Geplant; Konzept steht in der Spec, Stories und Tasks sind angelegt, Branch `todo_mindmap` ist der Ausgangspunkt der Umsetzung.
-- Next step: `TASK-052` in eigener Session umsetzen und nach `todo_mindmap` mergen, dann `TASK-053`.
+- Next step: `TASK-054` in eigener Session umsetzen und nach `todo_mindmap` mergen; `TASK-052` und `TASK-053` sind abgeschlossen.
 - Open:
   - Wie genau Area durch die Mindmap ersetzt wird (`STORY-106`) (2026-11-16)
 - Decided:
@@ -18,9 +18,10 @@
   - Die Mindmap ersetzt das Feld Area (2026-11-16)
   - Der Branch heißt `todo_mindmap`, zweigt von `main` ab und enthält die Planung per Merge aus `claude/nice-volta-6mvn99` (2026-11-16)
   - Jeder Task läuft in eigener Session auf eigenem `claude/…`-Branch und wird nach `todo_mindmap` gemergt; Plan für `STORY-099` freigegeben (2026-11-16)
+  - Auf `todo_mindmap` gibt es keine Releases (kein Versionsschritt nach den Merges der Tasks); die Version wird erst mit der Rückführung geklärt (2026-11-16)
 - References: Spec `EPIC-008_spec.md`; Ideensammlung `TASK-064`; Stories `STORY-099`, `STORY-100`, `STORY-101`, `STORY-102`, `STORY-103`, `STORY-104`, `STORY-105`
 
-State confirmed after entry 2026-11-16 — Umsetzungsplan freigegeben, Sessions (58a563812b5a)
+State confirmed after entry 2026-11-16 — Kein Release auf dem Mindmap-Branch (ab006fec9f3a)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -79,3 +80,14 @@ State confirmed after entry 2026-11-16 — Umsetzungsplan freigegeben, Sessions 
 ### Open
 
 - Wo die Dokument-Logik für Knoten liegt (gemeinsamer Baustein im Workspace oder `requires: backlog`): vor `TASK-055` klären
+
+## 2026-11-16 — Kein Release auf dem Mindmap-Branch
+
+### Discussed
+
+- Die Versionsregel sieht nach jedem Merge einer Änderung einen Versionsschritt vor; nach `TASK-053` wäre es 0.11.0 gewesen. `todo_mindmap` ist ein Experimentier-Branch, nach `TASK-052` gab es ebenfalls keinen Schritt.
+
+### Decided
+
+- Der Owner entscheidet: kein Release auf `todo_mindmap`
+

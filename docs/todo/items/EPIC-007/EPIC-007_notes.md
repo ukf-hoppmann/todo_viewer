@@ -9,7 +9,7 @@
   - `src_old/` ist nach der Abnahme des Neubaus durch den Owner entfernt worden, samt Dockerfile, `todo_old.sh`, `scripts/check.sh`, Root-`pyproject.toml` und dem alten Compose-Dienst (2026-11-17)
   - Die Architekturscopes `legacy`, `backend` und `web` entfallen; Regel 0 gilt nur noch für `reference/` (2026-11-17)
   - `STORY-086` und `STORY-092` sind in das neue Epic „Nachbesserungen am Neubau“ umgehängt (2026-11-17)
-- References: Spec `EPIC-007_spec.md`; Stories `STORY-060` bis `STORY-092`; neues Epic `NEW-nachbesserungen-neubau`
+- References: Spec `EPIC-007_spec.md`; Stories `STORY-060` bis `STORY-092`; neues Epic `EPIC-009`
 
 State confirmed after entry 2026-11-17 — Bestätigung (b6af08403f35)
 
@@ -142,7 +142,7 @@ State confirmed after entry 2026-11-17 — Bestätigung (b6af08403f35)
 
 - `src_old/` und alles, was nur ihm diente, ist entfernt; die Git-Historie behält es
 - Architekturscopes `legacy`, `backend`, `web` entfallen, Regel 0 gilt nur noch für `reference/`
-- `STORY-086` und `STORY-092` hängen unter dem neuen Epic „Nachbesserungen am Neubau“ (Platzhalter `NEW-nachbesserungen-neubau`)
+- `STORY-086` und `STORY-092` hängen unter dem neuen Epic „Nachbesserungen am Neubau“ (Platzhalter `EPIC-009`)
 
 ### Open
 

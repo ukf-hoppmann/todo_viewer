@@ -39,9 +39,11 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Backlog-Einträge und Memos daran hängen und so schnell sehen, was es gibt
     und was kommt. Sie ist nur ein Gerippe und verlinkt; kopiert wird nichts.
 
-- `NEW-nachbesserungen-neubau` **Nachbesserungen am Neubau**
+- `EPIC-009` **Nachbesserungen am Neubau**
+  - Uid: b22089d8-7efd-4395-9c14-7643501c0fa8.
   - Type: Epic.
   - Status: Open.
+  - Created: 2026-11-17.
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: None.
@@ -280,7 +282,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 - `STORY-086` **Baum: Umwandeln-Dialog beim Ziehen**
   - Uid: 9ccc4f8d-f897-4fdd-bc8d-a67da5569d3f.
   - Type: Story.
-  - Parent: `NEW-nachbesserungen-neubau`.
+  - Parent: `EPIC-009`.
   - Required for parent: No.
   - Status: Open.
   - Created: 2026-10-17.
@@ -314,7 +316,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 - `STORY-092` **MCP-Server fehlerarm für Agenten: Projektbindung, Labels, typisierte Felder**
   - Uid: 203401d1-c591-4737-9d56-60aea47a3fec.
   - Type: Story.
-  - Parent: `NEW-nachbesserungen-neubau`.
+  - Parent: `EPIC-009`.
   - Required for parent: No.
   - Status: Open.
   - Created: 2026-10-19.

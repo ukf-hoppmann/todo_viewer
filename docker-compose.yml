@@ -1,32 +1,5 @@
 services:
-  todo-viewer:
-    build: .
-    container_name: todo-viewer
-    hostname: todo.localhost
-    restart: unless-stopped
-    environment:
-      # Startordner des Dateibrowsers beim Hinzufügen von Projekten
-      - BROWSE_START=/Users/hoppmann/Documents/GitHub
-      # Log in das per Volume eingebundene ./logs (rotiert: 5 × 5 MB)
-      - LOG_FILE=/app/logs/todo-viewer.log
-      - LOG_LEVEL=INFO
-    ports:
-      # Nur lokal erreichbar: die API kann Items anlegen, ändern und löschen.
-      - "127.0.0.1:5412:5412"
-    volumes:
-      # config.json + UI-Zustand (ui_state.json) liegen hier beschreibbar auf
-      # dem Host und überleben damit "docker compose down" bzw. Rebuilds.
-      - ./configs:/app/configs
-      # Logdateien auf dem Host; bleiben beim Entfernen des Containers erhalten.
-      - ./logs:/app/logs
-      # gleicher absoluter Pfad wie auf dem Host, damit die in config.json
-      # referenzierten Backlog-Ordner in den Nachbar-Repos gefunden werden.
-      # Beschreibbar, damit Status-/Prioritätsänderungen und Archivierung
-      # aus der UI in den Dateien landen.
-      - /Users/hoppmann/Documents/GitHub:/Users/hoppmann/Documents/GitHub
-
-  # Der Neubau (EPIC-007) liegt auf Host-Port 5411 (der Harness sucht dort), der alte Viewer auf 5412.
-  # Host- und Container-Port sind gleich.
+  # Der Viewer liegt auf Host-Port 5411 (der Harness sucht dort). Host- und Container-Port sind gleich.
   todo-viewer-next:
     build:
       context: .

@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import re
-from pathlib import Path
-
 import pytest
-from viewer.app.import_legacy import legacy_schema
+
 from viewer.app.import_legacy.mapping import (
     counters,
     document_kind,
@@ -14,8 +11,6 @@ from viewer.app.import_legacy.mapping import (
     stable_uid,
 )
 from viewer.app.import_legacy.report import Report
-
-OLD_SCHEMA = Path(__file__).resolve().parents[5] / "src_old/backend/todo_viewer/infrastructure/database/schema.py"
 
 
 @pytest.mark.parametrize(
@@ -85,20 +80,3 @@ def test_the_report_lists_counts_sorted_and_deviations() -> None:
         "Abweichungen: 1",
         "  - etwas fehlt",
     ]
-
-
-def _columns(source: str) -> dict[str, set[str]]:
-    """Tabelle → Spaltennamen, aus dem Quelltext einer Schema-Datei gelesen (nicht importiert)."""
-    tables: dict[str, set[str]] = {}
-    for match in re.finditer(r'sa\.Table\(\s*"(\w+)", metadata,(.*?)\n\)', source, re.S):
-        tables[match.group(1)] = set(re.findall(r'sa\.Column\("(\w+)"', match.group(2)))
-    return tables
-
-
-def test_the_copy_of_the_legacy_schema_matches_the_old_viewer() -> None:
-    old = _columns(OLD_SCHEMA.read_text(encoding="utf-8"))
-    copy = {name: {c.name for c in table.columns} for name, table in legacy_schema.metadata.tables.items()}
-
-    assert set(copy) <= set(old)
-    for name, columns in copy.items():
-        assert columns <= old[name], name

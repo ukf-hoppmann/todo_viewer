@@ -1,2 +1,0 @@
-NOTE: 15
-TOPIC: 7

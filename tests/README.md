@@ -1,8 +1,6 @@
 # Tests des Neubaus
 
-Alle Tests des Neubaus (`server/`, `client/`) liegen hier. Die Tests des alten
-Viewers liegen in `src_old/backend/tests/` und `src_old/web/` und laufen mit
-`scripts/check.sh`.
+Alle Tests (`server/`, `client/`) liegen hier.
 
 ```
 implementation/unit/server/…         spiegelt server/src/viewer/, mit Fakes statt Adaptern
@@ -17,8 +15,8 @@ helpers/client/                      Fakes und Render-Hilfen für die Client-Tes
 
 ## Befehle
 
-Einmalig: `python3.11 -m venv .venv && .venv/bin/pip install -r src_old/backend/requirements-dev.txt`
-und `.venv/bin/pip install -e server` bzw. die Abhängigkeiten aus `server/pyproject.toml`.
+Einmalig: `python3.11 -m venv .venv && .venv/bin/pip install -e server`
+bzw. die Abhängigkeiten aus `server/pyproject.toml`.
 
 | Was | Befehl |
 |---|---|

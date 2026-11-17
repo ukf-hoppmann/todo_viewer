@@ -29,6 +29,28 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Eine Map ab einem beliebigen Knoten öffnen, mit Pfad zurück, und vom Item aus zur Map springen, dort einen Knoten anlegen oder ihn als Wurzel öffnen.
   - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
 
+- `EPIC-007` **Neuentwicklung als eigenständiges Tool**
+  - Uid: c3a3ff5a-e320-4b04-af05-30257804a721.
+  - Type: Epic.
+  - Status: Completed.
+  - Created: 2026-10-10.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Das ToDo-Viewer wird von Grund auf neu entwickelt, mit einer
+    tragfähigen Architektur und einem relationalen Datenmodell in der
+    Datenbank. Es wird ein eigenständiges Produkt, das der KI eine API
+    bietet und nicht mehr als Teil des KI-Harness entsteht.
+  - Completion criteria: 1. Die Architektur ist dokumentiert und vom
+    Projektinhaber freigegeben. 2. Das relationale Datenmodell ist
+    umgesetzt. 3. Die neue Version deckt den Funktionsumfang von v0.8.7 ab,
+    die API für die KI eingeschlossen. 4. Bestehende Backlogs lassen sich in
+    die neue Datenbank übernehmen. 5. Das Tool läuft und ist dokumentiert,
+    ohne Harness-Bezug. 6. Der Cutover ist erfolgt und der Altcode entfernt.
+  - Summary: Kompletter Neubau des ToDo-Viewers mit besserer Architektur und
+    relationaler Datenstruktur, als eigenständiges Tool mit API für die KI.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; Altcode `src_old/` entfernt, Doku auf den Neubau umgestellt.
+
 - `STORY-100` **Items und Memos an Knoten hängen: Anzahl, Fortschritt und Zustand am Thema**
   - Uid: 36fb7560-506d-49a0-9d0b-bcbc5b35015f.
   - Type: Story.

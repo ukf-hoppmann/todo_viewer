@@ -1,6 +1,6 @@
 # Neubau: Server (`server/`)
 
-Stand des Neubaus (`EPIC-007`); der alte Viewer in `src_old/` ist davon unberührt. Verbindliche Regeln:
+Verbindliche Regeln:
 [Architektur](../development/architecture.md) und Scope `server`. Entwurf:
 `docs/todo/items/EPIC-007/EPIC-007_spec.md`.
 
@@ -297,7 +297,7 @@ Projektname und Zusatzangaben für Codecs: `MirrorConfig` trägt den Namen des P
 - **Abbildung.** Projekte: `id` → `uid`; Spiegel-Ordner = `sync_path`, eingeschaltet, wenn vorhanden und nicht `mirror_disabled`; `auto_sync` übernommen, Richtung `both`; ein Projekt „Allgemein“ wird das eingebaute; Reihenfolge nach der alten `position`. Elemente (Items, Topics, Notes): `uid` und Label bleiben; `deleted` → `deleted_at`; Label-Verlauf und Zähler (höchstes Label je Präfix, dazu `note_counters`). Priorität (ohne Rücksicht auf Groß-/Kleinschreibung): `Urgent`/`Important`/`Normal`/`Prospective` unverändert, `High` → `Urgent`, `Medium` → `Important`, `Low` → `Normal`, `dringend`/`wichtig`/`perspektivisch` wie im alten Viewer, leer → `Normal`. Bereiche → `backlog_areas` je Projekt. `location` entfällt (das Archiv ist der Endstatus). Zusatzfelder → ein Eintrag „Übernommene Zusatzfelder“ (Datum des Imports) in `<LABEL>_notes.md` (`STORY-060` Frage 4). Links → `workspace_links` über Projekt und Label des Ziels. Zeit-Auslöser an Notes → Wecker mit der Note als Ziel (`fired_at` gesetzt → `Due`, sonst `Pending`; `STORY-060` Frage 7); Ereignis-Auslöser behalten Status, Zustand und ihre Verknüpfung `trigger`; `topic_due` → `topic_date`. Hinweise → `notes_notices` (`project_unreachable` entfällt). Nicht übernommen: `ui_state`, `sync_entries` (der neue Sync fängt ohne Stand an).
 - **Wiederholbar.** Erzeugte `uid`s (Bereiche, Verknüpfungen, Auslöser, Wecker, Hinweise) sind `uuid5` aus stabilen alten Schlüsseln: zwei Läufe auf frische Datenbanken ergeben dieselben Zeilen (bis auf das eingebaute Projekt, das die Migration anlegt).
 - **Bericht.** Zahlen je Typ (Projekte, Items je Typ, Memos, Topics, Dokumente, Verknüpfungen, Auslöser, Wecker, Hinweise, Bereiche) und eine Zeile je Abweichung: leere Priorität oder alter Wert, fehlender Parent/Topic/Ziel, Abhängigkeit oder Verknüpfung ohne Ziel, doppelte Verknüpfung, Dokument ohne Item oder ohne Namensliste, Hinweis „Projekt nicht erreichbar“, unbekannter Zähler.
-- **Tests.** Synthetische alte Datenbank aus `tests/helpers/server/legacy_db.py` (Fälle: `tests/fixtures/legacy-db/README.md`); dort liegt nie eine echte Datenbank. Ein Test prüft, dass die Kopie des Schemas zu `src_old/…/schema.py` passt (Quelltext, kein Import).
+- **Tests.** Synthetische alte Datenbank aus `tests/helpers/server/legacy_db.py` (Fälle: `tests/fixtures/legacy-db/README.md`); dort liegt nie eine echte Datenbank.
 
 ## Sync: Anzeige-Unterschiede und Dateiordner
 

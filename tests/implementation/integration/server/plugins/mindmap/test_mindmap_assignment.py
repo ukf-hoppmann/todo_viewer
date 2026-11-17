@@ -466,3 +466,14 @@ def test_the_content_of_a_node_lists_only_its_own_items_by_the_status_filter(min
 
     assert labels() == [a["label"], b["label"]]
     assert labels("Open") == [a["label"]]
+
+
+def test_the_content_of_a_node_says_which_items_are_assigned_to_it_and_which_are_inherited(mindmap: Env) -> None:
+    node = _node(mindmap)
+    story = _item(mindmap, "Story")
+    task = _item(mindmap, "Task", parent=story)
+    _assign(mindmap, node, story)
+
+    body = mindmap.client.get(f"{API}/nodes/{node['uid']}/content").json()
+
+    assert {i["label"]: i["explicit"] for i in body["items"]} == {story["label"]: True, task["label"]: False}

@@ -2474,11 +2474,29 @@ export interface components {
          */
         NodeContentOut: {
             /** Items */
-            items: components["schemas"]["ItemRefOut"][];
+            items: components["schemas"]["NodeItemOut"][];
             /** Memos */
             memos: components["schemas"]["MemoRefOut"][];
             /** Node Uid */
             node_uid: string;
+        };
+        /** NodeItemOut */
+        NodeItemOut: {
+            /**
+             * Explicit
+             * @default false
+             */
+            explicit: boolean;
+            /** Label */
+            label: string;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+            /** Type */
+            type: string;
+            /** Uid */
+            uid: string;
         };
         /** NodeOut */
         NodeOut: {

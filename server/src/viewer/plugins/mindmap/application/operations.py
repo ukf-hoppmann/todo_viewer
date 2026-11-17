@@ -232,12 +232,18 @@ class MemoRefOut:
 
 
 @dataclass(frozen=True)
+class NodeItemOut(ItemRefOut):
+    #: Dem Knoten eigens zugeordnet (nur dann lässt sich die Zuordnung lösen); sonst erbt das Item ihn.
+    explicit: bool = False
+
+
+@dataclass(frozen=True)
 class NodeContentOut:
     """Das Detail eines Knotens: die Items, deren wirksamer Knoten er ist (nach Statusfilter, ohne Unterknoten),
     und seine Memos. Memos zählen nicht in der Zahl."""
 
     node_uid: str
-    items: list[ItemRefOut]
+    items: list[NodeItemOut]
     memos: list[MemoRefOut]
 
 
@@ -308,7 +314,7 @@ class Done:
 def _content_out(content: NodeContent) -> NodeContentOut:
     return NodeContentOut(
         content.node.uid,
-        [_item_ref(i) for i in content.items],
+        [NodeItemOut(**vars(_item_ref(i)), explicit=i.uid in content.explicit) for i in content.items],
         [MemoRefOut(m.uid, m.label, m.title) for m in content.memos],
     )
 

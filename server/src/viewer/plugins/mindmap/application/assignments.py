@@ -43,6 +43,8 @@ class NodeContent:
     node: Node
     items: list[BacklogItem]
     memos: list[Element] = field(default_factory=list)
+    #: `uid`s der Items aus `items`, die diesem Knoten eigens zugeordnet sind (die übrigen erben ihn).
+    explicit: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -161,7 +163,8 @@ class AssignmentService:
                 and (not statuses or i.status in statuses)
             ]
             memos = self._memos_of(tx, node.uid)
-        return NodeContent(node, shown, memos)
+            explicit = frozenset(i.uid for i in shown if any(n == node.uid for n, _ in self._nodes_of(tx, i.uid)))
+        return NodeContent(node, shown, memos, explicit)
 
     def item_node(self, item_ref: str, project_uid: str | None) -> ItemNode:
         with self._database.transaction() as tx:

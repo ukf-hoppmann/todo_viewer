@@ -98,3 +98,31 @@ export function dropPlacement(rootId: string, nodes: readonly PlacedNode[], sour
 export function shownProject<P>(visible: readonly P[], marked: P | undefined): P | undefined {
 	return marked ?? (visible.length === 1 ? visible[0] : undefined);
 }
+
+/** The states a node can have, derived by the server from its items (spec `STORY-100`). */
+export const NODE_STATES = ["idea", "planned", "in_progress", "done"] as const;
+
+/** How a node is drawn: dashed and hollow (an idea), dimmed (finished), with ring and number (items count). */
+export interface NodeLook {
+	dashed: boolean;
+	hollow: boolean;
+	dimmed: boolean;
+	counts: boolean;
+}
+
+export function nodeLook(state: string, total: number): NodeLook {
+	return { dashed: state === "idea", hollow: state === "idea", dimmed: state === "done", counts: total > 0 };
+}
+
+/**
+ * The nodes whose state is not hidden. A node whose parent is hidden stays in the list, but `visibleNodes` only
+ * reaches nodes through their parents, so a hidden node takes its whole branch from the map.
+ */
+export function filterByState<T extends { state: string }>(nodes: readonly T[], hiddenStates: readonly string[]): T[] {
+	return hiddenStates.length === 0 ? [...nodes] : nodes.filter((node) => !hiddenStates.includes(node.state));
+}
+
+/** Whether an item can be dropped on `targetId`: on a node of the tree, not on the root (the project). */
+export function canDropItem(rootId: string, nodes: readonly PlacedNode[], targetId: string): boolean {
+	return targetId !== rootId && nodes.some((node) => node.uid === targetId);
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultOpen, dropPlacement, isOpen, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
+import { canDropItem, defaultOpen, dropPlacement, filterByState, isOpen, nodeLook, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
 import { node } from "../../../../../helpers/client/mindmapFixtures";
 
 const nodes = [node("a"), node("b", null, 1), node("a1", "a"), node("a2", "a", 1), node("a11", "a1"), node("a111", "a11")];
@@ -103,5 +103,59 @@ describe("dropPlacement", () => {
 		expect(dropPlacement("p1", nodes, "a1", "a2", "before")).toBeNull();
 		expect(dropPlacement("p1", nodes, "a2", "a1", "after")).toBeNull();
 		expect(dropPlacement("p1", nodes, "a1", "a", "inside")).toEqual({ parent: "a", position: 1 });
+	});
+});
+
+describe("nodeLook", () => {
+	it("draws an idea dashed and hollow, without ring and number while nothing counts", () => {
+		expect(nodeLook("idea", 0)).toEqual({ dashed: true, hollow: true, dimmed: false, counts: false });
+	});
+
+	it("shows ring and number as soon as items count, also for an idea that only holds rejected items", () => {
+		expect(nodeLook("idea", 2)).toEqual({ dashed: true, hollow: true, dimmed: false, counts: true });
+		expect(nodeLook("planned", 3)).toEqual({ dashed: false, hollow: false, dimmed: false, counts: true });
+		expect(nodeLook("in_progress", 3)).toEqual({ dashed: false, hollow: false, dimmed: false, counts: true });
+	});
+
+	it("dims a finished node and keeps its ring", () => {
+		expect(nodeLook("done", 4)).toEqual({ dashed: false, hollow: false, dimmed: true, counts: true });
+	});
+
+	it("treats an unknown state like planned", () => {
+		expect(nodeLook("other", 1)).toEqual({ dashed: false, hollow: false, dimmed: false, counts: true });
+	});
+});
+
+describe("filterByState", () => {
+	const stated = [
+		{ ...node("a"), state: "in_progress" },
+		{ ...node("a1", "a"), state: "done" },
+		{ ...node("a2", "a", 1), state: "planned" },
+		{ ...node("b", null, 1), state: "idea" },
+	];
+
+	it("keeps everything while no state is hidden", () => {
+		expect(filterByState(stated, []).map((entry) => entry.uid)).toEqual(["a", "a1", "a2", "b"]);
+	});
+
+	it("drops the nodes of a hidden state; their branch disappears from the map with them", () => {
+		const kept = filterByState(stated, ["done", "idea"]);
+
+		expect(kept.map((entry) => entry.uid)).toEqual(["a", "a2"]);
+		expect(visibleNodes("p1", filterByState(stated, ["in_progress"]), {}).map((entry) => entry.id)).toEqual(["p1", "b"]);
+	});
+});
+
+describe("canDropItem", () => {
+	const all = [node("a"), node("a1", "a")];
+
+	it("offers every node of the tree", () => {
+		expect(canDropItem("p1", all, "a")).toBe(true);
+		expect(canDropItem("p1", all, "a1")).toBe(true);
+	});
+
+	it("does not offer the root (the project) or a node that is not there", () => {
+		expect(canDropItem("p1", all, "p1")).toBe(false);
+		expect(canDropItem("p1", all, "gone")).toBe(false);
 	});
 });

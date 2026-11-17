@@ -78,7 +78,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Type: Task.
   - Parent: `STORY-100`.
   - Required for parent: No.
-  - Status: In progress.
+  - Status: Awaiting confirmation.
   - Created: 2026-11-16.
   - Area: Web-UI.
   - Priority: Normal.
@@ -95,6 +95,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     und ändert weder die Summen der Items noch den Zustand.
     4. Die Werte sind fest (keine, verworfen, später), nicht frei;
     Domain-, API- und UI-Tests sind grün.
+  - Summary: Ideen-Knoten lassen sich als „verworfen“ oder „später“ markieren.
+    Die Markierung setzt den Knoten ab und lässt sich ausblenden, ändert aber
+    keine Zahlen.
 
 - `STORY-101` **Mindmap-Ansichten: Fokus auf einen Knoten, Einzel- und Gesamtansicht, runde Anordnung, Abhängigkeiten**
   - Uid: 3366e17a-d7f3-4810-85c4-adf6817191fe.

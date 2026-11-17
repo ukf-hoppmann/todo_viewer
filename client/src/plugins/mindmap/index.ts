@@ -16,16 +16,23 @@ export const plugin = definePlugin({
 	api: mindmapApi,
 	eventHandlers: {
 		"mindmap.node.changed": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Tree"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode"]));
+		},
+		// A status change moves the counts, a changed memo its title in the detail of a node.
+		"backlog.item.changed": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode"]));
+		},
+		"memos.memo.changed": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Content"]));
 		},
 		"mindmap.document.changed": (_payload, { dispatch, api }) => {
 			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents"]));
 		},
 		"workspace.element.changed": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Tree"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode"]));
 		},
 		"core.reconnected": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents", "Content", "ItemNode"]));
 		},
 	},
 	contributions: [{ slot: "core.main", name: "main", title: "tab.mindmap", icon: MindmapIcon, page: () => import("./pages/MindmapPage"), layout: { sidebar: true, detail: true } }],

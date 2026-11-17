@@ -6,10 +6,10 @@ import { plugin } from "../../../../../../client/src/plugins/mindmap";
 import manifest from "../../../../../../client/src/plugins/mindmap/plugin.json";
 
 describe("mindmap plugin definition", () => {
-	it("is valid, switched on, and needs only the layout and the workspace", () => {
+	it("is valid, switched on, and needs the layout, the workspace and the backlog", () => {
 		expect(checkDefinition({ plugin }, "mindmap").ok).toBe(true);
 		expect(checkContributions(plugin.contributions ?? [])).toEqual([]);
-		expect(manifest.requires).toEqual(["layout-header-sidebar", "workspace"]);
+		expect(manifest.requires).toEqual(["layout-header-sidebar", "workspace", "backlog"]);
 		expect(activePluginIds).toContain("mindmap");
 	});
 
@@ -20,10 +20,12 @@ describe("mindmap plugin definition", () => {
 	});
 
 	it.each([
-		["mindmap.node.changed", ["Tree"]],
-		["workspace.element.changed", ["Tree"]],
+		["mindmap.node.changed", ["Tree", "Content", "ItemNode"]],
+		["workspace.element.changed", ["Tree", "Content", "ItemNode"]],
+		["backlog.item.changed", ["Tree", "Content", "ItemNode"]],
+		["memos.memo.changed", ["Content"]],
 		["mindmap.document.changed", ["Tree", "Documents"]],
-		["core.reconnected", ["Tree", "Documents"]],
+		["core.reconnected", ["Tree", "Documents", "Content", "ItemNode"]],
 	])("reloads on %s", (topic, tags) => {
 		const dispatch = vi.fn();
 		const invalidateTags = vi.fn((names: string[]) => ({ type: "invalidate", tags: names }));

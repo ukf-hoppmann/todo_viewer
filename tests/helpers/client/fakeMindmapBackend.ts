@@ -1,20 +1,45 @@
-import { mindmapApi, type NodeOut } from "../../../client/src/plugins/mindmap/api";
+import { mindmapApi, type ItemRefOut, type MemoRefOut, type NodeItemOut, type TreeNodeOut } from "../../../client/src/plugins/mindmap/api";
 import { fakeWorkspaceBackend } from "./fakeWorkspaceBackend";
 
 type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respond" | "extraApis"> & {
-	nodes?: NodeOut[];
+	nodes?: TreeNodeOut[];
+	/** The items without a node (the side view), in the order of the backlog. */
+	unassigned?: ItemRefOut[];
+	/** The items in the detail of a node, by node `uid`; `explicit` says whether the node is theirs. */
+	items?: Record<string, NodeItemOut[]>;
+	/** The memos linked to a node, by node `uid`. */
+	memos?: Record<string, MemoRefOut[]>;
 	/** Answers a request itself; `undefined` lets the fake answer. */
 	respond?: (request: { method: string; path: string; body?: unknown; query: URLSearchParams }) => Response | undefined;
 };
 
 /**
- * The workspace fake plus the `mindmap` API. It keeps the nodes: `GET mindmap/trees/{project}` lists those of the
+ * The workspace fake plus the `mindmap` API. It also keeps the assignments: `unassigned`, the items and memos of the
+ * nodes (`assign_item` moves an item from the side view or from another node to the node, `replace` is needed for the
+ * latter; `unassign_item` puts an explicit item back to the side view; memos are linked and unlinked). It keeps the nodes: `GET mindmap/trees/{project}` lists those of the
  * project, creating, updating and moving change them, and `DELETE workspace/elements/{uid}` removes a node (with its branch
  * when `cascade` is set; without it a node with children answers `has_children`). The documents of a node are kept
  * too: reading and putting one, and an entry in the notes (which create `<LABEL>_notes.md` and list it at the node).
  */
 export function fakeMindmapBackend(options: Options = {}) {
 	let nodes = [...(options.nodes ?? [])];
+	let unassigned = [...(options.unassigned ?? [])];
+	const contents = new Map<string, NodeItemOut[]>(Object.entries(options.items ?? {}).map(([uid, list]) => [uid, [...list]]));
+	const memos = new Map<string, MemoRefOut[]>(Object.entries(options.memos ?? {}).map(([uid, list]) => [uid, [...list]]));
+	const failure = (code: string, message: string, status = 400) => Response.json({ code, message, details: {} }, { status });
+	const explicitNode = (item: string) => [...contents].find(([, list]) => list.some((entry) => entry.uid === item && entry.explicit))?.[0];
+	const takeFrom = (item: string): ItemRefOut | undefined => {
+		const loose = unassigned.find((entry) => entry.uid === item);
+		unassigned = unassigned.filter((entry) => entry.uid !== item);
+		for (const [uid, list] of contents) {
+			const found = list.find((entry) => entry.uid === item && entry.explicit);
+			if (found) {
+				contents.set(uid, list.filter((entry) => entry !== found));
+				return found;
+			}
+		}
+		return loose;
+	};
 	let created = 0;
 	const documents = new Map<string, { content: string; version: number }>();
 	const addName = (uid: string, name: string) => {
@@ -32,12 +57,53 @@ export function fakeMindmapBackend(options: Options = {}) {
 			const tree = /^mindmap\/trees\/([^/]+)$/.exec(path);
 			if (tree && method === "GET") {
 				const own = nodes.filter((entry) => entry.project_uid === tree[1]);
-				return Response.json({ project_uid: tree[1], tree_uid: own.length > 0 ? "t1" : null, nodes: own });
+				return Response.json({ project_uid: tree[1], tree_uid: own.length > 0 ? "t1" : null, nodes: own, unassigned });
+			}
+			const content = /^mindmap\/nodes\/([^/]+)\/content$/.exec(path);
+			if (content && method === "GET") {
+				return Response.json({ node_uid: content[1], items: contents.get(content[1]!) ?? [], memos: memos.get(content[1]!) ?? [] });
+			}
+			const assign = /^mindmap\/nodes\/([^/]+)\/items$/.exec(path);
+			if (assign && method === "POST") {
+				const item = body.item as string;
+				const target = nodes.find((entry) => entry.uid === assign[1]);
+				if (!target) return failure("not_found", "Knoten gibt es nicht", 404);
+				if (explicitNode(item) && body.replace !== true) return failure("mindmap_item_assigned", "Das Item hängt schon an einem Knoten");
+				const taken = takeFrom(item);
+				if (!taken) return failure("not_found", "Item gibt es nicht", 404);
+				const { uid, label, type, title, status } = taken;
+				contents.set(target.uid, [...(contents.get(target.uid) ?? []), { uid, label, type, title, status, explicit: true }]);
+				return Response.json(target);
+			}
+			const itemNode = /^mindmap\/items\/([^/]+)\/node$/.exec(path);
+			if (itemNode && method === "GET") {
+				const inherited = [...contents].find(([, list]) => list.some((entry) => entry.uid === itemNode[1]));
+				const own = explicitNode(itemNode[1]!);
+				return Response.json({ item_uid: itemNode[1], node_uid: own ?? inherited?.[0] ?? null, explicit: own !== undefined });
+			}
+			if (itemNode && method === "DELETE") {
+				const own = explicitNode(itemNode[1]!);
+				if (!own) return failure("not_found", "Das Item ist keinem Knoten eigens zugeordnet", 404);
+				const taken = takeFrom(itemNode[1]!)!;
+				unassigned = [...unassigned, { uid: taken.uid, label: taken.label, type: taken.type, title: taken.title, status: taken.status }];
+				return Response.json({ ok: true });
+			}
+			const link = /^mindmap\/nodes\/([^/]+)\/memos$/.exec(path);
+			if (link && method === "POST") {
+				const memo = body.memo as string;
+				const list = memos.get(link[1]!) ?? [];
+				if (!list.some((entry) => entry.uid === memo)) memos.set(link[1]!, [...list, { uid: memo, label: `MEMO-${memo}`, title: `Memo ${memo}` }]);
+				return Response.json(nodes.find((entry) => entry.uid === link[1]) ?? {});
+			}
+			const unlink = /^mindmap\/nodes\/([^/]+)\/memos\/([^/]+)$/.exec(path);
+			if (unlink && method === "DELETE") {
+				memos.set(unlink[1]!, (memos.get(unlink[1]!) ?? []).filter((entry) => entry.uid !== unlink[2]));
+				return Response.json({ ok: true });
 			}
 			if (path === "mindmap/nodes" && method === "POST") {
 				created += 1;
 				const parent = (body.parent as string | undefined) ?? null;
-				const node: NodeOut = {
+				const node: TreeNodeOut = {
 					uid: `new${created}`,
 					project_uid: body.project as string,
 					label: `NODE-new${created}`,
@@ -48,6 +114,9 @@ export function fakeMindmapBackend(options: Options = {}) {
 					position: nodes.filter((entry) => (entry.parent_uid ?? null) === parent).length,
 					version: 1,
 					documents: [],
+					total: 0,
+					done: 0,
+					state: "idea",
 				};
 				nodes = [...nodes, node];
 				return Response.json(node);
@@ -87,7 +156,7 @@ export function fakeMindmapBackend(options: Options = {}) {
 			if (one && method === "PUT") {
 				const found = nodes.find((entry) => entry.uid === one[1]);
 				if (!found) return Response.json({ code: "not_found", message: "Knoten gibt es nicht", details: {} }, { status: 404 });
-				const changed: NodeOut = {
+				const changed: TreeNodeOut = {
 					...found,
 					...(typeof body.title === "string" ? { title: body.title } : {}),
 					...(typeof body.text === "string" ? { text: body.text === "" ? null : body.text } : {}),
@@ -103,7 +172,7 @@ export function fakeMindmapBackend(options: Options = {}) {
 				const parent = (body.parent as string | null | undefined) ?? null;
 				const siblingsOf = (uid: string | null) => nodes.filter((entry) => (entry.parent_uid ?? null) === uid && entry.uid !== found.uid).sort((a, b) => a.position - b.position);
 				const target = siblingsOf(parent);
-				const changed: NodeOut = { ...found, parent_uid: parent, version: found.version + 1 };
+				const changed: TreeNodeOut = { ...found, parent_uid: parent, version: found.version + 1 };
 				target.splice(Math.min((body.position as number | undefined) ?? target.length, target.length), 0, changed);
 				const placed = new Map([...siblingsOf(found.parent_uid ?? null), ...target].map((entry) => [entry.uid, entry]));
 				const positions = new Map([...siblingsOf(found.parent_uid ?? null).map((entry, index) => [entry.uid, index] as const), ...target.map((entry, index) => [entry.uid, index] as const)]);

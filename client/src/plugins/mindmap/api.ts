@@ -3,6 +3,12 @@ import type { components } from "../../shared";
 
 export type NodeOut = components["schemas"]["NodeOut"];
 export type TreeOut = components["schemas"]["TreeOut"];
+export type TreeNodeOut = components["schemas"]["TreeNodeOut"];
+export type ItemRefOut = components["schemas"]["ItemRefOut"];
+export type NodeItemOut = components["schemas"]["NodeItemOut"];
+export type MemoRefOut = components["schemas"]["MemoRefOut"];
+export type NodeContentOut = components["schemas"]["NodeContentOut"];
+export type ItemNodeOut = components["schemas"]["ItemNodeOut"];
 export type DocumentOut = components["schemas"]["DocumentOut"];
 
 /** The error of a write: the code and details the server gave, as an `Error` the forms can show. */
@@ -30,7 +36,9 @@ export function errorMessage(error: unknown, fallback: string): string {
 }
 
 /**
- * The API of the plugin (`mindmap.api`): `getTree` reads the topic tree of a project (the project is the root),
+ * The API of the plugin (`mindmap.api`): `getTree` reads the topic tree of a project (the project is the root) with
+ * count, progress and state of every node and the items without a node; `statuses` is the status filter of the
+ * backlog (comma-separated, empty: all),
  * `createNode` and `updateNode` write a node, `moveNode` hangs a node with its branch under another parent (empty:
  * under the root) or to another place among its siblings. Moving to the trash goes through `workspace`. The tag `Tree` is what
  * server events invalidate. The documents of a node (`getDocument`, `putDocument`, `appendEntry`) have the tag
@@ -39,9 +47,33 @@ export function errorMessage(error: unknown, fallback: string): string {
 export const mindmapApi = createPluginApi(
 	"mindmap",
 	(build) => ({
-		getTree: build.query<TreeOut, string>({
-			query: (project) => ({ url: `mindmap/trees/${project}` }),
+		getTree: build.query<TreeOut, { project: string; statuses: string }>({
+			query: ({ project, statuses }) => ({ url: `mindmap/trees/${project}`, params: statuses ? { statuses } : undefined }),
 			providesTags: ["Tree"],
+		}),
+		getNodeContent: build.query<NodeContentOut, { node: string; statuses: string }>({
+			query: ({ node, statuses }) => ({ url: `mindmap/nodes/${node}/content`, params: statuses ? { statuses } : undefined }),
+			providesTags: ["Content"],
+		}),
+		getItemNode: build.query<ItemNodeOut, string>({
+			query: (item) => `mindmap/items/${item}/node`,
+			providesTags: ["ItemNode"],
+		}),
+		assignItem: build.mutation<NodeOut, { node: string; item: string; replace?: boolean }>({
+			query: ({ node, ...body }) => ({ url: `mindmap/nodes/${node}/items`, method: "POST", body }),
+			invalidatesTags: ["Tree", "Content", "ItemNode"],
+		}),
+		unassignItem: build.mutation<unknown, string>({
+			query: (item) => ({ url: `mindmap/items/${item}/node`, method: "DELETE" }),
+			invalidatesTags: ["Tree", "Content", "ItemNode"],
+		}),
+		linkMemo: build.mutation<NodeOut, { node: string; memo: string }>({
+			query: ({ node, ...body }) => ({ url: `mindmap/nodes/${node}/memos`, method: "POST", body }),
+			invalidatesTags: ["Content"],
+		}),
+		unlinkMemo: build.mutation<unknown, { node: string; memo: string }>({
+			query: ({ node, memo }) => ({ url: `mindmap/nodes/${node}/memos/${memo}`, method: "DELETE" }),
+			invalidatesTags: ["Content"],
 		}),
 		createNode: build.mutation<NodeOut, { project: string; title: string; parent?: string; position?: number }>({
 			query: (body) => ({ url: "mindmap/nodes", method: "POST", body }),
@@ -68,11 +100,17 @@ export const mindmapApi = createPluginApi(
 			invalidatesTags: ["Tree", "Documents"],
 		}),
 	}),
-	{ tagTypes: ["Tree", "Documents"] },
+	{ tagTypes: ["Tree", "Documents", "Content", "ItemNode"] },
 );
 
 export const {
 	useGetTreeQuery,
+	useGetNodeContentQuery,
+	useGetItemNodeQuery,
+	useAssignItemMutation,
+	useUnassignItemMutation,
+	useLinkMemoMutation,
+	useUnlinkMemoMutation,
 	useCreateNodeMutation,
 	useUpdateNodeMutation,
 	useMoveNodeMutation,

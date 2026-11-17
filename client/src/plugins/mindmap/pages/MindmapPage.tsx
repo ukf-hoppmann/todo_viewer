@@ -4,6 +4,7 @@ import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
+import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
 import { errorMessage, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type NodeOut } from "../api";
 import { dropPlacement, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
@@ -33,7 +34,8 @@ export default function MindmapPage() {
 	const { t } = useTranslation("mindmap");
 	const { visible, marked } = useProjectSelection();
 	const project = shownProject(visible, marked);
-	const { currentData: tree } = useGetTreeQuery(project?.uid ?? "", { skip: !project });
+	const statuses = useShownStatuses();
+	const { currentData: tree } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: !project });
 	const nodes = tree?.nodes ?? NO_NODES;
 	const { fold, setFold, selected, setSelected } = useMindmapState();
 	const [createNode] = useCreateNodeMutation();

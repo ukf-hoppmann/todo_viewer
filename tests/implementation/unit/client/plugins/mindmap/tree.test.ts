@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canDropItem, defaultOpen, dropPlacement, filterByMark, filterByState, isOpen, markLook, nodeLook, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
+import { canDropItem, defaultOpen, dropPlacement, filterByMark, filterByState, focusPath, isOpen, markLook, nodeLook, parentForNewNode, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
 import { node } from "../../../../../helpers/client/mindmapFixtures";
 
 const nodes = [node("a"), node("b", null, 1), node("a1", "a"), node("a2", "a", 1), node("a11", "a1"), node("a111", "a11")];
@@ -200,5 +200,72 @@ describe("filterByMark", () => {
 
 		expect(kept.find((entry) => entry.uid === "a1")?.mark).toBeNull();
 		expect(visibleNodes("p1", kept, { a: "open" }).map((entry) => entry.id)).toEqual(["p1", "b", "c"]);
+	});
+});
+
+describe("visibleNodes with a focus", () => {
+	it("starts at the focus: it is the top of the view and the depth counts from there", () => {
+		const shown = visibleNodes("p1", nodes, {}, "a");
+
+		expect(ids(shown)).toEqual(["a", "a1", "a11", "a2"]);
+		expect(shown.map((entry) => entry.depth)).toEqual([0, 1, 2, 1]);
+		expect(shown[0]).toMatchObject({ parentId: null, hasChildren: true, open: true });
+		expect(shown[0]!.node?.uid).toBe("a");
+	});
+
+	it("opens two levels below the focus, deeper than they were open before", () => {
+		expect(ids(visibleNodes("p1", nodes, {}, "a1"))).toEqual(["a1", "a11", "a111"]);
+	});
+
+	it("still follows what the user folded", () => {
+		expect(ids(visibleNodes("p1", nodes, { a1: "closed" }, "a"))).toEqual(["a", "a1", "a2"]);
+		expect(ids(visibleNodes("p1", nodes, { a: "closed" }, "a"))).toEqual(["a"]);
+	});
+
+	it("shows the whole tree for the root, an unknown focus or one that is not in the list", () => {
+		const whole = ["p1", "a", "a1", "a2", "b"];
+		expect(ids(visibleNodes("p1", nodes, {}, "p1"))).toEqual(whole);
+		expect(ids(visibleNodes("p1", nodes, {}, "nowhere"))).toEqual(whole);
+		expect(ids(visibleNodes("p1", nodes, {}, undefined))).toEqual(whole);
+	});
+
+	it("shows a focus whose ancestors are not in the list", () => {
+		const withoutA = nodes.filter((entry) => entry.uid !== "a");
+
+		expect(ids(visibleNodes("p1", withoutA, {}, "a1"))).toEqual(["a1", "a11", "a111"]);
+	});
+});
+
+describe("focusPath", () => {
+	it("lists the ids from the root down to the focus", () => {
+		expect(focusPath("p1", nodes, "a11")).toEqual(["p1", "a", "a1", "a11"]);
+		expect(focusPath("p1", nodes, "b")).toEqual(["p1", "b"]);
+	});
+
+	it("is only the root for the root itself", () => {
+		expect(focusPath("p1", nodes, "p1")).toEqual(["p1"]);
+	});
+
+	it("has no path for an unknown focus or one that is missing or empty", () => {
+		expect(focusPath("p1", nodes, "nowhere")).toBeNull();
+		expect(focusPath("p1", nodes, null)).toBeNull();
+		expect(focusPath("p1", nodes, "")).toBeNull();
+	});
+
+	it("has no path when the chain does not reach the root, even in a cycle", () => {
+		expect(focusPath("p1", [node("x", "y"), node("y", "x")], "x")).toBeNull();
+	});
+});
+
+describe("parentForNewNode", () => {
+	it("hangs a new node below the effective node of the item", () => {
+		expect(parentForNewNode("a1", "p1")).toBe("a1");
+	});
+
+	it("hangs it below the root when the item has no node or hangs on the root", () => {
+		expect(parentForNewNode(undefined, "p1")).toBeNull();
+		expect(parentForNewNode(null, "p1")).toBeNull();
+		expect(parentForNewNode("", "p1")).toBeNull();
+		expect(parentForNewNode("p1", "p1")).toBeNull();
 	});
 });

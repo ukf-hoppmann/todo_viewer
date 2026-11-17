@@ -38,9 +38,11 @@ export function toggledFold(fold: Fold, id: string, depth: number): Fold {
 
 /**
  * The nodes the map shows, parents before children and siblings by position: the root `rootId` (the project), then
- * every node whose ancestors are all open. Nodes whose parent is not part of the tree are left out.
+ * every node whose ancestors are all open. Nodes whose parent is not part of the tree are left out. With a `focusId`
+ * the view starts at that node instead: it becomes the top (depth 0, no parent) and the depth counts from there; a
+ * focus that is the root, unknown or not in `nodes` shows the whole tree.
  */
-export function visibleNodes<T extends PlacedNode>(rootId: string, nodes: readonly T[], fold: Fold): ShownNode<T>[] {
+export function visibleNodes<T extends PlacedNode>(rootId: string, nodes: readonly T[], fold: Fold, focusId?: string | null): ShownNode<T>[] {
 	const children = new Map<string, T[]>();
 	for (const node of nodes) {
 		const parent = node.parent_uid || rootId;
@@ -57,8 +59,34 @@ export function visibleNodes<T extends PlacedNode>(rootId: string, nodes: readon
 		shown.push({ id, parentId, depth, node, hasChildren: below.length > 0, open });
 		if (open) for (const child of below) visit(child.uid, id, depth + 1, child);
 	};
-	visit(rootId, null, 0, undefined);
+	const focus = focusId && focusId !== rootId ? nodes.find((node) => node.uid === focusId) : undefined;
+	if (focus) visit(focus.uid, null, 0, focus);
+	else visit(rootId, null, 0, undefined);
 	return shown;
+}
+
+/**
+ * The ids from the root `rootId` down to `focusId`, the root first; `null` when there is no such focus: it is empty,
+ * unknown, or its chain of parents does not reach the root. The path of the root is the root alone.
+ */
+export function focusPath(rootId: string, nodes: readonly PlacedNode[], focusId: string | null | undefined): string[] | null {
+	if (!focusId) return null;
+	if (focusId === rootId) return [rootId];
+	const byId = new Map(nodes.map((node) => [node.uid, node]));
+	const path: string[] = [];
+	const seen = new Set<string>();
+	for (let current = byId.get(focusId); current; current = current.parent_uid ? byId.get(current.parent_uid) : undefined) {
+		if (seen.has(current.uid)) return null;
+		seen.add(current.uid);
+		path.unshift(current.uid);
+		if (!current.parent_uid || current.parent_uid === rootId) return [rootId, ...path];
+	}
+	return null;
+}
+
+/** The parent for a node created for an item: its effective node, or `null` (under the root) without one or on the root. */
+export function parentForNewNode(effectiveNodeUid: string | null | undefined, rootId: string): string | null {
+	return !effectiveNodeUid || effectiveNodeUid === rootId ? null : effectiveNodeUid;
 }
 
 /** Where a dragged node lands relative to the node it is dropped on. */

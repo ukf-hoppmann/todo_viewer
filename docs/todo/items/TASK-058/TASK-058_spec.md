@@ -8,6 +8,7 @@ Regeln: `STORY-101_spec.md` (Abschnitte „Fokus“ und „Aktionen am Item“);
   Route; die Routen kennen sonst keine Parameter). Ohne oder mit unbekanntem Fokus gilt die Projektwurzel.
 - Pfad von der Projektwurzel bis zum Fokus über der Map; ein Klick auf einen Eintrag setzt den Fokus dorthin. Am
   Knoten (Menü oder Aktion) gibt es „Als Wurzel öffnen“.
+- Der Fokusknoten ist ein Knoten wie jeder andere (Umbenennen, Detail, Anlegen, Papierkorb); wird er gelöscht, gilt die Projektwurzel.
 - Die Map zeigt nur den Ast ab dem Fokus; die Tiefe zählt ab dem Fokus (zwei Ebenen darunter offen, solange nichts
   gefaltet wurde). Gefaltet wird weiter je Knoten im UI-State.
 - Drei Aktionen im Item-Detail (`ItemNodeSection`, Slot `backlog.item-detail`):
@@ -16,7 +17,7 @@ Regeln: `STORY-101_spec.md` (Abschnitte „Fokus“ und „Aktionen am Item“);
     öffentliche API des Plugins `workspace`; kein Zugriff auf dessen Interna).
   - „Erstelle“: `createNode` unter dem wirksamen Knoten (sonst unter der Wurzel) mit dem Titel des Items, dann
     `assignItem` mit `replace`. Fehler beim Anlegen oder Zuordnen erscheinen im Abschnitt.
-  - „Anker“: nur wenn `explicit` (das Item hängt eigens an einem Knoten); öffnet die Map mit diesem Knoten als Wurzel.
+  - „Anker“: nur wenn `explicit` (das Item hängt eigens an einem Knoten); öffnet die Map mit diesem Knoten als Wurzel; ein ausgeblendetes Projekt wird wie bei „Gehe hin“ eingeblendet und markiert.
 - Nichts davon wird für ein Item im Papierkorb angeboten (wie der übrige Abschnitt).
 
 ## Schnittstellen und Dateien

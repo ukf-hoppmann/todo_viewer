@@ -5,7 +5,7 @@ bzw. Claude_Harness-Backlog-Format. Jeder Eintrag braucht eine ID; einfache
 Markdown-Checklisten werden nicht unterstützt.
 
 > **Neubau (`EPIC-007`):** Der Viewer wird in `server/` und `client/` neu gebaut; der Stand steht in
-> [Neubau: Server](docs/techdocs/neubau-server.md) und [Neubau: Client](docs/techdocs/neubau-client.md). Dieses README beschreibt weiter den laufenden Viewer in `src_old/`.
+> [Neubau: Server](docs/techdocs/neubau-server.md) und [Neubau: Client](docs/techdocs/neubau-client.md). Der alte Viewer (`src_old/`) wurde entfernt; Teile dieses READMEs beschreiben noch ihn und werden schrittweise auf den Neubau umgestellt.
 
 ## Quickstart (Docker)
 
@@ -28,9 +28,6 @@ Viewer unter [http://localhost:5411](http://localhost:5411) erreichbar. Die Cont
 ./todo.sh status    # Container und Antwort von /api/core/health (direkt und über den Proxy)
 ./todo.sh open      # nur den Browser öffnen
 ```
-
-Der alte Viewer (`src_old/`, Port 5412, <http://todo.localhost:5412>) wird mit denselben Befehlen über
-`./todo_old.sh` gesteuert; dort steuert `./todo_old.sh next <befehl>` weiter den Neubau.
 
 ## Quellen konfigurieren
 
@@ -301,49 +298,13 @@ gestrichelt und durchgestrichen am Ende (Tooltip: Löschdatum).
 
 ## Architektur
 
-Onion-Architektur im Backend: Abhängigkeiten zeigen nur nach innen, geprüft
-per `import-linter`.
-
-```
-src_old/backend/todo_viewer/
-  domain/          Item, Source, Backlog, Status-/Archiv-Regeln (EditPlanner → ChangeSet), Fehler mit Codes
-  application/     Ports (Protocols) + kleine Use-Case-Services, Container
-  infrastructure/  Adapter: markdown/ (Parser, Editoren, atomares Schreiben), database/ (SQLite), config/ (JSON), filesystem/
-  api/             FastAPI: v2-Router, Pydantic-Schemas, Fehler → HTTP ({code, message, details})
-  bootstrap.py     Composition Root: setzt alles per Konstruktor-Injection zusammen
-src_old/web/               React + Vite + TypeScript, TanStack Query
-  src/api/         aus OpenAPI generierte Typen (schema.d.ts), Client, Query-Hooks
-  src/domain/      Filter, Baum, Fortschritt, Edit-Regeln als reine Funktionen
-  src/state/       UI-Zustand (Server = Datenbank über /api/v2/ui-state), Polling-Pause
-  src/components/, src/views/
-```
-
-Die Primärquelle eines Projekts liegt entweder in Markdown-Dateien oder in der
-zentralen Datenbank (`infrastructure/database/`, SQLite); die andere Seite kann
-als Spiegel mitgeführt werden. Beide Adapter bestehen dieselbe Contract-Suite
-(`src_old/backend/tests/contract/`), als Primärquelle und als Spiegel. Datenbank-Projekte
-entstehen über `POST /api/v2/sources` mit `{"backend": "database", "project": "…"}`.
+Aufbau, Schichten und Plugins des Neubaus: [Neubau: Server](docs/techdocs/neubau-server.md) und
+[Neubau: Client](docs/techdocs/neubau-client.md); verbindliche Regeln in `docs/development/architecture.md`.
 
 ## Entwicklung
 
 ```bash
-python3.11 -m venv .venv && .venv/bin/pip install -r src_old/backend/requirements-dev.txt
-npm --prefix src_old/web install
+scripts/check-next.sh   # Server: ruff, mypy, import-linter, pytest; Client: tsc, eslint, vitest
 ```
 
-```bash
-.venv/bin/python src_old/backend/main.py        # API + gebautes Frontend auf :5412 (Auto-Reload)
-npm --prefix src_old/web run dev                # Vite auf :5173, proxyt /api auf :5412
-scripts/check.sh                        # ruff, mypy --strict, import-linter, pytest, tsc, eslint, vitest
-```
-
-Nach Änderungen an der v2-API die TS-Typen neu erzeugen (ein Test schlägt
-sonst fehl):
-
-```bash
-.venv/bin/python src_old/backend/scripts/export_openapi.py && npm --prefix src_old/web run gen:api
-```
-
-Die Characterization-Tests (`src_old/backend/tests/characterization`) prüfen die
-geschriebenen Markdown-Dateien bytegenau gegen Golden-Files; bewusste
-Änderungen mit `UPDATE_GOLDEN=1 .venv/bin/pytest` neu aufnehmen.
+Alles Weitere zu Tests steht in `tests/README.md`.

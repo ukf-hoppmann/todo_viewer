@@ -3,11 +3,8 @@ __pycache__
 *.pyc
 .git
 .DS_Store
-src_old/backend/tests
 docs
 .claude
-src_old/web/node_modules
-src_old/web/dist
 logs
 configs/todo.db*
 configs/*.bak

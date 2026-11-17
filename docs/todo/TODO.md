@@ -104,6 +104,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     und Zustand je Knoten samt Unterknoten und liefert die Items ohne Knoten mit dem
     Baum. Ein Item hängt an höchstens einem Knoten, Kinder erben, ein gelöschter
     Knoten gibt seine Items an den Parent-Knoten zurück.
+
 - `TASK-057` **Mindmap: Zahl, Fortschrittsring, Zustand und Filter am Knoten, Items und Memos im Detail**
   - Uid: 0401cbeb-4e8c-42db-b37a-57b857f6772e.
   - Type: Task.

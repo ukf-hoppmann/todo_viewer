@@ -2,72 +2,42 @@
 
 <!-- Jede Einstellung mit Typ, Standardwert, ob sie Pflicht ist, und ihrer Wirkung. -->
 
-## Umgebungsvariablen
+Der Server liest `configs/viewer.json` (optional) und Umgebungsvariablen. Die Umgebung gewinnt. Im Container setzt
+`docker-compose.yml` die nötigen Werte (siehe [Betrieb](operations.md)).
 
-| Einstellung | Typ | Standard | Pflicht | Wirkung |
-|---|---|---|---|---|
-| `HOST` | String | `127.0.0.1` (im Docker-Image `0.0.0.0`) | nein | Adresse, an die uvicorn bindet |
-| `PORT` | Integer | `5411` (im Compose-Image `5412`) | nein | HTTP-Port |
-| `DEV_RELOAD` | `0`/`1` | `1` (im Docker-Image `0`) | nein | Auto-Reload von uvicorn bei Code-Änderungen |
-| `CONFIG_DIR` | Pfad | `<Projekt>/configs` | nein | Ordner mit `config.json` und (Standard) der Datenbank `todo.db` |
-| `FRONTEND_DIR` | Pfad | `<Projekt>/src_old/web/dist` | nein | Ordner mit dem gebauten Frontend |
-| `BROWSE_START` | Pfad | Home-Ordner | nein | Startordner des Ordner-Browsers beim Hinzufügen von Projekten; wird ignoriert, wenn er kein Ordner ist. In `docker-compose.yml` auf `/Users/hoppmann/Documents/GitHub` gesetzt |
-| `LOG_FILE` | Pfad | leer (Konsole) | nein | Logdatei; wird nach Größe rotiert (5 MB, 5 alte Dateien `.1`–`.5`). Ohne Wert wird auf stderr geloggt. In `docker-compose.yml` auf `/app/logs/todo-viewer.log` gesetzt (Host: `./logs/`) |
-| `AUTO_SYNC_INTERVAL` | Sekunden (Zahl) | `30` | nein | Abstand der Prüfungen des Auto-Syncs. `0` schaltet den Timer ganz ab. Der Timer läuft nur, solange mindestens ein Projekt den Schalter „Auto-Sync“ an hat; ohne Schalter kostet ein Viewer nichts. Wird beim Start gelesen |
-| `LOG_LEVEL` | `DEBUG`/`INFO`/`WARNING`/`ERROR` | `INFO` | nein | Mindestlevel des Logs. `DEBUG` zeigt zusätzlich Lesezugriffe, Speichern des UI-Zustands und Stacktraces nicht lesbarer Backlogs; ein unbekannter Wert bricht den Start ab |
-| `PYTHON_BIN` | Pfad | `.venv/bin` | nein | Nur `scripts/check.sh`: Ordner mit ruff, mypy, lint-imports, pytest |
+## Server
 
-## `configs/config.json`
+| Einstellung (Datei) | Umgebungsvariable | Typ | Standard | Pflicht | Wirkung |
+|---|---|---|---|---|---|
+| `host` | `VIEWER_HOST` | String | `127.0.0.1` (im Container `0.0.0.0`) | nein | Adresse, an die der Server bindet. Nach der Architektur nur lokal; im Container schützt Compose, indem es den Port nur an `127.0.0.1` des Hosts bindet |
+| `port` | `VIEWER_PORT` | Integer | `5411` | nein | HTTP-Port (API, Oberfläche, MCP) |
+| `db_path` | `VIEWER_DB` | Pfad | `configs/viewer.db` | nein | SQLite-Datei mit allen Projekten, Items, Memos, Weckern und Mindmap-Knoten |
+| `backup_dir` | `VIEWER_BACKUP_DIR` | Pfad | `configs/backups` | nein | Ordner der automatischen Datenbank-Sicherungen |
+| `log_dir` | `VIEWER_LOG_DIR` | Pfad | `logs` | nein | Ordner mit `viewer.log` (JSON-Zeilen, rotiert) |
+| `static_dir` | `VIEWER_STATIC_DIR` | Pfad | `client/dist` | nein | Gebaute Oberfläche, die der Server unter `/` ausliefert; fehlt der Ordner, gibt es nur die API |
+| `auto_sync_interval_seconds` | `AUTO_SYNC_INTERVAL` | Zahl (Sekunden) | `30` | nein | Takt des Auto-Syncs; `0` schaltet ihn ab. Der Timer läuft nur, solange ein Projekt den Auto-Sync an hat. Zur Laufzeit in der Oberfläche änderbar (Einstellungen → System → Auto-Sync), außer die Umgebungsvariable ist gesetzt: sie gewinnt, das Feld ist dann gesperrt |
+| `sse_keepalive_seconds` | – | Zahl | `15` | nein | Abstand der Keep-alive-Zeilen im Ereignisstrom |
+| `plugins.<id>` | – | Objekt | `{}` | nein | Einstellungen eines Plugins |
+| – | `VIEWER_CONFIG` | Pfad | `configs/viewer.json` | nein | Andere Konfigurationsdatei |
+| – | `TZ` | IANA-Name (`Europe/Berlin`) | leer (dann UTC, Warnung im Log) | nein | Zeitzone des Rechners. Die Wecker rechnen ihre Serientermine darin; ohne sie verschieben sich Termine um die Sommerzeit. `todo.sh` gibt die Zone des Rechners an den Container weiter, Compose hat `Europe/Berlin` als Rückfall |
+| – | `BROWSE_START` | Pfad | Home-Ordner | nein | Startordner des Ordner-Browsers beim Einrichten eines Spiegel-Ordners. In `docker-compose.yml` auf den Projekte-Ordner des Hosts gesetzt |
+| – | `PYTHON_BIN` | Pfad | `.venv/bin` | nein | Nur `scripts/check-next.sh`: Ordner mit ruff, mypy, lint-imports, pytest |
 
-| Einstellung | Typ | Standard | Pflicht | Wirkung |
-|---|---|---|---|---|
-| `storage_url` | SQLAlchemy-URL | `sqlite:///<CONFIG_DIR>/todo.db` | nein | Zentrale Datenbank. Sie enthält die Projektliste, den UI-Zustand und die Inhalte der Projekte mit `backend: database`. Wird beim Start gelesen (Änderung braucht einen Neustart); ein fehlender Ordner für die SQLite-Datei wird angelegt. Zugangsdaten dürfen in der URL stehen; sie werden nicht geloggt |
-| `notes.review_days` | positive Ganzzahl | `30` | nein | Prüf-Datum jeder Note: so viele Tage nach Anlage, Textänderung, Zurückstellen und „behalten“ wird die Note fällig. Gilt für alle Notes und Projekte; wird beim Start gelesen. Ungültige Werte fallen auf den Standard zurück. Ändern geht auch im Einstellungsmenü unter „Allgemein“ und über `PUT /api/v2/notes/settings` (1 bis 3650): die API schreibt den Wert hierher und er gilt sofort, ohne Neustart |
-| `notes.max_topic_depth` | positive Ganzzahl | `3` | nein | Höchste Verschachtelungstiefe von Topics; ungültige Werte fallen auf den Standard zurück. Ändern auch im Einstellungsmenü unter „Allgemein“ und über `PUT /api/v2/notes/settings` (1 bis 10), wirksam ohne Neustart; schon tiefer verschachtelte Topics bleiben, nur neue und verschobene werden geprüft |
+Unbekannte Schlüssel in `viewer.json` bleiben beim Schreiben erhalten. Fehlt die Datei, gelten die Standardwerte.
 
-Unbekannte Schlüssel bleiben beim Schreiben erhalten. Fehlt die Datei, gilt
-der Standard.
+## Einstellungen in der Oberfläche
 
-Ändert man `storage_url`, zeigt der Dienst danach auf eine andere (ggf. leere)
-Datenbank; Projekte und Inhalte wandern nicht mit. Die Primärquelle, der Spiegel
-(Sync-Ordner `sync_path` eines Datenbank-Projekts, Datenbank-Spiegel eines
-Markdown-Projekts), der Stand des letzten Syncs und alle anderen
-Projekteinstellungen (auch, ob der Markdown-Spiegel eines Datenbank-Projekts ausgeschaltet
-ist, sein Ordner bleibt dabei erhalten) stehen in der Datenbank, nicht in dieser Datei. Backups vor einem Wechsel der Primärquelle
-liegen unter `<CONFIG_DIR>/backups/` (ohne eigenen Schalter, siehe
-[Betrieb](operations.md)).
+Das Zahnrad (Tab „Einstellungen“) hat zwei Gruppen. Die offene Gruppe steht in der Adresse (`/core/settings?group=…`).
 
-Projekte stehen nicht mehr in dieser Datei, sondern in der Datenbank; sie
-werden über die UI bzw. `/api/v2/sources` verwaltet (siehe
-[Schnittstellen](interfaces.md)). Enthält `config.json` noch eine Liste
-`sources` (frühere Versionen), wird sie beim ersten Zugriff übernommen:
-
-- jedes Projekt bekommt eine neue UUID als `source_id`; Markdown-Ordner, die
-  schon eingetragen sind, werden übersprungen;
-- Einträge mit `"backend": "database"` ziehen samt ihren Items unter die neue
-  ID um;
-- ältere Einträge, die auf eine `.md`/`.markdown`/`.txt`-Datei zeigen, werden
-  auf deren Ordner umgestellt;
-- danach wird `config.json` ohne `sources` neu geschrieben; der vorherige
-  Inhalt bleibt als `config.json.bak` erhalten.
+| Gruppe | Abschnitt | Wirkung |
+|---|---|---|
+| Projekte | Projektliste | Je Projekt Name, Spiegel-Ordner, Spiegel an/aus, Auto-Sync, Sync-Richtung; Stand des Spiegels und Sync-Dialog |
+| System | Memos | Prüf-Intervall (Tage) und größte Topic-Tiefe |
+| System | Wecker | Browser-Benachrichtigung bei fälligen Weckern |
+| System | Auto-Sync | Takt in Sekunden (siehe oben) |
 
 ## UI-Zustand
 
-Wird von der UI über `/api/v2/ui-state` geschrieben und in der Datenbank
-gespeichert, nicht von Hand gepflegt. Eine `configs/ui_state.json` früherer
-Versionen wird beim ersten Zugriff übernommen (falls die Datenbank noch keinen
-UI-Zustand hat) und in `ui_state.json.bak` umbenannt.
-
-| Einstellung | Typ | Standard | Pflicht | Wirkung |
-|---|---|---|---|---|
-| `hiddenProjects`, `hiddenStatuses`, `hiddenPriorities` | Liste von Strings | leer | nein | Ausgeblendete Filterwerte (englische Werte) |
-| `hiddenNoteStatuses` | Liste von Strings | `done`, `dropped`, `promoted` | nein | Ausgeblendete Note-Status im Notes-Bereich, getrennt von `hiddenStatuses` |
-| `notesHighlight` | Boolean | `true` | nein | Erweiterte Markierung im Notes-Baum: Flächen für Topic-Ebene 1 und 2 |
-| `collapsed` | Liste von Strings | leer | nein | Eingeklappte Knoten im Backlog-Baum (Item-UIDs) und im Notes-Baum (`note-project:<Projekt>`, `note-topic:<Projekt>/<Label>`, `note-none:<Projekt>`) |
-| `markedProjects` | Liste von Strings | leer | nein | Markierte Projekte, auf die „Epics/Stories zuklappen/aufklappen“ wirken; leer = alle |
-| `search` | String | leer | nein | Suchbegriff, gemeinsam für alle Tabs |
-| `selectedId` | String oder `null` | `null` | nein | Ausgewähltes Item |
-| `currentView` | `tree`/`graph`/`kanban`/`trash` | `tree` | nein | Aktive Ansicht |
-| `lang` | `de`/`en` | `de` | nein | Anzeigesprache |
-| `syncScopes` | Objekt: Quell-ID → `to_md`/`from_md` | leer | nein | Sync-Richtung je Projekt für Syncs aus der Oberfläche („Sync starten…“, „Konflikte klären…“); ohne Eintrag gilt „beide Richtungen“, ein ungültiger Wert wird ignoriert. Einzustellen unter ⚙ → Projekte → Einrichtung. Der Auto-Sync und die API sind davon nicht berührt |
-| `defaultBackend` | `markdown`/`database` | `markdown` | nein | Speicherort, mit dem „Projekt hinzufügen“ vorbelegt ist; im Einstellungsmenü (⚙, Abschnitt „Allgemein“) änderbar, jedes Projekt kann beim Hinzufügen anders gewählt werden |
+Was man in der Oberfläche wählt (ausgeblendete Projekte, Filter, zugeklappte Knoten, gewähltes Item, Sprache DE/EN),
+speichert der Server in der Datenbank, getrennt nach Besitzer (`core`, `workspace`, `backlog`, `memos`, `alarms`,
+`mindmap`). Er wird nicht von Hand gepflegt und liegt nie im Browser-Speicher.

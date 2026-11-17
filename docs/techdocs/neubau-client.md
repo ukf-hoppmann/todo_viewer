@@ -1,6 +1,6 @@
 # Neubau: Client (`client/`)
 
-Stand des Neubaus (`EPIC-007`); der alte Viewer in `src_old/web/` ist davon unberührt. Verbindliche Regeln:
+Verbindliche Regeln:
 [Architektur](../development/architecture.md) und Scope `client`. Vorlage des Core: `reference/ezf-ui/` (kopiert und
 angepasst, nichts wird von dort importiert).
 
@@ -17,7 +17,7 @@ tests/helpers/client/                Fakes (Backend, EventSource, UI-Zustand)
 ```
 
 Schichten und öffentliche API (nur über `index.ts`) prüft die ESLint-Regel `architecture/boundaries`
-(`client/configs/eslint/architectureBoundaries.ts`, mit eigenen Tests). Sie kennt auch `src_old/` und `reference/`
+(`client/configs/eslint/architectureBoundaries.ts`, mit eigenen Tests). Sie kennt auch `reference/`
 (Regel 0: keine Importe von dort).
 
 ## Befehle

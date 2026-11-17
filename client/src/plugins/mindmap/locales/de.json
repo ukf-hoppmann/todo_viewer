@@ -83,5 +83,12 @@
 		"replaceMessage": "{{label}} hängt schon an einem anderen Knoten. Zu diesem Knoten umhängen?",
 		"replace": "Umhängen",
 		"cancel": "Abbrechen"
+	},
+	"itemNode": {
+		"title": "Mindmap-Knoten",
+		"node": "Knoten",
+		"unassigned": "Nicht zugeordnet",
+		"inherited": "geerbt",
+		"release": "Zuordnung lösen"
 	}
 }

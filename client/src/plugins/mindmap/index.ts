@@ -4,6 +4,7 @@ import { StatusFilter } from "../backlog";
 import { mindmapApi } from "./api";
 import de from "./locales/de.json";
 import en from "./locales/en.json";
+import { ItemNodeSection } from "./ItemNodeSection";
 import { MapFilters } from "./MapFilters";
 
 /**
@@ -40,6 +41,7 @@ export const plugin = definePlugin({
 		},
 	},
 	contributions: [{ slot: "core.main", name: "main", title: "tab.mindmap", icon: MindmapIcon, page: () => import("./pages/MindmapPage"), layout: { sidebar: true, detail: true } },
+		{ slot: "backlog.item-detail", name: "node", component: ItemNodeSection, order: 5 },
 		{ slot: "core.sidebar-sections", name: "state-filter", component: MapFilters, order: 20, when: ["mindmap/main"] },
 		{ slot: "core.sidebar-sections", name: "status-filter", component: StatusFilter, order: 21, when: ["mindmap/main"] },
 	],

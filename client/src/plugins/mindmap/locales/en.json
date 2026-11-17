@@ -83,5 +83,12 @@
 		"replaceMessage": "{{label}} already hangs on another node. Move it to this node?",
 		"replace": "Move",
 		"cancel": "Cancel"
+	},
+	"itemNode": {
+		"title": "Mind map node",
+		"node": "Node",
+		"unassigned": "Unassigned",
+		"inherited": "inherited",
+		"release": "Release assignment"
 	}
 }

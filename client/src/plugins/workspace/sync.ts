@@ -150,6 +150,11 @@ export function lineDiff(before: string, after: string, context = 2): DiffLine[]
 	return collapse(lines, context);
 }
 
+/** `true` if a row has a multi-line text on both sides; such a row is shown as a line diff instead of two columns. */
+export function isTextDiff(row: { database: string; files: string }): boolean {
+	return row.database !== "—" && row.files !== "—" && (row.database.includes("\n") || row.files.includes("\n"));
+}
+
 /** `true` if two texts differ only in whitespace: line endings, indentation, trailing spaces, and empty lines. */
 export function onlyWhitespaceDiffers(before: string, after: string): boolean {
 	const normalize = (text: string) =>

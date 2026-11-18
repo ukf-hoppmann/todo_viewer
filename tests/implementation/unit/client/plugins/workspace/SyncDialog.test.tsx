@@ -80,6 +80,7 @@ describe("SyncDialog explains a conflict", () => {
 		expect(diff.textContent).toContain("−alt");
 		expect(diff.textContent).toContain("+neu");
 		expect(screen.queryByTestId(ids.syncWhitespaceOnly("d3", "content"))).toBeNull();
+		expect(screen.queryByText("Datenbank")).toBeNull(); // keine Spaltenköpfe über dem Diff
 	});
 
 	it("says so and writes out the empty line when only whitespace differs", async () => {

@@ -3,15 +3,16 @@
 ## State
 
 - Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Nach Gerüst und Zuordnung mit dem Task zu den freien Maps beginnen.
+- Next step: Thema 3 (Löschen freier Maps) besprechen.
 - Open:
-  - Besprechung in Arbeit, Themenplan 2026-11-18, Thema 1 erledigt: 2 Memo-Map (Owner stellt klar: Brainstorming-Map, die im Memo gespeichert wird, damit Cloud-Sitzungen sie füllen können; Empfehlung: entfällt, wenn freie Maps im Spiegel `STORY-105` liegen), 3 Löschen freier Maps, 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
+  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 und 2 erledigt: 3 Löschen freier Maps, 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
   - Die Maps eines Projekts stehen als Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps; Anlegen, Umbenennen, Löschen dort) (2026-11-18)
   - Die Gesamtansicht zeigt nur Projektbäume; freie Maps stehen dort nicht (2026-11-18)
   - Projektbaum und freie Maps werden gemischt, damit man flexibel gestalten kann (2026-11-13)
   - Freie Maps gehören zu einem Projekt; Übergreifendes kommt ins eingebaute Projekt „Allgemein“ (2026-11-13)
-  - Die Mindmap zu einem Memo lebt allein in diesem Memo; Bedeutung wird am 2026-11-18 neu geklärt (2026-11-13)
+  - Keine eigene Map je Memo; ein Memo wird an einen Knoten oder eine freie Map verlinkt. Cloud-Zugriff auf freie Maps über den Spiegel `STORY-105` (2026-11-18)
+  - „Export nach Memo“ (Baum als Liste ins Memo) wird nicht gebaut, sondern als Memo mit Prüfdatum 2027-02-18 festgehalten (2026-11-18)
   - Nichts wird kopiert; es gibt „umhängen“ (aus A weg, in B drin) und „übertragen“ (derselbe Ast in A und B) (2026-11-13)
   - Übertragen geht nur zwischen Bäumen; innerhalb eines Baums gibt es nur Umhängen (2026-11-13)
   - Platzierungen sind gleichberechtigt: Wird der Ast aus einem Baum entfernt, bleibt er im anderen vollwertig (2026-11-13)
@@ -19,7 +20,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-18 — Thema 2: Export oder Sync einer freien Map in ein Memo (a81ec00ee51c)
+State confirmed after entry 2026-11-18 — Thema 2: Entscheidung und Umsetzung in der Planung (39a3c712b441)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -115,3 +116,19 @@ State confirmed after entry 2026-11-18 — Thema 2: Export oder Sync einer freie
 ### Open
 
 - Entscheidung des Owners: Memo-Map ganz streichen und Export nach Memo erst bei Bedarf? Empfehlung: ja, als Idee in einem Memo oder Item festhalten.
+
+## 2026-11-18 — Thema 2: Entscheidung und Umsetzung in der Planung
+
+### Decided
+
+- Memo-Map gestrichen; freie Maps bleiben, ein Memo wird daran verlinkt wie an einen Knoten (Owner, Empfehlung angenommen). Grund: ein Speichermodell weniger, Umhängen und Übertragen bleiben einfach, Cloud-Zugriff kommt mit dem Spiegel.
+- „Export nach Memo“ wird erst bei Bedarf gebaut; als Memo mit Prüfdatum festgehalten (Owner).
+- `STORY-105` muss freie Maps enthalten, damit eine Cloud-Sitzung sie füllen kann (Owner).
+
+### Discussed
+
+- Angepasst: Ziel und Kriterien von `STORY-102` und `TASK-062` (Titel ohne Memo-Map, Maps-Liste in der Seitenleiste), Kriterium 1 von `STORY-105`, Konzept `EPIC-008_spec.md` (Begriffe, Darstellung, Spiegel, Idee Export). Das Memo `new-map-export-nach-memo` hält die Export-Idee fest.
+
+### Open
+
+- Thema 3: Löschen freier Maps.

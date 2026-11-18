@@ -2,10 +2,10 @@
 
 ## State
 
-- Goal/Status: Geplant; vier Tasks mit Spec und Notizen, Story-Spec steht; bereit zur Umsetzung in eigenen Sessions.
-- Next step: `TASK-058` in eigener Session umsetzen (Plan aus der Spec, dem Owner vorlegen); danach `TASK-060` (Prototyp fertig, Umsetzung steht an), `TASK-059`, `TASK-061`.
+- Goal/Status: Alle vier Tasks (`TASK-058`, `TASK-059`, `TASK-060`, `TASK-061`) sind `Completed`; die Kriterien der Story sind erfüllt, die Story steht auf `Awaiting confirmation` (2026-11-18).
+- Next step: Der Owner bestätigt die Story oder nennt Fehlendes (2026-11-18).
 - Open:
-  - Seitenansicht „Nicht zugeordnet“ in der Gesamtansicht: Items des markierten Projekts oder aus; Vorschlag, vor `TASK-059` zu klären (2026-11-17)
+  - Der Owner bestätigt die Story oder nennt Fehlendes (2026-11-18)
 - Decided:
   - Ein Anker ist nur eine Ansicht ab einem Knoten des einen Baums, mit Pfad zurück; so entstehen keine doppelten Orte (2026-11-13)
   - Am Item gibt es drei getrennte Aktionen: „Gehe hin“, „Erstelle“, „Anker“; kein Knoten entsteht still im Hintergrund (2026-11-13)
@@ -23,7 +23,7 @@
   - Reihenfolge der Tasks: `TASK-058`, `TASK-060`, `TASK-059`, `TASK-061`; je Task eigene Session und eigener Branch (2026-11-17)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Story-Spec `STORY-101_spec.md`; Tasks `TASK-058`, `TASK-059`, `TASK-060`, `TASK-061`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-17 — Prototyp der runden Anordnung (TASK-060) (c54a14995b37)
+State confirmed after entry 2026-11-18 — Alle Tasks abgeschlossen (00e52069a259)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -91,3 +91,18 @@ State confirmed after entry 2026-11-17 — Prototyp der runden Anordnung (TASK-0
 
 - Ob die Kanten in der runden Anordnung gerade oder als Kurven laufen: wird in der Umsetzung am Bild entschieden, das Muster der Anschlüsse (links/rechts nach Lage des Kindes) steht fest
 - Open from 2026-11-17 (Runde Anordnung bei großen Maps) resolved: eigene Berechnung, siehe oben
+
+## 2026-11-18 — Alle Tasks abgeschlossen
+
+### Discussed
+
+- Mit der Bestätigung von `TASK-061` sind alle vier Tasks `Completed`. Kriterien der Story: (1) Fokus mit Pfad (`TASK-058`); (2) „Gehe hin“, „Erstelle“, „Anker“ (`TASK-058`); (3) Gesamt- und Einzelansicht (`TASK-059`); (4) rund oder zur Seite (`TASK-060`); (5) Abhängigkeitslinien, Standard aus (`TASK-061`); (6) UI-Tests grün (Client-Gesamtlauf zuletzt 1404 von 1405 grün, der eine Fehlschlag war eine Zeitüberschreitung in `startApp.test.tsx`, einzeln grün).
+- Nicht ausgeführt: Browserprüfung der Abhängigkeitslinien.
+
+### Decided
+
+- `STORY-101` steht auf `Awaiting confirmation`
+
+### Open
+
+- Der Owner bestätigt oder nennt Fehlendes

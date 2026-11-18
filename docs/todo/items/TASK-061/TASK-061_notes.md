@@ -2,10 +2,9 @@
 
 ## State
 
-- Goal/Status: Umgesetzt (Server: Port, Domain `dependency_links`, `TreeOut.links`, OpenAPI-Typen; Client: `liftLinks`, Schalter `showDependencies`, gestrichelte Linien mit Pfeil und Anzahl); Tests grün, Techdocs und Daily nachgezogen; `Awaiting confirmation`.
-- Next step: Der Owner bestätigt oder nennt Fehlendes; Browserprüfung mit dem laufenden Viewer steht aus.
+- Goal/Status: Vom Owner am 2026-11-18 bestätigt (`Completed`, archiviert). Umgesetzt (Server: Port, Domain `dependency_links`, `TreeOut.links`, OpenAPI-Typen; Client: `liftLinks`, Schalter `showDependencies`, gestrichelte Linien mit Pfeil und Anzahl); Tests grün, Techdocs und Daily nachgezogen; `Awaiting confirmation`.
+- Next step: keiner, der Task ist abgeschlossen (2026-11-18); die Browserprüfung mit dem laufenden Viewer wurde nicht ausgeführt.
 - Open:
-  - Der Owner bestätigt oder nennt Fehlendes (2026-11-18)
 - Decided:
   - Die Zusammenfassung der Linien liegt in der Server-Domain, weil dort der wirksame Knoten berechnet wird (2026-11-17)
   - Nur Abhängigkeiten innerhalb eines Projekts; auch in der Gesamtansicht keine Linien zwischen Projekten (2026-11-17)
@@ -13,7 +12,7 @@
   - Der Server lässt Linien zwischen Eltern- und Kindknoten stehen, nur Paare im selben Knoten entfallen; der Client kürzt sie bei gefalteten Ästen (`liftLinks`) (2026-11-18)
 - References: Spec `TASK-061_spec.md`; Story-Spec `STORY-101_spec.md`; Commits 90194cb3 (Server) und d41ce0f8 (Client)
 
-State confirmed after entry 2026-11-18 — Umsetzung (d7803ebb006c)
+State confirmed after entry 2026-11-18 — Bestätigung (6442a27eee33)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -49,3 +48,16 @@ State confirmed after entry 2026-11-18 — Umsetzung (d7803ebb006c)
 
 - Der Owner bestätigt oder nennt Fehlendes
 
+## 2026-11-18 — Bestätigung
+
+### Discussed
+
+- Der Owner hat `TASK-061` als abgeschlossen bestätigt.
+
+### Decided
+
+- `TASK-061` ist `Completed` und nach `archive.md` verschoben
+
+### Open
+
+- Open from 2026-11-18 (Der Owner bestätigt oder nennt Fehlendes) resolved: bestätigt

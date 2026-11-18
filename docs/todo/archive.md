@@ -4212,3 +4212,21 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     3. UI-Tests sind grün.
   - Summary: Alle gewählten Projekte unter einer gemeinsamen Wurzel in einer Map sehen; umschaltbar zur Einzelansicht.
   - Resolution: Vom Projekteigner am 2026-11-18 bestätigt; auf `todo_mindmap`.
+- `TASK-061` **Mindmap: Abhängigkeiten zwischen Themen ein- und ausblenden**
+  - Uid: c9b91950-7822-42e1-9b52-d0d3d0176a6f.
+  - Type: Task.
+  - Parent: `STORY-101`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Ein Schalter blendet Linien zwischen Themen ein, sobald ein Item des
+    einen Themas von einem Item des anderen abhängt.
+  - Completion criteria: 1. Die Linien werden aus den Abhängigkeiten der Items
+    und ihren wirksamen Knoten zusammengefasst; die reine Funktion ist
+    getestet.
+    2. Der Schalter ist standardmäßig aus und sein Zustand bleibt gespeichert.
+  - Summary: Linien zwischen Themen zeigen, deren Items voneinander abhängen; ein Schalter, standardmäßig aus.
+  - Resolution: Vom Projekteigner am 2026-11-18 bestätigt; auf `todo_mindmap`.

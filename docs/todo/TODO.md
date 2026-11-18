@@ -59,7 +59,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Type: Story.
   - Parent: `EPIC-008`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-11-13.
   - Area: Web-UI.
   - Priority: Normal.
@@ -83,24 +83,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Verschiedene Blicke auf die Map: einen Ast als eigene Map öffnen,
     alle Projekte zusammen sehen, rund oder zur Seite anordnen und
     Abhängigkeiten zwischen Themen einblenden.
-
-- `TASK-061` **Mindmap: Abhängigkeiten zwischen Themen ein- und ausblenden**
-  - Uid: c9b91950-7822-42e1-9b52-d0d3d0176a6f.
-  - Type: Task.
-  - Parent: `STORY-101`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-13.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Ein Schalter blendet Linien zwischen Themen ein, sobald ein Item des
-    einen Themas von einem Item des anderen abhängt.
-  - Completion criteria: 1. Die Linien werden aus den Abhängigkeiten der Items
-    und ihren wirksamen Knoten zusammengefasst; die reine Funktion ist
-    getestet.
-    2. Der Schalter ist standardmäßig aus und sein Zustand bleibt gespeichert.
-  - Summary: Linien zwischen Themen zeigen, deren Items voneinander abhängen; ein Schalter, standardmäßig aus.
 
 - `STORY-102` **Freie Maps und Äste zwischen Bäumen umhängen und übertragen**
   - Uid: 5e2233a4-bac0-482b-8890-66e0855fa8e0.

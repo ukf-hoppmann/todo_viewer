@@ -5,9 +5,10 @@
 - Goal/Status: Geplant; zwei Tasks angelegt.
 - Next step: Nach Gerüst und Zuordnung mit dem Task zu den freien Maps beginnen.
 - Open:
-  - Besprechung in Arbeit, Themenplan 2026-11-18: 1 Auswahl der Maps, 2 Memo-Map, 3 Löschen freier Maps, 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
-  - Wo man zwischen Projektbaum und freien Maps wählt, hängt am Aufbau der Mindmap-Seite; Thema 1 (2026-11-13)
+  - Besprechung in Arbeit, Themenplan 2026-11-18, Thema 1 erledigt: 2 Memo-Map, 3 Löschen freier Maps, 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
+  - Die Maps eines Projekts stehen als Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps; Anlegen, Umbenennen, Löschen dort) (2026-11-18)
+  - Die Gesamtansicht zeigt nur Projektbäume; freie Maps stehen dort nicht (2026-11-18)
   - Projektbaum und freie Maps werden gemischt, damit man flexibel gestalten kann (2026-11-13)
   - Freie Maps gehören zu einem Projekt; Übergreifendes kommt ins eingebaute Projekt „Allgemein“ (2026-11-13)
   - Die Mindmap zu einem Memo lebt allein in diesem Memo (2026-11-13)
@@ -18,7 +19,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-18 — Themenplan der Besprechung (cb09d2d9e268)
+State confirmed after entry 2026-11-18 — Thema 1: Auswahl der Maps (c8bb4a53c43a)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -66,3 +67,23 @@ State confirmed after entry 2026-11-18 — Themenplan der Besprechung (cb09d2d9e
 ### Open
 
 - Alle neun Themen; Reihenfolge wie oben.
+
+## 2026-11-18 — Thema 1: Auswahl der Maps
+
+### Discussed
+
+- Frage: Wie wählt man zwischen Projektbaum und freien Maps, und was zeigt die Gesamtansicht? Mockup mit den drei Varianten: https://claude.ai/artifact/3qoj9AET4gmLVxg4Nx8gGw
+- A, Map-Liste in der Seitenleiste: Verwalten und Auswählen an festem Ort, beim Umhängen und Übertragen sind die Ziele sichtbar; die Seitenleiste wird länger. Empfehlung.
+- B, Tabs über der Karte: schneller Wechsel, aber bei vielen Maps unübersichtlich; Verwalten braucht ein zusätzliches Menü.
+- C, Dropdown im Kopf der Karte: platzsparend, aber die Maps sind versteckt.
+- Gesamtansicht: nur Projektbäume (übersichtlich) oder auch freie Maps als zusätzliche Äste (erzeugt Doppelungen bei übertragenen Ästen). Empfehlung: nur Projektbäume.
+
+### Decided
+
+- Variante A: Map-Liste in der Seitenleiste (Owner).
+- Freie Maps stehen in der Gesamtansicht nicht; sie zeigt nur Projektbäume (Owner).
+- Verworfen: B (Verwalten braucht Zusatzmenü, unübersichtlich bei vielen Maps) und C (Maps versteckt), außerdem freie Maps als Äste der Gesamtansicht (Doppelungen).
+
+### Open
+
+- Thema 2: Map eines Memos.

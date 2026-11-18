@@ -14,8 +14,8 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 
 - **Knoten:** ein Thema mit Titel und optionalem Text; kann Notizen tragen, darf leer sein, beliebige Tiefe.
 - **Baum (Map):** Knoten unter einer Wurzel. Es gibt den **Projektbaum** (einer je Projekt, das Projekt ist die
-  Wurzel), **freie Maps** (beliebig viele je Projekt, Übergreifendes im Projekt „Allgemein“) und die **Map eines
-  Memos** (lebt allein in diesem Memo).
+  Wurzel), **freie Maps** (beliebig viele je Projekt, Übergreifendes im Projekt „Allgemein“). Eine eigene Map je Memo gibt es
+  nicht; ein Memo wird an einen Knoten oder eine freie Map verlinkt.
 - **Platzierung:** die Lage eines Knotens in einem Baum (Knoten, Parent, Stelle). Ein Knoten kann Platzierungen
   in mehreren Bäumen haben, in einem Baum höchstens eine. Platzierungen sind gleichberechtigt.
 - **Zuordnung:** die Verknüpfung eines Items oder Memos mit einem Knoten.
@@ -46,6 +46,8 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 ## Darstellung
 
 - Eigene Seite. Beim Öffnen sind zwei Ebenen offen.
+- **Auswahl der Maps:** Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps); dort auch Anlegen,
+  Umbenennen, Löschen. Die Gesamtansicht zeigt nur Projektbäume, keine freien Maps.
 - **Fokus (Anker):** jeder Knoten lässt sich als Wurzel öffnen, mit Pfad zurück. Es ist eine Ansicht, kein
   zweiter Baum.
 - **Einzelansicht:** eine Map. **Gesamtansicht:** eine gemeinsame Wurzel, die gewählten Projekte als erste Knoten.
@@ -69,7 +71,9 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - Aus einem Ideen-Knoten wird ein Item angelegt; der Knoten bleibt stehen und das Item hängt daran.
 - Die KI ordnet beim Anlegen eines Items zu, schlägt Knoten vor und legt sie nach Bestätigung an. Sie arbeitet
   über API und MCP; der Viewer hat keine eigene LLM-Anbindung.
-- Markdown-Spiegel: mitgeplant, nicht Pflicht; nötig, damit Cloud-Sitzungen zuordnen können.
+- Markdown-Spiegel: mitgeplant, nicht Pflicht; nötig, damit Cloud-Sitzungen zuordnen können. Er muss auch freie
+  Maps enthalten, damit eine Cloud-Sitzung sie beim Brainstormen füllen kann.
+- Idee, nicht geplant: Export einer freien Map als verschachtelte Liste in ein Memo (einmalig, später bei Bedarf).
 
 ## Vorhandene Bausteine
 

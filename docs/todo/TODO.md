@@ -65,12 +65,12 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Priority: Normal.
   - Dependencies: `STORY-099`, `STORY-100`.
   - Goal: Neben dem Projektbaum kann ein Projekt freie Maps haben, etwa zum
-    Brainstormen vor der Umsetzung, und ein Memo seine eigene Map. Äste lassen
+    Brainstormen vor der Umsetzung. Äste lassen
     sich zwischen Bäumen umhängen (aus A weg, in B drin) oder übertragen
     (derselbe Ast in A und B), ohne zu kopieren.
   - Completion criteria: 1. Freie Maps lassen sich in einem Projekt anlegen,
-    auswählen, umbenennen und löschen; die Map eines Memos öffnet man aus dem
-    Memo.
+    auswählen, umbenennen und löschen; die Maps eines Projekts stehen als Liste
+    in der Seitenleiste, die Gesamtansicht zeigt nur Projektbäume.
     2. Umhängen geht innerhalb eines Baums und zwischen Bäumen; Übertragen
     geht nur zwischen Bäumen, ein Knoten steht höchstens einmal je Baum.
     3. Ein übertragener Ast ist markiert; „hier entfernen“ nimmt ihn nur aus
@@ -82,7 +82,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     andere Map zu hängen oder ihn in beiden zu führen, damit die Planungs-Map
     nicht schrumpft, wenn die Umsetzungs-Map wächst.
 
-- `TASK-062` **Mindmap: freie Maps je Projekt und die Map eines Memos**
+- `TASK-062` **Mindmap: freie Maps je Projekt**
   - Uid: 57a6b175-25bd-4d1e-8f8b-7fc05a044760.
   - Type: Task.
   - Parent: `STORY-102`.
@@ -92,13 +92,12 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Area: Web-UI.
   - Priority: Normal.
   - Dependencies: None.
-  - Goal: Ein Projekt kann neben seinem Projektbaum freie Maps haben, und ein
-    Memo eine eigene Map; sie lassen sich anlegen, auswählen, umbenennen und
-    löschen.
+  - Goal: Ein Projekt kann neben seinem Projektbaum freie Maps haben; sie
+    lassen sich anlegen, auswählen, umbenennen und löschen.
   - Completion criteria: 1. Server und Oberfläche führen mehrere Bäume je
-    Projekt und höchstens einen je Memo.
-    2. Die Auswahl der Map sitzt an der mit dem Owner abgestimmten Stelle der
-    Mindmap-Seite; die Map eines Memos öffnet man aus dem Memo.
+    Projekt.
+    2. Die Maps eines Projekts stehen als Liste in der Seitenleiste (Projektbaum
+    zuerst); die Gesamtansicht zeigt nur Projektbäume.
     3. API- und UI-Tests sind grün.
 
 - `TASK-063` **Mindmap: Äste zwischen Bäumen umhängen und übertragen**
@@ -183,8 +182,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Goal: Die Mindmap geht wie Backlog und Memos als Markdown über den Sync
     mit, damit sie über Git zwischen Rechnern wandert und die KI auch in
     Cloud-Sitzungen, die nur auf den Dateien arbeiten, zuordnen kann.
-  - Completion criteria: 1. Ein Dateiformat für Bäume, Knoten, Platzierungen
-    und Zuordnungen ist beschrieben und mit Golden-Files abgedeckt.
+  - Completion criteria: 1. Ein Dateiformat für Bäume (Projektbäume und freie
+    Maps), Knoten, Platzierungen und Zuordnungen ist beschrieben und mit
+    Golden-Files abgedeckt; eine Cloud-Sitzung kann freie Maps füllen.
     2. Der Sync nimmt die Mindmap mit Vorschau und Konflikten in denselben
     Dialog auf.
     3. Die Regeln für den Datei-Modus sind an Claude_Harness übergeben.

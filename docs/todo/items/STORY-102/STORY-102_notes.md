@@ -5,13 +5,13 @@
 - Goal/Status: Geplant; zwei Tasks angelegt.
 - Next step: Nach Gerüst und Zuordnung mit dem Task zu den freien Maps beginnen.
 - Open:
-  - Besprechung in Arbeit, Themenplan 2026-11-18, Thema 1 erledigt: 2 Memo-Map, 3 Löschen freier Maps, 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
+  - Besprechung in Arbeit, Themenplan 2026-11-18, Thema 1 erledigt: 2 Memo-Map (Owner stellt klar: Brainstorming-Map, die im Memo gespeichert wird, damit Cloud-Sitzungen sie füllen können; Empfehlung: entfällt, wenn freie Maps im Spiegel `STORY-105` liegen), 3 Löschen freier Maps, 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
   - Die Maps eines Projekts stehen als Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps; Anlegen, Umbenennen, Löschen dort) (2026-11-18)
   - Die Gesamtansicht zeigt nur Projektbäume; freie Maps stehen dort nicht (2026-11-18)
   - Projektbaum und freie Maps werden gemischt, damit man flexibel gestalten kann (2026-11-13)
   - Freie Maps gehören zu einem Projekt; Übergreifendes kommt ins eingebaute Projekt „Allgemein“ (2026-11-13)
-  - Die Mindmap zu einem Memo lebt allein in diesem Memo (2026-11-13)
+  - Die Mindmap zu einem Memo lebt allein in diesem Memo; Bedeutung wird am 2026-11-18 neu geklärt (2026-11-13)
   - Nichts wird kopiert; es gibt „umhängen“ (aus A weg, in B drin) und „übertragen“ (derselbe Ast in A und B) (2026-11-13)
   - Übertragen geht nur zwischen Bäumen; innerhalb eines Baums gibt es nur Umhängen (2026-11-13)
   - Platzierungen sind gleichberechtigt: Wird der Ast aus einem Baum entfernt, bleibt er im anderen vollwertig (2026-11-13)
@@ -19,7 +19,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-18 — Thema 1: Auswahl der Maps (c8bb4a53c43a)
+State confirmed after entry 2026-11-18 — Thema 2: Map eines Memos, Klarstellung (ae18120f766e)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -87,3 +87,16 @@ State confirmed after entry 2026-11-18 — Thema 1: Auswahl der Maps (c8bb4a53c4
 ### Open
 
 - Thema 2: Map eines Memos.
+
+## 2026-11-18 — Thema 2: Map eines Memos, Klarstellung
+
+### Discussed
+
+- Der Owner präzisiert „lebt allein im Memo“: gemeint ist eine Brainstorming-Map, die nicht irgendwo in der Mindmap-Datenbank liegt, sondern im Memo gespeichert wird, damit eine Cloud-Sitzung sie füllen kann. Die Cloud-Begründung stand bisher nirgends in den Notes; in `TASK-064` stand nur „die Map eines Memos lebt in dem Memo“ und „speist sich nur aus dem einen Memo“.
+- Reine Brainstorming-Maps ohne Memo gibt es mit den freien Maps. Deren Cloud-Zugriff hängt am Markdown-Spiegel `STORY-105`; Memos sind schon Dateien im Spiegel.
+- Option 1, Map im Memo gespeichert: Cloud-Sitzung füllt sie über die Memo-Datei; aber ein zweites Speichermodell neben den Mindmap-Tabellen, und Umhängen oder Übertragen in andere Bäume (diese Story) wird schwierig, weil der Knoten dann in einer Memo-Datei liegt.
+- Option 2, freie Map plus Verknüpfung zum Memo: ein Modell, Umhängen und Übertragen funktionieren; Cloud-Zugriff kommt mit `STORY-105`. Empfehlung.
+
+### Open
+
+- Entscheidung des Owners zwischen Option 1 und 2; bei Option 2 entfallen die Map-eines-Memos-Teile in `TASK-062` und im Epic-Konzept.

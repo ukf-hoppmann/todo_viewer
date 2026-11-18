@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: umgesetzt (ff3d8dc5), `Awaiting confirmation`; alle Client-Tests und `tsc` grün (2026-11-18)
-- Next step: Owner bestätigt oder nennt Fehlendes (2026-11-18)
+- Goal/Status: umgesetzt (ff3d8dc5), vom Owner am 2026-11-18 bestätigt (`Completed`) und archiviert
+- Next step: Keiner (2026-11-18)
 - Open:
   - Keine
 - Decided:

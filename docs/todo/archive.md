@@ -4193,3 +4193,22 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Überlappung lesbar.
   - Summary: Die Map rund um die Wurzel anordnen oder zur Seite; ein Prototyp mit großer Map klärt vorher, ob ELK genügt.
   - Resolution: Vom Projekteigner am 2026-11-18 bestätigt; auf `todo_mindmap`.
+- `TASK-059` **Mindmap: Gesamtansicht mit gemeinsamer Wurzel über die gewählten Projekte**
+  - Uid: 9d65405e-bef7-4405-b7d3-693fbbfc7615.
+  - Type: Task.
+  - Parent: `STORY-101`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-058`.
+  - Goal: Neben der Einzelansicht gibt es eine Gesamtansicht mit einer
+    gemeinsamen Wurzel, unter der die in der Seitenleiste gewählten Projekte
+    die ersten Knoten sind.
+  - Completion criteria: 1. Die Ansicht ist umschaltbar; Projekte hinzu- und
+    wegschalten wirkt sofort.
+    2. Die Summen an der gemeinsamen Wurzel zählen jedes Item einmal.
+    3. UI-Tests sind grün.
+  - Summary: Alle gewählten Projekte unter einer gemeinsamen Wurzel in einer Map sehen; umschaltbar zur Einzelansicht.
+  - Resolution: Vom Projekteigner am 2026-11-18 bestätigt; auf `todo_mindmap`.

@@ -11,12 +11,12 @@ bleibt unverändert.
   als erste Knoten, jedes mit seinem Baum. Projekte hinzu- und wegschalten wirkt sofort (die Projektauswahl kommt aus
   `useProjectSelection`).
 - Summen der gemeinsamen Wurzel: Anzahl und erledigt addieren die Projekte (jedes Item gehört zu einem Projekt und
-  zählt einmal); der Zustand folgt der Regel aus `STORY-100_spec.md` über die Zustände der Projektknoten. Die
+  zählt einmal; Items ohne Knoten zählen nicht mit, die Projektsumme ist die der obersten Knoten); der Zustand folgt der Regel aus `STORY-100_spec.md` über die Zustände der Projektknoten. Die
   Projektknoten tragen die Summen ihrer Bäume wie bisher die Projektwurzel.
 - An der gemeinsamen Wurzel gibt es kein Hinzufügen, Umhängen oder Zuordnen; Ziehen eines Items oder Knotens auf sie
   wird nicht angeboten. Fokus und Pfad aus `TASK-058` gelten (der Pfad beginnt bei der gemeinsamen Wurzel).
-- Die Seitenansicht „Nicht zugeordnet“ gilt je Projekt. Offen (Vorschlag, vom Owner noch nicht bestätigt): in der
-  Gesamtansicht zeigt sie die Items des markierten Projekts, sonst ist sie aus. Vor der Umsetzung klären.
+- Die Seitenansicht „Nicht zugeordnet“ gilt je Projekt. In der Gesamtansicht zeigt sie die
+  Items des markierten Projekts, sonst ist sie aus (Owner 2026-11-18).
 
 ## Schnittstellen und Dateien
 

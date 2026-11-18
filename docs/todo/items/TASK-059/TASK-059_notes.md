@@ -2,29 +2,30 @@
 
 ## State
 
-- Goal/Status: Spec steht; wartet auf `TASK-058`.
-- Next step: Nach dem Merge von `TASK-058` Plan aus der Spec erstellen und umsetzen.
+- Goal/Status: Spec vollständig, keine offene Frage; `TASK-058` ist erledigt, Plan wird erstellt (2026-11-18)
+- Next step: Plan vom Owner freigeben lassen, dann umsetzen (2026-11-18)
 - Open:
-  - In der Gesamtansicht zeigt die Seitenansicht „Nicht zugeordnet“ die Items des markierten Projekts, sonst ist sie aus; das ist ein Vorschlag, noch nicht vom Owner bestätigt (2026-11-17)
+  - Keine
 - Decided:
+  - „Nicht zugeordnet“ zeigt in der Gesamtansicht die Items des markierten Projekts, sonst ist die Seitenansicht aus (2026-11-18)
+  - Items ohne Knoten zählen in den Summen und im Zustand des Projektknotens nicht mit (2026-11-18)
   - Mehrere Projekte werden über einen RTK-Query-Endpunkt `getTrees` geladen (`queryFn`, parallel); der Server bleibt unverändert (2026-11-17)
   - Die gemeinsame Wurzel gehört keinem Projekt und nimmt nichts an (2026-11-17)
   - Keine Abhängigkeitslinien über Projektgrenzen (2026-11-17)
 - References: Spec `TASK-059_spec.md`; Story-Spec `STORY-101_spec.md`
 
-State confirmed after entry 2026-11-17 — Anlage aus der Planung der Story (3af5b3960e5e)
-
-## 2026-11-17 — Anlage aus der Planung der Story
+## 2026-11-18 — Planung: offene Fragen entschieden
 
 ### Discussed
 
-- Planung der Story `STORY-101` mit dem Owner.
+- Seitenansicht „Nicht zugeordnet“ in der Gesamtansicht: markiertes Projekt (empfohlen), immer aus, oder alle gruppiert.
+- Projektsumme mit oder ohne Items ohne Knoten.
 
 ### Decided
 
-- Ein Endpunkt `getTrees` statt Hooks in Schleifen; der Server bleibt unverändert
-- Gemeinsame Wurzel ohne Anlegen, Umhängen, Zuordnen
+- Markiertes Projekt, sonst aus: das Ziel eines Drops liegt dann immer im selben Projekt. Verworfen: immer aus (nimmt die Zuordnung), alle gruppiert (Aufwand).
+- Ohne Items ohne Knoten: sie sind kein Knoten und zählen auch in der Einzelansicht nicht im Baum; die Summe ist die der obersten Knoten, die ihre Unterknoten enthalten.
 
 ### Open
 
-- In der Gesamtansicht zeigt die Seitenansicht „Nicht zugeordnet“ die Items des markierten Projekts, sonst ist sie aus; das ist ein Vorschlag, noch nicht vom Owner bestätigt
+- Keine

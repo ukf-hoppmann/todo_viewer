@@ -8,6 +8,285 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
 
 ## Work items
 
+- `TASK-058` **Mindmap: Fokus auf einen Knoten und die Aktionen „Gehe hin“, „Erstelle“, „Anker“ am Item**
+  - Uid: 44aae02d-c3c4-48b7-81d2-4ad27c9d5398.
+  - Type: Task.
+  - Parent: `STORY-101`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Jeder Knoten lässt sich als Wurzel öffnen, mit Pfad zurück. Im
+    Detail eines Items führen „Gehe hin“, „Erstelle“ und „Anker“ zur Map.
+  - Completion criteria: 1. Der Fokus steht in der Adresse und zeigt einen
+    Pfad bis zur Wurzel.
+    2. „Gehe hin“ öffnet die Map am wirksamen Knoten des Items; „Erstelle“
+    legt unter ihm einen Knoten mit dem Namen des Items an und hängt es eigens
+    dorthin; „Anker“ gibt es nur mit eigenem Knoten.
+    3. UI-Tests sind grün.
+  - Summary: Eine Map ab einem beliebigen Knoten öffnen, mit Pfad zurück, und vom Item aus zur Map springen, dort einen Knoten anlegen oder ihn als Wurzel öffnen.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
+
+- `EPIC-007` **Neuentwicklung als eigenständiges Tool**
+  - Uid: c3a3ff5a-e320-4b04-af05-30257804a721.
+  - Type: Epic.
+  - Status: Completed.
+  - Created: 2026-10-10.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Das ToDo-Viewer wird von Grund auf neu entwickelt, mit einer
+    tragfähigen Architektur und einem relationalen Datenmodell in der
+    Datenbank. Es wird ein eigenständiges Produkt, das der KI eine API
+    bietet und nicht mehr als Teil des KI-Harness entsteht.
+  - Completion criteria: 1. Die Architektur ist dokumentiert und vom
+    Projektinhaber freigegeben. 2. Das relationale Datenmodell ist
+    umgesetzt. 3. Die neue Version deckt den Funktionsumfang von v0.8.7 ab,
+    die API für die KI eingeschlossen. 4. Bestehende Backlogs lassen sich in
+    die neue Datenbank übernehmen. 5. Das Tool läuft und ist dokumentiert,
+    ohne Harness-Bezug. 6. Der Cutover ist erfolgt und der Altcode entfernt.
+  - Summary: Kompletter Neubau des ToDo-Viewers mit besserer Architektur und
+    relationaler Datenstruktur, als eigenständiges Tool mit API für die KI.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; Altcode `src_old/` entfernt, Doku auf den Neubau umgestellt.
+
+- `STORY-100` **Items und Memos an Knoten hängen: Anzahl, Fortschritt und Zustand am Thema**
+  - Uid: 36fb7560-506d-49a0-9d0b-bcbc5b35015f.
+  - Type: Story.
+  - Parent: `EPIC-008`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `STORY-099`.
+  - Goal: Backlog-Items und Memos lassen sich an Knoten hängen. Ein Knoten
+    zeigt Anzahl und Fortschritt seiner Items samt Unterknoten und einen
+    daraus abgeleiteten Zustand; die Items selbst stehen nur im Detail. Items
+    ohne Knoten stehen in einer Seitenansicht und werden von dort in den Baum
+    gezogen. So wird der Themenbaum zur Übersicht des Backlogs.
+  - Completion criteria: 1. Ein Item hängt an höchstens einem Knoten; Kinder
+    erben den Knoten ihres Parents, außer sie sind eigens angehängt, dann
+    zählen sie und ihre Kinder zum neuen Knoten. Wird ein Knoten gelöscht,
+    fallen seine Items an den Parent-Knoten zurück, sonst in „Nicht
+    zugeordnet“.
+    2. Ein Knoten zeigt Anzahl und Fortschrittsring über sich und seine
+    Unterknoten; jedes Item zählt genau einmal, auch über leere Knoten hinweg; Items im
+    Papierkorb zählen nie.
+    3. Der Zustand Idee, geplant, in Arbeit oder erledigt ergibt sich aus den
+    Items und ist filterbar.
+    4. Das Detail eines Knotens listet seine Items und verlinkten Memos; Memos
+    zählen nicht in der Zahl.
+    5. Items ohne Knoten stehen in einer Seitenansicht „Nicht zugeordnet“. Sie
+    lässt sich ausschalten. Von dort ordnet man Items per Drag-and-drop einem
+    Knoten zu.
+    6. Domain-, API- und UI-Tests sind grün.
+  - Summary: Backlog-Einträge und Memos an Themen hängen. Das Thema zeigt nur
+    eine Zahl und den Fortschritt, damit die Map übersichtlich bleibt.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
+
+- `TASK-065` **Mindmap: Markierungen „verworfen“ und „später“ an Ideen-Knoten**
+  - Uid: ea634e30-aae8-49b4-a5ab-8b77aa40bf03.
+  - Type: Task.
+  - Parent: `STORY-100`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-11-16.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-056`, `TASK-057`.
+  - Goal: Ideen-Knoten lassen sich als „verworfen“ oder „später“ markieren,
+    damit alte Ideen als Spur stehen bleiben, aber nicht mehr stören. Die
+    Markierung gehört zum Knoten, nicht zu seinen Items.
+  - Completion criteria: 1. Ein Knoten trägt höchstens eine Markierung
+    (keine, verworfen, später); setzen und löschen gehen über API, MCP und
+    Oberfläche.
+    2. Markierte Knoten sind sichtbar abgesetzt, und der Zustandsfilter kann
+    sie ausblenden.
+    3. Die Markierung gilt nur für den Knoten selbst, nicht für Unterknoten,
+    und ändert weder die Summen der Items noch den Zustand.
+    4. Die Werte sind fest (keine, verworfen, später), nicht frei;
+    Domain-, API- und UI-Tests sind grün.
+  - Summary: Ideen-Knoten lassen sich als „verworfen“ oder „später“ markieren.
+    Die Markierung setzt den Knoten ab und lässt sich ausblenden, ändert aber
+    keine Zahlen.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
+
+- `TASK-057` **Mindmap: Zahl, Fortschrittsring, Zustand und Filter am Knoten, Items und Memos im Detail**
+  - Uid: 0401cbeb-4e8c-42db-b37a-57b857f6772e.
+  - Type: Task.
+  - Parent: `STORY-100`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-056`.
+  - Goal: Die Map zeigt an jedem Knoten Anzahl, Fortschrittsring und Zustand,
+    bietet einen Filter über die Zustände und listet im Detail die Items und
+    Memos des Knotens; Items lassen sich in der Oberfläche zuordnen und lösen.
+  - Completion criteria: 1. Ideen-Knoten sind gestrichelt und hohl, Knoten mit
+    Items zeigen Ring und Zahl, erledigte sind gedimmt.
+    2. Der Filter blendet Knoten nach Zustand aus; die Seitenansicht „Nicht
+    zugeordnet“ listet Items ohne Knoten, lässt sich ausschalten, und Items
+    lassen sich von dort per Drag-and-drop einem Knoten zuordnen.
+    3. Im Detail eines Knotens und eines Items lässt sich die Zuordnung setzen
+    und lösen.
+    4. Zahl, Ring und Detail folgen dem Statusfilter des Backlogs.
+    5. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
+  - Summary: Die Mindmap zeigt an jedem Thema Zahl, Fortschritt und Zustand.
+    Items lassen sich per Ziehen oder im Detail zuordnen und lösen.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
+
+- `TASK-056` **Mindmap-Server: Items und Memos zuordnen, Vererbung, Summen und Zustand**
+  - Uid: b8dc196f-65c2-4f22-a846-46d853a2ec75.
+  - Type: Task.
+  - Parent: `STORY-100`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Server verknüpft Items und Memos mit Knoten, berechnet den
+    wirksamen Knoten jedes Items nach der Vererbungsregel und liefert je
+    Knoten Anzahl, Fortschritt und Zustand.
+  - Completion criteria: 1. Zuordnen und Lösen gehen über API und MCP; ein
+    zweiter Knoten für dasselbe Item wird abgewiesen oder ersetzt den ersten
+    ausdrücklich.
+    2. Die reine Funktion für wirksamen Knoten, Summen ohne Doppelzählung und
+    Zustand ist mit Tests abgedeckt, auch für leere Knoten und eigens
+    angehängte Kinder.
+    3. Die Antwort des Baums enthält je Knoten Anzahl, Fortschritt und Zustand
+    sowie die Items ohne Knoten.
+    4. Zählende Items folgen dem Statusfilter des Backlogs; Items im Papierkorb
+    zählen nie; der Zustand folgt der Regel der Story-Spec und ist vom Filter
+    unabhängig.
+    5. Wird ein Knoten gelöscht, fallen seine Items an den Parent-Knoten
+    zurück, sonst nach „Nicht zugeordnet“; Memos lassen sich an mehrere Knoten
+    verlinken, der Link ruht im Papierkorb.
+  - Summary: Der Server hängt Items und Memos an Knoten, berechnet Anzahl, Fortschritt
+    und Zustand je Knoten samt Unterknoten und liefert die Items ohne Knoten mit dem
+    Baum. Ein Item hängt an höchstens einem Knoten, Kinder erben, ein gelöschter
+    Knoten gibt seine Items an den Parent-Knoten zurück.
+  - Resolution: Vom Projekteigner am 2026-11-17 bestätigt; auf `todo_mindmap`.
+
+- `STORY-099` **Mindmap-Gerüst: Themenbaum je Projekt anlegen, ordnen und mit Notizen versehen**
+  - Uid: e4a5ac91-95ba-44d0-aa9a-5ac0fffa6326.
+  - Type: Story.
+  - Parent: `EPIC-008`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Auf einer eigenen Seite hat jedes Projekt einen Themenbaum mit dem
+    Projekt als Wurzel. Man legt Knoten an, benennt sie um, hängt sie um,
+    klappt sie ein und aus, legt sie in den Papierkorb und schreibt Notizen
+    dazu. Das ist das reine Brainstorming-Werkzeug ohne Bezug zum Backlog.
+  - Completion criteria: 1. Knoten haben Titel und optionalen Text, beliebige
+    Tiefe und dürfen leer sein; ihre Lage steht als Platzierung (Knoten,
+    Parent, Stelle), nicht als Parent-Feld.
+    2. Anlegen, Umbenennen, Umhängen, Löschen in den Papierkorb und
+    Wiederherstellen gehen über API, MCP und Oberfläche; ein Knoten kann nicht
+    unter sich selbst landen.
+    3. Die Seite zeigt den Baum eines Projekts in der Anordnung zur Seite,
+    beim Öffnen sind zwei Ebenen offen.
+    4. Ein Knoten hat den Abschnitt „Dokumente“ mit Notizen wie ein Item.
+    5. Domain-, API- und UI-Tests sind grün.
+  - Summary: Der Grundbaustein: ein Themenbaum je Projekt, in dem man frei
+    Knoten sammelt und ordnet und Notizen dazu schreibt.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
+- `TASK-055` **Mindmap: Notizen an Knoten**
+  - Uid: 6fc3d1ab-41db-4b13-9e39-eb5f4c2572c7.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-053`.
+  - Goal: Ein Knoten hat im Detail den Abschnitt „Dokumente“ und kann Notizen
+    tragen, gespeichert und gelesen wie bei Items.
+  - Completion criteria: 1. Der Server speichert Dokumente eines Knotens; das
+    Detail des Knotens nutzt `DocumentsSection`.
+    2. Ein Knoten mit Notizen ist in der Map erkennbar.
+    3. API- und UI-Tests sind grün.
+  - Summary: Knoten bekommen den Abschnitt „Dokumente“ mit Notizen wie ein
+    Item; in der Map sieht man, welche Knoten Notizen tragen.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
+- `TASK-054` **Mindmap: Knoten per Ziehen umhängen und umordnen**
+  - Uid: 0d9f9111-7e91-4adf-b97d-7c979ac15544.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-053`.
+  - Goal: In der Map lässt sich ein Knoten samt Ast per Ziehen unter einen
+    anderen Knoten hängen oder unter seinen Geschwistern umordnen.
+  - Completion criteria: 1. Ziehen auf einen Knoten hängt den Ast darunter;
+    die Reihenfolge der Geschwister lässt sich ändern.
+    2. Was die Struktur verbietet, wird nicht angeboten; eine Ablehnung des
+    Servers steht als Meldung über der Map.
+    3. UI-Tests sind grün.
+  - Summary: Themen in der Map mit der Maus an eine andere Stelle ziehen:
+    unter ein anderes Thema oder in eine andere Reihenfolge.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
+- `TASK-053` **Mindmap-Seite: Projektbaum anzeigen, Knoten anlegen, umbenennen, löschen, ein- und ausklappen**
+  - Uid: e642fa32-c332-4e52-8174-05648be29c84.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-052`.
+  - Goal: Ein neues Client-Plugin zeigt den Themenbaum des gewählten Projekts
+    als Mindmap in der Anordnung zur Seite und erlaubt das Anlegen, Umbenennen
+    und Löschen von Knoten sowie das Ein- und Ausklappen.
+  - Completion criteria: 1. Die Hauptroute zeigt den Baum eines Projekts; die
+    Projektauswahl der Seitenleiste bestimmt, welches.
+    2. Knoten lassen sich in der Map anlegen, umbenennen und in den Papierkorb
+    legen; der Klappzustand bleibt erhalten, beim ersten Öffnen sind zwei
+    Ebenen offen.
+    3. UI-Tests sind grün und der Ablauf ist im Browser geprüft.
+  - Summary: Die Seite, auf der man den Themenbaum eines Projekts als Mindmap
+    sieht und Knoten anlegt, umbenennt, löscht und auf- und zuklappt.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
+- `TASK-052` **Mindmap-Server: Knoten, Platzierungen und Projektbaum mit API und MCP**
+  - Uid: 26d4cdfa-7632-4e6d-bacf-2a17a04a7334.
+  - Type: Task.
+  - Parent: `STORY-099`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Ein neues Server-Plugin speichert Knoten und ihre Platzierungen,
+    führt je Projekt einen Baum und bietet Anlegen, Lesen, Ändern, Umhängen,
+    Papierkorb und Wiederherstellen über API und MCP.
+  - Completion criteria: 1. Knoten und Platzierungen liegen in eigenen
+    Tabellen; ein Knoten ist ein Element des Workspace.
+    2. Die Domain weist Kreise, fremde Projekte und einen Knoten zweimal im
+    selben Baum ab.
+    3. Die Operationen sind über API und MCP erreichbar und melden Ereignisse.
+    4. Domain- und API-Tests sind grün, die Schnittstellen sind dokumentiert.
+  - Summary: Der Server speichert jetzt Mindmap-Knoten und ihre Platzierungen
+    je Projekt und stellt sie über API und MCP bereit.
+  - Resolution: Vom Projekteigner am 2026-11-16 bestätigt; gemergt nach `todo_mindmap`.
+
 - `STORY-028` **Architekturregeln: Primärquelle und Spiegel statt genau einem Backend**
   - Uid: 010ef637-220f-49da-beab-0b7a96c81684.
   - Type: Story.
@@ -3892,3 +4171,62 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     einmal nur Machbarkeit und Ideensammlung.
   - Resolution: Vom Owner am 2026-11-13 bestätigt, nachdem die Entscheidungen
     in Epic EPIC-008 und seine Stories übertragen waren.
+
+- `TASK-060` **Mindmap: runde Anordnung, umschaltbar zur Anordnung zur Seite**
+  - Uid: a52f7b44-3538-457d-8e85-46d493bdd7d9.
+  - Type: Task.
+  - Parent: `STORY-101`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Map lässt sich rund anordnen, mit der Wurzel in der Mitte, und
+    zurück zur Anordnung zur Seite schalten. Vorab zeigt ein Prototyp mit
+    einer großen Map, ob ELK `radial` genügt oder eine eigene Anordnung nötig
+    ist.
+  - Completion criteria: 1. Das Ergebnis des Prototyps und die Wahl der
+    Anordnung stehen in den Notizen der Story.
+    2. Beide Anordnungen sind umschaltbar und die Wahl bleibt gespeichert.
+    3. Eine Map mit vielen Knoten bleibt in der runden Anordnung ohne
+    Überlappung lesbar.
+  - Summary: Die Map rund um die Wurzel anordnen oder zur Seite; ein Prototyp mit großer Map klärt vorher, ob ELK genügt.
+  - Resolution: Vom Projekteigner am 2026-11-18 bestätigt; auf `todo_mindmap`.
+- `TASK-059` **Mindmap: Gesamtansicht mit gemeinsamer Wurzel über die gewählten Projekte**
+  - Uid: 9d65405e-bef7-4405-b7d3-693fbbfc7615.
+  - Type: Task.
+  - Parent: `STORY-101`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-058`.
+  - Goal: Neben der Einzelansicht gibt es eine Gesamtansicht mit einer
+    gemeinsamen Wurzel, unter der die in der Seitenleiste gewählten Projekte
+    die ersten Knoten sind.
+  - Completion criteria: 1. Die Ansicht ist umschaltbar; Projekte hinzu- und
+    wegschalten wirkt sofort.
+    2. Die Summen an der gemeinsamen Wurzel zählen jedes Item einmal.
+    3. UI-Tests sind grün.
+  - Summary: Alle gewählten Projekte unter einer gemeinsamen Wurzel in einer Map sehen; umschaltbar zur Einzelansicht.
+  - Resolution: Vom Projekteigner am 2026-11-18 bestätigt; auf `todo_mindmap`.
+- `TASK-061` **Mindmap: Abhängigkeiten zwischen Themen ein- und ausblenden**
+  - Uid: c9b91950-7822-42e1-9b52-d0d3d0176a6f.
+  - Type: Task.
+  - Parent: `STORY-101`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Ein Schalter blendet Linien zwischen Themen ein, sobald ein Item des
+    einen Themas von einem Item des anderen abhängt.
+  - Completion criteria: 1. Die Linien werden aus den Abhängigkeiten der Items
+    und ihren wirksamen Knoten zusammengefasst; die reine Funktion ist
+    getestet.
+    2. Der Schalter ist standardmäßig aus und sein Zustand bleibt gespeichert.
+  - Summary: Linien zwischen Themen zeigen, deren Items voneinander abhängen; ein Schalter, standardmäßig aus.
+  - Resolution: Vom Projekteigner am 2026-11-18 bestätigt; auf `todo_mindmap`.

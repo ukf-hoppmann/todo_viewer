@@ -125,7 +125,7 @@ class ElementRef:
     deleted: bool
 
 
-LinkRoleName = Literal["reference", "origin", "trigger"]
+LinkRoleName = Literal["reference", "origin", "trigger", "node"]
 
 
 @dataclass(frozen=True)
@@ -383,7 +383,7 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "add_link",
-        "Verknüpft zwei Elemente (Rolle reference oder origin; 'trigger' legt nur ein Auslöser der Notes an)",
+        "Verknüpft zwei Elemente (Rolle reference oder origin; 'trigger' legt nur ein Auslöser der Notes an, 'node' die Mindmap)",
         "write",
         AddLink,
         LinkedElement,
@@ -392,7 +392,7 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "remove_link",
-        "Entfernt eine Verknüpfung (nicht die Rolle 'trigger')",
+        "Entfernt eine Verknüpfung (nicht die Rollen 'trigger' und 'node')",
         "write",
         RemoveLink,
         Removed,

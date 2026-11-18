@@ -1,6 +1,5 @@
 #!/bin/bash
-# Prüfungen des Neubaus (server/): Lint, Typen, Schichtregeln, Tests.
-# Der alte Viewer wird weiter von scripts/check.sh geprüft.
+# Prüfungen (server/ und client/): Lint, Typen, Schichtregeln, Tests.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 PY=$(pwd)/${PYTHON_BIN:-.venv/bin}

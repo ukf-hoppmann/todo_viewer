@@ -14,8 +14,8 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 
 - **Knoten:** ein Thema mit Titel und optionalem Text; kann Notizen tragen, darf leer sein, beliebige Tiefe.
 - **Baum (Map):** Knoten unter einer Wurzel. Es gibt den **Projektbaum** (einer je Projekt, das Projekt ist die
-  Wurzel), **freie Maps** (beliebig viele je Projekt, Übergreifendes im Projekt „Allgemein“) und die **Map eines
-  Memos** (lebt allein in diesem Memo).
+  Wurzel), **freie Maps** (beliebig viele je Projekt, Übergreifendes im Projekt „Allgemein“). Eine eigene Map je Memo gibt es
+  nicht; ein Memo wird an einen Knoten oder eine freie Map verlinkt.
 - **Platzierung:** die Lage eines Knotens in einem Baum (Knoten, Parent, Stelle). Ein Knoten kann Platzierungen
   in mehreren Bäumen haben, in einem Baum höchstens eine. Platzierungen sind gleichberechtigt.
 - **Zuordnung:** die Verknüpfung eines Items oder Memos mit einem Knoten.
@@ -38,13 +38,16 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - Ein Epic ist in der Regel ein Knoten, aber nicht zwingend; ein Knoten kann mehrere Epics tragen.
 - Summen laufen über Unterknoten und leere Knoten nach oben. Jedes Item zählt genau einmal, auch wenn sein Ast
   über zwei Wege unter derselben Wurzel liegt.
-- Zustand eines Knotens, abgeleitet: Idee (keine Items), geplant, in Arbeit, erledigt. Ein Filter darüber.
+- Zustand eines Knotens, abgeleitet: Idee (keine Items), geplant, in Arbeit, erledigt. Ein Filter darüber. Regel und Zählung: `STORY-100_spec.md`.
 - Memos lassen sich verlinken und stehen nur im Detail.
-- Items ohne Knoten stehen im Sammelknoten „Nicht zugeordnet“.
+- Items ohne Knoten stehen in der Seitenansicht „Nicht zugeordnet“ (kein Knoten, ausschaltbar, Drag-and-drop in den
+  Baum). Einzelheiten: `STORY-100_spec.md`.
 
 ## Darstellung
 
 - Eigene Seite. Beim Öffnen sind zwei Ebenen offen.
+- **Auswahl der Maps:** Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps); dort auch Anlegen,
+  Umbenennen, Löschen. Die Gesamtansicht zeigt nur Projektbäume, keine freien Maps.
 - **Fokus (Anker):** jeder Knoten lässt sich als Wurzel öffnen, mit Pfad zurück. Es ist eine Ansicht, kein
   zweiter Baum.
 - **Einzelansicht:** eine Map. **Gesamtansicht:** eine gemeinsame Wurzel, die gewählten Projekte als erste Knoten.
@@ -52,7 +55,8 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - **Abhängigkeiten:** nur zwischen Themen zusammengefasst, an- und abschaltbar, standardmäßig aus.
 - **Am Item:** „Gehe hin“ (Map an seiner Stelle), „Erstelle“ (eigener Knoten), „Anker“ (als Wurzel öffnen, erst
   nach „Erstelle“).
-- Der genaue Aufbau der Seite (Auswahl der Maps, Schalter) ist noch offen.
+- Aufbau zunächst wie im Backlog: Sidebar, Baum zur Seite, Detailspalte; die Detailspalte ist schließbar. Auswahl der Maps und Schalter kommen mit den späteren Stories; der Aufbau darf dann angepasst werden.
+- Die Mindmap ersetzt das Feld Area; wie, regelt eine eigene Story.
 
 ## Äste zwischen Bäumen
 
@@ -67,7 +71,9 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - Aus einem Ideen-Knoten wird ein Item angelegt; der Knoten bleibt stehen und das Item hängt daran.
 - Die KI ordnet beim Anlegen eines Items zu, schlägt Knoten vor und legt sie nach Bestätigung an. Sie arbeitet
   über API und MCP; der Viewer hat keine eigene LLM-Anbindung.
-- Markdown-Spiegel: mitgeplant, nicht Pflicht; nötig, damit Cloud-Sitzungen zuordnen können.
+- Markdown-Spiegel: mitgeplant, nicht Pflicht; nötig, damit Cloud-Sitzungen zuordnen können. Er muss auch freie
+  Maps enthalten, damit eine Cloud-Sitzung sie beim Brainstormen füllen kann.
+- Idee, nicht geplant: Export einer freien Map als verschachtelte Liste in ein Memo (einmalig, später bei Bedarf).
 
 ## Vorhandene Bausteine
 
@@ -83,7 +89,5 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 
 ## Offen
 
-- Aufbau der Mindmap-Seite.
 - Runde Anordnung bei großen Maps (Prototyp).
-- Form der KI-Vorschläge; abgeschlossene Items zeigen; Typwahl und tiefe Knoten beim Überführen; Zukunft des
-  Felds Area; Markierung für Ideen-Knoten; Dateiformat für Platzierungen.
+- Form der KI-Vorschläge; Typwahl und tiefe Knoten beim Überführen; Markierung für Ideen-Knoten (Werte entschieden: fest); Dateiformat für Platzierungen.

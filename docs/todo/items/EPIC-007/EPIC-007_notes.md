@@ -1,5 +1,18 @@
 # EPIC-007 — Neuentwicklung als eigenständiges Tool
 
+## State
+
+- Goal/Status: Vom Owner bestätigt und archiviert (2026-11-17).
+- Next step: Keiner; das Epic ist abgeschlossen (2026-11-17).
+- Open:
+- Decided:
+  - `src_old/` ist nach der Abnahme des Neubaus durch den Owner entfernt worden, samt Dockerfile, `todo_old.sh`, `scripts/check.sh`, Root-`pyproject.toml` und dem alten Compose-Dienst (2026-11-17)
+  - Die Architekturscopes `legacy`, `backend` und `web` entfallen; Regel 0 gilt nur noch für `reference/` (2026-11-17)
+  - `STORY-086` und `STORY-092` sind in das neue Epic „Nachbesserungen am Neubau“ umgehängt (2026-11-17)
+- References: Spec `EPIC-007_spec.md`; Stories `STORY-060` bis `STORY-092`; neues Epic `EPIC-009`
+
+State confirmed after entry 2026-11-17 — Bestätigung (b6af08403f35)
+
 ## 2026-10-16 — Architektur-Grundsatzfragen
 
 ### Discussed
@@ -115,3 +128,51 @@
 
 - Der Projektinhaber prüft die Items mit `Awaiting confirmation` und die Fragen 13 bis 35 in `STORY-060`; neu seit dem letzten Stand: Fragen 29 bis 35 (Notes, Wecker, Datenübernahme).
 - Vor dem Umstieg (`STORY-084`): erst `import_legacy --dry-run` auf einer Kopie der echten Datenbank, Markdown-primäre Projekte vorher im alten Viewer in ihre Datenbank spiegeln, `server/constraints.txt` bei Abhängigkeits-Updates pflegen.
+
+## 2026-11-17 — Altcode entfernt, Stories umgehängt
+
+### Discussed
+
+- Die Prüfung der Abschlusskriterien ergab: Kriterium 6 (Cutover, Altcode entfernt) fehlte, weil `src_old/` noch im Repository lag; `STORY-086` und `STORY-092` waren optionale, noch offene Kinder.
+- Folgen des Löschens: Root-`Dockerfile`, `todo_old.sh`, `scripts/check.sh`, Root-`pyproject.toml`, der alte Compose-Dienst `todo-viewer` (Port 5412), ihre Tests und die Architekturscopes `legacy`, `backend`, `web` dienten nur dem alten Viewer.
+- Der Test, der die Kopie des alten Schemas mit `src_old/…/schema.py` verglich, entfällt mit der Quelle; die Datenübernahme `import_legacy` bleibt.
+- Wohin mit den beiden Stories: neues Epic (empfohlen), ohne Parent oder unter `EPIC-008`.
+
+### Decided
+
+- `src_old/` und alles, was nur ihm diente, ist entfernt; die Git-Historie behält es
+- Architekturscopes `legacy`, `backend`, `web` entfallen, Regel 0 gilt nur noch für `reference/`
+- `STORY-086` und `STORY-092` hängen unter dem neuen Epic „Nachbesserungen am Neubau“ (Platzhalter `EPIC-009`)
+
+### Open
+
+- README und Techdocs beschreiben teils noch den alten Viewer und müssen auf den Neubau umgestellt werden
+
+## 2026-11-17 — Abschlusskriterien geprüft
+
+### Discussed
+
+- Kriterien 1 bis 5 durch die abgeschlossenen Stories belegt (Architektur freigegeben, relationales Datenmodell, Funktionsumfang samt KI-Schnittstelle, Datenübernahme `import_legacy`, Betrieb und Doku des Neubaus); Kriterium 6 durch `STORY-084` (Umstieg) und die Entfernung von `src_old/`.
+- Offen bleibt nur die Umstellung von README und Techdocs, die teils noch den alten Viewer beschreiben; sie gehört nicht zu den Kriterien.
+
+### Decided
+
+- `EPIC-007` steht auf `Awaiting confirmation`; bestätigen kann nur der Owner
+
+### Open
+
+- Doku zum alten Viewer auf den Neubau umstellen
+
+## 2026-11-17 — Bestätigung
+
+### Discussed
+
+- README, `architecture.md`, `configuration.md`, `operations.md` und `interfaces.md` beschreiben jetzt den Neubau; die Abschnitte zur alten HTTP-API v2, den alten Dateiformaten und zu `src_old/` entfielen.
+
+### Decided
+
+- Vom Projekteigner am 2026-11-17 bestätigt (`Completed`, archiviert)
+
+### Open
+
+- Open from 2026-11-17 (Doku zum alten Viewer) resolved: umgestellt

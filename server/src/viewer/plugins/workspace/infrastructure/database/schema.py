@@ -85,4 +85,26 @@ def _v2(connection: Any) -> None:
         connection.exec_driver_sql(statement)
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2))
+def _v3(connection: Any) -> None:
+    """Die Rolle `node` (Mindmap: ein Knoten verknüpft ein Item oder Memo). SQLite ändert eine CHECK-Regel nur über
+    eine neue Tabelle; die vorhandenen Verknüpfungen werden übernommen."""
+    for statement in (
+        "DROP INDEX workspace_links_to",
+        "ALTER TABLE workspace_links RENAME TO workspace_links_v2",
+        """CREATE TABLE workspace_links (
+            uid TEXT PRIMARY KEY,
+            from_uid TEXT NOT NULL REFERENCES workspace_elements(uid) ON DELETE CASCADE,
+            to_uid TEXT NOT NULL REFERENCES workspace_elements(uid) ON DELETE CASCADE,
+            role TEXT NOT NULL CHECK (role IN ('reference', 'origin', 'trigger', 'node')),
+            created_at TEXT NOT NULL,
+            UNIQUE (from_uid, to_uid, role)
+        )""",
+        "INSERT INTO workspace_links(uid, from_uid, to_uid, role, created_at) "
+        "SELECT uid, from_uid, to_uid, role, created_at FROM workspace_links_v2",
+        "DROP TABLE workspace_links_v2",
+        "CREATE INDEX workspace_links_to ON workspace_links(to_uid)",
+    ):
+        connection.exec_driver_sql(statement)
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3))

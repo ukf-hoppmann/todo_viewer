@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from viewer.core.domain.errors import NotFound
-from viewer.plugins.workspace.domain.model import LinkExists, TriggerLinkReserved
+from viewer.plugins.workspace.domain.model import LinkExists, NodeLinkReserved, TriggerLinkReserved
 from workspace_env import Env
 
 
@@ -176,6 +176,19 @@ def test_the_port_rejects_unknown_ends(env: Env) -> None:
         env.kinds.run_links(lambda links, tx: links.add(tx, a.uid, b.uid, "reference"))
     with pytest.raises(TriggerLinkReserved):
         env.services_links().add_link(a.uid, "x", "trigger")
+
+
+def test_the_role_node_belongs_to_the_mindmap_and_is_neither_added_nor_removed_by_hand(env: Env) -> None:
+    a = _element(env, str(env.general()["uid"]))
+    b = _element(env, str(env.general()["uid"]))
+    link = env.kinds.run_links(lambda links, tx: links.add(tx, a.uid, b.uid, "node"))
+
+    with pytest.raises(NodeLinkReserved):
+        env.services_links().add_link(a.uid, b.uid, "node")
+    with pytest.raises(NodeLinkReserved):
+        env.services_links().remove_link(link.uid)
+    assert _link(env, a.uid, b.uid, "node").json()["code"] == "node_link_reserved"
+    assert [(e["role"], e["label"]) for e in _links(env, a.uid)["outgoing"]] == [("node", "TASK-002")]
 
 
 def test_link_tools_are_available_to_mcp(env: Env) -> None:

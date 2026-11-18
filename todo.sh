@@ -1,7 +1,6 @@
 #!/bin/bash
 # Steuerskript für den ToDo Viewer (Neubau, EPIC-007) als Docker-Container.
 # Nutzung: ./todo.sh <befehl>
-# Der alte Viewer (Port 5412) wird mit ./todo_old.sh gesteuert.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -34,7 +33,6 @@ Befehle:
   status    Zustand der Container und Antwort von /api/core/health (direkt und über den Proxy)
   open      Nur den Browser öffnen (Container muss bereits laufen)
 
-Der alte Viewer läuft getrennt davon: ./todo_old.sh
 EOF
 }
 

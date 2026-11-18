@@ -60,6 +60,7 @@ export const workspaceTestIds = {
 	syncRename: (key: string) => `workspace.sync-rename.${key}`,
 	syncRecommended: (key: string, choice: string) => `workspace.sync-recommended.${key}.${choice}`,
 	syncDiff: (key: string, name: string) => `workspace.sync-diff.${key}.${name}`,
+	syncWhitespaceOnly: (key: string, name: string) => `workspace.sync-whitespace-only.${key}.${name}`,
 	syncAll: (choice: string) => `workspace.sync-all.${choice}`,
 	syncTransfers: "workspace.sync-transfers",
 	syncExecute: "workspace.sync-execute",

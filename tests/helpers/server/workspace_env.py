@@ -18,6 +18,7 @@ from viewer.plugins.backlog.application.operations import BacklogServices
 from viewer.plugins.backlog.plugin import plugin as backlog_plugin
 from viewer.plugins.memos.application.operations import MemosServices
 from viewer.plugins.memos.plugin import plugin as memos_plugin
+from viewer.plugins.mindmap.plugin import plugin as mindmap_plugin
 from viewer.plugins.workspace.application.operations import WorkspaceServices
 from viewer.plugins.workspace.plugin import plugin as workspace_plugin
 
@@ -93,3 +94,9 @@ def alarms_env(tmp_path: Path, settings: Settings) -> Env:
 def full_env(tmp_path: Path, settings: Settings) -> Env:
     """Eine Umgebung mit allen fachlichen Plugins: `workspace`, `backlog`, `memos` und `alarms`."""
     return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, memos_plugin, alarms_plugin])
+
+
+def mindmap_env(tmp_path: Path, settings: Settings) -> Env:
+    """Eine Umgebung mit dem echten Plugin `mindmap` und den Plugins, die es braucht (`workspace`, `backlog`), dazu
+    `memos` für die Memo-Links."""
+    return Env(tmp_path, settings, plugins=[workspace_plugin, backlog_plugin, memos_plugin, mindmap_plugin])

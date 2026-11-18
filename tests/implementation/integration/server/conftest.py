@@ -15,7 +15,7 @@ from running_server import RunningServer
 from viewer.app.composition import create_app
 from viewer.core.domain.settings import Settings
 from viewer.core.infrastructure.database import MigrationRunner, SqliteBackupMaker, SqliteDatabase
-from workspace_env import Env, alarms_env, backlog_env, full_env, memos_env
+from workspace_env import Env, alarms_env, backlog_env, full_env, memos_env, mindmap_env
 
 
 @pytest.fixture
@@ -93,6 +93,13 @@ def backlog(tmp_path: Path, settings: Settings) -> Iterator[Env]:
 @pytest.fixture
 def memos(tmp_path: Path, settings: Settings) -> Iterator[Env]:
     environment = memos_env(tmp_path, settings)
+    with environment.client:
+        yield environment
+
+
+@pytest.fixture
+def mindmap(tmp_path: Path, settings: Settings) -> Iterator[Env]:
+    environment = mindmap_env(tmp_path, settings)
     with environment.client:
         yield environment
 

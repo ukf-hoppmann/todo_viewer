@@ -177,7 +177,10 @@
 			"deleted_other_unchanged": "The other side is unchanged since the last sync, so the deletion loses nothing.",
 			"deleted_other_changed": "The other side changed since the last sync; deleting would lose those changes."
 		},
-		"diffLegend": "− only in the database, + only in the files",
+		"diffOnlyDatabase": "only in the database",
+		"diffOnlyFiles": "only in the files",
+		"diffEmptyLine": "empty line",
+		"diffWhitespaceOnly": "Only whitespace differs (empty lines, indentation, trailing spaces). The text is the same in content.",
 		"diffSkipped_one": "{{count}} unchanged line",
 		"diffSkipped_other": "{{count}} unchanged lines",
 		"database": "Database",

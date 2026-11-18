@@ -11,6 +11,7 @@ from viewer.plugins.workspace.domain.model import (
     Link,
     LinkExists,
     LinkView,
+    NodeLinkReserved,
     TriggerLinkReserved,
     validate_link,
 )
@@ -81,6 +82,8 @@ class LinkService:
     def add_link(self, from_uid: str, to_uid: str, role: str) -> LinkView:
         if role == "trigger":
             raise TriggerLinkReserved("Verknüpfungen der Rolle 'trigger' legt nur ein Auslöser der Notes an")
+        if role == "node":
+            raise NodeLinkReserved("Verknüpfungen der Rolle 'node' legt nur die Mindmap an")
         with self._database.transaction() as tx:
             link = self.add(tx, from_uid, to_uid, role)
             view = LinkView(link, self._require(tx, to_uid))
@@ -92,6 +95,8 @@ class LinkService:
             existing = self._links.get(tx, uid)
             if existing is not None and existing.role == "trigger":
                 raise TriggerLinkReserved("Verknüpfungen der Rolle 'trigger' entfernt nur ihr Auslöser")
+            if existing is not None and existing.role == "node":
+                raise NodeLinkReserved("Verknüpfungen der Rolle 'node' entfernt nur die Mindmap")
             link = self.remove(tx, uid)
         self.announce("removed", link)
 

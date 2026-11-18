@@ -1,0 +1,119 @@
+{
+	"tab": {
+		"mindmap": "Mind map"
+	},
+	"page": {
+		"allProjects": "All projects",
+		"chooseProjects": "Choose at least one project on the left to see the overall view.",
+		"chooseProject": "Mark a project on the left to see its mind map.",
+		"path": "Path to the focus",
+		"hint": "Double click renames · click opens the detail · drag moves or reorders"
+	},
+	"node": {
+		"new": "New topic",
+		"hasNotes": "This node has notes",
+		"progress": "{{done}} of {{total}} done"
+	},
+	"action": {
+		"add": "Add child node",
+		"remove": "Move to trash",
+		"openAsRoot": "Open as root",
+		"expand": "Expand",
+		"collapse": "Collapse",
+		"close": "Close",
+		"edit": "Edit"
+	},
+	"field": {
+		"title": "Title",
+		"text": "Text",
+		"documents": "Documents",
+		"mark": "Mark"
+	},
+	"error": {
+		"failed": "The change failed",
+		"titleEmpty": "The title must not be empty"
+	},
+	"form": {
+		"cancel": "Cancel",
+		"save": "Save"
+	},
+	"documents": {
+		"none": "No notes or specs yet.",
+		"addEntry": "Add notes entry",
+		"addSpec": "Add spec",
+		"topic": "Topic",
+		"discussed": "Discussed",
+		"decided": "Decided",
+		"open": "Open",
+		"onePerLine": "One bullet per line",
+		"specName": "Name",
+		"specNameHint": "{{label}}_spec.md or {{label}}_spec_<topic>.md",
+		"large": "Large view",
+		"conflict": "The document has changed in the meantime.",
+		"showCurrent": "Show current state",
+		"saveAnyway": "Save anyway",
+		"currentState": "current state",
+		"toc": "Table of contents"
+	},
+	"view": {
+		"title": "View",
+		"single": "Single",
+		"all": "Overall"
+	},
+	"layout": {
+		"title": "Arrangement",
+		"side": "To the side",
+		"round": "Round"
+	},
+	"filter": {
+		"state": "State",
+		"unassigned": "Show unassigned",
+		"dependencies": "Show dependencies between topics",
+		"mark": "Mark"
+	},
+	"state": {
+		"idea": "Idea",
+		"planned": "Planned",
+		"in_progress": "In progress",
+		"done": "Done"
+	},
+	"unassigned": {
+		"title": "Unassigned",
+		"empty": "Every item hangs on a node.",
+		"hint": "Drag an item onto a node to assign it."
+	},
+	"content": {
+		"title": "Items and memos",
+		"noItems": "No items",
+		"noMemos": "No memos",
+		"items": "Items",
+		"memos": "Memos",
+		"inherited": "inherited",
+		"assignItem": "Assign item",
+		"linkMemo": "Link memo",
+		"noMatch": "Nothing found",
+		"assign": "Assign",
+		"link": "Link",
+		"unassign": "Release {{label}} from this node",
+		"unlink": "Unlink {{label}}",
+		"replaceTitle": "Take it from another node?",
+		"replaceMessage": "{{label}} already hangs on another node. Move it to this node?",
+		"replace": "Move",
+		"cancel": "Cancel"
+	},
+	"itemNode": {
+		"title": "Mind map node",
+		"node": "Node",
+		"unassigned": "Unassigned",
+		"inherited": "inherited",
+		"release": "Release assignment",
+		"goto": "Go there",
+		"create": "Create",
+		"anchor": "Anchor"
+	},
+	"mark": {
+		"none": "None",
+		"discarded": "Discarded",
+		"later": "Later"
+	}
+}

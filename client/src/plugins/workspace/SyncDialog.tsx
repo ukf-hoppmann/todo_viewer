@@ -1,5 +1,5 @@
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Radio, RadioGroup, FormControlLabel, TextField, Typography } from "@mui/material";
+import { alpha, Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Radio, RadioGroup, FormControlLabel, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconAction } from "../../shared";
@@ -14,7 +14,7 @@ import {
 	type SyncDirection,
 	type SyncResult,
 } from "./api";
-import { choiceBlocked, choiceEffect, decisionsOf, differences, documentContext, isDeletionConflict, lineDiff, originKey, withBulkChoice, type Choices, type DiffLine } from "./sync";
+import { choiceBlocked, choiceEffect, decisionsOf, differences, documentContext, isDeletionConflict, lineDiff, onlyWhitespaceDiffers, originKey, visibleWhitespace, withBulkChoice, type Choices, type DiffLine } from "./sync";
 import { workspaceTestIds } from "./testIds";
 
 const directions: SyncDirection[] = ["both", "to_files", "to_database"];
@@ -251,12 +251,18 @@ function TextCells({ conflictKey, row }: { conflictKey: string; row: { name: str
 	if (diff) {
 		return (
 			<td colSpan={2}>
-				<Typography variant="caption" color="text.secondary" component="div">
-					{t("sync.diffLegend")}
-				</Typography>
-				<Box sx={{ maxHeight: 240, overflow: "auto", fontFamily: "monospace", fontSize: 12 }} data-testid={workspaceTestIds.syncDiff(conflictKey, row.name)}>
+				<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center", mb: 0.5 }}>
+					<Chip size="small" label={`− ${t("sync.diffOnlyDatabase")}`} sx={(theme) => ({ bgcolor: alpha(theme.palette.error.main, 0.25) })} />
+					<Chip size="small" label={`+ ${t("sync.diffOnlyFiles")}`} sx={(theme) => ({ bgcolor: alpha(theme.palette.success.main, 0.25) })} />
+				</Box>
+				{onlyWhitespaceDiffers(row.database, row.files) && (
+					<Alert severity="info" icon={false} sx={{ mb: 0.5, py: 0 }} data-testid={workspaceTestIds.syncWhitespaceOnly(conflictKey, row.name)}>
+						{t("sync.diffWhitespaceOnly")}
+					</Alert>
+				)}
+				<Box sx={{ maxHeight: 240, overflow: "auto", fontFamily: "monospace", fontSize: 12, border: 1, borderColor: "divider", borderRadius: 0.5 }} data-testid={workspaceTestIds.syncDiff(conflictKey, row.name)}>
 					{diff.map((line, index) => (
-						<DiffRow key={index} line={line} skipped={(count) => t("sync.diffSkipped", { count })} />
+						<DiffRow key={index} line={line} skipped={(count) => t("sync.diffSkipped", { count })} emptyLine={t("sync.diffEmptyLine")} />
 					))}
 				</Box>
 			</td>
@@ -274,9 +280,29 @@ function TextCells({ conflictKey, row }: { conflictKey: string; row: { name: str
 	);
 }
 
-function DiffRow({ line, skipped }: { line: DiffLine; skipped: (count: number) => string }) {
-	if (line.op === "skip") return <Box sx={{ color: "text.disabled", fontStyle: "italic" }}>… {skipped(line.count)}</Box>;
-	const marker = line.op === "add" ? "+ " : line.op === "del" ? "− " : "  ";
-	const color = line.op === "add" ? "success.main" : line.op === "del" ? "error.main" : "text.primary";
-	return <Box sx={{ color, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{marker + line.text}</Box>;
+/** One line of a diff: a changed line has a tinted background and a marker in its own column, an empty one is written out. */
+function DiffRow({ line, skipped, emptyLine }: { line: DiffLine; skipped: (count: number) => string; emptyLine: string }) {
+	if (line.op === "skip") {
+		return <Box sx={{ color: "text.disabled", fontStyle: "italic", textAlign: "center", py: 0.25, bgcolor: "action.hover" }}>⋯ {skipped(line.count)} ⋯</Box>;
+	}
+	const changed = line.op !== "same";
+	const base = line.op === "add" ? "success" : "error";
+	const shown = visibleWhitespace(line.text);
+	return (
+		<Box
+			sx={(theme) => ({
+				display: "flex",
+				bgcolor: changed ? alpha(theme.palette[base].main, 0.2) : undefined,
+				color: changed ? "text.primary" : "text.secondary",
+				fontWeight: changed ? 600 : 400,
+			})}
+		>
+			<Box component="span" sx={(theme) => ({ width: 24, flexShrink: 0, textAlign: "center", color: changed ? theme.palette[base].main : "text.disabled", fontWeight: 700 })}>
+				{line.op === "add" ? "+" : line.op === "del" ? "−" : ""}
+			</Box>
+			<Box component="span" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontStyle: shown === null ? "italic" : undefined, opacity: shown === null ? 0.7 : 1 }}>
+				{shown === null ? (changed ? `⏎ ${emptyLine}` : " ") : shown}
+			</Box>
+		</Box>
+	);
 }

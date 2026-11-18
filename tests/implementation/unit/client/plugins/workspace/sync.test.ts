@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SyncConflict, SyncStatus } from "../../../../../../client/src/plugins/workspace/api";
-import { choiceDeletes, decisionsOf, differences, documentContext, isDeletionConflict, lineDiff, needsAttention, originKey, syncView, withBulkChoice, choiceBlocked } from "../../../../../../client/src/plugins/workspace/sync";
+import { choiceDeletes, decisionsOf, differences, documentContext, isDeletionConflict, lineDiff, needsAttention, onlyWhitespaceDiffers, originKey, syncView, visibleWhitespace, withBulkChoice, choiceBlocked } from "../../../../../../client/src/plugins/workspace/sync";
 
 const status = (state: SyncStatus["state"], extra: Partial<SyncStatus> = {}): SyncStatus => ({ project: "p", state, conflicts: 0, to_database: 0, to_files: 0, files: [], reason: null, last_sync: null, ...extra });
 const on = { mirror_enabled: true };
@@ -129,6 +129,25 @@ describe("documentContext", () => {
 
 	it("is none for entries that are not documents", () => {
 		expect(documentContext(conflict("a", "both_changed", entry({ title: "T" }), entry({ title: "T" })))).toBeNull();
+	});
+});
+
+describe("onlyWhitespaceDiffers", () => {
+	it("is true for empty lines, indentation, trailing spaces, and line endings, false for content or equal texts", () => {
+		expect(onlyWhitespaceDiffers("a\n\nb", "a\n\n\nb")).toBe(true);
+		expect(onlyWhitespaceDiffers("a\nb", "a  \r\n  b")).toBe(true);
+		expect(onlyWhitespaceDiffers("a\nb", "a\nc")).toBe(false);
+		expect(onlyWhitespaceDiffers("a", "a")).toBe(false);
+	});
+});
+
+describe("visibleWhitespace", () => {
+	it("makes tabs, trailing spaces, and a carriage return visible and reports an empty line as null", () => {
+		expect(visibleWhitespace("")).toBeNull();
+		expect(visibleWhitespace("a  ")).toBe("a··");
+		expect(visibleWhitespace("a\tb")).toBe("a→   b");
+		expect(visibleWhitespace("a \r")).toBe("a·␍");
+		expect(visibleWhitespace("  a")).toBe("  a");
 	});
 });
 

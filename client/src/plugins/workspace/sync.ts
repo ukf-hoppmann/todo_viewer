@@ -150,6 +150,26 @@ export function lineDiff(before: string, after: string, context = 2): DiffLine[]
 	return collapse(lines, context);
 }
 
+/** `true` if two texts differ only in whitespace: line endings, indentation, trailing spaces, and empty lines. */
+export function onlyWhitespaceDiffers(before: string, after: string): boolean {
+	const normalize = (text: string) =>
+		text
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter((line) => line !== "")
+			.join("\n");
+	return before !== after && normalize(before) === normalize(after);
+}
+
+/** A line as it is shown in a diff: an empty line becomes `null`; tabs, trailing spaces, and a carriage return are made visible. */
+export function visibleWhitespace(line: string): string | null {
+	if (line === "") return null;
+	return line
+		.replace(/\t/g, "→   ")
+		.replace(/\r$/, "␍")
+		.replace(/ +(?=␍?$)/, (spaces) => "·".repeat(spaces.length));
+}
+
 function collapse(lines: DiffLine[], context: number): DiffLine[] {
 	const near = lines.map((line, index) => line.op !== "same" || lines.slice(Math.max(0, index - context), index + context + 1).some((other) => other.op !== "same"));
 	const result: DiffLine[] = [];

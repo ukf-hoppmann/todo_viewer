@@ -3,10 +3,11 @@
 ## State
 
 - Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Thema 3 (Löschen freier Maps) besprechen.
+- Next step: Thema 4 (Bedienung von Umhängen und Übertragen) besprechen.
 - Open:
-  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 und 2 erledigt: 3 Löschen freier Maps, 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
+  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 3 erledigt: 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
+  - Freie Map löschen: Papierkorb mit Wiederherstellen; Knoten nur dieser Map gehen mit, übertragene Äste bleiben im anderen Baum, Items fallen an den Parent-Knoten oder in „Nicht zugeordnet“; der Projektbaum lässt sich nicht löschen (2026-11-18)
   - Die Maps eines Projekts stehen als Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps; Anlegen, Umbenennen, Löschen dort) (2026-11-18)
   - Die Gesamtansicht zeigt nur Projektbäume; freie Maps stehen dort nicht (2026-11-18)
   - Projektbaum und freie Maps werden gemischt, damit man flexibel gestalten kann (2026-11-13)
@@ -20,7 +21,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-18 — Thema 2: Entscheidung und Umsetzung in der Planung (39a3c712b441)
+State confirmed after entry 2026-11-18 — Thema 3: Löschen freier Maps (ff718591cd19)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -132,3 +133,18 @@ State confirmed after entry 2026-11-18 — Thema 2: Entscheidung und Umsetzung i
 ### Open
 
 - Thema 3: Löschen freier Maps.
+
+## 2026-11-18 — Thema 3: Löschen freier Maps
+
+### Discussed
+
+- Frage: Was geschieht beim Löschen einer ganzen freien Map? Zur Wahl standen Papierkorb mit Wiederherstellen (wie bei Knoten, `STORY-099`) oder sofortiges Löschen mit Rückfrage. Empfehlung: Papierkorb.
+- Folgen: Knoten, die nur in dieser Map stehen, gehen mit; übertragene Äste verlieren nur die Platzierung in dieser Map und bleiben im anderen Baum (folgt aus gleichberechtigten Platzierungen); die Rückfrage nennt, wie viele Äste anderswo erhalten bleiben; Items an gelöschten Knoten fallen an den Parent-Knoten, sonst nach „Nicht zugeordnet“ (Regel aus `STORY-100`).
+
+### Decided
+
+- Papierkorb mit Wiederherstellen; Knoten nur dieser Map gehen mit, übertragene Äste bleiben im anderen Baum, Items wie bei gelöschten Knoten; der Projektbaum lässt sich nicht löschen (Owner).
+
+### Open
+
+- Thema 4: Bedienung von Umhängen und Übertragen.

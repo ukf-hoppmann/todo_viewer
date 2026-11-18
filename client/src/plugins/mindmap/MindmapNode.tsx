@@ -13,12 +13,19 @@ import { useTranslation } from "react-i18next";
 import { dropPosition, IconAction, ProgressRing } from "../../shared";
 import { markLook, nodeLook, type DropZone } from "./domain/tree";
 import { useMapActions } from "./mapActions";
-import { NODE_HEIGHT, NODE_WIDTH } from "./mindmapLayout";
+import { NODE_HEIGHT, NODE_WIDTH, type DropZones, type Side } from "./mindmapLayout";
 import { mindmapTestIds } from "./testIds";
 
-export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; hasNotes?: boolean; state?: string; mark?: string | null; total?: number; done?: number; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone };
+export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; hasNotes?: boolean; state?: string; mark?: string | null; total?: number; done?: number; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone; zones?: DropZones };
 export type TopicNode = Node<TopicData, "topic">;
 
+/** The four sides an edge can leave or reach a node by; the id is the one `edgeSides` names. */
+const SIDES: ReadonlyArray<[Side, Position]> = [
+	["left", Position.Left],
+	["right", Position.Right],
+	["top", Position.Top],
+	["bottom", Position.Bottom],
+];
 const HIDDEN_HANDLE = { opacity: 0, pointerEvents: "none" } as const;
 
 /**
@@ -26,13 +33,13 @@ const HIDDEN_HANDLE = { opacity: 0, pointerEvents: "none" } as const;
  * children, and above it, while pointer or focus are on the node, the actions "add child" and "trash". The root is
  * the project: it cannot be renamed or deleted. A node is dragged onto another one to move it with its branch: the
  * upper quarter of the target places it before, the lower quarter after, the middle below the target; the page says
- * whether a place is offered and marks it (`drop`). A node with items shows a progress ring and their count; an
+ * whether a place is offered and marks it (`drop`); left of the root in the round arrangement before and after trade places, above and below it only the middle is offered (`zones`). A node with items shows a progress ring and their count; an
  * idea is dashed and hollow, a finished node dimmed (`nodeLook`). A marked node ("verworfen", "später") carries a
- * symbol; a discarded one is also struck through and dimmed more (`markLook`). A node has connections on both sides, so
- * an edge can leave a parent and reach a child on either side (the map around the root puts children on the left).
+ * symbol; a discarded one is also struck through and dimmed more (`markLook`). A node has connections on all four sides, so
+ * an edge can leave a parent and reach a child on any side (the map around the root puts children on all sides).
  */
 export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNode>) {
-	const { id, title, isRoot, hasChildren, hasNotes, state = "idea", mark = null, total = 0, done = 0, open, selected, editing, dragging, drop } = data;
+	const { id, title, isRoot, hasChildren, hasNotes, state = "idea", mark = null, total = 0, done = 0, open, selected, editing, dragging, drop, zones = "normal" } = data;
 	const { t } = useTranslation("mindmap");
 	const actions = useMapActions();
 	const marked = isRoot ? markLook(null) : markLook(mark);
@@ -41,7 +48,9 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 	const cancelled = useRef(false);
 	const zoneOf = (event: DragEvent<HTMLElement>): DropZone => {
 		const box = event.currentTarget.getBoundingClientRect();
-		return dropPosition(event.clientY - box.top, box.height);
+		const zone = dropPosition(event.clientY - box.top, box.height);
+		if (zones === "inside") return "inside";
+		return zones === "flipped" && zone !== "inside" ? (zone === "before" ? "after" : "before") : zone;
 	};
 	return (
 		<Box
@@ -93,11 +102,11 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 			{(drop === "before" || drop === "after") && (
 				<Box
 					data-testid={mindmapTestIds.dropLine(id, drop)}
-					sx={{ position: "absolute", left: 0, right: 0, height: 3, borderRadius: 1, bgcolor: "primary.main", pointerEvents: "none", ...(drop === "before" ? { top: -8 } : { bottom: -8 }) }}
+					data-side={(drop === "before") !== (zones === "flipped") ? "top" : "bottom"}
+					sx={{ position: "absolute", left: 0, right: 0, height: 3, borderRadius: 1, bgcolor: "primary.main", pointerEvents: "none", ...((drop === "before") !== (zones === "flipped") ? { top: -8 } : { bottom: -8 }) }}
 				/>
 			)}
-			{!isRoot && <Handle type="target" id="left" position={Position.Left} style={HIDDEN_HANDLE} />}
-			{!isRoot && <Handle type="target" id="right" position={Position.Right} style={HIDDEN_HANDLE} />}
+			{!isRoot && SIDES.map(([id, position]) => <Handle key={`target-${id}`} type="target" id={id} position={position} style={HIDDEN_HANDLE} />)}
 			{editing ? (
 				<InputBase
 					autoFocus
@@ -179,8 +188,9 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 					{!isRoot && <IconAction label={t("action.remove")} icon={DeleteIcon} onClick={() => actions.remove(id)} testId={mindmapTestIds.remove(id)} />}
 				</Box>
 			)}
-			<Handle type="source" id="left" position={Position.Left} style={HIDDEN_HANDLE} />
-			<Handle type="source" id="right" position={Position.Right} style={HIDDEN_HANDLE} />
+			{SIDES.map(([id, position]) => (
+				<Handle key={`source-${id}`} type="source" id={id} position={position} style={HIDDEN_HANDLE} />
+			))}
 		</Box>
 	);
 });

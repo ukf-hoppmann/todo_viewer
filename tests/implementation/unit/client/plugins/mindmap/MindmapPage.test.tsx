@@ -777,12 +777,33 @@ describe("MindmapPage: the arrangement of the map", () => {
 		expect(edge("p1->b").getAttribute("data-target-handle")).toBe("right");
 	});
 
-	it("gives the root a connection on both sides to send edges from, and every other node on both sides to take and send them", async () => {
+	it("gives the root a connection on every side to send edges from, and every other node on every side to take and send them", async () => {
 		await renderPage();
 		await waitFor(() => expect(shownIds()).toContain("a1"));
 
-		expect(handles("p1")).toEqual(["source-left", "source-right"]);
-		expect(handles("a")).toEqual(["source-left", "source-right", "target-left", "target-right"]);
+		expect(handles("p1")).toEqual(["source-bottom", "source-left", "source-right", "source-top"]);
+		expect(handles("a")).toEqual(["source-bottom", "source-left", "source-right", "source-top", "target-bottom", "target-left", "target-right", "target-top"]);
+	});
+
+	it("connects a child straight below or above its parent from the bottom to the top, or the top to the bottom, in the round arrangement", async () => {
+		// Three branches share the circle in thirds: the second one lies straight below the root, the third at the upper left.
+		await renderPage({ nodes: [node("a"), node("b", null, 1), node("c", null, 2)], documents: { ...marked, mindmap: { layout: "round" } } });
+		await waitFor(() => expect(shownIds()).toContain("c"));
+
+		expect(edge("p1->b").getAttribute("data-source-handle")).toBe("bottom");
+		expect(edge("p1->b").getAttribute("data-target-handle")).toBe("top");
+		expect(edge("p1->a").getAttribute("data-source-handle")).toBe("right");
+		expect(edge("p1->c").getAttribute("data-source-handle")).toBe("left");
+	});
+
+	it("uses only the left and right sides in the tree to the side, however far a child lies above or below", async () => {
+		await renderPage({ nodes: [node("a"), node("b", null, 1), node("c", null, 2), node("d", null, 3), node("e", null, 4), node("f", null, 5), node("g", null, 6)] });
+		await waitFor(() => expect(shownIds()).toContain("g"));
+
+		for (const id of ["a", "b", "c", "d", "e", "f", "g"]) {
+			expect(edge(`p1->${id}`).getAttribute("data-source-handle")).toBe("right");
+			expect(edge(`p1->${id}`).getAttribute("data-target-handle")).toBe("left");
+		}
 	});
 
 	it("rearranges the map when the arrangement is switched, and back", async () => {
@@ -803,5 +824,54 @@ describe("MindmapPage: the arrangement of the map", () => {
 
 		fireEvent.click(screen.getByTestId(ids.layoutOption("side")));
 		await waitFor(() => expect(x("b")).toBeGreaterThan(x("p1")));
+	});
+});
+
+describe("MindmapPage: moving by dragging in the round arrangement", () => {
+	const round = { documents: { ...marked, mindmap: { layout: "round" } } };
+
+	it("keeps before and after on a branch right of the root", async () => {
+		await renderPage({ ...round, nodes: [node("a"), node("b", null, 1)] });
+		await screen.findByTestId(ids.node("b"));
+
+		startDrag("b");
+		dragEvent("dragover", screen.getByTestId(ids.node("a")), 2);
+
+		expect(screen.getByTestId(ids.dropLine("a", "before"))).toBeTruthy();
+	});
+
+	it("turns before and after around on a branch left of the root, so the mark lies where the node lands", async () => {
+		const backend = await renderPage({ ...round, nodes: [node("a"), node("b", null, 1)] });
+		await screen.findByTestId(ids.node("b"));
+
+		startDrag("a");
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 2);
+		expect(screen.getByTestId(ids.dropLine("b", "after"))).toBeTruthy();
+		expect(screen.getByTestId(ids.dropLine("b", "after")).dataset.side).toBe("top");
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 2);
+
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/a/move")).toHaveLength(1));
+		expect(backend.calls("POST", "mindmap/nodes/a/move")[0]!.body).toEqual({ version: 1, parent: null, position: 1 });
+	});
+
+	it("offers only the inside on a branch straight below the root", async () => {
+		await renderPage({ ...round, nodes: [node("a"), node("b", null, 1), node("c", null, 2)] });
+		await screen.findByTestId(ids.node("c"));
+
+		startDrag("c");
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 2);
+
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBe("inside");
+		expect(document.querySelector("[data-testid^='mindmap.drop-line.']")).toBeNull();
+	});
+
+	it("leaves the tree to the side as it is: the upper quarter still places before", async () => {
+		await renderPage({ nodes: [node("a"), node("b", null, 1)] });
+		await screen.findByTestId(ids.node("b"));
+
+		startDrag("b");
+		dragEvent("dragover", screen.getByTestId(ids.node("a")), 2);
+
+		expect(screen.getByTestId(ids.dropLine("a", "before"))).toBeTruthy();
 	});
 });

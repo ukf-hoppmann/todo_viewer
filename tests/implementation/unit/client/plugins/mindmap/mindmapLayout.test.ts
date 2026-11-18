@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { layoutTree, NODE_HEIGHT, NODE_WIDTH } from "../../../../../../client/src/plugins/mindmap/mindmapLayout";
+import { dropZonesOf, edgeSides, layoutTree, NODE_HEIGHT, NODE_WIDTH } from "../../../../../../client/src/plugins/mindmap/mindmapLayout";
 
 const tree = [
 	{ id: "root", parentId: null },
@@ -138,5 +138,46 @@ describe("layoutTree, round", () => {
 	it("lays out a single root and an empty list", async () => {
 		expect((await layoutTree([{ id: "root", parentId: null }], "round")).get("root")).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
 		expect((await layoutTree([], "round")).size).toBe(0);
+	});
+});
+
+describe("edgeSides", () => {
+	const parent = { x: 0, y: 0 };
+
+	it("attaches the tree to the side from the right to the left, even if the child lies far above or below", () => {
+		expect(edgeSides("side", parent, { x: 260, y: 900 })).toEqual({ source: "right", target: "left" });
+		expect(edgeSides("side", parent, { x: 260, y: -900 })).toEqual({ source: "right", target: "left" });
+	});
+
+	it("attaches a child beside its parent from the side that faces it in the round arrangement", () => {
+		expect(edgeSides("round", parent, { x: 300, y: 100 })).toEqual({ source: "right", target: "left" });
+		expect(edgeSides("round", parent, { x: -300, y: -100 })).toEqual({ source: "left", target: "right" });
+		expect(edgeSides("round", parent, { x: 200, y: 200 })).toEqual({ source: "right", target: "left" });
+	});
+
+	it("attaches a child above or below its parent from the top and bottom in the round arrangement", () => {
+		expect(edgeSides("round", parent, { x: 50, y: 300 })).toEqual({ source: "bottom", target: "top" });
+		expect(edgeSides("round", parent, { x: -50, y: -300 })).toEqual({ source: "top", target: "bottom" });
+	});
+});
+
+describe("dropZonesOf", () => {
+	const root = { x: -95, y: -18 };
+
+	it("keeps the zones as they are in the tree to the side, wherever the node lies", () => {
+		expect(dropZonesOf("side", { x: 260, y: 900 }, root)).toBe("normal");
+	});
+
+	it("keeps the zones right of the root in the round arrangement: earlier siblings lie above", () => {
+		expect(dropZonesOf("round", { x: 400, y: 100 }, root)).toBe("normal");
+	});
+
+	it("turns before and after around left of the root: earlier siblings lie below", () => {
+		expect(dropZonesOf("round", { x: -500, y: 100 }, root)).toBe("flipped");
+	});
+
+	it("offers only the inside above and below the root, where siblings lie side by side", () => {
+		expect(dropZonesOf("round", { x: -80, y: 400 }, root)).toBe("inside");
+		expect(dropZonesOf("round", { x: -100, y: -400 }, root)).toBe("inside");
 	});
 });

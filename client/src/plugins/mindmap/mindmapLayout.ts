@@ -18,6 +18,9 @@ const LAYOUT_OPTIONS: Record<string, string> = {
 /** How the map is arranged: the tree to the side, or around the root. */
 export type LayoutMode = "side" | "round";
 
+/** A side of a node an edge is attached to. */
+export type Side = "left" | "right" | "top" | "bottom";
+
 type Structure = ReadonlyArray<{ id: string; parentId: string | null }>;
 type Point = { x: number; y: number };
 
@@ -130,4 +133,33 @@ export async function layoutTree(nodes: Structure, mode: LayoutMode = "side"): P
 	});
 	for (const child of result.children ?? []) positions.set(child.id, { x: child.x ?? 0, y: child.y ?? 0 });
 	return positions;
+}
+
+/**
+ * The sides by which the edge from a parent to a child is attached, from the top-left corners of the two. The tree to the
+ * side always leaves a parent on the right and reaches the child on the left. In the round arrangement a child that lies
+ * more above or below than beside its parent is attached from the bottom to the top (or the reverse), else from the
+ * side that faces it.
+ */
+export function edgeSides(mode: LayoutMode, parent: Point, child: Point): { source: Side; target: Side } {
+	const dx = child.x - parent.x;
+	const dy = child.y - parent.y;
+	if (mode === "side" || Math.abs(dx) >= Math.abs(dy)) return dx < 0 ? { source: "left", target: "right" } : { source: "right", target: "left" };
+	return dy < 0 ? { source: "top", target: "bottom" } : { source: "bottom", target: "top" };
+}
+
+/**
+ * How the drop zones of a node read, from the top-left corners of the node and the root. "normal": the upper quarter places
+ * before, the lower quarter after (the tree to the side, and the round arrangement right of the root, where earlier siblings
+ * lie above). "flipped": left of the root earlier siblings lie below, so before and after trade places and the mark lies where
+ * the node lands. "inside": above and below the root the siblings lie side by side, so only the middle (below the target) is offered.
+ */
+export type DropZones = "normal" | "flipped" | "inside";
+
+export function dropZonesOf(mode: LayoutMode, node: Point, root: Point): DropZones {
+	if (mode === "side") return "normal";
+	const dx = node.x - root.x;
+	const dy = node.y - root.y;
+	if (Math.abs(dy) > Math.abs(dx)) return "inside";
+	return dx < 0 ? "flipped" : "normal";
 }

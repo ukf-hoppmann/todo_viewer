@@ -2,19 +2,20 @@
 
 ## State
 
-- Goal/Status: §1 (Prototyp), §2 (`layoutTree(nodes, mode)`) und §3 (UI-State `layout`, Umschalter) und §4 (Seite und Knoten folgen `layout`) erledigt und committet; §5 und §6 offen (2026-11-18)
-- Next step: weiter mit §5 (Drag-and-drop und Ansicht in beiden Anordnungen im Browser prüfen, Playwright), dann: §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
+- Goal/Status: §1 (Prototyp), §2 (`layoutTree(nodes, mode)`) und §3 (UI-State `layout`, Umschalter) und §4 (Seite und Knoten folgen `layout`) und §5 (Browserprüfung, Kanten, Drag-and-drop) erledigt und committet; §6 (Integration, Techdocs) offen (2026-11-18)
+- Next step: weiter mit §6 (Gesamtlauf der Tests, Lint, Techdocs, Prüfung der Kriterien, dann `Awaiting confirmation`), dann: §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
 - Open:
   - Gerade oder gekrümmte Kanten in der runden Anordnung: in der Umsetzung am Bild entscheiden (2026-11-17)
-  - Drag-and-drop-Zonen vor/nach links der Wurzel: am Bild prüfen, sonst nur „innerhalb“ (2026-11-17)
 - Decided:
+  - Kanten bleiben gekrümmt (React Flow `default`), mit Anschlüssen auf vier Seiten; in der runden Anordnung nach Lage des Kindes (waagerecht oder senkrecht), zur Seite wie bisher rechts nach links (2026-11-18)
+  - Drag-and-drop in der runden Anordnung: rechts der Wurzel wie bisher, links vertauschen „vor“ und „nach“ (die Marke liegt dort, wo der Knoten landet), oberhalb und unterhalb der Wurzel nur „innerhalb“ (2026-11-18)
   - Die Anordnung gilt für Einzel- und Gesamtansicht und bleibt im UI-State (`layout`) gespeichert (2026-11-17)
   - Der Umschalter sitzt in der Seitenleiste (2026-11-17)
   - Keine neue Abhängigkeit ohne Freigabe des Owners (2026-11-17)
   - Runde Anordnung als eigene Berechnung, Ergebnis des Prototyps in den Notizen von `STORY-101` (2026-11-17)
 - References: Spec `TASK-060_spec.md`; Story-Spec `STORY-101_spec.md`
 
-State confirmed after entry 2026-11-18 — §4 umgesetzt: Seite und Knoten (31a40fe2bfbe)
+State confirmed after entry 2026-11-18 — §5: Browserprüfung, Kanten und Drag-and-drop (8ba9a8112e52)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -126,3 +127,24 @@ State confirmed after entry 2026-11-18 — §4 umgesetzt: Seite und Knoten (31a4
 - Gerade oder gekrümmte Kanten in der runden Anordnung
 - Zonen vor/nach beim Ziehen links der Wurzel
 - Lage des Falt-Pfeils bei Ästen links der Wurzel
+
+## 2026-11-18 — §5: Browserprüfung, Kanten und Drag-and-drop
+
+### Discussed
+
+- Prüfstand: Server aus dem Paket (venv im Scratchpad), Vite, Chromium mit Playwright, Beispielprojekt mit 110 Knoten; Skripte nur im Scratchpad. Ein nativer Drag lässt Chromium in dieser Umgebung abstürzen; deshalb löste das Skript `dragstart`, `dragover`, `drop` und `dragend` selbst aus (dieselben Handler der Seite).
+- Bild der runden Anordnung: gut lesbar, keine Konsolenfehler, Umschalten hin und zurück passt die Ansicht neu ein, die Anordnung zur Seite sieht wie vorher aus.
+- Kanten: mit Anschlüssen nur links und rechts schwingen Kanten zu Knoten oberhalb oder unterhalb des Elternknotens stark. Entscheidung: vier Anschlüsse je Knoten; `edgeSides(mode, parent, child)` in `mindmapLayout.ts` wählt in der runden Anordnung waagerecht, wenn das Kind mehr daneben als darüber liegt, sonst senkrecht; zur Seite immer rechts nach links. Gekrümmte Kanten bleiben (Optionen gerade oder gekrümmt: gekrümmt liest sich besser, kein Mehraufwand).
+- Drag-and-drop: Einfügen davor, danach und innerhalb ergab links und rechts der Wurzel die richtige Reihenfolge am Server. Befund im Bild: links der Wurzel liegen frühere Geschwister weiter unten, die Marke „vor“ oberhalb des Ziels stand also dort, wo der Knoten nicht landet. Optionen: (a) überall nur „innerhalb“ (verliert das Umordnen), (b) „vor“ und „nach“ links vertauschen und oben/unten nur „innerhalb“ anbieten (empfohlen: die Marke zeigt, wo der Knoten landet, geordnet wird weiter dort, wo es eindeutig ist), (c) nach Tangente der Äste mit schrägen Zonen (zu aufwendig). Gewählt: (b), `dropZonesOf` in `mindmapLayout.ts`, `zones` am Knoten, `data-side` an der Marke.
+- Tests zuerst (schlugen vorher fehl): Anschlüsse auf vier Seiten, Kanten senkrecht, `edgeSides` (3), `dropZonesOf` (4), Drag in der runden Anordnung (4); danach 179 von 179 Mindmap-Tests grün, `tsc -b` sauber, Lint nur die 5 alten Fehler.
+- Nicht geprüft: der Falt-Pfeil bleibt am rechten Knotenrand, auch bei Ästen links der Wurzel; im Bild unauffällig, nicht weiter geändert. Eine Map mit 300 Knoten wurde nur im Prototyp und im Test geprüft, nicht im Browser (dort 110 Knoten).
+
+### Decided
+
+- Kanten gekrümmt, mit Anschlüssen auf vier Seiten
+- Zonen: rechts wie bisher, links vertauscht, oben und unten nur „innerhalb“
+
+### Open
+
+- Open from 2026-11-17 (Gerade oder gekrümmte Kanten) resolved: gekrümmt
+- Open from 2026-11-17 (Zonen vor/nach links der Wurzel) resolved: vertauscht links, nur „innerhalb“ oben und unten

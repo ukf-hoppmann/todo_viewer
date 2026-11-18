@@ -9,7 +9,7 @@ import { useDeleteElement, useProjectSelection } from "../../workspace";
 import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
 import { canDropItem, dropPlacement, filterByMark, filterByState, focusPath, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import { MapActionsContext, type MapActions } from "../mapActions";
-import { layoutTree } from "../mindmapLayout";
+import { dropZonesOf, edgeSides, layoutTree } from "../mindmapLayout";
 import { MindmapNode, type TopicNode } from "../MindmapNode";
 import { useMapNavigation } from "../navigation";
 import { NodeDetail } from "../NodeDetail";
@@ -209,6 +209,7 @@ export default function MindmapPage() {
 	const close = useCallback(() => setSelected(null), [setSelected]);
 	usePageDetail(open && <NodeDetail key={open.uid} node={open} onClose={close} />);
 
+	const rootPosition = rootId ? layout?.positions.get(rootId) : undefined;
 	const flowNodes: TopicNode[] = useMemo(
 		() =>
 			shown.flatMap((entry) => {
@@ -234,13 +235,14 @@ export default function MindmapPage() {
 							editing: entry.id === editing,
 							dragging: entry.id === drag?.source,
 							drop: drag?.over?.id === entry.id ? drag.over.zone : undefined,
+							zones: entry.node && rootPosition ? dropZonesOf(mode, position, rootPosition) : "normal",
 						},
 						draggable: false,
 						connectable: false,
 					},
 				];
 			}),
-		[shown, layout, project?.name, selected, editing, drag],
+		[shown, layout, rootPosition, mode, project?.name, selected, editing, drag],
 	);
 	const edges: Edge[] = useMemo(
 		() =>
@@ -248,11 +250,10 @@ export default function MindmapPage() {
 				const parentId = shown.find((entry) => entry.id === node.id)?.parentId;
 				const from = parentId ? layout?.positions.get(parentId) : undefined;
 				if (!parentId || !from) return [];
-				// A child left of its parent is reached from the parent's left side and takes the edge on its right side.
-				const toLeft = node.position.x < from.x;
-				return [{ id: `${parentId}->${node.id}`, source: parentId, target: node.id, sourceHandle: toLeft ? "left" : "right", targetHandle: toLeft ? "right" : "left", style: EDGE_STYLE }];
+				const { source, target } = edgeSides(mode, from, node.position);
+				return [{ id: `${parentId}->${node.id}`, source: parentId, target: node.id, sourceHandle: source, targetHandle: target, style: EDGE_STYLE }];
 			}),
-		[flowNodes, shown, layout],
+		[flowNodes, shown, layout, mode],
 	);
 
 	if (!project) {

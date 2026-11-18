@@ -51,7 +51,7 @@ def _delete(env: Env, node: dict[str, Any], cascade: bool = True) -> Any:
 
 
 def test_a_project_without_nodes_has_an_empty_tree(mindmap: Env) -> None:
-    assert _tree(mindmap) == {"project_uid": _project(mindmap), "tree_uid": None, "nodes": [], "unassigned": []}
+    assert _tree(mindmap) == {"project_uid": _project(mindmap), "tree_uid": None, "nodes": [], "unassigned": [], "links": []}
 
 
 def test_the_first_node_creates_the_project_tree_and_gets_a_label(mindmap: Env) -> None:

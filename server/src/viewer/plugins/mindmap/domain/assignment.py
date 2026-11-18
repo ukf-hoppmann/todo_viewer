@@ -33,6 +33,8 @@ class ItemFact:
     parent_uid: str | None
     status: str
     deleted: bool = False
+    #: Die `uid`s der Items, die dieses Item braucht.
+    dependencies: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -171,6 +173,40 @@ def overview(
         {item.uid: node for item in items if not item.deleted and (node := effective[item.uid]) is not None},
         sorted(unassigned),
     )
+
+
+@dataclass(frozen=True)
+class LinkFact:
+    """Eine Linie zwischen zwei Knoten: `count` Items von `to_node` brauchen Items von `from_node` (je Abhängigkeit
+    eins)."""
+
+    from_node: str
+    to_node: str
+    count: int
+
+
+def dependency_links(
+    items: Sequence[ItemFact], effective: Mapping[str, str], statuses: Collection[str] = ()
+) -> list[LinkFact]:
+    """Die Abhängigkeiten der Items, je Knotenpaar zusammengefasst.
+
+    Linie vom Knoten des benötigten Items zum Knoten des abhängigen. `effective` ist der wirksame Knoten je Item
+    (`Overview.effective`: nur Items mit Knoten, ohne gelöschte). Es zählen nur Abhängigkeiten, deren beide Enden
+    ein solches Item sind und den Statusfilter passieren (`statuses` leer: alle); Abhängigkeiten auf Items außerhalb
+    des Projekts und Paare im selben Knoten fallen weg. Sortiert nach (von, nach)."""
+    by_uid = {item.uid: item for item in items}
+    counts: dict[tuple[str, str], int] = {}
+    for item in items:
+        target = effective.get(item.uid)
+        if item.deleted or target is None or (statuses and item.status not in statuses):
+            continue
+        for needed_uid in item.dependencies:
+            needed = by_uid.get(needed_uid)
+            source = effective.get(needed_uid)
+            if needed is None or needed.deleted or source is None or source == target or (statuses and needed.status not in statuses):
+                continue
+            counts[(source, target)] = counts.get((source, target), 0) + 1
+    return [LinkFact(a, b, n) for (a, b), n in sorted(counts.items())]
 
 
 def check_assign(current_nodes: Collection[str], node_uid: str, replace: bool) -> list[str]:

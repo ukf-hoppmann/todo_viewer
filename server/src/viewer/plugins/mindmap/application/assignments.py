@@ -16,7 +16,7 @@ from viewer.core.domain.events import Event
 from viewer.plugins.mindmap.application.ports import BacklogItem, BacklogItems, MindmapRepository
 from viewer.plugins.mindmap.application.service import NODE_TOPIC, MindmapService
 from viewer.plugins.mindmap.domain import assignment as rules
-from viewer.plugins.mindmap.domain.assignment import ItemFact, NodeStats, Overview
+from viewer.plugins.mindmap.domain.assignment import ItemFact, LinkFact, NodeStats, Overview
 from viewer.plugins.mindmap.domain.model import MindmapViolation, Node
 from viewer.plugins.workspace import Element, ElementRegistry, Links
 
@@ -28,12 +28,18 @@ MEMO_KIND = "memo"
 ITEM_STATUSES = ("Open", "In progress", "Awaiting confirmation", "Completed", "Rejected")
 
 
+def _facts(items: list[BacklogItem]) -> list[ItemFact]:
+    return [ItemFact(i.uid, i.parent_uid, i.status, i.deleted, i.dependencies) for i in items]
+
+
 @dataclass(frozen=True)
 class TreeStats:
     """Zahlen und Zustand je lebendem Knoten des Baums und die Items ohne Knoten."""
 
     stats: dict[str, NodeStats]
     unassigned: list[BacklogItem]
+    #: Abhängigkeiten zwischen Knoten, zusammengefasst (Statusfilter wie bei den Zahlen).
+    links: list[LinkFact]
 
 
 @dataclass(frozen=True)
@@ -148,7 +154,9 @@ class AssignmentService:
         with self._database.transaction() as tx:
             overview, items = self._overview(tx, project_uid, statuses)
         loose = set(overview.unassigned)
-        return TreeStats(overview.stats, [i for i in items if i.uid in loose])  # in der Reihenfolge des Backlogs
+        links = rules.dependency_links(_facts(items), overview.effective, statuses)
+        # Die Items ohne Knoten in der Reihenfolge des Backlogs
+        return TreeStats(overview.stats, [i for i in items if i.uid in loose], links)
 
     def node_content(self, node_ref: str, project_uid: str | None, statuses: list[str]) -> NodeContent:
         check_statuses(statuses)
@@ -200,8 +208,7 @@ class AssignmentService:
                 for view in self._links.outgoing(tx, node.uid):
                     if view.link.role == ROLE and view.element.uid in wanted:
                         assigned.setdefault(view.element.uid, node.uid)
-        facts = [ItemFact(i.uid, i.parent_uid, i.status, i.deleted) for i in items]
-        return rules.overview(facts, assigned, live, parent_of, statuses), items
+        return rules.overview(_facts(items), assigned, live, parent_of, statuses), items
 
     def _element(
         self, tx: Transaction, ref: str, project_uid: str | None, kinds: tuple[str, ...], *, allow_deleted: bool = False

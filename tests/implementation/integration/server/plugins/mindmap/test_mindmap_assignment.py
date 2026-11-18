@@ -327,6 +327,7 @@ def test_a_project_without_nodes_lists_all_its_items_as_unassigned(mindmap: Env)
         "project_uid": _project(mindmap),
         "tree_uid": None,
         "nodes": [],
+        "links": [],
         "unassigned": [{"uid": task["uid"], "label": task["label"], "type": "Task", "title": "Item", "status": "Open"}],
     }
 
@@ -477,3 +478,30 @@ def test_the_content_of_a_node_says_which_items_are_assigned_to_it_and_which_are
     body = mindmap.client.get(f"{API}/nodes/{node['uid']}/content").json()
 
     assert {i["label"]: i["explicit"] for i in body["items"]} == {story["label"]: True, task["label"]: False}
+
+
+def _links(env: Env, statuses: str | None = None) -> list[tuple[str, str, int]]:
+    nodes = {n["uid"]: n["title"] for n in _tree(env, statuses)["nodes"]}
+    return [(nodes[x["from_node"]], nodes[x["to_node"]], x["count"]) for x in _tree(env, statuses)["links"]]
+
+
+def test_dependencies_between_items_of_different_nodes_become_a_summed_line(mindmap: Env) -> None:
+    """`TASK-061`: Linie vom Knoten des benötigten zum Knoten des abhängigen Items, mit Anzahl; Statusfilter wirkt."""
+    a, b = _node(mindmap, "A"), _node(mindmap, "B")
+    needed, other = _item(mindmap), _item(mindmap)
+    dependent = _item(mindmap, dependencies=[needed["uid"], other["uid"]])
+    inside = _item(mindmap, dependencies=[needed["uid"]])
+    for node, item in ((a, needed), (a, other), (b, dependent), (a, inside)):
+        assert _assign(mindmap, node, item).status_code == 200
+    _status(mindmap, other, "Completed")
+
+    assert _links(mindmap) == [("A", "B", 2)]
+    assert _links(mindmap, "Open") == [("A", "B", 1)]
+    assert _links(mindmap, "Completed") == []
+
+
+def test_a_tree_without_dependencies_has_no_lines(mindmap: Env) -> None:
+    a = _node(mindmap, "A")
+    assert _assign(mindmap, a, _item(mindmap)).status_code == 200
+
+    assert _tree(mindmap)["links"] == []

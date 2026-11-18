@@ -18,7 +18,7 @@ class ServicesBacklogItems:
         items = self._repository.list_in(tx, [project_uid], include_deleted=True)
         return [
             BacklogItem(
-                i.uid, i.project_uid, i.label, i.type, i.title, i.status, i.parent_uid, i.deleted_at is not None
+                i.uid, i.project_uid, i.label, i.type, i.title, i.status, i.parent_uid, i.deleted_at is not None, tuple(i.dependencies)
             )
             for i in items
         ]

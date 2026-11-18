@@ -89,6 +89,8 @@ class BacklogItem:
     status: str
     parent_uid: str | None
     deleted: bool
+    #: Die `uid`s der Items, die dieses Item braucht.
+    dependencies: tuple[str, ...] = ()
 
 
 class BacklogItems(Protocol):

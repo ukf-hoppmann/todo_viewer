@@ -2040,6 +2040,15 @@ export interface components {
             /** Uid */
             uid: string;
         };
+        /** LinkOut */
+        LinkOut: {
+            /** Count */
+            count: number;
+            /** From Node */
+            from_node: string;
+            /** To Node */
+            to_node: string;
+        };
         /**
          * LinkedElement
          * @description Das Element am anderen Ende einer Verknüpfung; `deleted`: es liegt im Papierkorb.
@@ -2885,6 +2894,8 @@ export interface components {
         };
         /** TreeOut */
         TreeOut: {
+            /** Links */
+            links: components["schemas"]["LinkOut"][];
             /** Nodes */
             nodes: components["schemas"]["TreeNodeOut"][];
             /** Project Uid */

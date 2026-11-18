@@ -67,6 +67,13 @@ class ItemRefOut:
 
 
 @dataclass(frozen=True)
+class LinkOut:
+    from_node: str
+    to_node: str
+    count: int
+
+
+@dataclass(frozen=True)
 class TreeOut:
     project_uid: str
     #: Leer, solange im Projekt noch kein Knoten angelegt ist.
@@ -75,6 +82,9 @@ class TreeOut:
     nodes: list[TreeNodeOut]
     #: Die Items ohne Knoten, die der Statusfilter durchlässt (die Seitenansicht „Nicht zugeordnet“).
     unassigned: list[ItemRefOut]
+    #: Abhängigkeiten zwischen Knoten: `count` Abhängigkeiten von Items in `to_node` auf Items in `from_node`
+    #: (Linie vom benötigten zum abhängigen Thema); nur innerhalb des Projekts, sortiert.
+    links: list[LinkOut]
 
 
 @dataclass(frozen=True)
@@ -222,7 +232,11 @@ def tree_out(view: TreeView, stats: TreeStats) -> TreeOut:
             )
         )
     return TreeOut(
-        view.project_uid, view.tree.uid if view.tree else None, nodes, [_item_ref(i) for i in stats.unassigned]
+        view.project_uid,
+        view.tree.uid if view.tree else None,
+        nodes,
+        [_item_ref(i) for i in stats.unassigned],
+        [LinkOut(link.from_node, link.to_node, link.count) for link in stats.links],
     )
 
 

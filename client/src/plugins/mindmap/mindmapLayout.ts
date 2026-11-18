@@ -15,13 +15,112 @@ const LAYOUT_OPTIONS: Record<string, string> = {
 	"elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
 };
 
+/** How the map is arranged: the tree to the side, or around the root. */
+export type LayoutMode = "side" | "round";
+
+type Structure = ReadonlyArray<{ id: string; parentId: string | null }>;
+type Point = { x: number; y: number };
+
+// The round arrangement: the first level starts this far from the middle, every further level at least this far beyond its parent.
+const ROUND_FIRST_RADIUS = 300;
+const ROUND_LEVEL_STEP = 260;
+const ROUND_PUSH = 10;
+const ROUND_GAP = 8;
+
 /**
- * The tree to the side: the root at the left, every child right of its parent, siblings below each other in the order
+ * The map around the root: the root in the middle, every subtree in an angular sector by its number of leaves, the siblings
+ * clockwise in the order given, starting at the top. A node begins one step beyond its parent on the middle line of its
+ * sector and moves outward only as far as needed to clear the nodes already placed, so a dense branch does not widen the
+ * whole level. Nodes are placed level by level, so parents come before children. Returns the top-left corners by id.
+ */
+function layoutRound(nodes: Structure): Map<string, Point> {
+	const positions = new Map<string, Point>();
+	const root = nodes.find((node) => node.parentId === null) ?? nodes[0];
+	const children = new Map<string, string[]>();
+	for (const node of nodes) {
+		if (node.parentId === null) continue;
+		const list = children.get(node.parentId);
+		if (list) list.push(node.id);
+		else children.set(node.parentId, [node.id]);
+	}
+	const leaves = new Map<string, number>();
+	const countLeaves = (id: string): number => {
+		const own = children.get(id) ?? [];
+		const count = own.length === 0 ? 1 : own.reduce((sum, child) => sum + countLeaves(child), 0);
+		leaves.set(id, count);
+		return count;
+	};
+	countLeaves(root.id);
+
+	const angle = new Map<string, number>();
+	const depth = new Map<string, number>();
+	const parentOf = new Map(nodes.map((node) => [node.id, node.parentId]));
+	const order: string[] = [];
+	const assign = (id: string, from: number, to: number, level: number) => {
+		angle.set(id, (from + to) / 2);
+		depth.set(id, level);
+		order.push(id);
+		let start = from;
+		for (const child of children.get(id) ?? []) {
+			const span = ((to - from) * leaves.get(child)!) / leaves.get(id)!;
+			assign(child, start, start + span, level + 1);
+			start += span;
+		}
+	};
+	assign(root.id, -Math.PI / 2, (3 * Math.PI) / 2, 0);
+	order.sort((a, b) => depth.get(a)! - depth.get(b)! || angle.get(a)! - angle.get(b)!);
+
+	// A grid of the placed rectangles keeps the check for a clash local.
+	const cellWidth = NODE_WIDTH + ROUND_GAP;
+	const cellHeight = NODE_HEIGHT + ROUND_GAP;
+	const grid = new Map<string, Point[]>();
+	const cellKey = (cx: number, cy: number) => `${cx},${cy}`;
+	const clears = (point: Point) => {
+		const cx = Math.floor(point.x / cellWidth);
+		const cy = Math.floor(point.y / cellHeight);
+		for (let dx = -1; dx <= 1; dx++) {
+			for (let dy = -1; dy <= 1; dy++) {
+				for (const other of grid.get(cellKey(cx + dx, cy + dy)) ?? []) {
+					if (point.x < other.x + cellWidth && other.x < point.x + cellWidth && point.y < other.y + cellHeight && other.y < point.y + cellHeight) return false;
+				}
+			}
+		}
+		return true;
+	};
+	const place = (id: string, point: Point) => {
+		positions.set(id, point);
+		const key = cellKey(Math.floor(point.x / cellWidth), Math.floor(point.y / cellHeight));
+		const list = grid.get(key);
+		if (list) list.push(point);
+		else grid.set(key, [point]);
+	};
+
+	const radius = new Map<string, number>([[root.id, 0]]);
+	place(root.id, { x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
+	for (const id of order) {
+		if (id === root.id) continue;
+		let r = radius.get(parentOf.get(id)!)! + (depth.get(id) === 1 ? ROUND_FIRST_RADIUS : ROUND_LEVEL_STEP);
+		const direction = angle.get(id)!;
+		for (;; r += ROUND_PUSH) {
+			const point = { x: r * Math.cos(direction) - NODE_WIDTH / 2, y: r * Math.sin(direction) - NODE_HEIGHT / 2 };
+			if (clears(point)) {
+				place(id, point);
+				radius.set(id, r);
+				break;
+			}
+		}
+	}
+	return positions;
+}
+
+/**
+ * The tree to the side (`mode` "side", the default) or around the root (`mode` "round"). To the side: the root at the left, every child right of its parent, siblings below each other in the order
  * given (parents before children). Returns the top-left corners by id.
  */
-export async function layoutTree(nodes: ReadonlyArray<{ id: string; parentId: string | null }>): Promise<Map<string, { x: number; y: number }>> {
-	const positions = new Map<string, { x: number; y: number }>();
+export async function layoutTree(nodes: Structure, mode: LayoutMode = "side"): Promise<Map<string, Point>> {
+	const positions = new Map<string, Point>();
 	if (nodes.length === 0) return positions;
+	if (mode === "round") return layoutRound(nodes);
 	const elk = await loadElk();
 	const result = await elk.layout({
 		id: "tree",

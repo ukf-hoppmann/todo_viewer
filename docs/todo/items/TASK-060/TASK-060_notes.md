@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Plan §1 (Prototyp) erledigt und committet; §2 bis §6 noch nicht begonnen, kein Code geändert (2026-11-17)
-- Next step: weiter mit §2 (Test zuerst), dann Umsetzung nach dem Plan: §2 Layout-Funktion (Test zuerst), §3 Zustand und Umschalter, §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
+- Goal/Status: §1 (Prototyp) und §2 (`layoutTree(nodes, mode)`, runde Berechnung) erledigt und committet; §3 bis §6 offen (2026-11-18)
+- Next step: weiter mit §3 (Test zuerst), dann: §3 Zustand und Umschalter, §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
 - Open:
   - Gerade oder gekrümmte Kanten in der runden Anordnung: in der Umsetzung am Bild entscheiden (2026-11-17)
   - Drag-and-drop-Zonen vor/nach links der Wurzel: am Bild prüfen, sonst nur „innerhalb“ (2026-11-17)
@@ -14,7 +14,7 @@
   - Runde Anordnung als eigene Berechnung, Ergebnis des Prototyps in den Notizen von `STORY-101` (2026-11-17)
 - References: Spec `TASK-060_spec.md`; Story-Spec `STORY-101_spec.md`
 
-State confirmed after entry 2026-11-17 — Stand zum Weitermachen (4a760ecc451c)
+State confirmed after entry 2026-11-18 — §2 umgesetzt: runde Layout-Funktion (188280d40cf1)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -69,6 +69,23 @@ State confirmed after entry 2026-11-17 — Stand zum Weitermachen (4a760ecc451c)
 ### Decided
 
 - Kein eigener Branch für `TASK-060`; weiter auf `todo_mindmap`
+
+### Open
+
+- Gerade oder gekrümmte Kanten in der runden Anordnung
+- Zonen vor/nach beim Ziehen links der Wurzel
+
+## 2026-11-18 — §2 umgesetzt: runde Layout-Funktion
+
+### Discussed
+
+- `layoutTree(nodes, mode: "side" | "round" = "side")` in `client/src/plugins/mindmap/mindmapLayout.ts`; neuer Typ `LayoutMode`. Die Anordnung zur Seite ist unverändert. Die runde Berechnung steht wie im Prototyp (Sektor je Teilbaum nach Blattzahl, Radius je Knoten: Start 300 bzw. +260 hinter dem Elternknoten, Schritt 10 px, Abstand 8 px); dazu ein Raster der gesetzten Rechtecke, damit die Prüfung auf Überlappung bei großen Maps lokal bleibt.
+- Tests in `tests/implementation/unit/client/plugins/mindmap/mindmapLayout.test.ts`: feste Map mit 300 Knoten ohne Überlappung, Wurzel in der Mitte, Geschwister im Uhrzeigersinn ab oben, Kinder weiter außen als der Elternknoten, Knoten ringsum, Modus `side` gleich dem Standard. Test zuerst: drei schlugen vorher fehl, danach 10 von 10 grün; alle 156 Mindmap-Tests grün, `tsc -b` sauber.
+- `npm run lint` meldet 5 Fehler in `client/src/core/ui-state/usePersistentState.ts` (`react-hooks/refs`); sie bestehen schon ohne diese Änderung (mit `git stash` geprüft) und sind nicht Teil dieses Tasks.
+
+### Decided
+
+- Siehe Stand oben; keine neue Entscheidung
 
 ### Open
 

@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: §1 (Prototyp), §2 (`layoutTree(nodes, mode)`) und §3 (UI-State `layout`, Umschalter) und §4 (Seite und Knoten folgen `layout`) und §5 (Browserprüfung, Kanten, Drag-and-drop) erledigt und committet; §6 (Integration, Techdocs) offen (2026-11-18)
-- Next step: weiter mit §6 (Gesamtlauf der Tests, Lint, Techdocs, Prüfung der Kriterien, dann `Awaiting confirmation`), dann: §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
+- Goal/Status: §1 (Prototyp), §2 (`layoutTree(nodes, mode)`) und §3 (UI-State `layout`, Umschalter) und §4 (Seite und Knoten folgen `layout`) und §5 (Browserprüfung, Kanten, Drag-and-drop) und §6 (Gesamtlauf, Techdocs, Kriterien) erledigt; Kriterien erfüllt, wartet auf Bestätigung des Owners (2026-11-18)
+- Next step: Owner bestätigt `Completed` oder nennt, was fehlt (2026-11-18); frühere Planung: §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
 - Open:
   - Gerade oder gekrümmte Kanten in der runden Anordnung: in der Umsetzung am Bild entscheiden (2026-11-17)
 - Decided:
@@ -15,7 +15,7 @@
   - Runde Anordnung als eigene Berechnung, Ergebnis des Prototyps in den Notizen von `STORY-101` (2026-11-17)
 - References: Spec `TASK-060_spec.md`; Story-Spec `STORY-101_spec.md`
 
-State confirmed after entry 2026-11-18 — §5: Browserprüfung, Kanten und Drag-and-drop (8ba9a8112e52)
+State confirmed after entry 2026-11-18 — §6: Integration und Abschluss (aff66c7188ca)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -148,3 +148,20 @@ State confirmed after entry 2026-11-18 — §5: Browserprüfung, Kanten und Drag
 
 - Open from 2026-11-17 (Gerade oder gekrümmte Kanten) resolved: gekrümmt
 - Open from 2026-11-17 (Zonen vor/nach links der Wurzel) resolved: vertauscht links, nur „innerhalb“ oben und unten
+
+## 2026-11-18 — §6: Integration und Abschluss
+
+### Discussed
+
+- Gesamtlauf der Client-Tests (Vitest): 115 Dateien, 1374 Tests, alle grün; `tsc -b` sauber; Lint nur die 5 alten Fehler in `usePersistentState.ts` (auch ohne diesen Task).
+- Techdocs nachgezogen: `docs/techdocs/neubau-client.md` (Abschnitt Mindmap: zwei Anordnungen und die eigene Berechnung, Anschlüsse und `edgeSides`, UI-Zustand `layout`, `LayoutSwitch`, Drag-and-drop-Zonen in der runden Anordnung).
+- Kriterien: (1) Prototyp und Wahl stehen in den Notizen von `STORY-101` (2026-11-17); (2) beide Anordnungen sind umschaltbar, die Wahl bleibt im UI-State (Tests von `LayoutSwitch` und Seite, im Browser geprüft); (3) eine Map mit 300 Knoten bleibt in der runden Anordnung ohne Überlappung (Test von `layoutTree`; im Browser mit 110 Knoten lesbar).
+- Nicht ausgeführt: Server-Tests (kein Server-Code geändert); `check_backlog.py` und `check_doclinks.py` brechen nach Minuten ab, vermutlich wegen der 12.941 Dateien aus `src_old/web` im Repository (Sync-Commit `5ada5cc3`); Links in den Techdocs von Hand geprüft (Zieldatei existiert).
+
+### Decided
+
+- `TASK-060` steht auf `Awaiting confirmation`
+
+### Open
+
+- Der Owner bestätigt oder nennt Fehlendes

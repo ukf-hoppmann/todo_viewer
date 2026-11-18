@@ -20,3 +20,7 @@ tests/node_modules
 # Bau-Ausgaben des Servers (pip install ./server)
 server/build/
 server/src/*.egg-info/
+
+# Altlasten und Abhängigkeiten, nie einchecken (ein Sync hat src_old/web einmal mit hineingenommen)
+src_old/
+node_modules/

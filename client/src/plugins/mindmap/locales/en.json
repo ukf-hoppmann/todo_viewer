@@ -3,6 +3,8 @@
 		"mindmap": "Mind map"
 	},
 	"page": {
+		"allProjects": "All projects",
+		"chooseProjects": "Choose at least one project on the left to see the overall view.",
 		"chooseProject": "Mark a project on the left to see its mind map.",
 		"path": "Path to the focus",
 		"hint": "Double click renames · click opens the detail · drag moves or reorders"
@@ -52,6 +54,11 @@
 		"saveAnyway": "Save anyway",
 		"currentState": "current state",
 		"toc": "Table of contents"
+	},
+	"view": {
+		"title": "View",
+		"single": "Single",
+		"all": "Overall"
 	},
 	"layout": {
 		"title": "Arrangement",

@@ -16,7 +16,7 @@ import { useMapActions } from "./mapActions";
 import { NODE_HEIGHT, NODE_WIDTH, type DropZones, type Side } from "./mindmapLayout";
 import { mindmapTestIds } from "./testIds";
 
-export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; hasNotes?: boolean; state?: string; mark?: string | null; total?: number; done?: number; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone; zones?: DropZones };
+export type TopicData = { id: string; title: string; isRoot: boolean; hasChildren: boolean; isProject?: boolean; noAdd?: boolean; hasNotes?: boolean; state?: string; mark?: string | null; total?: number; done?: number; open: boolean; selected: boolean; editing: boolean; dragging?: boolean; drop?: DropZone; zones?: DropZones };
 export type TopicNode = Node<TopicData, "topic">;
 
 /** The four sides an edge can leave or reach a node by; the id is the one `edgeSides` names. */
@@ -39,7 +39,7 @@ const HIDDEN_HANDLE = { opacity: 0, pointerEvents: "none" } as const;
  * an edge can leave a parent and reach a child on any side (the map around the root puts children on all sides).
  */
 export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNode>) {
-	const { id, title, isRoot, hasChildren, hasNotes, state = "idea", mark = null, total = 0, done = 0, open, selected, editing, dragging, drop, zones = "normal" } = data;
+	const { id, title, isRoot, isProject = false, noAdd = false, hasChildren, hasNotes, state = "idea", mark = null, total = 0, done = 0, open, selected, editing, dragging, drop, zones = "normal" } = data;
 	const { t } = useTranslation("mindmap");
 	const actions = useMapActions();
 	const marked = isRoot ? markLook(null) : markLook(mark);
@@ -61,7 +61,7 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 			data-mark={marked.icon}
 			data-drop={drop}
 			className={isRoot ? undefined : "nodrag nopan"}
-			draggable={!isRoot && !editing}
+			draggable={!isRoot && !isProject && !editing}
 			onDragStart={(event) => {
 				event.dataTransfer.setData("text/plain", id);
 				event.dataTransfer.effectAllowed = "move";
@@ -78,7 +78,7 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 				event.preventDefault();
 				actions.drop(id, zoneOf(event));
 			}}
-			onDoubleClick={isRoot ? undefined : () => actions.startRename(id)}
+			onDoubleClick={isRoot || isProject ? undefined : () => actions.startRename(id)}
 			sx={{
 				position: "relative",
 				width: NODE_WIDTH,
@@ -90,7 +90,7 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 				gap: 0.5,
 				borderRadius: isRoot ? 1 : 4,
 				border: "2px solid",
-				borderColor: selected || isRoot || drop === "inside" ? "primary.main" : "divider",
+				borderColor: selected || isRoot || isProject || drop === "inside" ? "primary.main" : "divider",
 				borderStyle: drop === "inside" || look.dashed ? "dashed" : "solid",
 				bgcolor: selected || drop === "inside" ? "action.selected" : look.hollow ? "transparent" : "background.paper",
 				opacity: dragging ? 0.5 : marked.dimmed ? 0.45 : look.dimmed ? 0.55 : 1,
@@ -133,7 +133,7 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 					inputProps={{ "data-testid": mindmapTestIds.titleInput(id), "aria-label": t("field.title") }}
 				/>
 			) : (
-				<Typography variant="body2" noWrap sx={{ flexGrow: 1, minWidth: 0, fontWeight: isRoot ? 600 : 400, textDecoration: marked.strike ? "line-through" : "none" }}>
+				<Typography variant="body2" noWrap sx={{ flexGrow: 1, minWidth: 0, fontWeight: isRoot || isProject ? 600 : 400, textDecoration: marked.strike ? "line-through" : "none" }}>
 					{title}
 				</Typography>
 			)}
@@ -184,8 +184,8 @@ export const MindmapNode = memo(function MindmapNode({ data }: NodeProps<TopicNo
 					sx={{ position: "absolute", right: 8, bottom: "100%", display: "flex", bgcolor: "background.paper", border: 1, borderBottom: 0, borderColor: "divider", borderRadius: "8px 8px 0 0" }}
 				>
 					{!isRoot && <IconAction label={t("action.openAsRoot")} icon={CenterFocusStrongIcon} onClick={() => actions.openAsRoot(id)} testId={mindmapTestIds.openAsRoot(id)} />}
-					<IconAction label={t("action.add")} icon={AddIcon} onClick={() => actions.add(id)} testId={mindmapTestIds.add(id)} />
-					{!isRoot && <IconAction label={t("action.remove")} icon={DeleteIcon} onClick={() => actions.remove(id)} testId={mindmapTestIds.remove(id)} />}
+					{!noAdd && <IconAction label={t("action.add")} icon={AddIcon} onClick={() => actions.add(id)} testId={mindmapTestIds.add(id)} />}
+					{!isRoot && !isProject && <IconAction label={t("action.remove")} icon={DeleteIcon} onClick={() => actions.remove(id)} testId={mindmapTestIds.remove(id)} />}
 				</Box>
 			)}
 			{SIDES.map(([id, position]) => (

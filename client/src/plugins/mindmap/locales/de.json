@@ -3,6 +3,8 @@
 		"mindmap": "Mindmap"
 	},
 	"page": {
+		"allProjects": "Alle Projekte",
+		"chooseProjects": "Wähle links mindestens ein Projekt, um die Gesamtansicht zu sehen.",
 		"chooseProject": "Markiere links ein Projekt, um seine Mindmap zu sehen.",
 		"path": "Pfad zum Fokus",
 		"hint": "Doppelklick benennt um · Klick öffnet das Detail · Ziehen hängt um oder ordnet um"
@@ -52,6 +54,11 @@
 		"saveAnyway": "Trotzdem speichern",
 		"currentState": "aktueller Stand",
 		"toc": "Inhaltsverzeichnis"
+	},
+	"view": {
+		"title": "Ansicht",
+		"single": "Einzeln",
+		"all": "Gesamt"
 	},
 	"layout": {
 		"title": "Anordnung",

@@ -6,8 +6,9 @@ import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
-import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
-import { canDropItem, dropPlacement, filterByMark, filterByState, focusPath, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
+import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useGetTreesQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
+import { COMBINED_ROOT, canDropItem, combinedTree, dropPlacement, filterByMark, filterByState, focusPath, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
+import type { TreeOut } from "../api";
 import { MapActionsContext, type MapActions } from "../mapActions";
 import { dropZonesOf, edgeSides, layoutTree } from "../mindmapLayout";
 import { MindmapNode, type TopicNode } from "../MindmapNode";
@@ -27,10 +28,11 @@ const EDGE_STYLE = { stroke: "#5b8cff", strokeOpacity: 0.7 };
 type Structure = Array<{ id: string; parentId: string | null }>;
 
 /**
- * The topic tree of one project as a mind map to the side: the project is the root, every node hangs right of its
+ * In the overall view (`view` "all") the root is common to all visible projects (it belongs to none and takes nothing), the projects are
+ * its first nodes. The topic tree of one project as a mind map to the side: the project is the root, every node hangs right of its
  * parent. Which project: the marked one, else the only visible one. Nodes are added, renamed and moved to the trash
  * in the map; a click opens title and text in the detail column. Dragging a node onto another one moves it with its
- * branch (below the target or next to it); only places `dropPlacement` allows are offered. What is folded is kept in the UI state of the
+ * branch (below the target or next to it), within its project; only places `dropPlacement` allows are offered. What is folded is kept in the UI state of the
  * server; before the first choice two levels are open.
  */
 export default function MindmapPage() {
@@ -38,10 +40,35 @@ export default function MindmapPage() {
 	const { visible, marked } = useProjectSelection();
 	const project = shownProject(visible, marked);
 	const statuses = useShownStatuses();
-	const { currentData: tree } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: !project });
-	const nodes = tree?.nodes ?? NO_NODES;
-	const unassigned = tree?.unassigned ?? NO_ITEMS;
-	const { fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, layout: mode } = useMindmapState();
+	const { view, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, layout: mode } = useMindmapState();
+	const all = view === "all";
+	// The single view loads the tree of one project, the overall view those of all visible projects.
+	const { currentData: single } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: all || !project });
+	const projectUids = useMemo(() => visible.map((entry) => entry.uid), [visible]);
+	const { currentData: several } = useGetTreesQuery({ projects: projectUids, statuses }, { skip: !all || projectUids.length === 0 });
+	// `byProject` holds the nodes of every project as the server gave them (top nodes without a parent); `nodes` is what the map draws from.
+	const { nodes, byProject, tree, rootId, rootTitle, unassignedProject, unassigned } = useMemo(() => {
+		if (!all) {
+			const own = single?.nodes ?? NO_NODES;
+			return { nodes: own, byProject: new Map([[project?.uid ?? "", own]]), tree: single, rootId: project?.uid, rootTitle: project?.name ?? "", unassignedProject: project?.uid, unassigned: single?.unassigned ?? NO_ITEMS };
+		}
+		// A response that belongs to other projects (the selection just changed) is not used.
+		const trees: readonly TreeOut[] | undefined = several && several.length === visible.length && several.every((entry, index) => entry.project_uid === visible[index]!.uid) ? several : undefined;
+		const own = new Map(visible.map((entry, index) => [entry.uid, trees?.[index]?.nodes ?? NO_NODES]));
+		const makeProject = (entry: (typeof visible)[number], sums: { position: number; total: number; done: number; state: string }): TreeNodeOut => ({
+			uid: entry.uid, project_uid: entry.uid, label: "", title: entry.name, text: null, tree_uid: "", parent_uid: null, version: 0, documents: [], mark: null, ...sums,
+		});
+		const markedTree = marked ? trees?.[visible.findIndex((entry) => entry.uid === marked.uid)] : undefined;
+		return {
+			nodes: trees ? combinedTree(visible, trees.map((entry) => entry.nodes), makeProject) : NO_NODES,
+			byProject: own,
+			tree: trees,
+			rootId: COMBINED_ROOT,
+			rootTitle: t("page.allProjects"),
+			unassignedProject: markedTree ? marked?.uid : undefined,
+			unassigned: markedTree?.unassigned ?? NO_ITEMS,
+		};
+	}, [all, single, several, project, visible, marked, t]);
 	const [createNode] = useCreateNodeMutation();
 	const [updateNode] = useUpdateNodeMutation();
 	const [moveNode] = useMoveNodeMutation();
@@ -53,7 +80,6 @@ export default function MindmapPage() {
 	const { requestDelete, dialog: deleteDialog, failed: deleteFailed } = useDeleteElement();
 	const [editing, setEditing] = useState<string | null>(null);
 	const [error, setError] = useState<string>();
-	const rootId = project?.uid;
 	const { focus, openFocus } = useMapNavigation();
 
 	// The focus from the address counts once the tree is loaded and only if it is a node of this tree; else the whole tree is shown.
@@ -61,6 +87,8 @@ export default function MindmapPage() {
 	const path = useMemo(() => (rootId && tree ? focusPath(rootId, nodes, focus) : null), [rootId, tree, nodes, focus]);
 	const focusId = path && path.length > 1 ? path[path.length - 1] : undefined;
 	const waitsForTree = Boolean(focus) && !tree;
+	// The root and, in the overall view, the project nodes are no records: they are neither opened in the detail nor renamed, moved or removed.
+	const isFixed = (id: string) => id === rootId || (all && byProject.has(id));
 
 	// The filters hide nodes by their state and mark; a hidden node takes its branch from the map. Moving still sees all nodes.
 	const shown = useMemo(
@@ -94,21 +122,29 @@ export default function MindmapPage() {
 	}, [layoutKey, detailOpen]);
 
 	// The actions read the newest data through a ref, so the nodes of the map keep the same handlers.
-	const latest = useRef({ shown, nodes, fold, rootId });
+	const latest = useRef({ shown, nodes, byProject, fold, unassignedProject });
 	useEffect(() => {
-		latest.current = { shown, nodes, fold, rootId };
+		latest.current = { shown, nodes, byProject, fold, unassignedProject };
 	});
 	const actions: MapActions = useMemo(() => {
 		const fail = (failure: unknown) => setError(errorMessage(failure, t("error.failed")));
 		const depthOf = (id: string) => latest.current.shown.find((entry) => entry.id === id)?.depth ?? 0;
-		const itemAllowed = (id: string) => {
-			const { rootId: root, nodes: all } = latest.current;
-			return Boolean(root) && canDropItem(root!, all, id);
+		// The project a node belongs to (a project node: itself) with its nodes as the server gave them; none for the common root.
+		const scopeOf = (id: string) => {
+			const { byProject: own, nodes: drawn } = latest.current;
+			const projectUid = own.has(id) ? id : drawn.find((entry) => entry.uid === id)?.project_uid;
+			const list = projectUid ? own.get(projectUid) : undefined;
+			return projectUid && list ? { projectUid, list } : undefined;
 		};
+		const itemAllowed = (id: string) => {
+			const scope = scopeOf(id);
+			return Boolean(scope) && scope!.projectUid === latest.current.unassignedProject && canDropItem(scope!.projectUid, scope!.list, id);
+		};
+		// A node moves only within its project: the source must be a node of the target's project.
 		const placementOf = (id: string, zone: DropZone) => {
-			const { rootId: root, nodes: all } = latest.current;
+			const scope = scopeOf(id);
 			const source = dragSource.current;
-			return root && source ? dropPlacement(root, all, source, id, zone) : null;
+			return scope && source ? dropPlacement(scope.projectUid, scope.list, source, id, zone) : null;
 		};
 		const endDrag = () => {
 			dragSource.current = undefined;
@@ -163,10 +199,10 @@ export default function MindmapPage() {
 			},
 			toggle: (id) => setFold((current) => toggledFold(current, id, depthOf(id))),
 			add: (id) => {
-				const { rootId: root } = latest.current;
-				if (!root) return;
+				const scope = scopeOf(id);
+				if (!scope) return;
 				setError(undefined);
-				createNode({ project: root, title: t("node.new"), ...(id === root ? {} : { parent: id }) })
+				createNode({ project: scope.projectUid, title: t("node.new"), ...(id === scope.projectUid ? {} : { parent: id }) })
 					.unwrap()
 					.then((created) => {
 						// The new child must be visible: a closed parent is opened.
@@ -201,11 +237,11 @@ export default function MindmapPage() {
 	useEffect(() => () => clearTimeout(pendingClick.current), []);
 	const onNodeClick = (id: string) => {
 		clearTimeout(pendingClick.current);
-		if (id === rootId) return;
+		if (isFixed(id)) return;
 		pendingClick.current = setTimeout(() => setSelected((current) => (current === id ? null : id)), DOUBLE_CLICK_MS);
 	};
 
-	const open = selected ? nodes.find((node) => node.uid === selected) : undefined;
+	const open = selected && !isFixed(selected) ? nodes.find((node) => node.uid === selected) : undefined;
 	const close = useCallback(() => setSelected(null), [setSelected]);
 	usePageDetail(open && <NodeDetail key={open.uid} node={open} onClose={close} />);
 
@@ -222,8 +258,10 @@ export default function MindmapPage() {
 						position,
 						data: {
 							id: entry.id,
-							title: entry.node?.title ?? project?.name ?? "",
+							title: entry.node?.title ?? rootTitle,
 							isRoot: entry.node === undefined,
+							isProject: all && byProject.has(entry.id),
+							noAdd: all && entry.node === undefined,
 							hasChildren: entry.hasChildren,
 							hasNotes: (entry.node?.documents.length ?? 0) > 0,
 							state: entry.node?.state,
@@ -242,7 +280,7 @@ export default function MindmapPage() {
 					},
 				];
 			}),
-		[shown, layout, rootPosition, mode, project?.name, selected, editing, drag],
+		[shown, layout, rootPosition, mode, rootTitle, all, byProject, selected, editing, drag],
 	);
 	const edges: Edge[] = useMemo(
 		() =>
@@ -256,11 +294,11 @@ export default function MindmapPage() {
 		[flowNodes, shown, layout, mode],
 	);
 
-	if (!project) {
+	if (all ? visible.length === 0 : !project) {
 		return (
 			<Box sx={{ p: 2 }} data-testid={mindmapTestIds.page}>
 				<Typography color="text.secondary" data-testid={mindmapTestIds.chooseProject}>
-					{t("page.chooseProject")}
+					{t(all ? "page.chooseProjects" : "page.chooseProject")}
 				</Typography>
 			</Box>
 		);
@@ -276,7 +314,7 @@ export default function MindmapPage() {
 			{focusId && path && (
 				<Breadcrumbs aria-label={t("page.path")} sx={{ mb: 1 }} data-testid={mindmapTestIds.path}>
 					{path.map((id, index) => {
-						const title = id === rootId ? project.name : (nodes.find((node) => node.uid === id)?.title ?? "");
+						const title = id === rootId ? rootTitle : (nodes.find((node) => node.uid === id)?.title ?? "");
 						return index === path.length - 1 ? (
 							<Typography key={id} color="text.primary" data-testid={mindmapTestIds.pathEntry(id)}>
 								{title}
@@ -297,7 +335,7 @@ export default function MindmapPage() {
 					<Box sx={{ flexGrow: 1, minWidth: 0, border: 1, borderColor: "divider" }} data-testid={mindmapTestIds.map}>
 						{layout && (
 							<ReactFlow
-								key={project.uid}
+								key={`${view}:${projectUids.join(",")}`}
 								nodes={flowNodes}
 								edges={edges}
 								nodeTypes={NODE_TYPES}
@@ -318,7 +356,7 @@ export default function MindmapPage() {
 							</ReactFlow>
 						)}
 					</Box>
-					{showUnassigned && <UnassignedPanel items={unassigned} />}
+					{showUnassigned && (!all || unassignedProject) && <UnassignedPanel items={unassigned} />}
 				</Box>
 			</MapActionsContext.Provider>
 			{deleteDialog}

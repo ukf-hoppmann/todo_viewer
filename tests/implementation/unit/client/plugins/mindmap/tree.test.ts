@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canDropItem, defaultOpen, dropPlacement, filterByMark, filterByState, focusPath, isOpen, markLook, nodeLook, parentForNewNode, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
+import { COMBINED_ROOT, canDropItem, combinedState, combinedTree, defaultOpen, dropPlacement, filterByMark, filterByState, focusPath, isOpen, markLook, nodeLook, parentForNewNode, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
 import { node } from "../../../../../helpers/client/mindmapFixtures";
 
 const nodes = [node("a"), node("b", null, 1), node("a1", "a"), node("a2", "a", 1), node("a11", "a1"), node("a111", "a11")];
@@ -267,5 +267,63 @@ describe("parentForNewNode", () => {
 		expect(parentForNewNode(null, "p1")).toBeNull();
 		expect(parentForNewNode("", "p1")).toBeNull();
 		expect(parentForNewNode("p1", "p1")).toBeNull();
+	});
+});
+
+describe("combinedState", () => {
+	it("follows the rule of the node state over the states of the projects", () => {
+		expect(combinedState([])).toBe("idea");
+		expect(combinedState(["idea", "idea"])).toBe("idea");
+		expect(combinedState(["planned", "idea"])).toBe("planned");
+		expect(combinedState(["done", "idea"])).toBe("done");
+		expect(combinedState(["done", "done"])).toBe("done");
+		expect(combinedState(["planned", "planned"])).toBe("planned");
+		expect(combinedState(["done", "planned"])).toBe("in_progress");
+		expect(combinedState(["in_progress", "planned"])).toBe("in_progress");
+		expect(combinedState(["in_progress", "done"])).toBe("in_progress");
+	});
+});
+
+describe("combinedTree", () => {
+	const make = (project: { uid: string; name: string }, own: { position: number; total: number; done: number; state: string }) =>
+		node(project.uid, null, own.position, { title: project.name, project_uid: project.uid, ...own });
+	const p1 = { uid: "p1", name: "Eins" };
+	const p2 = { uid: "p2", name: "Zwei" };
+	const tree1 = [node("a", null, 0, { total: 3, done: 1, state: "in_progress" }), node("b", null, 1, { total: 2, done: 2, state: "done" }), node("a1", "a", 0, { total: 3, done: 1, state: "in_progress" })];
+	const tree2 = [node("c", null, 0, { project_uid: "p2", total: 4, done: 0, state: "planned" })];
+
+	it("hangs the projects under the common root and the top nodes of each under their project", () => {
+		const nodes = combinedTree([p1, p2], [tree1, tree2], make);
+
+		expect(nodes.find((entry) => entry.uid === "p1")).toMatchObject({ parent_uid: null, position: 0, title: "Eins" });
+		expect(nodes.find((entry) => entry.uid === "p2")).toMatchObject({ parent_uid: null, position: 1 });
+		expect(nodes.find((entry) => entry.uid === "a")?.parent_uid).toBe("p1");
+		expect(nodes.find((entry) => entry.uid === "c")?.parent_uid).toBe("p2");
+		expect(nodes.find((entry) => entry.uid === "a1")?.parent_uid).toBe("a");
+		expect(ids(visibleNodes(COMBINED_ROOT, nodes, {}))).toEqual([COMBINED_ROOT, "p1", "a", "b", "p2", "c"]);
+	});
+
+	it("counts the items of a project once: the sum of its top nodes, which hold their sub-nodes", () => {
+		const project = combinedTree([p1], [tree1], make).find((entry) => entry.uid === "p1");
+
+		expect(project).toMatchObject({ total: 5, done: 3, state: "in_progress" });
+	});
+
+	it("derives the state of a project from its top nodes", () => {
+		const nodes = combinedTree([p1, p2], [[tree1[1]!], tree2], make);
+
+		expect(nodes.find((entry) => entry.uid === "p1")?.state).toBe("done");
+		expect(nodes.find((entry) => entry.uid === "p2")).toMatchObject({ state: "planned", total: 4, done: 0 });
+	});
+
+	it("shows a project without nodes as an idea that counts nothing", () => {
+		expect(combinedTree([p1], [[]], make)).toEqual([expect.objectContaining({ uid: "p1", total: 0, done: 0, state: "idea" })]);
+		expect(combinedTree([], [], make)).toEqual([]);
+	});
+
+	it("does not change the nodes it was given", () => {
+		const before = JSON.stringify(tree1);
+		combinedTree([p1], [tree1], make);
+		expect(JSON.stringify(tree1)).toBe(before);
 	});
 });

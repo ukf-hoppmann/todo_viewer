@@ -178,3 +178,53 @@ export function markLook(mark: string | null | undefined): MarkLook {
 export function filterByMark<T extends { mark?: string | null }>(nodes: readonly T[], hiddenMarks: readonly string[]): T[] {
 	return hiddenMarks.length === 0 ? [...nodes] : nodes.filter((node) => !node.mark || !hiddenMarks.includes(node.mark));
 }
+
+/** The views of the map: one project (`single`), or all chosen projects under a common root (`all`). */
+export type ViewMode = "single" | "all";
+
+/** The id of the common root of the overall view: it belongs to no project and is no record. */
+export const COMBINED_ROOT = "mindmap:all";
+
+/**
+ * The state of a project node (or the common root) over the states of what hangs below it, by the rule of the node
+ * state: only ideas (or nothing) is an idea, only planned is planned, only done is done, anything else is in progress.
+ * Ideas count nothing and are left out.
+ */
+export function combinedState(states: readonly string[]): string {
+	const counted = states.filter((state) => state !== "idea");
+	if (counted.length === 0) return "idea";
+	if (counted.every((state) => state === "planned")) return "planned";
+	if (counted.every((state) => state === "done")) return "done";
+	return "in_progress";
+}
+
+/** What a node of the overall view needs besides its place: the counts and the state. */
+export interface CountedNode extends PlacedNode {
+	total: number;
+	done: number;
+	state: string;
+}
+
+/**
+ * The nodes of the overall view: for every project a node of its own (made by `makeProject` from the project and its
+ * place, counts and state), directly under the common root, with the top nodes of its tree hung below it. `trees[i]`
+ * holds the nodes of `projects[i]`. A project counts the sum of its top nodes, which already hold their sub-nodes, so
+ * every item counts once; items without a node are no node and do not count. The given nodes stay unchanged.
+ */
+export function combinedTree<P extends { uid: string }, T extends CountedNode>(
+	projects: readonly P[],
+	trees: ReadonlyArray<readonly T[]>,
+	makeProject: (project: P, own: { position: number; total: number; done: number; state: string }) => T,
+): T[] {
+	return projects.flatMap((project, position) => {
+		const nodes = trees[position] ?? [];
+		const top = nodes.filter((entry) => !entry.parent_uid);
+		const own = {
+			position,
+			total: top.reduce((sum, entry) => sum + entry.total, 0),
+			done: top.reduce((sum, entry) => sum + entry.done, 0),
+			state: combinedState(top.map((entry) => entry.state)),
+		};
+		return [makeProject(project, own), ...nodes.map((entry) => (entry.parent_uid ? entry : { ...entry, parent_uid: project.uid }))];
+	});
+}

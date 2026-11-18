@@ -37,7 +37,7 @@ export function errorMessage(error: unknown, fallback: string): string {
 
 /**
  * The API of the plugin (`mindmap.api`): `getTree` reads the topic tree of a project (the project is the root) with
- * count, progress and state of every node and the items without a node; `statuses` is the status filter of the
+ * count, progress and state of every node and the items without a node; `getTrees` reads the trees of several projects at once (the overall view; one tree per project, in the order given); `statuses` is the status filter of the
  * backlog (comma-separated, empty: all),
  * `createNode` and `updateNode` write a node, `moveNode` hangs a node with its branch under another parent (empty:
  * under the root) or to another place among its siblings. Moving to the trash goes through `workspace`. The tag `Tree` is what
@@ -49,6 +49,18 @@ export const mindmapApi = createPluginApi(
 	(build) => ({
 		getTree: build.query<TreeOut, { project: string; statuses: string }>({
 			query: ({ project, statuses }) => ({ url: `mindmap/trees/${project}`, params: statuses ? { statuses } : undefined }),
+			providesTags: ["Tree"],
+		}),
+		getTrees: build.query<TreeOut[], { projects: string[]; statuses: string }>({
+			// One request per project, in parallel, so the overall view needs no hook in a loop.
+			async queryFn({ projects, statuses }, _api, _extra, baseQuery) {
+				const results = await Promise.all(
+					projects.map((project) => baseQuery({ url: `mindmap/trees/${project}`, params: statuses ? { statuses } : undefined })),
+				);
+				const failed = results.find((result) => result.error);
+				if (failed?.error) return { error: failed.error };
+				return { data: results.map((result) => result.data as TreeOut) };
+			},
 			providesTags: ["Tree"],
 		}),
 		getNodeContent: build.query<NodeContentOut, { node: string; statuses: string }>({
@@ -105,6 +117,7 @@ export const mindmapApi = createPluginApi(
 
 export const {
 	useGetTreeQuery,
+	useGetTreesQuery,
 	useGetNodeContentQuery,
 	useGetItemNodeQuery,
 	useAssignItemMutation,

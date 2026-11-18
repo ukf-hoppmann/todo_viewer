@@ -875,3 +875,106 @@ describe("MindmapPage: moving by dragging in the round arrangement", () => {
 		expect(screen.getByTestId(ids.dropLine("a", "before"))).toBeTruthy();
 	});
 });
+
+describe("MindmapPage: the overall view", () => {
+	const overall = { mindmap: { view: "all" } };
+	const two = [
+		node("a", null, 0, { total: 3, done: 1, state: "in_progress" }),
+		node("a1", "a", 0, { total: 3, done: 1, state: "in_progress" }),
+		node("b", null, 1),
+		node("c", null, 0, { project_uid: "p0", total: 2, done: 2, state: "done" }),
+	];
+	const renderAll = (options: Parameters<typeof fakeMindmapBackend>[0] = {}) =>
+		renderPage({ nodes: two, documents: { ...marked, ...overall }, ...options });
+
+	it("shows a common root with the visible projects as its first nodes, each with its tree", async () => {
+		await renderAll();
+
+		await screen.findByTestId(ids.node("c"));
+		expect(shownIds()).toEqual(["mindmap:all", "p0", "c", "p1", "a", "b"]);
+		expect(screen.getByTestId(ids.node("mindmap:all")).textContent).toContain("Alle Projekte");
+		expect(screen.getByTestId(ids.node("p1")).textContent).toContain("Viewer");
+		expect(document.querySelector("[data-flow-edge='mindmap:all->p1']")).not.toBeNull();
+		expect(document.querySelector("[data-flow-edge='p1->a']")).not.toBeNull();
+	});
+
+	it("counts every item once at the project nodes", async () => {
+		await renderAll();
+
+		await screen.findByTestId(ids.node("c"));
+		expect(screen.getByTestId(ids.count("p1")).textContent).toBe("3");
+		expect(screen.getByTestId(ids.count("p0")).textContent).toBe("2");
+		expect(screen.getByTestId(ids.node("p0")).dataset.state).toBe("done");
+		expect(screen.getByTestId(ids.node("p1")).dataset.state).toBe("in_progress");
+	});
+
+	it("shows only the projects switched on, at once when one is switched", async () => {
+		await renderAll({ documents: { workspace: { marked: "p1", hidden: ["p0"] }, ...overall } });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(shownIds()).toEqual(["mindmap:all", "p1", "a", "b"]);
+	});
+
+	it("offers nothing on the common root: no adding, and a project node can neither be removed nor renamed", async () => {
+		await renderAll();
+		await screen.findByTestId(ids.node("c"));
+
+		expect(screen.queryByTestId(ids.add("mindmap:all"))).toBeNull();
+		expect(screen.queryByTestId(ids.remove("mindmap:all"))).toBeNull();
+		expect(screen.queryByTestId(ids.remove("p1"))).toBeNull();
+		expect(screen.getByTestId(ids.add("p1"))).toBeTruthy();
+		fireEvent.doubleClick(screen.getByTestId(ids.node("p1")));
+		expect(screen.queryByTestId(ids.titleInput("p1"))).toBeNull();
+	});
+
+	it("adds a top node to the project of the node it is added at", async () => {
+		const backend = await renderAll();
+		await screen.findByTestId(ids.node("c"));
+
+		fireEvent.click(screen.getByTestId(ids.add("p0")));
+
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes")).toHaveLength(1));
+		expect(backend.calls("POST", "mindmap/nodes")[0]!.body).toMatchObject({ project: "p0" });
+		expect(backend.calls("POST", "mindmap/nodes")[0]!.body).not.toHaveProperty("parent");
+	});
+
+	it("moves a node within its project only: a node of another project is not offered as a place", async () => {
+		const backend = await renderAll();
+		await screen.findByTestId(ids.node("c"));
+
+		startDrag("a");
+		dragEvent("dragover", screen.getByTestId(ids.node("c")), 20);
+		expect(screen.getByTestId(ids.node("c")).dataset.drop).toBeUndefined();
+		dragEvent("dragover", screen.getByTestId(ids.node("p1")), 20);
+		expect(screen.getByTestId(ids.node("p1")).dataset.drop).toBe("inside");
+		dragEvent("drop", screen.getByTestId(ids.node("p1")), 20);
+
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/a/move")).toHaveLength(1));
+		expect(backend.calls("POST", "mindmap/nodes/a/move")[0]!.body).toMatchObject({ parent: null });
+	});
+
+	it("shows the items without a node of the marked project, else the side view is off", async () => {
+		await renderAll({ unassigned: [itemRef("x1")] });
+		await screen.findByTestId(ids.unassignedItem("x1"));
+		cleanup();
+
+		await renderAll({ unassigned: [itemRef("x1")], documents: { ...overall } });
+		await screen.findByTestId(ids.node("c"));
+		expect(screen.queryByTestId(ids.unassigned)).toBeNull();
+	});
+
+	it("starts at a project when the address has its uid as the focus, with the path back to the common root", async () => {
+		await renderPage({ nodes: two, documents: { ...marked, ...overall } }, "/mindmap/main?focus=p1");
+
+		await screen.findByTestId(ids.pathEntry("p1"));
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "a", "a1", "b"]));
+		expect(screen.getByTestId(ids.pathEntry("mindmap:all")).textContent).toBe("Alle Projekte");
+	});
+
+	it("asks to choose a project when none is visible", async () => {
+		await renderAll({ documents: { workspace: { hidden: ["p0", "p1"] }, ...overall } });
+
+		await screen.findByTestId(ids.chooseProject);
+		expect(screen.getByTestId(ids.chooseProject).textContent).toContain("Gesamtansicht");
+	});
+});

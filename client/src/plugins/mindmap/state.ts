@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { usePersistentState } from "../../core";
 import type { Fold } from "./domain/tree";
+import type { LayoutMode } from "./mindmapLayout";
 
 const OWNER = "mindmap";
 
@@ -16,8 +17,9 @@ export function useMindmapState() {
 	const [hiddenStates, setHiddenStates] = usePersistentState<string[]>(OWNER, "hiddenStates", []);
 	const [hiddenMarks, setHiddenMarks] = usePersistentState<string[]>(OWNER, "hiddenMarks", []);
 	const [showUnassigned, setShowUnassigned] = usePersistentState<boolean>(OWNER, "showUnassigned", true);
+	const [layout, setLayout] = usePersistentState<LayoutMode>(OWNER, "layout", "side");
 	return useMemo(
-		() => ({ fold, setFold, selected, setSelected, hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned }),
-		[fold, setFold, selected, setSelected, hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned],
+		() => ({ fold, setFold, selected, setSelected, hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned, layout, setLayout }),
+		[fold, setFold, selected, setSelected, hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned, layout, setLayout],
 	);
 }

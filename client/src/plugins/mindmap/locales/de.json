@@ -53,6 +53,11 @@
 		"currentState": "aktueller Stand",
 		"toc": "Inhaltsverzeichnis"
 	},
+	"layout": {
+		"title": "Anordnung",
+		"side": "Zur Seite",
+		"round": "Rund"
+	},
 	"filter": {
 		"state": "Zustand",
 		"unassigned": "Nicht zugeordnet anzeigen",

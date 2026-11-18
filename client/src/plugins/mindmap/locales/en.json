@@ -53,6 +53,11 @@
 		"currentState": "current state",
 		"toc": "Table of contents"
 	},
+	"layout": {
+		"title": "Arrangement",
+		"side": "To the side",
+		"round": "Round"
+	},
 	"filter": {
 		"state": "State",
 		"unassigned": "Show unassigned",

@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: §1 (Prototyp) und §2 (`layoutTree(nodes, mode)`, runde Berechnung) erledigt und committet; §3 bis §6 offen (2026-11-18)
-- Next step: weiter mit §3 (Test zuerst), dann: §3 Zustand und Umschalter, §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
+- Goal/Status: §1 (Prototyp), §2 (`layoutTree(nodes, mode)`) und §3 (UI-State `layout`, Umschalter in der Seitenleiste) erledigt und committet; §4 bis §6 offen (2026-11-18)
+- Next step: weiter mit §4 (Seite und Knoten ruft `layoutTree(…, layout)` auf), dann: §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
 - Open:
   - Gerade oder gekrümmte Kanten in der runden Anordnung: in der Umsetzung am Bild entscheiden (2026-11-17)
   - Drag-and-drop-Zonen vor/nach links der Wurzel: am Bild prüfen, sonst nur „innerhalb“ (2026-11-17)
@@ -14,7 +14,7 @@
   - Runde Anordnung als eigene Berechnung, Ergebnis des Prototyps in den Notizen von `STORY-101` (2026-11-17)
 - References: Spec `TASK-060_spec.md`; Story-Spec `STORY-101_spec.md`
 
-State confirmed after entry 2026-11-18 — §2 umgesetzt: runde Layout-Funktion (188280d40cf1)
+State confirmed after entry 2026-11-18 — §3 umgesetzt: Zustand und Umschalter (77701e247d2e)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -86,6 +86,23 @@ State confirmed after entry 2026-11-18 — §2 umgesetzt: runde Layout-Funktion 
 ### Decided
 
 - Siehe Stand oben; keine neue Entscheidung
+
+### Open
+
+- Gerade oder gekrümmte Kanten in der runden Anordnung
+- Zonen vor/nach beim Ziehen links der Wurzel
+
+## 2026-11-18 — §3 umgesetzt: Zustand und Umschalter
+
+### Discussed
+
+- `useMindmapState` (`state.ts`) hat `layout` (`"side"` | `"round"`, Standard `"side"`, Eigentümer `mindmap`); neue Sektion `LayoutSwitch.tsx` (zwei Umschalter „Zur Seite“ / „Rund“, `ToggleButtonGroup`), im Slot `core.sidebar-sections` (`name: "layout"`, `order: 19`, `when: ["mindmap/main"]`, also vor dem Filter); Test-IDs `layoutSwitch`, `layoutOption(value)`, Texte `layout.*` in `de` und `en`. Drückt man den gedrückten Knopf noch einmal, bleibt die Wahl.
+- Test zuerst (`LayoutSwitch.test.tsx`, schlug vorher fehl, weil das Modul fehlte); danach 5 neue Tests und alle 161 Mindmap-Tests grün, `tsc -b` sauber; Lint nur die 5 alten Fehler in `usePersistentState.ts`.
+- Der Umschalter hat noch keine Wirkung auf die Karte: die Seite liest `layout` erst in §4.
+
+### Decided
+
+- Der Umschalter liegt vor den Filtern (`order: 19`)
 
 ### Open
 

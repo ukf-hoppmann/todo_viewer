@@ -19,7 +19,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-18 — Thema 2: Map eines Memos, Klarstellung (ae18120f766e)
+State confirmed after entry 2026-11-18 — Thema 2: Export oder Sync einer freien Map in ein Memo (a81ec00ee51c)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -100,3 +100,18 @@ State confirmed after entry 2026-11-18 — Thema 2: Map eines Memos, Klarstellun
 ### Open
 
 - Entscheidung des Owners zwischen Option 1 und 2; bei Option 2 entfallen die Map-eines-Memos-Teile in `TASK-062` und im Epic-Konzept.
+
+## 2026-11-18 — Thema 2: Export oder Sync einer freien Map in ein Memo
+
+### Discussed
+
+- Neue Idee des Owners: Brainstorming in einer freien Map; die Einträge werden als Aufzählungspunkte in einem Memo abgelegt, damit die Ergebnisse systematisch nachlesbar sind. Als „Export nach Memo“ oder „Sync nach Memo“, wobei der Baum mit dem Memo verknüpft ist, das die Liste trägt. Der Owner fragt nach dem Aufwand und ob der Nutzen ihn jetzt rechtfertigt oder ob man es bei Bedarf nachzieht.
+- Das Memo hat ein Textfeld (`body`); ein Export schreibt den Baum als verschachtelte Liste dorthin.
+- Option 1, einmaliger Export (Baum zu Markdown-Liste im Memo): klein; eine Funktion, ein Endpunkt, ein Knopf, dazu die Verknüpfung Baum–Memo. Eine erneute Ausführung ersetzt die Liste. Wegen der gemeinsamen Äste gibt es dabei Doppelungen, die man festlegen muss.
+- Option 2, Sync in eine Richtung (Baum ändert Memo bei jeder Änderung): braucht Auslöser und Regeln, was bei von Hand geänderten Memos gilt; mittel.
+- Option 3, Sync in beide Richtungen: Liste lesen, Knoten zuordnen, Verschieben, Löschen und Konflikte, dazu gemeinsame Äste; groß und fehleranfällig.
+- Einschätzung: Nutzen ungewiss, Cloud-Zugriff kommt ohnehin mit dem Markdown-Spiegel `STORY-105`. Option 1 lässt sich später ohne Umbau nachziehen, weil sie nur liest.
+
+### Open
+
+- Entscheidung des Owners: Memo-Map ganz streichen und Export nach Memo erst bei Bedarf? Empfehlung: ja, als Idee in einem Memo oder Item festhalten.

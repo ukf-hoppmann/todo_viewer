@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: §1 (Prototyp), §2 (`layoutTree(nodes, mode)`) und §3 (UI-State `layout`, Umschalter) und §4 (Seite und Knoten folgen `layout`) und §5 (Browserprüfung, Kanten, Drag-and-drop) und §6 (Gesamtlauf, Techdocs, Kriterien) erledigt; Kriterien erfüllt, wartet auf Bestätigung des Owners (2026-11-18)
-- Next step: Owner bestätigt `Completed` oder nennt, was fehlt (2026-11-18); frühere Planung: §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
+- Goal/Status: §1 (Prototyp), §2 (`layoutTree(nodes, mode)`) und §3 (UI-State `layout`, Umschalter) und §4 (Seite und Knoten folgen `layout`) und §5 (Browserprüfung, Kanten, Drag-and-drop) und §6 (Gesamtlauf, Techdocs, Kriterien) erledigt; Kriterien erfüllt, vom Owner am 2026-11-18 bestätigt (`Completed`, archiviert)
+- Next step: keiner, der Task ist abgeschlossen (2026-11-18); frühere Planung: §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
 - Open:
   - Gerade oder gekrümmte Kanten in der runden Anordnung: in der Umsetzung am Bild entscheiden (2026-11-17)
 - Decided:
@@ -15,7 +15,7 @@
   - Runde Anordnung als eigene Berechnung, Ergebnis des Prototyps in den Notizen von `STORY-101` (2026-11-17)
 - References: Spec `TASK-060_spec.md`; Story-Spec `STORY-101_spec.md`
 
-State confirmed after entry 2026-11-18 — §6: Integration und Abschluss (aff66c7188ca)
+State confirmed after entry 2026-11-18 — Bestätigung (d56ad8b068b1)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -165,3 +165,17 @@ State confirmed after entry 2026-11-18 — §6: Integration und Abschluss (aff66
 ### Open
 
 - Der Owner bestätigt oder nennt Fehlendes
+
+## 2026-11-18 — Bestätigung
+
+### Discussed
+
+- Der Owner hat `TASK-060` als abgeschlossen bestätigt; `src_old/web` war vorher auf seinen Wunsch wieder aus dem Repository entfernt worden.
+
+### Decided
+
+- `TASK-060` ist `Completed` und nach `archive.md` verschoben
+
+### Open
+
+- Open from 2026-11-18 (Der Owner bestätigt oder nennt Fehlendes) resolved: bestätigt

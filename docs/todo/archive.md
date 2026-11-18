@@ -4171,3 +4171,25 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     einmal nur Machbarkeit und Ideensammlung.
   - Resolution: Vom Owner am 2026-11-13 bestätigt, nachdem die Entscheidungen
     in Epic EPIC-008 und seine Stories übertragen waren.
+
+- `TASK-060` **Mindmap: runde Anordnung, umschaltbar zur Anordnung zur Seite**
+  - Uid: a52f7b44-3538-457d-8e85-46d493bdd7d9.
+  - Type: Task.
+  - Parent: `STORY-101`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Map lässt sich rund anordnen, mit der Wurzel in der Mitte, und
+    zurück zur Anordnung zur Seite schalten. Vorab zeigt ein Prototyp mit
+    einer großen Map, ob ELK `radial` genügt oder eine eigene Anordnung nötig
+    ist.
+  - Completion criteria: 1. Das Ergebnis des Prototyps und die Wahl der
+    Anordnung stehen in den Notizen der Story.
+    2. Beide Anordnungen sind umschaltbar und die Wahl bleibt gespeichert.
+    3. Eine Map mit vielen Knoten bleibt in der runden Anordnung ohne
+    Überlappung lesbar.
+  - Summary: Die Map rund um die Wurzel anordnen oder zur Seite; ein Prototyp mit großer Map klärt vorher, ob ELK genügt.
+  - Resolution: Vom Projekteigner am 2026-11-18 bestätigt; auf `todo_mindmap`.

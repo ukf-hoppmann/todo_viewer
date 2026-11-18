@@ -103,27 +103,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     3. UI-Tests sind grün.
   - Summary: Alle gewählten Projekte unter einer gemeinsamen Wurzel in einer Map sehen; umschaltbar zur Einzelansicht.
 
-- `TASK-060` **Mindmap: runde Anordnung, umschaltbar zur Anordnung zur Seite**
-  - Uid: a52f7b44-3538-457d-8e85-46d493bdd7d9.
-  - Type: Task.
-  - Parent: `STORY-101`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-13.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Die Map lässt sich rund anordnen, mit der Wurzel in der Mitte, und
-    zurück zur Anordnung zur Seite schalten. Vorab zeigt ein Prototyp mit
-    einer großen Map, ob ELK `radial` genügt oder eine eigene Anordnung nötig
-    ist.
-  - Completion criteria: 1. Das Ergebnis des Prototyps und die Wahl der
-    Anordnung stehen in den Notizen der Story.
-    2. Beide Anordnungen sind umschaltbar und die Wahl bleibt gespeichert.
-    3. Eine Map mit vielen Knoten bleibt in der runden Anordnung ohne
-    Überlappung lesbar.
-  - Summary: Die Map rund um die Wurzel anordnen oder zur Seite; ein Prototyp mit großer Map klärt vorher, ob ELK genügt.
-
 - `TASK-061` **Mindmap: Abhängigkeiten zwischen Themen ein- und ausblenden**
   - Uid: c9b91950-7822-42e1-9b52-d0d3d0176a6f.
   - Type: Task.

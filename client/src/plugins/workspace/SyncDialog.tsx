@@ -14,7 +14,7 @@ import {
 	type SyncDirection,
 	type SyncResult,
 } from "./api";
-import { choiceBlocked, choiceEffect, decisionsOf, differences, documentContext, isDeletionConflict, lineDiff, onlyWhitespaceDiffers, originKey, visibleWhitespace, withBulkChoice, type Choices, type DiffLine } from "./sync";
+import { choiceBlocked, choiceEffect, decisionsOf, differences, documentContext, isDeletionConflict, isTextDiff, lineDiff, onlyWhitespaceDiffers, originKey, visibleWhitespace, withBulkChoice, type Choices, type DiffLine } from "./sync";
 import { workspaceTestIds } from "./testIds";
 
 const directions: SyncDirection[] = ["both", "to_files", "to_database"];
@@ -192,15 +192,17 @@ function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: Syn
 			)}
 			<Box
 				component="table"
-				sx={{ width: "100%", fontSize: 13, borderCollapse: "collapse", my: 0.5, "& td": { verticalAlign: "top", whiteSpace: "pre-wrap", wordBreak: "break-word", pr: 1 } }}
+				sx={{ width: "100%", fontSize: 13, borderCollapse: "collapse", my: 0.5, "& td": { verticalAlign: "top", whiteSpace: "pre-wrap", wordBreak: "break-word", pr: 1 }, "& td:first-of-type": { whiteSpace: "nowrap" } }}
 			>
-				<thead>
-					<tr>
-						<th align="left" />
-						<th align="left">{t("sync.database")}</th>
-						<th align="left">{t("sync.files")}</th>
-					</tr>
-				</thead>
+				{rows.some((row) => !isTextDiff(row)) && (
+					<thead>
+						<tr>
+							<th align="left" />
+							<th align="left">{t("sync.database")}</th>
+							<th align="left">{t("sync.files")}</th>
+						</tr>
+					</thead>
+				)}
 				<tbody>
 					{rows.map((row) => (
 						<tr key={row.name} data-testid={workspaceTestIds.syncDifference(conflict.key, row.name)}>
@@ -246,8 +248,7 @@ function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: Syn
 /** The two sides of a row; a text that exists on both sides is shown as a line diff instead of twice in full. */
 function TextCells({ conflictKey, row }: { conflictKey: string; row: { name: string; database: string; files: string } }) {
 	const { t } = useTranslation("workspace");
-	const both = row.database !== "—" && row.files !== "—" && (row.database.includes("\n") || row.files.includes("\n"));
-	const diff = both ? lineDiff(row.database, row.files) : null;
+	const diff = isTextDiff(row) ? lineDiff(row.database, row.files) : null;
 	if (diff) {
 		return (
 			<td colSpan={2}>

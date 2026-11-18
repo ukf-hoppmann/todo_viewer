@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Spec vollständig, keine offene Frage; `TASK-058` ist erledigt, Plan wird erstellt (2026-11-18)
-- Next step: Plan vom Owner freigeben lassen, dann umsetzen (2026-11-18)
+- Goal/Status: umgesetzt (ff3d8dc5), `Awaiting confirmation`; alle Client-Tests und `tsc` grün (2026-11-18)
+- Next step: Owner bestätigt oder nennt Fehlendes (2026-11-18)
 - Open:
   - Keine
 - Decided:
@@ -25,6 +25,21 @@
 
 - Markiertes Projekt, sonst aus: das Ziel eines Drops liegt dann immer im selben Projekt. Verworfen: immer aus (nimmt die Zuordnung), alle gruppiert (Aufwand).
 - Ohne Items ohne Knoten: sie sind kein Knoten und zählen auch in der Einzelansicht nicht im Baum; die Summe ist die der obersten Knoten, die ihre Unterknoten enthalten.
+
+### Open
+
+- Keine
+
+## 2026-11-18 — Umsetzung
+
+### Discussed
+
+- Plan mit Owner abgestimmt und freigegeben; umgesetzt in fünf Abschnitten (Domain, `getTrees`, Umschalter, Seite, Doku).
+
+### Decided
+
+- `combinedTree` bekommt eine Fabrik für den Projektknoten, damit `domain/tree.ts` keine API-Typen importiert.
+- Ein Drop gilt nur im selben Projekt: Quelle und Ziel werden gegen die Knoten des Zielprojekts (wie vom Server geliefert) geprüft.
 
 ### Open
 

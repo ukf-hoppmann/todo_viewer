@@ -5,6 +5,8 @@ type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respon
 	nodes?: TreeNodeOut[];
 	/** The items without a node (the side view), in the order of the backlog. */
 	unassigned?: ItemRefOut[];
+	/** The lines between nodes the tree answers with (`from_node` → `to_node`, summed `count`). */
+	dependencyLinks?: Array<{ from_node: string; to_node: string; count: number }>;
 	/** The items in the detail of a node, by node `uid`; `explicit` says whether the node is theirs. */
 	items?: Record<string, NodeItemOut[]>;
 	/** The memos linked to a node, by node `uid`. */
@@ -57,7 +59,7 @@ export function fakeMindmapBackend(options: Options = {}) {
 			const tree = /^mindmap\/trees\/([^/]+)$/.exec(path);
 			if (tree && method === "GET") {
 				const own = nodes.filter((entry) => entry.project_uid === tree[1]);
-				return Response.json({ project_uid: tree[1], tree_uid: own.length > 0 ? "t1" : null, nodes: own, unassigned });
+				return Response.json({ project_uid: tree[1], tree_uid: own.length > 0 ? "t1" : null, nodes: own, unassigned, links: options.dependencyLinks ?? [] });
 			}
 			const content = /^mindmap\/nodes\/([^/]+)\/content$/.exec(path);
 			if (content && method === "GET") {

@@ -68,6 +68,7 @@
 	"filter": {
 		"state": "State",
 		"unassigned": "Show unassigned",
+		"dependencies": "Show dependencies between topics",
 		"mark": "Mark"
 	},
 	"state": {

@@ -11,7 +11,7 @@ const STATE_COLORS: Record<string, string> = { idea: "#8a8f98", planned: "#6b728
 /** Sidebar section of the mind map: which node states and marks are shown, and the switch of the side view "Nicht zugeordnet". */
 export function MapFilters() {
 	const { t } = useTranslation("mindmap");
-	const { hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned } = useMindmapState();
+	const { hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned, showDependencies, setShowDependencies } = useMindmapState();
 	return (
 		<Box data-testid={mindmapTestIds.stateFilter}>
 			<FilterSection
@@ -36,6 +36,17 @@ export function MapFilters() {
 					/>
 				}
 				label={t("filter.unassigned")}
+			/>
+			<FormControlLabel
+				control={
+					<Checkbox
+						size="small"
+						checked={showDependencies}
+						onChange={(event) => setShowDependencies(event.target.checked)}
+						slotProps={{ input: { "data-testid": mindmapTestIds.dependenciesSwitch } as never }}
+					/>
+				}
+				label={t("filter.dependencies")}
 			/>
 		</Box>
 	);

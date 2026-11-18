@@ -228,3 +228,40 @@ export function combinedTree<P extends { uid: string }, T extends CountedNode>(
 		return [makeProject(project, own), ...nodes.map((entry) => (entry.parent_uid ? entry : { ...entry, parent_uid: project.uid }))];
 	});
 }
+
+/** A line between two nodes: `count` dependencies of items in `to_node` on items in `from_node`. */
+export interface NodeLink {
+	from_node: string;
+	to_node: string;
+	count: number;
+}
+
+/**
+ * The lines as the map draws them. A line whose end is not shown (folded away, filtered out, outside the focus) ends at
+ * the nearest shown ancestor of that end instead (`parentOf`: node → parent). A line without a shown ancestor at one of
+ * its ends is dropped; so is one that now runs from a node to itself. Lines with the same ends are summed again. Sorted
+ * by (from, to).
+ */
+export function liftLinks(links: readonly NodeLink[], shownIds: ReadonlySet<string>, parentOf: ReadonlyMap<string, string | null | undefined>): NodeLink[] {
+	const lift = (id: string): string | null => {
+		const seen = new Set<string>();
+		let current: string | null | undefined = id;
+		while (current && !shownIds.has(current)) {
+			if (seen.has(current)) return null;
+			seen.add(current);
+			current = parentOf.get(current);
+		}
+		return current || null;
+	};
+	const sums = new Map<string, NodeLink>();
+	for (const link of links) {
+		const from = lift(link.from_node);
+		const to = lift(link.to_node);
+		if (!from || !to || from === to) continue;
+		const key = `${from}\u0000${to}`;
+		const known = sums.get(key);
+		if (known) known.count += link.count;
+		else sums.set(key, { from_node: from, to_node: to, count: link.count });
+	}
+	return [...sums.values()].sort((a, b) => a.from_node.localeCompare(b.from_node) || a.to_node.localeCompare(b.to_node));
+}

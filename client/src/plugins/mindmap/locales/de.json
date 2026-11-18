@@ -68,6 +68,7 @@
 	"filter": {
 		"state": "Zustand",
 		"unassigned": "Nicht zugeordnet anzeigen",
+		"dependencies": "Abhängigkeiten zwischen Themen zeigen",
 		"mark": "Markierung"
 	},
 	"state": {

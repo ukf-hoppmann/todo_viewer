@@ -30,6 +30,7 @@ export const mindmapTestIds = {
 	unassignedItem: (id: string) => `mindmap.unassigned-item.${id}`,
 	stateFilter: "mindmap.state-filter",
 	unassignedSwitch: "mindmap.unassigned-switch",
+	dependenciesSwitch: "mindmap.dependencies-switch",
 	layoutSwitch: "mindmap.layout-switch",
 	layoutOption: (value: string) => `mindmap.layout-option.${value}`,
 	viewSwitch: "mindmap.view-switch",

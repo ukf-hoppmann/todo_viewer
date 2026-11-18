@@ -1,5 +1,5 @@
 import { Alert, Box, Breadcrumbs, Link, Typography } from "@mui/material";
-import { Background, Controls, ReactFlow, type Edge, type ReactFlowInstance } from "@xyflow/react";
+import { Background, Controls, MarkerType, ReactFlow, type Edge, type ReactFlowInstance } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,7 @@ import { usePageDetail } from "../../../core";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
 import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useGetTreesQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
-import { COMBINED_ROOT, canDropItem, combinedTree, dropPlacement, filterByMark, filterByState, focusPath, isOpen, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
+import { COMBINED_ROOT, canDropItem, combinedTree, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import type { TreeOut } from "../api";
 import { MapActionsContext, type MapActions } from "../mapActions";
 import { dropZonesOf, edgeSides, layoutTree } from "../mindmapLayout";
@@ -24,6 +24,8 @@ const NO_ITEMS: readonly ItemRefOut[] = [];
 const DOUBLE_CLICK_MS = 250;
 const FIT = { maxZoom: 1, padding: 0.15 };
 const EDGE_STYLE = { stroke: "#5b8cff", strokeOpacity: 0.7 };
+const LINK_COLOR = "#e0a83a";
+const LINK_STYLE = { stroke: LINK_COLOR, strokeDasharray: "6 4", strokeWidth: 1.5 };
 
 type Structure = Array<{ id: string; parentId: string | null }>;
 
@@ -40,7 +42,7 @@ export default function MindmapPage() {
 	const { visible, marked } = useProjectSelection();
 	const project = shownProject(visible, marked);
 	const statuses = useShownStatuses();
-	const { view, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, layout: mode } = useMindmapState();
+	const { view, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, showDependencies, layout: mode } = useMindmapState();
 	const all = view === "all";
 	// The single view loads the tree of one project, the overall view those of all visible projects.
 	const { currentData: single } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: all || !project });
@@ -282,7 +284,7 @@ export default function MindmapPage() {
 			}),
 		[shown, layout, rootPosition, mode, rootTitle, all, byProject, selected, editing, drag],
 	);
-	const edges: Edge[] = useMemo(
+	const treeEdges: Edge[] = useMemo(
 		() =>
 			flowNodes.flatMap((node) => {
 				const parentId = shown.find((entry) => entry.id === node.id)?.parentId;
@@ -293,6 +295,39 @@ export default function MindmapPage() {
 			}),
 		[flowNodes, shown, layout, mode],
 	);
+	// Dependencies between topics (switched on in the sidebar): the server sums them per pair of nodes, the map moves their ends to the
+	// nearest shown node. They are drawn below the tree edges and cannot be clicked.
+	const dependencyLinks = useMemo(() => {
+		if (!showDependencies) return [];
+		const lines = (all ? (tree as readonly TreeOut[] | undefined) : tree ? [tree as TreeOut] : undefined)?.flatMap((entry) => entry.links) ?? [];
+		return liftLinks(lines, new Set(shown.map((entry) => entry.id)), new Map(nodes.map((node) => [node.uid, node.parent_uid])));
+	}, [showDependencies, all, tree, shown, nodes]);
+	const edges: Edge[] = useMemo(() => {
+		const lines = dependencyLinks.flatMap((link) => {
+			const from = layout?.positions.get(link.from_node);
+			const to = layout?.positions.get(link.to_node);
+			if (!from || !to) return [];
+			const { source, target } = edgeSides(mode, from, to);
+			return [
+				{
+					id: `dependency:${link.from_node}->${link.to_node}`,
+					source: link.from_node,
+					target: link.to_node,
+					sourceHandle: source,
+					targetHandle: target,
+					style: LINK_STYLE,
+					markerEnd: { type: MarkerType.ArrowClosed, color: LINK_COLOR },
+					label: String(link.count),
+					labelStyle: { fill: LINK_COLOR },
+					selectable: false,
+					focusable: false,
+					deletable: false,
+					zIndex: 0,
+				} satisfies Edge,
+			];
+		});
+		return [...lines, ...treeEdges];
+	}, [dependencyLinks, treeEdges, layout, mode]);
 
 	if (all ? visible.length === 0 : !project) {
 		return (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COMBINED_ROOT, canDropItem, combinedState, combinedTree, defaultOpen, dropPlacement, filterByMark, filterByState, focusPath, isOpen, markLook, nodeLook, parentForNewNode, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
+import { COMBINED_ROOT, canDropItem, combinedState, combinedTree, defaultOpen, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, markLook, nodeLook, parentForNewNode, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
 import { node } from "../../../../../helpers/client/mindmapFixtures";
 
 const nodes = [node("a"), node("b", null, 1), node("a1", "a"), node("a2", "a", 1), node("a11", "a1"), node("a111", "a11")];
@@ -325,5 +325,35 @@ describe("combinedTree", () => {
 		const before = JSON.stringify(tree1);
 		combinedTree([p1], [tree1], make);
 		expect(JSON.stringify(tree1)).toBe(before);
+	});
+});
+
+describe("liftLinks", () => {
+	const parentOf = new Map<string, string | null>([["a", null], ["a1", "a"], ["a11", "a1"], ["b", null], ["b1", "b"], ["c", null]]);
+	const link = (from_node: string, to_node: string, count = 1) => ({ from_node, to_node, count });
+
+	it("keeps lines whose ends are shown", () => {
+		expect(liftLinks([link("a1", "b1", 2)], new Set(["a1", "b1"]), parentOf)).toEqual([link("a1", "b1", 2)]);
+	});
+
+	it("ends a line at the nearest shown ancestor of a folded end", () => {
+		expect(liftLinks([link("a11", "b1")], new Set(["a", "a1", "b", "b1"]), parentOf)).toEqual([link("a1", "b1")]);
+	});
+
+	it("drops a line that now runs from a node to itself", () => {
+		expect(liftLinks([link("a11", "a1")], new Set(["a", "a1"]), parentOf)).toEqual([]);
+	});
+
+	it("sums lines that now have the same ends", () => {
+		expect(liftLinks([link("a1", "b1", 2), link("a11", "b1", 3)], new Set(["a", "b", "b1"]), parentOf)).toEqual([link("a", "b1", 5)]);
+	});
+
+	it("drops a line when an end has no shown ancestor, as outside a focus", () => {
+		expect(liftLinks([link("c", "b1"), link("a1", "b1")], new Set(["a1", "b1"]), parentOf)).toEqual([link("a1", "b1")]);
+	});
+
+	it("does not loop on a cycle in the data", () => {
+		const loop = new Map<string, string | null>([["x", "y"], ["y", "x"]]);
+		expect(liftLinks([link("x", "b1")], new Set(["b1"]), loop)).toEqual([]);
 	});
 });

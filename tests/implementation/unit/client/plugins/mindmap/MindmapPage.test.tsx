@@ -16,12 +16,13 @@ vi.mock("@xyflow/react", () => {
 	const Handle = (props: { type: string; id?: string }) => <span data-handle={`${props.type}-${props.id}`} />;
 	return {
 		Handle,
+		MarkerType: { ArrowClosed: "arrowclosed" },
 		Position: { Left: "left", Right: "right" },
 		Background: () => null,
 		Controls: () => null,
 		ReactFlow: (props: {
 			nodes: Array<{ id: string; type: string; data: unknown; position: { x: number; y: number } }>;
-			edges: Array<{ id: string; sourceHandle?: string; targetHandle?: string }>;
+			edges: Array<{ id: string; sourceHandle?: string; targetHandle?: string; label?: string; selectable?: boolean }>;
 			nodeTypes: Record<string, (props: { data: unknown }) => ReactNode>;
 			onNodeClick: (event: unknown, node: { id: string }) => void;
 			onNodeDoubleClick: (event: unknown, node: { id: string }) => void;
@@ -36,7 +37,7 @@ vi.mock("@xyflow/react", () => {
 					);
 				})}
 				{props.edges.map((edge) => (
-					<span key={edge.id} data-flow-edge={edge.id} data-source-handle={edge.sourceHandle} data-target-handle={edge.targetHandle} />
+					<span key={edge.id} data-flow-edge={edge.id} data-source-handle={edge.sourceHandle} data-target-handle={edge.targetHandle} data-label={edge.label} data-selectable={String(edge.selectable ?? true)} />
 				))}
 			</div>
 		),
@@ -976,5 +977,42 @@ describe("MindmapPage: the overall view", () => {
 
 		await screen.findByTestId(ids.chooseProject);
 		expect(screen.getByTestId(ids.chooseProject).textContent).toContain("Gesamtansicht");
+	});
+});
+
+describe("MindmapPage: dependencies between topics", () => {
+	const links = [{ from_node: "a11", to_node: "b", count: 2 }];
+	const dependencyEdges = () => [...document.querySelectorAll("[data-flow-edge^='dependency:']")] as HTMLElement[];
+
+	it("draws no lines while the switch is off, which is the start", async () => {
+		await renderPage({ dependencyLinks: links });
+
+		await screen.findByTestId(ids.node("b"));
+		expect(dependencyEdges()).toEqual([]);
+	});
+
+	it("draws a line with its count from the needed to the dependent topic, not clickable", async () => {
+		await renderPage({ dependencyLinks: links, documents: { ...marked, mindmap: { showDependencies: true, fold: { a1: "open" } } } });
+
+		await screen.findByTestId(ids.node("a11"));
+		const [edge] = dependencyEdges();
+		expect(dependencyEdges()).toHaveLength(1);
+		expect(edge!.getAttribute("data-flow-edge")).toBe("dependency:a11->b");
+		expect(edge!.getAttribute("data-label")).toBe("2");
+		expect(edge!.getAttribute("data-selectable")).toBe("false");
+	});
+
+	it("ends the line at the nearest shown ancestor of a folded topic", async () => {
+		await renderPage({ dependencyLinks: links, documents: { ...marked, mindmap: { showDependencies: true } } });
+
+		await screen.findByTestId(ids.node("a1"));
+		expect(dependencyEdges().map((edge) => edge.getAttribute("data-flow-edge"))).toEqual(["dependency:a1->b"]);
+	});
+
+	it("keeps the tree edges next to the lines", async () => {
+		await renderPage({ dependencyLinks: links, documents: { ...marked, mindmap: { showDependencies: true } } });
+
+		await screen.findByTestId(ids.node("a1"));
+		expect(document.querySelector("[data-flow-edge='a->a1']")).not.toBeNull();
 	});
 });

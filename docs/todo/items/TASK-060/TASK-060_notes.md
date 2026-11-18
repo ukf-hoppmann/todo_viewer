@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: §1 (Prototyp), §2 (`layoutTree(nodes, mode)`) und §3 (UI-State `layout`, Umschalter in der Seitenleiste) erledigt und committet; §4 bis §6 offen (2026-11-18)
-- Next step: weiter mit §4 (Seite und Knoten ruft `layoutTree(…, layout)` auf), dann: §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
+- Goal/Status: §1 (Prototyp), §2 (`layoutTree(nodes, mode)`) und §3 (UI-State `layout`, Umschalter) und §4 (Seite und Knoten folgen `layout`) erledigt und committet; §5 und §6 offen (2026-11-18)
+- Next step: weiter mit §5 (Drag-and-drop und Ansicht in beiden Anordnungen im Browser prüfen, Playwright), dann: §4 Seite und Knoten, §5 Drag-and-drop, §6 Integration und Doku.
 - Open:
   - Gerade oder gekrümmte Kanten in der runden Anordnung: in der Umsetzung am Bild entscheiden (2026-11-17)
   - Drag-and-drop-Zonen vor/nach links der Wurzel: am Bild prüfen, sonst nur „innerhalb“ (2026-11-17)
@@ -14,7 +14,7 @@
   - Runde Anordnung als eigene Berechnung, Ergebnis des Prototyps in den Notizen von `STORY-101` (2026-11-17)
 - References: Spec `TASK-060_spec.md`; Story-Spec `STORY-101_spec.md`
 
-State confirmed after entry 2026-11-18 — §3 umgesetzt: Zustand und Umschalter (77701e247d2e)
+State confirmed after entry 2026-11-18 — §4 umgesetzt: Seite und Knoten (31a40fe2bfbe)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -108,3 +108,21 @@ State confirmed after entry 2026-11-18 — §3 umgesetzt: Zustand und Umschalter
 
 - Gerade oder gekrümmte Kanten in der runden Anordnung
 - Zonen vor/nach beim Ziehen links der Wurzel
+
+## 2026-11-18 — §4 umgesetzt: Seite und Knoten
+
+### Discussed
+
+- `MindmapPage.tsx` liest `layout` aus dem UI-State und ruft `layoutTree(…, layout)` auf; der Modus steckt im Layout-Schlüssel, damit beim Umschalten neu gerechnet und neu eingepasst wird (`fitView`). `MindmapNode.tsx` hat auf beiden Seiten Anschlüsse mit fester ID (`left`, `right`), die Wurzel nur als Quelle, jeder andere Knoten als Ziel und Quelle. Die Kante wählt nach der Lage des Kindes: liegt es links vom Elternknoten, geht sie von dessen linker Seite zur rechten Seite des Kindes, sonst wie bisher von rechts nach links.
+- Test zuerst: der Mock von React Flow zeigt jetzt Position, Anschlüsse und Kantenanschlüsse; 5 neue Tests in `MindmapPage.test.tsx` (zur Seite wie bisher, rund mit wanderndem Ast, Anschlüsse, Umschalten hin und zurück) schlugen vorher fehl, danach 166 von 166 Mindmap-Tests grün, `tsc -b` sauber, Lint nur die 5 alten Fehler.
+- Nicht geprüft: das Bild im Browser (jsdom hat kein Layout). Der Pfeil zum Falten sitzt weiter am rechten Rand des Knotens, auch bei Ästen links der Wurzel; ob das irritiert, zeigt die Prüfung in §5.
+
+### Decided
+
+- Die Kanten bleiben in der Umsetzung die vorhandenen (React Flow `default`), nur mit den neuen Anschlüssen; ob gerade oder gekrümmt, entscheidet das Bild in §5
+
+### Open
+
+- Gerade oder gekrümmte Kanten in der runden Anordnung
+- Zonen vor/nach beim Ziehen links der Wurzel
+- Lage des Falt-Pfeils bei Ästen links der Wurzel

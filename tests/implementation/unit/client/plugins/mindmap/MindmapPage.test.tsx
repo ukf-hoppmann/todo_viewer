@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mindmapApi } from "../../../../../../client/src/plugins/mindmap/api";
+import { LayoutSwitch } from "../../../../../../client/src/plugins/mindmap/LayoutSwitch";
 import { mindmapTestIds as ids } from "../../../../../../client/src/plugins/mindmap/testIds";
 import { sharedTestIds } from "../../../../../../client/src/shared";
 import { fakeMindmapBackend } from "../../../../../helpers/client/fakeMindmapBackend";
@@ -12,7 +13,7 @@ import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
 // jsdom has no layout: React Flow is replaced by a list of the nodes it is given and a record of its edges.
 vi.mock("@xyflow/react", () => {
-	const Handle = () => null;
+	const Handle = (props: { type: string; id?: string }) => <span data-handle={`${props.type}-${props.id}`} />;
 	return {
 		Handle,
 		Position: { Left: "left", Right: "right" },
@@ -20,7 +21,7 @@ vi.mock("@xyflow/react", () => {
 		Controls: () => null,
 		ReactFlow: (props: {
 			nodes: Array<{ id: string; type: string; data: unknown; position: { x: number; y: number } }>;
-			edges: Array<{ id: string }>;
+			edges: Array<{ id: string; sourceHandle?: string; targetHandle?: string }>;
 			nodeTypes: Record<string, (props: { data: unknown }) => ReactNode>;
 			onNodeClick: (event: unknown, node: { id: string }) => void;
 			onNodeDoubleClick: (event: unknown, node: { id: string }) => void;
@@ -29,13 +30,13 @@ vi.mock("@xyflow/react", () => {
 				{props.nodes.map((entry) => {
 					const Node = props.nodeTypes[entry.type]!;
 					return (
-						<div key={entry.id} data-flow-node={entry.id} data-x={entry.position.x} onClick={(event) => props.onNodeClick(event, entry)} onDoubleClick={(event) => props.onNodeDoubleClick(event, entry)}>
+						<div key={entry.id} data-flow-node={entry.id} data-x={entry.position.x} data-y={entry.position.y} onClick={(event) => props.onNodeClick(event, entry)} onDoubleClick={(event) => props.onNodeDoubleClick(event, entry)}>
 							<Node data={entry.data} />
 						</div>
 					);
 				})}
 				{props.edges.map((edge) => (
-					<span key={edge.id} data-flow-edge={edge.id} />
+					<span key={edge.id} data-flow-edge={edge.id} data-source-handle={edge.sourceHandle} data-target-handle={edge.targetHandle} />
 				))}
 			</div>
 		),
@@ -736,5 +737,71 @@ describe("MindmapPage: focus", () => {
 
 		await waitFor(() => expect(shownIds()).toEqual(["p1", "b"]));
 		expect(screen.queryByTestId(ids.path)).toBeNull();
+	});
+});
+
+describe("MindmapPage: the arrangement of the map", () => {
+	const edge = (id: string) => document.querySelector(`[data-flow-edge='${id}']`) as HTMLElement;
+	const handles = (id: string) => [...flowNode(id).querySelectorAll("[data-handle]")].map((entry) => entry.getAttribute("data-handle")).sort();
+	const x = (id: string) => Number(flowNode(id).getAttribute("data-x"));
+
+	it("arranges the tree to the side at the start: every child right of its parent, edges from the right to the left side", async () => {
+		await renderPage();
+		await waitFor(() => expect(shownIds()).toContain("a1"));
+
+		expect(x("a")).toBeGreaterThan(x("p1"));
+		expect(x("a1")).toBeGreaterThan(x("a"));
+		expect(edge("p1->a").getAttribute("data-source-handle")).toBe("right");
+		expect(edge("p1->a").getAttribute("data-target-handle")).toBe("left");
+		expect(edge("a->a1").getAttribute("data-source-handle")).toBe("right");
+		expect(edge("a->a1").getAttribute("data-target-handle")).toBe("left");
+	});
+
+	it("arranges the map around the root when `layout` is `round`: the root in the middle, a branch on each side", async () => {
+		await renderPage({ documents: { ...marked, mindmap: { layout: "round" } } });
+		await waitFor(() => expect(shownIds()).toContain("a1"));
+
+		expect(flowNode("p1").getAttribute("data-x")).toBe("-95");
+		expect(flowNode("p1").getAttribute("data-y")).toBe("-18");
+		expect(x("a")).toBeGreaterThan(x("p1"));
+		expect(x("b")).toBeLessThan(x("p1"));
+	});
+
+	it("connects a child on the left of its parent from the left side to the right side", async () => {
+		await renderPage({ documents: { ...marked, mindmap: { layout: "round" } } });
+		await waitFor(() => expect(shownIds()).toContain("a1"));
+
+		expect(edge("p1->a").getAttribute("data-source-handle")).toBe("right");
+		expect(edge("p1->a").getAttribute("data-target-handle")).toBe("left");
+		expect(edge("p1->b").getAttribute("data-source-handle")).toBe("left");
+		expect(edge("p1->b").getAttribute("data-target-handle")).toBe("right");
+	});
+
+	it("gives the root a connection on both sides to send edges from, and every other node on both sides to take and send them", async () => {
+		await renderPage();
+		await waitFor(() => expect(shownIds()).toContain("a1"));
+
+		expect(handles("p1")).toEqual(["source-left", "source-right"]);
+		expect(handles("a")).toEqual(["source-left", "source-right", "target-left", "target-right"]);
+	});
+
+	it("rearranges the map when the arrangement is switched, and back", async () => {
+		const backend = fakeMindmapBackend({ projects, nodes, documents: marked });
+		await renderWorkspace(
+			<>
+				<LayoutSwitch />
+				<MindmapPage />
+			</>,
+			{ backend, initialEntries: ["/mindmap/main"] },
+		);
+		await waitFor(() => expect(shownIds()).toContain("a1"));
+		expect(x("b")).toBeGreaterThan(x("p1"));
+
+		fireEvent.click(screen.getByTestId(ids.layoutOption("round")));
+		await waitFor(() => expect(flowNode("p1").getAttribute("data-x")).toBe("-95"));
+		expect(x("b")).toBeLessThan(x("p1"));
+
+		fireEvent.click(screen.getByTestId(ids.layoutOption("side")));
+		await waitFor(() => expect(x("b")).toBeGreaterThan(x("p1")));
 	});
 });

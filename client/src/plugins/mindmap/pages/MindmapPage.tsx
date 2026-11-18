@@ -41,7 +41,7 @@ export default function MindmapPage() {
 	const { currentData: tree } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: !project });
 	const nodes = tree?.nodes ?? NO_NODES;
 	const unassigned = tree?.unassigned ?? NO_ITEMS;
-	const { fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned } = useMindmapState();
+	const { fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, layout: mode } = useMindmapState();
 	const [createNode] = useCreateNodeMutation();
 	const [updateNode] = useUpdateNodeMutation();
 	const [moveNode] = useMoveNodeMutation();
@@ -68,18 +68,19 @@ export default function MindmapPage() {
 		[rootId, waitsForTree, nodes, fold, hiddenStates, hiddenMarks, focusId],
 	);
 
-	// The layout depends only on which nodes hang where, not on their titles: renaming keeps every node in place.
+	// The layout depends only on which nodes hang where and on the arrangement, not on their titles: renaming keeps every node in place.
 	const structureKey = JSON.stringify(shown.map(({ id, parentId }) => ({ id, parentId })));
+	const arrangementKey = `${mode}:${structureKey}`;
 	const [layout, setLayout] = useState<{ key: string; positions: Map<string, { x: number; y: number }> }>();
 	useEffect(() => {
 		let cancelled = false;
-		void layoutTree(JSON.parse(structureKey) as Structure).then((positions) => {
-			if (!cancelled) setLayout({ key: structureKey, positions });
+		void layoutTree(JSON.parse(structureKey) as Structure, mode).then((positions) => {
+			if (!cancelled) setLayout({ key: arrangementKey, positions });
 		});
 		return () => {
 			cancelled = true;
 		};
-	}, [structureKey]);
+	}, [structureKey, mode, arrangementKey]);
 
 	// When nodes appear or go (created, folded, deleted) or the detail column opens or closes (the map changes its
 	// width), the map is fitted again, so no node is outside the view.
@@ -245,7 +246,11 @@ export default function MindmapPage() {
 		() =>
 			flowNodes.flatMap((node) => {
 				const parentId = shown.find((entry) => entry.id === node.id)?.parentId;
-				return parentId && layout?.positions.has(parentId) ? [{ id: `${parentId}->${node.id}`, source: parentId, target: node.id, style: EDGE_STYLE }] : [];
+				const from = parentId ? layout?.positions.get(parentId) : undefined;
+				if (!parentId || !from) return [];
+				// A child left of its parent is reached from the parent's left side and takes the edge on its right side.
+				const toLeft = node.position.x < from.x;
+				return [{ id: `${parentId}->${node.id}`, source: parentId, target: node.id, sourceHandle: toLeft ? "left" : "right", targetHandle: toLeft ? "right" : "left", style: EDGE_STYLE }];
 			}),
 		[flowNodes, shown, layout],
 	);

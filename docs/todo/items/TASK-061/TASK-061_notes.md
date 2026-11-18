@@ -2,16 +2,18 @@
 
 ## State
 
-- Goal/Status: Spec steht; berührt Server und Client.
-- Next step: Plan aus der Spec erstellen: Server (Port, Domain, `TreeOut.links`, Schema), dann Client (`liftLinks`, Darstellung, Schalter), Integration.
+- Goal/Status: Umgesetzt (Server: Port, Domain `dependency_links`, `TreeOut.links`, OpenAPI-Typen; Client: `liftLinks`, Schalter `showDependencies`, gestrichelte Linien mit Pfeil und Anzahl); Tests grün, Techdocs und Daily nachgezogen; `Awaiting confirmation`.
+- Next step: Der Owner bestätigt oder nennt Fehlendes; Browserprüfung mit dem laufenden Viewer steht aus.
 - Open:
+  - Der Owner bestätigt oder nennt Fehlendes (2026-11-18)
 - Decided:
   - Die Zusammenfassung der Linien liegt in der Server-Domain, weil dort der wirksame Knoten berechnet wird (2026-11-17)
   - Nur Abhängigkeiten innerhalb eines Projekts; auch in der Gesamtansicht keine Linien zwischen Projekten (2026-11-17)
-  - `BacklogItem` liefert bisher keine `dependencies`; Port und Adapter werden erweitert (2026-11-17)
-- References: Spec `TASK-061_spec.md`; Story-Spec `STORY-101_spec.md`
+  - `BacklogItem` liefert jetzt `dependencies`; Port und Adapter sind erweitert (2026-11-18)
+  - Der Server lässt Linien zwischen Eltern- und Kindknoten stehen, nur Paare im selben Knoten entfallen; der Client kürzt sie bei gefalteten Ästen (`liftLinks`) (2026-11-18)
+- References: Spec `TASK-061_spec.md`; Story-Spec `STORY-101_spec.md`; Commits 90194cb3 (Server) und d41ce0f8 (Client)
 
-State confirmed after entry 2026-11-17 — Anlage aus der Planung der Story (3f69281cdb6e)
+State confirmed after entry 2026-11-18 — Umsetzung (d7803ebb006c)
 
 ## 2026-11-17 — Anlage aus der Planung der Story
 
@@ -28,3 +30,22 @@ State confirmed after entry 2026-11-17 — Anlage aus der Planung der Story (3f6
 ### Open
 
 - Nichts offen.
+
+## 2026-11-18 — Umsetzung
+
+### Discussed
+
+- Plan mit dem Owner abgestimmt (6 Abschnitte); offener Punkt war, ob der Server auch Linien zwischen Eltern- und Kindknoten entfernt. Entscheidung: nur Paare im selben Knoten entfallen, der Client kürzt über `liftLinks`.
+- Server: `BacklogItem.dependencies`, `ItemFact.dependencies`, `dependency_links` (rein, `domain/assignment.py`), `TreeStats.links`, `TreeOut.links` (`LinkOut`), Schema `schema.d.ts` mit `scripts/gen-api.sh` neu erzeugt. Der Statusfilter gilt auf beiden Enden einer Abhängigkeit.
+- Client: `liftLinks` (`domain/tree.ts`), UI-Zustand `showDependencies` (Standard aus), Schalter in `MapFilters`, Linien als React-Flow-Kanten unter den Baumkanten. In der Gesamtansicht werden die Links der Projektbäume zusammen gelegt; Knoten-UIDs sind projektübergreifend eindeutig.
+- Tests: 6 Domain-Tests, 2 Integrationstests (Endpunkt), 6 `liftLinks`-Tests, 4 Seitentests und 1 Schaltertest; Mindmap-Client-Tests 210 grün, `tsc -b` sauber, Lint nur die 5 alten Fehler in `usePersistentState.ts`. Beim ersten Gesamtlauf schlug `startApp.test.tsx` einmal mit Zeitüberschreitung fehl, einzeln und danach grün (Last, nicht die Änderung).
+- Nicht ausgeführt: Browserprüfung mit dem laufenden Viewer.
+
+### Decided
+
+- `TASK-061` steht auf `Awaiting confirmation`
+
+### Open
+
+- Der Owner bestätigt oder nennt Fehlendes
+

@@ -289,6 +289,10 @@ class MindmapService:
         return tree
 
     def existing_tree(self, tx: Transaction, project_uid: str, tree_uid: str) -> Tree:
+        """Eine Map des Projekts außerhalb des Papierkorbs; die `uid` des Projekts nennt seinen Projektbaum (der beim
+        ersten Zugriff angelegt wird, solange noch kein Knoten in ihm steht)."""
+        if tree_uid == project_uid:
+            return self._tree_for(tx, project_uid)
         return self._existing_tree(tx, project_uid, tree_uid)
 
     def parent_uid(self, tx: Transaction, parent: str | None, project_uid: str) -> str | None:

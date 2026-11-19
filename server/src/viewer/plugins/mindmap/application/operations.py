@@ -11,7 +11,7 @@ from datetime import datetime
 
 from viewer.core.domain.operations import HttpBinding, Operation
 from viewer.plugins.mindmap.application.assignments import AssignmentService, ItemNode, NodeContent, TreeStats
-from viewer.plugins.mindmap.application.branches import BranchService, NodeTree, Removal
+from viewer.plugins.mindmap.application.branches import BranchMoved, BranchService, NodeTree, Removal
 from viewer.plugins.mindmap.application.documents import DocumentService
 from viewer.plugins.mindmap.application.maps import MapDeleted, MapService, MapView
 from viewer.plugins.mindmap.application.ports import BacklogItem, Document
@@ -304,6 +304,10 @@ class NodeTreeOut:
     name: str
     #: `uid` des Parent-Knotens in diesem Baum; leer unter der Wurzel.
     parent_uid: str | None
+
+
+def _moved(services: MindmapServices, moved: BranchMoved) -> NodeOut:
+    return node_out(services.mindmap.get_node(moved.node.uid, None, moved.target.uid))
 
 
 def _removal_out(result: Removal) -> RemovalOut:
@@ -640,11 +644,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "write",
         MoveNodeToMap,
         NodeOut,
-        lambda s, d: node_out(
-            s.mindmap.get_node(
-                s.branches.move_to_map(d.ref, d.project, d.version, d.tree, d.target).node.uid, None, d.target
-            )
-        ),
+        lambda s, d: _moved(s, s.branches.move_to_map(d.ref, d.project, d.version, d.tree, d.target)),
         HttpBinding("POST", "/nodes/{ref}/move-to-map"),
     ),
     Operation(
@@ -655,11 +655,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "write",
         TransferNodeToMap,
         NodeOut,
-        lambda s, d: node_out(
-            s.mindmap.get_node(
-                s.branches.transfer_to_map(d.ref, d.project, d.version, d.tree, d.target).node.uid, None, d.target
-            )
-        ),
+        lambda s, d: _moved(s, s.branches.transfer_to_map(d.ref, d.project, d.version, d.tree, d.target)),
         HttpBinding("POST", "/nodes/{ref}/transfer"),
     ),
     Operation(

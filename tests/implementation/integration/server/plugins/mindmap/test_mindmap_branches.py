@@ -381,3 +381,12 @@ def test_events_announce_the_moved_nodes(mindmap: Env) -> None:
     _act(mindmap, top, "transfer", target=ideas)
     assert {e.payload["change"] for e in seen} == {"transferred"}
     assert len(seen) == 3
+
+
+def test_the_project_tree_is_a_target_even_before_it_has_a_node(mindmap: Env) -> None:
+    ideas = _new_map(mindmap)
+    own = _node(mindmap, "Frei", ideas)
+    response = _act(mindmap, own, "move-to-map", target=_project(mindmap), tree=ideas)
+    assert response.status_code == 200, response.text
+    assert _titles(mindmap) == [("Frei", None)]
+    assert _titles(mindmap, ideas) == []

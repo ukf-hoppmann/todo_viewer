@@ -3,10 +3,12 @@
 ## State
 
 - Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Thema 4 (Bedienung von Umhängen und Übertragen) besprechen.
+- Next step: Thema 4 zu Ende klären (Umhängen und Übertragen zwischen Projekten, Gesamtansicht), dann Thema 5.
 - Open:
+  - Thema 4: dürfen Äste zwischen Projekten wandern, und ob die Gesamtansicht dafür ein Weg ist (2026-11-19)
   - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 3 erledigt: 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
+  - Umhängen und Übertragen zwischen Bäumen: Kontextmenü „Umhängen nach …“ / „Übertragen nach …“ und Ziehen auf einen Eintrag der Map-Liste mit Auswahl „Umhängen oder Übertragen“; der Ast landet unter der Wurzel der Ziel-Map, die feine Position per Ziehen in der Ziel-Map; kein Zielknoten-Dialog (2026-11-19)
   - Freie Map löschen: Papierkorb mit Wiederherstellen; Knoten nur dieser Map gehen mit, übertragene Äste bleiben im anderen Baum, Items fallen an den Parent-Knoten oder in „Nicht zugeordnet“; der Projektbaum lässt sich nicht löschen (2026-11-18)
   - Die Maps eines Projekts stehen als Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps; Anlegen, Umbenennen, Löschen dort) (2026-11-18)
   - Die Gesamtansicht zeigt nur Projektbäume; freie Maps stehen dort nicht (2026-11-18)
@@ -21,7 +23,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-18 — Thema 3: Löschen freier Maps (ff718591cd19)
+State confirmed after entry 2026-11-19 — Thema 4: Bedienung von Umhängen und Übertragen (83337eead34a)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -148,3 +150,18 @@ State confirmed after entry 2026-11-18 — Thema 3: Löschen freier Maps (ff7185
 ### Open
 
 - Thema 4: Bedienung von Umhängen und Übertragen.
+
+## 2026-11-19 — Thema 4: Bedienung von Umhängen und Übertragen
+
+### Discussed
+
+- Frage: Wie bedient man das Umhängen und Übertragen zwischen Bäumen? A: Kontextmenü am Knoten; B: Ziehen auf einen Eintrag der Map-Liste mit Menü „Umhängen oder Übertragen“; C: Zielknoten in einem Dialog wählen (genau, aber größter Aufwand). Empfehlung: A und B zusammen, C weglassen.
+- Der Owner wendet ein, die Gesamtansicht mit künstlicher Wurzel, an der alle Bäume hängen, wäre ebenfalls ein Weg zum Ziehen. Einschätzung: Sie zeigt nach Thema 1 nur Projektbäume, keine freien Maps; für den Hauptfall (freie Map nach Projektbaum desselben Projekts) hilft sie daher nicht. Zwischen Projektbäumen verschiedener Projekte wäre sie möglich, aber der Code erlaubt das Verschieben bisher nur innerhalb eines Projekts (`dropPlacement`); ob Äste Projekte wechseln dürfen, ist offen.
+
+### Decided
+
+- A und B (Owner). Der Ast landet unter der Wurzel der Ziel-Map; Feinschliff per Ziehen in der Ziel-Map. C entfällt vorerst.
+
+### Open
+
+- Dürfen Äste zwischen Projekten wandern, und ist die Gesamtansicht dafür ein zusätzlicher Weg?

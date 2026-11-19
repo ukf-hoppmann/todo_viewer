@@ -11,7 +11,7 @@
   - Knoten im Papierkorb lassen sich per Ziehen an eine neue Stelle setzen: im Backend „wiederherstellen und umziehen“ in einem Schritt (auch API und MCP), in der Oberfläche „reaktivieren am neuen Punkt“ (2026-11-19)
   - Übertragene Äste: Inhalt (Titel, Text, Notizen, Items) gemeinsam, Struktur darunter je Baum eigen; neue Unterknoten erscheinen in allen Bäumen des Parents, Umhängen und „Hier entfernen“ nur im bearbeiteten Baum; Zahl, Fortschritt und Zustand je Baum berechnet, können abweichen (2026-11-19)
   - Eine Doppelzählung unter einer Wurzel kann nach den Regeln nicht entstehen; das Kriterium bleibt als Test (2026-11-19)
-  - Entfernte Platzierungen werden gemerkt und lassen sich wieder einsetzen, als eigener Task nach `TASK-063` (Platzhalter `NEW-platzierungen-merken`) (2026-11-19)
+  - Entfernte Platzierungen werden gemerkt und lassen sich wieder einsetzen, als eigener Task nach `TASK-063` (Platzhalter `TASK-066`) (2026-11-19)
   - „Hier entfernen“ / „Knoten löschen“: nur „Löschen“, wenn der Knoten in einem Baum steht; Rückfrage mit den Bäumen bei geteilten Knoten; letzte Platzierung weg heißt Papierkorb (auch für heimatlose Unterknoten); getrennt über API und MCP (2026-11-19)
   - Übertragene Äste: kleines Symbol mit Baumzahl beim Überfahren, das die Bäume des Knotens zum Springen anbietet; zusätzlich ein Schalter, der alle übertragenen Äste mit einem Rand einfärbt, damit man sie gezielt sehen kann und die Karte sonst ruhig bleibt (2026-11-19)
   - „Gehe hin“ zu einem Knoten in mehreren Bäumen: Auswahl des Baums; ebenso kann man aus einem Baum mit geteilten Knoten schnell in den anderen springen (2026-11-19)
@@ -228,7 +228,7 @@ State confirmed after entry 2026-11-19 — Thema 8: Verbotene Fälle (0cc80714e2
 
 ### Decided
 
-- Weg 1 (Platzierung nur als entfernt markieren, wieder einsetzbar), als eigener Task `NEW-platzierungen-merken` unter dieser Story, abhängig von `TASK-063`, nicht Pflicht für die Story (Owner). Verworfen: nur „Rückgängig“ direkt danach (hilft später nicht) und Weglassen (alte Position ginge verloren).
+- Weg 1 (Platzierung nur als entfernt markieren, wieder einsetzbar), als eigener Task `TASK-066` unter dieser Story, abhängig von `TASK-063`, nicht Pflicht für die Story (Owner). Verworfen: nur „Rückgängig“ direkt danach (hilft später nicht) und Weglassen (alte Position ginge verloren).
 
 ### Open
 
@@ -253,7 +253,7 @@ State confirmed after entry 2026-11-19 — Thema 8: Verbotene Fälle (0cc80714e2
 
 ### Discussed
 
-- Vorschlag: Ziele ablehnen, in denen der Ast oder ein Unterknoten schon steht (Empfehlung; Alternative Zusammenführen: bequem, aber die Struktur entspräche nicht mehr der Quelle); Wurzel einer Map nicht bewegbar; Knoten im Papierkorb nicht bewegbar; Hinweis an `NEW-platzierungen-merken`, beim Wiedereinsetzen zu prüfen, ob der Knoten inzwischen im Baum steht.
+- Vorschlag: Ziele ablehnen, in denen der Ast oder ein Unterknoten schon steht (Empfehlung; Alternative Zusammenführen: bequem, aber die Struktur entspräche nicht mehr der Quelle); Wurzel einer Map nicht bewegbar; Knoten im Papierkorb nicht bewegbar; Hinweis an `TASK-066`, beim Wiedereinsetzen zu prüfen, ob der Knoten inzwischen im Baum steht.
 - Zum Papierkorb sagt der Owner „jein“: Er will Knoten aus dem Papierkorb per Ziehen an eine andere Stelle setzen. Im Backend wiederherstellen plus umziehen, in der Oberfläche ein Reaktivieren am neuen Punkt. Die Mindmap-Seite hat bisher keine Papierkorb-Ansicht (Wiederherstellen läuft über den Workspace); eine solche Seitenansicht, ähnlich „Nicht zugeordnet“, wäre neu.
 
 ### Decided

@@ -145,11 +145,13 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Summen zählen jedes Item höchstens einmal; Domain-, API- und UI-Tests sind
     grün.
 
-- `NEW-platzierungen-merken` **Mindmap: entfernte Platzierungen merken und wieder einsetzen**
+- `TASK-066` **Mindmap: entfernte Platzierungen merken und wieder einsetzen**
+  - Uid: 3c7069c8-2a16-42aa-ba05-9cb248b3c000.
   - Type: Task.
   - Parent: `STORY-102`.
   - Required for parent: No.
   - Status: Open.
+  - Created: 2026-11-19.
   - Area: Web-UI.
   - Priority: Normal.
   - Dependencies: `TASK-063`.

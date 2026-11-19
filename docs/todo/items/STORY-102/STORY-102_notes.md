@@ -3,10 +3,22 @@
 ## State
 
 - Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Thema 4 (Bedienung von Umhängen und Übertragen) besprechen.
+- Next step: Thema 9 (Markdown-Spiegel) besprechen.
 - Open:
-  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 3 erledigt: 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
+  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 6 erledigt:  „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
+  - Die Papierkorb-Ansicht (Seitenansicht, Knoten per Ziehen reaktivieren) ist ein eigener Task `NEW-papierkorb-ansicht` nach `TASK-063`; ein wiederhergestellter Knoten mit mehreren Platzierungen: die neue Stelle ersetzt die alte im aktuellen Baum, andere Bäume wie vorher (2026-11-19)
+  - Verbotene Ziele werden abgelehnt (Ast oder Unterknoten steht im Zielbaum schon, Kreis, anderes Projekt, Wurzel, Knoten im Papierkorb); die Meldung nennt die Knoten, in der Oberfläche sind solche Ziele ausgegraut mit Grund, die API liefert einen Fehlercode mit Liste; kein Zusammenführen (2026-11-19)
+  - Knoten im Papierkorb lassen sich per Ziehen an eine neue Stelle setzen: im Backend „wiederherstellen und umziehen“ in einem Schritt (auch API und MCP), in der Oberfläche „reaktivieren am neuen Punkt“ (2026-11-19)
+  - Übertragene Äste: Inhalt (Titel, Text, Notizen, Items) gemeinsam, Struktur darunter je Baum eigen; neue Unterknoten erscheinen in allen Bäumen des Parents, Umhängen und „Hier entfernen“ nur im bearbeiteten Baum; Zahl, Fortschritt und Zustand je Baum berechnet, können abweichen (2026-11-19)
+  - Eine Doppelzählung unter einer Wurzel kann nach den Regeln nicht entstehen; das Kriterium bleibt als Test (2026-11-19)
+  - Entfernte Platzierungen werden gemerkt und lassen sich wieder einsetzen, als eigener Task nach `TASK-063` (Platzhalter `TASK-066`) (2026-11-19)
+  - „Hier entfernen“ / „Knoten löschen“: nur „Löschen“, wenn der Knoten in einem Baum steht; Rückfrage mit den Bäumen bei geteilten Knoten; letzte Platzierung weg heißt Papierkorb (auch für heimatlose Unterknoten); getrennt über API und MCP (2026-11-19)
+  - Übertragene Äste: kleines Symbol mit Baumzahl beim Überfahren, das die Bäume des Knotens zum Springen anbietet; zusätzlich ein Schalter, der alle übertragenen Äste mit einem Rand einfärbt, damit man sie gezielt sehen kann und die Karte sonst ruhig bleibt (2026-11-19)
+  - „Gehe hin“ zu einem Knoten in mehreren Bäumen: Auswahl des Baums; ebenso kann man aus einem Baum mit geteilten Knoten schnell in den anderen springen (2026-11-19)
+  - Äste wandern nicht zwischen Projekten; Umhängen und Übertragen gelten nur innerhalb eines Projekts, die Gesamtansicht bleibt eine reine Ansicht (2026-11-19)
+  - Umhängen und Übertragen gibt es auch über API und MCP, weil die KI Äste verschieben soll (2026-11-19)
+  - Umhängen und Übertragen zwischen Bäumen: Kontextmenü „Umhängen nach …“ / „Übertragen nach …“ und Ziehen auf einen Eintrag der Map-Liste mit Auswahl „Umhängen oder Übertragen“; der Ast landet unter der Wurzel der Ziel-Map, die feine Position per Ziehen in der Ziel-Map; kein Zielknoten-Dialog (2026-11-19)
   - Freie Map löschen: Papierkorb mit Wiederherstellen; Knoten nur dieser Map gehen mit, übertragene Äste bleiben im anderen Baum, Items fallen an den Parent-Knoten oder in „Nicht zugeordnet“; der Projektbaum lässt sich nicht löschen (2026-11-18)
   - Die Maps eines Projekts stehen als Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps; Anlegen, Umbenennen, Löschen dort) (2026-11-18)
   - Die Gesamtansicht zeigt nur Projektbäume; freie Maps stehen dort nicht (2026-11-18)
@@ -21,7 +33,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-18 — Thema 3: Löschen freier Maps (ff718591cd19)
+State confirmed after entry 2026-11-19 — Thema 8: Papierkorb-Ansicht (7c96a0634286)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -148,3 +160,122 @@ State confirmed after entry 2026-11-18 — Thema 3: Löschen freier Maps (ff7185
 ### Open
 
 - Thema 4: Bedienung von Umhängen und Übertragen.
+
+## 2026-11-19 — Thema 4: Bedienung von Umhängen und Übertragen
+
+### Discussed
+
+- Frage: Wie bedient man das Umhängen und Übertragen zwischen Bäumen? A: Kontextmenü am Knoten; B: Ziehen auf einen Eintrag der Map-Liste mit Menü „Umhängen oder Übertragen“; C: Zielknoten in einem Dialog wählen (genau, aber größter Aufwand). Empfehlung: A und B zusammen, C weglassen.
+- Der Owner wendet ein, die Gesamtansicht mit künstlicher Wurzel, an der alle Bäume hängen, wäre ebenfalls ein Weg zum Ziehen. Einschätzung: Sie zeigt nach Thema 1 nur Projektbäume, keine freien Maps; für den Hauptfall (freie Map nach Projektbaum desselben Projekts) hilft sie daher nicht. Zwischen Projektbäumen verschiedener Projekte wäre sie möglich, aber der Code erlaubt das Verschieben bisher nur innerhalb eines Projekts (`dropPlacement`); ob Äste Projekte wechseln dürfen, ist offen.
+
+### Decided
+
+- A und B (Owner). Der Ast landet unter der Wurzel der Ziel-Map; Feinschliff per Ziehen in der Ziel-Map. C entfällt vorerst.
+
+### Open
+
+- Dürfen Äste zwischen Projekten wandern, und ist die Gesamtansicht dafür ein zusätzlicher Weg?
+
+## 2026-11-19 — Thema 4: Projektgrenze und API
+
+### Discussed
+
+- Frage: Dürfen Äste zwischen Projekten wandern, und ist die Gesamtansicht dafür ein zusätzlicher Weg? Empfehlung: nein, weil Übergreifendes ohnehin nach „Allgemein“ gehört; die Gesamtansicht bleibt Ansicht.
+- Der Owner stimmt zu und fordert: Umhängen und Übertragen müssen über eine API gehen, weil er viel an die KI auslagern will. Sein Wort „kopieren“ meint das Übertragen; Kopieren im Sinne einer eigenen Kopie gibt es weiterhin nicht (entschieden am 2026-11-13).
+
+### Decided
+
+- Nur innerhalb eines Projekts (Owner).
+- API und MCP für Umhängen und Übertragen sind Teil der Story; in `TASK-063` als Kriterium aufgenommen (Owner).
+
+### Open
+
+- Thema 5: Markierung übertragener Äste und Pfad im Fokus.
+
+## 2026-11-19 — Thema 5: Markierung übertragener Äste und Sprung
+
+### Discussed
+
+- Frage 1: Wie sieht die Markierung aus? Zur Wahl standen ein Symbol am Knoten (Empfehlung), ein farbiger Rand oder nur das Detail.
+- Frage 2: Was gilt beim Sprung zu einem Knoten, der in mehreren Bäumen steht? Empfehlung war: Baum des Herkunftsorts, sonst die erste Platzierung, Wechsel über die Markierung.
+- Der Owner kombiniert: Symbol nur beim Überfahren (Baum bleibt ruhig), dazu schaltbar ein farbiger Rand für alle übertragenen Äste, um sie gezielt zu finden. Beim Sprung soll er selbst den Baum wählen.
+
+### Decided
+
+- Symbol mit Baumzahl beim Überfahren plus schaltbarer Rand (Owner); das Symbol bietet die Bäume des Knotens zum Springen an.
+- Sprung zu einem Knoten in mehreren Bäumen fragt per Auswahl nach dem Baum (Owner), statt eine Regel zu raten. Verworfen: feste Regel „erste Platzierung“, weil man sonst in einem unerwarteten Baum landet.
+
+### Open
+
+- Thema 6: „Hier entfernen“ und „Knoten löschen“.
+
+## 2026-11-19 — Thema 6: „Hier entfernen“ und „Knoten löschen“
+
+### Discussed
+
+- Vorschläge: nur „Löschen“ bei Knoten in einem Baum; Rückfrage mit den Bäumen bei „Knoten löschen“ eines geteilten Knotens; verliert ein Knoten seine letzte Platzierung, kommt er mit den heimatlos gewordenen Unterknoten in den Papierkorb; Items nach der Regel von `STORY-100`; „Hier entfernen“ ohne Rückfrage; getrennte Namen in API und MCP. Der Owner stimmt zu, mit Ausnahme von Punkt 4.
+- Punkt 4 (Wiederherstellen von „Hier entfernen“): Der Papierkorb kennt Knoten, keine Platzierungen. Der Owner möchte wissen, wie viel Arbeit es ist, die Orte zu merken, an denen der Knoten stand, weil man sonst ein versehentliches Entfernen nicht wirklich rückgängig machen kann und sich den Ort merken muss.
+- Aufwand (Einschätzung am Code: `mindmap_placements` mit Schlüssel (Baum, Knoten), Papierkorb über `workspace`): Option 1, Platzierung nur als entfernt markieren statt löschen (neue Spalte, Migration v4); alle Abfragen, Summen und die Regel „höchstens einmal je Baum“ müssen markierte Zeilen ausnehmen; Wiederherstellen braucht Regeln, wenn Parent oder Platz inzwischen fehlt oder der Knoten dort schon wieder steht; ein Ast wird als Gruppe entfernt und zurückgeholt; API, MCP und eine Stelle in der Oberfläche („Früher in …“ am Knoten mit „Wieder einsetzen“); mittlerer Aufwand, etwa ein eigener Task. Option 2, nur „Rückgängig“ direkt nach der Aktion: klein, hilft aber nicht später. Option 3, weglassen: kein Aufwand, der Ast ist über den anderen Baum wieder erreichbar.
+
+### Decided
+
+- Punkte 1, 2, 3 und 5 wie vorgeschlagen (Owner); in `TASK-063` und im Konzept eingetragen.
+
+### Open
+
+- Punkt 4: Entscheidung zwischen Option 1, 2 und 3; Empfehlung: Option 1 als eigener Task nach `TASK-063`, damit dieser klein bleibt.
+
+## 2026-11-19 — Thema 6, Punkt 4: Entfernte Platzierungen merken
+
+### Decided
+
+- Weg 1 (Platzierung nur als entfernt markieren, wieder einsetzbar), als eigener Task `TASK-066` unter dieser Story, abhängig von `TASK-063`, nicht Pflicht für die Story (Owner). Verworfen: nur „Rückgängig“ direkt danach (hilft später nicht) und Weglassen (alte Position ginge verloren).
+
+### Open
+
+- Thema 7: Summen und Zustand bei übertragenen Ästen.
+
+## 2026-11-19 — Thema 7: Summen und Zustand bei übertragenen Ästen
+
+### Discussed
+
+- Fund: Die Doppelzählung unter einer Wurzel kann nach den Entscheidungen nicht mehr entstehen (ein Knoten höchstens einmal je Baum, Äste nur innerhalb eines Projekts, die Gesamtansicht zeigt nur Projektbäume, einer je Projekt). Das Kriterium bleibt als Test, nicht als eigene Logik.
+- Frage: Ist die Struktur im geteilten Ast gemeinsam oder je Baum eigen? Je Baum eigen: Inhalt gemeinsam, neuer Unterknoten in allen Bäumen, Umhängen und Entfernen nur im bearbeiteten Baum, Zahlen je Baum berechnet (passt zu „Hier entfernen wirkt nur in diesem Baum“; die Maps können sich unterschiedlich entwickeln). Gemeinsam: überall gleiche Zahlen, aber Herausziehen eines Unterknotens aus dem Ast wirft Fragen für die anderen Bäume auf, schwerer zu erklären und zu bauen. Empfehlung: je Baum eigen.
+
+### Decided
+
+- Struktur je Baum eigen, Inhalt gemeinsam (Owner). Verworfen: gemeinsame Struktur wegen der offenen Folgen beim Herausziehen und des höheren Aufwands.
+
+### Open
+
+- Thema 8: verbotene Fälle.
+
+## 2026-11-19 — Thema 8: Verbotene Fälle
+
+### Discussed
+
+- Vorschlag: Ziele ablehnen, in denen der Ast oder ein Unterknoten schon steht (Empfehlung; Alternative Zusammenführen: bequem, aber die Struktur entspräche nicht mehr der Quelle); Wurzel einer Map nicht bewegbar; Knoten im Papierkorb nicht bewegbar; Hinweis an `TASK-066`, beim Wiedereinsetzen zu prüfen, ob der Knoten inzwischen im Baum steht.
+- Zum Papierkorb sagt der Owner „jein“: Er will Knoten aus dem Papierkorb per Ziehen an eine andere Stelle setzen. Im Backend wiederherstellen plus umziehen, in der Oberfläche ein Reaktivieren am neuen Punkt. Die Mindmap-Seite hat bisher keine Papierkorb-Ansicht (Wiederherstellen läuft über den Workspace); eine solche Seitenansicht, ähnlich „Nicht zugeordnet“, wäre neu.
+
+### Decided
+
+- Ablehnen statt Zusammenführen; Wurzel nicht bewegbar (Owner).
+- Knoten im Papierkorb per Ziehen an eine neue Stelle setzen (Owner); Backend „wiederherstellen und umziehen“ auch über API und MCP; in `TASK-063` eingetragen.
+
+### Open
+
+- Wo man Papierkorb-Knoten in der Oberfläche sieht und zieht (neue Seitenansicht) und ob das zu `TASK-063` gehört oder ein eigener Task wird.
+- Wohin ein wiederhergestellter Knoten mit mehreren früheren Platzierungen kommt: Vorschlag: die neue Stelle ersetzt die alte Platzierung im aktuellen Baum, Platzierungen in anderen Bäumen kommen wie vorher zurück.
+- Thema 9: Markdown-Spiegel.
+
+## 2026-11-19 — Thema 8: Papierkorb-Ansicht
+
+### Decided
+
+- Eigener Task `NEW-papierkorb-ansicht` (abhängig von `TASK-063`, nicht Pflicht für die Story); das Backend „wiederherstellen und umziehen“ bleibt in `TASK-063` (Owner).
+- Wiederhergestellter Knoten mit mehreren früheren Platzierungen: die neue Stelle ersetzt die alte im aktuellen Baum, Platzierungen in anderen Bäumen kommen wie vorher zurück (Owner, Vorschlag angenommen).
+- Der Viewer hat dem Task für entfernte Platzierungen die Nummer `TASK-066` gegeben; Verweise sind angepasst.
+
+### Open
+
+- Thema 9: Markdown-Spiegel.

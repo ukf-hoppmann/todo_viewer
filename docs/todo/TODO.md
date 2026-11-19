@@ -72,11 +72,20 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     auswählen, umbenennen und löschen; die Maps eines Projekts stehen als Liste
     in der Seitenleiste, die Gesamtansicht zeigt nur Projektbäume.
     2. Umhängen geht innerhalb eines Baums und zwischen Bäumen; Übertragen
-    geht nur zwischen Bäumen, ein Knoten steht höchstens einmal je Baum.
-    3. Ein übertragener Ast ist markiert; „hier entfernen“ nimmt ihn nur aus
-    diesem Baum, „Knoten löschen“ überall.
-    4. Summen zählen ein Item auch dann nur einmal, wenn sein Ast über zwei
-    Wege unter derselben Wurzel liegt.
+    geht nur zwischen Bäumen, ein Knoten steht höchstens einmal je Baum; beides
+    nur innerhalb eines Projekts. Umhängen und Übertragen gehen auch über API
+    und MCP, damit die KI Äste verschieben kann.
+    3. Ein übertragener Ast trägt ein Symbol, das beim Überfahren erscheint
+    und die Bäume des Knotens als Auswahl zum Springen anbietet; eine
+    Einstellung färbt alle übertragenen Äste mit einem Rand ein. „Gehe hin“
+    zu einem Knoten in mehreren Bäumen fragt per Auswahl nach dem Baum.
+    „Hier entfernen“ nimmt ihn nur aus diesem Baum, „Knoten löschen“ überall.
+    4. Inhalt (Titel, Text, Notizen, Items) eines übertragenen Knotens ist in
+    allen Bäumen gleich, die Struktur darunter gehört je Baum: Ein neuer
+    Unterknoten erscheint in allen Bäumen, in denen sein Parent steht;
+    Umhängen und „hier entfernen“ eines Unterknotens gelten nur im Baum, in dem
+    man arbeitet. Zahl, Fortschritt und Zustand werden je Baum berechnet; ein
+    Item zählt dabei höchstens einmal.
     5. Domain-, API- und UI-Tests sind grün.
   - Summary: Mehrere Maps je Projekt und die Möglichkeit, einen Ast in eine
     andere Map zu hängen oder ihn in beiden zu führen, damit die Planungs-Map
@@ -114,11 +123,71 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     übertragen, sodass er in beiden steht; übertragene Äste sind markiert und
     lassen sich nur hier entfernen oder ganz löschen.
   - Completion criteria: 1. Der Server legt eine zweite Platzierung an und
-    weist einen Knoten zweimal im selben Baum sowie Kreise ab.
-    2. Die Oberfläche bietet „umhängen“ und „übertragen“ mit Wahl des Ziels,
-    markiert übertragene Äste und trennt „hier entfernen“ von „Knoten
-    löschen“.
-    3. Summen zählen jedes Item einmal; Domain-, API- und UI-Tests sind grün.
+    weist Ziele ab, in denen der Ast oder ein Unterknoten schon steht (die
+    Meldung nennt die Knoten), Kreise, Ziele in anderen Projekten, die Wurzel
+    einer Map und Knoten im Papierkorb. Ein Knoten im Papierkorb lässt sich
+    „wiederherstellen und umziehen“ in einem Schritt, auch über API und MCP. Umhängen und Übertragen stehen als API und als MCP-Werkzeug
+    bereit, damit die KI Äste verschieben kann.
+    2. Die Oberfläche bietet „umhängen“ und „übertragen“ mit Wahl des Ziels
+    (Kontextmenü und Ziehen auf die Map-Liste),
+    markiert übertragene Äste (Symbol beim Überfahren, schaltbarer Rand,
+    Baumauswahl zum Springen) und trennt „hier entfernen“ von „Knoten
+    löschen“: Steht ein Knoten nur in einem Baum, gibt es nur „Löschen“.
+    „Knoten löschen“ eines geteilten Knotens fragt vorher mit den Bäumen, aus
+    denen er verschwindet. Verliert ein Knoten seine letzte Platzierung,
+    kommt er mit den dadurch heimatlosen Unterknoten in den Papierkorb; Items
+    folgen der Regel von `STORY-100`. „Hier entfernen“ und „Knoten löschen“
+    gibt es getrennt auch über API und MCP. Nicht erlaubte Ziele sind im Menü
+    ausgegraut mit Grund. Das Ziehen aus dem Papierkorb steht in
+    `NEW-papierkorb-ansicht`.
+    3. Neue Unterknoten eines übertragenen Knotens entstehen in allen seinen
+    Bäumen, Umhängen und Entfernen darunter gelten nur im bearbeiteten Baum;
+    Summen zählen jedes Item höchstens einmal; Domain-, API- und UI-Tests sind
+    grün.
+
+- `TASK-066` **Mindmap: entfernte Platzierungen merken und wieder einsetzen**
+  - Uid: 3c7069c8-2a16-42aa-ba05-9cb248b3c000.
+  - Type: Task.
+  - Parent: `STORY-102`.
+  - Required for parent: No.
+  - Status: Open.
+  - Created: 2026-11-19.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-063`.
+  - Goal: „Hier entfernen“ löscht eine Platzierung nicht, sondern merkt sie
+    als entfernt. Ein Ast lässt sich an den Ort zurücksetzen, an dem er stand,
+    auch später und auch mit seinen Unterknoten.
+  - Completion criteria: 1. Entfernte Platzierungen bleiben mit Baum, Parent
+    und Stelle gespeichert; Abfragen, Summen und die Regel „höchstens einmal je
+    Baum“ ignorieren sie. Ein Ast wird als Gruppe entfernt und kommt als Gruppe
+    zurück.
+    2. „Wieder einsetzen“ gibt es über API, MCP und am Knoten („Früher in …“);
+    fehlt der alte Parent oder steht der Knoten dort schon wieder, gilt eine
+    festgelegte Ersatzregel (zum Beispiel unter die Wurzel der Map) und die
+    Oberfläche sagt es.
+    3. Domain-, API- und UI-Tests sind grün.
+
+- `NEW-papierkorb-ansicht` **Mindmap: Papierkorb-Ansicht, Knoten per Ziehen reaktivieren**
+  - Type: Task.
+  - Parent: `STORY-102`.
+  - Required for parent: No.
+  - Status: Open.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-063`.
+  - Goal: Neben der Karte gibt es eine Seitenansicht „Papierkorb“ mit den
+    gelöschten Knoten des Projekts. Man zieht einen Knoten von dort an eine
+    neue Stelle der Karte; er wird dort reaktiviert, im Backend ist das
+    „wiederherstellen und umziehen“ aus `TASK-063`.
+  - Completion criteria: 1. Die Seitenansicht lässt sich wie „Nicht
+    zugeordnet“ ein- und ausschalten und zeigt die gelöschten Knoten des
+    Projekts.
+    2. Ziehen eines Knotens auf eine Stelle der Karte reaktiviert ihn dort mit
+    seinen Unterknoten; die neue Stelle ersetzt seine alte Platzierung im
+    aktuellen Baum, Platzierungen in anderen Bäumen kommen wie vorher zurück.
+    Nicht erlaubte Stellen werden wie beim Umhängen abgelehnt.
+    3. UI-Tests sind grün.
 
 - `STORY-103` **Ideen-Knoten ins Backlog überführen**
   - Uid: 688f456a-295f-453d-a6cd-39d7bb6c6aa8.

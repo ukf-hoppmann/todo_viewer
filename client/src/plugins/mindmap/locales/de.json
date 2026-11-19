@@ -115,5 +115,25 @@
 		"none": "Keine",
 		"discarded": "Verworfen",
 		"later": "Später"
+	},
+	"maps": {
+		"title": "Maps in {{project}}",
+		"projectTree": "{{name}} (Projektbaum)",
+		"new": "Neue Map",
+		"newTitle": "Neue Map",
+		"renameTitle": "Map umbenennen",
+		"name": "Name",
+		"nameEmpty": "Der Name darf nicht leer sein",
+		"nodes_one": "{{count}} Knoten",
+		"nodes_other": "{{count}} Knoten",
+		"menu": "Menü von {{name}}",
+		"rename": "Umbenennen",
+		"delete": "In den Papierkorb legen",
+		"deleteTitle": "Map „{{name}}“ löschen?",
+		"deleteMessage_one": "Die Map und ihr {{count}} Knoten, der nur hier steht, kommen in den Papierkorb und lassen sich dort wiederherstellen.",
+		"deleteMessage_other": "Die Map und ihre {{count}} Knoten, die nur hier stehen, kommen in den Papierkorb und lassen sich dort wiederherstellen.",
+		"deleteKept_one": "{{count}} Ast bleibt, weil er auch in einem anderen Baum steht.",
+		"deleteKept_other": "{{count}} Äste bleiben, weil sie auch in einem anderen Baum stehen.",
+		"deleteConfirm": "In den Papierkorb"
 	}
 }

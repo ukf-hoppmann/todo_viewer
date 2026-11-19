@@ -1016,3 +1016,52 @@ describe("MindmapPage: dependencies between topics", () => {
 		expect(document.querySelector("[data-flow-edge='a->a1']")).not.toBeNull();
 	});
 });
+
+describe("MindmapPage: free maps", () => {
+	const free = [{ uid: "f1", project_uid: "p1", name: "Ideen" }];
+	const inMap = [node("a"), node("x", null, 0, { tree_uid: "f1", title: "Freier Knoten" }), node("x1", "x", 0, { tree_uid: "f1" })];
+
+	it("shows the chosen free map under its name instead of the project tree", async () => {
+		const backend = await renderPage({ nodes: inMap, maps: free, documents: { ...marked, mindmap: { maps: { p1: "f1" } } } });
+
+		await screen.findByTestId(ids.node("x"));
+		expect(shownIds()).toEqual(["p1", "x", "x1"]);
+		expect(screen.getByTestId(ids.node("p1")).textContent).toContain("Ideen");
+		expect(backend.calls("GET", "mindmap/trees")[0]!.query.get("tree")).toBe("f1");
+	});
+
+	it("shows the project tree when no map was chosen", async () => {
+		const backend = await renderPage({ nodes: inMap, maps: free });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(shownIds()).toEqual(["p1", "a"]);
+		expect(backend.calls("GET", "mindmap/trees")[0]!.query.get("tree")).toBeNull();
+	});
+
+	it("creates a new node in the shown free map", async () => {
+		const backend = await renderPage({ nodes: inMap, maps: free, documents: { ...marked, mindmap: { maps: { p1: "f1" } } } });
+		await screen.findByTestId(ids.node("x"));
+
+		fireEvent.click(screen.getByTestId(ids.add("x")));
+
+		await screen.findByTestId(ids.titleInput("new1"));
+		expect(backend.calls("POST", "mindmap/nodes")[0]!.body).toMatchObject({ project: "p1", parent: "x", tree: "f1" });
+	});
+
+	it("has no side view \"Nicht zugeordnet\" in a free map", async () => {
+		await renderPage({ nodes: inMap, maps: free, unassigned: [itemRef("i1")], documents: { ...marked, mindmap: { maps: { p1: "f1" } } } });
+		await screen.findByTestId(ids.node("x"));
+		expect(screen.queryByTestId(ids.unassigned)).toBeNull();
+		cleanup();
+
+		await renderPage({ nodes: inMap, maps: free, unassigned: [itemRef("i1")] });
+		expect(await screen.findByTestId(ids.unassigned)).toBeTruthy();
+	});
+
+	it("shows the project tree in the overall view even when a free map is chosen", async () => {
+		await renderPage({ nodes: inMap, maps: free, documents: { ...marked, workspace: { ...marked.workspace, hidden: ["p0"] }, mindmap: { view: "all", maps: { p1: "f1" } } } });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(shownIds()).not.toContain("x");
+	});
+});

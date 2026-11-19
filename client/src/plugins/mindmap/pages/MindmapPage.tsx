@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
-import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useGetTreesQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
+import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useGetTreesQuery, useListMapsQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
+import { chooseMap } from "../domain/maps";
 import { COMBINED_ROOT, canDropItem, combinedTree, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import type { TreeOut } from "../api";
 import { MapActionsContext, type MapActions } from "../mapActions";
@@ -42,17 +43,21 @@ export default function MindmapPage() {
 	const { visible, marked } = useProjectSelection();
 	const project = shownProject(visible, marked);
 	const statuses = useShownStatuses();
-	const { view, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, showDependencies, layout: mode } = useMindmapState();
+	const { view, chosenMaps, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, showDependencies, layout: mode } = useMindmapState();
 	const all = view === "all";
 	// The single view loads the tree of one project, the overall view those of all visible projects.
-	const { currentData: single } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: all || !project });
+	// The single view shows the map chosen in the sidebar list: the project tree, or a free map of the project (named by `tree`).
+	const { currentData: maps } = useListMapsQuery(project?.uid ?? "", { skip: all || !project });
+	const map = all ? undefined : chooseMap(maps, project ? chosenMaps[project.uid] : undefined);
+	const freeTree = map?.kind === "free" ? (map.tree_uid ?? undefined) : undefined;
+	const { currentData: single } = useGetTreeQuery({ project: project?.uid ?? "", statuses, ...(freeTree ? { tree: freeTree } : {}) }, { skip: all || !project || !map });
 	const projectUids = useMemo(() => visible.map((entry) => entry.uid), [visible]);
 	const { currentData: several } = useGetTreesQuery({ projects: projectUids, statuses }, { skip: !all || projectUids.length === 0 });
 	// `byProject` holds the nodes of every project as the server gave them (top nodes without a parent); `nodes` is what the map draws from.
 	const { nodes, byProject, tree, rootId, rootTitle, unassignedProject, unassigned } = useMemo(() => {
 		if (!all) {
 			const own = single?.nodes ?? NO_NODES;
-			return { nodes: own, byProject: new Map([[project?.uid ?? "", own]]), tree: single, rootId: project?.uid, rootTitle: project?.name ?? "", unassignedProject: project?.uid, unassigned: single?.unassigned ?? NO_ITEMS };
+			return { nodes: own, byProject: new Map([[project?.uid ?? "", own]]), tree: single, rootId: project?.uid, rootTitle: freeTree ? (map?.name ?? "") : (project?.name ?? ""), unassignedProject: freeTree ? undefined : project?.uid, unassigned: single?.unassigned ?? NO_ITEMS };
 		}
 		// A response that belongs to other projects (the selection just changed) is not used.
 		const trees: readonly TreeOut[] | undefined = several && several.length === visible.length && several.every((entry, index) => entry.project_uid === visible[index]!.uid) ? several : undefined;
@@ -70,7 +75,7 @@ export default function MindmapPage() {
 			unassignedProject: markedTree ? marked?.uid : undefined,
 			unassigned: markedTree?.unassigned ?? NO_ITEMS,
 		};
-	}, [all, single, several, project, visible, marked, t]);
+	}, [all, single, several, project, visible, marked, t, map, freeTree]);
 	const [createNode] = useCreateNodeMutation();
 	const [updateNode] = useUpdateNodeMutation();
 	const [moveNode] = useMoveNodeMutation();
@@ -124,9 +129,9 @@ export default function MindmapPage() {
 	}, [layoutKey, detailOpen]);
 
 	// The actions read the newest data through a ref, so the nodes of the map keep the same handlers.
-	const latest = useRef({ shown, nodes, byProject, fold, unassignedProject });
+	const latest = useRef({ shown, nodes, byProject, fold, unassignedProject, freeTree });
 	useEffect(() => {
-		latest.current = { shown, nodes, byProject, fold, unassignedProject };
+		latest.current = { shown, nodes, byProject, fold, unassignedProject, freeTree };
 	});
 	const actions: MapActions = useMemo(() => {
 		const fail = (failure: unknown) => setError(errorMessage(failure, t("error.failed")));
@@ -204,7 +209,7 @@ export default function MindmapPage() {
 				const scope = scopeOf(id);
 				if (!scope) return;
 				setError(undefined);
-				createNode({ project: scope.projectUid, title: t("node.new"), ...(id === scope.projectUid ? {} : { parent: id }) })
+				createNode({ project: scope.projectUid, title: t("node.new"), ...(id === scope.projectUid ? {} : { parent: id }), ...(latest.current.freeTree ? { tree: latest.current.freeTree } : {}) })
 					.unwrap()
 					.then((created) => {
 						// The new child must be visible: a closed parent is opened.
@@ -370,7 +375,7 @@ export default function MindmapPage() {
 					<Box sx={{ flexGrow: 1, minWidth: 0, border: 1, borderColor: "divider" }} data-testid={mindmapTestIds.map}>
 						{layout && (
 							<ReactFlow
-								key={`${view}:${projectUids.join(",")}`}
+								key={`${view}:${projectUids.join(",")}:${freeTree ?? ""}`}
 								nodes={flowNodes}
 								edges={edges}
 								nodeTypes={NODE_TYPES}
@@ -391,7 +396,7 @@ export default function MindmapPage() {
 							</ReactFlow>
 						)}
 					</Box>
-					{showUnassigned && (!all || unassignedProject) && <UnassignedPanel items={unassigned} />}
+					{showUnassigned && !freeTree && (!all || unassignedProject) && <UnassignedPanel items={unassigned} />}
 				</Box>
 			</MapActionsContext.Provider>
 			{deleteDialog}

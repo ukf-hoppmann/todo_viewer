@@ -28,6 +28,13 @@ Gesamtbild: `STORY-102_spec.md`; Konzept: `EPIC-008_spec.md`. Der Weg steht in `
   `STORY-100_spec.md`).
 - Der Projektbaum lässt sich nicht löschen.
 
+## Festlegungen der Umsetzung
+
+- Der Name einer freien Map ist eine Zeile, höchstens 100 Zeichen und je Projekt eindeutig (ohne Groß-/Kleinschreibung);
+  Maps im Papierkorb zählen nicht. Beim Wiederherstellen muss der Name frei sein.
+- Eine gelöschte Map erscheint als eigener Eintrag im Papierkorb von `workspace`; Wiederherstellen holt die Knoten zurück,
+  die mit ihr gingen.
+
 ## Nicht Teil
 
 - Umhängen und Übertragen zwischen Bäumen: `TASK-063`.

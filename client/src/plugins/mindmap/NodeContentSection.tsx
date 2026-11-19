@@ -39,7 +39,7 @@ function useCandidates(projectUid: string, kinds: readonly string[]) {
 export function NodeContentSection({ node }: { node: NodeOut }) {
 	const { t } = useTranslation("mindmap");
 	const statuses = useShownStatuses();
-	const { data } = useGetNodeContentQuery({ node: node.uid, statuses });
+	const { data } = useGetNodeContentQuery({ node: node.uid, statuses, tree: node.tree_uid || undefined });
 	const [assignItem] = useAssignItemMutation();
 	const [unassignItem] = useUnassignItemMutation();
 	const [linkMemo] = useLinkMemoMutation();

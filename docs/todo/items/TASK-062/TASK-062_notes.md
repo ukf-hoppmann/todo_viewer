@@ -2,20 +2,21 @@
 
 ## State
 
-- Goal/Status: Geplant; Entscheidungen aus der Besprechung von `STORY-102` übernommen.
-- Next step: Plan beim Start der Umsetzung vorstellen.
+- Goal/Status: Umgesetzt (Server, Oberfläche, Doku), Tests grün; wartet auf Bestätigung des Owners.
+- Next step: Owner prüft die Map-Liste in der Seitenleiste; danach `TASK-063` (Umhängen und Übertragen).
 - Open:
   - Keine
 - Decided:
   - Auswahl der Maps als Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps); dort auch Anlegen, Umbenennen, Löschen (2026-11-19)
   - Die Gesamtansicht zeigt nur Projektbäume, keine freien Maps (2026-11-19)
-  - Freie Map löschen: Papierkorb mit Wiederherstellen; der Projektbaum lässt sich nicht löschen (2026-11-19)
-  - Keine eigene Map je Memo; ein Memo wird an einen Knoten verlinkt, auch in freien Maps; die Map selbst ist kein Ziel, weil ein Baum kein Element ist (2026-11-19)
+  - Freie Map löschen: Papierkorb mit Wiederherstellen; Knoten nur dieser Map gehen mit (gleicher Löschzeitpunkt); der Projektbaum lässt sich nicht löschen (2026-11-19)
+  - Keine eigene Map je Memo; ein Memo wird an einen Knoten verlinkt, auch in freien Maps; die Map selbst ist kein Ziel (2026-11-19)
   - „Nicht zugeordnet“ gibt es nur im Projektbaum (2026-11-19)
   - Freie Maps gehören zu einem Projekt, Übergreifendes zum Projekt „Allgemein“ (2026-11-19)
+  - Vorsichtige Annahmen der Umsetzung: Name je Projekt eindeutig (ohne Groß-/Kleinschreibung), höchstens 100 Zeichen; Versionstoken `revision` am Baum; gelöschte Map als eigener Papierkorb-Eintrag (`TrashSource`); Wiederherstellen scheitert bei vergebenem Namen (2026-11-19)
 - References: Spec `TASK-062_spec.md`; Story-Spec `STORY-102_spec.md`; Konzept `EPIC-008_spec.md`; Mockup https://claude.ai/artifact/3qoj9AET4gmLVxg4Nx8gGw; Memo `MEMO-003`
 
-State confirmed after entry 2026-11-19 — Offene Punkte vor der Umsetzung geklärt (b1ac28318ca6)
+State confirmed after entry 2026-11-19 — Umsetzung (c00ce61fe0a7)
 
 ## 2026-11-19 — Übernahme der Entscheidungen aus STORY-102
 
@@ -48,6 +49,25 @@ State confirmed after entry 2026-11-19 — Offene Punkte vor der Umsetzung gekl�
 
 - Memos hängen nur an Knoten (Owner); die Spec ist korrigiert.
 - „Nicht zugeordnet“ nur im Projektbaum (Owner).
+
+### Open
+
+- Keine.
+
+## 2026-11-19 — Umsetzung
+
+### Discussed
+
+- Wie eine Map „in den Papierkorb“ geht, obwohl ein Baum kein Element ist: (a) Baum zum Element machen (Migration, Label, Links – aufwendig und mit dem Owner verworfen für Memo-Links), (b) Weiche Löschung am Baum plus Papierkorb-Eintrag über die vorhandene `TrashSource` von `workspace`. Gewählt (b).
+- Die Knoten, die nur in der Map stehen, müssen „mitgehen“: sie werden mit demselben Zeitpunkt wie die Map in den Papierkorb gelegt; Wiederherstellen holt nur Knoten mit genau diesem Zeitpunkt zurück, früher einzeln gelöschte bleiben draußen (wie beim Ast). Ein Knoten einer gelöschten Map ist einzeln nicht wiederherstellbar (`mindmap_tree_in_trash`).
+- Knoten in mehreren Bäumen gibt es erst mit `TASK-063`; die Zählung `shared_count` / `kept_elsewhere` für die Rückfrage ist schon da (heute immer 0) und wird von der Oberfläche genutzt.
+- Name: eindeutig je Projekt (Verwechslung in der Liste vermeiden), nicht von der Spec verlangt – vorsichtige Annahme; beim Wiederherstellen kann der Name inzwischen vergeben sein, dann Fehler `mindmap_map_name_taken`.
+- Migration 1 las die Konstante `TREE_KINDS`; sie ist auf den festen Wert `project` umgestellt, damit spätere Arten nur in eigenen Migrationen stehen.
+
+### Decided
+
+- Umgesetzt wie in der Spec: Operationen `list_maps`, `create_map`, `rename_map`, `delete_map` (HTTP und MCP), `tree` bei `get_tree`, `create_node`, `get_node_content`; Liste „Maps in <Projekt>“ in der Seitenleiste mit Kontextmenü; gewählte Map je Projekt im UI-Zustand.
+- Nicht Teil: Umhängen/Übertragen (`TASK-063`), entfernte Platzierungen (`TASK-066`), Papierkorb-Ansicht (`TASK-067`). Der Papierkorb von `workspace` zeigt die Map als Eintrag der Art `mindmap_map`; die Oberfläche dafür ist `TASK-067`.
 
 ### Open
 

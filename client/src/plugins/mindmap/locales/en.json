@@ -115,5 +115,25 @@
 		"none": "None",
 		"discarded": "Discarded",
 		"later": "Later"
+	},
+	"maps": {
+		"title": "Maps in {{project}}",
+		"projectTree": "{{name}} (project tree)",
+		"new": "New map",
+		"newTitle": "New map",
+		"renameTitle": "Rename map",
+		"name": "Name",
+		"nameEmpty": "The name must not be empty",
+		"nodes_one": "{{count}} node",
+		"nodes_other": "{{count}} nodes",
+		"menu": "Menu of {{name}}",
+		"rename": "Rename",
+		"delete": "Move to trash",
+		"deleteTitle": "Delete map \"{{name}}\"?",
+		"deleteMessage_one": "The map and its {{count}} node that stands only here go to the trash and can be restored there.",
+		"deleteMessage_other": "The map and its {{count}} nodes that stand only here go to the trash and can be restored there.",
+		"deleteKept_one": "{{count}} branch stays because it also stands in another tree.",
+		"deleteKept_other": "{{count}} branches stay because they also stand in another tree.",
+		"deleteConfirm": "Move to trash"
 	}
 }

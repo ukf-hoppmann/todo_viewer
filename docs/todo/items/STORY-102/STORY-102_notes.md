@@ -3,11 +3,11 @@
 ## State
 
 - Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Thema 6, Punkt 4 (entfernte Platzierungen merken?) entscheiden, dann Thema 7.
+- Next step: Thema 7 (Summen und Zustand bei übertragenen Ästen) besprechen.
 - Open:
-  - Entfernte Platzierungen merken und wieder einsetzen (Aufwand mittel) oder weglassen; Entscheidung des Owners (2026-11-19)
-  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 5 erledigt, Thema 6 bis auf Punkt 4:  „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
+  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 6 erledigt:  „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
+  - Entfernte Platzierungen werden gemerkt und lassen sich wieder einsetzen, als eigener Task nach `TASK-063` (Platzhalter `NEW-platzierungen-merken`) (2026-11-19)
   - „Hier entfernen“ / „Knoten löschen“: nur „Löschen“, wenn der Knoten in einem Baum steht; Rückfrage mit den Bäumen bei geteilten Knoten; letzte Platzierung weg heißt Papierkorb (auch für heimatlose Unterknoten); getrennt über API und MCP (2026-11-19)
   - Übertragene Äste: kleines Symbol mit Baumzahl beim Überfahren, das die Bäume des Knotens zum Springen anbietet; zusätzlich ein Schalter, der alle übertragenen Äste mit einem Rand einfärbt, damit man sie gezielt sehen kann und die Karte sonst ruhig bleibt (2026-11-19)
   - „Gehe hin“ zu einem Knoten in mehreren Bäumen: Auswahl des Baums; ebenso kann man aus einem Baum mit geteilten Knoten schnell in den anderen springen (2026-11-19)
@@ -28,7 +28,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-19 — Thema 6: „Hier entfernen“ und „Knoten löschen“ (a19e961ec692)
+State confirmed after entry 2026-11-19 — Thema 6, Punkt 4: Entfernte Platzierungen merken (89290bc85975)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -219,3 +219,13 @@ State confirmed after entry 2026-11-19 — Thema 6: „Hier entfernen“ und „
 ### Open
 
 - Punkt 4: Entscheidung zwischen Option 1, 2 und 3; Empfehlung: Option 1 als eigener Task nach `TASK-063`, damit dieser klein bleibt.
+
+## 2026-11-19 — Thema 6, Punkt 4: Entfernte Platzierungen merken
+
+### Decided
+
+- Weg 1 (Platzierung nur als entfernt markieren, wieder einsetzbar), als eigener Task `NEW-platzierungen-merken` unter dieser Story, abhängig von `TASK-063`, nicht Pflicht für die Story (Owner). Verworfen: nur „Rückgängig“ direkt danach (hilft später nicht) und Weglassen (alte Position ginge verloren).
+
+### Open
+
+- Thema 7: Summen und Zustand bei übertragenen Ästen.

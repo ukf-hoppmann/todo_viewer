@@ -134,6 +134,27 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     gibt es getrennt auch über API und MCP.
     3. Summen zählen jedes Item einmal; Domain-, API- und UI-Tests sind grün.
 
+- `NEW-platzierungen-merken` **Mindmap: entfernte Platzierungen merken und wieder einsetzen**
+  - Type: Task.
+  - Parent: `STORY-102`.
+  - Required for parent: No.
+  - Status: Open.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-063`.
+  - Goal: „Hier entfernen“ löscht eine Platzierung nicht, sondern merkt sie
+    als entfernt. Ein Ast lässt sich an den Ort zurücksetzen, an dem er stand,
+    auch später und auch mit seinen Unterknoten.
+  - Completion criteria: 1. Entfernte Platzierungen bleiben mit Baum, Parent
+    und Stelle gespeichert; Abfragen, Summen und die Regel „höchstens einmal je
+    Baum“ ignorieren sie. Ein Ast wird als Gruppe entfernt und kommt als Gruppe
+    zurück.
+    2. „Wieder einsetzen“ gibt es über API, MCP und am Knoten („Früher in …“);
+    fehlt der alte Parent oder steht der Knoten dort schon wieder, gilt eine
+    festgelegte Ersatzregel (zum Beispiel unter die Wurzel der Map) und die
+    Oberfläche sagt es.
+    3. Domain-, API- und UI-Tests sind grün.
+
 - `STORY-103` **Ideen-Knoten ins Backlog überführen**
   - Uid: 688f456a-295f-453d-a6cd-39d7bb6c6aa8.
   - Type: Story.

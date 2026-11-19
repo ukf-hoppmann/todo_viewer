@@ -75,6 +75,17 @@ class RemovedFrom:
 
 
 @dataclass(frozen=True)
+class TrashedBranch:
+    """Ein Ast im Papierkorb, wie ihn die Seitenansicht „Papierkorb“ zeigt: der oberste gelöschte Knoten."""
+
+    node: Node
+    #: Der Parent, unter dem der Knoten im Baum stand; leer unter der Wurzel.
+    parent_uid: str | None
+    #: Die Knoten des Asts im Papierkorb (der Knoten selbst und seine gelöschten Unterknoten in diesem Baum).
+    nodes: int
+
+
+@dataclass(frozen=True)
 class CutResult:
     removal: Removal
     trashed: list[Node]
@@ -251,6 +262,35 @@ class BranchService:
         return PlacementRestored(node, tree, len(plan.restored), len(plan.skipped), plan.parent_uid, plan.fell_back)
 
     # --- Lesen ---------------------------------------------------------------------------------------------------
+
+    def trashed_branches(self, project_uid: str, tree_uid: str | None) -> list[TrashedBranch]:
+        """Die Äste im Papierkorb, die im Baum standen („Papierkorb“ neben der Karte): je gelöschtem Knoten, dessen
+        Parent im Baum nicht ebenfalls gelöscht ist; er nimmt seine gelöschten Unterknoten mit. Ohne `tree_uid` der
+        Projektbaum. Nach Label geordnet."""
+        with self._database.transaction() as tx:
+            if tree_uid is None:
+                found = self._repository.tree_of_project(tx, project_uid)
+                if found is None:
+                    return []
+                tree = found
+            else:
+                tree = self._mindmap.existing_tree(tx, project_uid, tree_uid)
+            nodes = {n.uid: n for n in self._repository.nodes_in_tree(tx, tree.uid, include_deleted=True)}
+            placements = self._repository.placements(tx, tree.uid)
+            trashed = {uid for uid, n in nodes.items() if n.deleted_at is not None}
+            branches: list[TrashedBranch] = []
+            for placement in placements:
+                if placement.node_uid not in trashed or placement.parent_uid in trashed:
+                    continue
+                size = branch_rules.branch_uids(placements, placement.node_uid)
+                branches.append(
+                    TrashedBranch(
+                        nodes[placement.node_uid],
+                        placement.parent_uid,
+                        sum(1 for uid in size if uid in trashed),
+                    )
+                )
+        return sorted(branches, key=lambda b: b.node.label)
 
     def node_trees(self, ref: str, project_uid: str | None) -> list[NodeTree]:
         """Die Bäume außerhalb des Papierkorbs, in denen der Knoten steht: der Projektbaum zuerst, dann die freien Maps

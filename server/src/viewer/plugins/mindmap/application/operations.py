@@ -18,6 +18,7 @@ from viewer.plugins.mindmap.application.branches import (
     PlacementRestored,
     Removal,
     RemovedFrom,
+    TrashedBranch,
 )
 from viewer.plugins.mindmap.application.documents import DocumentService
 from viewer.plugins.mindmap.application.maps import MapDeleted, MapService, MapView
@@ -340,6 +341,27 @@ class RemovedFromOut:
 
 
 @dataclass(frozen=True)
+class ListTrashedNodes:
+    #: `uid` des Projekts.
+    project: str
+    #: Die Map, deren Papierkorb gezeigt wird; ohne Angabe der Projektbaum.
+    tree: str | None = None
+
+
+@dataclass(frozen=True)
+class TrashedNodeOut:
+    uid: str
+    label: str
+    title: str
+    #: Versionstoken des Knotens im Papierkorb, für `restore_and_move_node`.
+    version: int
+    #: Der Parent, unter dem der Knoten im Baum stand; leer unter der Wurzel.
+    parent_uid: str | None
+    #: Die Knoten des Asts im Papierkorb (der Knoten und seine gelöschten Unterknoten in diesem Baum).
+    nodes: int
+
+
+@dataclass(frozen=True)
 class RemovalOut:
     node_uid: str
     #: Die Knoten, die in den Papierkorb gingen (steht der Knoten nirgends mehr, er selbst und seine heimatlosen
@@ -372,6 +394,11 @@ def _restored_out(result: PlacementRestored) -> PlacementRestoredOut:
     return PlacementRestoredOut(
         result.node.uid, result.tree.uid, result.nodes, result.skipped, result.parent_uid, result.fell_back
     )
+
+
+def _trashed_out(found: TrashedBranch) -> TrashedNodeOut:
+    node = found.node
+    return TrashedNodeOut(node.uid, node.label, node.title, node.revision, found.parent_uid, found.nodes)
 
 
 def _removed_from_out(found: RemovedFrom) -> RemovedFromOut:
@@ -774,6 +801,17 @@ OPERATIONS: tuple[Operation, ...] = (
         PlacementRestoredOut,
         lambda s, d: _restored_out(s.branches.restore_placement(d.ref, d.project, d.version, d.tree)),
         HttpBinding("POST", "/nodes/{ref}/restore-placement"),
+    ),
+    Operation(
+        "list_trashed_nodes",
+        "Die gelöschten Äste einer Map (Seitenansicht „Papierkorb“): je der oberste gelöschte Knoten, der im Baum "
+        "stand, mit Titel, Version für `restore_and_move_node`, altem Parent und der Zahl der Knoten im Papierkorb, "
+        "die mit ihm zurückkämen. Ohne `tree` der Projektbaum; eine Map im Papierkorb wird abgelehnt",
+        "read",
+        ListTrashedNodes,
+        list[TrashedNodeOut],
+        lambda s, d: [_trashed_out(b) for b in s.branches.trashed_branches(d.project, d.tree)],
+        HttpBinding("GET", "/trash/{project}"),
     ),
     Operation(
         "list_removed_placements",

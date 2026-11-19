@@ -1296,6 +1296,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mindmap/trash/{project}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die gelöschten Äste einer Map (Seitenansicht „Papierkorb“): je der oberste gelöschte Knoten, der im Baum stand, mit Titel, Version für `restore_and_move_node`, altem Parent und der Zahl der Knoten im Papierkorb, die mit ihm zurückkämen. Ohne `tree` der Projektbaum; eine Map im Papierkorb wird abgelehnt */
+        get: operations["mindmap_list_trashed_nodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mindmap/trees/{project}": {
         parameters: {
             query?: never;
@@ -3171,6 +3188,21 @@ export interface components {
             title: string;
             /** Uid */
             uid: string;
+        };
+        /** TrashedNodeOut */
+        TrashedNodeOut: {
+            /** Label */
+            label: string;
+            /** Nodes */
+            nodes: number;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
         };
         /**
          * TreeNodeOut
@@ -6412,6 +6444,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NodeTreeOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_list_trashed_nodes: {
+        parameters: {
+            query?: {
+                tree?: string | null;
+            };
+            header?: never;
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashedNodeOut"][];
                 };
             };
             /** @description Client Error */

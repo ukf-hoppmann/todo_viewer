@@ -130,7 +130,7 @@ State confirmed after entry 2026-11-19 — Thema 4: Bedienung von Umhängen und 
 
 ### Discussed
 
-- Angepasst: Ziel und Kriterien von `STORY-102` und `TASK-062` (Titel ohne Memo-Map, Maps-Liste in der Seitenleiste), Kriterium 1 von `STORY-105`, Konzept `EPIC-008_spec.md` (Begriffe, Darstellung, Spiegel, Idee Export). Das Memo `new-map-export-nach-memo` hält die Export-Idee fest.
+- Angepasst: Ziel und Kriterien von `STORY-102` und `TASK-062` (Titel ohne Memo-Map, Maps-Liste in der Seitenleiste), Kriterium 1 von `STORY-105`, Konzept `EPIC-008_spec.md` (Begriffe, Darstellung, Spiegel, Idee Export). Das Memo `MEMO-003` hält die Export-Idee fest.
 
 ### Open
 

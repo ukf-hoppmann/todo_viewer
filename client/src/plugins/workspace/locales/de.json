@@ -177,7 +177,10 @@
 			"deleted_other_unchanged": "Die andere Seite ist seit dem letzten Abgleich unverändert, die Löschung verliert nichts.",
 			"deleted_other_changed": "Die andere Seite wurde seit dem letzten Abgleich geändert; beim Löschen gingen diese Änderungen verloren."
 		},
-		"diffLegend": "− nur in der Datenbank, + nur in den Dateien",
+		"diffOnlyDatabase": "nur in der Datenbank",
+		"diffOnlyFiles": "nur in den Dateien",
+		"diffEmptyLine": "leere Zeile",
+		"diffWhitespaceOnly": "Es unterscheidet sich nur der Leerraum (Leerzeilen, Einrückung, Leerzeichen am Zeilenende). Der Text ist inhaltlich gleich.",
 		"diffSkipped_one": "{{count}} unveränderte Zeile",
 		"diffSkipped_other": "{{count}} unveränderte Zeilen",
 		"database": "Datenbank",

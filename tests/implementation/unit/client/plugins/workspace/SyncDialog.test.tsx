@@ -77,9 +77,19 @@ describe("SyncDialog explains a conflict", () => {
 		await renderDialog({ syncPreview: preview({ conflicts: [both as never] }) });
 		const diff = await screen.findByTestId(ids.syncDiff("d3", "content"));
 
-		expect(diff.textContent).toContain("− alt");
-		expect(diff.textContent).toContain("+ neu");
-		expect(diff.textContent).not.toContain("− a\n");
+		expect(diff.textContent).toContain("−alt");
+		expect(diff.textContent).toContain("+neu");
+		expect(screen.queryByTestId(ids.syncWhitespaceOnly("d3", "content"))).toBeNull();
+		expect(screen.queryByText("Datenbank")).toBeNull(); // keine Spaltenköpfe über dem Diff
+	});
+
+	it("says so and writes out the empty line when only whitespace differs", async () => {
+		const both = { ...renamed, key: "d4", conflict: "both_changed", database: spec("a\n\nb"), files: spec("a\n\n\nb"), renamed_to: null, recommendation: "none", reason: "both_changed" };
+		await renderDialog({ syncPreview: preview({ conflicts: [both as never] }) });
+		const diff = await screen.findByTestId(ids.syncDiff("d4", "content"));
+
+		expect(screen.getByTestId(ids.syncWhitespaceOnly("d4", "content"))).toBeTruthy();
+		expect(diff.textContent).toContain("+⏎ leere Zeile");
 	});
 });
 

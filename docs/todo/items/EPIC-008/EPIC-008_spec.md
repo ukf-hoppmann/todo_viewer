@@ -36,8 +36,8 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - Items sind nie eigene Knoten. Ein Knoten zeigt Anzahl und Fortschrittsring; die Items stehen im Detail.
 - Alles erbt vom Parent, außer ein Item ist eigens angehängt; dann zählen es und seine Kinder zum neuen Knoten.
 - Ein Epic ist in der Regel ein Knoten, aber nicht zwingend; ein Knoten kann mehrere Epics tragen.
-- Summen laufen über Unterknoten und leere Knoten nach oben. Jedes Item zählt genau einmal, auch wenn sein Ast
-  über zwei Wege unter derselben Wurzel liegt.
+- Summen laufen über Unterknoten und leere Knoten nach oben. Jedes Item zählt genau einmal. Bei übertragenen Ästen
+  werden Zahl, Fortschritt und Zustand je Baum aus der dort sichtbaren Struktur berechnet und können je Baum abweichen.
 - Zustand eines Knotens, abgeleitet: Idee (keine Items), geplant, in Arbeit, erledigt. Ein Filter darüber. Regel und Zählung: `STORY-100_spec.md`.
 - Memos lassen sich verlinken und stehen nur im Detail.
 - Items ohne Knoten stehen in der Seitenansicht „Nicht zugeordnet“ (kein Knoten, ausschaltbar, Drag-and-drop in den
@@ -62,8 +62,9 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 
 - **Umhängen:** aus A weg, in B drin; innerhalb eines Baums und zwischen Bäumen, nur innerhalb eines Projekts.
 - **Bedienung:** Kontextmenü „Umhängen nach …“ / „Übertragen nach …“ und Ziehen auf einen Eintrag der Map-Liste mit Wahl; der Ast landet unter der Wurzel der Ziel-Map. Beides gibt es auch über API und MCP, damit die KI Äste verschieben kann.
-- **Übertragen:** derselbe Ast in A und B; nur zwischen Bäumen. Der Ast ist ein gemeinsamer Datensatz, eine
-  Änderung wirkt an beiden Stellen. Übertragene Äste sind markiert: ein Symbol mit der Zahl der Bäume erscheint beim Überfahren und bietet die Bäume des Knotens zum Springen an; ein Schalter in den Filtern färbt alle übertragenen Äste mit einem Rand ein. „Gehe hin“ zu einem Knoten in mehreren Bäumen fragt per Auswahl nach dem Baum.
+- **Übertragen:** derselbe Ast in A und B; nur zwischen Bäumen. Der Ast ist ein gemeinsamer Datensatz: Inhalt (Titel, Text, Notizen, Items)
+  ist überall gleich; die Struktur darunter gehört je Baum. Ein neuer Unterknoten erscheint in allen Bäumen, in
+  denen sein Parent steht; Umhängen und „Hier entfernen“ darunter gelten nur im bearbeiteten Baum. Übertragene Äste sind markiert: ein Symbol mit der Zahl der Bäume erscheint beim Überfahren und bietet die Bäume des Knotens zum Springen an; ein Schalter in den Filtern färbt alle übertragenen Äste mit einem Rand ein. „Gehe hin“ zu einem Knoten in mehreren Bäumen fragt per Auswahl nach dem Baum.
 - „Hier entfernen“ nimmt den Ast aus einem Baum, „Knoten löschen“ überall. Steht ein Knoten nur in einem Baum, gibt es nur „Löschen“; „Knoten löschen“ eines geteilten Knotens fragt vorher mit den betroffenen Bäumen. Verliert ein Knoten seine letzte Platzierung, kommt er mit den heimatlos gewordenen Unterknoten in den Papierkorb, nie ins Leere. Beides gibt es getrennt über API und MCP.
 - Ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht; bei Bedarf wird umgebaut.
 

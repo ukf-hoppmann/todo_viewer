@@ -3,10 +3,12 @@
 ## State
 
 - Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Thema 7 (Summen und Zustand bei übertragenen Ästen) besprechen.
+- Next step: Thema 8 (verbotene Fälle) besprechen.
 - Open:
   - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 6 erledigt:  „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
+  - Übertragene Äste: Inhalt (Titel, Text, Notizen, Items) gemeinsam, Struktur darunter je Baum eigen; neue Unterknoten erscheinen in allen Bäumen des Parents, Umhängen und „Hier entfernen“ nur im bearbeiteten Baum; Zahl, Fortschritt und Zustand je Baum berechnet, können abweichen (2026-11-19)
+  - Eine Doppelzählung unter einer Wurzel kann nach den Regeln nicht entstehen; das Kriterium bleibt als Test (2026-11-19)
   - Entfernte Platzierungen werden gemerkt und lassen sich wieder einsetzen, als eigener Task nach `TASK-063` (Platzhalter `NEW-platzierungen-merken`) (2026-11-19)
   - „Hier entfernen“ / „Knoten löschen“: nur „Löschen“, wenn der Knoten in einem Baum steht; Rückfrage mit den Bäumen bei geteilten Knoten; letzte Platzierung weg heißt Papierkorb (auch für heimatlose Unterknoten); getrennt über API und MCP (2026-11-19)
   - Übertragene Äste: kleines Symbol mit Baumzahl beim Überfahren, das die Bäume des Knotens zum Springen anbietet; zusätzlich ein Schalter, der alle übertragenen Äste mit einem Rand einfärbt, damit man sie gezielt sehen kann und die Karte sonst ruhig bleibt (2026-11-19)
@@ -28,7 +30,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-19 — Thema 6, Punkt 4: Entfernte Platzierungen merken (89290bc85975)
+State confirmed after entry 2026-11-19 — Thema 7: Summen und Zustand bei übertragenen Ästen (b4631e2d7325)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -229,3 +231,18 @@ State confirmed after entry 2026-11-19 — Thema 6, Punkt 4: Entfernte Platzieru
 ### Open
 
 - Thema 7: Summen und Zustand bei übertragenen Ästen.
+
+## 2026-11-19 — Thema 7: Summen und Zustand bei übertragenen Ästen
+
+### Discussed
+
+- Fund: Die Doppelzählung unter einer Wurzel kann nach den Entscheidungen nicht mehr entstehen (ein Knoten höchstens einmal je Baum, Äste nur innerhalb eines Projekts, die Gesamtansicht zeigt nur Projektbäume, einer je Projekt). Das Kriterium bleibt als Test, nicht als eigene Logik.
+- Frage: Ist die Struktur im geteilten Ast gemeinsam oder je Baum eigen? Je Baum eigen: Inhalt gemeinsam, neuer Unterknoten in allen Bäumen, Umhängen und Entfernen nur im bearbeiteten Baum, Zahlen je Baum berechnet (passt zu „Hier entfernen wirkt nur in diesem Baum“; die Maps können sich unterschiedlich entwickeln). Gemeinsam: überall gleiche Zahlen, aber Herausziehen eines Unterknotens aus dem Ast wirft Fragen für die anderen Bäume auf, schwerer zu erklären und zu bauen. Empfehlung: je Baum eigen.
+
+### Decided
+
+- Struktur je Baum eigen, Inhalt gemeinsam (Owner). Verworfen: gemeinsame Struktur wegen der offenen Folgen beim Herausziehen und des höheren Aufwands.
+
+### Open
+
+- Thema 8: verbotene Fälle.

@@ -80,8 +80,12 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Einstellung färbt alle übertragenen Äste mit einem Rand ein. „Gehe hin“
     zu einem Knoten in mehreren Bäumen fragt per Auswahl nach dem Baum.
     „Hier entfernen“ nimmt ihn nur aus diesem Baum, „Knoten löschen“ überall.
-    4. Summen zählen ein Item auch dann nur einmal, wenn sein Ast über zwei
-    Wege unter derselben Wurzel liegt.
+    4. Inhalt (Titel, Text, Notizen, Items) eines übertragenen Knotens ist in
+    allen Bäumen gleich, die Struktur darunter gehört je Baum: Ein neuer
+    Unterknoten erscheint in allen Bäumen, in denen sein Parent steht;
+    Umhängen und „hier entfernen“ eines Unterknotens gelten nur im Baum, in dem
+    man arbeitet. Zahl, Fortschritt und Zustand werden je Baum berechnet; ein
+    Item zählt dabei höchstens einmal.
     5. Domain-, API- und UI-Tests sind grün.
   - Summary: Mehrere Maps je Projekt und die Möglichkeit, einen Ast in eine
     andere Map zu hängen oder ihn in beiden zu führen, damit die Planungs-Map
@@ -132,7 +136,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     kommt er mit den dadurch heimatlosen Unterknoten in den Papierkorb; Items
     folgen der Regel von `STORY-100`. „Hier entfernen“ und „Knoten löschen“
     gibt es getrennt auch über API und MCP.
-    3. Summen zählen jedes Item einmal; Domain-, API- und UI-Tests sind grün.
+    3. Neue Unterknoten eines übertragenen Knotens entstehen in allen seinen
+    Bäumen, Umhängen und Entfernen darunter gelten nur im bearbeiteten Baum;
+    Summen zählen jedes Item höchstens einmal; Domain-, API- und UI-Tests sind
+    grün.
 
 - `NEW-platzierungen-merken` **Mindmap: entfernte Platzierungen merken und wieder einsetzen**
   - Type: Task.

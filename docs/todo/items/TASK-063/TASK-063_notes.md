@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Geplant; Entscheidungen aus der Besprechung von `STORY-102` übernommen.
-- Next step: Nach `TASK-062` beginnen; Plan beim Start vorstellen.
+- Goal/Status: Umgesetzt (Server, Oberfläche, Doku), Tests grün; wartet auf Bestätigung des Owners.
+- Next step: Owner prüft Umhängen/Übertragen, Markierung und Entfernen/Löschen; danach `TASK-066` (entfernte Platzierungen merken).
 - Open:
   - Keine
 - Decided:
@@ -15,9 +15,11 @@
   - Übertragene Äste: Symbol beim Überfahren, schaltbarer Rand, Baumauswahl beim Sprung (2026-11-19)
   - „Hier entfernen“ und „Knoten löschen“ getrennt; letzte Platzierung weg heißt Papierkorb (2026-11-19)
   - Backend „wiederherstellen und umziehen“ für Knoten im Papierkorb, auch API und MCP (2026-11-19)
+  - Vorsichtige Annahmen der Umsetzung: Heimatlos gewordene Unterknoten rücken in ihrer Platzierung unter den Parent des entfernten Asts; ein Unterknoten im Papierkorb blockiert ein Ziel ebenfalls; der Papierkorb von `workspace` kaskadiert nur über ausschließlich dort stehende Unterknoten (2026-11-19)
 - References: Spec `TASK-063_spec.md`; Story-Spec `STORY-102_spec.md`; Konzept `EPIC-008_spec.md`; Ideensammlung `TASK-064`; Folge-Tasks `TASK-066`, `TASK-067`
 
-State confirmed after entry 2026-11-19 — Übernahme der Entscheidungen aus STORY-102 (c54de6080214)
+State confirmed after entry 2026-11-19 — Umsetzung (ad3560aa1c24)
+
 
 ## 2026-11-19 — Übernahme der Entscheidungen aus STORY-102
 
@@ -44,3 +46,27 @@ State confirmed after entry 2026-11-19 — Übernahme der Entscheidungen aus STO
 ### Open
 
 - Keine
+
+## 2026-11-19 — Umsetzung
+
+### Discussed
+
+- Wie ein Knoten „heimatlos“ wird: Ein Knoten ist es, wenn er nach dem Schnitt in keinem Baum außerhalb des Papierkorbs mehr steht. Die Rechnung läuft über alle Bäume zugleich (`plan_cuts`), weil beim Löschen eines Knotens, der in mehreren Bäumen steht, dessen Äste in jedem Baum geschnitten werden und ein Unterknoten nur bleibt, wenn er außerhalb aller Schnitte noch steht.
+- Die Platzierung eines heimatlosen Knotens bleibt (wie bisher beim Löschen), damit er zurückkommen kann. Ist sein Parent-Platz im selben Baum aber weg (der Parent bleibt anderswo und verlässt nur diesen Baum), hinge die Platzierung ins Leere: Option 1 an der Wurzel, Option 2 unter den nächsten verbleibenden Vorfahren (der Parent des entfernten Asts). Gewählt 2, weil der Knoten beim Wiederherstellen dort steht, wo der Ast vorher stand. Das Merken der entfernten Platzierung selbst ist `TASK-066`.
+- Papierkorb von `workspace`: seine Kaskade (`children`) folgte bisher allen Platzierungen; für Knoten in mehreren Bäumen wäre das falsch. Die Liste der Unterknoten nimmt jetzt nur Knoten, die ausschließlich unter dem Parent stehen. Für geteilte Knoten sind `delete_node` und `remove_node_from_map` der richtige Weg (eigene Operationen, getrennt in API und MCP, wie gefordert); `workspace_delete_element` bleibt allgemein und für Knoten in einem Baum unverändert.
+- Neue Unterknoten: Sie entstehen in jedem Baum, in dem der Parent steht, auch in einer Map im Papierkorb (sonst fehlte der Knoten nach dem Wiederherstellen der Map).
+- Ziel: Ein Unterknoten im Papierkorb, der schon im Ziel steht, blockiert ebenfalls (höchstens eine Platzierung je Knoten und Baum); die Meldung nennt ihn.
+- „Wurzel einer Map als Quelle“: eine Wurzel ist kein Knoten; abgelehnt wird die Map-Uid als `ref` (`mindmap_root_fixed`).
+- `get_node` ohne `tree` für einen Knoten in mehreren Bäumen: bisher Fehler, jetzt Lesen im Projektbaum (sonst erste freie Map); Schreiben verlangt weiter die Angabe.
+- Wiederherstellen und umziehen: erst die Platzierung im Baum setzen, dann über `workspace` wiederherstellen (der Schutz „Parent im Papierkorb“ gilt sonst gerade für den Fall, um den es geht). Die Platzierungen in anderen Bäumen prüft die Operation vorher mit demselben Schutz; steht dort der Parent im Papierkorb, bricht sie ab (`mindmap_parent_in_trash`), bevor etwas geändert ist.
+- Oberfläche: Menü per Rechtsklick und Knopf in der Aktionsleiste (Rechtsklick allein wäre schlecht auffindbar); beim Ziehen trägt der Knoten zusätzlich einen eigenen Medientyp, den die Map-Liste annimmt. Die Karte selbst nimmt weiter nur Knoten an.
+
+### Decided
+
+- Umgesetzt wie in der Spec; Server `application/branches.py`, `domain/branches.py`; Operationen `move_node_to_map`, `transfer_node_to_map`, `remove_node_from_map`, `delete_node`, `restore_and_move_node`, `list_node_trees`; `tree_count` je Knoten im Baum; Oberfläche `BranchDialog`, `NodeMenus`, Markierung, Schalter „Übertragene Äste einrahmen“, Baumauswahl bei „Gehe hin“.
+- Die Projekt-Uid als `target` nennt den Projektbaum, auch wenn er noch keinen Knoten hat.
+- Nicht Teil: entfernte Platzierungen wieder einsetzen (`TASK-066`), Papierkorb-Ansicht und Ziehen daraus (`TASK-067`). Die Oberfläche für „wiederherstellen und umziehen“ gehört zu `TASK-067`.
+
+### Open
+
+- Keine.

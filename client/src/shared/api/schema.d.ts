@@ -935,6 +935,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mindmap/maps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Legt eine freie Map zum Brainstormen im Projekt an (Übergreifendes gehört ins Projekt „Allgemein“). Der Name ist je Projekt eindeutig. Knoten legt `create_node` mit `tree` an */
+        post: operations["mindmap_create_map"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/maps/{project}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Maps eines Projekts: zuerst der Projektbaum, dann die freien Maps in der Reihenfolge des Anlegens, je mit Name, Knotenzahl und Versionstoken. Maps im Papierkorb fehlen */
+        get: operations["mindmap_list_maps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/maps/{tree}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Benennt eine freie Map um, mit Versionsprüfung. Der Projektbaum heißt wie das Projekt und lässt sich nicht umbenennen */
+        put: operations["mindmap_rename_map"];
+        post?: never;
+        /** Legt eine freie Map in den Papierkorb (Wiederherstellen: `workspace_restore_elements` mit der `tree`-uid). Knoten, die nur in ihr stehen, gehen mit; Knoten, die auch in einem anderen Baum stehen, bleiben dort. Items an gelöschten Knoten fallen an den Parent-Knoten zurück, sonst nach „Nicht zugeordnet“. Der Projektbaum lässt sich nicht löschen. Mit Versionsprüfung */
+        delete: operations["mindmap_delete_map"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mindmap/memos/{memo}/nodes": {
         parameters: {
             query?: never;
@@ -961,7 +1013,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Legt einen Knoten (Titel, optionaler Text) im Themenbaum des Projekts an, unter `parent` oder unter der Wurzel, an der Stelle `position` (sonst am Ende). Leere Knoten sind erlaubt */
+        /** Legt einen Knoten (Titel, optionaler Text) im Themenbaum des Projekts oder, mit `tree`, in einer freien Map an, unter `parent` oder unter der Wurzel, an der Stelle `position` (sonst am Ende). Leere Knoten sind erlaubt */
         post: operations["mindmap_create_node"];
         delete?: never;
         options?: never;
@@ -1032,7 +1084,8 @@ export interface paths {
         /** Ändert Titel, Text oder Markierung eines Knotens mit Versionsprüfung; ein leerer `text` löscht den Text, `mark` ist `discarded` oder `later`, ein leerer Wert nimmt sie weg */
         put: operations["mindmap_update_node"];
         post?: never;
-        delete?: never;
+        /** „Knoten löschen“: nimmt den Ast aus allen Bäumen und legt ihn mit den heimatlos gewordenen Unterknoten in den Papierkorb (Wiederherstellen: `workspace_restore_elements` oder `restore_and_move_node`). Unterknoten, die in einem anderen Baum stehen, bleiben dort. Mit Versionsprüfung */
+        delete: operations["mindmap_delete_node"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1124,6 +1177,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mindmap/nodes/{ref}/move-to-map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hängt einen Ast (Knoten mit Unterknoten) aus seinem Baum in die Ziel-Map um: er steht danach nur dort, unter der Wurzel am Ende. Nur innerhalb eines Projekts. Abgelehnt mit Liste der Knoten (`mindmap_target_conflict`), wenn der Ast oder ein Unterknoten im Ziel schon steht; ebenso Knoten im Papierkorb und Maps im Papierkorb. Mit Versionsprüfung */
+        post: operations["mindmap_move_node_to_map"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** „Hier entfernen“: nimmt den Ast nur aus einem Baum. Verliert ein Knoten damit seine letzte Platzierung, geht er mit den heimatlos gewordenen Unterknoten in den Papierkorb; Unterknoten, die in einem anderen Baum stehen, bleiben dort. Mit Versionsprüfung */
+        post: operations["mindmap_remove_node_from_map"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/removed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Bäume (ohne Papierkorb), aus denen ein Knoten entfernt wurde und in die er zurück kann („Früher in …“): der Projektbaum zuerst, dann die freien Maps; mit dem alten Parent, ob er noch im Baum steht, und der Zahl der Knoten, die zurückkämen */
+        get: operations["mindmap_list_removed_placements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/restore-move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Holt einen Knoten aus dem Papierkorb und stellt ihn in einem Schritt unter `parent` (sonst unter die Wurzel) des Baums `tree`. Die neue Stelle ersetzt seine alte Platzierung in diesem Baum; Platzierungen in anderen Bäumen kommen wie vorher zurück. Mit Versionsprüfung */
+        post: operations["mindmap_restore_and_move_node"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/restore-placement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Setzt einen mit `remove_node_from_map` („Hier entfernen“) entfernten Ast wieder in den Baum, in dem er stand: an den alten Parent und die alte Stelle, mit den Unterknoten, die mit ihm entfernt wurden. Fehlt der alte Parent (nicht mehr im Baum, im Papierkorb oder selbst noch entfernt), steht der Ast unter der Wurzel der Map (`fell_back_to_root`). Abgelehnt: der Knoten steht im Baum schon wieder (`mindmap_node_in_tree`), es ist keine Platzierung gemerkt (`mindmap_nothing_to_restore`), Knoten oder Map im Papierkorb. Mit Versionsprüfung */
+        post: operations["mindmap_restore_node_placement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Überträgt einen Ast in die Ziel-Map: derselbe Ast steht danach in beiden Bäumen (nichts wird kopiert; Titel, Text, Notizen und Items sind gemeinsam, die Struktur darunter gehört je Baum). Nur zwischen verschiedenen Bäumen desselben Projekts; Ablehnungen wie bei `move_node_to_map`. Mit Versionsprüfung */
+        post: operations["mindmap_transfer_node_to_map"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/trees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Bäume (ohne Papierkorb), in denen ein Knoten steht: der Projektbaum zuerst, dann die freien Maps */
+        get: operations["mindmap_list_node_trees"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/trash/{project}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die gelöschten Äste einer Map (Seitenansicht „Papierkorb“): je der oberste gelöschte Knoten, der im Baum stand, mit Titel, Version für `restore_and_move_node`, altem Parent und der Zahl der Knoten im Papierkorb, die mit ihm zurückkämen. Ohne `tree` der Projektbaum; eine Map im Papierkorb wird abgelehnt */
+        get: operations["mindmap_list_trashed_nodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mindmap/trees/{project}": {
         parameters: {
             query?: never;
@@ -1131,7 +1320,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Der Themenbaum eines Projekts (das Projekt ist die Wurzel): alle Knoten mit Parent und Stelle, Eltern vor Kindern, je Knoten Anzahl, Fortschritt und Zustand über ihn und seine Unterknoten, dazu die Items ohne Knoten. Knoten im Papierkorb fehlen. `statuses` ist der Statusfilter des Backlogs für die Zahlen */
+        /** Der Themenbaum eines Projekts (das Projekt ist die Wurzel) oder, mit `tree`, einer freien Map: alle Knoten mit Parent und Stelle, Eltern vor Kindern, je Knoten Anzahl, Fortschritt und Zustand über ihn und seine Unterknoten, dazu im Projektbaum die Items ohne Knoten (in freien Maps gibt es „Nicht zugeordnet“ nicht). Knoten im Papierkorb fehlen. `statuses` ist der Statusfilter des Backlogs für die Zahlen */
         get: operations["mindmap_get_tree"];
         put?: never;
         post?: never;
@@ -2081,6 +2270,38 @@ export interface components {
             /** Outgoing */
             outgoing: components["schemas"]["LinkedElement"][];
         };
+        /** MapDeletedOut */
+        MapDeletedOut: {
+            /**
+             * Kept Elsewhere
+             * @default 0
+             */
+            kept_elsewhere: number;
+            /** Nodes Deleted */
+            nodes_deleted: number;
+            /** Tree Uid */
+            tree_uid: string;
+        };
+        /**
+         * MapOut
+         * @description Eine Map eines Projekts: der Projektbaum (zuerst) oder eine freie Map.
+         */
+        MapOut: {
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Node Count */
+            node_count: number;
+            /** Project Uid */
+            project_uid: string;
+            /** Shared Count */
+            shared_count: number;
+            /** Tree Uid */
+            tree_uid: string | null;
+            /** Version */
+            version: number;
+        };
         /** MemoHintOut */
         MemoHintOut: {
             /**
@@ -2423,6 +2644,13 @@ export interface components {
              */
             replace: boolean;
         };
+        /** MindmapCreateMapBody */
+        MindmapCreateMapBody: {
+            /** Name */
+            name: string;
+            /** Project */
+            project: string;
+        };
         /** MindmapCreateNodeBody */
         MindmapCreateNodeBody: {
             /** Parent */
@@ -2435,6 +2663,8 @@ export interface components {
             text?: string | null;
             /** Title */
             title: string;
+            /** Tree */
+            tree?: string | null;
         };
         /** MindmapLinkMemoBody */
         MindmapLinkMemoBody: {
@@ -2456,6 +2686,17 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** MindmapMoveNodeToMapBody */
+        MindmapMoveNodeToMapBody: {
+            /** Project */
+            project?: string | null;
+            /** Target */
+            target: string;
+            /** Tree */
+            tree?: string | null;
+            /** Version */
+            version: number;
+        };
         /** MindmapPutNodeDocumentBody */
         MindmapPutNodeDocumentBody: {
             /** Content */
@@ -2464,6 +2705,55 @@ export interface components {
             project?: string | null;
             /** Version */
             version?: number | null;
+        };
+        /** MindmapRemoveNodeFromMapBody */
+        MindmapRemoveNodeFromMapBody: {
+            /** Project */
+            project?: string | null;
+            /** Tree */
+            tree?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MindmapRenameMapBody */
+        MindmapRenameMapBody: {
+            /** Name */
+            name: string;
+            /** Version */
+            version: number;
+        };
+        /** MindmapRestoreAndMoveNodeBody */
+        MindmapRestoreAndMoveNodeBody: {
+            /** Parent */
+            parent?: string | null;
+            /** Position */
+            position?: number | null;
+            /** Project */
+            project?: string | null;
+            /** Tree */
+            tree?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MindmapRestoreNodePlacementBody */
+        MindmapRestoreNodePlacementBody: {
+            /** Project */
+            project?: string | null;
+            /** Tree */
+            tree?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** MindmapTransferNodeToMapBody */
+        MindmapTransferNodeToMapBody: {
+            /** Project */
+            project?: string | null;
+            /** Target */
+            target: string;
+            /** Tree */
+            tree?: string | null;
+            /** Version */
+            version: number;
         };
         /** MindmapUpdateNodeBody */
         MindmapUpdateNodeBody: {
@@ -2534,6 +2824,17 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** NodeTreeOut */
+        NodeTreeOut: {
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Tree Uid */
+            tree_uid: string;
+        };
         /** NotesEntryOut */
         NotesEntryOut: {
             /** Day */
@@ -2576,6 +2877,21 @@ export interface components {
             };
             /** Message */
             message: string;
+        };
+        /** PlacementRestoredOut */
+        PlacementRestoredOut: {
+            /** Fell Back To Root */
+            fell_back_to_root: boolean;
+            /** Node Uid */
+            node_uid: string;
+            /** Nodes Restored */
+            nodes_restored: number;
+            /** Nodes Skipped */
+            nodes_skipped: number;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Tree Uid */
+            tree_uid: string;
         };
         /** Preview */
         Preview: {
@@ -2644,6 +2960,15 @@ export interface components {
             item_uid: string;
             memo: components["schemas"]["MemoOut"];
         };
+        /** RemovalOut */
+        RemovalOut: {
+            /** Kept Elsewhere */
+            kept_elsewhere: number;
+            /** Node Uid */
+            node_uid: string;
+            /** Nodes Deleted */
+            nodes_deleted: number;
+        };
         /** RemoveResult */
         RemoveResult: {
             /** Trashed */
@@ -2656,6 +2981,21 @@ export interface components {
              * @default true
              */
             removed: boolean;
+        };
+        /** RemovedFromOut */
+        RemovedFromOut: {
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Nodes */
+            nodes: number;
+            /** Parent Available */
+            parent_available: boolean;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Tree Uid */
+            tree_uid: string;
         };
         /** RenameOut */
         RenameOut: {
@@ -2849,6 +3189,21 @@ export interface components {
             /** Uid */
             uid: string;
         };
+        /** TrashedNodeOut */
+        TrashedNodeOut: {
+            /** Label */
+            label: string;
+            /** Nodes */
+            nodes: number;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Title */
+            title: string;
+            /** Uid */
+            uid: string;
+            /** Version */
+            version: number;
+        };
         /**
          * TreeNodeOut
          * @description Ein Knoten im Baum mit den Zahlen über sich und seine Unterknoten (jedes Item zählt genau einmal).
@@ -2885,6 +3240,11 @@ export interface components {
              * @default 0
              */
             total: number;
+            /**
+             * Tree Count
+             * @default 1
+             */
+            tree_count: number;
             /** Tree Uid */
             tree_uid: string;
             /** Uid */
@@ -5243,6 +5603,138 @@ export interface operations {
             };
         };
     };
+    mindmap_create_map: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapCreateMapBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_list_maps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_rename_map: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tree: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapRenameMapBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_delete_map: {
+        parameters: {
+            query: {
+                version: number;
+            };
+            header?: never;
+            path: {
+                tree: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapDeletedOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     mindmap_list_memo_nodes: {
         parameters: {
             query?: {
@@ -5482,11 +5974,46 @@ export interface operations {
             };
         };
     };
+    mindmap_delete_node: {
+        parameters: {
+            query: {
+                version: number;
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemovalOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     mindmap_get_node_content: {
         parameters: {
             query?: {
                 statuses?: string | null;
                 project?: string | null;
+                tree?: string | null;
             };
             header?: never;
             path: {
@@ -5689,9 +6216,284 @@ export interface operations {
             };
         };
     };
+    mindmap_move_node_to_map: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapMoveNodeToMapBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_remove_node_from_map: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapRemoveNodeFromMapBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemovalOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_list_removed_placements: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemovedFromOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_restore_and_move_node: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapRestoreAndMoveNodeBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_restore_node_placement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapRestoreNodePlacementBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlacementRestoredOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_transfer_node_to_map: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapTransferNodeToMapBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_list_node_trees: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeTreeOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_list_trashed_nodes: {
+        parameters: {
+            query?: {
+                tree?: string | null;
+            };
+            header?: never;
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashedNodeOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     mindmap_get_tree: {
         parameters: {
             query?: {
+                tree?: string | null;
                 statuses?: string | null;
             };
             header?: never;

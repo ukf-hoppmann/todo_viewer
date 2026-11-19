@@ -10,8 +10,9 @@ Gesamtbild: `STORY-102_spec.md`. Der Weg steht in `TASK-066_notes.md`. Setzt `TA
 - Ein Ast wird als Gruppe entfernt und kommt als Gruppe zurück (die entfernten Platzierungen seiner Unterknoten
   im selben Baum gehören dazu).
 - „Wieder einsetzen“ gibt es über API, MCP und am Knoten („Früher in …“). Fehlt der alte Parent, ist der Platz
-  belegt oder steht der Knoten im Baum inzwischen wieder, gilt eine festgelegte Ersatzregel (Vorschlag: unter die
-  Wurzel der Map) bzw. eine Ablehnung; die Oberfläche sagt es.
+  belegt oder steht der Knoten im Baum inzwischen wieder, gilt die Ersatzregel (unter die Wurzel der Map) bzw. eine
+  Ablehnung (Knoten steht schon wieder im Baum); die Oberfläche sagt es. Eine alte Stelle ist nie „belegt“: die
+  Geschwister rücken nach.
 - Die Regeln aus `TASK-063` gelten auch hier (Kreise, Projekt, Papierkorb).
 
 ## Nicht Teil

@@ -10,7 +10,9 @@ from viewer.core.application.ports import Transaction
 from viewer.core.domain.events import Event
 from viewer.core.domain.plugin import ElementKind, Subscription
 from viewer.plugins.mindmap.application.assignments import AssignmentService
+from viewer.plugins.mindmap.application.branches import BranchService
 from viewer.plugins.mindmap.application.documents import DocumentService
+from viewer.plugins.mindmap.application.maps import MapService, MapTrash
 from viewer.plugins.mindmap.application.operations import OPERATIONS, MindmapServices
 from viewer.plugins.mindmap.application.service import KIND, MindmapService
 from viewer.plugins.mindmap.infrastructure.backlog_gateway import ServicesBacklogItems
@@ -50,18 +52,45 @@ def _build(context: PluginContext) -> MindmapServices:
         context.database,
         context.events,
     )
+    maps = MapService(
+        repository,
+        workspace.registry,
+        workspace.project_store,
+        context.database,
+        context.events,
+        context.clock,
+        lambda: str(uuid.uuid4()),
+    )
+    # Freie Maps liegen als eigene Einträge im Papierkorb; ihre Knoten tragen den Löschzeitpunkt der Map.
+    workspace.trash.register_source(MapTrash(repository, workspace.registry, workspace.project_store))
+    branches = BranchService(
+        repository,
+        service,
+        workspace.registry,
+        workspace.project_store,
+        context.database,
+        context.events,
+        context.clock,
+        workspace.trash.restore_elements,
+    )
     return MindmapServices(
         service,
         DocumentService(documents, service, context.database, context.clock, context.events),
         assignments,
+        maps,
+        branches,
     )
 
 
 def _on_workspace_event(services: MindmapServices, event: Event) -> None:
     """Knoten, die der Papierkorb von `workspace` löscht oder zurückholt, werden als `mindmap.node.changed` gemeldet."""
-    change = {"deleted": "deleted", "restored": "restored"}.get(str(event.payload.get("change")))
+    kind = str(event.payload.get("change"))
+    uids = list(event.payload.get("uids", []))
+    change = {"deleted": "deleted", "restored": "restored"}.get(kind)
     if change is not None:
-        services.mindmap.announce(list(event.payload.get("uids", [])), change)
+        services.mindmap.announce(uids, change)
+    if kind == "entry_restored":
+        services.maps.announce_entries(uids, "restored")
 
 
 plugin = PluginDefinition(

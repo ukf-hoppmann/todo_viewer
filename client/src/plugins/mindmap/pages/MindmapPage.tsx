@@ -6,14 +6,19 @@ import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
-import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useGetTreesQuery, useMoveNodeMutation, useUpdateNodeMutation, type ItemRefOut, type TreeNodeOut } from "../api";
-import { COMBINED_ROOT, canDropItem, combinedTree, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
+import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useGetTreesQuery, useListMapsQuery, useListTrashedNodesQuery, useMoveNodeMutation, useRestoreAndMoveNodeMutation, useRemoveNodeFromMapMutation, useUpdateNodeMutation, type ItemRefOut, type NodeTreeOut, type TrashedNodeOut, type TreeNodeOut } from "../api";
+import { chooseMap } from "../domain/maps";
+import { COMBINED_ROOT, canDropItem, combinedTree, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, restorePlacement, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import type { TreeOut } from "../api";
+import { BranchDialog } from "../BranchDialog";
+import type { BranchAction, BranchSource } from "../domain/branches";
 import { MapActionsContext, type MapActions } from "../mapActions";
 import { dropZonesOf, edgeSides, layoutTree } from "../mindmapLayout";
 import { MindmapNode, type TopicNode } from "../MindmapNode";
 import { useMapNavigation } from "../navigation";
 import { NodeDetail } from "../NodeDetail";
+import { DeleteSharedDialog, NodeMenu, TreeJumpMenu, type MenuAnchor } from "../NodeMenus";
+import { TrashPanel } from "../TrashPanel";
 import { UnassignedPanel } from "../UnassignedPanel";
 import { useMindmapState } from "../state";
 import { mindmapTestIds } from "../testIds";
@@ -21,6 +26,7 @@ import { mindmapTestIds } from "../testIds";
 const NODE_TYPES = { topic: MindmapNode };
 const NO_NODES: readonly TreeNodeOut[] = [];
 const NO_ITEMS: readonly ItemRefOut[] = [];
+const NO_TRASH: readonly TrashedNodeOut[] = [];
 const DOUBLE_CLICK_MS = 250;
 const FIT = { maxZoom: 1, padding: 0.15 };
 const EDGE_STYLE = { stroke: "#5b8cff", strokeOpacity: 0.7 };
@@ -39,26 +45,30 @@ type Structure = Array<{ id: string; parentId: string | null }>;
  */
 export default function MindmapPage() {
 	const { t } = useTranslation("mindmap");
-	const { visible, marked } = useProjectSelection();
+	const { visible, marked, mark } = useProjectSelection();
 	const project = shownProject(visible, marked);
 	const statuses = useShownStatuses();
-	const { view, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, showDependencies, layout: mode } = useMindmapState();
+	const { view, setView, chosenMaps, chooseMapOf, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, showTrash, showDependencies, highlightShared, layout: mode } = useMindmapState();
 	const all = view === "all";
 	// The single view loads the tree of one project, the overall view those of all visible projects.
-	const { currentData: single } = useGetTreeQuery({ project: project?.uid ?? "", statuses }, { skip: all || !project });
+	// The single view shows the map chosen in the sidebar list: the project tree, or a free map of the project (named by `tree`).
+	const { currentData: maps } = useListMapsQuery(project?.uid ?? "", { skip: all || !project });
+	const map = all ? undefined : chooseMap(maps, project ? chosenMaps[project.uid] : undefined);
+	const freeTree = map?.kind === "free" ? (map.tree_uid ?? undefined) : undefined;
+	const { currentData: single } = useGetTreeQuery({ project: project?.uid ?? "", statuses, ...(freeTree ? { tree: freeTree } : {}) }, { skip: all || !project || !map });
 	const projectUids = useMemo(() => visible.map((entry) => entry.uid), [visible]);
 	const { currentData: several } = useGetTreesQuery({ projects: projectUids, statuses }, { skip: !all || projectUids.length === 0 });
 	// `byProject` holds the nodes of every project as the server gave them (top nodes without a parent); `nodes` is what the map draws from.
 	const { nodes, byProject, tree, rootId, rootTitle, unassignedProject, unassigned } = useMemo(() => {
 		if (!all) {
 			const own = single?.nodes ?? NO_NODES;
-			return { nodes: own, byProject: new Map([[project?.uid ?? "", own]]), tree: single, rootId: project?.uid, rootTitle: project?.name ?? "", unassignedProject: project?.uid, unassigned: single?.unassigned ?? NO_ITEMS };
+			return { nodes: own, byProject: new Map([[project?.uid ?? "", own]]), tree: single, rootId: project?.uid, rootTitle: freeTree ? (map?.name ?? "") : (project?.name ?? ""), unassignedProject: freeTree ? undefined : project?.uid, unassigned: single?.unassigned ?? NO_ITEMS };
 		}
 		// A response that belongs to other projects (the selection just changed) is not used.
 		const trees: readonly TreeOut[] | undefined = several && several.length === visible.length && several.every((entry, index) => entry.project_uid === visible[index]!.uid) ? several : undefined;
 		const own = new Map(visible.map((entry, index) => [entry.uid, trees?.[index]?.nodes ?? NO_NODES]));
 		const makeProject = (entry: (typeof visible)[number], sums: { position: number; total: number; done: number; state: string }): TreeNodeOut => ({
-			uid: entry.uid, project_uid: entry.uid, label: "", title: entry.name, text: null, tree_uid: "", parent_uid: null, version: 0, documents: [], mark: null, ...sums,
+			uid: entry.uid, project_uid: entry.uid, label: "", title: entry.name, text: null, tree_uid: "", parent_uid: null, version: 0, documents: [], mark: null, tree_count: 1, ...sums,
 		});
 		const markedTree = marked ? trees?.[visible.findIndex((entry) => entry.uid === marked.uid)] : undefined;
 		return {
@@ -70,17 +80,28 @@ export default function MindmapPage() {
 			unassignedProject: markedTree ? marked?.uid : undefined,
 			unassigned: markedTree?.unassigned ?? NO_ITEMS,
 		};
-	}, [all, single, several, project, visible, marked, t]);
+	}, [all, single, several, project, visible, marked, t, map, freeTree]);
+	// The side view "Papierkorb" (single view only): the deleted branches that stood in the map shown.
+	const { currentData: trashed } = useListTrashedNodesQuery({ project: project?.uid ?? "", ...(freeTree ? { tree: freeTree } : {}) }, { skip: all || !project || !map || !showTrash });
+	const trashTree = map?.tree_uid ?? undefined;
 	const [createNode] = useCreateNodeMutation();
+	const [restoreAndMove] = useRestoreAndMoveNodeMutation();
 	const [updateNode] = useUpdateNodeMutation();
 	const [moveNode] = useMoveNodeMutation();
+	const [removeFromMap] = useRemoveNodeFromMapMutation();
 	const [assignItem] = useAssignItemMutation();
 	// The drag in progress: the dragged node (or an item of the side view) and the place it is over, if that place is offered.
 	const [drag, setDrag] = useState<{ source: string; over?: { id: string; zone: DropZone } }>();
 	const dragSource = useRef<string | undefined>(undefined);
 	const dragsItem = useRef(false);
+	const dragsTrash = useRef(false);
 	const { requestDelete, dialog: deleteDialog, failed: deleteFailed } = useDeleteElement();
 	const [editing, setEditing] = useState<string | null>(null);
+	// The menu of a node, the dialog that hangs over or transfers a branch, the list of trees to jump to, and the question before a shared node is deleted everywhere.
+	const [menu, setMenu] = useState<{ id: string; anchor: MenuAnchor }>();
+	const [branch, setBranch] = useState<{ source: BranchSource; action: BranchAction }>();
+	const [trees, setTrees] = useState<{ id: string; anchor: MenuAnchor }>();
+	const [sharedDelete, setSharedDelete] = useState<string>();
 	const [error, setError] = useState<string>();
 	const { focus, openFocus } = useMapNavigation();
 
@@ -124,9 +145,9 @@ export default function MindmapPage() {
 	}, [layoutKey, detailOpen]);
 
 	// The actions read the newest data through a ref, so the nodes of the map keep the same handlers.
-	const latest = useRef({ shown, nodes, byProject, fold, unassignedProject });
+	const latest = useRef({ shown, nodes, byProject, fold, unassignedProject, freeTree, trashed, trashTree, rootId });
 	useEffect(() => {
-		latest.current = { shown, nodes, byProject, fold, unassignedProject };
+		latest.current = { shown, nodes, byProject, fold, unassignedProject, freeTree, trashed, trashTree, rootId };
 	});
 	const actions: MapActions = useMemo(() => {
 		const fail = (failure: unknown) => setError(errorMessage(failure, t("error.failed")));
@@ -148,9 +169,15 @@ export default function MindmapPage() {
 			const source = dragSource.current;
 			return scope && source ? dropPlacement(scope.projectUid, scope.list, source, id, zone) : null;
 		};
+		// A branch from the trash lands in the tree shown: the root and every node of it are places, nothing stands next to the root.
+		const trashPlacementOf = (id: string, zone: DropZone) => {
+			const { nodes: drawn, rootId: root } = latest.current;
+			return root && !all ? restorePlacement(root, drawn, id, zone) : null;
+		};
 		const endDrag = () => {
 			dragSource.current = undefined;
 			dragsItem.current = false;
+			dragsTrash.current = false;
 			setDrag(undefined);
 		};
 		return {
@@ -163,9 +190,14 @@ export default function MindmapPage() {
 				dragsItem.current = true;
 				setDrag({ source: uid });
 			},
+			dragStartTrash: (uid) => {
+				dragSource.current = uid;
+				dragsTrash.current = true;
+				setDrag({ source: uid });
+			},
 			dragEnd: endDrag,
 			dragOver: (id, zone) => {
-				const allowed = dragsItem.current ? itemAllowed(id) : placementOf(id, zone) !== null;
+				const allowed = dragsItem.current ? itemAllowed(id) : dragsTrash.current ? trashPlacementOf(id, zone) !== null : placementOf(id, zone) !== null;
 				const place = dragsItem.current ? "inside" : zone;
 				// dragover fires continuously: the state object is kept while nothing changed, so nothing is drawn again.
 				setDrag((current) => {
@@ -177,6 +209,22 @@ export default function MindmapPage() {
 			},
 			dragLeave: (id) => setDrag((current) => (current?.over?.id === id ? { source: current.source } : current)),
 			drop: (id, zone) => {
+				if (dragsTrash.current) {
+					const branch = latest.current.trashed?.find((entry) => entry.uid === dragSource.current);
+					const placement = trashPlacementOf(id, zone);
+					const tree = latest.current.trashTree;
+					endDrag();
+					if (!branch || !placement) return;
+					setError(undefined);
+					restoreAndMove({ ref: branch.uid, version: branch.version, ...(tree ? { tree } : {}), ...placement })
+						.unwrap()
+						.then(() => {
+							// The restored branch must be visible: a closed target it was hung below is opened.
+							if (zone === "inside") setFold((current) => (isOpen(current, id, depthOf(id)) ? current : toggledFold(current, id, depthOf(id))));
+						})
+						.catch(fail);
+					return;
+				}
 				if (dragsItem.current) {
 					const item = dragSource.current;
 					const allowed = itemAllowed(id);
@@ -204,7 +252,7 @@ export default function MindmapPage() {
 				const scope = scopeOf(id);
 				if (!scope) return;
 				setError(undefined);
-				createNode({ project: scope.projectUid, title: t("node.new"), ...(id === scope.projectUid ? {} : { parent: id }) })
+				createNode({ project: scope.projectUid, title: t("node.new"), ...(id === scope.projectUid ? {} : { parent: id }), ...(latest.current.freeTree ? { tree: latest.current.freeTree } : {}) })
 					.unwrap()
 					.then((created) => {
 						// The new child must be visible: a closed parent is opened.
@@ -227,11 +275,30 @@ export default function MindmapPage() {
 				const node = latest.current.nodes.find((entry) => entry.uid === id);
 				if (!node) return;
 				setError(undefined);
-				void requestDelete(node.uid, node.version);
+				// A node in several trees is deleted everywhere only after a question that names the trees.
+				if (node.tree_count > 1) setSharedDelete(id);
+				else void requestDelete(node.uid, node.version);
 			},
+			openMenu: (id, anchor) => setMenu({ id, anchor }),
+			openTrees: (id, anchor) => setTrees({ id, anchor }),
 			openAsRoot: (id) => openFocus(id),
 		};
-	}, [createNode, updateNode, moveNode, assignItem, requestDelete, setFold, openFocus, t]);
+	}, [createNode, updateNode, moveNode, restoreAndMove, assignItem, requestDelete, all, setFold, openFocus, t]);
+
+	// What the menu and the jump list do with a node of this page.
+	const nodeOf = (id: string | undefined) => (id ? nodes.find((entry) => entry.uid === id) : undefined);
+	const sourceOf = (node: TreeNodeOut): BranchSource => ({ uid: node.uid, version: node.version, title: node.title, project_uid: node.project_uid, tree_uid: node.tree_uid });
+	const jump = (id: string, tree: NodeTreeOut) => {
+		const node = nodeOf(id);
+		setTrees(undefined);
+		if (!node) return;
+		if (all) {
+			setView("single");
+			mark(node.project_uid);
+		}
+		chooseMapOf(node.project_uid, tree.kind === "free" ? tree.tree_uid : null);
+		setSelected(node.uid);
+	};
 
 	// A double click renames and must not open the detail in between (the map would shift under the pointer): a click
 	// selects only after the time a double click may take.
@@ -266,6 +333,11 @@ export default function MindmapPage() {
 							noAdd: all && entry.node === undefined,
 							hasChildren: entry.hasChildren,
 							hasNotes: (entry.node?.documents.length ?? 0) > 0,
+							version: entry.node?.version,
+							projectUid: entry.node?.project_uid,
+							treeUid: entry.node?.tree_uid,
+							treeCount: entry.node?.tree_count,
+							frameShared: highlightShared,
 							state: entry.node?.state,
 							mark: entry.node?.mark,
 							total: entry.node?.total,
@@ -282,7 +354,7 @@ export default function MindmapPage() {
 					},
 				];
 			}),
-		[shown, layout, rootPosition, mode, rootTitle, all, byProject, selected, editing, drag],
+		[shown, layout, rootPosition, mode, rootTitle, all, byProject, selected, editing, drag, highlightShared],
 	);
 	const treeEdges: Edge[] = useMemo(
 		() =>
@@ -370,7 +442,7 @@ export default function MindmapPage() {
 					<Box sx={{ flexGrow: 1, minWidth: 0, border: 1, borderColor: "divider" }} data-testid={mindmapTestIds.map}>
 						{layout && (
 							<ReactFlow
-								key={`${view}:${projectUids.join(",")}`}
+								key={`${view}:${projectUids.join(",")}:${freeTree ?? ""}`}
 								nodes={flowNodes}
 								edges={edges}
 								nodeTypes={NODE_TYPES}
@@ -391,10 +463,31 @@ export default function MindmapPage() {
 							</ReactFlow>
 						)}
 					</Box>
-					{showUnassigned && (!all || unassignedProject) && <UnassignedPanel items={unassigned} />}
+					{showUnassigned && !freeTree && (!all || unassignedProject) && <UnassignedPanel items={unassigned} />}
+						{showTrash && !all && map && <TrashPanel branches={trashed ?? NO_TRASH} />}
 				</Box>
 			</MapActionsContext.Provider>
 			{deleteDialog}
+			{menu && nodeOf(menu.id) && (
+				<NodeMenu
+					anchor={menu.anchor}
+					shared={nodeOf(menu.id)!.tree_count > 1}
+					onClose={() => setMenu(undefined)}
+					onMove={() => setBranch({ source: sourceOf(nodeOf(menu.id)!), action: "move" })}
+					onTransfer={() => setBranch({ source: sourceOf(nodeOf(menu.id)!), action: "transfer" })}
+					onRemoveHere={() => {
+						const node = nodeOf(menu.id)!;
+						setError(undefined);
+						removeFromMap({ ref: node.uid, version: node.version, tree: node.tree_uid }).unwrap().catch((failure: unknown) => setError(errorMessage(failure, t("error.failed"))));
+					}}
+					onDelete={() => actions.remove(menu.id)}
+				/>
+			)}
+			{branch && <BranchDialog source={branch.source} action={branch.action} onClose={() => setBranch(undefined)} />}
+			{trees && nodeOf(trees.id) && <TreeJumpMenu anchor={trees.anchor} node={trees.id} onClose={() => setTrees(undefined)} onPick={(tree) => jump(trees.id, tree)} />}
+			{sharedDelete && nodeOf(sharedDelete) && (
+				<DeleteSharedDialog node={sharedDelete} title={nodeOf(sharedDelete)!.title} version={nodeOf(sharedDelete)!.version} onClose={() => setSharedDelete(undefined)} onFail={setError} />
+			)}
 		</Box>
 	);
 }

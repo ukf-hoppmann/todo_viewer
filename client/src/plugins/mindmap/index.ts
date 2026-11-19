@@ -7,6 +7,7 @@ import en from "./locales/en.json";
 import { ItemNodeSection } from "./ItemNodeSection";
 import { LayoutSwitch } from "./LayoutSwitch";
 import { MapFilters } from "./MapFilters";
+import { MapList } from "./MapList";
 import { ViewSwitch } from "./ViewSwitch";
 
 /**
@@ -18,14 +19,18 @@ import { ViewSwitch } from "./ViewSwitch";
  * (with its sub-nodes) and its state; the sidebar filters the nodes by state and shows the status filter of the
  * backlog, by which the server counts. The view can start at a node (the focus, `?focus=<uid>` in the address, with the
  * path back above the map); the detail of an item offers "Gehe hin", "Erstelle" and "Anker". A sidebar section switches between the single view and the overall view (`view` in the UI state: all chosen projects under a common root, `getTrees`); another switches the
- * arrangement of the map (`layout` in the UI state: the tree to the side, or around the root).
+ * arrangement of the map (`layout` in the UI state: the tree to the side, or around the root). The sidebar section "Maps in <project>" (`MapList`) lists the project tree and the free maps of the project; the map chosen there (kept per project in the UI state) is the one the page shows. Free maps are created, renamed and put into the trash there.
  */
 export const plugin = definePlugin({
 	i18n: { de, en },
 	api: mindmapApi,
 	eventHandlers: {
 		"mindmap.node.changed": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode", "Maps", "Trashed"]));
+		},
+		// A free map was created, renamed, deleted or restored: the list of maps and the tree change.
+		"mindmap.map.changed": (_payload, { dispatch, api }) => {
+			if (api?.util) dispatch(api.util.invalidateTags(["Maps", "Tree", "Content", "ItemNode", "Trashed"]));
 		},
 		// A status change moves the counts, a changed memo its title in the detail of a node.
 		"backlog.item.changed": (_payload, { dispatch, api }) => {
@@ -38,14 +43,15 @@ export const plugin = definePlugin({
 			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents"]));
 		},
 		"workspace.element.changed": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode", "Maps", "Trashed"]));
 		},
 		"core.reconnected": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents", "Content", "ItemNode"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents", "Content", "ItemNode", "Maps", "Trashed"]));
 		},
 	},
 	contributions: [{ slot: "core.main", name: "main", title: "tab.mindmap", icon: MindmapIcon, page: () => import("./pages/MindmapPage"), layout: { sidebar: true, detail: true } },
 		{ slot: "backlog.item-detail", name: "node", component: ItemNodeSection, order: 5 },
+		{ slot: "core.sidebar-sections", name: "maps", component: MapList, order: 17, when: ["mindmap/main"] },
 		{ slot: "core.sidebar-sections", name: "view", component: ViewSwitch, order: 18, when: ["mindmap/main"] },
 		{ slot: "core.sidebar-sections", name: "layout", component: LayoutSwitch, order: 19, when: ["mindmap/main"] },
 		{ slot: "core.sidebar-sections", name: "state-filter", component: MapFilters, order: 20, when: ["mindmap/main"] },

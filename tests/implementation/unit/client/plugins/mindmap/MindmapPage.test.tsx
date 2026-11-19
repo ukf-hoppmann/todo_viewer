@@ -7,7 +7,7 @@ import { mindmapTestIds as ids } from "../../../../../../client/src/plugins/mind
 import { sharedTestIds } from "../../../../../../client/src/shared";
 import { fakeMindmapBackend } from "../../../../../helpers/client/fakeMindmapBackend";
 import { project } from "../../../../../helpers/client/fakeWorkspaceBackend";
-import { itemRef, node } from "../../../../../helpers/client/mindmapFixtures";
+import { itemRef, node, trashedNode } from "../../../../../helpers/client/mindmapFixtures";
 import { locationTestId } from "../../../../../helpers/client/locationTestId";
 import { renderWorkspace } from "../../../../../helpers/client/renderWorkspace";
 
@@ -589,6 +589,140 @@ describe("MindmapPage: the side view Nicht zugeordnet", () => {
 	});
 });
 
+describe("MindmapPage: the side view Papierkorb", () => {
+	const gone = [trashedNode("g1", { nodes: 3 }), trashedNode("g2")];
+	const shownTrash = { ...marked, mindmap: { showTrash: true } };
+	const startTrashDrag = (uid: string) => fireEvent.dragStart(screen.getByTestId(ids.trashEntry(uid)), { dataTransfer: { setData: () => {}, effectAllowed: "" } });
+
+	it("is off at the start", async () => {
+		await renderPage({ trashed: gone });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(screen.queryByTestId(ids.trash)).toBeNull();
+	});
+
+	it("lists the deleted branches of the project next to the map, with the size of each, and keeps them out of the tree", async () => {
+		await renderPage({ trashed: gone, documents: shownTrash });
+
+		const panel = await screen.findByTestId(ids.trash);
+		await screen.findByTestId(ids.trashEntry("g1"));
+		expect(panel.textContent).toContain("Papierkorb");
+		expect(screen.getByTestId(ids.trashEntry("g1")).textContent).toContain("Gelöscht g1");
+		expect(screen.getByTestId(ids.trashEntry("g1")).textContent).toContain("3");
+		expect(screen.getByTestId(ids.trashEntry("g2"))).toBeTruthy();
+		await screen.findByTestId(ids.node("b"));
+		expect(shownIds()).toEqual(["p1", "a", "a1", "b"]);
+	});
+
+	it("says so when nothing is in the trash", async () => {
+		await renderPage({ documents: shownTrash });
+
+		expect((await screen.findByTestId(ids.trash)).textContent).toContain("Der Papierkorb dieser Map ist leer.");
+	});
+
+	it("is not there in the overall view", async () => {
+		await renderPage({ trashed: gone, documents: { ...marked, mindmap: { showTrash: true, view: "all" } } });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(screen.queryByTestId(ids.trash)).toBeNull();
+	});
+
+	it("asks for the trash of the map that is shown", async () => {
+		const backend = await renderPage({
+			maps: [{ uid: "m1", project_uid: "p1", name: "Ideen" }],
+			trashed: [trashedNode("g1"), trashedNode("g3", { tree: "m1" })],
+			documents: { ...shownTrash, mindmap: { showTrash: true, maps: { p1: "m1" } } },
+		});
+
+		await screen.findByTestId(ids.trashEntry("g3"));
+		expect(screen.queryByTestId(ids.trashEntry("g1"))).toBeNull();
+		expect(backend.calls("GET", "mindmap/trash/p1").some((call) => call.query.get("tree") === "m1")).toBe(true);
+	});
+
+	it("reactivates a branch below the node it is dropped on, and it leaves the list", async () => {
+		const backend = await renderPage({ trashed: gone, documents: shownTrash });
+		await screen.findByTestId(ids.trashEntry("g1"));
+		await screen.findByTestId(ids.node("b"));
+
+		startTrashDrag("g1");
+		expect(dragEvent("dragover", screen.getByTestId(ids.node("b")), 20).defaultPrevented).toBe(true);
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBe("inside");
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 20);
+
+		await waitFor(() => expect(screen.queryByTestId(ids.trashEntry("g1"))).toBeNull());
+		expect(backend.calls("POST", "mindmap/nodes/g1/restore-move")[0]!.body).toEqual({ version: 3, tree: "t1", parent: "b", position: 0 });
+		await waitFor(() => expect(shownIds()).toEqual(["p1", "a", "a1", "b", "g1"]));
+		expect(screen.getByTestId(ids.trashEntry("g2"))).toBeTruthy();
+		expect(screen.getByTestId(ids.node("b")).dataset.drop).toBeUndefined();
+	});
+
+	it("places a branch before or after the node it is dropped next to", async () => {
+		const backend = await renderPage({ trashed: gone, documents: shownTrash });
+		await screen.findByTestId(ids.trashEntry("g1"));
+		await screen.findByTestId(ids.node("b"));
+
+		startTrashDrag("g1");
+		dragEvent("dragover", screen.getByTestId(ids.node("a")), 2);
+		expect(screen.getByTestId(ids.dropLine("a", "before"))).toBeTruthy();
+		dragEvent("drop", screen.getByTestId(ids.node("a")), 2);
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/g1/restore-move")).toHaveLength(1));
+		expect(backend.calls("POST", "mindmap/nodes/g1/restore-move")[0]!.body).toEqual({ version: 3, tree: "t1", position: 0 });
+
+		startTrashDrag("g2");
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 38);
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 38);
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/g2/restore-move")).toHaveLength(1));
+		expect(backend.calls("POST", "mindmap/nodes/g2/restore-move")[0]!.body).toEqual({ version: 3, tree: "t1", position: 3 });
+	});
+
+	it("hangs a branch below the root with an empty parent, and offers no place next to the root", async () => {
+		const backend = await renderPage({ trashed: gone, documents: shownTrash });
+		await screen.findByTestId(ids.trashEntry("g1"));
+		await screen.findByTestId(ids.node("b"));
+
+		startTrashDrag("g1");
+		expect(dragEvent("dragover", screen.getByTestId(ids.node("p1")), 2).defaultPrevented).toBe(false);
+		dragEvent("drop", screen.getByTestId(ids.node("p1")), 2);
+		expect(backend.calls("POST", "restore-move")).toHaveLength(0);
+
+		startTrashDrag("g1");
+		dragEvent("dragover", screen.getByTestId(ids.node("p1")), 20);
+		dragEvent("drop", screen.getByTestId(ids.node("p1")), 20);
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/g1/restore-move")).toHaveLength(1));
+		expect(backend.calls("POST", "mindmap/nodes/g1/restore-move")[0]!.body).toEqual({ version: 3, tree: "t1", position: 2 });
+	});
+
+	it("shows the message of the server when the place is refused, and the branch stays in the trash", async () => {
+		await renderPage({
+			trashed: gone,
+			documents: shownTrash,
+			respond: ({ method, path }) =>
+				method === "POST" && path === "mindmap/nodes/g1/restore-move" ? Response.json({ code: "mindmap_parent_in_trash", message: "NODE-x liegt im Papierkorb; erst diesen Knoten wiederherstellen", details: {} }, { status: 400 }) : undefined,
+		});
+		await screen.findByTestId(ids.trashEntry("g1"));
+		await screen.findByTestId(ids.node("b"));
+
+		startTrashDrag("g1");
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 20);
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 20);
+
+		expect((await screen.findByTestId(ids.error)).textContent).toContain("liegt im Papierkorb");
+		expect(screen.getByTestId(ids.trashEntry("g1"))).toBeTruthy();
+	});
+
+	it("does not move live nodes by the drag of the side view and keeps moving them by dragging", async () => {
+		const backend = await renderPage({ trashed: gone, documents: shownTrash });
+		await screen.findByTestId(ids.node("a1"));
+
+		startDrag("a1");
+		dragEvent("dragover", screen.getByTestId(ids.node("b")), 20);
+		dragEvent("drop", screen.getByTestId(ids.node("b")), 20);
+
+		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/a1/move")).toHaveLength(1));
+		expect(backend.calls("POST", "restore-move")).toHaveLength(0);
+	});
+});
+
 describe("MindmapPage: marks", () => {
 	const withMarks = [
 		node("a", null, 0, { mark: "discarded", total: 2, done: 1, state: "in_progress" }),
@@ -1014,5 +1148,54 @@ describe("MindmapPage: dependencies between topics", () => {
 
 		await screen.findByTestId(ids.node("a1"));
 		expect(document.querySelector("[data-flow-edge='a->a1']")).not.toBeNull();
+	});
+});
+
+describe("MindmapPage: free maps", () => {
+	const free = [{ uid: "f1", project_uid: "p1", name: "Ideen" }];
+	const inMap = [node("a"), node("x", null, 0, { tree_uid: "f1", title: "Freier Knoten" }), node("x1", "x", 0, { tree_uid: "f1" })];
+
+	it("shows the chosen free map under its name instead of the project tree", async () => {
+		const backend = await renderPage({ nodes: inMap, maps: free, documents: { ...marked, mindmap: { maps: { p1: "f1" } } } });
+
+		await screen.findByTestId(ids.node("x"));
+		expect(shownIds()).toEqual(["p1", "x", "x1"]);
+		expect(screen.getByTestId(ids.node("p1")).textContent).toContain("Ideen");
+		expect(backend.calls("GET", "mindmap/trees")[0]!.query.get("tree")).toBe("f1");
+	});
+
+	it("shows the project tree when no map was chosen", async () => {
+		const backend = await renderPage({ nodes: inMap, maps: free });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(shownIds()).toEqual(["p1", "a"]);
+		expect(backend.calls("GET", "mindmap/trees")[0]!.query.get("tree")).toBeNull();
+	});
+
+	it("creates a new node in the shown free map", async () => {
+		const backend = await renderPage({ nodes: inMap, maps: free, documents: { ...marked, mindmap: { maps: { p1: "f1" } } } });
+		await screen.findByTestId(ids.node("x"));
+
+		fireEvent.click(screen.getByTestId(ids.add("x")));
+
+		await screen.findByTestId(ids.titleInput("new1"));
+		expect(backend.calls("POST", "mindmap/nodes")[0]!.body).toMatchObject({ project: "p1", parent: "x", tree: "f1" });
+	});
+
+	it("has no side view \"Nicht zugeordnet\" in a free map", async () => {
+		await renderPage({ nodes: inMap, maps: free, unassigned: [itemRef("i1")], documents: { ...marked, mindmap: { maps: { p1: "f1" } } } });
+		await screen.findByTestId(ids.node("x"));
+		expect(screen.queryByTestId(ids.unassigned)).toBeNull();
+		cleanup();
+
+		await renderPage({ nodes: inMap, maps: free, unassigned: [itemRef("i1")] });
+		expect(await screen.findByTestId(ids.unassigned)).toBeTruthy();
+	});
+
+	it("shows the project tree in the overall view even when a free map is chosen", async () => {
+		await renderPage({ nodes: inMap, maps: free, documents: { ...marked, workspace: { ...marked.workspace, hidden: ["p0"] }, mindmap: { view: "all", maps: { p1: "f1" } } } });
+
+		await screen.findByTestId(ids.node("a"));
+		expect(shownIds()).not.toContain("x");
 	});
 });

@@ -25,7 +25,7 @@
   - Die Gesamtansicht zeigt nur Projektbäume; freie Maps stehen dort nicht (2026-11-18)
   - Projektbaum und freie Maps werden gemischt, damit man flexibel gestalten kann (2026-11-13)
   - Freie Maps gehören zu einem Projekt; Übergreifendes kommt ins eingebaute Projekt „Allgemein“ (2026-11-13)
-  - Keine eigene Map je Memo; ein Memo wird an einen Knoten oder eine freie Map verlinkt. Cloud-Zugriff auf freie Maps über den Spiegel `STORY-105` (2026-11-18)
+  - Keine eigene Map je Memo; ein Memo wird an einen Knoten verlinkt (auch in freien Maps; die Map selbst ist kein Ziel). Cloud-Zugriff auf freie Maps über den Spiegel `STORY-105` (2026-11-18)
   - „Export nach Memo“ (Baum als Liste ins Memo) wird nicht gebaut, sondern als Memo mit Prüfdatum 2027-02-18 festgehalten (2026-11-18)
   - Nichts wird kopiert; es gibt „umhängen“ (aus A weg, in B drin) und „übertragen“ (derselbe Ast in A und B) (2026-11-13)
   - Übertragen geht nur zwischen Bäumen; innerhalb eines Baums gibt es nur Umhängen (2026-11-13)
@@ -34,7 +34,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Spec `STORY-102_spec.md`; Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Memo `MEMO-003`
 
-State confirmed after entry 2026-11-19 — Aufteilung auf die Tasks (8efc45b9ccc9)
+State confirmed after entry 2026-11-19 — Offene Punkte vor der Umsetzung (0b775ca9b8d3)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -302,3 +302,15 @@ State confirmed after entry 2026-11-19 — Aufteilung auf die Tasks (8efc45b9ccc
 ### Open
 
 - Ob „Nicht zugeordnet“ in freien Maps gilt (`TASK-062`).
+
+## 2026-11-19 — Offene Punkte vor der Umsetzung
+
+### Decided
+
+- Memos hängen nur an Knoten, nicht an der Map selbst; die frühere Formulierung „an einen Knoten oder eine freie Map“ in Spec und Konzept ist korrigiert (Owner). Das war bei der Entscheidung zu Thema 2 ungenau, weil ein Baum kein Element ist.
+- „Nicht zugeordnet“ gilt nur im Projektbaum (Owner); damit ist der offene Punkt aus dem Eintrag „Aufteilung auf die Tasks“ erledigt.
+- Die Tasks werden nacheinander in Sonnet-Sessions umgesetzt, automatisch verkettet: `TASK-062`, `TASK-063`, `TASK-066`, `TASK-067` (Owner).
+
+### Open
+
+- Keine.

@@ -122,6 +122,21 @@ export function dropPlacement(rootId: string, nodes: readonly PlacedNode[], sour
 	return { parent, position };
 }
 
+/**
+ * Where a branch from the trash lands when it is dropped on `targetId` in `zone`, or `null` when the drop is not offered: nothing
+ * stands next to the root and an unknown target takes nothing. The branch is in none of `nodes`; "inside" appends to the children of the target
+ * (the root: below the root, `parent` empty). The server still checks what only it can (the old places of the branch in other trees).
+ */
+export function restorePlacement(rootId: string, nodes: readonly PlacedNode[], targetId: string, zone: DropZone): Placement | null {
+	const target = nodes.find((node) => node.uid === targetId);
+	if (!target && targetId !== rootId) return null;
+	if (zone !== "inside" && !target) return null;
+	const parent = zone === "inside" ? (target ? target.uid : null) : target!.parent_uid || null;
+	const siblings = nodes.filter((node) => (node.parent_uid || null) === parent).sort((a, b) => a.position - b.position);
+	const position = zone === "inside" ? siblings.length : siblings.findIndex((node) => node.uid === targetId) + (zone === "after" ? 1 : 0);
+	return { parent, position };
+}
+
 /** The project whose tree the page shows: the marked one, else the only visible one, else none. */
 export function shownProject<P>(visible: readonly P[], marked: P | undefined): P | undefined {
 	return marked ?? (visible.length === 1 ? visible[0] : undefined);

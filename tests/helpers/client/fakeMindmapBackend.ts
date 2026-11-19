@@ -1,4 +1,4 @@
-import { mindmapApi, type ItemRefOut, type MemoRefOut, type NodeItemOut, type TreeNodeOut } from "../../../client/src/plugins/mindmap/api";
+import { mindmapApi, type TrashedNodeOut, type ItemRefOut, type MapOut, type MemoRefOut, type NodeItemOut, type TreeNodeOut } from "../../../client/src/plugins/mindmap/api";
 import { fakeWorkspaceBackend } from "./fakeWorkspaceBackend";
 
 type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respond" | "extraApis"> & {
@@ -7,10 +7,14 @@ type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respon
 	unassigned?: ItemRefOut[];
 	/** The lines between nodes the tree answers with (`from_node` → `to_node`, summed `count`). */
 	dependencyLinks?: Array<{ from_node: string; to_node: string; count: number }>;
+	/** The branches in the trash (the side view "Papierkorb"); `tree` is the free map they stood in, none: the project tree. Restoring one puts a node back into the tree. */
+	trashed?: Array<TrashedNodeOut & { tree?: string }>;
 	/** The items in the detail of a node, by node `uid`; `explicit` says whether the node is theirs. */
 	items?: Record<string, NodeItemOut[]>;
 	/** The memos linked to a node, by node `uid`. */
 	memos?: Record<string, MemoRefOut[]>;
+	/** The free maps of the projects at the start (`kind` and `node_count` are kept by the fake). */
+	maps?: Array<{ uid: string; project_uid: string; name: string }>;
 	/** Answers a request itself; `undefined` lets the fake answer. */
 	respond?: (request: { method: string; path: string; body?: unknown; query: URLSearchParams }) => Response | undefined;
 };
@@ -26,6 +30,7 @@ type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respon
 export function fakeMindmapBackend(options: Options = {}) {
 	let nodes = [...(options.nodes ?? [])];
 	let unassigned = [...(options.unassigned ?? [])];
+	let trashed = [...(options.trashed ?? [])];
 	const contents = new Map<string, NodeItemOut[]>(Object.entries(options.items ?? {}).map(([uid, list]) => [uid, [...list]]));
 	const memos = new Map<string, MemoRefOut[]>(Object.entries(options.memos ?? {}).map(([uid, list]) => [uid, [...list]]));
 	const failure = (code: string, message: string, status = 400) => Response.json({ code, message, details: {} }, { status });
@@ -42,6 +47,13 @@ export function fakeMindmapBackend(options: Options = {}) {
 		}
 		return loose;
 	};
+	let freeMaps = (options.maps ?? []).map((entry) => ({ ...entry, version: 1 }));
+	const projectName = (uid: string) => options.projects?.find((entry) => entry.uid === uid)?.name ?? "Projekt";
+	const treeOf = (entry: TreeNodeOut) => (freeMaps.some((map) => map.uid === entry.tree_uid) ? entry.tree_uid : null);
+	const mapEntry = (uid: string): MapOut => {
+		const found = freeMaps.find((entry) => entry.uid === uid)!;
+		return { project_uid: found.project_uid, kind: "free", name: found.name, tree_uid: found.uid, node_count: nodes.filter((entry) => entry.tree_uid === uid).length, shared_count: 0, version: found.version };
+	};
 	let created = 0;
 	const documents = new Map<string, { content: string; version: number }>();
 	const addName = (uid: string, name: string) => {
@@ -56,10 +68,60 @@ export function fakeMindmapBackend(options: Options = {}) {
 			if (custom) return custom;
 			const { method, path, query } = request;
 			const body = (request.body ?? {}) as Record<string, unknown>;
+			const listed = /^mindmap\/maps\/([^/]+)$/.exec(path);
+			if (listed && method === "GET") {
+				const own = nodes.filter((entry) => entry.project_uid === listed[1] && treeOf(entry) === null);
+				const project: MapOut = { project_uid: listed[1]!, kind: "project", name: projectName(listed[1]!), tree_uid: own.length > 0 ? "t1" : null, node_count: own.length, shared_count: 0, version: 1 };
+				return Response.json([project, ...freeMaps.filter((entry) => entry.project_uid === listed[1]).map((entry) => mapEntry(entry.uid))]);
+			}
+			if (path === "mindmap/maps" && method === "POST") {
+				const name = String(body.name ?? "").trim();
+				if (name === "") return failure("mindmap_map_name_missing", "Der Name der Map fehlt");
+				if (freeMaps.some((entry) => entry.project_uid === body.project && entry.name.toLowerCase() === name.toLowerCase())) return failure("mindmap_map_name_taken", `Es gibt in diesem Projekt schon eine Map '${name}'`);
+				created += 1;
+				freeMaps = [...freeMaps, { uid: `map${created}`, project_uid: body.project as string, name, version: 1 }];
+				return Response.json(mapEntry(`map${created}`));
+			}
+			const changedMap = /^mindmap\/maps\/([^/]+)$/.exec(path);
+			if (changedMap && method === "PUT") {
+				const found = freeMaps.find((entry) => entry.uid === changedMap[1]);
+				if (!found) return failure("not_found", "Map gibt es nicht", 404);
+				if (body.version !== found.version) return failure("version_conflict", "Die Map wurde inzwischen geändert", 409);
+				freeMaps = freeMaps.map((entry) => (entry === found ? { ...entry, name: String(body.name), version: entry.version + 1 } : entry));
+				return Response.json(mapEntry(found.uid));
+			}
+			if (changedMap && method === "DELETE") {
+				const found = freeMaps.find((entry) => entry.uid === changedMap[1]);
+				if (!found) return failure("mindmap_project_tree_fixed", "Der Projektbaum lässt sich nicht löschen");
+				const going = nodes.filter((entry) => entry.tree_uid === found.uid).length;
+				nodes = nodes.filter((entry) => entry.tree_uid !== found.uid);
+				freeMaps = freeMaps.filter((entry) => entry !== found);
+				return Response.json({ tree_uid: found.uid, nodes_deleted: going, kept_elsewhere: 0 });
+			}
+			const trash = /^mindmap\/trash\/([^/]+)$/.exec(path);
+			if (trash && method === "GET") {
+				const wanted = query.get("tree");
+				return Response.json(trashed.filter((entry) => (wanted ? entry.tree === wanted : (entry.tree ?? null) === null || entry.tree === "t1")).map((entry) => ({ uid: entry.uid, label: entry.label, title: entry.title, version: entry.version, parent_uid: entry.parent_uid, nodes: entry.nodes })));
+			}
+			const restoreMove = /^mindmap\/nodes\/([^/]+)\/restore-move$/.exec(path);
+			if (restoreMove && method === "POST") {
+				const found = trashed.find((entry) => entry.uid === restoreMove[1]);
+				if (!found) return failure("mindmap_node_not_deleted", "Der Knoten liegt nicht im Papierkorb");
+				if (body.version !== found.version) return failure("version_conflict", "Der Knoten wurde inzwischen geändert", 409);
+				trashed = trashed.filter((entry) => entry !== found);
+				const parent = (body.parent as string | undefined) ?? null;
+				const siblings = nodes.filter((entry) => (entry.parent_uid ?? null) === parent && (entry.tree_uid === ((body.tree as string | undefined) ?? "t1"))).sort((a, b) => a.position - b.position);
+				const at = Math.min((body.position as number | undefined) ?? siblings.length, siblings.length);
+				const restored: TreeNodeOut = { uid: found.uid, project_uid: "p1", label: found.label, title: found.title, text: null, tree_uid: (body.tree as string | undefined) ?? "t1", parent_uid: parent, position: at, version: found.version + 1, documents: [], total: 0, done: 0, state: "idea", mark: null, tree_count: 1 };
+				const behind = new Set(siblings.slice(at).map((entry) => entry.uid));
+				nodes = [...nodes.map((entry) => (behind.has(entry.uid) ? { ...entry, position: entry.position + 1 } : entry)), restored];
+				return Response.json(restored);
+			}
 			const tree = /^mindmap\/trees\/([^/]+)$/.exec(path);
 			if (tree && method === "GET") {
-				const own = nodes.filter((entry) => entry.project_uid === tree[1]);
-				return Response.json({ project_uid: tree[1], tree_uid: own.length > 0 ? "t1" : null, nodes: own, unassigned, links: options.dependencyLinks ?? [] });
+				const wanted = query.get("tree");
+				const own = nodes.filter((entry) => entry.project_uid === tree[1] && (wanted ? entry.tree_uid === wanted : treeOf(entry) === null));
+				return Response.json({ project_uid: tree[1], tree_uid: wanted ?? (own.length > 0 ? "t1" : null), nodes: own, unassigned: wanted ? [] : unassigned, links: options.dependencyLinks ?? [] });
 			}
 			const content = /^mindmap\/nodes\/([^/]+)\/content$/.exec(path);
 			if (content && method === "GET") {
@@ -111,7 +173,7 @@ export function fakeMindmapBackend(options: Options = {}) {
 					label: `NODE-new${created}`,
 					title: body.title as string,
 					text: null,
-					tree_uid: "t1",
+					tree_uid: (body.tree as string | undefined) ?? "t1",
 					parent_uid: parent,
 					position: nodes.filter((entry) => (entry.parent_uid ?? null) === parent).length,
 					version: 1,
@@ -120,6 +182,7 @@ export function fakeMindmapBackend(options: Options = {}) {
 					done: 0,
 					state: "idea",
 					mark: null,
+					tree_count: 1,
 				};
 				nodes = [...nodes, node];
 				return Response.json(node);

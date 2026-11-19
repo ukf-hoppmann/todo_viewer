@@ -68,8 +68,10 @@
 	"filter": {
 		"state": "Zustand",
 		"unassigned": "Nicht zugeordnet anzeigen",
+		"trash": "Papierkorb anzeigen",
 		"dependencies": "Abhängigkeiten zwischen Themen zeigen",
-		"mark": "Markierung"
+		"mark": "Markierung",
+		"shared": "Übertragene Äste einrahmen"
 	},
 	"state": {
 		"idea": "Idee",
@@ -81,6 +83,12 @@
 		"title": "Nicht zugeordnet",
 		"empty": "Alle Items hängen an einem Knoten.",
 		"hint": "Ziehe ein Item auf einen Knoten, um es zuzuordnen."
+	},
+	"trash": {
+		"title": "Papierkorb",
+		"empty": "Der Papierkorb dieser Map ist leer.",
+		"hint": "Ziehe einen Ast an eine Stelle der Karte, um ihn dort zurückzuholen.",
+		"size": "{{count}} Knoten"
 	},
 	"content": {
 		"title": "Items und Memos",
@@ -115,5 +123,66 @@
 		"none": "Keine",
 		"discarded": "Verworfen",
 		"later": "Später"
+	},
+	"maps": {
+		"title": "Maps in {{project}}",
+		"projectTree": "{{name}} (Projektbaum)",
+		"new": "Neue Map",
+		"newTitle": "Neue Map",
+		"renameTitle": "Map umbenennen",
+		"name": "Name",
+		"nameEmpty": "Der Name darf nicht leer sein",
+		"nodes_one": "{{count}} Knoten",
+		"nodes_other": "{{count}} Knoten",
+		"menu": "Menü von {{name}}",
+		"rename": "Umbenennen",
+		"delete": "In den Papierkorb legen",
+		"deleteTitle": "Map „{{name}}“ löschen?",
+		"deleteMessage_one": "Die Map und ihr {{count}} Knoten, der nur hier steht, kommen in den Papierkorb und lassen sich dort wiederherstellen.",
+		"deleteMessage_other": "Die Map und ihre {{count}} Knoten, die nur hier stehen, kommen in den Papierkorb und lassen sich dort wiederherstellen.",
+		"deleteKept_one": "{{count}} Ast bleibt, weil er auch in einem anderen Baum steht.",
+		"deleteKept_other": "{{count}} Äste bleiben, weil sie auch in einem anderen Baum stehen.",
+		"deleteConfirm": "In den Papierkorb",
+		"dropHint": "Hierher ziehen: umhängen oder übertragen"
+	},
+	"menu": {
+		"move": "Umhängen nach …",
+		"transfer": "Übertragen nach …",
+		"removeHere": "Hier entfernen",
+		"deleteNode": "Knoten löschen …",
+		"delete": "Löschen",
+		"open": "Menü des Knotens {{title}}"
+	},
+	"branch": {
+		"title": "„{{title}}“ verschieben",
+		"action": "Aktion",
+		"move": "Umhängen",
+		"transfer": "Übertragen",
+		"moveHint": "Der Ast verlässt seinen Baum und steht danach nur im Ziel (unter der Wurzel).",
+		"transferHint": "Derselbe Ast steht danach in beiden Bäumen; nichts wird kopiert.",
+		"target": "Ziel",
+		"moveConfirm": "Umhängen",
+		"transferConfirm": "Übertragen",
+		"sameTree": "Hier steht der Ast schon.",
+		"standing": "Dort steht schon: {{nodes}}"
+	},
+	"sharedDelete": {
+		"title": "„{{title}}“ überall löschen?",
+		"message": "Der Knoten steht in mehreren Bäumen ({{trees}}) und verschwindet aus allen. Unterknoten, die nur hier stehen, kommen mit in den Papierkorb. „Hier entfernen“ nimmt ihn nur aus dem aktuellen Baum.",
+		"confirm": "Überall löschen"
+	},
+	"removed": {
+		"title": "Früher in …",
+		"tree": "{{name}} ({{count}} Knoten)",
+		"restore": "Wieder einsetzen",
+		"parentGone": "Der alte Parent steht dort nicht mehr; der Ast kommt unter die Wurzel.",
+		"restoredAtRoot": "Der alte Parent fehlte: „{{title}}“ steht jetzt unter der Wurzel von {{name}}.",
+		"restored": "Wieder eingesetzt in {{name}}."
+	},
+	"shared": {
+		"badge": "Steht in {{count}} Bäumen",
+		"jump": "Zu einem Baum springen",
+		"highlight": "Übertragene Äste einrahmen",
+		"pick": "In welchem Baum?"
 	}
 }

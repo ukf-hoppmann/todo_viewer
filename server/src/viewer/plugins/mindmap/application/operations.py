@@ -11,16 +11,35 @@ from datetime import datetime
 
 from viewer.core.domain.operations import HttpBinding, Operation
 from viewer.plugins.mindmap.application.assignments import AssignmentService, ItemNode, NodeContent, TreeStats
+from viewer.plugins.mindmap.application.branches import (
+    BranchMoved,
+    BranchService,
+    NodeTree,
+    PlacementRestored,
+    Removal,
+    RemovedFrom,
+    TrashedBranch,
+)
 from viewer.plugins.mindmap.application.documents import DocumentService
+from viewer.plugins.mindmap.application.maps import MapDeleted, MapService, MapView
 from viewer.plugins.mindmap.application.ports import BacklogItem, Document
 from viewer.plugins.mindmap.application.service import MindmapService, NodeView, TreeView
 
 
 class MindmapServices:
-    def __init__(self, mindmap: MindmapService, documents: DocumentService, assignments: AssignmentService) -> None:
+    def __init__(
+        self,
+        mindmap: MindmapService,
+        documents: DocumentService,
+        assignments: AssignmentService,
+        maps: MapService,
+        branches: BranchService,
+    ) -> None:
         self.mindmap = mindmap
         self.documents = documents
         self.assignments = assignments
+        self.maps = maps
+        self.branches = branches
 
 
 @dataclass(frozen=True)
@@ -55,6 +74,8 @@ class TreeNodeOut(NodeOut):
     done: int = 0
     #: `idea`, `planned`, `in_progress` oder `done`; unabhängig vom Statusfilter, `Rejected` zählt nicht.
     state: str = "idea"
+    #: In wie vielen Bäumen (ohne Papierkorb) der Knoten steht; mehr als 1: ein übertragener Ast.
+    tree_count: int = 1
 
 
 @dataclass(frozen=True)
@@ -88,9 +109,78 @@ class TreeOut:
 
 
 @dataclass(frozen=True)
+class MapOut:
+    """Eine Map eines Projekts: der Projektbaum (zuerst) oder eine freie Map."""
+
+    project_uid: str
+    #: `project` oder `free`.
+    kind: str
+    #: Bei freien Maps der Name, beim Projektbaum der Name des Projekts.
+    name: str
+    #: Leer beim Projektbaum, solange im Projekt noch kein Knoten angelegt ist.
+    tree_uid: str | None
+    #: Die Knoten der Map außerhalb des Papierkorbs.
+    node_count: int
+    #: Davon Knoten, die auch in einem anderen Baum stehen und beim Löschen der Map dort erhalten bleiben.
+    shared_count: int
+    #: Versionstoken für Umbenennen und Löschen; beim noch leeren Projektbaum 0.
+    version: int
+
+
+@dataclass(frozen=True)
+class MapDeletedOut:
+    tree_uid: str
+    #: Die Knoten, die mit der Map in den Papierkorb gingen (nur in ihr stehende).
+    nodes_deleted: int
+    #: Die Knoten, die auch in einem anderen Baum stehen und dort erhalten bleiben.
+    kept_elsewhere: int = 0
+
+
+@dataclass(frozen=True)
+class ListMaps:
+    #: `uid` des Projekts.
+    project: str
+
+
+@dataclass(frozen=True)
+class CreateMap:
+    project: str
+    name: str
+
+
+@dataclass(frozen=True)
+class RenameMap:
+    #: `uid` der freien Map.
+    tree: str
+    version: int
+    name: str
+
+
+@dataclass(frozen=True)
+class DeleteMap:
+    #: `uid` der freien Map; sie geht in den Papierkorb und lässt sich dort wiederherstellen.
+    tree: str
+    version: int
+
+
+def map_out(view: MapView) -> MapOut:
+    return MapOut(
+        view.project_uid,
+        view.kind,
+        view.name,
+        view.tree.uid if view.tree else None,
+        view.node_count,
+        view.shared_count,
+        view.tree.revision if view.tree else 0,
+    )
+
+
+@dataclass(frozen=True)
 class GetTree:
     #: `uid` des Projekts.
     project: str
+    #: Eine freie Map des Projekts; ohne Angabe der Projektbaum.
+    tree: str | None = None
     #: Statusfilter des Backlogs, kommagetrennt (`Open,In progress`); ohne Angabe zählen alle Items.
     statuses: str | None = None
 
@@ -111,6 +201,8 @@ class CreateNode:
     parent: str | None = None
     #: Stelle unter den Geschwistern; ohne Angabe ans Ende.
     position: int | None = None
+    #: Die freie Map, in der der Knoten angelegt wird; ohne Angabe der Projektbaum.
+    tree: str | None = None
 
 
 @dataclass(frozen=True)
@@ -137,6 +229,186 @@ class MoveNode:
     #: Der Baum, in dem der Knoten umgehängt wird; nur nötig, wenn er in mehreren steht.
     tree: str | None = None
     project: str | None = None
+
+
+@dataclass(frozen=True)
+class MoveNodeToMap:
+    """Hängt den Ast unter die Wurzel der Ziel-Map um (aus seinem Baum weg)."""
+
+    ref: str
+    version: int
+    #: `uid` der Ziel-Map (auch der Projektbaum, dessen `tree_uid` `list_maps` nennt).
+    target: str
+    #: Der Baum, aus dem der Ast kommt; nur nötig, wenn der Knoten in mehreren steht.
+    tree: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class TransferNodeToMap:
+    """Überträgt den Ast: er steht danach auch unter der Wurzel der Ziel-Map."""
+
+    ref: str
+    version: int
+    target: str
+    tree: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class RemoveNodeFromMap:
+    """„Hier entfernen“: nimmt den Ast nur aus einem Baum."""
+
+    ref: str
+    version: int
+    tree: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class DeleteNode:
+    """„Knoten löschen“: der Ast verlässt alle Bäume."""
+
+    ref: str
+    version: int
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class RestoreAndMoveNode:
+    ref: str
+    #: Die Version des Knotens im Papierkorb.
+    version: int
+    #: Neuer Parent in `tree` (uid oder Label); ohne Angabe unter die Wurzel.
+    parent: str | None = None
+    position: int | None = None
+    #: Der Baum, in dem der Knoten an die neue Stelle kommt; nur nötig, wenn er in mehreren steht.
+    tree: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class ListNodeTrees:
+    ref: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class RestoreNodePlacement:
+    """Setzt einen mit „Hier entfernen“ entfernten Ast wieder in den Baum, in dem er stand."""
+
+    ref: str
+    version: int
+    #: Der Baum, in den der Ast zurück soll; nur nötig, wenn er aus mehreren entfernt wurde.
+    tree: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class ListRemovedPlacements:
+    ref: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class PlacementRestoredOut:
+    node_uid: str
+    tree_uid: str
+    #: Die Knoten, die wieder im Baum stehen (der Knoten und seine Unterknoten aus derselben Entfernung).
+    nodes_restored: int
+    #: Mitglieder der Entfernung, die im Papierkorb liegen und entfernt gemerkt bleiben.
+    nodes_skipped: int
+    #: Der Parent, unter dem der Knoten jetzt steht; leer unter der Wurzel.
+    parent_uid: str | None
+    #: Der alte Parent fehlte (nicht mehr im Baum, im Papierkorb oder selbst noch entfernt): der Ast steht unter der
+    #: Wurzel der Map.
+    fell_back_to_root: bool
+
+
+@dataclass(frozen=True)
+class RemovedFromOut:
+    tree_uid: str
+    #: `project` oder `free`.
+    kind: str
+    #: Bei freien Maps der Name, beim Projektbaum der Name des Projekts.
+    name: str
+    #: Der Parent von damals; leer unter der Wurzel.
+    parent_uid: str | None
+    #: Ob der Parent von damals noch im Baum steht; sonst käme der Ast unter die Wurzel.
+    parent_available: bool
+    #: Die Knoten, die mit ihm zurückkämen.
+    nodes: int
+
+
+@dataclass(frozen=True)
+class ListTrashedNodes:
+    #: `uid` des Projekts.
+    project: str
+    #: Die Map, deren Papierkorb gezeigt wird; ohne Angabe der Projektbaum.
+    tree: str | None = None
+
+
+@dataclass(frozen=True)
+class TrashedNodeOut:
+    uid: str
+    label: str
+    title: str
+    #: Versionstoken des Knotens im Papierkorb, für `restore_and_move_node`.
+    version: int
+    #: Der Parent, unter dem der Knoten im Baum stand; leer unter der Wurzel.
+    parent_uid: str | None
+    #: Die Knoten des Asts im Papierkorb (der Knoten und seine gelöschten Unterknoten in diesem Baum).
+    nodes: int
+
+
+@dataclass(frozen=True)
+class RemovalOut:
+    node_uid: str
+    #: Die Knoten, die in den Papierkorb gingen (steht der Knoten nirgends mehr, er selbst und seine heimatlosen
+    #: Unterknoten).
+    nodes_deleted: int
+    #: Die Knoten des Asts, die in einem anderen Baum stehen und dort erhalten bleiben.
+    kept_elsewhere: int
+
+
+@dataclass(frozen=True)
+class NodeTreeOut:
+    tree_uid: str
+    #: `project` oder `free`.
+    kind: str
+    #: Bei freien Maps der Name, beim Projektbaum der Name des Projekts.
+    name: str
+    #: `uid` des Parent-Knotens in diesem Baum; leer unter der Wurzel.
+    parent_uid: str | None
+
+
+def _moved(services: MindmapServices, moved: BranchMoved) -> NodeOut:
+    return node_out(services.mindmap.get_node(moved.node.uid, None, moved.target.uid))
+
+
+def _removal_out(result: Removal) -> RemovalOut:
+    return RemovalOut(result.node.uid, result.nodes_deleted, result.kept_elsewhere)
+
+
+def _restored_out(result: PlacementRestored) -> PlacementRestoredOut:
+    return PlacementRestoredOut(
+        result.node.uid, result.tree.uid, result.nodes, result.skipped, result.parent_uid, result.fell_back
+    )
+
+
+def _trashed_out(found: TrashedBranch) -> TrashedNodeOut:
+    node = found.node
+    return TrashedNodeOut(node.uid, node.label, node.title, node.revision, found.parent_uid, found.nodes)
+
+
+def _removed_from_out(found: RemovedFrom) -> RemovedFromOut:
+    return RemovedFromOut(
+        found.tree.uid, found.tree.kind, found.name, found.parent_uid, found.parent_available, found.nodes
+    )
+
+
+def _node_tree_out(found: NodeTree) -> NodeTreeOut:
+    return NodeTreeOut(found.tree.uid, found.tree.kind, found.name, found.parent_uid)
 
 
 @dataclass(frozen=True)
@@ -229,6 +501,7 @@ def tree_out(view: TreeView, stats: TreeStats) -> TreeOut:
                 total=counted.total if counted else 0,
                 done=counted.done if counted else 0,
                 state=counted.state if counted else "idea",
+                tree_count=view.tree_counts.get(node.uid, 1),
             )
         )
     return TreeOut(
@@ -312,6 +585,8 @@ class GetNodeContent:
     ref: str
     statuses: str | None = None
     project: str | None = None
+    #: Die Map, in der der Knoten gelesen wird (bestimmt den wirksamen Knoten der Items); ohne Angabe der Projektbaum.
+    tree: str | None = None
 
 
 @dataclass(frozen=True)
@@ -343,21 +618,69 @@ def _item_node_out(found: ItemNode) -> ItemNodeOut:
     return ItemNodeOut(found.item.uid, found.node.uid if found.node else None, found.explicit)
 
 
-def _detail(services: MindmapServices, uid: str) -> NodeOut:
-    return node_out(services.mindmap.get_node(uid, None))
+def _deleted_out(result: MapDeleted) -> MapDeletedOut:
+    return MapDeletedOut(result.tree_uid, result.nodes_deleted, result.kept_elsewhere)
+
+
+def _detail(services: MindmapServices, uid: str, tree: str | None = None) -> NodeOut:
+    return node_out(services.mindmap.get_node(uid, None, tree))
 
 
 OPERATIONS: tuple[Operation, ...] = (
     Operation(
+        "list_maps",
+        "Die Maps eines Projekts: zuerst der Projektbaum, dann die freien Maps in der Reihenfolge des Anlegens, je "
+        "mit Name, Knotenzahl und Versionstoken. Maps im Papierkorb fehlen",
+        "read",
+        ListMaps,
+        list[MapOut],
+        lambda s, d: [map_out(view) for view in s.maps.list_maps(d.project)],
+        HttpBinding("GET", "/maps/{project}"),
+    ),
+    Operation(
+        "create_map",
+        "Legt eine freie Map zum Brainstormen im Projekt an (Übergreifendes gehört ins Projekt „Allgemein“). Der Name "
+        "ist je Projekt eindeutig. Knoten legt `create_node` mit `tree` an",
+        "write",
+        CreateMap,
+        MapOut,
+        lambda s, d: map_out(s.maps.get_map(s.maps.create_map(d.project, d.name))),
+        HttpBinding("POST", "/maps"),
+    ),
+    Operation(
+        "rename_map",
+        "Benennt eine freie Map um, mit Versionsprüfung. Der Projektbaum heißt wie das Projekt und lässt sich nicht "
+        "umbenennen",
+        "write",
+        RenameMap,
+        MapOut,
+        lambda s, d: map_out(s.maps.get_map(s.maps.rename_map(d.tree, d.version, d.name))),
+        HttpBinding("PUT", "/maps/{tree}"),
+    ),
+    Operation(
+        "delete_map",
+        "Legt eine freie Map in den Papierkorb (Wiederherstellen: `workspace_restore_elements` mit der `tree`-uid). "
+        "Knoten, die nur in ihr stehen, gehen mit; Knoten, die auch in einem anderen Baum stehen, bleiben dort. "
+        "Items an gelöschten Knoten fallen an den Parent-Knoten zurück, sonst nach „Nicht zugeordnet“. Der "
+        "Projektbaum lässt sich nicht löschen. Mit Versionsprüfung",
+        "write",
+        DeleteMap,
+        MapDeletedOut,
+        lambda s, d: _deleted_out(s.maps.delete_map(d.tree, d.version)),
+        HttpBinding("DELETE", "/maps/{tree}"),
+    ),
+    Operation(
         "get_tree",
-        "Der Themenbaum eines Projekts (das Projekt ist die Wurzel): alle Knoten mit Parent und Stelle, Eltern vor "
-        "Kindern, je Knoten Anzahl, Fortschritt und Zustand über ihn und seine Unterknoten, dazu die Items ohne "
-        "Knoten. "
+        "Der Themenbaum eines Projekts (das Projekt ist die Wurzel) oder, mit `tree`, einer freien Map: alle Knoten "
+        "mit Parent und Stelle, Eltern vor Kindern, je Knoten Anzahl, Fortschritt und Zustand über ihn und seine "
+        "Unterknoten, dazu im Projektbaum die Items ohne Knoten (in freien Maps gibt es „Nicht zugeordnet“ nicht). "
         "Knoten im Papierkorb fehlen. `statuses` ist der Statusfilter des Backlogs für die Zahlen",
         "read",
         GetTree,
         TreeOut,
-        lambda s, d: tree_out(s.mindmap.get_tree(d.project), s.assignments.stats(d.project, _statuses(d.statuses))),
+        lambda s, d: tree_out(
+            s.mindmap.get_tree(d.project, d.tree), s.assignments.stats(d.project, _statuses(d.statuses), d.tree)
+        ),
         HttpBinding("GET", "/trees/{project}"),
     ),
     Operation(
@@ -371,12 +694,14 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "create_node",
-        "Legt einen Knoten (Titel, optionaler Text) im Themenbaum des Projekts an, unter `parent` oder unter der "
-        "Wurzel, an der Stelle `position` (sonst am Ende). Leere Knoten sind erlaubt",
+        "Legt einen Knoten (Titel, optionaler Text) im Themenbaum des Projekts oder, mit `tree`, in einer freien Map "
+        "an, unter `parent` oder unter der Wurzel, an der Stelle `position` (sonst am Ende). Leere Knoten sind erlaubt",
         "write",
         CreateNode,
         NodeOut,
-        lambda s, d: _detail(s, s.mindmap.create_node(d.project, d.title, d.text, d.parent, d.position)),
+        lambda s, d: _detail(
+            s, s.mindmap.create_node(d.project, d.title, d.text, d.parent, d.position, d.tree), d.tree
+        ),
         HttpBinding("POST", "/nodes"),
     ),
     Operation(
@@ -402,6 +727,112 @@ OPERATIONS: tuple[Operation, ...] = (
             )
         ),
         HttpBinding("POST", "/nodes/{ref}/move"),
+    ),
+    Operation(
+        "move_node_to_map",
+        "Hängt einen Ast (Knoten mit Unterknoten) aus seinem Baum in die Ziel-Map um: er steht danach nur dort, unter "
+        "der Wurzel am Ende. Nur innerhalb eines Projekts. Abgelehnt mit Liste der Knoten (`mindmap_target_conflict`), "
+        "wenn der Ast oder ein Unterknoten im Ziel schon steht; ebenso Knoten im Papierkorb und Maps im Papierkorb. "
+        "Mit Versionsprüfung",
+        "write",
+        MoveNodeToMap,
+        NodeOut,
+        lambda s, d: _moved(s, s.branches.move_to_map(d.ref, d.project, d.version, d.tree, d.target)),
+        HttpBinding("POST", "/nodes/{ref}/move-to-map"),
+    ),
+    Operation(
+        "transfer_node_to_map",
+        "Überträgt einen Ast in die Ziel-Map: derselbe Ast steht danach in beiden Bäumen (nichts wird kopiert; Titel, "
+        "Text, Notizen und Items sind gemeinsam, die Struktur darunter gehört je Baum). Nur zwischen verschiedenen "
+        "Bäumen desselben Projekts; Ablehnungen wie bei `move_node_to_map`. Mit Versionsprüfung",
+        "write",
+        TransferNodeToMap,
+        NodeOut,
+        lambda s, d: _moved(s, s.branches.transfer_to_map(d.ref, d.project, d.version, d.tree, d.target)),
+        HttpBinding("POST", "/nodes/{ref}/transfer"),
+    ),
+    Operation(
+        "remove_node_from_map",
+        "„Hier entfernen“: nimmt den Ast nur aus einem Baum. Verliert ein Knoten damit seine letzte Platzierung, geht "
+        "er mit den heimatlos gewordenen Unterknoten in den Papierkorb; Unterknoten, die in einem anderen Baum stehen, "
+        "bleiben dort. Mit Versionsprüfung",
+        "write",
+        RemoveNodeFromMap,
+        RemovalOut,
+        lambda s, d: _removal_out(s.branches.remove_from_map(d.ref, d.project, d.version, d.tree)),
+        HttpBinding("POST", "/nodes/{ref}/remove"),
+    ),
+    Operation(
+        "delete_node",
+        "„Knoten löschen“: nimmt den Ast aus allen Bäumen und legt ihn mit den heimatlos gewordenen Unterknoten in den "
+        "Papierkorb (Wiederherstellen: `workspace_restore_elements` oder `restore_and_move_node`). Unterknoten, die in "
+        "einem anderen Baum stehen, bleiben dort. Mit Versionsprüfung",
+        "write",
+        DeleteNode,
+        RemovalOut,
+        lambda s, d: _removal_out(s.branches.delete_node(d.ref, d.project, d.version)),
+        HttpBinding("DELETE", "/nodes/{ref}"),
+    ),
+    Operation(
+        "restore_and_move_node",
+        "Holt einen Knoten aus dem Papierkorb und stellt ihn in einem Schritt unter `parent` (sonst unter die Wurzel) "
+        "des Baums `tree`. Die neue Stelle ersetzt seine alte Platzierung in diesem Baum; Platzierungen in anderen "
+        "Bäumen kommen wie vorher zurück. Mit Versionsprüfung",
+        "write",
+        RestoreAndMoveNode,
+        NodeOut,
+        lambda s, d: node_out(
+            s.mindmap.get_node(
+                s.branches.restore_and_move(d.ref, d.project, d.version, d.tree, d.parent, d.position).uid, None, d.tree
+            )
+        ),
+        HttpBinding("POST", "/nodes/{ref}/restore-move"),
+    ),
+    Operation(
+        "restore_node_placement",
+        "Setzt einen mit `remove_node_from_map` („Hier entfernen“) entfernten Ast wieder in den Baum, in dem er stand: "
+        "an den alten Parent und die alte Stelle, mit den Unterknoten, die mit ihm entfernt wurden. Fehlt der alte "
+        "Parent (nicht mehr im Baum, im Papierkorb oder selbst noch entfernt), steht der Ast unter der Wurzel der Map "
+        "(`fell_back_to_root`). Abgelehnt: der Knoten steht im Baum schon wieder (`mindmap_node_in_tree`), es ist "
+        "keine "
+        "Platzierung gemerkt (`mindmap_nothing_to_restore`), Knoten oder Map im Papierkorb. Mit Versionsprüfung",
+        "write",
+        RestoreNodePlacement,
+        PlacementRestoredOut,
+        lambda s, d: _restored_out(s.branches.restore_placement(d.ref, d.project, d.version, d.tree)),
+        HttpBinding("POST", "/nodes/{ref}/restore-placement"),
+    ),
+    Operation(
+        "list_trashed_nodes",
+        "Die gelöschten Äste einer Map (Seitenansicht „Papierkorb“): je der oberste gelöschte Knoten, der im Baum "
+        "stand, mit Titel, Version für `restore_and_move_node`, altem Parent und der Zahl der Knoten im Papierkorb, "
+        "die mit ihm zurückkämen. Ohne `tree` der Projektbaum; eine Map im Papierkorb wird abgelehnt",
+        "read",
+        ListTrashedNodes,
+        list[TrashedNodeOut],
+        lambda s, d: [_trashed_out(b) for b in s.branches.trashed_branches(d.project, d.tree)],
+        HttpBinding("GET", "/trash/{project}"),
+    ),
+    Operation(
+        "list_removed_placements",
+        "Die Bäume (ohne Papierkorb), aus denen ein Knoten entfernt wurde und in die er zurück kann („Früher in …“): "
+        "der Projektbaum zuerst, dann die freien Maps; mit dem alten Parent, ob er noch im Baum steht, und der "
+        "Zahl der "
+        "Knoten, die zurückkämen",
+        "read",
+        ListRemovedPlacements,
+        list[RemovedFromOut],
+        lambda s, d: [_removed_from_out(t) for t in s.branches.removed_from(d.ref, d.project)],
+        HttpBinding("GET", "/nodes/{ref}/removed"),
+    ),
+    Operation(
+        "list_node_trees",
+        "Die Bäume (ohne Papierkorb), in denen ein Knoten steht: der Projektbaum zuerst, dann die freien Maps",
+        "read",
+        ListNodeTrees,
+        list[NodeTreeOut],
+        lambda s, d: [_node_tree_out(t) for t in s.branches.node_trees(d.ref, d.project)],
+        HttpBinding("GET", "/nodes/{ref}/trees"),
     ),
     Operation(
         "list_node_documents",
@@ -484,7 +915,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "read",
         GetNodeContent,
         NodeContentOut,
-        lambda s, d: _content_out(s.assignments.node_content(d.ref, d.project, _statuses(d.statuses))),
+        lambda s, d: _content_out(s.assignments.node_content(d.ref, d.project, _statuses(d.statuses), d.tree)),
         HttpBinding("GET", "/nodes/{ref}/content"),
     ),
     Operation(

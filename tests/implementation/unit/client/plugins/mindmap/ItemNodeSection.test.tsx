@@ -108,6 +108,29 @@ describe("the actions on an item: go there, create, anchor", () => {
 		await waitFor(() => expect(location()).toBe("/mindmap/main?focus=a1"));
 	});
 
+	it("asks for the tree when the node of the item stands in several trees, then opens it there", async () => {
+		const backend = await renderItem({
+			nodes: [node("a", null, 0, { tree_count: 2 }), node("b", null, 1)],
+			items: { a: [nodeItem("t1", true)] },
+			respond: ({ method, path }) =>
+				method === "GET" && path === "mindmap/nodes/a/trees"
+					? Response.json([{ tree_uid: "t1", kind: "project", name: "Viewer", parent_uid: null }, { tree_uid: "f1", kind: "free", name: "Ideen", parent_uid: null }])
+					: undefined,
+		});
+		await waitFor(() => expect(select().value).toBe("a"));
+
+		fireEvent.click(screen.getByTestId(ids.itemNodeGoto));
+		expect(location()).not.toContain("focus");
+		fireEvent.click(await screen.findByTestId(ids.treeJump("f1")));
+
+		await waitFor(() => expect(location()).toBe("/mindmap/main?focus=a"));
+		const { flushUiState } = await import("../../../../../../client/src/core/ui-state/uiState");
+		await waitFor(async () => {
+			await flushUiState(backend.store);
+			expect((backend.documents.get("mindmap") as { maps?: Record<string, string> } | undefined)?.maps).toEqual({ p1: "f1" });
+		});
+	});
+
 	it("goes to the whole map when the item has no node", async () => {
 		await renderItem({ unassigned: [itemRef("t1")] });
 		await screen.findByTestId(ids.itemNode);

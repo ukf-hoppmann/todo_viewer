@@ -9,7 +9,14 @@ from __future__ import annotations
 
 from collections.abc import Collection, Sequence
 
-from viewer.plugins.mindmap.domain.model import NODE_MARKS, MindmapViolation, Placement
+from viewer.plugins.mindmap.domain.model import (
+    MAP_NAME_MAX,
+    NODE_MARKS,
+    TREE_PROJECT,
+    MindmapViolation,
+    Placement,
+    Tree,
+)
 
 
 def children_of(placements: Sequence[Placement], parent_uid: str | None) -> list[Placement]:
@@ -140,3 +147,35 @@ def check_mark(value: str | None) -> str | None:
             allowed=list(NODE_MARKS),
         )
     return value
+
+
+def clean_map_name(value: object) -> str:
+    """Der Name einer freien Map ist eine Zeile ohne überflüssige Leerzeichen, nicht leer und nicht zu lang."""
+    cleaned = " ".join(value.split()) if isinstance(value, str) else ""
+    if not cleaned:
+        raise MindmapViolation("mindmap_map_name_missing", "Der Name der Map fehlt", field="name")
+    if len(cleaned) > MAP_NAME_MAX:
+        raise MindmapViolation(
+            "mindmap_map_name_too_long", f"Der Name darf höchstens {MAP_NAME_MAX} Zeichen haben", field="name"
+        )
+    return cleaned
+
+
+def check_map_name_free(name: str, taken: Collection[str]) -> None:
+    """Die freien Maps eines Projekts heißen verschieden (Groß- und Kleinschreibung zählt nicht)."""
+    if name.casefold() in {t.casefold() for t in taken}:
+        raise MindmapViolation(
+            "mindmap_map_name_taken", f"Es gibt in diesem Projekt schon eine Map '{name}'", name=name
+        )
+
+
+def check_renamable(tree: Tree) -> None:
+    if tree.kind == TREE_PROJECT:
+        raise MindmapViolation(
+            "mindmap_project_tree_fixed", "Der Projektbaum heißt wie das Projekt und lässt sich nicht umbenennen"
+        )
+
+
+def check_deletable(tree: Tree) -> None:
+    if tree.kind == TREE_PROJECT:
+        raise MindmapViolation("mindmap_project_tree_fixed", "Der Projektbaum lässt sich nicht löschen")

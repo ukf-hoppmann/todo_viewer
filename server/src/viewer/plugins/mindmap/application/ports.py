@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Protocol
 
 from viewer.core.application.ports import Transaction
-from viewer.plugins.mindmap.domain.model import Node, Placement, Tree
+from viewer.plugins.mindmap.domain.model import Node, Placement, RemovedPlacement, Tree
 
 
 class MindmapRepository(Protocol):
@@ -16,9 +16,40 @@ class MindmapRepository(Protocol):
         """Der Projektbaum des Projekts, falls es ihn schon gibt."""
         ...
 
-    def get_tree(self, tx: Transaction, uid: str) -> Tree | None: ...
+    def get_tree(self, tx: Transaction, uid: str) -> Tree | None:
+        """Der Baum, auch wenn er im Papierkorb liegt."""
+        ...
 
     def insert_tree(self, tx: Transaction, tree: Tree) -> None: ...
+
+    def free_maps(self, tx: Transaction, project_uid: str) -> list[Tree]:
+        """Die freien Maps des Projekts außerhalb des Papierkorbs, in der Reihenfolge des Anlegens."""
+        ...
+
+    def deleted_maps(self, tx: Transaction, project_uids: Sequence[str] | None) -> list[Tree]:
+        """Die freien Maps im Papierkorb (aller oder der genannten Projekte)."""
+        ...
+
+    def rename_tree(self, tx: Transaction, uid: str, name: str, expected: int) -> int:
+        """Setzt den Namen, wenn die Revision `expected` ist (sonst `version_conflict`); gibt die neue zurück."""
+        ...
+
+    def set_tree_deleted(self, tx: Transaction, uid: str, at: datetime | None, expected: int | None = None) -> int:
+        """Legt die Map in den Papierkorb (`at`) oder holt sie zurück (`None`) und erhöht die Revision; mit
+        `expected` wird sie geprüft (sonst `version_conflict`). Gibt die neue Revision zurück."""
+        ...
+
+    def delete_tree(self, tx: Transaction, uid: str) -> None:
+        """Entfernt den Baum und seine Platzierungen (die Knoten räumt der Aufrufer ab)."""
+        ...
+
+    def node_count(self, tx: Transaction, tree_uid: str) -> int:
+        """Die Knoten des Baums außerhalb des Papierkorbs."""
+        ...
+
+    def shared_count(self, tx: Transaction, tree_uid: str) -> int:
+        """Die Knoten des Baums außerhalb des Papierkorbs, die auch in einem anderen Baum stehen."""
+        ...
 
     def insert_node(self, tx: Transaction, node: Node) -> None: ...
 
@@ -39,7 +70,35 @@ class MindmapRepository(Protocol):
     def upsert_placements(self, tx: Transaction, placements: Sequence[Placement]) -> None: ...
 
     def child_uids(self, tx: Transaction, node_uid: str) -> list[str]:
-        """Die Knoten direkt unter dem Knoten in allen Bäumen, gelöschte eingeschlossen."""
+        """Die Knoten direkt unter dem Knoten, die ausschließlich unter ihm stehen (in allen Bäumen), gelöschte
+        eingeschlossen. Ein Knoten mit einer Platzierung unter einem anderen Parent oder unter der Wurzel gehört dem
+        Papierkorb des Parents nicht mit."""
+        ...
+
+    def delete_placements(self, tx: Transaction, placements: Sequence[Placement]) -> None:
+        """Entfernt genau diese Platzierungen (Kinder vor ihren Eltern übergeben)."""
+        ...
+
+    def mark_removed(self, tx: Transaction, placements: Sequence[Placement], root_uid: str) -> None:
+        """Merkt die Platzierungen als entfernt (`TASK-066`): Baum, Parent und Stelle bleiben gespeichert, alle Abfragen
+        übergehen sie. `root_uid` nennt den Knoten, dessen Ast mit ihnen entfernt wurde (die Gruppe)."""
+        ...
+
+    def removed_placements(self, tx: Transaction, tree_uid: str) -> list[RemovedPlacement]:
+        """Die gemerkten, entfernten Platzierungen des Baums."""
+        ...
+
+    def removed_placements_of(self, tx: Transaction, node_uid: str) -> list[RemovedPlacement]:
+        """Die gemerkten, entfernten Platzierungen des Knotens, eine je Baum."""
+        ...
+
+    def live_trees_of(self, tx: Transaction, node_uids: Sequence[str]) -> dict[str, set[str]]:
+        """Je Knoten die Bäume außerhalb des Papierkorbs, in denen er steht."""
+        ...
+
+    def live_tree_counts(self, tx: Transaction, tree_uid: str) -> dict[str, int]:
+        """Je Knoten des Baums die Zahl der Bäume außerhalb des Papierkorbs, in denen er steht (mindestens 1, wenn der
+        Baum selbst lebt)."""
         ...
 
     def delete_node(self, tx: Transaction, uid: str) -> None:

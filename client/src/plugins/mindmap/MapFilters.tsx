@@ -8,10 +8,10 @@ import { mindmapTestIds } from "./testIds";
 const MARK_COLORS: Record<string, string> = { discarded: "#d5544a", later: "#4a7fd5" };
 const STATE_COLORS: Record<string, string> = { idea: "#8a8f98", planned: "#6b7280", in_progress: "#d59a3a", done: "#3ab26b" };
 
-/** Sidebar section of the mind map: which node states and marks are shown, and the switch of the side view "Nicht zugeordnet". */
+/** Sidebar section of the mind map: which node states and marks are shown, and the switches of the side views "Nicht zugeordnet" and "Papierkorb". */
 export function MapFilters() {
 	const { t } = useTranslation("mindmap");
-	const { hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned, showDependencies, setShowDependencies } = useMindmapState();
+	const { hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned, showTrash, setShowTrash, showDependencies, setShowDependencies, highlightShared, setHighlightShared } = useMindmapState();
 	return (
 		<Box data-testid={mindmapTestIds.stateFilter}>
 			<FilterSection
@@ -41,12 +41,34 @@ export function MapFilters() {
 				control={
 					<Checkbox
 						size="small"
+						checked={showTrash}
+						onChange={(event) => setShowTrash(event.target.checked)}
+						slotProps={{ input: { "data-testid": mindmapTestIds.trashSwitch } as never }}
+					/>
+				}
+				label={t("filter.trash")}
+			/>
+			<FormControlLabel
+				control={
+					<Checkbox
+						size="small"
 						checked={showDependencies}
 						onChange={(event) => setShowDependencies(event.target.checked)}
 						slotProps={{ input: { "data-testid": mindmapTestIds.dependenciesSwitch } as never }}
 					/>
 				}
 				label={t("filter.dependencies")}
+			/>
+			<FormControlLabel
+				control={
+					<Checkbox
+						size="small"
+						checked={highlightShared}
+						onChange={(event) => setHighlightShared(event.target.checked)}
+						slotProps={{ input: { "data-testid": mindmapTestIds.sharedSwitch } as never }}
+					/>
+				}
+				label={t("filter.shared")}
 			/>
 		</Box>
 	);

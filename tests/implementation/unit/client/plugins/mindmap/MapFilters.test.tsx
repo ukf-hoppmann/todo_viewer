@@ -16,7 +16,7 @@ async function renderFilters(documents: Record<string, Record<string, unknown>> 
 }
 const stored = async (backend: Awaited<ReturnType<typeof renderFilters>>) => {
 	await flushUiState(backend.store);
-	return backend.documents.get("mindmap") as { hiddenStates?: string[]; hiddenMarks?: string[]; showUnassigned?: boolean; showDependencies?: boolean } | undefined;
+	return backend.documents.get("mindmap") as { hiddenStates?: string[]; hiddenMarks?: string[]; showUnassigned?: boolean; showTrash?: boolean; showDependencies?: boolean } | undefined;
 };
 
 describe("MapFilters: the sidebar section of the mind map", () => {
@@ -29,6 +29,17 @@ describe("MapFilters: the sidebar section of the mind map", () => {
 			expect((screen.getByTestId(sharedTestIds.filterOption(state)) as HTMLInputElement).checked).toBe(true);
 		}
 		expect((screen.getByTestId(ids.unassignedSwitch) as HTMLInputElement).checked).toBe(true);
+	});
+
+	it("offers the switch for the side view Papierkorb, off at the start, and keeps it", async () => {
+		const backend = await renderFilters();
+		await screen.findByTestId(ids.stateFilter);
+		expect((screen.getByTestId(ids.trashSwitch) as HTMLInputElement).checked).toBe(false);
+
+		fireEvent.click(screen.getByTestId(ids.trashSwitch));
+
+		await waitFor(async () => expect((await stored(backend))?.showTrash).toBe(true));
+		expect((screen.getByTestId(ids.trashSwitch) as HTMLInputElement).checked).toBe(true);
 	});
 
 	it("offers the switch for dependencies, off at the start, and keeps it", async () => {

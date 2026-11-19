@@ -319,7 +319,26 @@ def test_the_operations_are_published_as_http_routes_and_mcp_tools(mindmap: Env)
         "get_node_content",
         "get_item_node",
         "list_memo_nodes",
+        "list_maps",
+        "create_map",
+        "rename_map",
+        "delete_map",
+        "move_node_to_map",
+        "transfer_node_to_map",
+        "remove_node_from_map",
+        "delete_node",
+        "restore_and_move_node",
+        "list_node_trees",
+        "list_removed_placements",
+        "restore_node_placement",
+        "list_trashed_nodes",
     }
     assert all(host.operation("mindmap", name).mcp for name in names)
     paths = mindmap.client.get("/openapi.json").json()["paths"]
-    assert {"/api/mindmap/trees/{project}", "/api/mindmap/nodes", "/api/mindmap/nodes/{ref}/move"} <= set(paths)
+    assert {
+        "/api/mindmap/trees/{project}",
+        "/api/mindmap/nodes",
+        "/api/mindmap/nodes/{ref}/move",
+        "/api/mindmap/maps",
+        "/api/mindmap/maps/{tree}",
+    } <= set(paths)

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { DetailPanel, DetailSection, InlineField } from "../../shared";
 import { DocumentsSection } from "./DocumentsSection";
 import { NodeContentSection } from "./NodeContentSection";
+import { RemovedPlacementsSection } from "./RemovedPlacementsSection";
 import { NODE_MARKS } from "./domain/tree";
 import { errorMessage, useUpdateNodeMutation, type NodeOut } from "./api";
 import { mindmapTestIds } from "./testIds";
@@ -49,6 +50,7 @@ export function NodeDetail({ node, onClose }: { node: NodeOut; onClose: () => vo
 					<DetailSection id="content" title={t("content.title")}>
 						<NodeContentSection node={node} />
 					</DetailSection>
+					<RemovedPlacementsSection node={node} />
 					<DetailSection id="documents" title={t("field.documents")}>
 						<DocumentsSection node={node} />
 					</DetailSection>

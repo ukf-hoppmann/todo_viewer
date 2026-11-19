@@ -15,7 +15,7 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - **Knoten:** ein Thema mit Titel und optionalem Text; kann Notizen tragen, darf leer sein, beliebige Tiefe.
 - **Baum (Map):** Knoten unter einer Wurzel. Es gibt den **Projektbaum** (einer je Projekt, das Projekt ist die
   Wurzel), **freie Maps** (beliebig viele je Projekt, Übergreifendes im Projekt „Allgemein“). Eine eigene Map je Memo gibt es
-  nicht; ein Memo wird an einen Knoten oder eine freie Map verlinkt.
+  nicht; ein Memo wird an einen Knoten verlinkt, auch in freien Maps (die Map selbst ist kein Ziel).
 - **Platzierung:** die Lage eines Knotens in einem Baum (Knoten, Parent, Stelle). Ein Knoten kann Platzierungen
   in mehreren Bäumen haben, in einem Baum höchstens eine. Platzierungen sind gleichberechtigt.
 - **Zuordnung:** die Verknüpfung eines Items oder Memos mit einem Knoten.

@@ -5,16 +5,17 @@
 - Goal/Status: Geplant; Entscheidungen aus der Besprechung von `STORY-102` übernommen.
 - Next step: Plan beim Start der Umsetzung vorstellen.
 - Open:
-  - Gilt die Seitenansicht „Nicht zugeordnet“ auch in freien Maps? Nicht besprochen; Vorschlag: nur im Projektbaum (2026-11-19)
+  - Keine
 - Decided:
   - Auswahl der Maps als Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps); dort auch Anlegen, Umbenennen, Löschen (2026-11-19)
   - Die Gesamtansicht zeigt nur Projektbäume, keine freien Maps (2026-11-19)
   - Freie Map löschen: Papierkorb mit Wiederherstellen; der Projektbaum lässt sich nicht löschen (2026-11-19)
-  - Keine eigene Map je Memo; ein Memo wird an einen Knoten oder eine freie Map verlinkt (2026-11-19)
+  - Keine eigene Map je Memo; ein Memo wird an einen Knoten verlinkt, auch in freien Maps; die Map selbst ist kein Ziel, weil ein Baum kein Element ist (2026-11-19)
+  - „Nicht zugeordnet“ gibt es nur im Projektbaum (2026-11-19)
   - Freie Maps gehören zu einem Projekt, Übergreifendes zum Projekt „Allgemein“ (2026-11-19)
 - References: Spec `TASK-062_spec.md`; Story-Spec `STORY-102_spec.md`; Konzept `EPIC-008_spec.md`; Mockup https://claude.ai/artifact/3qoj9AET4gmLVxg4Nx8gGw; Memo `MEMO-003`
 
-State confirmed after entry 2026-11-19 — Übernahme der Entscheidungen aus STORY-102 (f484bfc2bfb7)
+State confirmed after entry 2026-11-19 — Offene Punkte vor der Umsetzung geklärt (b1ac28318ca6)
 
 ## 2026-11-19 — Übernahme der Entscheidungen aus STORY-102
 
@@ -35,3 +36,19 @@ State confirmed after entry 2026-11-19 — Übernahme der Entscheidungen aus STO
 ### Open
 
 - Ob die Seitenansicht „Nicht zugeordnet“ auch in freien Maps gilt; nicht besprochen.
+
+## 2026-11-19 — Offene Punkte vor der Umsetzung geklärt
+
+### Discussed
+
+- Memo-Link: Verlinken geht heute nur an Knoten (Rolle `node` in `workspace_links`); ein Baum ist kein Element und die Wurzel einer freien Map kein Knoten. Option 1: nur Knoten (Empfehlung, kein Mehraufwand). Option 2: auch die Map als Element, mit Migration, Verknüpfung und Papierkorb der Map.
+- „Nicht zugeordnet“: nur im Projektbaum (Empfehlung) oder auch in freien Maps; Letzteres bräuchte eine Regel, weil „nicht zugeordnet“ sich dann auf Knoten statt auf Bäume bezieht.
+
+### Decided
+
+- Memos hängen nur an Knoten (Owner); die Spec ist korrigiert.
+- „Nicht zugeordnet“ nur im Projektbaum (Owner).
+
+### Open
+
+- Keine.

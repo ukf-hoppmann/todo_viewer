@@ -8,7 +8,8 @@ Platzierungen merken) und `TASK-067` (Papierkorb-Ansicht). Die beiden letzten si
 
 - Ein Projekt hat seinen Projektbaum (nicht löschbar) und beliebig viele freie Maps zum Brainstormen. Übergreifendes
   kommt ins eingebaute Projekt „Allgemein“. Eine eigene Map je Memo gibt es nicht; ein Memo wird an einen Knoten
-  oder eine freie Map verlinkt. Ein Export einer Map in ein Memo ist nur als Idee im Memo `MEMO-003` festgehalten.
+  verlinkt, auch in freien Maps; die Map selbst ist kein Ziel. Die Seitenansicht „Nicht zugeordnet“ gibt es nur im
+  Projektbaum. Ein Export einer Map in ein Memo ist nur als Idee im Memo `MEMO-003` festgehalten.
 - Auswahl: Liste „Maps“ in der Seitenleiste (Projektbaum zuerst, dann freie Maps); dort auch Anlegen, Umbenennen,
   Löschen. Die Gesamtansicht zeigt nur Projektbäume.
 - Löschen einer freien Map: Papierkorb mit Wiederherstellen. Knoten nur dieser Map gehen mit, übertragene Äste

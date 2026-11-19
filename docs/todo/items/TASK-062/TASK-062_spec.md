@@ -9,7 +9,7 @@ Gesamtbild: `STORY-102_spec.md`; Konzept: `EPIC-008_spec.md`. Der Weg steht in `
   vorkommen. Übergreifendes kommt in das eingebaute Projekt „Allgemein“.
 - Server und Oberfläche führen mehrere Bäume je Projekt. Eine freie Map hat einen Namen; sie lässt sich anlegen,
   auswählen, umbenennen und löschen, über Oberfläche, API und MCP.
-- Es gibt keine Map je Memo. Ein Memo wird an einen Knoten oder eine freie Map verlinkt.
+- Es gibt keine Map je Memo. Ein Memo wird an einen Knoten verlinkt, auch in freien Maps; die Map selbst ist kein Ziel einer Verknüpfung.
 
 ## Oberfläche
 
@@ -31,4 +31,4 @@ Gesamtbild: `STORY-102_spec.md`; Konzept: `EPIC-008_spec.md`. Der Weg steht in `
 ## Nicht Teil
 
 - Umhängen und Übertragen zwischen Bäumen: `TASK-063`.
-- Die Seitenansicht „Nicht zugeordnet“ in freien Maps ist nicht besprochen; Vorschlag: nur im Projektbaum.
+- Die Seitenansicht „Nicht zugeordnet“ gibt es nur im Projektbaum, nicht in freien Maps.

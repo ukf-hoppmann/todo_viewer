@@ -180,3 +180,24 @@ def test_a_type_that_does_not_match_the_label_is_invalid() -> None:
         decode(type(files)(changed))
 
     assert error.value.code == "invalid_value" and "TASK-001" in str(error.value)
+
+
+def test_notes_are_compared_in_the_layout_the_database_produces() -> None:
+    """Zusätzliche Leerzeilen nach dem Stempel sind kein Unterschied: die Datenbank bringt Notes ins feste Layout."""
+    from dataclasses import replace
+
+    files = read_folder(FIXTURES / "valid")
+    path = "items/STORY-001/STORY-001_notes.md"
+    text = (
+        "# STORY-001 — Pflicht-Story mit Dokumenten\n\n## State\n\n- Goal/Status: a\n\n"
+        "State confirmed after entry 2026-10-02 — Erster Eintrag (d48625b9122c)\n\n\n"
+        "## 2026-10-02 — Erster Eintrag\ntext\n"
+    )
+    plain = replace(files.files[path], text=text.replace("\n\n\n##", "\n\n##"))
+    extra = replace(files.files[path], text=text)
+
+    def content_of(entry) -> str:  # type: ignore[no-untyped-def]
+        folder = type(files)({**files.files, path: entry})
+        return next(e for e in decode(folder) if e.label == "STORY-001_notes.md").fields["content"]
+
+    assert content_of(extra) == content_of(plain)

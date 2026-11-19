@@ -13,7 +13,7 @@ from viewer.core.domain.files import FileSet
 from viewer.core.domain.sync import MirrorEntry, MirrorFormatError
 from viewer.plugins.backlog.domain.lifecycle import LifecycleRules, LifecycleViolation
 from viewer.plugins.backlog.domain.model import KIND_BY_TYPE, PRIORITIES, STATUSES, TYPES, Item
-from viewer.plugins.backlog.domain.notes import without_title
+from viewer.plugins.backlog.domain.notes import assemble, split, without_title
 from viewer.plugins.backlog.infrastructure.mirror.syntax import (
     ARCHIVE_FILE,
     DAY,
@@ -253,7 +253,11 @@ def _documents(files: FileSet, items: list[_Decoded]) -> list[MirrorEntry]:
             # Die Titelzeile ist abgeleitet: das Schreiben erzeugt sie aus Label und Titel des Items, verglichen wird
             # sie nicht. So erscheint die Datei nach einem Typwechsel nicht als geändert, und eine abweichende alte
             # Titelzeile ist kein Konflikt; sie wird beim nächsten Schreiben erneuert.
-            fields: dict[str, Any] = {"content": without_title(text), "kind": "notes", "title": item.fields["title"]}
+            # Ebenso das Layout: die Datenbank hält Notes zerlegt und setzt sie in festem Layout zusammen (zusätzliche
+            # Leerzeilen vor den Einträgen gehen verloren). Verglichen wird die Form, die die Datenbank liefern würde;
+            # sonst bliebe ein Unterschied nur im Leerraum nach „Dateien“ + Sync ein Konflikt.
+            content = without_title(assemble("", split(text)))
+            fields: dict[str, Any] = {"content": content, "kind": "notes", "title": item.fields["title"]}
         else:
             fields = {"content": text, "kind": "spec"}
         refs = {"item": (folder,)}

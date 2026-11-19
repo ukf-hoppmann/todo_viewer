@@ -3,10 +3,12 @@
 ## State
 
 - Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Thema 5 (Markierung übertragener Äste, Pfad im Fokus) besprechen.
+- Next step: Thema 6 („Hier entfernen“ und „Knoten löschen“) besprechen.
 - Open:
-  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 4 erledigt: 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
+  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 5 erledigt: 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
+  - Übertragene Äste: kleines Symbol mit Baumzahl beim Überfahren, das die Bäume des Knotens zum Springen anbietet; zusätzlich ein Schalter, der alle übertragenen Äste mit einem Rand einfärbt, damit man sie gezielt sehen kann und die Karte sonst ruhig bleibt (2026-11-19)
+  - „Gehe hin“ zu einem Knoten in mehreren Bäumen: Auswahl des Baums; ebenso kann man aus einem Baum mit geteilten Knoten schnell in den anderen springen (2026-11-19)
   - Äste wandern nicht zwischen Projekten; Umhängen und Übertragen gelten nur innerhalb eines Projekts, die Gesamtansicht bleibt eine reine Ansicht (2026-11-19)
   - Umhängen und Übertragen gibt es auch über API und MCP, weil die KI Äste verschieben soll (2026-11-19)
   - Umhängen und Übertragen zwischen Bäumen: Kontextmenü „Umhängen nach …“ / „Übertragen nach …“ und Ziehen auf einen Eintrag der Map-Liste mit Auswahl „Umhängen oder Übertragen“; der Ast landet unter der Wurzel der Ziel-Map, die feine Position per Ziehen in der Ziel-Map; kein Zielknoten-Dialog (2026-11-19)
@@ -24,7 +26,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-19 — Thema 4: Projektgrenze und API (c2ad622681ef)
+State confirmed after entry 2026-11-19 — Thema 5: Markierung übertragener Äste und Sprung (7474b2ccf9fd)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -182,3 +184,20 @@ State confirmed after entry 2026-11-19 — Thema 4: Projektgrenze und API (c2ad6
 ### Open
 
 - Thema 5: Markierung übertragener Äste und Pfad im Fokus.
+
+## 2026-11-19 — Thema 5: Markierung übertragener Äste und Sprung
+
+### Discussed
+
+- Frage 1: Wie sieht die Markierung aus? Zur Wahl standen ein Symbol am Knoten (Empfehlung), ein farbiger Rand oder nur das Detail.
+- Frage 2: Was gilt beim Sprung zu einem Knoten, der in mehreren Bäumen steht? Empfehlung war: Baum des Herkunftsorts, sonst die erste Platzierung, Wechsel über die Markierung.
+- Der Owner kombiniert: Symbol nur beim Überfahren (Baum bleibt ruhig), dazu schaltbar ein farbiger Rand für alle übertragenen Äste, um sie gezielt zu finden. Beim Sprung soll er selbst den Baum wählen.
+
+### Decided
+
+- Symbol mit Baumzahl beim Überfahren plus schaltbarer Rand (Owner); das Symbol bietet die Bäume des Knotens zum Springen an.
+- Sprung zu einem Knoten in mehreren Bäumen fragt per Auswahl nach dem Baum (Owner), statt eine Regel zu raten. Verworfen: feste Regel „erste Platzierung“, weil man sonst in einem unerwarteten Baum landet.
+
+### Open
+
+- Thema 6: „Hier entfernen“ und „Knoten löschen“.

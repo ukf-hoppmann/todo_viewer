@@ -75,8 +75,11 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     geht nur zwischen Bäumen, ein Knoten steht höchstens einmal je Baum; beides
     nur innerhalb eines Projekts. Umhängen und Übertragen gehen auch über API
     und MCP, damit die KI Äste verschieben kann.
-    3. Ein übertragener Ast ist markiert; „hier entfernen“ nimmt ihn nur aus
-    diesem Baum, „Knoten löschen“ überall.
+    3. Ein übertragener Ast trägt ein Symbol, das beim Überfahren erscheint
+    und die Bäume des Knotens als Auswahl zum Springen anbietet; eine
+    Einstellung färbt alle übertragenen Äste mit einem Rand ein. „Gehe hin“
+    zu einem Knoten in mehreren Bäumen fragt per Auswahl nach dem Baum.
+    „Hier entfernen“ nimmt ihn nur aus diesem Baum, „Knoten löschen“ überall.
     4. Summen zählen ein Item auch dann nur einmal, wenn sein Ast über zwei
     Wege unter derselben Wurzel liegt.
     5. Domain-, API- und UI-Tests sind grün.
@@ -121,7 +124,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     bereit, damit die KI Äste verschieben kann.
     2. Die Oberfläche bietet „umhängen“ und „übertragen“ mit Wahl des Ziels
     (Kontextmenü und Ziehen auf die Map-Liste),
-    markiert übertragene Äste und trennt „hier entfernen“ von „Knoten
+    markiert übertragene Äste (Symbol beim Überfahren, schaltbarer Rand,
+    Baumauswahl zum Springen) und trennt „hier entfernen“ von „Knoten
     löschen“.
     3. Summen zählen jedes Item einmal; Domain-, API- und UI-Tests sind grün.
 

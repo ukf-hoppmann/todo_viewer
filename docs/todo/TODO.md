@@ -252,8 +252,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     mit, damit sie über Git zwischen Rechnern wandert und die KI auch in
     Cloud-Sitzungen, die nur auf den Dateien arbeiten, zuordnen kann.
   - Completion criteria: 1. Ein Dateiformat für Bäume (Projektbäume und freie
-    Maps), Knoten, Platzierungen und Zuordnungen ist beschrieben und mit
-    Golden-Files abgedeckt; eine Cloud-Sitzung kann freie Maps füllen.
+    Maps), Knoten, Platzierungen (auch mehrere je Knoten und entfernte) und
+    Zuordnungen ist beschrieben und mit Golden-Files abgedeckt; eine
+    Cloud-Sitzung kann freie Maps füllen und Äste umhängen oder übertragen.
     2. Der Sync nimmt die Mindmap mit Vorschau und Konflikten in denselben
     Dialog auf.
     3. Die Regeln für den Datei-Modus sind an Claude_Harness übergeben.

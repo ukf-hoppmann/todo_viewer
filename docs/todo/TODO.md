@@ -123,8 +123,10 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     übertragen, sodass er in beiden steht; übertragene Äste sind markiert und
     lassen sich nur hier entfernen oder ganz löschen.
   - Completion criteria: 1. Der Server legt eine zweite Platzierung an und
-    weist einen Knoten zweimal im selben Baum, Kreise und Ziele in anderen
-    Projekten ab. Umhängen und Übertragen stehen als API und als MCP-Werkzeug
+    weist Ziele ab, in denen der Ast oder ein Unterknoten schon steht (die
+    Meldung nennt die Knoten), Kreise, Ziele in anderen Projekten, die Wurzel
+    einer Map und Knoten im Papierkorb. Ein Knoten im Papierkorb lässt sich
+    „wiederherstellen und umziehen“ in einem Schritt, auch über API und MCP. Umhängen und Übertragen stehen als API und als MCP-Werkzeug
     bereit, damit die KI Äste verschieben kann.
     2. Die Oberfläche bietet „umhängen“ und „übertragen“ mit Wahl des Ziels
     (Kontextmenü und Ziehen auf die Map-Liste),
@@ -135,7 +137,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     denen er verschwindet. Verliert ein Knoten seine letzte Platzierung,
     kommt er mit den dadurch heimatlosen Unterknoten in den Papierkorb; Items
     folgen der Regel von `STORY-100`. „Hier entfernen“ und „Knoten löschen“
-    gibt es getrennt auch über API und MCP.
+    gibt es getrennt auch über API und MCP. Nicht erlaubte Ziele sind im Menü
+    ausgegraut mit Grund. Ein Knoten aus dem Papierkorb lässt sich per Ziehen
+    an eine neue Stelle setzen (reaktivieren am neuen Punkt).
     3. Neue Unterknoten eines übertragenen Knotens entstehen in allen seinen
     Bäumen, Umhängen und Entfernen darunter gelten nur im bearbeiteten Baum;
     Summen zählen jedes Item höchstens einmal; Domain-, API- und UI-Tests sind

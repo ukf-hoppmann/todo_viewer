@@ -3,10 +3,12 @@
 ## State
 
 - Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Thema 8 (verbotene Fälle) besprechen.
+- Next step: Thema 9 (Markdown-Spiegel) besprechen; Papierkorb-Ansicht klären.
 - Open:
   - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 6 erledigt:  „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
+  - Verbotene Ziele werden abgelehnt (Ast oder Unterknoten steht im Zielbaum schon, Kreis, anderes Projekt, Wurzel, Knoten im Papierkorb); die Meldung nennt die Knoten, in der Oberfläche sind solche Ziele ausgegraut mit Grund, die API liefert einen Fehlercode mit Liste; kein Zusammenführen (2026-11-19)
+  - Knoten im Papierkorb lassen sich per Ziehen an eine neue Stelle setzen: im Backend „wiederherstellen und umziehen“ in einem Schritt (auch API und MCP), in der Oberfläche „reaktivieren am neuen Punkt“ (2026-11-19)
   - Übertragene Äste: Inhalt (Titel, Text, Notizen, Items) gemeinsam, Struktur darunter je Baum eigen; neue Unterknoten erscheinen in allen Bäumen des Parents, Umhängen und „Hier entfernen“ nur im bearbeiteten Baum; Zahl, Fortschritt und Zustand je Baum berechnet, können abweichen (2026-11-19)
   - Eine Doppelzählung unter einer Wurzel kann nach den Regeln nicht entstehen; das Kriterium bleibt als Test (2026-11-19)
   - Entfernte Platzierungen werden gemerkt und lassen sich wieder einsetzen, als eigener Task nach `TASK-063` (Platzhalter `NEW-platzierungen-merken`) (2026-11-19)
@@ -30,7 +32,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-19 — Thema 7: Summen und Zustand bei übertragenen Ästen (b4631e2d7325)
+State confirmed after entry 2026-11-19 — Thema 8: Verbotene Fälle (0cc80714e287)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -246,3 +248,21 @@ State confirmed after entry 2026-11-19 — Thema 7: Summen und Zustand bei über
 ### Open
 
 - Thema 8: verbotene Fälle.
+
+## 2026-11-19 — Thema 8: Verbotene Fälle
+
+### Discussed
+
+- Vorschlag: Ziele ablehnen, in denen der Ast oder ein Unterknoten schon steht (Empfehlung; Alternative Zusammenführen: bequem, aber die Struktur entspräche nicht mehr der Quelle); Wurzel einer Map nicht bewegbar; Knoten im Papierkorb nicht bewegbar; Hinweis an `NEW-platzierungen-merken`, beim Wiedereinsetzen zu prüfen, ob der Knoten inzwischen im Baum steht.
+- Zum Papierkorb sagt der Owner „jein“: Er will Knoten aus dem Papierkorb per Ziehen an eine andere Stelle setzen. Im Backend wiederherstellen plus umziehen, in der Oberfläche ein Reaktivieren am neuen Punkt. Die Mindmap-Seite hat bisher keine Papierkorb-Ansicht (Wiederherstellen läuft über den Workspace); eine solche Seitenansicht, ähnlich „Nicht zugeordnet“, wäre neu.
+
+### Decided
+
+- Ablehnen statt Zusammenführen; Wurzel nicht bewegbar (Owner).
+- Knoten im Papierkorb per Ziehen an eine neue Stelle setzen (Owner); Backend „wiederherstellen und umziehen“ auch über API und MCP; in `TASK-063` eingetragen.
+
+### Open
+
+- Wo man Papierkorb-Knoten in der Oberfläche sieht und zieht (neue Seitenansicht) und ob das zu `TASK-063` gehört oder ein eigener Task wird.
+- Wohin ein wiederhergestellter Knoten mit mehreren früheren Platzierungen kommt: Vorschlag: die neue Stelle ersetzt die alte Platzierung im aktuellen Baum, Platzierungen in anderen Bäumen kommen wie vorher zurück.
+- Thema 9: Markdown-Spiegel.

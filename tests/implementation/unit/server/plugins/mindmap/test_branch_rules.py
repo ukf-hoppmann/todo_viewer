@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from viewer.plugins.mindmap.domain import branches
 from viewer.plugins.mindmap.domain.model import MindmapViolation, Placement
 
@@ -16,7 +17,13 @@ def _p(tree: str, *rows: tuple[str, str | None, int]) -> list[Placement]:
 def _sample() -> list[Placement]:
     """r (x (y, z (w)), q)"""
     return _p(
-        A, ("r", None, 0), ("x", "r", 0), ("q", "r", 1), ("y", "x", 0), ("z", "x", 1), ("w", "z", 0)
+        A,
+        ("r", None, 0),
+        ("x", "r", 0),
+        ("q", "r", 1),
+        ("y", "x", 0),
+        ("z", "x", 1),
+        ("w", "z", 0),
     )
 
 
@@ -69,7 +76,10 @@ def test_a_shared_root_is_only_taken_out_and_homeless_children_move_up() -> None
     assert sorted(p.node_uid for p in cut.removed) == ["x", "z"]
     assert cut.homeless == ["y", "w"]
     # y hängt nun an r (dem alten Parent von x), w an r statt an dem gehenden z
-    assert sorted((p.node_uid, p.parent_uid) for p in cut.reparented) == [("w", "r"), ("y", "r")]
+    assert sorted((p.node_uid, p.parent_uid) for p in cut.reparented) == [
+        ("w", "r"),
+        ("y", "r"),
+    ]
     positions = [p.position for p in cut.reparented]
     assert len(set(positions)) == 2 and min(positions) >= 2  # hinter q
 
@@ -85,7 +95,15 @@ def test_a_shared_descendant_stays_alive_when_only_the_root_is_homeless() -> Non
 
 def test_deleting_everywhere_cuts_every_tree_before_counting_what_stays() -> None:
     other = _p(B, ("x", None, 0), ("y", "x", 0), ("k", "y", 0))
-    standing = {"r": {A}, "x": {A, B}, "q": {A}, "y": {A, B}, "z": {A}, "w": {A}, "k": {B}}
+    standing = {
+        "r": {A},
+        "x": {A, B},
+        "q": {A},
+        "y": {A, B},
+        "z": {A},
+        "w": {A},
+        "k": {B},
+    }
     cut = branches.plan_cuts({A: _sample(), B: other}, "x", standing)
     assert cut.removed == []
     assert cut.homeless == ["x", "y", "z", "w", "k"]

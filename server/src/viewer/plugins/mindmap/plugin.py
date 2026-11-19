@@ -10,6 +10,7 @@ from viewer.core.application.ports import Transaction
 from viewer.core.domain.events import Event
 from viewer.core.domain.plugin import ElementKind, Subscription
 from viewer.plugins.mindmap.application.assignments import AssignmentService
+from viewer.plugins.mindmap.application.branches import BranchService
 from viewer.plugins.mindmap.application.documents import DocumentService
 from viewer.plugins.mindmap.application.maps import MapService, MapTrash
 from viewer.plugins.mindmap.application.operations import OPERATIONS, MindmapServices
@@ -62,11 +63,22 @@ def _build(context: PluginContext) -> MindmapServices:
     )
     # Freie Maps liegen als eigene Einträge im Papierkorb; ihre Knoten tragen den Löschzeitpunkt der Map.
     workspace.trash.register_source(MapTrash(repository, workspace.registry, workspace.project_store))
+    branches = BranchService(
+        repository,
+        service,
+        workspace.registry,
+        workspace.project_store,
+        context.database,
+        context.events,
+        context.clock,
+        workspace.trash.restore_elements,
+    )
     return MindmapServices(
         service,
         DocumentService(documents, service, context.database, context.clock, context.events),
         assignments,
         maps,
+        branches,
     )
 
 

@@ -33,6 +33,8 @@ class TreeView:
     nodes: list[tuple[Node, Placement]]
     #: Die Namen der Dokumente je Knoten (nur Knoten mit Dokumenten).
     documents: dict[str, list[str]] = field(default_factory=dict)
+    #: Je Knoten die Zahl der Bäume (ohne Papierkorb), in denen er steht.
+    tree_counts: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -83,7 +85,13 @@ class MindmapService:
             if tree is None:
                 return TreeView(project_uid, None, [])
             ordered = self._ordered(tx, tree)
-            return TreeView(project_uid, tree, ordered, self._documents.names_of(tx, [n.uid for n, _ in ordered]))
+            return TreeView(
+                project_uid,
+                tree,
+                ordered,
+                self._documents.names_of(tx, [n.uid for n, _ in ordered]),
+                self._repository.live_tree_counts(tx, tree.uid),
+            )
 
     def get_node(self, ref: str, project_uid: str | None, tree_uid: str | None = None) -> NodeView:
         with self._database.transaction() as tx:
@@ -114,6 +122,8 @@ class MindmapService:
             self._repository.insert_node(tx, Node(element.uid, project_uid, element.label, clean, text or None, 1))
             changed = rules.arrange(placements, tree.uid, element.uid, parent_uid, position, live | {element.uid})
             self._repository.upsert_placements(tx, changed)
+            if parent_uid is not None:
+                self._spread(tx, element.uid, parent_uid, tree.uid)
         self._changed(element.uid, project_uid, "created", tree.uid)
         return str(element.uid)
 
@@ -256,6 +266,38 @@ class MindmapService:
         assert tree is not None
         return tree
 
+    def _spread(self, tx: Transaction, node_uid: str, parent_uid: str, except_tree: str) -> None:
+        """Ein neuer Unterknoten erscheint in allen anderen Bäumen, in denen sein Parent steht (am Ende)."""
+        for where in self._repository.placements_of(tx, parent_uid):
+            if where.tree_uid == except_tree:
+                continue
+            placements = self._repository.placements(tx, where.tree_uid)
+            live = self._live(tx, where.tree_uid)
+            self._repository.upsert_placements(
+                tx, rules.arrange(placements, where.tree_uid, node_uid, parent_uid, None, live | {node_uid})
+            )
+
+    def live_set(self, tx: Transaction, tree_uid: str) -> set[str]:
+        """Die `uid`s der lebenden Knoten des Baums."""
+        return self._live(tx, tree_uid)
+
+    def tree_of_node(self, tx: Transaction, node: Node, tree_uid: str | None) -> Tree:
+        """Der Baum, in dem der Knoten bearbeitet wird; er darf nicht im Papierkorb liegen."""
+        tree = self._tree_of_node(tx, node, tree_uid)
+        if tree.deleted_at is not None:
+            raise MindmapViolation("mindmap_tree_deleted", "Die Map liegt im Papierkorb", tree=tree.uid)
+        return tree
+
+    def existing_tree(self, tx: Transaction, project_uid: str, tree_uid: str) -> Tree:
+        return self._existing_tree(tx, project_uid, tree_uid)
+
+    def parent_uid(self, tx: Transaction, parent: str | None, project_uid: str) -> str | None:
+        return self._parent_uid(tx, parent, project_uid)
+
+    def announce_nodes(self, nodes: list[Node], change: str, tree_uid: str | None = None) -> None:
+        for node in nodes:
+            self._changed(node.uid, node.project_uid, change, tree_uid)
+
     def _live(self, tx: Transaction, tree_uid: str) -> set[str]:
         return {n.uid for n in self._repository.nodes_in_tree(tx, tree_uid)}
 
@@ -293,8 +335,16 @@ class MindmapService:
                 queue.append(placement.node_uid)
         return ordered
 
+    def _read_tree(self, tx: Transaction, node: Node) -> str | None:
+        """Zum Lesen eines Knotens, der in mehreren Bäumen steht: der Projektbaum, sonst die erste freie Map."""
+        trees = [
+            t for p in self._repository.placements_of(tx, node.uid) if (t := self._repository.get_tree(tx, p.tree_uid))
+        ]
+        live = sorted((t for t in trees if t.deleted_at is None), key=lambda t: (t.kind != TREE_PROJECT, t.uid))
+        return live[0].uid if len(live) > 1 else None
+
     def _view(self, tx: Transaction, node: Node, tree_uid: str | None) -> NodeView:
-        tree = self._tree_of_node(tx, node, tree_uid)
+        tree = self._tree_of_node(tx, node, tree_uid or self._read_tree(tx, node))
         placements = self._repository.placements(tx, tree.uid)
         live = {n.uid for n in self._repository.nodes_in_tree(tx, tree.uid)}
         placement = rules.find(rules.compacted(placements, live | {node.uid}), node.uid)

@@ -70,7 +70,22 @@ class MindmapRepository(Protocol):
     def upsert_placements(self, tx: Transaction, placements: Sequence[Placement]) -> None: ...
 
     def child_uids(self, tx: Transaction, node_uid: str) -> list[str]:
-        """Die Knoten direkt unter dem Knoten in allen Bäumen, gelöschte eingeschlossen."""
+        """Die Knoten direkt unter dem Knoten, die ausschließlich unter ihm stehen (in allen Bäumen), gelöschte
+        eingeschlossen. Ein Knoten mit einer Platzierung unter einem anderen Parent oder unter der Wurzel gehört dem
+        Papierkorb des Parents nicht mit."""
+        ...
+
+    def delete_placements(self, tx: Transaction, placements: Sequence[Placement]) -> None:
+        """Entfernt genau diese Platzierungen (Kinder vor ihren Eltern übergeben)."""
+        ...
+
+    def live_trees_of(self, tx: Transaction, node_uids: Sequence[str]) -> dict[str, set[str]]:
+        """Je Knoten die Bäume außerhalb des Papierkorbs, in denen er steht."""
+        ...
+
+    def live_tree_counts(self, tx: Transaction, tree_uid: str) -> dict[str, int]:
+        """Je Knoten des Baums die Zahl der Bäume außerhalb des Papierkorbs, in denen er steht (mindestens 1, wenn der
+        Baum selbst lebt)."""
         ...
 
     def delete_node(self, tx: Transaction, uid: str) -> None:

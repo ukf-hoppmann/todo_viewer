@@ -202,10 +202,45 @@ class SqlMindmapRepository:
 
     def child_uids(self, tx: Transaction, node_uid: str) -> list[str]:
         rows = _conn(tx).execute(
-            text("SELECT DISTINCT node_uid FROM mindmap_placements WHERE parent_uid = :n ORDER BY node_uid"),
+            text(
+                "SELECT DISTINCT c.node_uid FROM mindmap_placements c WHERE c.parent_uid = :n AND NOT EXISTS ("
+                "SELECT 1 FROM mindmap_placements o WHERE o.node_uid = c.node_uid "
+                "AND (o.parent_uid IS NULL OR o.parent_uid <> :n)) ORDER BY c.node_uid"
+            ),
             {"n": node_uid},
         )
         return [row.node_uid for row in rows]
+
+    def delete_placements(self, tx: Transaction, placements: Sequence[Placement]) -> None:
+        for p in placements:
+            _conn(tx).execute(
+                text("DELETE FROM mindmap_placements WHERE tree_uid = :t AND node_uid = :n"),
+                {"t": p.tree_uid, "n": p.node_uid},
+            )
+
+    def live_trees_of(self, tx: Transaction, node_uids: Sequence[str]) -> dict[str, set[str]]:
+        found: dict[str, set[str]] = {}
+        if not node_uids:
+            return found
+        statement = text(
+            "SELECT p.node_uid, p.tree_uid FROM mindmap_placements p JOIN mindmap_trees t ON t.uid = p.tree_uid "
+            "WHERE t.deleted_at IS NULL AND p.node_uid IN :uids"
+        ).bindparams(bindparam("uids", expanding=True))
+        for row in _conn(tx).execute(statement, {"uids": list(node_uids)}):
+            found.setdefault(row.node_uid, set()).add(row.tree_uid)
+        return found
+
+    def live_tree_counts(self, tx: Transaction, tree_uid: str) -> dict[str, int]:
+        rows = _conn(tx).execute(
+            text(
+                "SELECT p.node_uid, COUNT(*) AS n FROM mindmap_placements p "
+                "JOIN mindmap_placements q ON q.node_uid = p.node_uid "
+                "JOIN mindmap_trees t ON t.uid = q.tree_uid AND t.deleted_at IS NULL "
+                "WHERE p.tree_uid = :t GROUP BY p.node_uid"
+            ),
+            {"t": tree_uid},
+        )
+        return {row.node_uid: int(row.n) for row in rows}
 
     def delete_node(self, tx: Transaction, uid: str) -> None:
         _conn(tx).execute(text("DELETE FROM mindmap_documents WHERE node_uid = :u"), {"u": uid})

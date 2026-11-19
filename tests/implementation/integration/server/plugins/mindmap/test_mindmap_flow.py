@@ -323,6 +323,12 @@ def test_the_operations_are_published_as_http_routes_and_mcp_tools(mindmap: Env)
         "create_map",
         "rename_map",
         "delete_map",
+        "move_node_to_map",
+        "transfer_node_to_map",
+        "remove_node_from_map",
+        "delete_node",
+        "restore_and_move_node",
+        "list_node_trees",
     }
     assert all(host.operation("mindmap", name).mcp for name in names)
     paths = mindmap.client.get("/openapi.json").json()["paths"]

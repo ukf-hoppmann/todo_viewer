@@ -4260,4 +4260,4 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Verschiedene Blicke auf die Map: einen Ast als eigene Map öffnen,
     alle Projekte zusammen sehen, rund oder zur Seite anordnen und
     Abhängigkeiten zwischen Themen einblenden.
-  - Resolution: Confirmed by the project owner on 2026-11-18.
+  - Resolution: Confirmed by the project owner on 2026-11-19.

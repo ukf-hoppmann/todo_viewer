@@ -99,7 +99,9 @@ class BacklogParticipant:
             refs["parent"] = (label.get(item.parent_uid, item.parent_uid),)
         if item.dependencies:
             refs["dependencies"] = tuple(sorted(label.get(uid, uid) for uid in item.dependencies))
-        return MirrorEntry(KIND_BY_TYPE[item.type].lower(), item.label, fields, refs, item.uid)
+        return MirrorEntry(
+            KIND_BY_TYPE[item.type].lower(), item.label, fields, refs, item.uid, trashed=item.deleted_at is not None
+        )
 
     def resolve_labels(self, project: str, labels: Collection[str]) -> Mapping[str, str]:
         found: dict[str, str] = {}

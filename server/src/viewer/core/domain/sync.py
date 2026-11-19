@@ -66,6 +66,9 @@ class MirrorEntry:
     source_lines: Mapping[str, int] = field(default_factory=dict, compare=False)
     #: Angaben, die der Codec mitführt, die aber nicht verglichen werden (z. B. Zeitstempel der Datei); nicht im Hash.
     extra: Mapping[str, Any] = field(default_factory=dict, compare=False)
+    #: Die Datenbank hält den Eintrag im Papierkorb. Fehlt er dann in den Dateien, ist das kein Konflikt: die
+    #: Löschung ist auf beiden Seiten angekommen (Entscheidung „Dateien“ bei „in den Dateien gelöscht“).
+    trashed: bool = field(default=False, compare=False)
 
     @property
     def key(self) -> str:
@@ -181,7 +184,7 @@ def compute_plan(
         elif db:
             if known is None:
                 intents.append(Intent("files", "create", db))
-            else:
+            elif not db.trashed:
                 conflicts.append(Conflict("deleted_in_files", uid, db.label, db, None))
         elif fl:
             if known is None:

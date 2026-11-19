@@ -34,7 +34,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Spec `STORY-102_spec.md`; Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Memo `MEMO-003`
 
-State confirmed after entry 2026-11-19 — Aufteilung auf die Tasks (cfa5064d4a00)
+State confirmed after entry 2026-11-19 — Aufteilung auf die Tasks (8efc45b9ccc9)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -141,7 +141,7 @@ State confirmed after entry 2026-11-19 — Aufteilung auf die Tasks (cfa5064d4a0
 
 ### Discussed
 
-- Angepasst: Ziel und Kriterien von `STORY-102` und `TASK-062` (Titel ohne Memo-Map, Maps-Liste in der Seitenleiste), Kriterium 1 von `STORY-105`, Konzept `EPIC-008_spec.md` (Begriffe, Darstellung, Spiegel, Idee Export). Das Memo `MEMO-003` hält die Export-Idee fest.
+- Angepasst: Ziel und Kriterien von `STORY-102` und `TASK-062` (Titel ohne Memo-Map, Maps-Liste in der Seitenleiste), Kriterium 1 von `STORY-105`, Konzept `EPIC-008_spec.md` (Begriffe, Darstellung, Spiegel, Idee Export). Das Memo `MEMO-004` hält die Export-Idee fest.
 
 ### Open
 

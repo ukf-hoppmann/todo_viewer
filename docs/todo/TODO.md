@@ -126,7 +126,12 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     (Kontextmenü und Ziehen auf die Map-Liste),
     markiert übertragene Äste (Symbol beim Überfahren, schaltbarer Rand,
     Baumauswahl zum Springen) und trennt „hier entfernen“ von „Knoten
-    löschen“.
+    löschen“: Steht ein Knoten nur in einem Baum, gibt es nur „Löschen“.
+    „Knoten löschen“ eines geteilten Knotens fragt vorher mit den Bäumen, aus
+    denen er verschwindet. Verliert ein Knoten seine letzte Platzierung,
+    kommt er mit den dadurch heimatlosen Unterknoten in den Papierkorb; Items
+    folgen der Regel von `STORY-100`. „Hier entfernen“ und „Knoten löschen“
+    gibt es getrennt auch über API und MCP.
     3. Summen zählen jedes Item einmal; Domain-, API- und UI-Tests sind grün.
 
 - `STORY-103` **Ideen-Knoten ins Backlog überführen**

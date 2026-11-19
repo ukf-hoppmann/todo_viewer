@@ -64,7 +64,7 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - **Bedienung:** Kontextmenü „Umhängen nach …“ / „Übertragen nach …“ und Ziehen auf einen Eintrag der Map-Liste mit Wahl; der Ast landet unter der Wurzel der Ziel-Map. Beides gibt es auch über API und MCP, damit die KI Äste verschieben kann.
 - **Übertragen:** derselbe Ast in A und B; nur zwischen Bäumen. Der Ast ist ein gemeinsamer Datensatz, eine
   Änderung wirkt an beiden Stellen. Übertragene Äste sind markiert: ein Symbol mit der Zahl der Bäume erscheint beim Überfahren und bietet die Bäume des Knotens zum Springen an; ein Schalter in den Filtern färbt alle übertragenen Äste mit einem Rand ein. „Gehe hin“ zu einem Knoten in mehreren Bäumen fragt per Auswahl nach dem Baum.
-- „Hier entfernen“ nimmt den Ast aus einem Baum, „Knoten löschen“ überall.
+- „Hier entfernen“ nimmt den Ast aus einem Baum, „Knoten löschen“ überall. Steht ein Knoten nur in einem Baum, gibt es nur „Löschen“; „Knoten löschen“ eines geteilten Knotens fragt vorher mit den betroffenen Bäumen. Verliert ein Knoten seine letzte Platzierung, kommt er mit den heimatlos gewordenen Unterknoten in den Papierkorb, nie ins Leere. Beides gibt es getrennt über API und MCP.
 - Ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht; bei Bedarf wird umgebaut.
 
 ## Ins Backlog und Rolle der KI

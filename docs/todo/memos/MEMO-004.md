@@ -6,9 +6,9 @@ Topic:
 Review: 2027-02-18T08:00:00Z
 Mode: any
 Created: 2026-11-18T15:03:28.278925Z
-Updated: 2026-11-18T15:03:28.278925Z
+Updated: 2026-11-19T08:41:46.063409Z
 Archived: false
-Deleted:
+Deleted: 2026-11-19T08:41:46.063409Z
 Links:
 - reference ToDo_viewer:STORY-102
 

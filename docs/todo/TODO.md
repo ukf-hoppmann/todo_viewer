@@ -124,26 +124,26 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     lassen sich nur hier entfernen oder ganz löschen.
   - Completion criteria: 1. Der Server legt eine zweite Platzierung an und
     weist Ziele ab, in denen der Ast oder ein Unterknoten schon steht (die
-    Meldung nennt die Knoten), Kreise, Ziele in anderen Projekten, die Wurzel
-    einer Map und Knoten im Papierkorb. Ein Knoten im Papierkorb lässt sich
-    „wiederherstellen und umziehen“ in einem Schritt, auch über API und MCP. Umhängen und Übertragen stehen als API und als MCP-Werkzeug
+    Meldung nennt die Knoten), Kreise, Ziele in anderen Projekten, die
+    Wurzel einer Map und Knoten im Papierkorb. Ein Knoten im Papierkorb
+    lässt sich „wiederherstellen und umziehen“ in einem Schritt, auch über
+    API und MCP. Umhängen und Übertragen stehen als API und als MCP-Werkzeug
     bereit, damit die KI Äste verschieben kann.
     2. Die Oberfläche bietet „umhängen“ und „übertragen“ mit Wahl des Ziels
-    (Kontextmenü und Ziehen auf die Map-Liste),
-    markiert übertragene Äste (Symbol beim Überfahren, schaltbarer Rand,
-    Baumauswahl zum Springen) und trennt „hier entfernen“ von „Knoten
-    löschen“: Steht ein Knoten nur in einem Baum, gibt es nur „Löschen“.
-    „Knoten löschen“ eines geteilten Knotens fragt vorher mit den Bäumen, aus
-    denen er verschwindet. Verliert ein Knoten seine letzte Platzierung,
-    kommt er mit den dadurch heimatlosen Unterknoten in den Papierkorb; Items
-    folgen der Regel von `STORY-100`. „Hier entfernen“ und „Knoten löschen“
-    gibt es getrennt auch über API und MCP. Nicht erlaubte Ziele sind im Menü
-    ausgegraut mit Grund. Das Ziehen aus dem Papierkorb steht in
-    `NEW-papierkorb-ansicht`.
+    (Kontextmenü und Ziehen auf die Map-Liste), markiert übertragene Äste
+    (Symbol beim Überfahren, schaltbarer Rand, Baumauswahl zum Springen) und
+    trennt „hier entfernen“ von „Knoten löschen“: Steht ein Knoten nur in
+    einem Baum, gibt es nur „Löschen“. „Knoten löschen“ eines geteilten
+    Knotens fragt vorher mit den Bäumen, aus denen er verschwindet. Verliert
+    ein Knoten seine letzte Platzierung, kommt er mit den dadurch
+    heimatlosen Unterknoten in den Papierkorb; Items folgen der Regel von
+    `STORY-100`. „Hier entfernen“ und „Knoten löschen“ gibt es getrennt auch
+    über API und MCP. Nicht erlaubte Ziele sind im Menü ausgegraut mit
+    Grund. Das Ziehen aus dem Papierkorb steht in `TASK-067`.
     3. Neue Unterknoten eines übertragenen Knotens entstehen in allen seinen
     Bäumen, Umhängen und Entfernen darunter gelten nur im bearbeiteten Baum;
-    Summen zählen jedes Item höchstens einmal; Domain-, API- und UI-Tests sind
-    grün.
+    Summen zählen jedes Item höchstens einmal; Domain-, API- und UI-Tests
+    sind grün.
 
 - `TASK-066` **Mindmap: entfernte Platzierungen merken und wieder einsetzen**
   - Uid: 3c7069c8-2a16-42aa-ba05-9cb248b3c000.
@@ -168,11 +168,13 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Oberfläche sagt es.
     3. Domain-, API- und UI-Tests sind grün.
 
-- `NEW-papierkorb-ansicht` **Mindmap: Papierkorb-Ansicht, Knoten per Ziehen reaktivieren**
+- `TASK-067` **Mindmap: Papierkorb-Ansicht, Knoten per Ziehen reaktivieren**
+  - Uid: 942288f5-a266-4601-a334-4086b509c479.
   - Type: Task.
   - Parent: `STORY-102`.
   - Required for parent: No.
   - Status: Open.
+  - Created: 2026-11-19.
   - Area: Web-UI.
   - Priority: Normal.
   - Dependencies: `TASK-063`.

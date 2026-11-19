@@ -7,7 +7,7 @@
 - Open:
   - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 6 erledigt:  „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
-  - Die Papierkorb-Ansicht (Seitenansicht, Knoten per Ziehen reaktivieren) ist ein eigener Task `NEW-papierkorb-ansicht` nach `TASK-063`; ein wiederhergestellter Knoten mit mehreren Platzierungen: die neue Stelle ersetzt die alte im aktuellen Baum, andere Bäume wie vorher (2026-11-19)
+  - Die Papierkorb-Ansicht (Seitenansicht, Knoten per Ziehen reaktivieren) ist ein eigener Task `TASK-067` nach `TASK-063`; ein wiederhergestellter Knoten mit mehreren Platzierungen: die neue Stelle ersetzt die alte im aktuellen Baum, andere Bäume wie vorher (2026-11-19)
   - Verbotene Ziele werden abgelehnt (Ast oder Unterknoten steht im Zielbaum schon, Kreis, anderes Projekt, Wurzel, Knoten im Papierkorb); die Meldung nennt die Knoten, in der Oberfläche sind solche Ziele ausgegraut mit Grund, die API liefert einen Fehlercode mit Liste; kein Zusammenführen (2026-11-19)
   - Knoten im Papierkorb lassen sich per Ziehen an eine neue Stelle setzen: im Backend „wiederherstellen und umziehen“ in einem Schritt (auch API und MCP), in der Oberfläche „reaktivieren am neuen Punkt“ (2026-11-19)
   - Übertragene Äste: Inhalt (Titel, Text, Notizen, Items) gemeinsam, Struktur darunter je Baum eigen; neue Unterknoten erscheinen in allen Bäumen des Parents, Umhängen und „Hier entfernen“ nur im bearbeiteten Baum; Zahl, Fortschritt und Zustand je Baum berechnet, können abweichen (2026-11-19)
@@ -272,7 +272,7 @@ State confirmed after entry 2026-11-19 — Thema 8: Papierkorb-Ansicht (7c96a063
 
 ### Decided
 
-- Eigener Task `NEW-papierkorb-ansicht` (abhängig von `TASK-063`, nicht Pflicht für die Story); das Backend „wiederherstellen und umziehen“ bleibt in `TASK-063` (Owner).
+- Eigener Task `TASK-067` (abhängig von `TASK-063`, nicht Pflicht für die Story); das Backend „wiederherstellen und umziehen“ bleibt in `TASK-063` (Owner).
 - Wiederhergestellter Knoten mit mehreren früheren Platzierungen: die neue Stelle ersetzt die alte im aktuellen Baum, Platzierungen in anderen Bäumen kommen wie vorher zurück (Owner, Vorschlag angenommen).
 - Der Viewer hat dem Task für entfernte Platzierungen die Nummer `TASK-066` gegeben; Verweise sind angepasst.
 

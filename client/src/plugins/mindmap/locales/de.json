@@ -164,6 +164,14 @@
 		"message": "Der Knoten steht in mehreren Bäumen ({{trees}}) und verschwindet aus allen. Unterknoten, die nur hier stehen, kommen mit in den Papierkorb. „Hier entfernen“ nimmt ihn nur aus dem aktuellen Baum.",
 		"confirm": "Überall löschen"
 	},
+	"removed": {
+		"title": "Früher in …",
+		"tree": "{{name}} ({{count}} Knoten)",
+		"restore": "Wieder einsetzen",
+		"parentGone": "Der alte Parent steht dort nicht mehr; der Ast kommt unter die Wurzel.",
+		"restoredAtRoot": "Der alte Parent fehlte: „{{title}}“ steht jetzt unter der Wurzel von {{name}}.",
+		"restored": "Wieder eingesetzt in {{name}}."
+	},
 	"shared": {
 		"badge": "Steht in {{count}} Bäumen",
 		"jump": "Zu einem Baum springen",

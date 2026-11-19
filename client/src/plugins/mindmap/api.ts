@@ -14,6 +14,8 @@ export type MapOut = components["schemas"]["MapOut"];
 export type MapDeletedOut = components["schemas"]["MapDeletedOut"];
 export type RemovalOut = components["schemas"]["RemovalOut"];
 export type NodeTreeOut = components["schemas"]["NodeTreeOut"];
+export type RemovedFromOut = components["schemas"]["RemovedFromOut"];
+export type PlacementRestoredOut = components["schemas"]["PlacementRestoredOut"];
 
 /** The error of a write: the code and details the server gave, as an `Error` the forms can show. */
 export class WriteError extends Error {
@@ -144,6 +146,16 @@ export const mindmapApi = createPluginApi(
 			query: (ref) => `mindmap/nodes/${ref}/trees`,
 			providesTags: ["Tree", "Maps"],
 		}),
+		// Removed placements (`TASK-066`): `listRemovedPlacements` names the trees a node was taken out of ("Früher in …"),
+		// `restoreNodePlacement` puts the branch back where it stood (under the root of the map when its old parent is gone).
+		listRemovedPlacements: build.query<RemovedFromOut[], string>({
+			query: (ref) => `mindmap/nodes/${ref}/removed`,
+			providesTags: ["Tree", "Maps"],
+		}),
+		restoreNodePlacement: build.mutation<PlacementRestoredOut, { ref: string; version: number; tree?: string }>({
+			query: ({ ref, ...body }) => ({ url: `mindmap/nodes/${ref}/restore-placement`, method: "POST", body }),
+			invalidatesTags: ["Tree", "Maps", "Content"],
+		}),
 		getDocument: build.query<DocumentOut, { uid: string; name: string }>({
 			query: ({ uid, name }) => `mindmap/nodes/${uid}/documents/${name}`,
 			providesTags: ["Documents"],
@@ -181,6 +193,8 @@ export const {
 	useRemoveNodeFromMapMutation,
 	useDeleteNodeMutation,
 	useListNodeTreesQuery,
+	useListRemovedPlacementsQuery,
+	useRestoreNodePlacementMutation,
 	useGetDocumentQuery,
 	usePutDocumentMutation,
 	useAppendEntryMutation,

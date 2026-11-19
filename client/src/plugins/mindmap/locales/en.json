@@ -164,6 +164,14 @@
 		"message": "The node stands in several trees ({{trees}}) and disappears from all of them. Sub-nodes that stand only here go to the trash too. “Remove here” takes it out of the current tree only.",
 		"confirm": "Delete everywhere"
 	},
+	"removed": {
+		"title": "Formerly in …",
+		"tree": "{{name}} ({{count}} nodes)",
+		"restore": "Put back",
+		"parentGone": "The old parent no longer stands there; the branch goes under the root.",
+		"restoredAtRoot": "The old parent was missing: “{{title}}” now stands under the root of {{name}}.",
+		"restored": "Put back into {{name}}."
+	},
 	"shared": {
 		"badge": "Stands in {{count}} trees",
 		"jump": "Jump to a tree",

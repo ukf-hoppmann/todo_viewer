@@ -68,5 +68,9 @@ export const mindmapTestIds = {
 	treeJump: (tree: string) => `mindmap.tree-jump.${tree}`,
 	sharedSwitch: "mindmap.shared-switch",
 	itemNodeTrees: "mindmap.item-node-trees",
+	removedSection: "mindmap.removed-section",
+	removedEntry: (tree: string) => `mindmap.removed-entry.${tree}`,
+	removedRestore: (tree: string) => `mindmap.removed-restore.${tree}`,
+	removedNotice: "mindmap.removed-notice",
 	mapDropTarget: "mindmap.map-drop-target",
 } as const;

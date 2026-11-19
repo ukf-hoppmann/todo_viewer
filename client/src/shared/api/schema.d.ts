@@ -1211,6 +1211,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mindmap/nodes/{ref}/removed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Die Bäume (ohne Papierkorb), aus denen ein Knoten entfernt wurde und in die er zurück kann („Früher in …“): der Projektbaum zuerst, dann die freien Maps; mit dem alten Parent, ob er noch im Baum steht, und der Zahl der Knoten, die zurückkämen */
+        get: operations["mindmap_list_removed_placements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mindmap/nodes/{ref}/restore-move": {
         parameters: {
             query?: never;
@@ -1222,6 +1239,23 @@ export interface paths {
         put?: never;
         /** Holt einen Knoten aus dem Papierkorb und stellt ihn in einem Schritt unter `parent` (sonst unter die Wurzel) des Baums `tree`. Die neue Stelle ersetzt seine alte Platzierung in diesem Baum; Platzierungen in anderen Bäumen kommen wie vorher zurück. Mit Versionsprüfung */
         post: operations["mindmap_restore_and_move_node"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{ref}/restore-placement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Setzt einen mit `remove_node_from_map` („Hier entfernen“) entfernten Ast wieder in den Baum, in dem er stand: an den alten Parent und die alte Stelle, mit den Unterknoten, die mit ihm entfernt wurden. Fehlt der alte Parent (nicht mehr im Baum, im Papierkorb oder selbst noch entfernt), steht der Ast unter der Wurzel der Map (`fell_back_to_root`). Abgelehnt: der Knoten steht im Baum schon wieder (`mindmap_node_in_tree`), es ist keine Platzierung gemerkt (`mindmap_nothing_to_restore`), Knoten oder Map im Papierkorb. Mit Versionsprüfung */
+        post: operations["mindmap_restore_node_placement"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2684,6 +2718,15 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** MindmapRestoreNodePlacementBody */
+        MindmapRestoreNodePlacementBody: {
+            /** Project */
+            project?: string | null;
+            /** Tree */
+            tree?: string | null;
+            /** Version */
+            version: number;
+        };
         /** MindmapTransferNodeToMapBody */
         MindmapTransferNodeToMapBody: {
             /** Project */
@@ -2818,6 +2861,21 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** PlacementRestoredOut */
+        PlacementRestoredOut: {
+            /** Fell Back To Root */
+            fell_back_to_root: boolean;
+            /** Node Uid */
+            node_uid: string;
+            /** Nodes Restored */
+            nodes_restored: number;
+            /** Nodes Skipped */
+            nodes_skipped: number;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Tree Uid */
+            tree_uid: string;
+        };
         /** Preview */
         Preview: {
             /** Conflicts */
@@ -2906,6 +2964,21 @@ export interface components {
              * @default true
              */
             removed: boolean;
+        };
+        /** RemovedFromOut */
+        RemovedFromOut: {
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Nodes */
+            nodes: number;
+            /** Parent Available */
+            parent_available: boolean;
+            /** Parent Uid */
+            parent_uid: string | null;
+            /** Tree Uid */
+            tree_uid: string;
         };
         /** RenameOut */
         RenameOut: {
@@ -6181,6 +6254,39 @@ export interface operations {
             };
         };
     };
+    mindmap_list_removed_placements: {
+        parameters: {
+            query?: {
+                project?: string | null;
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemovedFromOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     mindmap_restore_and_move_node: {
         parameters: {
             query?: never;
@@ -6203,6 +6309,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_restore_node_placement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapRestoreNodePlacementBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlacementRestoredOut"];
                 };
             };
             /** @description Client Error */

@@ -1,22 +1,12 @@
-<<<<<<<< HEAD:docs/todo/memos/MEMO-004.md
 # MEMO-004
 Uid: 9818a8e1-4580-42cc-9d6e-debe5aacba38
-========
-# MEMO-003
-Uid: b4c5ff24-193a-4abb-bf19-f6406bd5f507
->>>>>>>> origin/todo_mindmap:docs/todo/memos/MEMO-003.md
 Summary: Idee: freie Mindmap als verschachtelte Liste in ein Memo exportieren (STORY-102)
 Status: waiting
 Topic:
 Review: 2027-02-18T08:00:00Z
 Mode: any
-<<<<<<<< HEAD:docs/todo/memos/MEMO-004.md
 Created: 2026-11-18T15:03:28.278925Z
 Updated: 2026-11-18T15:03:28.278925Z
-========
-Created: 2026-11-18T15:02:58.66553Z
-Updated: 2026-11-18T15:02:58.66553Z
->>>>>>>> origin/todo_mindmap:docs/todo/memos/MEMO-003.md
 Archived: false
 Deleted:
 Links:

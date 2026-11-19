@@ -72,7 +72,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     auswählen, umbenennen und löschen; die Maps eines Projekts stehen als Liste
     in der Seitenleiste, die Gesamtansicht zeigt nur Projektbäume.
     2. Umhängen geht innerhalb eines Baums und zwischen Bäumen; Übertragen
-    geht nur zwischen Bäumen, ein Knoten steht höchstens einmal je Baum.
+    geht nur zwischen Bäumen, ein Knoten steht höchstens einmal je Baum; beides
+    nur innerhalb eines Projekts. Umhängen und Übertragen gehen auch über API
+    und MCP, damit die KI Äste verschieben kann.
     3. Ein übertragener Ast ist markiert; „hier entfernen“ nimmt ihn nur aus
     diesem Baum, „Knoten löschen“ überall.
     4. Summen zählen ein Item auch dann nur einmal, wenn sein Ast über zwei
@@ -114,8 +116,11 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     übertragen, sodass er in beiden steht; übertragene Äste sind markiert und
     lassen sich nur hier entfernen oder ganz löschen.
   - Completion criteria: 1. Der Server legt eine zweite Platzierung an und
-    weist einen Knoten zweimal im selben Baum sowie Kreise ab.
-    2. Die Oberfläche bietet „umhängen“ und „übertragen“ mit Wahl des Ziels,
+    weist einen Knoten zweimal im selben Baum, Kreise und Ziele in anderen
+    Projekten ab. Umhängen und Übertragen stehen als API und als MCP-Werkzeug
+    bereit, damit die KI Äste verschieben kann.
+    2. Die Oberfläche bietet „umhängen“ und „übertragen“ mit Wahl des Ziels
+    (Kontextmenü und Ziehen auf die Map-Liste),
     markiert übertragene Äste und trennt „hier entfernen“ von „Knoten
     löschen“.
     3. Summen zählen jedes Item einmal; Domain-, API- und UI-Tests sind grün.

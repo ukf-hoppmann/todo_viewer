@@ -60,7 +60,8 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 
 ## Äste zwischen Bäumen
 
-- **Umhängen:** aus A weg, in B drin; innerhalb eines Baums und zwischen Bäumen.
+- **Umhängen:** aus A weg, in B drin; innerhalb eines Baums und zwischen Bäumen, nur innerhalb eines Projekts.
+- **Bedienung:** Kontextmenü „Umhängen nach …“ / „Übertragen nach …“ und Ziehen auf einen Eintrag der Map-Liste mit Wahl; der Ast landet unter der Wurzel der Ziel-Map. Beides gibt es auch über API und MCP, damit die KI Äste verschieben kann.
 - **Übertragen:** derselbe Ast in A und B; nur zwischen Bäumen. Der Ast ist ein gemeinsamer Datensatz, eine
   Änderung wirkt an beiden Stellen. Übertragene Äste sind markiert.
 - „Hier entfernen“ nimmt den Ast aus einem Baum, „Knoten löschen“ überall.

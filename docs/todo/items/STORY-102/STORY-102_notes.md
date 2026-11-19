@@ -3,11 +3,12 @@
 ## State
 
 - Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Thema 4 zu Ende klären (Umhängen und Übertragen zwischen Projekten, Gesamtansicht), dann Thema 5.
+- Next step: Thema 5 (Markierung übertragener Äste, Pfad im Fokus) besprechen.
 - Open:
-  - Thema 4: dürfen Äste zwischen Projekten wandern, und ob die Gesamtansicht dafür ein Weg ist (2026-11-19)
-  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 3 erledigt: 4 Bedienung Umhängen/Übertragen, 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
+  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 4 erledigt: 5 Markierung und Pfad im Fokus, 6 „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
 - Decided:
+  - Äste wandern nicht zwischen Projekten; Umhängen und Übertragen gelten nur innerhalb eines Projekts, die Gesamtansicht bleibt eine reine Ansicht (2026-11-19)
+  - Umhängen und Übertragen gibt es auch über API und MCP, weil die KI Äste verschieben soll (2026-11-19)
   - Umhängen und Übertragen zwischen Bäumen: Kontextmenü „Umhängen nach …“ / „Übertragen nach …“ und Ziehen auf einen Eintrag der Map-Liste mit Auswahl „Umhängen oder Übertragen“; der Ast landet unter der Wurzel der Ziel-Map, die feine Position per Ziehen in der Ziel-Map; kein Zielknoten-Dialog (2026-11-19)
   - Freie Map löschen: Papierkorb mit Wiederherstellen; Knoten nur dieser Map gehen mit, übertragene Äste bleiben im anderen Baum, Items fallen an den Parent-Knoten oder in „Nicht zugeordnet“; der Projektbaum lässt sich nicht löschen (2026-11-18)
   - Die Maps eines Projekts stehen als Liste in der Seitenleiste (Projektbaum zuerst, dann freie Maps; Anlegen, Umbenennen, Löschen dort) (2026-11-18)
@@ -23,7 +24,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-19 — Thema 4: Bedienung von Umhängen und Übertragen (83337eead34a)
+State confirmed after entry 2026-11-19 — Thema 4: Projektgrenze und API (c2ad622681ef)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -165,3 +166,19 @@ State confirmed after entry 2026-11-19 — Thema 4: Bedienung von Umhängen und 
 ### Open
 
 - Dürfen Äste zwischen Projekten wandern, und ist die Gesamtansicht dafür ein zusätzlicher Weg?
+
+## 2026-11-19 — Thema 4: Projektgrenze und API
+
+### Discussed
+
+- Frage: Dürfen Äste zwischen Projekten wandern, und ist die Gesamtansicht dafür ein zusätzlicher Weg? Empfehlung: nein, weil Übergreifendes ohnehin nach „Allgemein“ gehört; die Gesamtansicht bleibt Ansicht.
+- Der Owner stimmt zu und fordert: Umhängen und Übertragen müssen über eine API gehen, weil er viel an die KI auslagern will. Sein Wort „kopieren“ meint das Übertragen; Kopieren im Sinne einer eigenen Kopie gibt es weiterhin nicht (entschieden am 2026-11-13).
+
+### Decided
+
+- Nur innerhalb eines Projekts (Owner).
+- API und MCP für Umhängen und Übertragen sind Teil der Story; in `TASK-063` als Kriterium aufgenommen (Owner).
+
+### Open
+
+- Thema 5: Markierung übertragener Äste und Pfad im Fokus.

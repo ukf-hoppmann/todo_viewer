@@ -108,6 +108,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     2. Die Maps eines Projekts stehen als Liste in der Seitenleiste (Projektbaum
     zuerst); die Gesamtansicht zeigt nur Projektbäume.
     3. API- und UI-Tests sind grün.
+  - Summary: Ein Projekt bekommt neben dem Projektbaum beliebig viele freie
+    Maps zum Brainstormen. Sie stehen als Liste in der Seitenleiste und lassen
+    sich anlegen, umbenennen und in den Papierkorb legen.
 
 - `TASK-063` **Mindmap: Äste zwischen Bäumen umhängen und übertragen**
   - Uid: fa9495d7-cad8-4d2e-8db0-98fdf2a6d88d.
@@ -144,6 +147,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Bäumen, Umhängen und Entfernen darunter gelten nur im bearbeiteten Baum;
     Summen zählen jedes Item höchstens einmal; Domain-, API- und UI-Tests
     sind grün.
+  - Summary: Äste lassen sich zwischen den Bäumen eines Projekts umhängen oder
+    übertragen, per Oberfläche, API und MCP. Übertragene Äste sind markiert und
+    lassen sich getrennt aus einem Baum entfernen oder überall löschen.
 
 - `TASK-066` **Mindmap: entfernte Platzierungen merken und wieder einsetzen**
   - Uid: 3c7069c8-2a16-42aa-ba05-9cb248b3c000.
@@ -167,6 +173,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     festgelegte Ersatzregel (zum Beispiel unter die Wurzel der Map) und die
     Oberfläche sagt es.
     3. Domain-, API- und UI-Tests sind grün.
+  - Summary: Wird ein Ast aus einem Baum entfernt, merkt sich das System den
+    Ort, damit man ihn später wieder an dieselbe Stelle setzen kann.
 
 - `TASK-067` **Mindmap: Papierkorb-Ansicht, Knoten per Ziehen reaktivieren**
   - Uid: 942288f5-a266-4601-a334-4086b509c479.
@@ -190,6 +198,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     aktuellen Baum, Platzierungen in anderen Bäumen kommen wie vorher zurück.
     Nicht erlaubte Stellen werden wie beim Umhängen abgelehnt.
     3. UI-Tests sind grün.
+  - Summary: Eine Seitenansicht zeigt gelöschte Knoten. Man zieht einen davon
+    an eine neue Stelle der Karte und aktiviert ihn dort wieder.
 
 - `STORY-103` **Ideen-Knoten ins Backlog überführen**
   - Uid: 688f456a-295f-453d-a6cd-39d7bb6c6aa8.
@@ -254,8 +264,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     mit, damit sie über Git zwischen Rechnern wandert und die KI auch in
     Cloud-Sitzungen, die nur auf den Dateien arbeiten, zuordnen kann.
   - Completion criteria: 1. Ein Dateiformat für Bäume (Projektbäume und freie
-    Maps), Knoten, Platzierungen und Zuordnungen ist beschrieben und mit
-    Golden-Files abgedeckt; eine Cloud-Sitzung kann freie Maps füllen.
+    Maps), Knoten, Platzierungen (auch mehrere je Knoten und entfernte) und
+    Zuordnungen ist beschrieben und mit Golden-Files abgedeckt; eine
+    Cloud-Sitzung kann freie Maps füllen und Äste umhängen oder übertragen.
     2. Der Sync nimmt die Mindmap mit Vorschau und Konflikten in denselben
     Dialog auf.
     3. Die Regeln für den Datei-Modus sind an Claude_Harness übergeben.

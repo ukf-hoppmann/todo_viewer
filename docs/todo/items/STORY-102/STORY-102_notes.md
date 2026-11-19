@@ -2,11 +2,12 @@
 
 ## State
 
-- Goal/Status: Geplant; zwei Tasks angelegt.
-- Next step: Thema 9 (Markdown-Spiegel) besprechen.
+- Goal/Status: Besprechung abgeschlossen (2026-11-19), Spec `STORY-102_spec.md` angelegt; Tasks `TASK-062`, `TASK-063`, `TASK-066`, `TASK-067`.
+- Next step: Mit `TASK-062` beginnen; Plan beim Start der Umsetzung vorstellen. Die Entscheidungen stehen auch in den Notes und Specs der Tasks.
 - Open:
-  - Besprechung in Arbeit, Themenplan 2026-11-18, Themen 1 bis 6 erledigt:  „Hier entfernen“ und „Knoten löschen“, 7 Summen und Zustand, 8 verbotene Fälle, 9 Markdown-Spiegel (2026-11-18)
+  - Keine
 - Decided:
+  - Anforderungen für den Markdown-Spiegel (mehrere Maps, mehrfache und entfernte Platzierungen, Papierkorb, Cloud-Zugriff) stehen in `STORY-105` (2026-11-19)
   - Die Papierkorb-Ansicht (Seitenansicht, Knoten per Ziehen reaktivieren) ist ein eigener Task `TASK-067` nach `TASK-063`; ein wiederhergestellter Knoten mit mehreren Platzierungen: die neue Stelle ersetzt die alte im aktuellen Baum, andere Bäume wie vorher (2026-11-19)
   - Verbotene Ziele werden abgelehnt (Ast oder Unterknoten steht im Zielbaum schon, Kreis, anderes Projekt, Wurzel, Knoten im Papierkorb); die Meldung nennt die Knoten, in der Oberfläche sind solche Ziele ausgegraut mit Grund, die API liefert einen Fehlercode mit Liste; kein Zusammenführen (2026-11-19)
   - Knoten im Papierkorb lassen sich per Ziehen an eine neue Stelle setzen: im Backend „wiederherstellen und umziehen“ in einem Schritt (auch API und MCP), in der Oberfläche „reaktivieren am neuen Punkt“ (2026-11-19)
@@ -31,9 +32,9 @@
   - Platzierungen sind gleichberechtigt: Wird der Ast aus einem Baum entfernt, bleibt er im anderen vollwertig (2026-11-13)
   - Verworfen: Verweis-Knoten auf ein Original, weil der Verweis ins Leere zeigt, sobald das Original entfernt wird (2026-11-13)
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
+- References: Spec `STORY-102_spec.md`; Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Memo `MEMO-003`
 
-State confirmed after entry 2026-11-19 — Thema 8: Papierkorb-Ansicht (7c96a0634286)
+State confirmed after entry 2026-11-19 — Aufteilung auf die Tasks (8efc45b9ccc9)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -279,3 +280,25 @@ State confirmed after entry 2026-11-19 — Thema 8: Papierkorb-Ansicht (7c96a063
 ### Open
 
 - Thema 9: Markdown-Spiegel.
+
+## 2026-11-19 — Thema 9 und Abschluss der Besprechung
+
+### Decided
+
+- Anforderungen für den Markdown-Spiegel in `STORY-105` eingetragen: mehrere Maps je Projekt, mehrfache und entfernte Platzierungen bei einmaligem Inhalt, Papierkorb, Cloud-Sitzung füllt freie Maps und verschiebt Äste mit den Regeln der API (Owner).
+- Die Besprechung ist abgeschlossen; die Entscheidungen stehen gebündelt in `STORY-102_spec.md`.
+
+### Open
+
+- Keine. Offenes liegt in den Tasks: Form der Ersatzregel beim Wiedereinsetzen (`TASK-066`) und das Dateiformat (`STORY-105`).
+
+## 2026-11-19 — Aufteilung auf die Tasks
+
+### Discussed
+
+- Auf Wunsch des Owners sind die Entscheidungen auf die Tasks verteilt: `TASK-062` (Maps, Auswahl, Löschen), `TASK-063` (Umhängen, Übertragen, Markierung, Entfernen, Papierkorb-Backend), `TASK-066` (entfernte Platzierungen), `TASK-067` (Papierkorb-Ansicht). Jeder Task hat Notes und eine Spec; `STORY-102_spec.md` bleibt das Gesamtbild.
+- Beim Aufteilen fiel eine Lücke auf, die nicht besprochen wurde: ob die Seitenansicht „Nicht zugeordnet“ auch in freien Maps gilt. Sie steht als offener Punkt in `TASK-062`.
+
+### Open
+
+- Ob „Nicht zugeordnet“ in freien Maps gilt (`TASK-062`).

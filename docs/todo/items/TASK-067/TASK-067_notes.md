@@ -13,7 +13,7 @@
   - Vorsichtige Annahmen bei der Umsetzung, siehe Eintrag „Umsetzung“ (2026-11-19)
 - References: Spec `TASK-067_spec.md`; Story-Spec `STORY-102_spec.md`; Vorgänger `TASK-063`
 
-State confirmed after entry 2026-11-19 — Umsetzung (783046ff1272)
+State confirmed after entry 2026-11-19 — Umsetzung (091af914aad9)
 
 ## 2026-11-19 — Übernahme der Entscheidungen aus STORY-102
 
@@ -52,4 +52,5 @@ State confirmed after entry 2026-11-19 — Umsetzung (783046ff1272)
 
 - Server: `pytest tests/implementation/integration/server/plugins/mindmap` und `unit/server` grün; `mypy` für das Plugin grün; `ruff check` meldet nur die zwei Altfunde.
 - Client: Vitest gesamt (121 Dateien, 1474 Tests) grün, darunter neue Tests für `restorePlacement`, die Seitenansicht (Schalter, Liste, Ziehen hinein/davor/danach/Wurzel, Ablehnung, Map-Wechsel, Gesamtansicht) und den Filter; `npm run lint` meldet nur die 5 Altfehler in `usePersistentState.ts`.
-- Nicht gelaufen: Server-Gesamtsuite (nur Mindmap- und Unit-Tests); Ziehen im echten Browser (React Flow ist in den Tests ersetzt).
+- Server-Gesamtsuite (`tests/implementation`) nachträglich gelaufen: alles grün bis auf den vorher bestehenden Fehler `test_client_log.py::test_browser_entry_lands_in_the_server_log`.
+- Nicht gelaufen: Ziehen im echten Browser (React Flow ist in den Tests ersetzt).

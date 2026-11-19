@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Protocol
 
 from viewer.core.application.ports import Transaction
-from viewer.plugins.mindmap.domain.model import Node, Placement, Tree
+from viewer.plugins.mindmap.domain.model import Node, Placement, RemovedPlacement, Tree
 
 
 class MindmapRepository(Protocol):
@@ -77,6 +77,19 @@ class MindmapRepository(Protocol):
 
     def delete_placements(self, tx: Transaction, placements: Sequence[Placement]) -> None:
         """Entfernt genau diese Platzierungen (Kinder vor ihren Eltern übergeben)."""
+        ...
+
+    def mark_removed(self, tx: Transaction, placements: Sequence[Placement], root_uid: str) -> None:
+        """Merkt die Platzierungen als entfernt (`TASK-066`): Baum, Parent und Stelle bleiben gespeichert, alle Abfragen
+        übergehen sie. `root_uid` nennt den Knoten, dessen Ast mit ihnen entfernt wurde (die Gruppe)."""
+        ...
+
+    def removed_placements(self, tx: Transaction, tree_uid: str) -> list[RemovedPlacement]:
+        """Die gemerkten, entfernten Platzierungen des Baums."""
+        ...
+
+    def removed_placements_of(self, tx: Transaction, node_uid: str) -> list[RemovedPlacement]:
+        """Die gemerkten, entfernten Platzierungen des Knotens, eine je Baum."""
         ...
 
     def live_trees_of(self, tx: Transaction, node_uids: Sequence[str]) -> dict[str, set[str]]:

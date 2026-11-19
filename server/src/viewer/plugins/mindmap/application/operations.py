@@ -11,7 +11,14 @@ from datetime import datetime
 
 from viewer.core.domain.operations import HttpBinding, Operation
 from viewer.plugins.mindmap.application.assignments import AssignmentService, ItemNode, NodeContent, TreeStats
-from viewer.plugins.mindmap.application.branches import BranchMoved, BranchService, NodeTree, Removal
+from viewer.plugins.mindmap.application.branches import (
+    BranchMoved,
+    BranchService,
+    NodeTree,
+    PlacementRestored,
+    Removal,
+    RemovedFrom,
+)
 from viewer.plugins.mindmap.application.documents import DocumentService
 from viewer.plugins.mindmap.application.maps import MapDeleted, MapService, MapView
 from viewer.plugins.mindmap.application.ports import BacklogItem, Document
@@ -286,6 +293,53 @@ class ListNodeTrees:
 
 
 @dataclass(frozen=True)
+class RestoreNodePlacement:
+    """Setzt einen mit „Hier entfernen“ entfernten Ast wieder in den Baum, in dem er stand."""
+
+    ref: str
+    version: int
+    #: Der Baum, in den der Ast zurück soll; nur nötig, wenn er aus mehreren entfernt wurde.
+    tree: str | None = None
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class ListRemovedPlacements:
+    ref: str
+    project: str | None = None
+
+
+@dataclass(frozen=True)
+class PlacementRestoredOut:
+    node_uid: str
+    tree_uid: str
+    #: Die Knoten, die wieder im Baum stehen (der Knoten und seine Unterknoten aus derselben Entfernung).
+    nodes_restored: int
+    #: Mitglieder der Entfernung, die im Papierkorb liegen und entfernt gemerkt bleiben.
+    nodes_skipped: int
+    #: Der Parent, unter dem der Knoten jetzt steht; leer unter der Wurzel.
+    parent_uid: str | None
+    #: Der alte Parent fehlte (nicht mehr im Baum, im Papierkorb oder selbst noch entfernt): der Ast steht unter der
+    #: Wurzel der Map.
+    fell_back_to_root: bool
+
+
+@dataclass(frozen=True)
+class RemovedFromOut:
+    tree_uid: str
+    #: `project` oder `free`.
+    kind: str
+    #: Bei freien Maps der Name, beim Projektbaum der Name des Projekts.
+    name: str
+    #: Der Parent von damals; leer unter der Wurzel.
+    parent_uid: str | None
+    #: Ob der Parent von damals noch im Baum steht; sonst käme der Ast unter die Wurzel.
+    parent_available: bool
+    #: Die Knoten, die mit ihm zurückkämen.
+    nodes: int
+
+
+@dataclass(frozen=True)
 class RemovalOut:
     node_uid: str
     #: Die Knoten, die in den Papierkorb gingen (steht der Knoten nirgends mehr, er selbst und seine heimatlosen
@@ -312,6 +366,18 @@ def _moved(services: MindmapServices, moved: BranchMoved) -> NodeOut:
 
 def _removal_out(result: Removal) -> RemovalOut:
     return RemovalOut(result.node.uid, result.nodes_deleted, result.kept_elsewhere)
+
+
+def _restored_out(result: PlacementRestored) -> PlacementRestoredOut:
+    return PlacementRestoredOut(
+        result.node.uid, result.tree.uid, result.nodes, result.skipped, result.parent_uid, result.fell_back
+    )
+
+
+def _removed_from_out(found: RemovedFrom) -> RemovedFromOut:
+    return RemovedFromOut(
+        found.tree.uid, found.tree.kind, found.name, found.parent_uid, found.parent_available, found.nodes
+    )
 
 
 def _node_tree_out(found: NodeTree) -> NodeTreeOut:
@@ -694,6 +760,32 @@ OPERATIONS: tuple[Operation, ...] = (
             )
         ),
         HttpBinding("POST", "/nodes/{ref}/restore-move"),
+    ),
+    Operation(
+        "restore_node_placement",
+        "Setzt einen mit `remove_node_from_map` („Hier entfernen“) entfernten Ast wieder in den Baum, in dem er stand: "
+        "an den alten Parent und die alte Stelle, mit den Unterknoten, die mit ihm entfernt wurden. Fehlt der alte "
+        "Parent (nicht mehr im Baum, im Papierkorb oder selbst noch entfernt), steht der Ast unter der Wurzel der Map "
+        "(`fell_back_to_root`). Abgelehnt: der Knoten steht im Baum schon wieder (`mindmap_node_in_tree`), es ist "
+        "keine "
+        "Platzierung gemerkt (`mindmap_nothing_to_restore`), Knoten oder Map im Papierkorb. Mit Versionsprüfung",
+        "write",
+        RestoreNodePlacement,
+        PlacementRestoredOut,
+        lambda s, d: _restored_out(s.branches.restore_placement(d.ref, d.project, d.version, d.tree)),
+        HttpBinding("POST", "/nodes/{ref}/restore-placement"),
+    ),
+    Operation(
+        "list_removed_placements",
+        "Die Bäume (ohne Papierkorb), aus denen ein Knoten entfernt wurde und in die er zurück kann („Früher in …“): "
+        "der Projektbaum zuerst, dann die freien Maps; mit dem alten Parent, ob er noch im Baum steht, und der "
+        "Zahl der "
+        "Knoten, die zurückkämen",
+        "read",
+        ListRemovedPlacements,
+        list[RemovedFromOut],
+        lambda s, d: [_removed_from_out(t) for t in s.branches.removed_from(d.ref, d.project)],
+        HttpBinding("GET", "/nodes/{ref}/removed"),
     ),
     Operation(
         "list_node_trees",

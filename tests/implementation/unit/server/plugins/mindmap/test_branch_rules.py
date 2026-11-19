@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import pytest
-
 from viewer.plugins.mindmap.domain import branches
-from viewer.plugins.mindmap.domain.model import MindmapViolation, Placement
+from viewer.plugins.mindmap.domain.model import (
+    MindmapViolation,
+    Placement,
+    RemovedPlacement,
+)
 
 A, B = "tree-a", "tree-b"
 
@@ -107,3 +110,88 @@ def test_deleting_everywhere_cuts_every_tree_before_counting_what_stays() -> Non
     cut = branches.plan_cuts({A: _sample(), B: other}, "x", standing)
     assert cut.removed == []
     assert cut.homeless == ["x", "y", "z", "w", "k"]
+
+
+# --- Entfernte Platzierungen wieder einsetzen (`TASK-066`) ------------------------------------------------------------
+
+
+def _gone(root: str, *rows: tuple[str, str | None, int]) -> list[RemovedPlacement]:
+    return [RemovedPlacement(A, n, parent, pos, root) for n, parent, pos in rows]
+
+
+def test_a_removed_branch_returns_as_a_group_to_its_old_parent_and_place() -> None:
+    live = _p(A, ("r", None, 0), ("q", "r", 0), ("s", "r", 1))
+    gone = _gone("x", ("x", "r", 1), ("y", "x", 0), ("z", "x", 1))
+    result = branches.plan_restore(
+        gone, "x", live, alive={"r", "q", "s", "x", "y", "z"}
+    )
+
+    assert not result.fell_back
+    assert result.restored == ["x", "y", "z"]
+    placed = {p.node_uid: (p.parent_uid, p.position) for p in result.placements}
+    assert placed["x"] == ("r", 1)
+    assert placed["s"] == ("r", 2)  # das Geschwister rückt nach, nichts ist „belegt“
+    assert placed["y"] == ("x", 0) and placed["z"] == ("x", 1)
+
+
+def test_a_missing_old_parent_puts_the_branch_under_the_root_and_says_so() -> None:
+    live = _p(A, ("r", None, 0))
+    gone = _gone("x", ("x", "gone-parent", 0), ("y", "x", 0))
+    result = branches.plan_restore(gone, "x", live, alive={"r", "x", "y"})
+
+    assert result.fell_back
+    placed = {p.node_uid: p.parent_uid for p in result.placements}
+    assert placed["x"] is None and placed["y"] == "x"
+
+
+def test_an_old_parent_in_the_trash_counts_as_missing() -> None:
+    live = _p(A, ("r", None, 0), ("p", "r", 0))
+    gone = _gone("x", ("x", "p", 0))
+    result = branches.plan_restore(gone, "x", live, alive={"r", "x"})
+
+    assert result.fell_back
+    assert [p.parent_uid for p in result.placements if p.node_uid == "x"] == [None]
+
+
+def test_a_root_level_placement_returns_without_fallback() -> None:
+    gone = _gone("x", ("x", None, 0))
+    result = branches.plan_restore(gone, "x", [], alive={"x"})
+    assert not result.fell_back
+    assert [(p.node_uid, p.parent_uid) for p in result.placements] == [("x", None)]
+
+
+def test_restoring_a_member_brings_back_only_its_own_subtree() -> None:
+    gone = _gone("x", ("x", "r", 0), ("y", "x", 0), ("z", "x", 1), ("w", "z", 0))
+    result = branches.plan_restore(
+        gone, "z", _p(A, ("r", None, 0)), alive={"r", "x", "y", "z", "w"}
+    )
+
+    assert result.restored == ["z", "w"]
+    assert result.fell_back  # sein Parent x ist noch entfernt
+    assert {p.node_uid: p.parent_uid for p in result.placements} == {
+        "z": None,
+        "w": "z",
+    }
+
+
+def test_members_in_the_trash_stay_removed_with_their_subtree() -> None:
+    gone = _gone("x", ("x", None, 0), ("y", "x", 0), ("v", "y", 0), ("z", "x", 1))
+    result = branches.plan_restore(gone, "x", [], alive={"x", "z", "v"})
+
+    assert result.restored == ["x", "z"]
+    assert result.skipped == ["y", "v"]
+
+
+def test_a_node_without_a_removed_placement_is_rejected() -> None:
+    with pytest.raises(MindmapViolation) as caught:
+        branches.plan_restore(
+            _gone("x", ("x", None, 0)), "other", [], alive={"x", "other"}
+        )
+    assert caught.value.code == "mindmap_nothing_to_restore"
+
+
+def test_a_node_that_stands_in_the_tree_again_is_rejected() -> None:
+    live = _p(A, ("x", None, 0))
+    with pytest.raises(MindmapViolation) as caught:
+        branches.plan_restore(_gone("x", ("x", None, 0)), "x", live, alive={"x"})
+    assert caught.value.code == "mindmap_node_in_tree"

@@ -17,7 +17,7 @@ from viewer.plugins.mindmap.application.ports import MindmapRepository
 from viewer.plugins.mindmap.application.service import MindmapService
 from viewer.plugins.mindmap.domain import branches as branch_rules
 from viewer.plugins.mindmap.domain import tree as rules
-from viewer.plugins.mindmap.domain.model import TREE_PROJECT, MindmapViolation, Node, Tree
+from viewer.plugins.mindmap.domain.model import TREE_PROJECT, MindmapViolation, Node, RemovedPlacement, Tree
 from viewer.plugins.workspace import ElementRegistry, Projects
 
 Restore = Callable[[Sequence[str]], list[str]]
@@ -47,6 +47,31 @@ class NodeTree:
     #: Bei freien Maps der Name, beim Projektbaum der Name des Projekts.
     name: str
     parent_uid: str | None
+
+
+@dataclass(frozen=True)
+class PlacementRestored:
+    node: Node
+    tree: Tree
+    #: Die Knoten, die wieder im Baum stehen (der Knoten und seine Unterknoten aus derselben Entfernung).
+    nodes: int
+    #: Die Knoten im Papierkorb, die als entfernt gemerkt bleiben.
+    skipped: int
+    parent_uid: str | None
+    #: Der alte Parent fehlte: der Ast steht unter der Wurzel der Map.
+    fell_back: bool
+
+
+@dataclass(frozen=True)
+class RemovedFrom:
+    tree: Tree
+    name: str
+    #: Der Parent von damals; leer unter der Wurzel.
+    parent_uid: str | None
+    #: Ob der Parent von damals noch im Baum steht (sonst käme der Ast unter die Wurzel).
+    parent_available: bool
+    #: Die Knoten, die mit ihm zurückkämen (er selbst und seine Unterknoten aus derselben Entfernung).
+    nodes: int
 
 
 @dataclass(frozen=True)
@@ -205,6 +230,26 @@ class BranchService:
         assert restored is not None
         return restored
 
+    def restore_placement(
+        self, ref: str, project_uid: str | None, version: int, tree_uid: str | None
+    ) -> PlacementRestored:
+        """Setzt einen entfernten Ast wieder in den Baum, in dem er stand: an den alten Parent und die alte Stelle, mit
+        den Unterknoten, die mit ihm entfernt wurden. Fehlt der alte Parent, steht er unter der Wurzel der Map."""
+        with self._database.transaction() as tx:
+            node = self._branch_node(tx, ref, project_uid)
+            removed = self._repository.removed_placements_of(tx, node.uid)
+            tree = self._removed_tree(tx, node, removed, tree_uid)
+            placements = self._repository.placements(tx, tree.uid)
+            alive = {n.uid for n in self._repository.nodes_in_tree(tx, tree.uid)}
+            group = self._repository.removed_placements(tx, tree.uid)
+            alive |= {r.node_uid for r in group if self._is_alive(tx, r.node_uid)}
+            plan = branch_rules.plan_restore(group, node.uid, placements, alive)
+            self._registry.bump_revision(tx, node.uid, version)
+            self._repository.upsert_placements(tx, plan.placements)
+            restored = self._nodes(tx, plan.restored)
+        self._mindmap.announce_nodes(restored, "restored", tree.uid)
+        return PlacementRestored(node, tree, len(plan.restored), len(plan.skipped), plan.parent_uid, plan.fell_back)
+
     # --- Lesen ---------------------------------------------------------------------------------------------------
 
     def node_trees(self, ref: str, project_uid: str | None) -> list[NodeTree]:
@@ -221,6 +266,29 @@ class BranchService:
                     found.append(NodeTree(tree, name, placement.parent_uid))
         return sorted(found, key=lambda t: (t.tree.kind != TREE_PROJECT, t.tree.uid))
 
+    def removed_from(self, ref: str, project_uid: str | None) -> list[RemovedFrom]:
+        """Die Bäume (ohne Papierkorb), aus denen der Knoten entfernt wurde und in die er zurück kann („Früher in …“):
+        der Projektbaum zuerst, dann die freien Maps."""
+        with self._database.transaction() as tx:
+            node = self._mindmap.resolve(tx, ref, project_uid)
+            project = self._projects.get(tx, node.project_uid)
+            found: list[RemovedFrom] = []
+            for removed in self._repository.removed_placements_of(tx, node.uid):
+                tree = self._repository.get_tree(tx, removed.tree_uid)
+                if tree is None or tree.deleted_at is not None:
+                    continue
+                group = self._repository.removed_placements(tx, tree.uid)
+                placements = self._repository.placements(tx, tree.uid)
+                alive = {n.uid for n in self._repository.nodes_in_tree(tx, tree.uid)}
+                alive |= {r.node_uid for r in group if self._is_alive(tx, r.node_uid)}
+                try:
+                    plan = branch_rules.plan_restore(group, node.uid, placements, alive)
+                except MindmapViolation:
+                    continue
+                name = (project.name if project else "") if tree.kind == TREE_PROJECT else tree.name or ""
+                found.append(RemovedFrom(tree, name, removed.parent_uid, not plan.fell_back, len(plan.restored)))
+        return sorted(found, key=lambda t: (t.tree.kind != TREE_PROJECT, t.tree.uid))
+
     # --- Hilfen --------------------------------------------------------------------------------------------------
 
     def _branch_node(self, tx: Transaction, ref: str, project_uid: str | None) -> Node:
@@ -230,6 +298,38 @@ class BranchService:
         node = self._mindmap.resolve(tx, ref, project_uid)
         self._mindmap.require_alive(node)
         return node
+
+    def _is_alive(self, tx: Transaction, uid: str) -> bool:
+        member = self._repository.get_node(tx, uid)
+        return member is not None and member.deleted_at is None
+
+    def _removed_tree(
+        self, tx: Transaction, node: Node, removed: Sequence[RemovedPlacement], tree_uid: str | None
+    ) -> Tree:
+        """Der Baum, in den der Knoten zurück soll: er darf nicht im Papierkorb liegen. Ohne Angabe muss es genau einen
+        geben. Steht der Knoten dort schon wieder, wird abgelehnt."""
+        if tree_uid is None:
+            if not removed:
+                raise MindmapViolation(
+                    "mindmap_nothing_to_restore", "Für diesen Knoten ist keine Platzierung gemerkt", node=node.label
+                )
+            if len(removed) > 1:
+                raise InvalidInput(
+                    "Der Knoten wurde aus mehreren Bäumen entfernt; tree angeben", details={"field": "tree"}
+                )
+            tree_uid = removed[0].tree_uid
+        tree = self._mindmap.existing_tree(tx, node.project_uid, tree_uid)
+        if all(r.tree_uid != tree.uid for r in removed):
+            if any(p.tree_uid == tree.uid for p in self._repository.placements_of(tx, node.uid)):
+                raise MindmapViolation(
+                    "mindmap_node_in_tree", "Der Knoten steht in diesem Baum schon wieder", node=node.label
+                )
+            raise MindmapViolation(
+                "mindmap_nothing_to_restore",
+                "Für diesen Knoten ist in diesem Baum keine Platzierung gemerkt",
+                node=node.label,
+            )
+        return tree
 
     def _nodes(self, tx: Transaction, uids: Sequence[str]) -> list[Node]:
         return [n for uid in uids if (n := self._repository.get_node(tx, uid)) is not None]
@@ -257,7 +357,8 @@ class BranchService:
         cut = branch_rules.plan_cuts(placements, node.uid, standing)
         self._registry.bump_revision(tx, node.uid, version)
         self._repository.upsert_placements(tx, cut.reparented)
-        self._repository.delete_placements(tx, list(reversed(cut.removed)))
+        # Entfernte Platzierungen bleiben gemerkt (`TASK-066`): Baum, Parent und Stelle, in einer Gruppe mit dem Ast.
+        self._repository.mark_removed(tx, cut.removed, node.uid)
         at = self._clock.now()
         trashed: list[Node] = []
         for uid in cut.homeless:

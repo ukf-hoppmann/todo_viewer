@@ -11,7 +11,7 @@ from viewer.core.domain.errors import VersionConflict
 from viewer.core.infrastructure.database import SqlTransaction
 from viewer.plugins.mindmap.application.ports import Document
 from viewer.plugins.mindmap.domain.documents import NOTES, document_kind
-from viewer.plugins.mindmap.domain.model import Node, Placement, Tree
+from viewer.plugins.mindmap.domain.model import Node, Placement, RemovedPlacement, Tree
 
 _NODE = """
 SELECT e.uid, e.project_uid, e.label, e.revision, e.deleted_at, n.title, n.text, n.mark
@@ -46,6 +46,13 @@ def _node(row: Row[Any]) -> Node:
         revision=row.revision,
         deleted_at=datetime.fromisoformat(deleted) if deleted else None,
     )
+
+
+_REMOVED = "SELECT tree_uid, node_uid, parent_uid, position, removed_root FROM mindmap_placements "
+
+
+def _removed(row: Row[Any]) -> RemovedPlacement:
+    return RemovedPlacement(row.tree_uid, row.node_uid, row.parent_uid, row.position, row.removed_root)
 
 
 def _placement(row: Row[Any]) -> Placement:
@@ -126,7 +133,7 @@ class SqlMindmapRepository:
             .execute(
                 text(
                     "SELECT COUNT(*) FROM mindmap_placements p JOIN workspace_elements e ON e.uid = p.node_uid "
-                    "WHERE p.tree_uid = :t AND e.deleted_at IS NULL"
+                    "WHERE p.tree_uid = :t AND p.removed_root IS NULL AND e.deleted_at IS NULL"
                 ),
                 {"t": tree_uid},
             )
@@ -139,8 +146,9 @@ class SqlMindmapRepository:
             .execute(
                 text(
                     "SELECT COUNT(*) FROM mindmap_placements p JOIN workspace_elements e ON e.uid = p.node_uid "
-                    "WHERE p.tree_uid = :t AND e.deleted_at IS NULL AND EXISTS ("
-                    "SELECT 1 FROM mindmap_placements q WHERE q.node_uid = p.node_uid AND q.tree_uid <> p.tree_uid)"
+                    "WHERE p.tree_uid = :t AND p.removed_root IS NULL AND e.deleted_at IS NULL AND EXISTS ("
+                    "SELECT 1 FROM mindmap_placements q WHERE q.node_uid = p.node_uid AND q.tree_uid <> p.tree_uid "
+                    "AND q.removed_root IS NULL)"
                 ),
                 {"t": tree_uid},
             )
@@ -164,7 +172,9 @@ class SqlMindmapRepository:
         return _node(row) if row else None
 
     def nodes_in_tree(self, tx: Transaction, tree_uid: str, *, include_deleted: bool = False) -> list[Node]:
-        query = _NODE + " JOIN mindmap_placements p ON p.node_uid = n.uid WHERE p.tree_uid = :t"
+        query = (
+            _NODE + " JOIN mindmap_placements p ON p.node_uid = n.uid WHERE p.tree_uid = :t AND p.removed_root IS NULL"
+        )
         if not include_deleted:
             query += " AND e.deleted_at IS NULL"
         return [_node(row) for row in _conn(tx).execute(text(query + " ORDER BY e.label"), {"t": tree_uid})]
@@ -173,7 +183,7 @@ class SqlMindmapRepository:
         rows = _conn(tx).execute(
             text(
                 "SELECT tree_uid, node_uid, parent_uid, position FROM mindmap_placements WHERE tree_uid = :t "
-                "ORDER BY parent_uid, position, node_uid"
+                "AND removed_root IS NULL ORDER BY parent_uid, position, node_uid"
             ),
             {"t": tree_uid},
         )
@@ -183,7 +193,7 @@ class SqlMindmapRepository:
         rows = _conn(tx).execute(
             text(
                 "SELECT tree_uid, node_uid, parent_uid, position FROM mindmap_placements WHERE node_uid = :n "
-                "ORDER BY tree_uid"
+                "AND removed_root IS NULL ORDER BY tree_uid"
             ),
             {"n": node_uid},
         )
@@ -195,7 +205,7 @@ class SqlMindmapRepository:
                 text(
                     "INSERT INTO mindmap_placements(tree_uid, node_uid, parent_uid, position) "
                     "VALUES (:t, :n, :p, :s) ON CONFLICT(tree_uid, node_uid) "
-                    "DO UPDATE SET parent_uid = excluded.parent_uid, position = excluded.position"
+                    "DO UPDATE SET parent_uid = excluded.parent_uid, position = excluded.position, removed_root = NULL"
                 ),
                 {"t": p.tree_uid, "n": p.node_uid, "p": p.parent_uid, "s": p.position},
             )
@@ -203,8 +213,9 @@ class SqlMindmapRepository:
     def child_uids(self, tx: Transaction, node_uid: str) -> list[str]:
         rows = _conn(tx).execute(
             text(
-                "SELECT DISTINCT c.node_uid FROM mindmap_placements c WHERE c.parent_uid = :n AND NOT EXISTS ("
-                "SELECT 1 FROM mindmap_placements o WHERE o.node_uid = c.node_uid "
+                "SELECT DISTINCT c.node_uid FROM mindmap_placements c "
+                "WHERE c.parent_uid = :n AND c.removed_root IS NULL AND NOT EXISTS ("
+                "SELECT 1 FROM mindmap_placements o WHERE o.node_uid = c.node_uid AND o.removed_root IS NULL "
                 "AND (o.parent_uid IS NULL OR o.parent_uid <> :n)) ORDER BY c.node_uid"
             ),
             {"n": node_uid},
@@ -218,13 +229,33 @@ class SqlMindmapRepository:
                 {"t": p.tree_uid, "n": p.node_uid},
             )
 
+    def mark_removed(self, tx: Transaction, placements: Sequence[Placement], root_uid: str) -> None:
+        for p in placements:
+            _conn(tx).execute(
+                text("UPDATE mindmap_placements SET removed_root = :r WHERE tree_uid = :t AND node_uid = :n"),
+                {"r": root_uid, "t": p.tree_uid, "n": p.node_uid},
+            )
+
+    def removed_placements(self, tx: Transaction, tree_uid: str) -> list[RemovedPlacement]:
+        rows = _conn(tx).execute(
+            text(_REMOVED + "WHERE tree_uid = :t AND removed_root IS NOT NULL ORDER BY parent_uid, position, node_uid"),
+            {"t": tree_uid},
+        )
+        return [_removed(row) for row in rows]
+
+    def removed_placements_of(self, tx: Transaction, node_uid: str) -> list[RemovedPlacement]:
+        rows = _conn(tx).execute(
+            text(_REMOVED + "WHERE node_uid = :n AND removed_root IS NOT NULL ORDER BY tree_uid"), {"n": node_uid}
+        )
+        return [_removed(row) for row in rows]
+
     def live_trees_of(self, tx: Transaction, node_uids: Sequence[str]) -> dict[str, set[str]]:
         found: dict[str, set[str]] = {}
         if not node_uids:
             return found
         statement = text(
             "SELECT p.node_uid, p.tree_uid FROM mindmap_placements p JOIN mindmap_trees t ON t.uid = p.tree_uid "
-            "WHERE t.deleted_at IS NULL AND p.node_uid IN :uids"
+            "WHERE t.deleted_at IS NULL AND p.removed_root IS NULL AND p.node_uid IN :uids"
         ).bindparams(bindparam("uids", expanding=True))
         for row in _conn(tx).execute(statement, {"uids": list(node_uids)}):
             found.setdefault(row.node_uid, set()).add(row.tree_uid)
@@ -234,9 +265,9 @@ class SqlMindmapRepository:
         rows = _conn(tx).execute(
             text(
                 "SELECT p.node_uid, COUNT(*) AS n FROM mindmap_placements p "
-                "JOIN mindmap_placements q ON q.node_uid = p.node_uid "
+                "JOIN mindmap_placements q ON q.node_uid = p.node_uid AND q.removed_root IS NULL "
                 "JOIN mindmap_trees t ON t.uid = q.tree_uid AND t.deleted_at IS NULL "
-                "WHERE p.tree_uid = :t GROUP BY p.node_uid"
+                "WHERE p.tree_uid = :t AND p.removed_root IS NULL GROUP BY p.node_uid"
             ),
             {"t": tree_uid},
         )

@@ -72,3 +72,16 @@ class Placement:
     node_uid: str
     parent_uid: str | None
     position: int
+
+
+@dataclass(frozen=True)
+class RemovedPlacement:
+    """Eine gemerkte, entfernte Platzierung (`TASK-066`): Baum, Parent und Stelle von damals. `root_uid` nennt
+    den Knoten, dessen Ast mit ihr zusammen entfernt wurde (die Gruppe). Der Parent muss heute nicht mehr im Baum
+    stehen."""
+
+    tree_uid: str
+    node_uid: str
+    parent_uid: str | None
+    position: int
+    root_uid: str

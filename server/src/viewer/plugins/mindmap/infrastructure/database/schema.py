@@ -82,4 +82,35 @@ def _v4(connection: Any) -> None:
         connection.exec_driver_sql(statement)
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3), Migration(4, _v4))
+def _v5(connection: Any) -> None:
+    """Entfernte Platzierungen merken (`TASK-066`): `removed_root` nennt bei einer entfernten Platzierung den Knoten,
+    dessen Ast mit ihr entfernt wurde (die Gruppe); leer heißt: die Platzierung gilt. Eine entfernte Platzierung
+    behält Baum, Parent und Stelle. Der Parent darf später fehlen; deshalb entfällt der Fremdschlüssel auf die eigene
+    Tabelle (die Regeln für gültige Platzierungen stehen in der Domäne). Die Tabelle wird dazu neu aufgebaut."""
+    for statement in (
+        """CREATE TABLE mindmap_placements_new (
+            tree_uid TEXT NOT NULL REFERENCES mindmap_trees(uid) ON DELETE CASCADE,
+            node_uid TEXT NOT NULL REFERENCES mindmap_nodes(uid),
+            parent_uid TEXT,
+            position INTEGER NOT NULL CHECK (position >= 0),
+            removed_root TEXT,
+            PRIMARY KEY (tree_uid, node_uid),
+            CHECK (parent_uid IS NULL OR parent_uid <> node_uid)
+        )""",
+        "INSERT INTO mindmap_placements_new(tree_uid, node_uid, parent_uid, position) "
+        "SELECT tree_uid, node_uid, parent_uid, position FROM mindmap_placements",
+        "DROP TABLE mindmap_placements",
+        "ALTER TABLE mindmap_placements_new RENAME TO mindmap_placements",
+        "CREATE INDEX mindmap_placements_parent ON mindmap_placements(tree_uid, parent_uid, position)",
+        "CREATE INDEX mindmap_placements_node ON mindmap_placements(node_uid)",
+    ):
+        connection.exec_driver_sql(statement)
+
+
+MIGRATIONS: tuple[Migration, ...] = (
+    Migration(1, _v1),
+    Migration(2, _v2),
+    Migration(3, _v3),
+    Migration(4, _v4),
+    Migration(5, _v5),
+)

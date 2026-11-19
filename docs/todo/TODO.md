@@ -138,8 +138,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     kommt er mit den dadurch heimatlosen Unterknoten in den Papierkorb; Items
     folgen der Regel von `STORY-100`. „Hier entfernen“ und „Knoten löschen“
     gibt es getrennt auch über API und MCP. Nicht erlaubte Ziele sind im Menü
-    ausgegraut mit Grund. Ein Knoten aus dem Papierkorb lässt sich per Ziehen
-    an eine neue Stelle setzen (reaktivieren am neuen Punkt).
+    ausgegraut mit Grund. Das Ziehen aus dem Papierkorb steht in
+    `NEW-papierkorb-ansicht`.
     3. Neue Unterknoten eines übertragenen Knotens entstehen in allen seinen
     Bäumen, Umhängen und Entfernen darunter gelten nur im bearbeiteten Baum;
     Summen zählen jedes Item höchstens einmal; Domain-, API- und UI-Tests sind
@@ -167,6 +167,27 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     festgelegte Ersatzregel (zum Beispiel unter die Wurzel der Map) und die
     Oberfläche sagt es.
     3. Domain-, API- und UI-Tests sind grün.
+
+- `NEW-papierkorb-ansicht` **Mindmap: Papierkorb-Ansicht, Knoten per Ziehen reaktivieren**
+  - Type: Task.
+  - Parent: `STORY-102`.
+  - Required for parent: No.
+  - Status: Open.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-063`.
+  - Goal: Neben der Karte gibt es eine Seitenansicht „Papierkorb“ mit den
+    gelöschten Knoten des Projekts. Man zieht einen Knoten von dort an eine
+    neue Stelle der Karte; er wird dort reaktiviert, im Backend ist das
+    „wiederherstellen und umziehen“ aus `TASK-063`.
+  - Completion criteria: 1. Die Seitenansicht lässt sich wie „Nicht
+    zugeordnet“ ein- und ausschalten und zeigt die gelöschten Knoten des
+    Projekts.
+    2. Ziehen eines Knotens auf eine Stelle der Karte reaktiviert ihn dort mit
+    seinen Unterknoten; die neue Stelle ersetzt seine alte Platzierung im
+    aktuellen Baum, Platzierungen in anderen Bäumen kommen wie vorher zurück.
+    Nicht erlaubte Stellen werden wie beim Umhängen abgelehnt.
+    3. UI-Tests sind grün.
 
 - `STORY-103` **Ideen-Knoten ins Backlog überführen**
   - Uid: 688f456a-295f-453d-a6cd-39d7bb6c6aa8.

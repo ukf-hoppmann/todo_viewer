@@ -1,11 +1,13 @@
 import AddIcon from "@mui/icons-material/Add";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemText, Menu, MenuItem, TextField, Typography } from "@mui/material";
-import { useState, type FormEvent, type MouseEvent } from "react";
+import { useState, type DragEvent, type FormEvent, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "../../shared";
 import { useProjectSelection } from "../workspace";
 import { errorMessage, useCreateMapMutation, useDeleteMapMutation, useListMapsQuery, useRenameMapMutation, type MapOut } from "./api";
+import { BranchDialog } from "./BranchDialog";
+import { NODE_MIME, type BranchSource } from "./domain/branches";
 import { chooseMap, deleteQuestion, mapKey } from "./domain/maps";
 import { shownProject } from "./domain/tree";
 import { useMindmapState } from "./state";
@@ -34,6 +36,9 @@ export function MapList() {
 	const [nameError, setNameError] = useState<string>();
 	const [deleting, setDeleting] = useState<MapOut>();
 	const [error, setError] = useState<string>();
+	// A node dragged onto an entry: the dialog then asks whether to hang it over or transfer it. `over` is the entry the drag is above.
+	const [over, setOver] = useState<string>();
+	const [dropped, setDropped] = useState<{ source: BranchSource; target: string }>();
 	if (!project || view === "all") return null;
 
 	const current = chooseMap(maps, chosenMaps[project.uid]);
@@ -91,7 +96,22 @@ export function MapList() {
 								openMenu(map, { top: event.clientY, left: event.clientX });
 							} : undefined}
 							data-testid={mindmapTestIds.mapEntry(key)}
-							sx={{ pr: 0.5 }}
+							data-drop={over === key ? "over" : undefined}
+							onDragOver={(event: DragEvent<HTMLElement>) => {
+								if (!event.dataTransfer.types.includes(NODE_MIME)) return;
+								event.preventDefault();
+								event.dataTransfer.dropEffect = "move";
+								setOver(key);
+							}}
+							onDragLeave={() => setOver((current) => (current === key ? undefined : current))}
+							onDrop={(event: DragEvent<HTMLElement>) => {
+								setOver(undefined);
+								const carried = event.dataTransfer.getData(NODE_MIME);
+								if (!carried) return;
+								event.preventDefault();
+								setDropped({ source: JSON.parse(carried) as BranchSource, target: key });
+							}}
+							sx={{ pr: 0.5, ...(over === key ? { outline: "2px dashed", outlineColor: "primary.main" } : {}) }}
 						>
 							<ListItemText primary={map.kind === "project" ? t("maps.projectTree", { name: map.name }) : map.name} slotProps={{ primary: { noWrap: true } }} />
 							<Typography variant="caption" color="text.secondary" data-testid={mindmapTestIds.mapCount(key)} aria-label={t("maps.nodes", { count: map.node_count })}>
@@ -172,6 +192,7 @@ export function MapList() {
 					</DialogActions>
 				</form>
 			</Dialog>
+			{dropped && <BranchDialog source={dropped.source} target={dropped.target} onClose={() => setDropped(undefined)} />}
 			<ConfirmDialog
 				open={deleting !== undefined}
 				title={t("maps.deleteTitle", { name: deleting?.name ?? "" })}

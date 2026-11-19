@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import type { DropZone } from "./domain/tree";
+import type { MenuAnchor } from "./NodeMenus";
 
 /** What a node of the map can ask the page to do. `id` is the node's `uid`, for the root the project's. */
 export interface MapActions {
@@ -22,10 +23,14 @@ export interface MapActions {
 	dragLeave: (id: string) => void;
 	/** Drops the dragged node on `id` in `zone`. */
 	drop: (id: string, zone: DropZone) => void;
+	/** Opens the menu of the node `id` (hang over, transfer, remove, delete) at `anchor`. */
+	openMenu: (id: string, anchor: MenuAnchor) => void;
+	/** Opens the list of the trees the node `id` stands in, to jump to one. */
+	openTrees: (id: string, anchor: MenuAnchor) => void;
 }
 
 const idle = () => undefined;
-export const MapActionsContext = createContext<MapActions>({ toggle: idle, add: idle, startRename: idle, commitTitle: idle, cancelRename: idle, remove: idle, openAsRoot: idle, dragStart: idle, dragStartItem: idle, dragEnd: idle, dragOver: () => false, dragLeave: idle, drop: idle });
+export const MapActionsContext = createContext<MapActions>({ toggle: idle, add: idle, startRename: idle, commitTitle: idle, cancelRename: idle, remove: idle, openAsRoot: idle, dragStart: idle, dragStartItem: idle, dragEnd: idle, dragOver: () => false, dragLeave: idle, drop: idle, openMenu: idle, openTrees: idle });
 
 export function useMapActions(): MapActions {
 	return useContext(MapActionsContext);

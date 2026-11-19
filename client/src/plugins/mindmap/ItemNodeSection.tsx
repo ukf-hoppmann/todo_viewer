@@ -8,6 +8,8 @@ import { useProjectSelection } from "../workspace";
 import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetItemNodeQuery, useGetTreeQuery, useUnassignItemMutation } from "./api";
 import { parentForNewNode, visibleNodes } from "./domain/tree";
 import { useMapNavigation } from "./navigation";
+import { TreeJumpMenu } from "./NodeMenus";
+import { useMindmapState } from "./state";
 import { mindmapTestIds } from "./testIds";
 
 const INDENT = "  ";
@@ -32,6 +34,9 @@ export function ItemNodeSection() {
 	const [createNode] = useCreateNodeMutation();
 	const { visible, marked, toggleVisible, mark } = useProjectSelection();
 	const { openFocus } = useMapNavigation();
+	const { chooseMapOf } = useMindmapState();
+	// A node that stands in several trees asks which tree "Gehe hin" opens.
+	const [pickTree, setPickTree] = useState<HTMLElement>();
 	const [error, setError] = useState<string>();
 	const [creating, setCreating] = useState(false);
 
@@ -47,11 +52,13 @@ export function ItemNodeSection() {
 	const current = where?.node_uid ?? "";
 	const fail = (failure: unknown) => setError(errorMessage(failure, t("error.failed")));
 	// The map shows the marked project, so a hidden project of the item is shown and marked before the map opens.
-	const open = (node: string) => {
+	const open = (node: string, freeMap: string | null = null) => {
 		if (!visible.some((project) => project.uid === item.project_uid)) toggleVisible(item.project_uid);
 		if (marked?.uid !== item.project_uid) mark(item.project_uid);
+		chooseMapOf(item.project_uid, freeMap);
 		openFocus(node || undefined);
 	};
+	const currentNode = tree?.nodes.find((node) => node.uid === current);
 	// No node arises silently: the node is created on request, and if hanging the item on it fails, the node stays.
 	const create = () => {
 		const parent = parentForNewNode(current, item.project_uid);
@@ -98,7 +105,7 @@ export function ItemNodeSection() {
 				)}
 			</Stack>
 			<Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-				<Button size="small" variant="outlined" onClick={() => open(current)} data-testid={mindmapTestIds.itemNodeGoto}>
+				<Button size="small" variant="outlined" onClick={(event) => (currentNode && currentNode.tree_count > 1 ? setPickTree(event.currentTarget) : open(current))} data-testid={mindmapTestIds.itemNodeGoto}>
 					{t("itemNode.goto")}
 				</Button>
 				<Button size="small" variant="outlined" disabled={creating} onClick={create} data-testid={mindmapTestIds.itemNodeCreate}>
@@ -110,6 +117,17 @@ export function ItemNodeSection() {
 					</Button>
 				)}
 			</Stack>
+			{pickTree && (
+				<TreeJumpMenu
+					anchor={pickTree}
+					node={current}
+					onClose={() => setPickTree(undefined)}
+					onPick={(picked) => {
+						setPickTree(undefined);
+						open(current, picked.kind === "free" ? picked.tree_uid : null);
+					}}
+				/>
+			)}
 			<Typography variant="caption" color="text.secondary">
 				{current === "" ? t("itemNode.unassigned") : where?.explicit ? "" : t("itemNode.inherited")}
 			</Typography>

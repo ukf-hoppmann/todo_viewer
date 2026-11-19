@@ -160,6 +160,7 @@ export function fakeMindmapBackend(options: Options = {}) {
 					done: 0,
 					state: "idea",
 					mark: null,
+					tree_count: 1,
 				};
 				nodes = [...nodes, node];
 				return Response.json(node);

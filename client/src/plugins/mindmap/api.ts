@@ -12,6 +12,8 @@ export type ItemNodeOut = components["schemas"]["ItemNodeOut"];
 export type DocumentOut = components["schemas"]["DocumentOut"];
 export type MapOut = components["schemas"]["MapOut"];
 export type MapDeletedOut = components["schemas"]["MapDeletedOut"];
+export type RemovalOut = components["schemas"]["RemovalOut"];
+export type NodeTreeOut = components["schemas"]["NodeTreeOut"];
 
 /** The error of a write: the code and details the server gave, as an `Error` the forms can show. */
 export class WriteError extends Error {
@@ -42,6 +44,7 @@ export function errorMessage(error: unknown, fallback: string): string {
  * count, progress and state of every node and the items without a node; `getTrees` reads the trees of several projects at once (the overall view; one tree per project, in the order given); `statuses` is the status filter of the
  * backlog (comma-separated, empty: all),
  * `listMaps` lists the maps of a project (the project tree first, then the free maps, each with its node count), `createMap`, `renameMap` and `deleteMap` (into the trash) write them (tag `Maps`); `getTree`, `createNode` and `getNodeContent` take the free map as `tree`.
+ * `moveNodeToMap` hangs a branch into another map, `transferNodeToMap` puts it into another map too (same records, structure below per tree), `removeNodeFromMap` takes it out of one map ("Hier entfernen"), `deleteNode` out of all ("Knoten löschen"); `listNodeTrees` lists the maps a node stands in.
  * `createNode` and `updateNode` write a node, `moveNode` hangs a node with its branch under another parent (empty:
  * under the root) or to another place among its siblings. Moving to the trash goes through `workspace`. The tag `Tree` is what
  * server events invalidate. The documents of a node (`getDocument`, `putDocument`, `appendEntry`) have the tag
@@ -119,6 +122,28 @@ export const mindmapApi = createPluginApi(
 			query: ({ uid, ...body }) => ({ url: `mindmap/nodes/${uid}/move`, method: "POST", body }),
 			invalidatesTags: ["Tree"],
 		}),
+		// Branches between trees (`TASK-063`): `ref` is the node, `target` the map (the `tree_uid` of `listMaps`, for a project
+		// tree without a node its project uid), `tree` the tree the branch comes from (needed when it stands in several).
+		moveNodeToMap: build.mutation<NodeOut, { ref: string; version: number; target: string; tree?: string }>({
+			query: ({ ref, ...body }) => ({ url: `mindmap/nodes/${ref}/move-to-map`, method: "POST", body }),
+			invalidatesTags: ["Tree", "Maps", "Content"],
+		}),
+		transferNodeToMap: build.mutation<NodeOut, { ref: string; version: number; target: string; tree?: string }>({
+			query: ({ ref, ...body }) => ({ url: `mindmap/nodes/${ref}/transfer`, method: "POST", body }),
+			invalidatesTags: ["Tree", "Maps", "Content"],
+		}),
+		removeNodeFromMap: build.mutation<RemovalOut, { ref: string; version: number; tree?: string }>({
+			query: ({ ref, ...body }) => ({ url: `mindmap/nodes/${ref}/remove`, method: "POST", body }),
+			invalidatesTags: ["Tree", "Maps", "Content"],
+		}),
+		deleteNode: build.mutation<RemovalOut, { ref: string; version: number }>({
+			query: ({ ref, version }) => ({ url: `mindmap/nodes/${ref}`, method: "DELETE", params: { version } }),
+			invalidatesTags: ["Tree", "Maps", "Content"],
+		}),
+		listNodeTrees: build.query<NodeTreeOut[], string>({
+			query: (ref) => `mindmap/nodes/${ref}/trees`,
+			providesTags: ["Tree", "Maps"],
+		}),
 		getDocument: build.query<DocumentOut, { uid: string; name: string }>({
 			query: ({ uid, name }) => `mindmap/nodes/${uid}/documents/${name}`,
 			providesTags: ["Documents"],
@@ -151,6 +176,11 @@ export const {
 	useCreateNodeMutation,
 	useUpdateNodeMutation,
 	useMoveNodeMutation,
+	useMoveNodeToMapMutation,
+	useTransferNodeToMapMutation,
+	useRemoveNodeFromMapMutation,
+	useDeleteNodeMutation,
+	useListNodeTreesQuery,
 	useGetDocumentQuery,
 	usePutDocumentMutation,
 	useAppendEntryMutation,

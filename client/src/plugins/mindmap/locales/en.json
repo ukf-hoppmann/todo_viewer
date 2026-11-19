@@ -69,7 +69,8 @@
 		"state": "State",
 		"unassigned": "Show unassigned",
 		"dependencies": "Show dependencies between topics",
-		"mark": "Mark"
+		"mark": "Mark",
+		"shared": "Frame transferred branches"
 	},
 	"state": {
 		"idea": "Idea",
@@ -134,6 +135,39 @@
 		"deleteMessage_other": "The map and its {{count}} nodes that stand only here go to the trash and can be restored there.",
 		"deleteKept_one": "{{count}} branch stays because it also stands in another tree.",
 		"deleteKept_other": "{{count}} branches stay because they also stand in another tree.",
-		"deleteConfirm": "Move to trash"
+		"deleteConfirm": "Move to trash",
+		"dropHint": "Drop here: hang over or transfer"
+	},
+	"menu": {
+		"move": "Hang over to …",
+		"transfer": "Transfer to …",
+		"removeHere": "Remove here",
+		"deleteNode": "Delete node …",
+		"delete": "Delete",
+		"open": "Menu of node {{title}}"
+	},
+	"branch": {
+		"title": "Move “{{title}}”",
+		"action": "Action",
+		"move": "Hang over",
+		"transfer": "Transfer",
+		"moveHint": "The branch leaves its tree and then stands only in the target (below the root).",
+		"transferHint": "The same branch then stands in both trees; nothing is copied.",
+		"target": "Target",
+		"moveConfirm": "Hang over",
+		"transferConfirm": "Transfer",
+		"sameTree": "The branch already stands here.",
+		"standing": "Already there: {{nodes}}"
+	},
+	"sharedDelete": {
+		"title": "Delete “{{title}}” everywhere?",
+		"message": "The node stands in several trees ({{trees}}) and disappears from all of them. Sub-nodes that stand only here go to the trash too. “Remove here” takes it out of the current tree only.",
+		"confirm": "Delete everywhere"
+	},
+	"shared": {
+		"badge": "Stands in {{count}} trees",
+		"jump": "Jump to a tree",
+		"highlight": "Frame transferred branches",
+		"pick": "Which tree?"
 	}
 }

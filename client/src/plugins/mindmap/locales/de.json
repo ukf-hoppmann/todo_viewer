@@ -69,7 +69,8 @@
 		"state": "Zustand",
 		"unassigned": "Nicht zugeordnet anzeigen",
 		"dependencies": "Abhängigkeiten zwischen Themen zeigen",
-		"mark": "Markierung"
+		"mark": "Markierung",
+		"shared": "Übertragene Äste einrahmen"
 	},
 	"state": {
 		"idea": "Idee",
@@ -134,6 +135,39 @@
 		"deleteMessage_other": "Die Map und ihre {{count}} Knoten, die nur hier stehen, kommen in den Papierkorb und lassen sich dort wiederherstellen.",
 		"deleteKept_one": "{{count}} Ast bleibt, weil er auch in einem anderen Baum steht.",
 		"deleteKept_other": "{{count}} Äste bleiben, weil sie auch in einem anderen Baum stehen.",
-		"deleteConfirm": "In den Papierkorb"
+		"deleteConfirm": "In den Papierkorb",
+		"dropHint": "Hierher ziehen: umhängen oder übertragen"
+	},
+	"menu": {
+		"move": "Umhängen nach …",
+		"transfer": "Übertragen nach …",
+		"removeHere": "Hier entfernen",
+		"deleteNode": "Knoten löschen …",
+		"delete": "Löschen",
+		"open": "Menü des Knotens {{title}}"
+	},
+	"branch": {
+		"title": "„{{title}}“ verschieben",
+		"action": "Aktion",
+		"move": "Umhängen",
+		"transfer": "Übertragen",
+		"moveHint": "Der Ast verlässt seinen Baum und steht danach nur im Ziel (unter der Wurzel).",
+		"transferHint": "Derselbe Ast steht danach in beiden Bäumen; nichts wird kopiert.",
+		"target": "Ziel",
+		"moveConfirm": "Umhängen",
+		"transferConfirm": "Übertragen",
+		"sameTree": "Hier steht der Ast schon.",
+		"standing": "Dort steht schon: {{nodes}}"
+	},
+	"sharedDelete": {
+		"title": "„{{title}}“ überall löschen?",
+		"message": "Der Knoten steht in mehreren Bäumen ({{trees}}) und verschwindet aus allen. Unterknoten, die nur hier stehen, kommen mit in den Papierkorb. „Hier entfernen“ nimmt ihn nur aus dem aktuellen Baum.",
+		"confirm": "Überall löschen"
+	},
+	"shared": {
+		"badge": "Steht in {{count}} Bäumen",
+		"jump": "Zu einem Baum springen",
+		"highlight": "Übertragene Äste einrahmen",
+		"pick": "In welchem Baum?"
 	}
 }

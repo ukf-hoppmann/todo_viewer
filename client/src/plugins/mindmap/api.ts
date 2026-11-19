@@ -15,6 +15,7 @@ export type MapDeletedOut = components["schemas"]["MapDeletedOut"];
 export type RemovalOut = components["schemas"]["RemovalOut"];
 export type NodeTreeOut = components["schemas"]["NodeTreeOut"];
 export type RemovedFromOut = components["schemas"]["RemovedFromOut"];
+export type TrashedNodeOut = components["schemas"]["TrashedNodeOut"];
 export type PlacementRestoredOut = components["schemas"]["PlacementRestoredOut"];
 
 /** The error of a write: the code and details the server gave, as an `Error` the forms can show. */
@@ -47,6 +48,7 @@ export function errorMessage(error: unknown, fallback: string): string {
  * backlog (comma-separated, empty: all),
  * `listMaps` lists the maps of a project (the project tree first, then the free maps, each with its node count), `createMap`, `renameMap` and `deleteMap` (into the trash) write them (tag `Maps`); `getTree`, `createNode` and `getNodeContent` take the free map as `tree`.
  * `moveNodeToMap` hangs a branch into another map, `transferNodeToMap` puts it into another map too (same records, structure below per tree), `removeNodeFromMap` takes it out of one map ("Hier entfernen"), `deleteNode` out of all ("Knoten löschen"); `listNodeTrees` lists the maps a node stands in.
+ * `listTrashedNodes` lists the deleted branches of a map (the side view "Papierkorb", tag `Trashed`), `restoreAndMoveNode` brings one back to a new place of the map ("wiederherstellen und umziehen").
  * `createNode` and `updateNode` write a node, `moveNode` hangs a node with its branch under another parent (empty:
  * under the root) or to another place among its siblings. Moving to the trash goes through `workspace`. The tag `Tree` is what
  * server events invalidate. The documents of a node (`getDocument`, `putDocument`, `appendEntry`) have the tag
@@ -156,6 +158,16 @@ export const mindmapApi = createPluginApi(
 			query: ({ ref, ...body }) => ({ url: `mindmap/nodes/${ref}/restore-placement`, method: "POST", body }),
 			invalidatesTags: ["Tree", "Maps", "Content"],
 		}),
+		// The trash of a map (`TASK-067`): the deleted branches that stood in `tree` (none: the project tree); `restoreAndMoveNode`
+		// takes one out of the trash and puts it under `parent` (none: below the root) at `position` of `tree`.
+		listTrashedNodes: build.query<TrashedNodeOut[], { project: string; tree?: string }>({
+			query: ({ project, tree }) => ({ url: `mindmap/trash/${project}`, params: tree ? { tree } : undefined }),
+			providesTags: ["Trashed"],
+		}),
+		restoreAndMoveNode: build.mutation<NodeOut, { ref: string; version: number; tree?: string; parent?: string | null; position?: number }>({
+			query: ({ ref, parent, ...body }) => ({ url: `mindmap/nodes/${ref}/restore-move`, method: "POST", body: { ...body, ...(parent ? { parent } : {}) } }),
+			invalidatesTags: ["Tree", "Maps", "Content", "Trashed"],
+		}),
 		getDocument: build.query<DocumentOut, { uid: string; name: string }>({
 			query: ({ uid, name }) => `mindmap/nodes/${uid}/documents/${name}`,
 			providesTags: ["Documents"],
@@ -169,7 +181,7 @@ export const mindmapApi = createPluginApi(
 			invalidatesTags: ["Tree", "Documents"],
 		}),
 	}),
-	{ tagTypes: ["Tree", "Documents", "Content", "ItemNode", "Maps"] },
+	{ tagTypes: ["Tree", "Documents", "Content", "ItemNode", "Maps", "Trashed"] },
 );
 
 export const {
@@ -195,6 +207,8 @@ export const {
 	useListNodeTreesQuery,
 	useListRemovedPlacementsQuery,
 	useRestoreNodePlacementMutation,
+	useListTrashedNodesQuery,
+	useRestoreAndMoveNodeMutation,
 	useGetDocumentQuery,
 	usePutDocumentMutation,
 	useAppendEntryMutation,

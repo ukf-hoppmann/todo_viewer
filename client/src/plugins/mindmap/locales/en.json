@@ -68,6 +68,7 @@
 	"filter": {
 		"state": "State",
 		"unassigned": "Show unassigned",
+		"trash": "Show trash",
 		"dependencies": "Show dependencies between topics",
 		"mark": "Mark",
 		"shared": "Frame transferred branches"
@@ -82,6 +83,12 @@
 		"title": "Unassigned",
 		"empty": "Every item hangs on a node.",
 		"hint": "Drag an item onto a node to assign it."
+	},
+	"trash": {
+		"title": "Trash",
+		"empty": "The trash of this map is empty.",
+		"hint": "Drag a branch to a place on the map to bring it back there.",
+		"size": "{{count}} nodes"
 	},
 	"content": {
 		"title": "Items and memos",

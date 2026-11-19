@@ -1,4 +1,4 @@
-import type { ItemRefOut, NodeItemOut, TreeNodeOut } from "../../../client/src/plugins/mindmap/api";
+import type { ItemRefOut, NodeItemOut, TreeNodeOut, TrashedNodeOut } from "../../../client/src/plugins/mindmap/api";
 
 /**
  * A node of the project tree `p1`: `node("a")` hangs under the root, `node("b", "a", 1)` is the second child of `a`.
@@ -16,4 +16,9 @@ export function itemRef(uid: string, extra: Partial<ItemRefOut> = {}): ItemRefOu
 /** An item in the detail of a node; `explicit`: assigned to that node itself, not inherited. */
 export function nodeItem(uid: string, explicit = true, extra: Partial<ItemRefOut> = {}): NodeItemOut {
 	return { ...itemRef(uid, extra), explicit };
+}
+
+/** A branch in the trash as the side view lists it: `nodes` is its size in the trash. */
+export function trashedNode(uid: string, extra: Partial<TrashedNodeOut & { tree: string }> = {}): TrashedNodeOut & { tree?: string } {
+	return { uid, label: `NODE-${uid}`, title: `Gelöscht ${uid}`, version: 3, parent_uid: null, nodes: 1, ...extra };
 }

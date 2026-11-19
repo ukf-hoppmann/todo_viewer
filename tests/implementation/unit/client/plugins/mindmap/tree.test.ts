@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COMBINED_ROOT, canDropItem, combinedState, combinedTree, defaultOpen, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, markLook, nodeLook, parentForNewNode, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
+import { COMBINED_ROOT, canDropItem, combinedState, combinedTree, defaultOpen, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, markLook, nodeLook, parentForNewNode, restorePlacement, shownProject, toggledFold, visibleNodes } from "../../../../../../client/src/plugins/mindmap/domain/tree";
 import { node } from "../../../../../helpers/client/mindmapFixtures";
 
 const nodes = [node("a"), node("b", null, 1), node("a1", "a"), node("a2", "a", 1), node("a11", "a1"), node("a111", "a11")];
@@ -103,6 +103,30 @@ describe("dropPlacement", () => {
 		expect(dropPlacement("p1", nodes, "a1", "a2", "before")).toBeNull();
 		expect(dropPlacement("p1", nodes, "a2", "a1", "after")).toBeNull();
 		expect(dropPlacement("p1", nodes, "a1", "a", "inside")).toEqual({ parent: "a", position: 1 });
+	});
+});
+
+describe("restorePlacement", () => {
+	// p1: a (a1 (a11 (a111)), a2), b; the node comes from the trash, it is in none of the lists
+	it("hangs the node below the target, at the end of its children", () => {
+		expect(restorePlacement("p1", nodes, "a", "inside")).toEqual({ parent: "a", position: 2 });
+		expect(restorePlacement("p1", nodes, "a2", "inside")).toEqual({ parent: "a2", position: 0 });
+	});
+
+	it("hangs the node below the root with an empty parent", () => {
+		expect(restorePlacement("p1", nodes, "p1", "inside")).toEqual({ parent: null, position: 2 });
+	});
+
+	it("places the node before or after the target among its siblings", () => {
+		expect(restorePlacement("p1", nodes, "a1", "before")).toEqual({ parent: "a", position: 0 });
+		expect(restorePlacement("p1", nodes, "a1", "after")).toEqual({ parent: "a", position: 1 });
+		expect(restorePlacement("p1", nodes, "b", "after")).toEqual({ parent: null, position: 2 });
+	});
+
+	it("offers no place next to the root and none at an unknown node", () => {
+		expect(restorePlacement("p1", nodes, "p1", "before")).toBeNull();
+		expect(restorePlacement("p1", nodes, "p1", "after")).toBeNull();
+		expect(restorePlacement("p1", nodes, "zz", "inside")).toBeNull();
 	});
 });
 

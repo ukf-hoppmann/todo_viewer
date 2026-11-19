@@ -17,6 +17,8 @@ export interface MapActions {
 	dragStart: (id: string) => void;
 	/** A drag of the item `uid` from the side view begins (it ends with `dragEnd`). */
 	dragStartItem: (uid: string) => void;
+	/** A drag of the deleted branch `uid` from the side view "Papierkorb" begins (it ends with `dragEnd`). */
+	dragStartTrash: (uid: string) => void;
 	dragEnd: () => void;
 	/** The dragged node or item is over `id` in `zone`; true if it may be dropped there (the page then marks the place). */
 	dragOver: (id: string, zone: DropZone) => boolean;
@@ -30,7 +32,7 @@ export interface MapActions {
 }
 
 const idle = () => undefined;
-export const MapActionsContext = createContext<MapActions>({ toggle: idle, add: idle, startRename: idle, commitTitle: idle, cancelRename: idle, remove: idle, openAsRoot: idle, dragStart: idle, dragStartItem: idle, dragEnd: idle, dragOver: () => false, dragLeave: idle, drop: idle, openMenu: idle, openTrees: idle });
+export const MapActionsContext = createContext<MapActions>({ toggle: idle, add: idle, startRename: idle, commitTitle: idle, cancelRename: idle, remove: idle, openAsRoot: idle, dragStart: idle, dragStartItem: idle, dragStartTrash: idle, dragEnd: idle, dragOver: () => false, dragLeave: idle, drop: idle, openMenu: idle, openTrees: idle });
 
 export function useMapActions(): MapActions {
 	return useContext(MapActionsContext);

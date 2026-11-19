@@ -72,5 +72,8 @@ export const mindmapTestIds = {
 	removedEntry: (tree: string) => `mindmap.removed-entry.${tree}`,
 	removedRestore: (tree: string) => `mindmap.removed-restore.${tree}`,
 	removedNotice: "mindmap.removed-notice",
+	trash: "mindmap.trash",
+	trashEntry: (id: string) => `mindmap.trash-entry.${id}`,
+	trashSwitch: "mindmap.trash-switch",
 	mapDropTarget: "mindmap.map-drop-target",
 } as const;

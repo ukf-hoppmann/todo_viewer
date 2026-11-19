@@ -1,4 +1,4 @@
-import { mindmapApi, type ItemRefOut, type MapOut, type MemoRefOut, type NodeItemOut, type TreeNodeOut } from "../../../client/src/plugins/mindmap/api";
+import { mindmapApi, type TrashedNodeOut, type ItemRefOut, type MapOut, type MemoRefOut, type NodeItemOut, type TreeNodeOut } from "../../../client/src/plugins/mindmap/api";
 import { fakeWorkspaceBackend } from "./fakeWorkspaceBackend";
 
 type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respond" | "extraApis"> & {
@@ -7,6 +7,8 @@ type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respon
 	unassigned?: ItemRefOut[];
 	/** The lines between nodes the tree answers with (`from_node` → `to_node`, summed `count`). */
 	dependencyLinks?: Array<{ from_node: string; to_node: string; count: number }>;
+	/** The branches in the trash (the side view "Papierkorb"); `tree` is the free map they stood in, none: the project tree. Restoring one puts a node back into the tree. */
+	trashed?: Array<TrashedNodeOut & { tree?: string }>;
 	/** The items in the detail of a node, by node `uid`; `explicit` says whether the node is theirs. */
 	items?: Record<string, NodeItemOut[]>;
 	/** The memos linked to a node, by node `uid`. */
@@ -28,6 +30,7 @@ type Options = Omit<Parameters<typeof fakeWorkspaceBackend>[0] & object, "respon
 export function fakeMindmapBackend(options: Options = {}) {
 	let nodes = [...(options.nodes ?? [])];
 	let unassigned = [...(options.unassigned ?? [])];
+	let trashed = [...(options.trashed ?? [])];
 	const contents = new Map<string, NodeItemOut[]>(Object.entries(options.items ?? {}).map(([uid, list]) => [uid, [...list]]));
 	const memos = new Map<string, MemoRefOut[]>(Object.entries(options.memos ?? {}).map(([uid, list]) => [uid, [...list]]));
 	const failure = (code: string, message: string, status = 400) => Response.json({ code, message, details: {} }, { status });
@@ -94,6 +97,25 @@ export function fakeMindmapBackend(options: Options = {}) {
 				nodes = nodes.filter((entry) => entry.tree_uid !== found.uid);
 				freeMaps = freeMaps.filter((entry) => entry !== found);
 				return Response.json({ tree_uid: found.uid, nodes_deleted: going, kept_elsewhere: 0 });
+			}
+			const trash = /^mindmap\/trash\/([^/]+)$/.exec(path);
+			if (trash && method === "GET") {
+				const wanted = query.get("tree");
+				return Response.json(trashed.filter((entry) => (wanted ? entry.tree === wanted : (entry.tree ?? null) === null || entry.tree === "t1")).map((entry) => ({ uid: entry.uid, label: entry.label, title: entry.title, version: entry.version, parent_uid: entry.parent_uid, nodes: entry.nodes })));
+			}
+			const restoreMove = /^mindmap\/nodes\/([^/]+)\/restore-move$/.exec(path);
+			if (restoreMove && method === "POST") {
+				const found = trashed.find((entry) => entry.uid === restoreMove[1]);
+				if (!found) return failure("mindmap_node_not_deleted", "Der Knoten liegt nicht im Papierkorb");
+				if (body.version !== found.version) return failure("version_conflict", "Der Knoten wurde inzwischen geändert", 409);
+				trashed = trashed.filter((entry) => entry !== found);
+				const parent = (body.parent as string | undefined) ?? null;
+				const siblings = nodes.filter((entry) => (entry.parent_uid ?? null) === parent && (entry.tree_uid === ((body.tree as string | undefined) ?? "t1"))).sort((a, b) => a.position - b.position);
+				const at = Math.min((body.position as number | undefined) ?? siblings.length, siblings.length);
+				const restored: TreeNodeOut = { uid: found.uid, project_uid: "p1", label: found.label, title: found.title, text: null, tree_uid: (body.tree as string | undefined) ?? "t1", parent_uid: parent, position: at, version: found.version + 1, documents: [], total: 0, done: 0, state: "idea", mark: null, tree_count: 1 };
+				const behind = new Set(siblings.slice(at).map((entry) => entry.uid));
+				nodes = [...nodes.map((entry) => (behind.has(entry.uid) ? { ...entry, position: entry.position + 1 } : entry)), restored];
+				return Response.json(restored);
 			}
 			const tree = /^mindmap\/trees\/([^/]+)$/.exec(path);
 			if (tree && method === "GET") {

@@ -20,13 +20,13 @@ describe("mindmap plugin definition", () => {
 	});
 
 	it.each([
-		["mindmap.node.changed", ["Tree", "Content", "ItemNode", "Maps"]],
-		["mindmap.map.changed", ["Maps", "Tree", "Content", "ItemNode"]],
-		["workspace.element.changed", ["Tree", "Content", "ItemNode", "Maps"]],
+		["mindmap.node.changed", ["Tree", "Content", "ItemNode", "Maps", "Trashed"]],
+		["mindmap.map.changed", ["Maps", "Tree", "Content", "ItemNode", "Trashed"]],
+		["workspace.element.changed", ["Tree", "Content", "ItemNode", "Maps", "Trashed"]],
 		["backlog.item.changed", ["Tree", "Content", "ItemNode"]],
 		["memos.memo.changed", ["Content"]],
 		["mindmap.document.changed", ["Tree", "Documents"]],
-		["core.reconnected", ["Tree", "Documents", "Content", "ItemNode", "Maps"]],
+		["core.reconnected", ["Tree", "Documents", "Content", "ItemNode", "Maps", "Trashed"]],
 	])("reloads on %s", (topic, tags) => {
 		const dispatch = vi.fn();
 		const invalidateTags = vi.fn((names: string[]) => ({ type: "invalidate", tags: names }));

@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
-import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useGetTreesQuery, useListMapsQuery, useMoveNodeMutation, useRemoveNodeFromMapMutation, useUpdateNodeMutation, type ItemRefOut, type NodeTreeOut, type TreeNodeOut } from "../api";
+import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useGetTreesQuery, useListMapsQuery, useListTrashedNodesQuery, useMoveNodeMutation, useRestoreAndMoveNodeMutation, useRemoveNodeFromMapMutation, useUpdateNodeMutation, type ItemRefOut, type NodeTreeOut, type TrashedNodeOut, type TreeNodeOut } from "../api";
 import { chooseMap } from "../domain/maps";
-import { COMBINED_ROOT, canDropItem, combinedTree, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
+import { COMBINED_ROOT, canDropItem, combinedTree, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, restorePlacement, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import type { TreeOut } from "../api";
 import { BranchDialog } from "../BranchDialog";
 import type { BranchAction, BranchSource } from "../domain/branches";
@@ -18,6 +18,7 @@ import { MindmapNode, type TopicNode } from "../MindmapNode";
 import { useMapNavigation } from "../navigation";
 import { NodeDetail } from "../NodeDetail";
 import { DeleteSharedDialog, NodeMenu, TreeJumpMenu, type MenuAnchor } from "../NodeMenus";
+import { TrashPanel } from "../TrashPanel";
 import { UnassignedPanel } from "../UnassignedPanel";
 import { useMindmapState } from "../state";
 import { mindmapTestIds } from "../testIds";
@@ -25,6 +26,7 @@ import { mindmapTestIds } from "../testIds";
 const NODE_TYPES = { topic: MindmapNode };
 const NO_NODES: readonly TreeNodeOut[] = [];
 const NO_ITEMS: readonly ItemRefOut[] = [];
+const NO_TRASH: readonly TrashedNodeOut[] = [];
 const DOUBLE_CLICK_MS = 250;
 const FIT = { maxZoom: 1, padding: 0.15 };
 const EDGE_STYLE = { stroke: "#5b8cff", strokeOpacity: 0.7 };
@@ -46,7 +48,7 @@ export default function MindmapPage() {
 	const { visible, marked, mark } = useProjectSelection();
 	const project = shownProject(visible, marked);
 	const statuses = useShownStatuses();
-	const { view, setView, chosenMaps, chooseMapOf, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, showDependencies, highlightShared, layout: mode } = useMindmapState();
+	const { view, setView, chosenMaps, chooseMapOf, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, showTrash, showDependencies, highlightShared, layout: mode } = useMindmapState();
 	const all = view === "all";
 	// The single view loads the tree of one project, the overall view those of all visible projects.
 	// The single view shows the map chosen in the sidebar list: the project tree, or a free map of the project (named by `tree`).
@@ -79,7 +81,11 @@ export default function MindmapPage() {
 			unassigned: markedTree?.unassigned ?? NO_ITEMS,
 		};
 	}, [all, single, several, project, visible, marked, t, map, freeTree]);
+	// The side view "Papierkorb" (single view only): the deleted branches that stood in the map shown.
+	const { currentData: trashed } = useListTrashedNodesQuery({ project: project?.uid ?? "", ...(freeTree ? { tree: freeTree } : {}) }, { skip: all || !project || !map || !showTrash });
+	const trashTree = map?.tree_uid ?? undefined;
 	const [createNode] = useCreateNodeMutation();
+	const [restoreAndMove] = useRestoreAndMoveNodeMutation();
 	const [updateNode] = useUpdateNodeMutation();
 	const [moveNode] = useMoveNodeMutation();
 	const [removeFromMap] = useRemoveNodeFromMapMutation();
@@ -88,6 +94,7 @@ export default function MindmapPage() {
 	const [drag, setDrag] = useState<{ source: string; over?: { id: string; zone: DropZone } }>();
 	const dragSource = useRef<string | undefined>(undefined);
 	const dragsItem = useRef(false);
+	const dragsTrash = useRef(false);
 	const { requestDelete, dialog: deleteDialog, failed: deleteFailed } = useDeleteElement();
 	const [editing, setEditing] = useState<string | null>(null);
 	// The menu of a node, the dialog that hangs over or transfers a branch, the list of trees to jump to, and the question before a shared node is deleted everywhere.
@@ -138,9 +145,9 @@ export default function MindmapPage() {
 	}, [layoutKey, detailOpen]);
 
 	// The actions read the newest data through a ref, so the nodes of the map keep the same handlers.
-	const latest = useRef({ shown, nodes, byProject, fold, unassignedProject, freeTree });
+	const latest = useRef({ shown, nodes, byProject, fold, unassignedProject, freeTree, trashed, trashTree, rootId });
 	useEffect(() => {
-		latest.current = { shown, nodes, byProject, fold, unassignedProject, freeTree };
+		latest.current = { shown, nodes, byProject, fold, unassignedProject, freeTree, trashed, trashTree, rootId };
 	});
 	const actions: MapActions = useMemo(() => {
 		const fail = (failure: unknown) => setError(errorMessage(failure, t("error.failed")));
@@ -162,9 +169,15 @@ export default function MindmapPage() {
 			const source = dragSource.current;
 			return scope && source ? dropPlacement(scope.projectUid, scope.list, source, id, zone) : null;
 		};
+		// A branch from the trash lands in the tree shown: the root and every node of it are places, nothing stands next to the root.
+		const trashPlacementOf = (id: string, zone: DropZone) => {
+			const { nodes: drawn, rootId: root } = latest.current;
+			return root && !all ? restorePlacement(root, drawn, id, zone) : null;
+		};
 		const endDrag = () => {
 			dragSource.current = undefined;
 			dragsItem.current = false;
+			dragsTrash.current = false;
 			setDrag(undefined);
 		};
 		return {
@@ -177,9 +190,14 @@ export default function MindmapPage() {
 				dragsItem.current = true;
 				setDrag({ source: uid });
 			},
+			dragStartTrash: (uid) => {
+				dragSource.current = uid;
+				dragsTrash.current = true;
+				setDrag({ source: uid });
+			},
 			dragEnd: endDrag,
 			dragOver: (id, zone) => {
-				const allowed = dragsItem.current ? itemAllowed(id) : placementOf(id, zone) !== null;
+				const allowed = dragsItem.current ? itemAllowed(id) : dragsTrash.current ? trashPlacementOf(id, zone) !== null : placementOf(id, zone) !== null;
 				const place = dragsItem.current ? "inside" : zone;
 				// dragover fires continuously: the state object is kept while nothing changed, so nothing is drawn again.
 				setDrag((current) => {
@@ -191,6 +209,22 @@ export default function MindmapPage() {
 			},
 			dragLeave: (id) => setDrag((current) => (current?.over?.id === id ? { source: current.source } : current)),
 			drop: (id, zone) => {
+				if (dragsTrash.current) {
+					const branch = latest.current.trashed?.find((entry) => entry.uid === dragSource.current);
+					const placement = trashPlacementOf(id, zone);
+					const tree = latest.current.trashTree;
+					endDrag();
+					if (!branch || !placement) return;
+					setError(undefined);
+					restoreAndMove({ ref: branch.uid, version: branch.version, ...(tree ? { tree } : {}), ...placement })
+						.unwrap()
+						.then(() => {
+							// The restored branch must be visible: a closed target it was hung below is opened.
+							if (zone === "inside") setFold((current) => (isOpen(current, id, depthOf(id)) ? current : toggledFold(current, id, depthOf(id))));
+						})
+						.catch(fail);
+					return;
+				}
 				if (dragsItem.current) {
 					const item = dragSource.current;
 					const allowed = itemAllowed(id);
@@ -249,7 +283,7 @@ export default function MindmapPage() {
 			openTrees: (id, anchor) => setTrees({ id, anchor }),
 			openAsRoot: (id) => openFocus(id),
 		};
-	}, [createNode, updateNode, moveNode, assignItem, requestDelete, setFold, openFocus, t]);
+	}, [createNode, updateNode, moveNode, restoreAndMove, assignItem, requestDelete, all, setFold, openFocus, t]);
 
 	// What the menu and the jump list do with a node of this page.
 	const nodeOf = (id: string | undefined) => (id ? nodes.find((entry) => entry.uid === id) : undefined);
@@ -430,6 +464,7 @@ export default function MindmapPage() {
 						)}
 					</Box>
 					{showUnassigned && !freeTree && (!all || unassignedProject) && <UnassignedPanel items={unassigned} />}
+						{showTrash && !all && map && <TrashPanel branches={trashed ?? NO_TRASH} />}
 				</Box>
 			</MapActionsContext.Provider>
 			{deleteDialog}

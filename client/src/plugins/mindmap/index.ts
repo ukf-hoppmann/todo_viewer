@@ -26,11 +26,11 @@ export const plugin = definePlugin({
 	api: mindmapApi,
 	eventHandlers: {
 		"mindmap.node.changed": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode", "Maps"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode", "Maps", "Trashed"]));
 		},
 		// A free map was created, renamed, deleted or restored: the list of maps and the tree change.
 		"mindmap.map.changed": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Maps", "Tree", "Content", "ItemNode"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Maps", "Tree", "Content", "ItemNode", "Trashed"]));
 		},
 		// A status change moves the counts, a changed memo its title in the detail of a node.
 		"backlog.item.changed": (_payload, { dispatch, api }) => {
@@ -43,10 +43,10 @@ export const plugin = definePlugin({
 			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents"]));
 		},
 		"workspace.element.changed": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode", "Maps"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Content", "ItemNode", "Maps", "Trashed"]));
 		},
 		"core.reconnected": (_payload, { dispatch, api }) => {
-			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents", "Content", "ItemNode", "Maps"]));
+			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents", "Content", "ItemNode", "Maps", "Trashed"]));
 		},
 	},
 	contributions: [{ slot: "core.main", name: "main", title: "tab.mindmap", icon: MindmapIcon, page: () => import("./pages/MindmapPage"), layout: { sidebar: true, detail: true } },

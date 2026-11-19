@@ -68,6 +68,7 @@
 	"filter": {
 		"state": "Zustand",
 		"unassigned": "Nicht zugeordnet anzeigen",
+		"trash": "Papierkorb anzeigen",
 		"dependencies": "Abhängigkeiten zwischen Themen zeigen",
 		"mark": "Markierung",
 		"shared": "Übertragene Äste einrahmen"
@@ -82,6 +83,12 @@
 		"title": "Nicht zugeordnet",
 		"empty": "Alle Items hängen an einem Knoten.",
 		"hint": "Ziehe ein Item auf einen Knoten, um es zuzuordnen."
+	},
+	"trash": {
+		"title": "Papierkorb",
+		"empty": "Der Papierkorb dieser Map ist leer.",
+		"hint": "Ziehe einen Ast an eine Stelle der Karte, um ihn dort zurückzuholen.",
+		"size": "{{count}} Knoten"
 	},
 	"content": {
 		"title": "Items und Memos",

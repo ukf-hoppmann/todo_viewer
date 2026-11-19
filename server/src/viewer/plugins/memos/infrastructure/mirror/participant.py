@@ -79,7 +79,9 @@ class MemosParticipant:
         }
         refs = {"parent": (label.get(topic.parent_uid, topic.parent_uid),)} if topic.parent_uid else {}
         extra = {"created": format_time(element.created_at) if element else None}
-        return MirrorEntry(KIND_TOPIC, topic.label, fields, refs, topic.uid, extra=extra)
+        return MirrorEntry(
+            KIND_TOPIC, topic.label, fields, refs, topic.uid, extra=extra, trashed=topic.deleted_at is not None
+        )
 
     def _token(self, tx: Transaction, project: str, uid: str, names: Mapping[str, str]) -> str:
         element = self._d.registry.get(tx, uid)
@@ -137,7 +139,7 @@ class MemosParticipant:
             "created": format_time(element.created_at) if element else None,
             "updated": format_time(element.updated_at) if element else None,
         }
-        return MirrorEntry(KIND_MEMO, memo.label, fields, refs, memo.uid, extra=extra)
+        return MirrorEntry(KIND_MEMO, memo.label, fields, refs, memo.uid, extra=extra, trashed=memo.deleted_at is not None)
 
     def resolve_labels(self, project: str, labels: Collection[str]) -> Mapping[str, str]:
         found: dict[str, str] = {}

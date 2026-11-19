@@ -192,14 +192,25 @@ function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: Syn
 			)}
 			<Box
 				component="table"
-				sx={{ width: "100%", fontSize: 13, borderCollapse: "collapse", my: 0.5, "& td": { verticalAlign: "top", whiteSpace: "pre-wrap", wordBreak: "break-word", pr: 1 }, "& td:first-of-type": { whiteSpace: "nowrap" } }}
+				sx={{
+						width: "100%",
+						fontSize: 13,
+						borderCollapse: "collapse",
+						my: 0.5,
+						"& td": { verticalAlign: "top", whiteSpace: "pre-wrap", wordBreak: "break-word", px: 1 },
+						"& td:first-of-type": { whiteSpace: "nowrap" },
+						"& th": { px: 1, py: 0.5 },
+						// the two sides sit in their own columns with a divider, so it is clear which is which
+						"& .side-files": { borderLeft: 1, borderColor: "divider" },
+						"& thead th": { borderBottom: 1, borderColor: "divider" },
+					}}
 			>
 				{rows.some((row) => !isTextDiff(row)) && (
 					<thead>
 						<tr>
 							<th align="left" />
 							<th align="left">{t("sync.database")}</th>
-							<th align="left">{t("sync.files")}</th>
+							<th align="left" className="side-files">{t("sync.files")}</th>
 						</tr>
 					</thead>
 				)}

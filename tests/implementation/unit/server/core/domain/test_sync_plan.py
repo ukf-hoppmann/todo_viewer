@@ -251,3 +251,14 @@ def test_the_label_drift_is_not_written_when_the_direction_only_goes_to_the_data
     )
 
     assert plan.intents == () and len(plan.skipped) == 1
+
+
+def test_a_trashed_database_entry_missing_in_the_files_is_no_conflict() -> None:
+    """Nach „Dateien“ bei „in den Dateien gelöscht“ liegt der Eintrag im Papierkorb: kein erneuter Konflikt."""
+    from dataclasses import replace
+
+    trashed = replace(A, trashed=True)
+    plan = compute_plan([trashed], [], {"a": A.hash}, "both")
+    assert summary(plan) == {"intents": [], "conflicts": [], "adopt": [], "forget": []}
+    # aus dem Papierkorb geholt: wieder ein Konflikt
+    assert summary(compute_plan([A], [], {"a": A.hash}, "both"))["conflicts"] == [("deleted_in_files", "a")]

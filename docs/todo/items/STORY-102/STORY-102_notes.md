@@ -3,7 +3,7 @@
 ## State
 
 - Goal/Status: Besprechung abgeschlossen (2026-11-19), Spec `STORY-102_spec.md` angelegt; Tasks `TASK-062`, `TASK-063`, `TASK-066`, `NEW-papierkorb-ansicht`.
-- Next step: Mit `TASK-062` beginnen; Plan beim Start der Umsetzung vorstellen.
+- Next step: Mit `TASK-062` beginnen; Plan beim Start der Umsetzung vorstellen. Die Entscheidungen stehen auch in den Notes und Specs der Tasks.
 - Open:
   - Keine
 - Decided:
@@ -34,7 +34,7 @@
   - Ein übertragener Ast ist ein gemeinsamer Knoten und überall gleich; ein „Trennen“ in eine eigenständige Kopie gibt es vorerst nicht, bei Bedarf wird umgebaut (2026-11-13)
 - References: Spec `STORY-102_spec.md`; Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Memo `MEMO-003`
 
-State confirmed after entry 2026-11-19 — Thema 9 und Abschluss der Besprechung (b493f93d5b88)
+State confirmed after entry 2026-11-19 — Aufteilung auf die Tasks (cfa5064d4a00)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -291,3 +291,14 @@ State confirmed after entry 2026-11-19 — Thema 9 und Abschluss der Besprechung
 ### Open
 
 - Keine. Offenes liegt in den Tasks: Form der Ersatzregel beim Wiedereinsetzen (`TASK-066`) und das Dateiformat (`STORY-105`).
+
+## 2026-11-19 — Aufteilung auf die Tasks
+
+### Discussed
+
+- Auf Wunsch des Owners sind die Entscheidungen auf die Tasks verteilt: `TASK-062` (Maps, Auswahl, Löschen), `TASK-063` (Umhängen, Übertragen, Markierung, Entfernen, Papierkorb-Backend), `TASK-066` (entfernte Platzierungen), `NEW-papierkorb-ansicht` (Papierkorb-Ansicht). Jeder Task hat Notes und eine Spec; `STORY-102_spec.md` bleibt das Gesamtbild.
+- Beim Aufteilen fiel eine Lücke auf, die nicht besprochen wurde: ob die Seitenansicht „Nicht zugeordnet“ auch in freien Maps gilt. Sie steht als offener Punkt in `TASK-062`.
+
+### Open
+
+- Ob „Nicht zugeordnet“ in freien Maps gilt (`TASK-062`).

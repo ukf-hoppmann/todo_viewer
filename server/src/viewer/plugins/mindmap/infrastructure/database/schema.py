@@ -7,7 +7,7 @@ from typing import Any
 from sqlalchemy import text
 
 from viewer.core.domain.plugin import Migration
-from viewer.plugins.mindmap.domain.model import NODE_MARKS, TREE_KINDS
+from viewer.plugins.mindmap.domain.model import NODE_MARKS
 
 
 def _v1(connection: Any) -> None:
@@ -42,7 +42,7 @@ def _v1(connection: Any) -> None:
         "CREATE INDEX mindmap_placements_node ON mindmap_placements(node_uid)",
     ):
         connection.exec_driver_sql(statement)
-    for code in TREE_KINDS:
+    for code in ("project",):  # fest: spätere Arten kommen mit eigener Migration
         connection.execute(text("INSERT INTO mindmap_tree_kinds(code) VALUES (:c)"), {"c": code})
 
 
@@ -69,4 +69,17 @@ def _v3(connection: Any) -> None:
     connection.exec_driver_sql("ALTER TABLE mindmap_nodes ADD COLUMN mark TEXT REFERENCES mindmap_marks(code)")
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3))
+def _v4(connection: Any) -> None:
+    """Freie Maps (`TASK-062`): eine zweite Art Baum, mit Namen, Versionstoken und Papierkorb-Zeitpunkt. Der Projektbaum
+    bleibt unbenannt und einmalig je Projekt (der Index aus Version 1 gilt nur für ihn)."""
+    connection.execute(text("INSERT INTO mindmap_tree_kinds(code) VALUES ('free')"))
+    for statement in (
+        "ALTER TABLE mindmap_trees ADD COLUMN name TEXT",
+        "ALTER TABLE mindmap_trees ADD COLUMN revision INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE mindmap_trees ADD COLUMN deleted_at TEXT",
+        "CREATE INDEX mindmap_trees_by_project ON mindmap_trees(project_uid, kind)",
+    ):
+        connection.exec_driver_sql(statement)
+
+
+MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3), Migration(4, _v4))

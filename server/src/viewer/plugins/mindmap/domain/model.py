@@ -12,9 +12,13 @@ from datetime import datetime
 
 from viewer.core.domain.errors import DomainError
 
-#: Der Baum eines Projekts; das Projekt ist seine Wurzel. Weitere Arten (freie Maps) kommen mit `STORY-102`.
+#: Der Baum eines Projekts; das Projekt ist seine Wurzel. Einmalig je Projekt und nicht löschbar.
 TREE_PROJECT = "project"
-TREE_KINDS = (TREE_PROJECT,)
+#: Eine freie Map zum Brainstormen (`TASK-062`): beliebig viele je Projekt, mit Namen, in den Papierkorb legbar.
+TREE_FREE = "free"
+TREE_KINDS = (TREE_PROJECT, TREE_FREE)
+#: Längster Name einer freien Map.
+MAP_NAME_MAX = 100
 
 #: Die Markierungen eines Knotens (`TASK-065`): feste Werte, keine Freitexte. Ein Knoten trägt höchstens eine; ohne
 #: Markierung steht `None`. Sie ändert weder Summen noch Zustand und gilt nur für den Knoten selbst.
@@ -47,11 +51,16 @@ class Node:
 
 @dataclass(frozen=True)
 class Tree:
-    """Ein Baum gehört zu genau einem Projekt."""
+    """Ein Baum gehört zu genau einem Projekt. Der Projektbaum hat keinen Namen (er heißt wie das Projekt); eine freie
+    Map hat einen. `revision` ist das Versionstoken für Umbenennen und Löschen; `deleted_at` gesetzt heißt: die Map
+    liegt im Papierkorb."""
 
     uid: str
     project_uid: str
     kind: str = TREE_PROJECT
+    name: str | None = None
+    revision: int = 1
+    deleted_at: datetime | None = None
 
 
 @dataclass(frozen=True)

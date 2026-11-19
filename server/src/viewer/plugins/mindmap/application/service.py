@@ -72,10 +72,14 @@ class MindmapService:
 
     # --- Lesen ----------------------------------------------------------------------------------------------------
 
-    def get_tree(self, project_uid: str) -> TreeView:
+    def get_tree(self, project_uid: str, tree_uid: str | None = None) -> TreeView:
+        """Der Projektbaum oder, mit `tree_uid`, eine freie Map des Projekts."""
         with self._database.transaction() as tx:
             self._require_project(tx, project_uid)
-            tree = self._repository.tree_of_project(tx, project_uid)
+            if tree_uid:
+                tree: Tree | None = self._existing_tree(tx, project_uid, tree_uid)
+            else:
+                tree = self._repository.tree_of_project(tx, project_uid)
             if tree is None:
                 return TreeView(project_uid, None, [])
             ordered = self._ordered(tx, tree)
@@ -89,12 +93,18 @@ class MindmapService:
     # --- Schreiben ------------------------------------------------------------------------------------------------
 
     def create_node(
-        self, project_uid: str, title: object, text: str | None, parent: str | None, position: int | None
+        self,
+        project_uid: str,
+        title: object,
+        text: str | None,
+        parent: str | None,
+        position: int | None,
+        tree_uid: str | None = None,
     ) -> str:
         clean = title_of(title)
         with self._database.transaction() as tx:
             self._require_project(tx, project_uid)
-            tree = self._tree_for(tx, project_uid)
+            tree = self._existing_tree(tx, project_uid, tree_uid) if tree_uid else self._tree_for(tx, project_uid)
             placements = self._repository.placements(tx, tree.uid)
             live = self._live(tx, tree.uid)
             parent_uid = self._parent_uid(tx, parent, project_uid)
@@ -169,7 +179,15 @@ class MindmapService:
         return self._repository.child_uids(tx, uid)
 
     def restore_guard(self, tx: Transaction, uid: str) -> None:
-        """Ein Knoten kommt nicht zurück, solange sein Parent im Papierkorb liegt."""
+        """Ein Knoten kommt nicht zurück, solange sein Parent im Papierkorb liegt oder alle Maps, in denen er steht."""
+        placements = self._repository.placements_of(tx, uid)
+        trees = [self._repository.get_tree(tx, p.tree_uid) for p in placements]
+        if trees and all(t is not None and t.deleted_at is not None for t in trees):
+            raise MindmapViolation(
+                "mindmap_tree_in_trash",
+                "Die Map dieses Knotens liegt im Papierkorb; erst die Map wiederherstellen",
+                tree=trees[0].uid if trees[0] else None,
+            )
         for placement in self._repository.placements_of(tx, uid):
             parent = self._repository.get_node(tx, placement.parent_uid) if placement.parent_uid else None
             if parent is not None and parent.deleted_at is not None:
@@ -211,9 +229,22 @@ class MindmapService:
         self._repository.insert_tree(tx, tree)
         return tree
 
+    def _existing_tree(self, tx: Transaction, project_uid: str, tree_uid: str) -> Tree:
+        """Eine Map des Projekts, die nicht im Papierkorb liegt."""
+        tree = self._repository.get_tree(tx, tree_uid)
+        if tree is None:
+            raise NotFound(f"Map {tree_uid} gibt es nicht", details={"tree": tree_uid})
+        rules.check_project(tree.project_uid, project_uid)
+        if tree.deleted_at is not None:
+            raise MindmapViolation("mindmap_tree_deleted", "Die Map liegt im Papierkorb", tree=tree.uid)
+        return tree
+
     def _tree_of_node(self, tx: Transaction, node: Node, tree_uid: str | None) -> Tree:
         placements = self._repository.placements_of(tx, node.uid)
         if tree_uid is None:
+            placements = [
+                p for p in placements if (t := self._repository.get_tree(tx, p.tree_uid)) and t.deleted_at is None
+            ]
             if len(placements) != 1:
                 raise InvalidInput(
                     "Der Knoten steht in keinem oder mehreren Bäumen; tree angeben", details={"field": "tree"}

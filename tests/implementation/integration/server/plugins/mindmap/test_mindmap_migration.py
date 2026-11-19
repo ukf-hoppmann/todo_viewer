@@ -62,7 +62,7 @@ def test_an_empty_database_gets_the_current_version_and_the_tables(
         "mindmap_placements",
         "mindmap_documents",
     } <= tables
-    assert kinds == {"project"}
+    assert kinds == {"project", "free"}
     assert runner.run(_defs()) == []  # ein zweiter Lauf tut nichts
 
 
@@ -155,8 +155,41 @@ def test_version_2_data_survives_the_upgrade_to_the_marks(runner: MigrationRunne
         )
         connection.execute(text("INSERT INTO mindmap_nodes(uid, title, text) VALUES ('n1', 'Alt', 'Text')"))
 
-    assert ("mindmap", 3) in runner.run(defs)
+    assert ("mindmap", len(MIGRATIONS)) in runner.run(defs)
 
     with database.engine.begin() as connection:
         row = connection.execute(text("SELECT title, text, mark FROM mindmap_nodes WHERE uid = 'n1'")).one()
     assert tuple(row) == ("Alt", "Text", None)
+
+
+def test_a_project_may_have_many_free_maps_with_a_name(runner: MigrationRunner, database: SqliteDatabase) -> None:
+    project = _prepare(runner, database)
+    with database.engine.begin() as connection:
+        for uid, name in (("f1", "Ideen"), ("f2", "Roadmap")):
+            connection.execute(
+                text("INSERT INTO mindmap_trees(uid, project_uid, kind, name) VALUES (:u, :p, 'free', :n)"),
+                {"u": uid, "p": project, "n": name},
+            )
+        row = connection.execute(text("SELECT name, revision, deleted_at FROM mindmap_trees WHERE uid = 'f1'")).one()
+        project_row = connection.execute(text("SELECT name, revision FROM mindmap_trees WHERE uid = 't1'")).one()
+    assert tuple(row) == ("Ideen", 1, None)
+    assert tuple(project_row) == (None, 1)  # der Projektbaum bleibt unbenannt
+
+
+def test_version_3_trees_survive_the_upgrade_to_free_maps(runner: MigrationRunner, database: SqliteDatabase) -> None:
+    old = [
+        plugin("workspace", migrations=WORKSPACE),
+        plugin("mindmap", requires=("workspace",), migrations=MIGRATIONS[:3]),
+    ]
+    runner.run(ordered(*old))
+    with database.engine.begin() as connection:
+        project: str = connection.execute(text("SELECT uid FROM workspace_projects")).scalar_one()
+        connection.execute(
+            text("INSERT INTO mindmap_trees(uid, project_uid, kind) VALUES ('t1', :p, 'project')"), {"p": project}
+        )
+
+    assert ("mindmap", len(MIGRATIONS)) in runner.run(_defs())
+
+    with database.engine.begin() as connection:
+        row = connection.execute(text("SELECT kind, name, revision, deleted_at FROM mindmap_trees")).one()
+    assert tuple(row) == ("project", None, 1, None)

@@ -16,6 +16,7 @@ from viewer.core.domain.events import Event
 from viewer.plugins.mindmap.application.ports import BacklogItem, BacklogItems, MindmapRepository
 from viewer.plugins.mindmap.application.service import NODE_TOPIC, MindmapService
 from viewer.plugins.mindmap.domain import assignment as rules
+from viewer.plugins.mindmap.domain import tree as rules_tree
 from viewer.plugins.mindmap.domain.assignment import ItemFact, LinkFact, NodeStats, Overview
 from viewer.plugins.mindmap.domain.model import MindmapViolation, Node
 from viewer.plugins.workspace import Element, ElementRegistry, Links
@@ -148,21 +149,24 @@ class AssignmentService:
 
     # --- Lesen ----------------------------------------------------------------------------------------------------
 
-    def stats(self, project_uid: str, statuses: list[str]) -> TreeStats:
-        """Anzahl, Fortschritt und Zustand je Knoten des Projektbaums und die Items ohne Knoten."""
+    def stats(self, project_uid: str, statuses: list[str], tree_uid: str | None = None) -> TreeStats:
+        """Anzahl, Fortschritt und Zustand je Knoten des Projektbaums oder einer freien Map und die Items ohne
+        Knoten. „Nicht zugeordnet“ gibt es nur im Projektbaum; in einer freien Map ist die Liste leer."""
         check_statuses(statuses)
         with self._database.transaction() as tx:
-            overview, items = self._overview(tx, project_uid, statuses)
-        loose = set(overview.unassigned)
+            overview, items = self._overview(tx, project_uid, statuses, tree_uid)
+        loose = set(overview.unassigned) if tree_uid is None else set()
         links = rules.dependency_links(_facts(items), overview.effective, statuses)
         # Die Items ohne Knoten in der Reihenfolge des Backlogs
         return TreeStats(overview.stats, [i for i in items if i.uid in loose], links)
 
-    def node_content(self, node_ref: str, project_uid: str | None, statuses: list[str]) -> NodeContent:
+    def node_content(
+        self, node_ref: str, project_uid: str | None, statuses: list[str], tree_uid: str | None = None
+    ) -> NodeContent:
         check_statuses(statuses)
         with self._database.transaction() as tx:
             node = self._mindmap.resolve(tx, node_ref, project_uid)
-            overview, items = self._overview(tx, node.project_uid, statuses)
+            overview, items = self._overview(tx, node.project_uid, statuses, tree_uid)
             shown = [
                 i
                 for i in items
@@ -193,9 +197,17 @@ class AssignmentService:
 
     # --- Hilfen ---------------------------------------------------------------------------------------------------
 
-    def _overview(self, tx: Transaction, project_uid: str, statuses: list[str]) -> tuple[Overview, list[BacklogItem]]:
+    def _overview(
+        self, tx: Transaction, project_uid: str, statuses: list[str], tree_uid: str | None = None
+    ) -> tuple[Overview, list[BacklogItem]]:
         items = self._backlog.list_items(tx, project_uid)
-        tree = self._repository.tree_of_project(tx, project_uid)
+        tree = (
+            self._repository.get_tree(tx, tree_uid) if tree_uid else self._repository.tree_of_project(tx, project_uid)
+        )
+        if tree is not None:
+            rules_tree.check_project(tree.project_uid, project_uid)
+            if tree.deleted_at is not None:
+                raise MindmapViolation("mindmap_tree_deleted", "Die Map liegt im Papierkorb", tree=tree.uid)
         live: set[str] = set()
         parent_of: dict[str, str | None] = {}
         assigned: dict[str, str] = {}

@@ -19,6 +19,16 @@ FROM mindmap_nodes n JOIN workspace_elements e ON e.uid = n.uid
 """
 
 
+_TREE = "SELECT uid, project_uid, kind, name, revision, deleted_at FROM mindmap_trees"
+
+
+def _tree(row: Row[Any]) -> Tree:
+    deleted = row.deleted_at
+    return Tree(
+        row.uid, row.project_uid, row.kind, row.name, row.revision, datetime.fromisoformat(deleted) if deleted else None
+    )
+
+
 def _conn(tx: Transaction) -> Connection:
     assert isinstance(tx, SqlTransaction)
     return tx.connection
@@ -47,25 +57,94 @@ class SqlMindmapRepository:
         row = (
             _conn(tx)
             .execute(
-                text("SELECT uid, project_uid, kind FROM mindmap_trees WHERE project_uid = :p AND kind = 'project'"),
+                text(f"{_TREE} WHERE project_uid = :p AND kind = 'project'"),
                 {"p": project_uid},
             )
             .first()
         )
-        return Tree(row.uid, row.project_uid, row.kind) if row else None
+        return _tree(row) if row else None
 
     def get_tree(self, tx: Transaction, uid: str) -> Tree | None:
-        row = (
-            _conn(tx)
-            .execute(text("SELECT uid, project_uid, kind FROM mindmap_trees WHERE uid = :u"), {"u": uid})
-            .first()
-        )
-        return Tree(row.uid, row.project_uid, row.kind) if row else None
+        row = _conn(tx).execute(text(f"{_TREE} WHERE uid = :u"), {"u": uid}).first()
+        return _tree(row) if row else None
 
     def insert_tree(self, tx: Transaction, tree: Tree) -> None:
         _conn(tx).execute(
-            text("INSERT INTO mindmap_trees(uid, project_uid, kind) VALUES (:u, :p, :k)"),
-            {"u": tree.uid, "p": tree.project_uid, "k": tree.kind},
+            text("INSERT INTO mindmap_trees(uid, project_uid, kind, name) VALUES (:u, :p, :k, :n)"),
+            {"u": tree.uid, "p": tree.project_uid, "k": tree.kind, "n": tree.name},
+        )
+
+    def free_maps(self, tx: Transaction, project_uid: str) -> list[Tree]:
+        rows = _conn(tx).execute(
+            text(f"{_TREE} WHERE project_uid = :p AND kind = 'free' AND deleted_at IS NULL ORDER BY rowid"),
+            {"p": project_uid},
+        )
+        return [_tree(row) for row in rows]
+
+    def deleted_maps(self, tx: Transaction, project_uids: Sequence[str] | None) -> list[Tree]:
+        query = f"{_TREE} WHERE kind = 'free' AND deleted_at IS NOT NULL"
+        if project_uids is None:
+            rows = _conn(tx).execute(text(query + " ORDER BY rowid"))
+        else:
+            if not project_uids:
+                return []
+            statement = text(query + " AND project_uid IN :ps ORDER BY rowid").bindparams(
+                bindparam("ps", expanding=True)
+            )
+            rows = _conn(tx).execute(statement, {"ps": list(project_uids)})
+        return [_tree(row) for row in rows]
+
+    def rename_tree(self, tx: Transaction, uid: str, name: str, expected: int) -> int:
+        result = _conn(tx).execute(
+            text("UPDATE mindmap_trees SET name = :n, revision = revision + 1 WHERE uid = :u AND revision = :r"),
+            {"n": name, "u": uid, "r": expected},
+        )
+        if result.rowcount != 1:
+            raise VersionConflict("Die Map wurde inzwischen geändert", details={"uid": uid, "expected": expected})
+        return expected + 1
+
+    def set_tree_deleted(self, tx: Transaction, uid: str, at: datetime | None, expected: int | None = None) -> int:
+        query = "UPDATE mindmap_trees SET deleted_at = :d, revision = revision + 1 WHERE uid = :u"
+        params: dict[str, Any] = {"d": at.isoformat() if at else None, "u": uid}
+        if expected is not None:
+            query += " AND revision = :r"
+            params["r"] = expected
+        result = _conn(tx).execute(text(query), params)
+        if result.rowcount != 1:
+            raise VersionConflict("Die Map wurde inzwischen geändert", details={"uid": uid, "expected": expected})
+        return int(
+            _conn(tx).execute(text("SELECT revision FROM mindmap_trees WHERE uid = :u"), {"u": uid}).scalar_one()
+        )
+
+    def delete_tree(self, tx: Transaction, uid: str) -> None:
+        _conn(tx).execute(text("DELETE FROM mindmap_placements WHERE tree_uid = :u"), {"u": uid})
+        _conn(tx).execute(text("DELETE FROM mindmap_trees WHERE uid = :u"), {"u": uid})
+
+    def node_count(self, tx: Transaction, tree_uid: str) -> int:
+        return int(
+            _conn(tx)
+            .execute(
+                text(
+                    "SELECT COUNT(*) FROM mindmap_placements p JOIN workspace_elements e ON e.uid = p.node_uid "
+                    "WHERE p.tree_uid = :t AND e.deleted_at IS NULL"
+                ),
+                {"t": tree_uid},
+            )
+            .scalar_one()
+        )
+
+    def shared_count(self, tx: Transaction, tree_uid: str) -> int:
+        return int(
+            _conn(tx)
+            .execute(
+                text(
+                    "SELECT COUNT(*) FROM mindmap_placements p JOIN workspace_elements e ON e.uid = p.node_uid "
+                    "WHERE p.tree_uid = :t AND e.deleted_at IS NULL AND EXISTS ("
+                    "SELECT 1 FROM mindmap_placements q WHERE q.node_uid = p.node_uid AND q.tree_uid <> p.tree_uid)"
+                ),
+                {"t": tree_uid},
+            )
+            .scalar_one()
         )
 
     def insert_node(self, tx: Transaction, node: Node) -> None:

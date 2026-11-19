@@ -16,9 +16,40 @@ class MindmapRepository(Protocol):
         """Der Projektbaum des Projekts, falls es ihn schon gibt."""
         ...
 
-    def get_tree(self, tx: Transaction, uid: str) -> Tree | None: ...
+    def get_tree(self, tx: Transaction, uid: str) -> Tree | None:
+        """Der Baum, auch wenn er im Papierkorb liegt."""
+        ...
 
     def insert_tree(self, tx: Transaction, tree: Tree) -> None: ...
+
+    def free_maps(self, tx: Transaction, project_uid: str) -> list[Tree]:
+        """Die freien Maps des Projekts außerhalb des Papierkorbs, in der Reihenfolge des Anlegens."""
+        ...
+
+    def deleted_maps(self, tx: Transaction, project_uids: Sequence[str] | None) -> list[Tree]:
+        """Die freien Maps im Papierkorb (aller oder der genannten Projekte)."""
+        ...
+
+    def rename_tree(self, tx: Transaction, uid: str, name: str, expected: int) -> int:
+        """Setzt den Namen, wenn die Revision `expected` ist (sonst `version_conflict`); gibt die neue zurück."""
+        ...
+
+    def set_tree_deleted(self, tx: Transaction, uid: str, at: datetime | None, expected: int | None = None) -> int:
+        """Legt die Map in den Papierkorb (`at`) oder holt sie zurück (`None`) und erhöht die Revision; mit
+        `expected` wird sie geprüft (sonst `version_conflict`). Gibt die neue Revision zurück."""
+        ...
+
+    def delete_tree(self, tx: Transaction, uid: str) -> None:
+        """Entfernt den Baum und seine Platzierungen (die Knoten räumt der Aufrufer ab)."""
+        ...
+
+    def node_count(self, tx: Transaction, tree_uid: str) -> int:
+        """Die Knoten des Baums außerhalb des Papierkorbs."""
+        ...
+
+    def shared_count(self, tx: Transaction, tree_uid: str) -> int:
+        """Die Knoten des Baums außerhalb des Papierkorbs, die auch in einem anderen Baum stehen."""
+        ...
 
     def insert_node(self, tx: Transaction, node: Node) -> None: ...
 

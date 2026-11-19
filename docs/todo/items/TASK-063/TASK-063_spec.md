@@ -30,6 +30,12 @@ Setzt die freien Maps aus `TASK-062` voraus. Entfernte Platzierungen wieder eins
   neue Stelle ersetzt seine alte Platzierung im aktuellen Baum, Platzierungen in anderen Bäumen kommen wie vorher
   zurück.
 
+- Umsetzung: Ziel der Operationen ist die `tree_uid` einer Map aus `list_maps` (die Uid des Projekts nennt seinen Projektbaum
+  auch ohne Knoten). Heimatlos gewordene Unterknoten behalten ihre Platzierung im Baum und rücken unter den Parent des
+  entfernten Asts; ein Unterknoten im Papierkorb, der im Ziel steht, blockiert das Ziel ebenfalls. `get_tree` nennt je
+  Knoten `tree_count` (Bäume ohne Papierkorb). Die Operationen heißen `move_node_to_map`, `transfer_node_to_map`,
+  `remove_node_from_map`, `delete_node`, `restore_and_move_node`, `list_node_trees`.
+
 ## Oberfläche
 
 - Kontextmenü am Knoten: „Umhängen nach …“ und „Übertragen nach …“ mit Wahl der Ziel-Map; zusätzlich Ziehen auf

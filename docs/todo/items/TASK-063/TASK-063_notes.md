@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt (Server, Oberfläche, Doku), Tests grün; wartet auf Bestätigung des Owners.
-- Next step: Owner prüft Umhängen/Übertragen, Markierung und Entfernen/Löschen; danach `TASK-066` (entfernte Platzierungen merken).
+- Goal/Status: Vom Projekteigner am 2026-11-19 bestätigt (`Completed`); auf `main`, Release v0.11.0.
+- Next step: Keiner; der Eintrag ist abgeschlossen.
 - Open:
   - Keine
 - Decided:

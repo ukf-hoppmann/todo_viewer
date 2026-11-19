@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Besprechung abgeschlossen (2026-11-19), Spec `STORY-102_spec.md` angelegt; Tasks `TASK-062`, `TASK-063`, `TASK-066`, `TASK-067`.
-- Next step: Mit `TASK-062` beginnen; Plan beim Start der Umsetzung vorstellen. Die Entscheidungen stehen auch in den Notes und Specs der Tasks.
+- Goal/Status: Vom Projekteigner am 2026-11-19 bestätigt (`Completed`); auf `main`, Release v0.11.0.
+- Next step: Keiner; der Eintrag ist abgeschlossen.
 - Open:
   - Keine
 - Decided:

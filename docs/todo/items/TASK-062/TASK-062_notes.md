@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt (Server, Oberfläche, Doku), Tests grün; wartet auf Bestätigung des Owners.
-- Next step: Owner prüft die Map-Liste in der Seitenleiste; danach `TASK-063` (Umhängen und Übertragen).
+- Goal/Status: Vom Projekteigner am 2026-11-19 bestätigt (`Completed`); auf `main`, Release v0.11.0.
+- Next step: Keiner; der Eintrag ist abgeschlossen.
 - Open:
   - Keine
 - Decided:

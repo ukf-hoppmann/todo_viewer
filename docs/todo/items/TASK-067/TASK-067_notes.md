@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Umgesetzt (Server-Leseoperation, Oberfläche, Doku), Tests grün; wartet auf Bestätigung des Owners.
-- Next step: Owner prüft „Papierkorb anzeigen“ → Ast aus der Seitenansicht auf eine Stelle der Karte ziehen. Die Kette `TASK-062` → `TASK-063` → `TASK-066` → `TASK-067` ist damit zu Ende.
+- Goal/Status: Vom Projekteigner am 2026-11-19 bestätigt (`Completed`); auf `main`, Release v0.11.0.
+- Next step: Keiner; der Eintrag ist abgeschlossen.
 - Open:
   - Keine
 - Decided:

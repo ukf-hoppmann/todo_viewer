@@ -1,0 +1,6 @@
+{
+  "code": "duplicate_node_in_tree",
+  "file": "mindmap/project.md",
+  "line": 12,
+  "reason": "Knoten steht zweimal im Baum"
+}

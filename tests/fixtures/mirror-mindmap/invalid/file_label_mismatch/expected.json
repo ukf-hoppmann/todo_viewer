@@ -1,0 +1,6 @@
+{
+  "code": "file_label_mismatch",
+  "file": "mindmap/NODE-005.md",
+  "line": 1,
+  "reason": "Datei und Label passen nicht"
+}

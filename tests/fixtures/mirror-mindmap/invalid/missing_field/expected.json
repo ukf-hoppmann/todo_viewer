@@ -1,0 +1,6 @@
+{
+  "code": "missing_field",
+  "file": "mindmap/NODE-004.md",
+  "line": 1,
+  "reason": "Der Knoten hat keinen Titel"
+}

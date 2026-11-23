@@ -1,0 +1,6 @@
+{
+  "code": "invalid_value",
+  "file": "mindmap/NODE-001.md",
+  "line": 4,
+  "reason": "Markierung, die es nicht gibt"
+}

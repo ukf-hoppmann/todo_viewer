@@ -1,0 +1,6 @@
+{
+  "code": "rule_violation",
+  "file": "mindmap/NODE-007.md",
+  "line": 7,
+  "reason": "Dasselbe Item steht bei NODE-001 und NODE-007"
+}

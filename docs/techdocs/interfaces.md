@@ -434,6 +434,120 @@ Projekt in Version 2 (mit `Area`, dazu Memos, Topics und Wecker); es sichert
 das Lesen von Version 2 und die Codecs von Memos und Alarmen. Die Beispiele
 sind die Golden-Files der Codecs (`STORY-075`, `STORY-079`, `STORY-080`).
 
+## Mindmap-Dateien (Format Version 1)
+
+Der Themenbaum eines Projekts (Plugin `mindmap`) hat ein eigenes Dateiformat mit eigener Versionszählung, unabhängig
+vom Backlog-Format. Es liegt im Spiegel-Ordner unter `mindmap/` (Muster des Codecs: `mindmap/**/*.md`).
+Grundsatz: **der Inhalt eines Knotens steht genau einmal in einer Datei; jeder Baum ist eine eigene Datei, die nur
+Verweise auf Knoten in ihrer Ordnung enthält.** Mehrfache Platzierungen sind Verweise, nie Kopien. Der Codec
+(`MindmapCodec`, `server/src/viewer/plugins/mindmap/infrastructure/mirror/`) liest und schreibt diese Dateien; er ist
+noch nicht beim Sync registriert (Teilnehmer: `TASK-080`). Feldnamen und Werte sind englisch, Inhalte in der Sprache
+des Projekts, Zeitpunkte UTC mit `Z`.
+
+| Pfad | Inhalt |
+|---|---|
+| `mindmap/NODE-001.md` | ein Knoten (Kopf, Zuordnungen, Text) |
+| `mindmap/NODE-001_notes.md`, `NODE-001_spec.md`, `NODE-001_spec_<thema>.md` | Dokumente des Knotens (Text unverändert) |
+| `mindmap/project.md` | der Projektbaum (genau einer je Projekt) |
+| `mindmap/maps/<name>.md` | eine freie Map |
+| `mindmap/new-<kurzname>.md`, `mindmap/maps/new-<kurzname>.md` | neuer Knoten bzw. neue Map aus den Dateien (Platzhalter) |
+
+Andere Dateien werden nicht gelesen. Die Identität ist die `Uid`, nie der Dateiname.
+
+### Knoten
+
+```markdown
+# NODE-001
+Uid: 5d1c0c2e-7a53-4a0e-9f3b-0c9f8f6e1a01
+Title: Mindmap-Ansichten
+Mark: later
+Deleted:
+Items:
+- Beispiel:STORY-101
+Memos:
+- Beispiel:MEMO-004
+
+Freitext des Knotens, beliebig lang, bis zum Dateiende.
+```
+
+- Kopfzeilen in dieser Reihenfolge: `Uid`, `Title`, `Mark` (leer, `later` oder `discarded`), `Deleted` (leer oder
+  Zeitpunkt, Papierkorb). Pflicht sind `Title` und (außer bei neuen Knoten) `Uid`.
+- `Items:` die eigens an den Knoten gehängten Items, `Memos:` die verlinkten Memos, je Zeile `- <Projekt>:<LABEL>`
+  (der Name des eigenen Projekts darf fehlen; Ziele anderer Projekte bleiben, wie sie stehen). Die Abschnitte fehlen,
+  wenn sie leer sind; die Ziele stehen sortiert. Ein Item steht bei höchstens einem Knoten; ein Memo darf bei
+  mehreren stehen.
+- Nach einer Leerzeile folgt der Text des Knotens bis zum Dateiende; ohne Text gibt es keine Leerzeile.
+- Ein neuer Knoten heißt `new-<kurzname>.md` (Kurzname aus `a-z`, `0-9`, `-`), beginnt mit `# NEW` und hat keine
+  `Uid`; der Sync vergibt `Uid` und Label `NODE-nnn` und benennt die Datei und ihre Dokumente um.
+- Dokumente gehören über den Dateinamen zum Knoten; ein Dokument ohne Knotendatei ist ein Fehler.
+
+### Bäume
+
+```markdown
+# Projekt
+Format: mindmap format version 1
+Uid: 9a2b0f4c-0d5e-4f60-8a71-2b3c4d5e6f70
+Kind: project
+
+- NODE-001
+  - NODE-002
+  - NODE-003
+    - NODE-007
+- NODE-004
+
+Removed:
+- NODE-010 parent NODE-001 position 2 group NODE-010
+- NODE-011 parent - position 0 group NODE-010
+```
+
+- `project.md` ist der Projektbaum (`Kind: project`, kein `Name`, nicht löschbar). Eine freie Map liegt in
+  `maps/<name>.md` und trägt zusätzlich `Name:` und `Deleted:` (Zeitpunkt, wenn die Map im Papierkorb liegt). Der
+  Dateiname ist der Name in `a-z0-9-` (bei Kollision mit `-2`, `-3`, …); Umbenennen der Map benennt die Datei um.
+  Die Namen der freien Maps eines Projekts, die nicht im Papierkorb liegen, sind verschieden (Groß- und
+  Kleinschreibung zählt nicht). Die erste Zeile
+  ist bei neuen Maps `# NEW`, sonst der Name; gelesen wird sie nicht.
+- Kopfzeilen: `Format`, `Uid`, `Kind`, bei freien Maps `Name`, `Deleted`. `Format` ist Pflicht und nennt
+  `mindmap format version 1`.
+- Die Liste gibt die Platzierungen: Einrückung um zwei Leerzeichen je Ebene, die Reihenfolge ist die Stelle unter
+  den Geschwistern, ein Knoten steht in einem Baum höchstens einmal. Ein Knoten in mehreren Bäumen steht in jedem
+  mit seinen dortigen Kindern; sein Inhalt steht nur in seiner Datei. Einträge sind Labels (`NODE-001`) oder
+  Platzhalter (`new-<kurzname>`).
+- `Removed:` die gemerkten, entfernten Platzierungen: Knoten, früherer Parent (`-` für die Wurzel), frühere Stelle
+  und die Gruppe (der Knoten, mit dessen Ast sie entfernt wurden). Der Parent darf einen Knoten nennen, der nicht
+  mehr im Baum steht. Der Abschnitt fehlt, wenn nichts gemerkt ist.
+- Eine neue Map aus den Dateien heißt `maps/new-<kurzname>.md`, beginnt mit `# NEW` und hat keine `Uid`.
+
+### Zuordnung zu den Einträgen des Sync
+
+Knoten sind Einträge der Art `mindmap.node` (Felder `title`, `text`, `mark`, `deleted_at`; Verweise `items`,
+`memos`), Dokumente `mindmap.document` (`uid` = `<Knoten-uid>/<notes|spec|spec_…>`), Bäume `mindmap.tree` (Felder
+`tree_kind`, `name`, `deleted_at`, `depths`, `removed`; Verweise `nodes` in der Reihenfolge einer Tiefensuche,
+`removed_nodes`, `removed_parents`, `removed_groups`). Die Verweise stehen als Label oder Platzhalter, damit der Sync
+sie bei neuen und umbenannten Knoten ersetzen kann. Derselbe Baum ergibt immer dieselben Bytes.
+
+### Fehler beim Lesen
+
+Jeder Fehler nennt Datei und Zeile (`MirrorFormatError`).
+
+| Code | Bedeutung |
+|---|---|
+| `format_version` | die Kennung `Format:` im Baum fehlt oder nennt eine andere Version |
+| `unknown_field` | Kopfzeile, die das Format nicht kennt |
+| `missing_field` | Pflichtfeld fehlt |
+| `invalid_value` | ungültige Markierung, Zeitpunkt, `Kind`, Einrückung, Verweis oder Zeile |
+| `duplicate_uid` | dieselbe `Uid` zweimal |
+| `duplicate_label` | zwei freie Maps (nicht im Papierkorb) mit demselben Namen |
+| `file_label_mismatch` | Dateiname und erste Zeile passen nicht, oder ein Dokument gehört zu keinem Knoten |
+| `invalid_placeholder` | Platzhalter mit ungültigem Namen |
+| `merge_markers` | Datei mit Git-Merge-Markern |
+| `duplicate_node_in_tree` | ein Knoten steht zweimal in einem Baum (auch zwischen Liste und `Removed:`) |
+| `tree_cycle` | die früheren Parents unter `Removed:` bilden einen Kreis |
+| `rule_violation` | dasselbe Item steht bei zwei Knoten |
+
+`unknown_reference` kann nur die Datenbank entscheiden und kommt mit dem Teilnehmer (`TASK-080`).
+
+Beispiele: `tests/fixtures/mirror-mindmap/valid/` und `…/invalid/<code>/` sind die Golden-Files des Codecs.
+
 ## CLI: `todo.sh`
 
 - Zweck: Steuerung des Docker-Containers.

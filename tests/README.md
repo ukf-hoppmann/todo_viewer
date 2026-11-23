@@ -8,7 +8,7 @@ implementation/integration/server/…  echte SQLite-Datei, echte Ordner, echter 
 implementation/system/server/…       ganzer Viewer, bedient über MCP wie vom Harness (STORY-081)
 implementation/system/ops/…          Betrieb: `todo.sh`, Compose-Datei, Server als Prozess, Image (STORY-083)
 implementation/unit/client/…         spiegelt client/src/ (Vitest, Testing Library)
-fixtures/                            synthetische Testdaten (nie echte Backlogs)
+fixtures/                            synthetische Testdaten (nie echte Backlogs); `mirror-v2/` und `mirror-mindmap/` sind die Golden-Files der Spiegel-Codecs
 helpers/server/                      Beispiel-Plugin und Hilfen nur für Tests
 helpers/client/                      Fakes und Render-Hilfen für die Client-Tests
 ```

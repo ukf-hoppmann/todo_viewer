@@ -1,0 +1,6 @@
+{
+  "code": "duplicate_uid",
+  "file": "mindmap/NODE-007.md",
+  "line": 2,
+  "reason": "Dieselbe Uid wie NODE-002"
+}

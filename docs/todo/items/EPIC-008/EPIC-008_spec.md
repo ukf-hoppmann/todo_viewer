@@ -71,10 +71,24 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 ## Ins Backlog und Rolle der KI
 
 - Aus einem Ideen-Knoten wird ein Item oder ein Memo angelegt; der Knoten bleibt stehen und das Ergebnis hängt daran. Typ und Beziehung (Parent-Child oder Abhängigkeit) legt je Knoten ein Mensch oder die KI fest, es gibt keine Ableitung aus Ebene oder Tiefe. Ein Memo ändert den Zustand des Knotens nicht (`STORY-100_spec.md`).
+- Ganze Äste lassen sich mit Vorschau überführen. Es gibt keinen Automatismus: Typ (Epic, Story, Task) oder Memo und die
+  Beziehung (Parent-Child, Abhängigkeit oder keine) legt ein Mensch oder die KI für jeden Knoten einzeln fest, auch
+  für Knoten tiefer als drei Ebenen (ein Knoten in Tiefe 5 kann ein eigenes Epic sein). Die Vorschau zeigt nur, was die
+  Struktur des Backlogs nicht erlaubt; die Regeln des Backlogs liefert das Plugin backlog.
 - Die KI ordnet beim Anlegen eines Items zu, schlägt Knoten vor und legt sie nach Bestätigung an. Sie arbeitet
-  über API und MCP; der Viewer hat keine eigene LLM-Anbindung.
+  über API und MCP; der Viewer hat keine eigene LLM-Anbindung. Ein Vorschlag erscheint im Gespräch, nicht als
+  gespeicherter Zustand; ohne Zustimmung entsteht kein Knoten und das Item steht unter „Nicht zugeordnet“. Die Regel
+  steht in den MCP-Tool-Beschreibungen des Viewers und wird als Skill-Regel an Claude_Harness übergeben, durch einen
+  Prompt, den der Owner selbst weitergibt.
 - Markdown-Spiegel: mitgeplant, nicht Pflicht; nötig, damit Cloud-Sitzungen zuordnen können. Er muss auch freie
-  Maps enthalten, damit eine Cloud-Sitzung sie beim Brainstormen füllen kann.
+  Maps enthalten, damit eine Cloud-Sitzung sie beim Brainstormen füllen kann. Format: der Inhalt eines Knotens steht
+  einmal in einer Datei, jeder Baum ist eine eigene Datei mit Verweisen auf Knoten, mehrfache Platzierungen sind
+  Verweise; die Zuordnung von Items und Memos steht auf dem Knoten, nicht im Item. Das Format hat eine eigene
+  Versionszählung (Details in `NEW-mirror-format_spec.md`).
+- Area entfällt ganz (`STORY-106`): kein abgeleiteter Wert, die Schichten Web-UI und Backend-API sind keine
+  Einordnung mehr; das Thema eines Items steht im Abschnitt „Knoten“ der Mindmap. Das Backlog-Dateiformat wird
+  Version 3 ohne Area (Version 2 und 3 werden gelesen, Area wird ignoriert). Den ersten Themenbaum erzeugt eine KI aus
+  den vorhandenen Items; der Owner bekommt dafür einen fertigen Prompt.
 - Idee, nicht geplant: Export einer freien Map als verschachtelte Liste in ein Memo (einmalig, später bei Bedarf).
 
 ## Vorhandene Bausteine
@@ -87,7 +101,7 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 ## Rahmen der Umsetzung
 
 - Eigener neuer Branch, weil großer experimenteller Umbau; viele kleine Schritte.
-- Reihenfolge: Gerüst, dann Zuordnung, dann Ansichten und freie Maps, danach Überführen, KI und Spiegel.
+- Reihenfolge: Gerüst, dann Zuordnung, dann Ansichten und freie Maps, danach Area entfernen (`STORY-106`), Überführen (`STORY-103`), KI (`STORY-104`) und zuletzt der Spiegel (`STORY-105`).
 
 ## Offen
 

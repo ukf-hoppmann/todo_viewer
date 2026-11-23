@@ -2,18 +2,20 @@
 
 ## State
 
-- Goal/Status: Geplant; noch ohne Tasks; Art des Ersatzes und Weg der Umwandlung entschieden.
-- Next step: Reihenfolge mit dem Owner bestätigen (Bäume erzeugen, dann Feld entfernen), dann Spec schreiben und in Tasks teilen.
+- Goal/Status: Geplant; noch ohne Tasks; Art des Ersatzes, Weg der Umwandlung und Reihenfolge entschieden.
+- Next step: Spec schreiben und in Tasks teilen, danach Plan vorlegen.
 - Open:
-  - Reihenfolge: Das Feld bleibt lesbar, bis die Bäume erzeugt sind, und wird danach entfernt (Vorschlag, 2026-11-23)
+  - Nichts offen für die Planung (2026-11-23)
 - Decided:
   - Das Feld Area entfällt ganz, ohne abgeleiteten Ersatzwert und ohne Zwischenzustand als Endlösung (2026-11-23)
   - Die Schichten Web-UI und Backend-API sind keine eigene Einordnung mehr; der Owner braucht sie nicht, wenn der Baum gut ist (2026-11-23)
   - Der Themenbaum wird nicht von Hand aufgebaut und nicht mechanisch aus den Areas erzeugt, sondern von einer KI aus den vorhandenen Items; der Owner bekommt dafür nach der Umsetzung einen fertigen Prompt (2026-11-23)
+  - Das Feld wird direkt entfernt, nicht erst nach dem Erzeugen der Bäume; ein Import einer Markdown-Datei mit dem Feld darf nicht abstürzen, das Feld wird ignoriert (2026-11-23)
+  - Die KI baut den Baum aus Titel, Ziel und Text der Items; die alten Area-Werte sind kein Hinweis mehr (2026-11-23)
   - Kriterien 1 bis 3 und Ziel sind entsprechend angepasst (2026-11-23)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Zuordnung und wirksamer Knoten in `STORY-100_spec.md`
 
-State confirmed after entry 2026-11-23 — Art des Ersatzes und Aufbau der Bäume (05f1dc85ca4f)
+State confirmed after entry 2026-11-23 — Reihenfolge: Feld sofort entfernen (56693b71fdab)
 
 ## 2026-11-23 — Art des Ersatzes und Aufbau der Bäume
 
@@ -36,3 +38,20 @@ State confirmed after entry 2026-11-23 — Art des Ersatzes und Aufbau der Bäum
 ### Open
 
 - Reihenfolge: Das Feld bleibt lesbar, bis die Bäume erzeugt sind, und wird danach entfernt (Vorschlag).
+
+## 2026-11-23 — Reihenfolge: Feld sofort entfernen
+
+### Discussed
+
+- Vorschlag war: Das Feld bleibt lesbar, bis die Bäume erzeugt sind, und wird danach entfernt, damit die KI die alten Areas als Hinweis lesen kann.
+- Der Owner: Das Feld kann direkt raus, das ist am sinnigsten. Es darf nur nicht abstürzen, wenn eine Markdown-Datei mit dem Feld importiert wird.
+- Folge: Die alten Area-Werte gehen mit dem Entfernen verloren; die KI baut den Baum aus Titel, Ziel und Text der Items. Items selbst gehen nicht verloren.
+
+### Decided
+
+- Das Feld wird direkt entfernt. Ein Import mit dem Feld wird toleriert (Feld ignorieren, kein Fehler).
+- Verworfen: Das Feld erst nach dem Erzeugen der Bäume zu entfernen, weil es eine Zwischenstufe wäre.
+
+### Open
+
+- Offen für die Planung ist nichts mehr.

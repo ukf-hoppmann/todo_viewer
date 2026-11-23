@@ -219,10 +219,12 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     mit Pfad), und ein Filter nach einem Thema schließt seine Unterthemen ein.
     2. Der Owner hat einen fertigen Prompt, mit dem er in jedem Projekt eine
     KI den Themenbaum aus den vorhandenen Items erzeugen und die Items
-    zuordnen lässt; die alten Areas dienen ihr nur als Hinweis, kein Item geht
-    verloren.
-    3. Das Feld wird erst entfernt, nachdem die Bäume erzeugt sind; danach
-    kommen Anzeige, Filter, API, MCP und Markdown-Spiegel ohne Area aus.
+    zuordnen lässt; die KI arbeitet aus Titel, Ziel und Text der Items, kein
+    Item geht verloren.
+    3. Das Feld wird direkt entfernt; Anzeige, Filter, API, MCP und
+    Markdown-Spiegel kommen ohne Area aus. Eine Markdown-Datei, die das Feld
+    noch enthält, lässt sich weiter importieren: das Feld wird ignoriert und
+    führt nicht zu einem Fehler.
     4. Die Dokumentation und die Harness-Regeln sind angepasst.
     5. Domain-, API- und UI-Tests sind grün.
   - Summary: Das Etikett „Area“ an den Items verschwindet. Die Mindmap

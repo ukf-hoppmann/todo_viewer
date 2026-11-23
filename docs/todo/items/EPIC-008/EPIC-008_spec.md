@@ -56,7 +56,7 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 - **Am Item:** „Gehe hin“ (Map an seiner Stelle), „Erstelle“ (eigener Knoten), „Anker“ (als Wurzel öffnen, erst
   nach „Erstelle“).
 - Aufbau zunächst wie im Backlog: Sidebar, Baum zur Seite, Detailspalte; die Detailspalte ist schließbar. Auswahl der Maps und Schalter kommen mit den späteren Stories; der Aufbau darf dann angepasst werden.
-- Die Mindmap ersetzt das Feld Area; wie, regelt eine eigene Story.
+- Die Mindmap ersetzt das Feld Area: Area entfällt ganz, das Thema eines Items kommt aus seinem Knoten; den ersten Baum erzeugt eine KI mit einem Prompt (`STORY-106`).
 
 ## Äste zwischen Bäumen
 
@@ -92,4 +92,4 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 ## Offen
 
 - Runde Anordnung bei großen Maps (Prototyp).
-- Form der KI-Vorschläge; Markierung für Ideen-Knoten (Werte entschieden: fest); Dateiformat für Platzierungen.
+- Alles Übrige ist entschieden und in den Specs der Tasks zu `STORY-103` bis `STORY-106` festgehalten.

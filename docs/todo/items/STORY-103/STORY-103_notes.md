@@ -2,10 +2,10 @@
 
 ## State
 
-- Goal/Status: Geplant; noch ohne Tasks, weil Grundsatzfragen entschieden, Ziel und Kriterien angepasst.
-- Next step: In Tasks teilen und den Plan vorlegen; offen ist nur noch die Bedienung der Beziehungswahl in der Vorschau.
+- Goal/Status: Geplant und in Tasks geschnitten; die Specs der Tasks sind geschrieben.
+- Next step: Tasks in der Reihenfolge ihrer Abhängigkeiten umsetzen, jede in eigener Session mit Plan; zuerst `STORY-106` (Area entfällt), weil das Anlegen sonst noch Area verlangt.
 - Open:
-  - Wie die Vorschau je Knoten zwischen Parent-Child und Abhängigkeit wählen lässt (2026-11-23)
+  - Gestaltung der Beziehungswahl im Dialog (Kind von, hängt ab von, keine) ist als Vorschlag in `NEW-branch-transfer-ui_spec.md` festgehalten; der Owner bestätigt sie bei der Abnahme der Task (2026-11-23)
 - Decided:
   - Alles oder Teile einer Map lassen sich ins Backlog überführen (Ausgangsidee des Owners) (2026-11-13)
   - Beim Überführen bleibt der Knoten stehen und das neue Item wird daran gehängt; der Zustand des Knotens ändert sich dadurch von selbst (2026-11-13)
@@ -14,9 +14,10 @@
   - Ein Ideen-Knoten lässt sich auch zu einem Memo machen, nicht nur zu einem Item; Mensch oder KI entscheiden das je Knoten, das Memo ist ebenfalls ein Backlog-Element (2026-11-23)
   - Ziel und Abschlusskriterien 1 und 2 sind angepasst: Item oder Memo als Ziel, Typ und Beziehung je Knoten ohne Vorgabe (2026-11-23)
   - Ein Knoten mit nur einem Memo bleibt eine Idee, weil Memos nicht zählen (bestehende Regel in `STORY-100_spec.md`) (2026-11-23)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-086
+  - Zuschnitt in vier Tasks: Server Item/Memo aus Knoten, Server Ast mit Vorschau, Oberfläche Knoten, Oberfläche Ast (2026-11-23)
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-086; Tasks `NEW-node-create-server`, `NEW-branch-transfer-server`, `NEW-node-create-ui`, `NEW-branch-transfer-ui`
 
-State confirmed after entry 2026-11-23 — Ziel, Kriterien und Zustand bei Memos (6c22e6526570)
+State confirmed after entry 2026-11-23 — Zuschnitt in Tasks (4c97a552ecee)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -125,3 +126,20 @@ State confirmed after entry 2026-11-23 — Ziel, Kriterien und Zustand bei Memos
 ### Open
 
 - Wie die Vorschau je Knoten zwischen Parent-Child und Abhängigkeit wählen lässt (Bedienung, im Plan zu klären).
+
+## 2026-11-23 — Zuschnitt in Tasks
+
+### Discussed
+
+- Die Story ist nach Fähigkeit und Schicht in vier session-große Tasks geschnitten: Server für einzelne Knoten, Server für Äste mit Vorschau, Oberfläche für einzelne Knoten, Oberfläche für Äste.
+- Die Tasks hängen an `STORY-106`: Sobald Area entfällt, braucht das Anlegen aus einem Knoten kein Area mehr. Darum läuft `STORY-106` zuerst (Abhängigkeit an der ersten Server-Task).
+- Das Plugin `mindmap` braucht den Zugriff auf das Plugin `memos` (Memo anlegen) und auf eine nicht schreibende Prüfung des Plugins `backlog` für die Vorschau; beides ist in den Specs festgelegt.
+
+### Decided
+
+- Vier Tasks mit Specs und Notes angelegt (Platzhalter `NEW-…`, der Sync vergibt die Labels)
+- Die Backlog-Regeln werden in der Vorschau über eine Prüfung des Plugins backlog genutzt, nicht in der Mindmap nachgebaut
+
+### Open
+
+- Gestaltung der Beziehungswahl im Dialog bestätigt der Owner bei der Abnahme von `NEW-branch-transfer-ui`.

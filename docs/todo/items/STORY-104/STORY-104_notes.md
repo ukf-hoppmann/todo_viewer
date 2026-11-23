@@ -2,9 +2,10 @@
 
 ## State
 
-- Goal/Status: Geplant; noch ohne Tasks; Form der Vorschläge entschieden, Weg der KI-Regel entschieden; Spec und Aufteilung in Tasks fehlen.
-- Next step: Spec schreiben und in Tasks teilen, danach Plan vorlegen.
+- Goal/Status: Geplant und in Tasks geschnitten; die Specs der Tasks sind geschrieben.
+- Next step: Tasks umsetzen, nachdem `NEW-node-create-server` (STORY-103) fertig ist; am Ende bekommt der Owner den Prompt für Claude_Harness.
 - Open:
+  - Nichts offen für die Planung (2026-11-23)
 - Decided:
   - Die KI überlegt beim Anlegen eines Items, wohin es passt, und füttert die Map so nebenbei (2026-11-13)
   - Die KI darf Knoten und Unterknoten vorschlagen und legt sie nach Bestätigung an; ohne Bestätigung erfindet sie keine Themen (2026-11-13)
@@ -13,9 +14,10 @@
   - Die KI schlägt neue Knoten im Gespräch vor; nach der Bestätigung legt sie sie über API und MCP an. Ohne Bestätigung entsteht kein Knoten und das Item landet unter „Nicht zugeordnet“ (2026-11-23)
   - Die Regel für die KI steht in den MCP-Tool-Beschreibungen des Viewers (sofort wirksam) und wird zusätzlich als Skill-Regel an Claude_Harness übergeben; die Übergabe macht der Owner mit einem Prompt, den die KI am Ende der Story liefert (2026-11-23)
   - Kriterium 3 ist entsprechend angepasst (2026-11-23)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-092
+  - Zuschnitt in zwei Tasks: Regel in den MCP-Tool-Beschreibungen, dann Systemtest und Prompt für Claude_Harness (2026-11-23)
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-092; Tasks `NEW-ai-rule-tools`, `NEW-ai-system-test`
 
-State confirmed after entry 2026-11-23 — Weg der KI-Regel nach Claude_Harness (908edea04b12)
+State confirmed after entry 2026-11-23 — Zuschnitt in Tasks (eef24ae30403)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -72,3 +74,19 @@ State confirmed after entry 2026-11-23 — Weg der KI-Regel nach Claude_Harness 
 ### Open
 
 - Nichts offen für die Planung; Spec und Aufteilung in Tasks folgen.
+
+## 2026-11-23 — Zuschnitt in Tasks
+
+### Discussed
+
+- Es gibt schon alle Werkzeuge, die die KI braucht (`get_tree`, `assign_item`, `create_node`); neu ist nur `create_item_at_node` aus `STORY-103`. Die Story besteht deshalb aus der Regel in den Beschreibungen und aus dem Systemtest samt Prompt.
+- `backlog_create_item` gehört dem Plugin backlog, das die Mindmap nicht kennen darf (Architektur §1); seine Beschreibung bekommt nur einen Texthinweis.
+
+### Decided
+
+- Zwei Tasks mit Specs und Notes angelegt
+- Der Systemtest bildet das Gespräch durch getrennte Aufrufe nach, weil der Vorschlag keinen Zustand im Server hat
+
+### Open
+
+- Nichts offen für die Planung.

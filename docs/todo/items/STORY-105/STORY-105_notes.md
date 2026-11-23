@@ -2,18 +2,20 @@
 
 ## State
 
-- Goal/Status: Geplant; nicht Pflicht für das Epic; Grundform des Dateiformats entschieden.
-- Next step: Nach der ersten lauffähigen Fassung prüfen, ob das Format umsetzbar ist; Anforderungen aus `STORY-102` beachten.
+- Goal/Status: Geplant und in Tasks geschnitten; die Specs der Tasks sind geschrieben; nicht Pflicht für das Epic.
+- Next step: Tasks nach der ersten lauffähigen Fassung der Mindmap in der Reihenfolge ihrer Abhängigkeiten umsetzen; erste Task ist `NEW-mirror-format`.
 - Open:
+  - Nichts offen für die Planung (2026-11-23)
 - Decided:
   - Anforderungen aus `STORY-102`: mehrere Maps je Projekt mit Name und Art; mehrfache Platzierungen je Knoten bei einmaligem Inhalt; entfernte Platzierungen (`TASK-066`) und Papierkorb erkennbar; eine Cloud-Sitzung füllt freie Maps und hängt Äste um oder überträgt sie mit denselben Regeln wie die API (2026-11-19)
   - Der Spiegel wird mitgeplant; wenn er umsetzbar ist, wird er gebaut, sonst entfällt er, der Owner hätte ihn lieber (2026-11-13)
   - Gebaut wird er erst nach der ersten lauffähigen Fassung der Mindmap (2026-11-13)
   - Dateiformat: Jeder Knoten steht einmal mit Inhalt und Label in einer Datei; jeder Baum (Projektbaum oder freie Map) ist eine eigene Datei, die nur Labels in ihrer Ordnung auflistet; mehrfache Platzierungen sind Verweise, der Inhalt steht nie doppelt (2026-11-23)
   - Kriterium 3 ist angepasst: Die Regeln für den Datei-Modus sind beschrieben, und der Owner hat einen fertigen Prompt für Claude_Harness; die KI übergibt nicht selbst (2026-11-23)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
+  - Zuschnitt in vier Tasks: Format und Codec, Teilnehmer für Knoten und Bäume, Zuordnungen mit Dokumenten und Papierkorb, Abschluss mit Sync-Dialog, Cloud-Test, Doku und Prompt (2026-11-23)
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Tasks `NEW-mirror-format`, `NEW-mirror-participant-core`, `NEW-mirror-participant-links`, `NEW-mirror-finish`
 
-State confirmed after entry 2026-11-23 — Kriterium 3: Prompt statt Übergabe (5a808f2c0463)
+State confirmed after entry 2026-11-23 — Zuschnitt in Tasks (c16e5b424004)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -73,3 +75,19 @@ State confirmed after entry 2026-11-23 — Kriterium 3: Prompt statt Übergabe (
 ### Open
 
 - Nichts.
+
+## 2026-11-23 — Zuschnitt in Tasks
+
+### Discussed
+
+- Die Story folgt dem Muster des Memos-Spiegels (Syntax, Encode, Decode, Codec, Teilnehmer) und ist nach Schichten der Reihe nach schneidbar: erst Format und Codec ohne Datenbank, dann der Teilnehmer in zwei Stufen, dann der Abschluss.
+- Die Zuordnung steht auf dem Knoten, nicht im Item, weil die Dateien der Items dem Harness gehören.
+
+### Decided
+
+- Vier Tasks mit Specs und Notes angelegt; das Format ist in der Spec der ersten Task festgelegt (Dateien, Kopfzeilen, Verweise, Platzhalter)
+- Eigene Versionszählung (Version 1) für das Mindmap-Format, unabhängig vom Backlog-Format
+
+### Open
+
+- Nichts offen für die Planung.

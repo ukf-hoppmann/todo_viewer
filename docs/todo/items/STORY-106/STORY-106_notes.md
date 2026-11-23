@@ -2,8 +2,8 @@
 
 ## State
 
-- Goal/Status: Geplant; noch ohne Tasks; Art des Ersatzes, Weg der Umwandlung und Reihenfolge entschieden.
-- Next step: Spec schreiben und in Tasks teilen, danach Plan vorlegen.
+- Goal/Status: Geplant und in Tasks geschnitten; die Specs der Tasks sind geschrieben; läuft vor `STORY-103`.
+- Next step: Tasks in der Reihenfolge der Abhängigkeiten umsetzen, jede in eigener Session mit Plan; erste Tasks sind `NEW-area-mirror-v3` und `NEW-area-optional`.
 - Open:
   - Nichts offen für die Planung (2026-11-23)
 - Decided:
@@ -13,9 +13,12 @@
   - Das Feld wird direkt entfernt, nicht erst nach dem Erzeugen der Bäume; ein Import einer Markdown-Datei mit dem Feld darf nicht abstürzen, das Feld wird ignoriert (2026-11-23)
   - Die KI baut den Baum aus Titel, Ziel und Text der Items; die alten Area-Werte sind kein Hinweis mehr (2026-11-23)
   - Kriterien 1 bis 3 und Ziel sind entsprechend angepasst (2026-11-23)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Zuordnung und wirksamer Knoten in `STORY-100_spec.md`
+  - Format Version 3 des Backlog-Dateiformats ohne Area; Version 2 und 3 werden gelesen, Area wird ignoriert (Owner) (2026-11-23)
+  - Kriterium 4 lautet: Dokumentation angepasst und fertiger Prompt für Claude_Harness (Owner) (2026-11-23)
+  - Zuschnitt in fünf Tasks: Spiegel Version 3, Area optional, Oberfläche ohne Area, Area aus Server und Datenbank entfernen, Prompts (2026-11-23)
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Zuordnung und wirksamer Knoten in `STORY-100_spec.md`; Tasks `NEW-area-mirror-v3`, `NEW-area-optional`, `NEW-area-client`, `NEW-area-remove-server`, `NEW-area-prompts`
 
-State confirmed after entry 2026-11-23 — Reihenfolge: Feld sofort entfernen (56693b71fdab)
+State confirmed after entry 2026-11-23 — Zuschnitt in Tasks und Format Version 3 (4c724fac9162)
 
 ## 2026-11-23 — Art des Ersatzes und Aufbau der Bäume
 
@@ -55,3 +58,21 @@ State confirmed after entry 2026-11-23 — Reihenfolge: Feld sofort entfernen (5
 ### Open
 
 - Offen für die Planung ist nichts mehr.
+
+## 2026-11-23 — Zuschnitt in Tasks und Format Version 3
+
+### Discussed
+
+- Das Backlog-Dateiformat gehört Claude_Harness, dessen Prüfung verlangt heute Area in jedem Eintrag. Der Owner wählt: Format Version 3 ohne Area, Version 2 und 3 werden gelesen, Area wird in beiden ignoriert; eine alte Prüfung meldet dann „anderes Format“ statt vieler Einzelfehler.
+- Kriterium 4 wurde wie bei `STORY-104` und `STORY-105` auf „fertiger Prompt für Claude_Harness“ geändert; der Owner hat zugestimmt.
+- Beim Zuschnitt zeigte sich: Es gibt heute keinen Filter nach Area, und das Thema eines Items steht schon im Abschnitt „Knoten“ der Mindmap im Detail. Kriterium 1 wurde entsprechend berichtigt (kein Filter, keine Spalte, Anzeige im Abschnitt „Knoten“); der Owner prüft die Berichtigung.
+- Damit Server und Oberfläche getrennt gebaut werden können, ohne dass der Build bricht, wird Area in drei Schritten entfernt: Area optional, Oberfläche ohne Area, Feld ganz entfernen. Der mittlere Zustand lebt nur während der Umsetzung.
+- `STORY-106` läuft vor `STORY-103` und `STORY-104`: danach verlangt das Anlegen aus einem Knoten kein Area mehr.
+
+### Decided
+
+- Fünf Tasks mit Specs und Notes angelegt; Kriterium 4 und Kriterium 1 angepasst
+
+### Open
+
+- Der Owner prüft die Berichtigung von Kriterium 1 (kein Filter nach Thema).

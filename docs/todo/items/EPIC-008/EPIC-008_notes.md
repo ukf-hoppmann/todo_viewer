@@ -3,7 +3,7 @@
 ## State
 
 - Goal/Status: Stories 099 bis 102 sind abgeschlossen; die offenen Stories 103 bis 106 sind durchgeplant und in 15 Tasks mit Specs geschnitten.
-- Next step: Umsetzung der 15 Tasks in Wellen (siehe Eintrag 2026-11-23 „Umsetzungsplan“); je Task eine eigene Session auf eigenem `claude/…`-Branch, Tasks einer Welle laufen parallel; Welle 1: `NEW-area-optional`, `NEW-area-mirror-v3`, `NEW-mirror-format` (2026-11-23)
+- Next step: Umsetzung der 15 Tasks in Wellen (siehe Eintrag 2026-11-23 „Umsetzungsplan“); je Task eine eigene Session auf eigenem `claude/…`-Branch, Tasks einer Welle laufen parallel; Welle 1: `TASK-069`, `TASK-068`, `TASK-079` (2026-11-23)
 - Open:
   - Nichts offen für die Planung (2026-11-23)
 - Decided:
@@ -27,7 +27,7 @@
   - Die Berichtigung von Kriterium 1 in `STORY-106` (kein Filter nach Thema, Anzeige im Abschnitt „Knoten“) ist bestätigt (2026-11-23)
 - References: Spec `EPIC-008_spec.md`; Ideensammlung `TASK-064`; Stories `STORY-099`, `STORY-100`, `STORY-101`, `STORY-102`, `STORY-103`, `STORY-104`, `STORY-105`
 
-State confirmed after entry 2026-11-23 — Umsetzungsplan: Wellen für parallele Sessions (1d67d581130a)
+State confirmed after entry 2026-11-23 — Umsetzungsplan: Wellen für parallele Sessions (e5c3e1e9e41f)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -135,12 +135,12 @@ State confirmed after entry 2026-11-23 — Umsetzungsplan: Wellen für parallele
 
 ### Decided
 
-- Welle 1 (parallel): `NEW-area-optional`, `NEW-area-mirror-v3`, `NEW-mirror-format`.
-- Welle 2: `NEW-area-client` (nach `NEW-area-optional`), `NEW-mirror-participant-core` (nach `NEW-mirror-format`).
-- Welle 3: `NEW-area-remove-server` (nach `NEW-area-mirror-v3` und `NEW-area-client`), `NEW-mirror-participant-links` (nach `NEW-mirror-participant-core`).
-- Welle 4: `NEW-area-prompts` und `NEW-node-create-server` (beide nach `NEW-area-remove-server`), `NEW-mirror-finish` (nach `NEW-mirror-participant-links`).
-- Welle 5: `NEW-node-create-ui`, `NEW-branch-transfer-server`, `NEW-ai-rule-tools` (alle nach `NEW-node-create-server`).
-- Welle 6: `NEW-branch-transfer-ui` (nach `NEW-branch-transfer-server` und `NEW-node-create-ui`), `NEW-ai-system-test` (nach `NEW-ai-rule-tools`).
+- Welle 1 (parallel): `TASK-069`, `TASK-068`, `TASK-079`.
+- Welle 2: `TASK-070` (nach `TASK-069`), `TASK-080` (nach `TASK-079`).
+- Welle 3: `TASK-071` (nach `TASK-068` und `TASK-070`), `TASK-081` (nach `TASK-080`).
+- Welle 4: `TASK-072` und `TASK-073` (beide nach `TASK-071`), `TASK-082` (nach `TASK-081`).
+- Welle 5: `TASK-075`, `TASK-074`, `TASK-077` (alle nach `TASK-073`).
+- Welle 6: `TASK-076` (nach `TASK-074` und `TASK-075`), `TASK-078` (nach `TASK-077`).
 - Jede Session: Task auf `In progress`, Plan nach `harness-decomposition`, Umsetzung auf eigenem `claude/…`-Branch, danach `Awaiting confirmation`; gemergt wird nach `main`, die nächste Welle startet erst nach dem Merge der Vorgänger.
 
 ### Open

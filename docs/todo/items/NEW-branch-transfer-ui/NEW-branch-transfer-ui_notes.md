@@ -8,9 +8,10 @@
   - Nichts offen für die Umsetzung (2026-11-23)
 - Decided:
   - Die Beziehung wird je Knoten gewählt (Kind von, hängt ab von, keine); es gibt keine Vorbelegung nach Ebene (Owner: kein Automatismus; die Gestaltung der Wahl ist Zuschnitt) (2026-11-23)
+  - Die Beziehungswahl im Dialog (Kind von, hängt ab von, keine; keine Vorbelegung) ist vom Owner bestätigt (2026-11-23)
 - References: Spec `NEW-branch-transfer-ui_spec.md`; Story `STORY-103` (Notes mit den Entscheidungen des Owners); Abhängigkeiten: NEW-branch-transfer-server, NEW-node-create-ui
 
-State confirmed after entry 2026-11-23 — Zuschnitt aus der Planung von STORY-103 (aab1f319dd82)
+State confirmed after entry 2026-11-23 — Beziehungswahl bestätigt (179611fd5e35)
 
 ## 2026-11-23 — Zuschnitt aus der Planung von STORY-103
 
@@ -24,6 +25,20 @@ State confirmed after entry 2026-11-23 — Zuschnitt aus der Planung von STORY-1
 ### Decided
 
 - Die Beziehung wird je Knoten gewählt (Kind von, hängt ab von, keine); es gibt keine Vorbelegung nach Ebene (Owner: kein Automatismus; die Gestaltung der Wahl ist Zuschnitt)
+
+### Open
+
+- Nichts.
+
+## 2026-11-23 — Beziehungswahl bestätigt
+
+### Discussed
+
+- Der Owner hat die Gestaltung der Beziehungswahl in der Spec geprüft.
+
+### Decided
+
+- Sie bleibt wie in der Spec: „Kind von“, „hängt ab von“ (mehrere) oder keine, ohne Vorbelegung.
 
 ### Open
 

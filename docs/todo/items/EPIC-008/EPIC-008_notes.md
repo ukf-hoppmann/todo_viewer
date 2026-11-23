@@ -5,7 +5,7 @@
 - Goal/Status: Stories 099 bis 102 sind abgeschlossen; die offenen Stories 103 bis 106 sind durchgeplant und in 15 Tasks mit Specs geschnitten.
 - Next step: Umsetzung in der Reihenfolge `STORY-106`, `STORY-103`, `STORY-104`, zuletzt `STORY-105`; jede Task in eigener Session mit Plan.
 - Open:
-  - Nichts offen für die Planung; der Owner bestätigt zwei Zuschnittspunkte bei der Abnahme (Beziehungswahl im Ast-Dialog, Berichtigung von Kriterium 1 in `STORY-106`) (2026-11-23)
+  - Der Owner prüft die Berichtigung von Kriterium 1 in `STORY-106` (kein Filter nach Thema) (2026-11-23)
 - Decided:
   - Die Mindmap ist ein eigenes Datenmodell und nur ein Gerippe; sie verlinkt Items und Memos, ähnlich dem Feld Area, und kopiert nichts (2026-11-13)
   - Es gibt nur ein Modell: Ob ein Knoten bloße Idee oder schon im Backlog ist, ergibt sich aus dem, was daran hängt (2026-11-13)

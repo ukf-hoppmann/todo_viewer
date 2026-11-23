@@ -5,7 +5,7 @@
 - Goal/Status: Geplant und in Tasks geschnitten; die Specs der Tasks sind geschrieben.
 - Next step: Tasks in der Reihenfolge ihrer Abhängigkeiten umsetzen, jede in eigener Session mit Plan; zuerst `STORY-106` (Area entfällt), weil das Anlegen sonst noch Area verlangt.
 - Open:
-  - Gestaltung der Beziehungswahl im Dialog (Kind von, hängt ab von, keine) ist als Vorschlag in `NEW-branch-transfer-ui_spec.md` festgehalten; der Owner bestätigt sie bei der Abnahme der Task (2026-11-23)
+  - Nichts offen für die Planung (2026-11-23)
 - Decided:
   - Alles oder Teile einer Map lassen sich ins Backlog überführen (Ausgangsidee des Owners) (2026-11-13)
   - Beim Überführen bleibt der Knoten stehen und das neue Item wird daran gehängt; der Zustand des Knotens ändert sich dadurch von selbst (2026-11-13)
@@ -15,9 +15,10 @@
   - Ziel und Abschlusskriterien 1 und 2 sind angepasst: Item oder Memo als Ziel, Typ und Beziehung je Knoten ohne Vorgabe (2026-11-23)
   - Ein Knoten mit nur einem Memo bleibt eine Idee, weil Memos nicht zählen (bestehende Regel in `STORY-100_spec.md`) (2026-11-23)
   - Zuschnitt in vier Tasks: Server Item/Memo aus Knoten, Server Ast mit Vorschau, Oberfläche Knoten, Oberfläche Ast (2026-11-23)
+  - Beziehungswahl im Ast-Dialog bestätigt: je Knoten „Kind von“, „hängt ab von“ (mehrere) oder keine, ohne Vorbelegung (2026-11-23)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-086; Tasks `NEW-node-create-server`, `NEW-branch-transfer-server`, `NEW-node-create-ui`, `NEW-branch-transfer-ui`
 
-State confirmed after entry 2026-11-23 — Zuschnitt in Tasks (4c97a552ecee)
+State confirmed after entry 2026-11-23 — Beziehungswahl im Ast-Dialog bestätigt (41b884d06e58)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -143,3 +144,17 @@ State confirmed after entry 2026-11-23 — Zuschnitt in Tasks (4c97a552ecee)
 ### Open
 
 - Gestaltung der Beziehungswahl im Dialog bestätigt der Owner bei der Abnahme von `NEW-branch-transfer-ui`.
+
+## 2026-11-23 — Beziehungswahl im Ast-Dialog bestätigt
+
+### Discussed
+
+- Der Owner hat die Gestaltung aus der Spec von `NEW-branch-transfer-ui` geprüft.
+
+### Decided
+
+- Die Beziehungswahl passt so: je Knoten „Kind von“ (ein Knoten des Plans oder ein vorhandenes Item), „hängt ab von“ (mehrere) oder keine, ohne Vorbelegung nach Ebene oder Tiefe.
+
+### Open
+
+- Nichts.

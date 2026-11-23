@@ -13,7 +13,7 @@ Rahmen: Architektur `docs/development/architecture.md` und `docs/development/arc
 - Der Dialog zeigt den Ast als Baum (vorhandene Hilfen: `domain/branches.ts`, `domain/tree.ts`, der gemeinsame
   `TreeView` in `client/src/shared/tree/`). Je Knoten: Wahl „nichts / Item / Memo“, bei Item der Typ, Titel, Ziel,
   Abschlusskriterien; Beziehung: „Kind von“ (Auswahl unter den Knoten des Plans und den Items des Projekts),
-  „hängt ab von“ (Mehrfachauswahl). Keine Voreinstellung nach Ebene oder Tiefe.
+  „hängt ab von“ (Mehrfachauswahl). Keine Voreinstellung nach Ebene oder Tiefe (vom Owner bestätigt).
 - Die Vorschau ruft bei jeder Änderung (entprellt) `preview_branch_transfer` auf; Probleme zeigt der Dialog am
   Knoten, mit der Meldung des Servers (Codes über Übersetzungen).
 - „Überführen“ ruft `transfer_branch`; das Ergebnis zeigt der Dialog je Knoten (Label des neuen Items oder Fehler)

@@ -3,7 +3,7 @@
 ## State
 
 - Goal/Status: Geplant und in Tasks geschnitten; die Specs der Tasks sind geschrieben; nicht Pflicht für das Epic.
-- Next step: Tasks nach der ersten lauffähigen Fassung der Mindmap in der Reihenfolge ihrer Abhängigkeiten umsetzen; erste Task ist `NEW-mirror-format`.
+- Next step: Tasks nach der ersten lauffähigen Fassung der Mindmap in der Reihenfolge ihrer Abhängigkeiten umsetzen; erste Task ist `TASK-079`.
 - Open:
   - Nichts offen für die Planung (2026-11-23)
 - Decided:
@@ -13,7 +13,7 @@
   - Dateiformat: Jeder Knoten steht einmal mit Inhalt und Label in einer Datei; jeder Baum (Projektbaum oder freie Map) ist eine eigene Datei, die nur Labels in ihrer Ordnung auflistet; mehrfache Platzierungen sind Verweise, der Inhalt steht nie doppelt (2026-11-23)
   - Kriterium 3 ist angepasst: Die Regeln für den Datei-Modus sind beschrieben, und der Owner hat einen fertigen Prompt für Claude_Harness; die KI übergibt nicht selbst (2026-11-23)
   - Zuschnitt in vier Tasks: Format und Codec, Teilnehmer für Knoten und Bäume, Zuordnungen mit Dokumenten und Papierkorb, Abschluss mit Sync-Dialog, Cloud-Test, Doku und Prompt (2026-11-23)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Tasks `NEW-mirror-format`, `NEW-mirror-participant-core`, `NEW-mirror-participant-links`, `NEW-mirror-finish`
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Tasks `TASK-079`, `TASK-080`, `TASK-081`, `TASK-082`
 
 State confirmed after entry 2026-11-23 — Zuschnitt in Tasks (c16e5b424004)
 

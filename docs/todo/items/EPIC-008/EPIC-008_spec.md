@@ -84,7 +84,7 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
   Maps enthalten, damit eine Cloud-Sitzung sie beim Brainstormen füllen kann. Format: der Inhalt eines Knotens steht
   einmal in einer Datei, jeder Baum ist eine eigene Datei mit Verweisen auf Knoten, mehrfache Platzierungen sind
   Verweise; die Zuordnung von Items und Memos steht auf dem Knoten, nicht im Item. Das Format hat eine eigene
-  Versionszählung (Details in `NEW-mirror-format_spec.md`).
+  Versionszählung (Details in `TASK-079_spec.md`).
 - Area entfällt ganz (`STORY-106`): kein abgeleiteter Wert, die Schichten Web-UI und Backend-API sind keine
   Einordnung mehr; das Thema eines Items steht im Abschnitt „Knoten“ der Mindmap. Das Backlog-Dateiformat wird
   Version 3 ohne Area (Version 2 und 3 werden gelesen, Area wird ignoriert). Den ersten Themenbaum erzeugt eine KI aus

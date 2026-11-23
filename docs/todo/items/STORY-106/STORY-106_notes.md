@@ -3,7 +3,7 @@
 ## State
 
 - Goal/Status: Geplant und in Tasks geschnitten; die Specs der Tasks sind geschrieben; läuft vor `STORY-103`.
-- Next step: Tasks in der Reihenfolge der Abhängigkeiten umsetzen, jede in eigener Session mit Plan; erste Tasks sind `NEW-area-mirror-v3` und `NEW-area-optional`.
+- Next step: Tasks in der Reihenfolge der Abhängigkeiten umsetzen, jede in eigener Session mit Plan; erste Tasks sind `TASK-068` und `TASK-069`.
 - Open:
   - Nichts offen für die Planung (2026-11-23)
 - Decided:
@@ -17,7 +17,7 @@
   - Kriterium 4 lautet: Dokumentation angepasst und fertiger Prompt für Claude_Harness (Owner) (2026-11-23)
   - Zuschnitt in fünf Tasks: Spiegel Version 3, Area optional, Oberfläche ohne Area, Area aus Server und Datenbank entfernen, Prompts (2026-11-23)
   - Berichtigung von Kriterium 1 (kein Filter nach Thema, Anzeige im Abschnitt „Knoten“) vom Owner bestätigt (2026-11-23)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Zuordnung und wirksamer Knoten in `STORY-100_spec.md`; Tasks `NEW-area-mirror-v3`, `NEW-area-optional`, `NEW-area-client`, `NEW-area-remove-server`, `NEW-area-prompts`
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Zuordnung und wirksamer Knoten in `STORY-100_spec.md`; Tasks `TASK-068`, `TASK-069`, `TASK-070`, `TASK-071`, `TASK-072`
 
 State confirmed after entry 2026-11-23 — Berichtigung von Kriterium 1 bestätigt (cc6066fae3ea)
 

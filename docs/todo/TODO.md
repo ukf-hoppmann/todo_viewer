@@ -235,11 +235,13 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     übernimmt die Einordnung nach Themen. Den ersten Themenbaum baut eine KI
     aus den vorhandenen Items, du bekommst dafür einen fertigen Prompt.
 
-- `NEW-area-mirror-v3` **Backlog-Spiegel: Format Version 3 ohne Area**
+- `TASK-068` **Backlog-Spiegel: Format Version 3 ohne Area**
+  - Uid: 5490cf98-8cec-4c5a-94a5-c0c5f95c120f.
   - Type: Task.
   - Parent: `STORY-106`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: None.
@@ -265,11 +267,13 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Die Backlog-Dateien kommen ohne das Feld Area aus und heißen
     Format Version 3. Alte Dateien mit Area lassen sich weiter einlesen.
 
-- `NEW-area-optional` **Area ist beim Anlegen nicht mehr Pflicht**
+- `TASK-069` **Area ist beim Anlegen nicht mehr Pflicht**
+  - Uid: 945d33d7-a499-4bbf-a044-2bab0b29ba18.
   - Type: Task.
   - Parent: `STORY-106`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: None.
@@ -289,14 +293,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Das Feld bleibt vorerst, damit die Oberfläche in einem eigenen Schritt
     umgebaut werden kann.
 
-- `NEW-area-client` **Oberfläche ohne Area**
+- `TASK-070` **Oberfläche ohne Area**
+  - Uid: 84329ee9-90ad-4214-bb27-46cadae823b8.
   - Type: Task.
   - Parent: `STORY-106`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-area-optional`.
+  - Dependencies: `TASK-069`.
   - Goal: Die Oberfläche zeigt, verlangt und ändert Area nirgends mehr: nicht
     im Item-Formular, nicht im Detail eines Items, nicht beim Befördern eines
     Memos.
@@ -315,14 +321,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: In der Oberfläche gibt es keinen Bereich mehr. Das Thema eines
     Items steht im Abschnitt „Knoten“ der Mindmap im Detail.
 
-- `NEW-area-remove-server` **Area aus Server und Datenbank entfernen**
+- `TASK-071` **Area aus Server und Datenbank entfernen**
+  - Uid: 8a9a4732-2bd1-4fe4-baa2-db84d44c3bbd.
   - Type: Task.
   - Parent: `STORY-106`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-area-mirror-v3`, `NEW-area-client`.
+  - Dependencies: `TASK-068`, `TASK-070`.
   - Goal: Das Feld Area gibt es in Domain, Anwendungsfällen, HTTP, MCP und
     Datenbank nicht mehr. Bestehende Daten bleiben bis auf die Area-Werte
     erhalten; ein Import alter Daten oder Dateien mit dem Feld läuft ohne
@@ -348,14 +356,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Das Feld Area verschwindet endgültig aus Server, Datenbank und
     Schnittstellen. Alles andere an den Items bleibt erhalten.
 
-- `NEW-area-prompts` **Prompts: Themenbaum aus den Items erzeugen und Claude_Harness anpassen**
+- `TASK-072` **Prompts: Themenbaum aus den Items erzeugen und Claude_Harness anpassen**
+  - Uid: c79d3455-4859-4f8f-9b35-8a2804c99101.
   - Type: Task.
   - Parent: `STORY-106`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-area-remove-server`.
+  - Dependencies: `TASK-071`.
   - Goal: Der Owner bekommt zwei fertige Prompts: einen, mit dem eine KI in
     jedem Projekt den Themenbaum aus den vorhandenen Items erzeugt und die
     Items zuordnet, und einen, mit dem Claude_Harness auf Format Version 3
@@ -375,14 +385,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Themenbaum aus den Items erzeugt, und einen, mit dem du Claude_Harness auf
     das Format ohne Area bringst.
 
-- `NEW-node-create-server` **Server: aus einem Knoten ein Item oder ein Memo anlegen**
+- `TASK-073` **Server: aus einem Knoten ein Item oder ein Memo anlegen**
+  - Uid: 27f711f2-355e-4d1f-81a2-18569ebbdca6.
   - Type: Task.
   - Parent: `STORY-103`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-area-remove-server`.
+  - Dependencies: `TASK-071`.
   - Goal: Über HTTP und MCP lässt sich aus einem Knoten ein Backlog-Item oder
     ein Memo anlegen; das Ergebnis hängt danach am Knoten. Typ des Items und
     seine Felder bestimmt der Aufrufer (Mensch oder KI).
@@ -407,14 +419,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     anlegen, das gleich am Knoten hängt. Das ist die Grundlage für die
     Oberfläche und für die KI.
 
-- `NEW-branch-transfer-server` **Server: einen Ast mit Vorschau ins Backlog überführen**
+- `TASK-074` **Server: einen Ast mit Vorschau ins Backlog überführen**
+  - Uid: d84f4d62-8979-4ce4-a2d9-b6b5fa3750b7.
   - Type: Task.
   - Parent: `STORY-103`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-node-create-server`.
+  - Dependencies: `TASK-073`.
   - Goal: Ein ganzer Ast lässt sich mit einer Vorschau ins Backlog überführen.
     Für jeden Knoten legt der Aufrufer Item (mit Typ) oder Memo fest und wie
     das Ergebnis zu den anderen Knoten steht (Parent-Child oder Abhängigkeit).
@@ -440,14 +454,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     überführt. Du oder die KI legen je Knoten fest, was daraus wird; die
     Vorschau meldet, was nicht geht.
 
-- `NEW-node-create-ui` **Oberfläche: im Detail eines Knotens ein Item oder Memo anlegen**
+- `TASK-075` **Oberfläche: im Detail eines Knotens ein Item oder Memo anlegen**
+  - Uid: 69e694e4-d8bc-4cd2-ba89-29d4efadc56a.
   - Type: Task.
   - Parent: `STORY-103`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-node-create-server`.
+  - Dependencies: `TASK-073`.
   - Goal: Im Detail eines Knotens legt eine Aktion ein Item oder ein Memo an,
     mit Titel und Text des Knotens als Vorschlag. Das Ergebnis hängt am
     Knoten.
@@ -466,14 +482,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     anlegen“. Titel und Text des Knotens sind der Vorschlag, das Ergebnis
     hängt gleich am Knoten.
 
-- `NEW-branch-transfer-ui` **Oberfläche: einen Ast mit Vorschau ins Backlog überführen**
+- `TASK-076` **Oberfläche: einen Ast mit Vorschau ins Backlog überführen**
+  - Uid: f415cc3d-9c46-4f3a-8f0c-cfdd5f472ec1.
   - Type: Task.
   - Parent: `STORY-103`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-branch-transfer-server`, `NEW-node-create-ui`.
+  - Dependencies: `TASK-074`, `TASK-075`.
   - Goal: Ein Ast lässt sich in einem Dialog überführen: je Knoten wählt der
     Mensch Item (Typ), Memo oder nichts und die Beziehung zu den anderen
     Knoten; die Vorschau zeigt Probleme, bevor etwas angelegt wird.
@@ -493,14 +511,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Knoten, was daraus wird und wie die Teile zusammenhängen, und siehst
     vorher, was nicht geht.
 
-- `NEW-ai-rule-tools` **MCP-Tools nennen die Regel zum Zuordnen und Vorschlagen**
+- `TASK-077` **MCP-Tools nennen die Regel zum Zuordnen und Vorschlagen**
+  - Uid: 33e20e2a-7ffb-444a-aea8-b79f27aa9361.
   - Type: Task.
   - Parent: `STORY-104`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-node-create-server`.
+  - Dependencies: `TASK-073`.
   - Goal: Die Beschreibungen der MCP-Tools des Viewers sagen einer KI, wie sie
     ein neues Item einem Knoten zuordnet: Baum lesen, passenden Knoten wählen,
     das Item an ihm anlegen; passt keiner, im Gespräch einen Knoten
@@ -523,14 +543,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     neue Items einem Knoten zuordnen und Knoten nur nach deiner Zustimmung
     anlegen soll.
 
-- `NEW-ai-system-test` **Systemtest Zuordnen und Vorschlagen; Prompt für Claude_Harness**
+- `TASK-078` **Systemtest Zuordnen und Vorschlagen; Prompt für Claude_Harness**
+  - Uid: ee66e6e2-4d92-4d00-9415-52cd63d7d378.
   - Type: Task.
   - Parent: `STORY-104`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-ai-rule-tools`.
+  - Dependencies: `TASK-077`.
   - Goal: Der Systemtest über MCP deckt das Zuordnen und das Vorschlagen ab.
     Der Owner bekommt den fertigen Prompt, mit dem er die Regel in
     Claude_Harness übergibt.
@@ -548,11 +570,13 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Ein Test beweist den Ablauf Zuordnen und Vorschlagen über die
     Werkzeuge der KI. Du bekommst den Prompt für Claude_Harness.
 
-- `NEW-mirror-format` **Mindmap-Spiegel: Dateiformat und Codec mit Golden-Files**
+- `TASK-079` **Mindmap-Spiegel: Dateiformat und Codec mit Golden-Files**
+  - Uid: 9e6775f1-faa6-4e27-88c8-042f708bccae.
   - Type: Task.
   - Parent: `STORY-105`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: None.
@@ -582,14 +606,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     schreiben, mit Beispieldateien als Absicherung. Die Datenbank ist noch
     nicht beteiligt.
 
-- `NEW-mirror-participant-core` **Mindmap-Spiegel: Teilnehmer für Knoten und Bäume**
+- `TASK-080` **Mindmap-Spiegel: Teilnehmer für Knoten und Bäume**
+  - Uid: cea5e2b3-594c-4fca-80d1-33de8f27473c.
   - Type: Task.
   - Parent: `STORY-105`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-mirror-format`.
+  - Dependencies: `TASK-079`.
   - Goal: Knoten, Bäume und Platzierungen laufen über den Sync zwischen
     Datenbank und Dateien: laden, vergleichen, übernehmen, mit neuen Einträgen
     aus der Cloud (Platzhalter) und freien Maps. Der Teilnehmer ist beim Sync
@@ -614,14 +640,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Dateien ab, auch neue aus der Cloud. Zuordnungen und Dokumente folgen im
     nächsten Schritt.
 
-- `NEW-mirror-participant-links` **Mindmap-Spiegel: Zuordnungen, Dokumente, entfernte Platzierungen und Papierkorb**
+- `TASK-081` **Mindmap-Spiegel: Zuordnungen, Dokumente, entfernte Platzierungen und Papierkorb**
+  - Uid: 7cff08f1-f39d-4fe9-857d-bb9fadc0d970.
   - Type: Task.
   - Parent: `STORY-105`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.
-  - Dependencies: `NEW-mirror-participant-core`.
+  - Dependencies: `TASK-080`.
   - Goal: Der Mindmap-Spiegel trägt auch die Zuordnung von Items und Memos zu
     Knoten, die Dokumente der Knoten, die entfernten Platzierungen und den
     Papierkorb-Zustand von Knoten und freien Maps.
@@ -644,14 +672,16 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     an welchem Knoten hängen, die Notizen der Knoten, entfernte Platzierungen
     und den Papierkorb.
 
-- `NEW-mirror-finish` **Mindmap-Spiegel: Sync-Dialog, Cloud-Ablauf, Doku und Prompt für Claude_Harness**
+- `TASK-082` **Mindmap-Spiegel: Sync-Dialog, Cloud-Ablauf, Doku und Prompt für Claude_Harness**
+  - Uid: f0241f7d-367f-44f1-8aec-51536800f5cd.
   - Type: Task.
   - Parent: `STORY-105`.
   - Required for parent: Yes.
   - Status: Open.
+  - Created: 2026-11-23.
   - Area: Web-UI.
   - Priority: Normal.
-  - Dependencies: `NEW-mirror-participant-links`.
+  - Dependencies: `TASK-081`.
   - Goal: Der Sync-Dialog benennt die Einträge der Mindmap verständlich, ein
     Systemtest zeigt eine Cloud-Sitzung, die nur mit Dateien arbeitet, die
     Doku ist aktuell und der Owner hat den fertigen Prompt für Claude_Harness.

@@ -16,7 +16,7 @@
   - Ein Knoten mit nur einem Memo bleibt eine Idee, weil Memos nicht zählen (bestehende Regel in `STORY-100_spec.md`) (2026-11-23)
   - Zuschnitt in vier Tasks: Server Item/Memo aus Knoten, Server Ast mit Vorschau, Oberfläche Knoten, Oberfläche Ast (2026-11-23)
   - Beziehungswahl im Ast-Dialog bestätigt: je Knoten „Kind von“, „hängt ab von“ (mehrere) oder keine, ohne Vorbelegung (2026-11-23)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-086; Tasks `NEW-node-create-server`, `NEW-branch-transfer-server`, `NEW-node-create-ui`, `NEW-branch-transfer-ui`
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-086; Tasks `TASK-073`, `TASK-074`, `TASK-075`, `TASK-076`
 
 State confirmed after entry 2026-11-23 — Beziehungswahl im Ast-Dialog bestätigt (41b884d06e58)
 
@@ -143,13 +143,13 @@ State confirmed after entry 2026-11-23 — Beziehungswahl im Ast-Dialog bestäti
 
 ### Open
 
-- Gestaltung der Beziehungswahl im Dialog bestätigt der Owner bei der Abnahme von `NEW-branch-transfer-ui`.
+- Gestaltung der Beziehungswahl im Dialog bestätigt der Owner bei der Abnahme von `TASK-076`.
 
 ## 2026-11-23 — Beziehungswahl im Ast-Dialog bestätigt
 
 ### Discussed
 
-- Der Owner hat die Gestaltung aus der Spec von `NEW-branch-transfer-ui` geprüft.
+- Der Owner hat die Gestaltung aus der Spec von `TASK-076` geprüft.
 
 ### Decided
 

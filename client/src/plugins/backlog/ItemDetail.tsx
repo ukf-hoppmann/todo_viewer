@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useSlot } from "../../core";
 import { DetailField, DetailPanel, DetailSection, InlineField, MarkdownView, type DetailAction } from "../../shared";
 import { DetailSections, LinksSection, useDeleteElement } from "../workspace";
-import { useGetItemQuery, useListAreasQuery, useListItemsQuery, type ItemOut, type ItemSummary } from "./api";
+import { useGetItemQuery, useListItemsQuery, type ItemOut, type ItemSummary } from "./api";
 import { PRIORITIES, STATUSES, defaultResolution, statusColor } from "./constants";
 import { DocumentsSection } from "./DocumentsSection";
 import { ItemDetailState } from "./itemDetailContext";
@@ -26,7 +26,7 @@ interface Props {
 
 /**
  * The detail panel of an item: all fields, its parent, children (also those in the trash) and dependencies.
- * Status, priority, area, "required for parent" and dependencies change at once; the form edits everything
+ * Status, priority, "required for parent" and dependencies change at once; the form edits everything
  * else; the buttons create a child, change the type and move the item to the trash.
  */
 export function ItemDetail({ uid, onSelect, onClose }: Props) {
@@ -42,11 +42,10 @@ function Loaded({ item, onSelect, onClose }: { item: ItemOut; onSelect: (uid: st
 	const { t } = useTranslation("backlog");
 	const write = useItemWrite();
 	const trash = useDeleteElement();
-	const { data: areas } = useListAreasQuery(item.project_uid);
 	const { data: siblings = [] } = useListItemsQuery([item.project_uid]);
 	const [dialog, setDialog] = useState<"edit" | "child" | "retype" | undefined>();
 	const [notice, setNotice] = useState<RetypeResult>();
-	const [prompt, setPrompt] = useState<"resolution" | "area">();
+	const [prompt, setPrompt] = useState<"resolution">();
 	const [pendingStatus, setPendingStatus] = useState<string>();
 	const widgets = useSlot("backlog.item-detail");
 
@@ -69,8 +68,6 @@ function Loaded({ item, onSelect, onClose }: { item: ItemOut; onSelect: (uid: st
 				{ id: "delete", label: t("action.delete"), icon: DeleteIcon, onClick: () => void trash.requestDelete(item.uid, item.version) },
 			];
 	const options = (values: readonly string[], prefix: string) => values.map((value) => ({ value, label: t(`${prefix}.${value}`) }));
-	const areaNames = [...new Set([...(areas?.areas ?? []), ...(item.area ? [item.area] : [])])];
-	const NEW_AREA = "\u0000new";
 
 	return (
 		<Box data-testid={backlogTestIds.detail}>
@@ -98,14 +95,6 @@ function Loaded({ item, onSelect, onClose }: { item: ItemOut; onSelect: (uid: st
 							}}
 						/>
 						<InlineField id="priority" kind="select" label={t("field.priority")} value={item.priority} options={options(PRIORITIES, "priority")} onSave={(priority) => save({ priority })} />
-						<InlineField
-							id="area"
-							kind="select"
-							label={t("field.area")}
-							value={item.area ?? ""}
-							options={[...areaNames.map((name) => ({ value: name, label: name })), { value: NEW_AREA, label: t("action.newArea") }]}
-							onSave={(area) => (area === NEW_AREA ? setPrompt("area") : save({ area }))}
-						/>
 						{item.parent && (
 							<InlineField
 								id="required"
@@ -204,19 +193,6 @@ function Loaded({ item, onSelect, onClose }: { item: ItemOut; onSelect: (uid: st
 					onCancel={() => setPrompt(undefined)}
 					onSubmit={async (resolution) => {
 						await save({ status: pendingStatus }, resolution);
-						setPrompt(undefined);
-					}}
-				/>
-			)}
-			{prompt === "area" && (
-				<TextPromptDialog
-					title={t("area.newTitle")}
-					label={t("field.area")}
-					confirmLabel={t("form.save")}
-					cancelLabel={t("form.cancel")}
-					onCancel={() => setPrompt(undefined)}
-					onSubmit={async (area) => {
-						await save({ area });
 						setPrompt(undefined);
 					}}
 				/>

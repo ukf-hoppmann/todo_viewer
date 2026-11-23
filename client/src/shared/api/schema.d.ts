@@ -135,7 +135,7 @@ export interface paths {
         /** Items der Projekte als flache Liste mit Fortschritt; Filter nach Status, Priorität und Text (Projekte, Status und Prioritäten komma-getrennt) */
         get: operations["backlog_list_items"];
         put?: never;
-        /** Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, area, goal, completion_criteria */
+        /** Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria; area ist optional */
         post: operations["backlog_create_item"];
         delete?: never;
         options?: never;
@@ -704,7 +704,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Befördert ein Memo zu einem Item (Epic, Story oder Task) im selben Projekt: Langtext, Notizen und Specs werden übernommen, das Memo ist danach befördert (Archiv) und mit dem Item verknüpft (origin). Pflicht: type und die Felder area, goal, completion_criteria */
+        /** Befördert ein Memo zu einem Item (Epic, Story oder Task) im selben Projekt: Langtext, Notizen und Specs werden übernommen, das Memo ist danach befördert (Archiv) und mit dem Item verknüpft (origin). Pflicht: type und die Felder goal, completion_criteria (area ist optional) */
         post: operations["memos_promote_memo"];
         delete?: never;
         options?: never;

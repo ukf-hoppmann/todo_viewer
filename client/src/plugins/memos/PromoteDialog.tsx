@@ -14,7 +14,7 @@ interface Props {
 }
 
 /**
- * Promotes a memo to an item: the type and the fields the backlog requires (area, goal, completion criteria);
+ * Promotes a memo to an item: the type and the fields the backlog requires (goal, completion criteria);
  * the title is the summary of the memo unless another is given. The server refuses what the backlog refuses and
  * the message stays in the dialog.
  */
@@ -24,7 +24,6 @@ export function PromoteDialog({ memo, hintUid, onClose }: Props) {
 	const [decide] = useDecideHintMutation();
 	const [type, setType] = useState<(typeof TYPES)[number]>("Task");
 	const [title, setTitle] = useState("");
-	const [area, setArea] = useState("");
 	const [goal, setGoal] = useState("");
 	const [criteria, setCriteria] = useState("");
 	const [error, setError] = useState<WriteError>();
@@ -32,7 +31,7 @@ export function PromoteDialog({ memo, hintUid, onClose }: Props) {
 	const submit = async (event: FormEvent) => {
 		event.preventDefault();
 		setError(undefined);
-		const fields: Record<string, unknown> = { area, goal, completion_criteria: criteria };
+		const fields: Record<string, unknown> = { goal, completion_criteria: criteria };
 		if (title.trim()) fields.title = title;
 		try {
 			if (hintUid) await decide({ uid: hintUid, decision: "promote", version: memo.version, type, fields }).unwrap();
@@ -68,7 +67,6 @@ export function PromoteDialog({ memo, hintUid, onClose }: Props) {
 						))}
 					</TextField>
 					{field("title", t("promote.itemTitle"), title, setTitle, { placeholder: memo.summary })}
-					{field("area", t("promote.area"), area, setArea, { required: true })}
 					{field("goal", t("promote.goal"), goal, setGoal, { required: true, multiline: true })}
 					{field("completion_criteria", t("promote.criteria"), criteria, setCriteria, { required: true, multiline: true })}
 					<Alert severity="info">{t("promote.hint")}</Alert>

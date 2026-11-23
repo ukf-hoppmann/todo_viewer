@@ -40,10 +40,6 @@ export const backlogApi = createPluginApi(
 			query: (projects) => ({ url: "backlog/items", params: { projects: projects.join(",") } }),
 			providesTags: ["Items"],
 		}),
-		listAreas: build.query<{ areas: string[] }, string>({
-			query: (project) => ({ url: "backlog/areas", params: { project } }),
-			providesTags: ["Items"],
-		}),
 		createItem: build.mutation<ItemOut, { project: string; type: string; fields: Record<string, unknown> }>({
 			query: (body) => ({ url: "backlog/items", method: "POST", body }),
 			invalidatesTags: ["Items"],
@@ -102,7 +98,6 @@ export const backlogApi = createPluginApi(
 export const {
 	useListItemsQuery,
 	useGetItemQuery,
-	useListAreasQuery,
 	useCreateItemMutation,
 	useUpdateItemMutation,
 	useMoveItemMutation,

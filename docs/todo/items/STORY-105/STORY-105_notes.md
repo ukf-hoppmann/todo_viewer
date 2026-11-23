@@ -10,9 +10,10 @@
   - Der Spiegel wird mitgeplant; wenn er umsetzbar ist, wird er gebaut, sonst entfällt er, der Owner hätte ihn lieber (2026-11-13)
   - Gebaut wird er erst nach der ersten lauffähigen Fassung der Mindmap (2026-11-13)
   - Dateiformat: Jeder Knoten steht einmal mit Inhalt und Label in einer Datei; jeder Baum (Projektbaum oder freie Map) ist eine eigene Datei, die nur Labels in ihrer Ordnung auflistet; mehrfache Platzierungen sind Verweise, der Inhalt steht nie doppelt (2026-11-23)
+  - Kriterium 3 ist angepasst: Die Regeln für den Datei-Modus sind beschrieben, und der Owner hat einen fertigen Prompt für Claude_Harness; die KI übergibt nicht selbst (2026-11-23)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`
 
-State confirmed after entry 2026-11-23 — Platzierungen in Dateien (7ad2f23da401)
+State confirmed after entry 2026-11-23 — Kriterium 3: Prompt statt Übergabe (5a808f2c0463)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -58,3 +59,17 @@ State confirmed after entry 2026-11-23 — Platzierungen in Dateien (7ad2f23da40
 ### Open
 
 - Nichts offen für die Planung; die Story entfällt oder wird gebaut nach der ersten lauffähigen Fassung (entschieden am 2026-11-13).
+
+## 2026-11-23 — Kriterium 3: Prompt statt Übergabe
+
+### Discussed
+
+- Wie bei `STORY-104` übergibt die KI die Regeln nicht selbst an Claude_Harness. Der Owner hat der Anpassung zugestimmt.
+
+### Decided
+
+- Kriterium 3 lautet: Die Regeln für den Datei-Modus sind beschrieben, und der Owner hat einen fertigen Prompt für Claude_Harness.
+
+### Open
+
+- Nichts.

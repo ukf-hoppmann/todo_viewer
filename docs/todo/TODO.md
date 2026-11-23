@@ -129,7 +129,8 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     Cloud-Sitzung kann freie Maps füllen und Äste umhängen oder übertragen.
     2. Der Sync nimmt die Mindmap mit Vorschau und Konflikten in denselben
     Dialog auf.
-    3. Die Regeln für den Datei-Modus sind an Claude_Harness übergeben.
+    3. Die Regeln für den Datei-Modus sind beschrieben, und der Owner hat einen
+    fertigen Prompt, mit dem er sie an Claude_Harness übergibt.
   - Summary: Die Map auch als Dateien speichern, damit sie über Git mitgeht
     und die KI in der Cloud damit arbeiten kann. Gewünscht, aber kein Muss.
 

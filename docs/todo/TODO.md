@@ -103,7 +103,9 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     2. Ein von der KI vorgeschlagener Knoten entsteht erst nach Bestätigung
     des Owners; ohne passenden Knoten landet das Item unter „Nicht
     zugeordnet“.
-    3. Die Regel für die KI ist beschrieben und an Claude_Harness übergeben.
+    3. Die Regel für die KI steht in den MCP-Tool-Beschreibungen des Viewers,
+    und der Owner hat einen fertigen Prompt, mit dem er sie an Claude_Harness
+    übergibt.
     4. Der Systemtest deckt Zuordnen und Vorschlagen ab.
   - Summary: Die KI sortiert neue Backlog-Einträge selbst in die Map ein und
     darf neue Themen vorschlagen, legt sie aber erst an, wenn du zustimmst.

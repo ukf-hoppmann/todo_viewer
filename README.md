@@ -64,7 +64,7 @@ abgelehnte. Filter für Status und Priorität stehen in der Seitenleiste; standa
 ausgeblendet (sie zählen im Fortschritt). Items lassen sich per Drag-and-drop umhängen; die Struktur (Epic nur als
 Wurzel, nichts unter einem Task) prüft der Server.
 
-Im Detail ändern Status, Priorität, Bereich, „Pflicht für Parent“ und Abhängigkeiten sich sofort; „Bearbeiten“ öffnet ein
+Im Detail ändern Status, Priorität, „Pflicht für Parent“ und Abhängigkeiten sich sofort; „Bearbeiten“ öffnet ein
 Formular für alle Felder. `Completed` und `Rejected` fragen nach einer Entscheidung und archivieren das Item. Ein Item
 lässt sich mit Kindern anlegen, im Typ ändern (neues Label, Verweise folgen) und in den Papierkorb legen. Notizen und
 Specs stehen im Abschnitt „Dokumente“ (Markdown, Großansicht, Notiz-Eintrag anhängen, Spec anlegen); ein Versionskonflikt

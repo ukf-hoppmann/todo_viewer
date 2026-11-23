@@ -189,7 +189,6 @@
 		"title": "{{label}} zu einem Item befördern",
 		"type": "Typ",
 		"itemTitle": "Titel des Items",
-		"area": "Bereich",
 		"goal": "Ziel",
 		"criteria": "Fertigstellungskriterien",
 		"hint": "Langtext, Notizen und Specs wandern an das Item; das Memo ist danach befördert und mit dem Item verknüpft.",

@@ -1,8 +1,8 @@
-import { Autocomplete, Box, FormControlLabel, MenuItem, Switch, TextField } from "@mui/material";
+import { Box, FormControlLabel, MenuItem, Switch, TextField } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EditForm, EntityPicker, type Entity } from "../../shared";
-import { toWriteError, useGetItemQuery, useListAreasQuery, useListItemsQuery, type ItemOut } from "./api";
+import { toWriteError, useGetItemQuery, useListItemsQuery, type ItemOut } from "./api";
 import { PRIORITIES } from "./constants";
 import { useItemWrite } from "./useItemWrite";
 import { backlogTestIds } from "./testIds";
@@ -20,18 +20,15 @@ interface Props {
 }
 
 /**
- * The form to create or edit an item. Title, area, goal and completion criteria are required; the area is
- * chosen from the project's areas or typed anew. Saving sends only what changed when editing, and a version
+ * The form to create or edit an item. Title, goal and completion criteria are required. Saving sends only what changed when editing, and a version
  * conflict offers to load the current state.
  */
 export function ItemForm({ projectUid, type, item, parentUid = null, onDone, onCancel }: Props) {
 	const { t } = useTranslation("backlog");
 	const write = useItemWrite();
-	const { data: areaData } = useListAreasQuery(projectUid);
 	const { data: all = [] } = useListItemsQuery([projectUid]);
 	const { refetch: refetchItem } = useGetItemQuery(item?.uid ?? "", { skip: !item });
 	const [title, setTitle] = useState(item?.title ?? "");
-	const [area, setArea] = useState(item?.area ?? "");
 	const [priority, setPriority] = useState(item?.priority ?? "Normal");
 	const [goal, setGoal] = useState(item?.goal ?? "");
 	const [criteria, setCriteria] = useState(item?.completion_criteria ?? "");
@@ -46,11 +43,11 @@ export function ItemForm({ projectUid, type, item, parentUid = null, onDone, onC
 	const save = async () => {
 		try {
 			if (item) {
-				const fields: Record<string, unknown> = { title, area, priority, goal, completion_criteria: criteria, summary, parent, dependencies };
+				const fields: Record<string, unknown> = { title, priority, goal, completion_criteria: criteria, summary, parent, dependencies };
 				if (parent) fields.required_for_parent = required;
 				await write.updateItem({ uid: item.uid, version: item.version }, fields);
 			} else {
-				const fields: Record<string, unknown> = { title, area, priority, goal, completion_criteria: criteria, dependencies };
+				const fields: Record<string, unknown> = { title, priority, goal, completion_criteria: criteria, dependencies };
 				if (summary.trim()) fields.summary = summary;
 				if (parent) {
 					fields.parent = parent;
@@ -76,16 +73,6 @@ export function ItemForm({ projectUid, type, item, parentUid = null, onDone, onC
 				labels={{ save: t("form.save"), cancel: t("form.cancel"), conflict: t("form.conflict"), reload: t("form.reload") }}
 			>
 				<TextField label={t("field.title")} value={title} onChange={(event) => setTitle(event.target.value)} required size="small" autoFocus slotProps={{ htmlInput: { "data-testid": backlogTestIds.formField("title") } }} />
-				<Autocomplete
-					freeSolo
-					size="small"
-					options={areaData?.areas ?? []}
-					inputValue={area}
-					onInputChange={(_event, value) => setArea(value)}
-					renderInput={(params) => (
-						<TextField {...params} required label={t("field.area")} helperText={t("form.areaHint")} slotProps={{ ...params.slotProps, htmlInput: { ...params.slotProps.htmlInput, "data-testid": backlogTestIds.formField("area") } }} />
-					)}
-				/>
 				<TextField select size="small" label={t("field.priority")} value={priority} onChange={(event) => setPriority(event.target.value)} slotProps={{ htmlInput: { "data-testid": backlogTestIds.formField("priority") } }}>
 					{PRIORITIES.map((value) => (
 						<MenuItem key={value} value={value}>

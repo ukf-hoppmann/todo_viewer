@@ -16,7 +16,6 @@ async function renderDetail(options: Parameters<typeof fakeWorkspaceBackend>[0] 
 	const backend = fakeWorkspaceBackend({
 		details: { t1: detail("t1", { version: 4 }), ...options?.details },
 		backlog: [item("t1"), item("t2"), item("e1", { type: "Epic" })],
-		areas: { p1: ["Client", "Server"] },
 		projects: [{ uid: "p1", name: "Viewer", position: 0, version: 1, builtin: false, mirror_folder: null, mirror_enabled: false, auto_sync: false, sync_direction: "both", created_at: "2026-10-16T10:00:00Z" }],
 		...options,
 	});
@@ -72,22 +71,6 @@ describe("ItemDetail: inline fields", () => {
 		await waitFor(() => expect(putBody(backend)).toEqual({ version: 4, fields: { priority: "Urgent" } }));
 	});
 
-	it("chooses an area of the project or creates a new one", async () => {
-		const backend = await renderDetail();
-
-		await choose("area", "Server");
-		await waitFor(() => expect(backend.calls("PUT", "backlog/items/t1")).toHaveLength(1));
-		await choose("area", "＋ Neuer Bereich …");
-		fireEvent.change(await screen.findByTestId(ids.resolutionInput), { target: { value: "Neuer Bereich" } });
-		fireEvent.click(screen.getByTestId(ids.resolutionConfirm));
-
-		await waitFor(() => expect(backend.calls("PUT", "backlog/items/t1")).toHaveLength(2));
-		expect(backend.calls("PUT", "backlog/items/t1").map((call) => call.body)).toEqual([
-			{ version: 4, fields: { area: "Server" } },
-			{ version: 4, fields: { area: "Neuer Bereich" } },
-		]);
-	});
-
 	it("shows 'required for parent' only below a parent and changes it", async () => {
 		const withParent = await renderDetail({ details: { t1: detail("t1", { version: 4, parent: summary("e1"), required_for_parent: true }) } });
 
@@ -124,24 +107,26 @@ describe("ItemDetail: inline fields", () => {
 
 describe("ItemDetail: form, children, type, trash", () => {
 	it("edits the item in the form and sends all fields with the version", async () => {
-		const backend = await renderDetail({ details: { t1: detail("t1", { version: 4, goal: "Ziel", completion_criteria: "Krit", area: "Server" }) } });
+		const backend = await renderDetail({ details: { t1: detail("t1", { version: 4, goal: "Ziel", completion_criteria: "Krit" }) } });
 
 		fireEvent.click(screen.getByTestId(sharedTestIds.detailAction("edit")));
 		const title = await screen.findByTestId(ids.formField("title"));
+		expect(screen.queryByTestId(ids.formField("area"))).toBeNull();
 		fireEvent.change(title, { target: { value: "Neuer Titel" } });
 		fireEvent.click(screen.getByTestId(sharedTestIds.editFormSave));
 
 		await waitFor(() => expect(backend.calls("PUT", "backlog/items/t1")).toHaveLength(1));
+		expect(putBody(backend)).not.toHaveProperty("fields.area");
 		expect(putBody(backend)).toMatchObject({
 			version: 4,
-			fields: { title: "Neuer Titel", area: "Server", priority: "Normal", goal: "Ziel", completion_criteria: "Krit", dependencies: [] },
+			fields: { title: "Neuer Titel", priority: "Normal", goal: "Ziel", completion_criteria: "Krit", dependencies: [] },
 		});
 		await waitFor(() => expect(screen.queryByTestId(ids.formDialog)).toBeNull());
 	});
 
 	it("offers to load the current state after a version conflict", async () => {
 		await renderDetail({
-			details: { t1: detail("t1", { version: 4, goal: "Ziel", completion_criteria: "Krit", area: "Server" }) },
+			details: { t1: detail("t1", { version: 4, goal: "Ziel", completion_criteria: "Krit" }) },
 			respond: ({ method }) =>
 				method === "PUT" ? Response.json({ code: "version_conflict", message: "geändert", details: {} }, { status: 409 }) : undefined,
 		});
@@ -159,7 +144,6 @@ describe("ItemDetail: form, children, type, trash", () => {
 		fireEvent.click(screen.getByTestId(sharedTestIds.detailAction("child")));
 		expect((await screen.findByTestId(ids.formDialog)).textContent).toContain("Story anlegen");
 		fireEvent.change(screen.getByTestId(ids.formField("title")), { target: { value: "Kind" } });
-		fireEvent.change(screen.getByTestId(ids.formField("area")), { target: { value: "Server" } });
 		fireEvent.change(screen.getByTestId(ids.formField("goal")), { target: { value: "Ziel" } });
 		fireEvent.change(screen.getByTestId(ids.formField("completion_criteria")), { target: { value: "Krit" } });
 		fireEvent.click(screen.getByTestId(sharedTestIds.editFormSave));
@@ -168,7 +152,7 @@ describe("ItemDetail: form, children, type, trash", () => {
 		expect(backend.requests.find((call) => call.path === "backlog/items" && call.method === "POST")!.body).toMatchObject({
 			project: "p1",
 			type: "Story",
-			fields: { title: "Kind", area: "Server", parent: "e1", required_for_parent: true },
+			fields: { title: "Kind", parent: "e1", required_for_parent: true },
 		});
 	});
 
@@ -194,7 +178,7 @@ describe("ItemDetail: form, children, type, trash", () => {
 		}, "e1");
 
 		fireEvent.click(screen.getByTestId(sharedTestIds.detailAction("child")));
-		for (const [field, value] of [["title", "K"], ["area", "S"], ["goal", "Z"], ["completion_criteria", "C"]] as const) {
+		for (const [field, value] of [["title", "K"], ["goal", "Z"], ["completion_criteria", "C"]] as const) {
 			fireEvent.change(await screen.findByTestId(ids.formField(field)), { target: { value } });
 		}
 		fireEvent.click(screen.getByTestId(sharedTestIds.editFormSave));
@@ -217,7 +201,7 @@ describe("ItemDetail: form, children, type, trash", () => {
 		}, "e1");
 
 		fireEvent.click(screen.getByTestId(sharedTestIds.detailAction("child")));
-		for (const [field, value] of [["title", "K"], ["area", "S"], ["goal", "Z"], ["completion_criteria", "C"]] as const) {
+		for (const [field, value] of [["title", "K"], ["goal", "Z"], ["completion_criteria", "C"]] as const) {
 			fireEvent.change(await screen.findByTestId(ids.formField(field)), { target: { value } });
 		}
 		fireEvent.click(screen.getByTestId(sharedTestIds.editFormSave));
@@ -263,7 +247,7 @@ describe("ItemDetail: form, children, type, trash", () => {
 
 describe("create forms for the '＋ New' dialog", () => {
 	it("creates an epic in the project the dialog hands over", async () => {
-		const backend = fakeWorkspaceBackend({ areas: { p1: [] } });
+		const backend = fakeWorkspaceBackend();
 		const { useCreateDialog } = await import("../../../../../../client/src/plugins/workspace/createDialog");
 		const { CreateDialogState } = await import("../../../../../../client/src/plugins/workspace/createDialog");
 		let closed = false;
@@ -275,7 +259,7 @@ describe("create forms for the '＋ New' dialog", () => {
 		);
 		void useCreateDialog;
 
-		for (const [field, value] of [["title", "Neues Epic"], ["area", "Server"], ["goal", "Z"], ["completion_criteria", "C"]] as const) {
+		for (const [field, value] of [["title", "Neues Epic"], ["goal", "Z"], ["completion_criteria", "C"]] as const) {
 			fireEvent.change(await screen.findByTestId(ids.formField(field)), { target: { value } });
 		}
 		fireEvent.click(screen.getByTestId(sharedTestIds.editFormSave));

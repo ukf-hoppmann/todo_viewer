@@ -189,7 +189,6 @@
 		"title": "Promote {{label}} to an item",
 		"type": "Type",
 		"itemTitle": "Title of the item",
-		"area": "Area",
 		"goal": "Goal",
 		"criteria": "Completion criteria",
 		"hint": "Text, memos and specs move to the item; the memo is then promoted and linked to it.",

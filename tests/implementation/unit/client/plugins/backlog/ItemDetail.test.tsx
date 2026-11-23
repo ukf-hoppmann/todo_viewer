@@ -33,7 +33,6 @@ describe("ItemDetail", () => {
 			t1: detail("t1", {
 				status: "Awaiting confirmation",
 				priority: "Important",
-				area: "Server",
 				goal: "Das **Ziel**",
 				completion_criteria: "1. Eins",
 				summary: "Kurz",
@@ -45,7 +44,7 @@ describe("ItemDetail", () => {
 		expect(screen.getByTestId(sharedTestIds.detailTitle).textContent).toBe("T1 — Titel t1");
 		expect(screen.getByTestId(sharedTestIds.inlineFieldInput("status")).textContent).toBe("Wartet auf Bestätigung");
 		expect(screen.getByTestId(sharedTestIds.inlineFieldInput("priority")).textContent).toBe("Wichtig");
-		expect(screen.getByTestId(sharedTestIds.inlineFieldInput("area")).textContent).toBe("Server");
+		expect(screen.queryByTestId(sharedTestIds.inlineField("area"))).toBeNull();
 		expect(screen.getByTestId(ids.field("created")).textContent).toBe("2026-10-16");
 		expect(screen.getByTestId(ids.field("goal")).querySelector("strong")?.textContent).toBe("Ziel");
 		expect(screen.getByTestId(ids.field("completion_criteria")).textContent).toContain("Eins");
@@ -59,7 +58,6 @@ describe("ItemDetail", () => {
 
 		expect(screen.queryByTestId(ids.field("goal"))).toBeNull();
 		expect(screen.queryByTestId(ids.field("progress"))).toBeNull();
-		expect(screen.getByTestId(sharedTestIds.inlineFieldInput("area")).textContent?.replace(/\u200b/g, "")).toBe("");
 	});
 
 	it("lists children with the ones in the trash struck through, and selects one on click", async () => {

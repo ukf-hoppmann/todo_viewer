@@ -143,7 +143,7 @@ describe("MemoDetail: hints", () => {
 
 		fireEvent.click(screen.getByTestId(ids.hintDecision("x1", "promote")));
 		await screen.findByTestId(ids.promoteDialog);
-		fireEvent.change(screen.getByTestId(ids.promoteField("area")), { target: { value: "Server" } });
+		expect(screen.queryByTestId(ids.promoteField("area"))).toBeNull();
 		fireEvent.change(screen.getByTestId(ids.promoteField("goal")), { target: { value: "Ziel" } });
 		fireEvent.change(screen.getByTestId(ids.promoteField("completion_criteria")), { target: { value: "Kriterien" } });
 		fireEvent.click(screen.getByTestId(ids.promoteConfirm));
@@ -153,7 +153,7 @@ describe("MemoDetail: hints", () => {
 			decision: "promote",
 			version: 4,
 			type: "Task",
-			fields: { area: "Server", goal: "Ziel", completion_criteria: "Kriterien" },
+			fields: { goal: "Ziel", completion_criteria: "Kriterien" },
 		});
 	});
 
@@ -177,7 +177,6 @@ describe("MemoDetail: promote", () => {
 		return backend;
 	};
 	const fill = () => {
-		fireEvent.change(screen.getByTestId(ids.promoteField("area")), { target: { value: "Server" } });
 		fireEvent.change(screen.getByTestId(ids.promoteField("goal")), { target: { value: "Ziel" } });
 		fireEvent.change(screen.getByTestId(ids.promoteField("completion_criteria")), { target: { value: "Kriterien" } });
 	};
@@ -196,7 +195,7 @@ describe("MemoDetail: promote", () => {
 		expect(backend.calls("POST", "memos/memos/n1/promote")[0]!.body).toEqual({
 			version: 3,
 			type: "Story",
-			fields: { area: "Server", goal: "Ziel", completion_criteria: "Kriterien", title: "Besserer Titel" },
+			fields: { goal: "Ziel", completion_criteria: "Kriterien", title: "Besserer Titel" },
 		});
 		await waitFor(() => expect(screen.queryByTestId(ids.promoteDialog)).toBeNull());
 	});

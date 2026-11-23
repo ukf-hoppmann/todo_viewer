@@ -15,7 +15,7 @@ interface Props {
 	testId?: string;
 }
 
-/** Asks for one text (a resolution, the name of a new area). Confirming needs a non-empty text. */
+/** Asks for one text (a resolution). Confirming needs a non-empty text. */
 export function TextPromptDialog({ title, label, initial = "", multiline, confirmLabel, cancelLabel, onSubmit, onCancel, testId }: Props) {
 	const [text, setText] = useState(initial);
 	const [error, setError] = useState<string>();

@@ -55,8 +55,6 @@ export function fakeWorkspaceBackend(
 		syncResult?: SyncResult;
 		/** The interval of the auto sync (`GET/PUT core/settings/sync`); `locked` = the environment sets it. */
 		syncSettings?: { seconds: number; locked?: boolean };
-		/** The areas by project, for `GET backlog/areas`. */
-		areas?: Record<string, string[]>;
 		/** Answers a request itself (return `undefined` to let the fake answer): for errors and special cases. */
 		respond?: (request: { method: string; path: string; body?: unknown; query: URLSearchParams }) => Response | undefined;
 		/** More plugin APIs for the store (e.g. `notes`). */
@@ -125,7 +123,6 @@ export function fakeWorkspaceBackend(
 			}
 			return Response.json(options.syncResult ?? { project, state: "in_sync", to_database: 0, to_files: 0, created: [], conflicts_left: [] });
 		}
-		if (path === "backlog/areas") return Response.json({ areas: options.areas?.[searchParams.get("project") ?? ""] ?? [] });
 		if (path.startsWith("backlog/items") && request.method !== "GET") {
 			const uid = path.split("/")[2];
 			const detail = uid ? options.details?.[uid] : undefined;

@@ -38,7 +38,6 @@
 	"field": {
 		"status": "Status",
 		"priority": "Priority",
-		"area": "Area",
 		"created": "Created",
 		"parent": "Parent",
 		"goal": "Goal",
@@ -70,8 +69,7 @@
 		"edit": "Edit",
 		"addChild": "Add child",
 		"retype": "Change type",
-		"delete": "Move to trash",
-		"newArea": "＋ New area …"
+		"delete": "Move to trash"
 	},
 	"form": {
 		"save": "Save",
@@ -79,7 +77,6 @@
 		"close": "Close",
 		"reload": "Load current state",
 		"conflict": "The item was changed in the meantime.",
-		"areaHint": "Choose an existing area or type a new one.",
 		"editTitle": "Edit {{label}}",
 		"createTitle": "Create {{type}}"
 	},
@@ -99,9 +96,6 @@
 	},
 	"resolution": {
 		"title": "{{label}} → {{status}}"
-	},
-	"area": {
-		"newTitle": "New area"
 	},
 	"documents": {
 		"none": "No notes or specs yet.",

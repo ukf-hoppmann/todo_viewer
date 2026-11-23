@@ -209,15 +209,22 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: `STORY-100`.
-  - Goal: Die Einordnung eines Items nach Themen läuft über die Knoten der
-    Mindmap und nicht mehr über das Feld Area. Bestehende Areas gehen ohne
-    Verlust in Knoten über.
-  - Completion criteria: 1. Die Art des Ersatzes (Feld entfällt oder wird aus
-    dem Knoten abgeleitet) ist mit dem Owner geklärt und in der Spec
-    festgehalten.
-    2. Bestehende Areas werden einmalig in Knoten umgewandelt und die Items
-    zugeordnet, ohne dass etwas verloren geht.
-    3. Anzeige, Filter, API, MCP und Markdown-Spiegel kommen ohne Area aus
-    oder zeigen den abgeleiteten Wert.
+  - Goal: Die Einordnung eines Items nach Themen läuft nur noch über die
+    Knoten der Mindmap; das Feld Area entfällt ganz, ohne abgeleiteten
+    Ersatzwert. Die Themenbäume der Projekte entstehen einmalig durch eine KI
+    aus den vorhandenen Items und werden nicht von Hand aufgebaut.
+  - Completion criteria: 1. Das Feld Area entfällt ganz, auch als abgeleiteter
+    Wert; die Schichten Web-UI und Backend-API sind keine eigene Einordnung
+    mehr. Wo Area stand, zeigt die Oberfläche den Namen des Themas (bei Bedarf
+    mit Pfad), und ein Filter nach einem Thema schließt seine Unterthemen ein.
+    2. Der Owner hat einen fertigen Prompt, mit dem er in jedem Projekt eine
+    KI den Themenbaum aus den vorhandenen Items erzeugen und die Items
+    zuordnen lässt; die alten Areas dienen ihr nur als Hinweis, kein Item geht
+    verloren.
+    3. Das Feld wird erst entfernt, nachdem die Bäume erzeugt sind; danach
+    kommen Anzeige, Filter, API, MCP und Markdown-Spiegel ohne Area aus.
     4. Die Dokumentation und die Harness-Regeln sind angepasst.
     5. Domain-, API- und UI-Tests sind grün.
+  - Summary: Das Etikett „Area“ an den Items verschwindet. Die Mindmap
+    übernimmt die Einordnung nach Themen. Den ersten Themenbaum baut eine KI
+    aus den vorhandenen Items, du bekommst dafür einen fertigen Prompt.

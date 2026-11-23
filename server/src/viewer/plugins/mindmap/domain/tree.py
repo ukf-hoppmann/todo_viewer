@@ -179,3 +179,19 @@ def check_renamable(tree: Tree) -> None:
 def check_deletable(tree: Tree) -> None:
     if tree.kind == TREE_PROJECT:
         raise MindmapViolation("mindmap_project_tree_fixed", "Der Projektbaum lässt sich nicht löschen")
+
+
+def check_acyclic(placements: Sequence[Placement]) -> None:
+    """Jeder Knoten ist von der Wurzel (Parent `None`) aus erreichbar; sonst bilden Knoten einen Kreis."""
+    reached = 0
+    queue: list[str | None] = [None]
+    seen: set[str | None] = {None}
+    while queue:
+        for child in children_of(placements, queue.pop(0)):
+            if child.node_uid in seen:
+                raise MindmapViolation("mindmap_loop", "Die Knoten bilden einen Kreis", node=child.node_uid)
+            seen.add(child.node_uid)
+            reached += 1
+            queue.append(child.node_uid)
+    if reached != len(placements):
+        raise MindmapViolation("mindmap_loop", "Die Knoten bilden einen Kreis")

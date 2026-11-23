@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from viewer.core.application.sync import SyncParticipant
 from viewer.core.domain.operations import HttpBinding, Operation
 from viewer.plugins.mindmap.application.assignments import AssignmentService, ItemNode, NodeContent, TreeStats
 from viewer.plugins.mindmap.application.branches import (
@@ -34,12 +35,14 @@ class MindmapServices:
         assignments: AssignmentService,
         maps: MapService,
         branches: BranchService,
+        participant: SyncParticipant,
     ) -> None:
         self.mindmap = mindmap
         self.documents = documents
         self.assignments = assignments
         self.maps = maps
         self.branches = branches
+        self.participant = participant
 
 
 @dataclass(frozen=True)

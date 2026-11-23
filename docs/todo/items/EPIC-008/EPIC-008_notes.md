@@ -110,7 +110,7 @@ State confirmed after entry 2026-11-23 — Berichtigung von Kriterium 1 bestäti
 
 ### Open
 
-- Der Owner bestätigt bei der Abnahme die Beziehungswahl im Ast-Dialog (`NEW-branch-transfer-ui`) und die Berichtigung von Kriterium 1 in `STORY-106`.
+- Der Owner bestätigt bei der Abnahme die Beziehungswahl im Ast-Dialog (`TASK-076`) und die Berichtigung von Kriterium 1 in `STORY-106`.
 
 ## 2026-11-23 — Berichtigung von Kriterium 1 bestätigt
 

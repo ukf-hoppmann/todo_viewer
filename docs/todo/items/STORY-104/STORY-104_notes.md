@@ -3,7 +3,7 @@
 ## State
 
 - Goal/Status: Geplant und in Tasks geschnitten; die Specs der Tasks sind geschrieben.
-- Next step: Tasks umsetzen, nachdem `NEW-node-create-server` (STORY-103) fertig ist; am Ende bekommt der Owner den Prompt für Claude_Harness.
+- Next step: Tasks umsetzen, nachdem `TASK-073` (STORY-103) fertig ist; am Ende bekommt der Owner den Prompt für Claude_Harness.
 - Open:
   - Nichts offen für die Planung (2026-11-23)
 - Decided:
@@ -15,7 +15,7 @@
   - Die Regel für die KI steht in den MCP-Tool-Beschreibungen des Viewers (sofort wirksam) und wird zusätzlich als Skill-Regel an Claude_Harness übergeben; die Übergabe macht der Owner mit einem Prompt, den die KI am Ende der Story liefert (2026-11-23)
   - Kriterium 3 ist entsprechend angepasst (2026-11-23)
   - Zuschnitt in zwei Tasks: Regel in den MCP-Tool-Beschreibungen, dann Systemtest und Prompt für Claude_Harness (2026-11-23)
-- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-092; Tasks `NEW-ai-rule-tools`, `NEW-ai-system-test`
+- References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-092; Tasks `TASK-077`, `TASK-078`
 
 State confirmed after entry 2026-11-23 — Zuschnitt in Tasks (eef24ae30403)
 

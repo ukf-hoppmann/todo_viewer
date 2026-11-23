@@ -70,7 +70,7 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 
 ## Ins Backlog und Rolle der KI
 
-- Aus einem Ideen-Knoten wird ein Item angelegt; der Knoten bleibt stehen und das Item hängt daran.
+- Aus einem Ideen-Knoten wird ein Item oder ein Memo angelegt; der Knoten bleibt stehen und das Ergebnis hängt daran. Typ und Beziehung (Parent-Child oder Abhängigkeit) legt je Knoten ein Mensch oder die KI fest, es gibt keine Ableitung aus Ebene oder Tiefe. Ein Memo ändert den Zustand des Knotens nicht (`STORY-100_spec.md`).
 - Die KI ordnet beim Anlegen eines Items zu, schlägt Knoten vor und legt sie nach Bestätigung an. Sie arbeitet
   über API und MCP; der Viewer hat keine eigene LLM-Anbindung.
 - Markdown-Spiegel: mitgeplant, nicht Pflicht; nötig, damit Cloud-Sitzungen zuordnen können. Er muss auch freie
@@ -92,4 +92,4 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
 ## Offen
 
 - Runde Anordnung bei großen Maps (Prototyp).
-- Form der KI-Vorschläge; Typwahl und tiefe Knoten beim Überführen; Markierung für Ideen-Knoten (Werte entschieden: fest); Dateiformat für Platzierungen.
+- Form der KI-Vorschläge; Markierung für Ideen-Knoten (Werte entschieden: fest); Dateiformat für Platzierungen.

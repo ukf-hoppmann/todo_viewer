@@ -65,19 +65,24 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Priority: Normal.
   - Dependencies: `STORY-100`.
   - Goal: Aus einem Knoten ohne Items lässt sich direkt ein Backlog-Item
-    anlegen. Der Knoten bleibt stehen, das neue Item hängt daran, und der
-    Knoten wechselt dadurch seinen Zustand von Idee zu geplant.
-  - Completion criteria: 1. Im Detail eines Knotens legt eine Aktion ein Epic,
-    eine Story oder einen Task an, mit Titel und Text des Knotens als
-    Vorschlag, und hängt das Item an den Knoten.
-    2. Ein ganzer Ast lässt sich mit Vorschau überführen; Typen und Titel sind
-    vor dem Anlegen änderbar.
+    oder ein Memo anlegen. Der Knoten bleibt stehen und das Ergebnis hängt
+    daran; mit einem Item wechselt der Knoten seinen Zustand von Idee zu
+    geplant, ein Memo ändert den Zustand nicht.
+  - Completion criteria: 1. Im Detail eines Knotens legt eine Aktion ein Item
+    (Epic, Story oder Task) oder ein Memo an, mit Titel und Text des Knotens
+    als Vorschlag, und hängt das Ergebnis an den Knoten. Den Typ legt der
+    Mensch oder die KI je Knoten fest.
+    2. Ein ganzer Ast lässt sich mit Vorschau überführen; Typ und Beziehung
+    (Parent-Child oder Abhängigkeit) wählt der Mensch oder die KI für jeden
+    Knoten einzeln, ohne Vorgabe aus Ebene oder Tiefe; Titel sind vor dem
+    Anlegen änderbar.
     3. Was die Struktur des Backlogs nicht erlaubt, zeigt die Vorschau, bevor
     etwas angelegt wird.
     4. Domain-, API- und UI-Tests sind grün.
-  - Summary: Aus einer gesammelten Idee mit einem Klick einen Backlog-Eintrag
-    machen. Die Idee bleibt in der Map stehen und zeigt dann, dass sie
-    eingeplant ist.
+  - Summary: Aus einer gesammelten Idee einen Backlog-Eintrag oder ein Memo
+    machen, einzeln je Knoten oder für einen ganzen Ast mit Vorschau. Die Idee
+    bleibt in der Map stehen; mit einem Item zeigt sie, dass sie eingeplant
+    ist.
 
 - `STORY-104` **KI ordnet neue Items der Mindmap zu und schlägt Knoten vor**
   - Uid: 5b8e795e-adf2-49e3-9cb8-6a2de4a49101.

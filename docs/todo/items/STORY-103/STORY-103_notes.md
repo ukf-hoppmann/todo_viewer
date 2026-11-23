@@ -2,11 +2,9 @@
 
 ## State
 
-- Goal/Status: Geplant; noch ohne Tasks, weil alle Grundsatzfragen entschieden (Typwahl, tiefe Äste, Memo).
-- Next step: Ziel und Abschlusskriterien an die Entscheidungen anpassen (Owner fragen), dann bei Bedarf in Tasks teilen.
+- Goal/Status: Geplant; noch ohne Tasks, weil Grundsatzfragen entschieden, Ziel und Kriterien angepasst.
+- Next step: In Tasks teilen und den Plan vorlegen; offen ist nur noch die Bedienung der Beziehungswahl in der Vorschau.
 - Open:
-  - Ob ein Knoten mit nur einem Memo als „geplant“ gilt (2026-11-23)
-  - Abschlusskriterien 1 und 2 an die Entscheidungen anpassen: Memo als Ziel, Typ und Beziehung je Knoten ohne Vorgabe (2026-11-23)
   - Wie die Vorschau je Knoten zwischen Parent-Child und Abhängigkeit wählen lässt (2026-11-23)
 - Decided:
   - Alles oder Teile einer Map lassen sich ins Backlog überführen (Ausgangsidee des Owners) (2026-11-13)
@@ -14,9 +12,11 @@
   - Der Typ eines Items wird nicht automatisch aus der Ebene des Knotens abgeleitet; Mensch oder KI legen ihn je Knoten fest, weil Kind-Äste Abhängigkeiten oder Parent-Child-Beziehungen sein können (2026-11-23)
   - Es gibt keine Automatismen beim Überführen, auch nicht für Äste tiefer als drei Ebenen: Jeder Ast wird einzeln entschieden, ein tiefer Knoten kann ein eigenes Epic werden; die Vorschau prüft nur, was die Struktur erlaubt (2026-11-23)
   - Ein Ideen-Knoten lässt sich auch zu einem Memo machen, nicht nur zu einem Item; Mensch oder KI entscheiden das je Knoten, das Memo ist ebenfalls ein Backlog-Element (2026-11-23)
+  - Ziel und Abschlusskriterien 1 und 2 sind angepasst: Item oder Memo als Ziel, Typ und Beziehung je Knoten ohne Vorgabe (2026-11-23)
+  - Ein Knoten mit nur einem Memo bleibt eine Idee, weil Memos nicht zählen (bestehende Regel in `STORY-100_spec.md`) (2026-11-23)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-086
 
-State confirmed after entry 2026-11-23 — Ideen-Knoten zu einem Memo machen (1243db8a494a)
+State confirmed after entry 2026-11-23 — Ziel, Kriterien und Zustand bei Memos (6c22e6526570)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -109,3 +109,19 @@ State confirmed after entry 2026-11-23 — Ideen-Knoten zu einem Memo machen (12
 
 - Ob ein Knoten, an dem nur ein Memo hängt, als „geplant“ gilt oder Idee bleibt.
 - Ziel und Abschlusskriterien 1 und 2 passen noch nicht zu den Entscheidungen (Memo als Ziel; Typ und Beziehung je Knoten ohne Vorgabe, Vorschau nur für Ast-Überführung mit Prüfung). Änderung braucht die Freigabe des Owners.
+
+## 2026-11-23 — Ziel, Kriterien und Zustand bei Memos
+
+### Discussed
+
+- Ziel und Kriterien 1 und 2 passten nicht zu den Entscheidungen (Memo als Ziel; Typ und Beziehung je Knoten ohne Vorgabe). Der Owner hat den Vorschlag bestätigt.
+- Zustand eines Knotens mit nur einem Memo: Die Regel aus `STORY-100_spec.md` zählt Memos nicht; ein solcher Knoten bleibt Idee. Der Owner ist einverstanden, die Regel bleibt unverändert.
+
+### Decided
+
+- Ziel, Summary und Kriterien 1 und 2 sind im Item angepasst; der Absatz „Ins Backlog“ in `EPIC-008_spec.md` ebenso.
+- Ein Knoten mit nur einem Memo bleibt eine Idee.
+
+### Open
+
+- Wie die Vorschau je Knoten zwischen Parent-Child und Abhängigkeit wählen lässt (Bedienung, im Plan zu klären).

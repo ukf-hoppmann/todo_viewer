@@ -45,6 +45,15 @@ def test_promote_creates_the_item_links_it_and_closes_the_memo(memos: Env) -> No
     assert [o["uid"] for o in _origin(memos, entry["uid"])] == [body["item_uid"]]
 
 
+def test_promote_works_without_area(memos: Env) -> None:
+    entry = new_memo(memos)
+
+    result = _promote(memos, entry, fields={"goal": "Das Ziel", "completion_criteria": "Die Kriterien"})
+
+    assert result.status_code == 200, result.text
+    assert item(memos, result.json()["item_uid"])["area"] is None
+
+
 def test_promote_takes_over_text_memos_and_specs(memos: Env) -> None:
     entry = _memo_with_documents(memos)
 
@@ -81,7 +90,7 @@ def test_given_fields_win_over_the_summary_of_the_memo(memos: Env) -> None:
 def test_a_refused_item_changes_nothing(memos: Env) -> None:
     entry = new_memo(memos)
 
-    refused = _promote(memos, entry, fields={"area": "Server"})
+    refused = _promote(memos, entry, fields={"goal": "Das Ziel"})
 
     assert refused.status_code in (400, 422)
     assert memo(memos, entry["uid"])["stored_status"] == "waiting"

@@ -55,7 +55,7 @@ def test_create_gives_a_register_label_status_open_and_todays_date(backlog: Env)
 
 
 def test_create_refuses_missing_required_fields_and_leaves_no_trace(backlog: Env) -> None:
-    for missing in ("title", "area", "goal", "completion_criteria"):
+    for missing in ("title", "goal", "completion_criteria"):
         fields = {k: v for k, v in BASE.items() if k != missing}
         r = backlog.client.post(
             "/api/backlog/items", json={"project": _project(backlog), "type": "Task", "fields": fields}
@@ -64,6 +64,17 @@ def test_create_refuses_missing_required_fields_and_leaves_no_trace(backlog: Env
 
     assert _create(backlog)["label"] == "TASK-001"  # keine Nummer wurde verbraucht
     assert backlog.client.get("/api/backlog/items").json()[0]["label"] == "TASK-001"
+
+
+def test_create_without_area_leaves_it_empty(backlog: Env) -> None:
+    fields = {k: v for k, v in BASE.items() if k != "area"}
+    r = backlog.client.post(
+        "/api/backlog/items", json={"project": _project(backlog), "type": "Task", "fields": fields}
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["area"] is None
+    assert _get(backlog, r.json()["uid"])["area"] is None
+    assert _create(backlog, area="Server")["area"] == "Server"
 
 
 def test_create_checks_the_structure_rules(backlog: Env) -> None:

@@ -38,13 +38,20 @@ def test_new_items_are_open_with_defaults_and_one_line_texts() -> None:
     assert created.required_for_parent is None and created.dependencies == ()
 
 
-def test_title_area_goal_and_criteria_are_required() -> None:
-    for field in ("title", "area", "goal", "completion_criteria"):
+def test_title_goal_and_criteria_are_required() -> None:
+    for field in ("title", "goal", "completion_criteria"):
         with pytest.raises(ValueRequired):
             build_new_item("u", "TASK-001", "p", "Task", {**NEW, field: "  "}, TODAY, 0, 1)
         fields = {k: v for k, v in NEW.items() if k != field}
         with pytest.raises(ValueRequired):
             build_new_item("u", "TASK-001", "p", "Task", fields, TODAY, 0, 1)
+
+
+def test_area_is_optional_when_creating() -> None:
+    without = {k: v for k, v in NEW.items() if k != "area"}
+    assert build_new_item("u", "TASK-001", "p", "Task", without, TODAY, 0, 1).area is None
+    assert build_new_item("u", "TASK-001", "p", "Task", {**without, "area": "  "}, TODAY, 0, 1).area is None
+    assert build_new_item("u", "TASK-001", "p", "Task", NEW, TODAY, 0, 1).area == "Server"
 
 
 def test_new_items_refuse_unknown_type_status_and_fields() -> None:

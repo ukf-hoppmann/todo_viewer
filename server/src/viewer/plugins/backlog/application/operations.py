@@ -107,8 +107,8 @@ class ItemOut:
 class CreateItem:
     project: str
     type: str
-    #: `title`, `area`, `goal`, `completion_criteria` sind Pflicht; dazu `priority`, `required_for_parent`, `summary`,
-    #: `parent` (uid), `dependencies` (uids), `created` (JJJJ-MM-TT).
+    #: `title`, `goal`, `completion_criteria` sind Pflicht, `area` ist optional; dazu `priority`,
+    #: `required_for_parent`, `summary`, `parent` (uid), `dependencies` (uids), `created` (JJJJ-MM-TT).
     fields: dict[str, Any]
 
 
@@ -528,7 +528,8 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "create_item",
-        "Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, area, goal, completion_criteria",
+        "Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria; "
+        "area ist optional",
         "write",
         CreateItem,
         ItemOut,

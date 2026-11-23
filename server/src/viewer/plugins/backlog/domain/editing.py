@@ -26,7 +26,7 @@ EDITABLE = frozenset(
     }
 )
 #: Texte, die nicht leer werden dürfen.
-REQUIRED_TEXT = frozenset({"title", "goal", "completion_criteria", "area"})
+REQUIRED_TEXT = frozenset({"title", "goal", "completion_criteria"})
 #: Felder, die ein neues Item setzen darf (Status ist immer `Open`, das Label vergibt der Server).
 CREATABLE = EDITABLE - {"status"} | {"created"}
 DEFAULT_PRIORITY = "Normal"
@@ -150,14 +150,14 @@ def build_new_item(
     position: int,
     revision: int,
 ) -> Item:
-    """Ein neues Item (Status `Open`) aus den Angaben; Titel, Bereich, Ziel und Kriterien sind Pflicht."""
+    """Ein neues Item (Status `Open`) aus den Angaben; Titel, Ziel und Kriterien sind Pflicht, Bereich nicht."""
     if type_ not in TYPES:
         raise InvalidInput(f"Unbekannter Typ '{type_}'", details={"field": "type", "allowed": list(TYPES)})
     for field in fields:
         if field not in CREATABLE:
             raise NotEditable(f"Das Feld '{field}' lässt sich beim Anlegen nicht setzen", details={"field": field})
     values = {field: normalize(field, raw) for field, raw in fields.items() if field != "created"}
-    for field in ("title", "area", "goal", "completion_criteria"):
+    for field in ("title", "goal", "completion_criteria"):
         values[field] = normalize(field, fields.get(field))
     created_text = str(fields.get("created") or today.isoformat()).strip()
     if not _DATE.match(created_text):
@@ -171,7 +171,7 @@ def build_new_item(
         title=str(values["title"]),
         status="Open",
         priority=str(values.get("priority") or DEFAULT_PRIORITY),
-        area=str(values["area"]),
+        area=values.get("area"),  # type: ignore[arg-type]
         parent_uid=values.get("parent"),  # type: ignore[arg-type]
         required_for_parent=required if isinstance(required, bool) else None,
         goal=str(values["goal"]),

@@ -445,8 +445,8 @@ class PromoteMemo:
     version: int
     #: Typ des neuen Items: `Epic`, `Story` oder `Task`.
     type: str
-    #: Felder des Items: Pflicht `area`, `goal`, `completion_criteria`; Titel und Kurzfassung sind die des Memos, wenn
-    #: nichts gegeben ist.
+    #: Felder des Items: Pflicht `goal`, `completion_criteria` (`area` ist optional); Titel und Kurzfassung sind die des
+    #: Memos, wenn nichts gegeben ist.
     fields: dict[str, Any] = field(default_factory=dict)
     project: str | None = None
 
@@ -932,7 +932,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "promote_memo",
         "Befördert ein Memo zu einem Item (Epic, Story oder Task) im selben Projekt: Langtext, Notizen und Specs "
         "werden übernommen, das Memo ist danach befördert (Archiv) und mit dem Item verknüpft (origin). Pflicht: type "
-        "und die Felder area, goal, completion_criteria",
+        "und die Felder goal, completion_criteria (area ist optional)",
         "write",
         PromoteMemo,
         PromotedOut,

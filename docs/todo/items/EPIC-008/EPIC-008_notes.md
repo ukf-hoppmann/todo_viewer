@@ -5,7 +5,7 @@
 - Goal/Status: Stories 099 bis 102 sind abgeschlossen; die offenen Stories 103 bis 106 sind durchgeplant und in 15 Tasks mit Specs geschnitten.
 - Next step: Umsetzung in der Reihenfolge `STORY-106`, `STORY-103`, `STORY-104`, zuletzt `STORY-105`; jede Task in eigener Session mit Plan.
 - Open:
-  - Der Owner prüft die Berichtigung von Kriterium 1 in `STORY-106` (kein Filter nach Thema) (2026-11-23)
+  - Nichts offen für die Planung (2026-11-23)
 - Decided:
   - Die Mindmap ist ein eigenes Datenmodell und nur ein Gerippe; sie verlinkt Items und Memos, ähnlich dem Feld Area, und kopiert nichts (2026-11-13)
   - Es gibt nur ein Modell: Ob ein Knoten bloße Idee oder schon im Backlog ist, ergibt sich aus dem, was daran hängt (2026-11-13)
@@ -24,9 +24,10 @@
   - Die Regel für die KI steht in den MCP-Tool-Beschreibungen; Claude_Harness bekommt einen Prompt, den der Owner selbst übergibt (`STORY-104`) (2026-11-23)
   - Spiegel: Inhalt einmal je Knoten, Bäume als Verweise (`STORY-105`) (2026-11-23)
   - Area entfällt ganz, Backlog-Format Version 3; der Themenbaum entsteht durch eine KI mit Prompt für den Owner (`STORY-106`) (2026-11-23)
+  - Die Berichtigung von Kriterium 1 in `STORY-106` (kein Filter nach Thema, Anzeige im Abschnitt „Knoten“) ist bestätigt (2026-11-23)
 - References: Spec `EPIC-008_spec.md`; Ideensammlung `TASK-064`; Stories `STORY-099`, `STORY-100`, `STORY-101`, `STORY-102`, `STORY-103`, `STORY-104`, `STORY-105`
 
-State confirmed after entry 2026-11-23 — Planung der offenen Stories (6dc649a8d6e1)
+State confirmed after entry 2026-11-23 — Berichtigung von Kriterium 1 bestätigt (8f4f89ac1a8b)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -110,3 +111,17 @@ State confirmed after entry 2026-11-23 — Planung der offenen Stories (6dc649a8
 ### Open
 
 - Der Owner bestätigt bei der Abnahme die Beziehungswahl im Ast-Dialog (`NEW-branch-transfer-ui`) und die Berichtigung von Kriterium 1 in `STORY-106`.
+
+## 2026-11-23 — Berichtigung von Kriterium 1 bestätigt
+
+### Discussed
+
+- Der Owner hat die Berichtigung geprüft.
+
+### Decided
+
+- Kriterium 1 von `STORY-106` bleibt wie berichtigt.
+
+### Open
+
+- Nichts.

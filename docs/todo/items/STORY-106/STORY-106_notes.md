@@ -16,9 +16,10 @@
   - Format Version 3 des Backlog-Dateiformats ohne Area; Version 2 und 3 werden gelesen, Area wird ignoriert (Owner) (2026-11-23)
   - Kriterium 4 lautet: Dokumentation angepasst und fertiger Prompt für Claude_Harness (Owner) (2026-11-23)
   - Zuschnitt in fünf Tasks: Spiegel Version 3, Area optional, Oberfläche ohne Area, Area aus Server und Datenbank entfernen, Prompts (2026-11-23)
+  - Berichtigung von Kriterium 1 (kein Filter nach Thema, Anzeige im Abschnitt „Knoten“) vom Owner bestätigt (2026-11-23)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Zuordnung und wirksamer Knoten in `STORY-100_spec.md`; Tasks `NEW-area-mirror-v3`, `NEW-area-optional`, `NEW-area-client`, `NEW-area-remove-server`, `NEW-area-prompts`
 
-State confirmed after entry 2026-11-23 — Zuschnitt in Tasks und Format Version 3 (4c724fac9162)
+State confirmed after entry 2026-11-23 — Berichtigung von Kriterium 1 bestätigt (cc6066fae3ea)
 
 ## 2026-11-23 — Art des Ersatzes und Aufbau der Bäume
 
@@ -76,3 +77,17 @@ State confirmed after entry 2026-11-23 — Zuschnitt in Tasks und Format Version
 ### Open
 
 - Der Owner prüft die Berichtigung von Kriterium 1 (kein Filter nach Thema).
+
+## 2026-11-23 — Berichtigung von Kriterium 1 bestätigt
+
+### Discussed
+
+- Der Owner hat die Berichtigung geprüft.
+
+### Decided
+
+- Kriterium 1 bleibt wie berichtigt.
+
+### Open
+
+- Nichts.

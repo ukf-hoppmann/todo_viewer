@@ -7,6 +7,7 @@ from typing import Any
 
 from viewer.core.application.plugin import PluginContext, PluginDefinition
 from viewer.core.application.ports import Transaction
+from viewer.core.application.sync import MirrorBinding
 from viewer.core.domain.events import Event
 from viewer.core.domain.plugin import ElementKind, Subscription
 from viewer.plugins.mindmap.application.assignments import AssignmentService
@@ -18,6 +19,8 @@ from viewer.plugins.mindmap.application.service import KIND, MindmapService
 from viewer.plugins.mindmap.infrastructure.backlog_gateway import ServicesBacklogItems
 from viewer.plugins.mindmap.infrastructure.database.repository import SqlDocumentRepository, SqlMindmapRepository
 from viewer.plugins.mindmap.infrastructure.database.schema import MIGRATIONS
+from viewer.plugins.mindmap.infrastructure.mirror.codec import MindmapCodec
+from viewer.plugins.mindmap.infrastructure.mirror.participant import MindmapParticipant
 from viewer.plugins.workspace import Element
 
 ELEMENT_KINDS = (ElementKind(KIND, "NODE"),)
@@ -79,6 +82,7 @@ def _build(context: PluginContext) -> MindmapServices:
         assignments,
         maps,
         branches,
+        MindmapParticipant(repository, documents, workspace.registry, context.database, context.clock),
     )
 
 
@@ -101,4 +105,5 @@ plugin = PluginDefinition(
     element_kinds=ELEMENT_KINDS,
     operations=OPERATIONS,
     subscriptions=(Subscription("workspace.element.changed", _on_workspace_event),),
+    mirror=lambda services: MirrorBinding("mindmap", MindmapCodec(), services.participant),
 )

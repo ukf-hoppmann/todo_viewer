@@ -440,8 +440,9 @@ Der Themenbaum eines Projekts (Plugin `mindmap`) hat ein eigenes Dateiformat mit
 vom Backlog-Format. Es liegt im Spiegel-Ordner unter `mindmap/` (Muster des Codecs: `mindmap/**/*.md`).
 Grundsatz: **der Inhalt eines Knotens steht genau einmal in einer Datei; jeder Baum ist eine eigene Datei, die nur
 Verweise auf Knoten in ihrer Ordnung enthält.** Mehrfache Platzierungen sind Verweise, nie Kopien. Der Codec
-(`MindmapCodec`, `server/src/viewer/plugins/mindmap/infrastructure/mirror/`) liest und schreibt diese Dateien; er ist
-noch nicht beim Sync registriert (Teilnehmer: `TASK-080`). Feldnamen und Werte sind englisch, Inhalte in der Sprache
+(`MindmapCodec`, `server/src/viewer/plugins/mindmap/infrastructure/mirror/`) liest und schreibt diese Dateien; der
+`MindmapParticipant` nimmt Knoten, Bäume und Dokumente in den Sync auf (Zuordnungen, `Removed:` und der Papierkorb der
+Bäume folgen mit `TASK-081`). Feldnamen und Werte sind englisch, Inhalte in der Sprache
 des Projekts, Zeitpunkte UTC mit `Z`.
 
 | Pfad | Inhalt |
@@ -544,7 +545,9 @@ Jeder Fehler nennt Datei und Zeile (`MirrorFormatError`).
 | `tree_cycle` | die früheren Parents unter `Removed:` bilden einen Kreis |
 | `rule_violation` | dasselbe Item steht bei zwei Knoten |
 
-`unknown_reference` kann nur die Datenbank entscheiden und kommt mit dem Teilnehmer (`TASK-080`).
+`unknown_reference` (ein Baum nennt einen Knoten, den es nie gab) entscheidet nur die Datenbank: der Teilnehmer meldet ihn
+beim Übernehmen mit Datei und Zeile; ebenso `rule_violation` bei einem Kreis oder einem Knoten, der in der Liste keinen
+Parent findet.
 
 Beispiele: `tests/fixtures/mirror-mindmap/valid/` und `…/invalid/<code>/` sind die Golden-Files des Codecs.
 

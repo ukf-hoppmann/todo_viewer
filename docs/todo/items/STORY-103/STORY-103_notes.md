@@ -2,19 +2,21 @@
 
 ## State
 
-- Goal/Status: Geplant; noch ohne Tasks, weil noch eine Frage offen ist; Typwahl und tiefe Äste sind entschieden.
-- Next step: Memo-Frage mit dem Owner klären, dann Spec nachziehen und bei Bedarf in Tasks teilen.
+- Goal/Status: Geplant; noch ohne Tasks, weil alle Grundsatzfragen entschieden (Typwahl, tiefe Äste, Memo).
+- Next step: Ziel und Abschlusskriterien an die Entscheidungen anpassen (Owner fragen), dann bei Bedarf in Tasks teilen.
 - Open:
+  - Ob ein Knoten mit nur einem Memo als „geplant“ gilt (2026-11-23)
+  - Abschlusskriterien 1 und 2 an die Entscheidungen anpassen: Memo als Ziel, Typ und Beziehung je Knoten ohne Vorgabe (2026-11-23)
   - Wie die Vorschau je Knoten zwischen Parent-Child und Abhängigkeit wählen lässt (2026-11-23)
-  - Ob sich ein Ideen-Knoten auch zu einem Memo machen lässt, nicht nur zu einem Backlog-Item (2026-11-13)
 - Decided:
   - Alles oder Teile einer Map lassen sich ins Backlog überführen (Ausgangsidee des Owners) (2026-11-13)
   - Beim Überführen bleibt der Knoten stehen und das neue Item wird daran gehängt; der Zustand des Knotens ändert sich dadurch von selbst (2026-11-13)
   - Der Typ eines Items wird nicht automatisch aus der Ebene des Knotens abgeleitet; Mensch oder KI legen ihn je Knoten fest, weil Kind-Äste Abhängigkeiten oder Parent-Child-Beziehungen sein können (2026-11-23)
   - Es gibt keine Automatismen beim Überführen, auch nicht für Äste tiefer als drei Ebenen: Jeder Ast wird einzeln entschieden, ein tiefer Knoten kann ein eigenes Epic werden; die Vorschau prüft nur, was die Struktur erlaubt (2026-11-23)
+  - Ein Ideen-Knoten lässt sich auch zu einem Memo machen, nicht nur zu einem Item; Mensch oder KI entscheiden das je Knoten, das Memo ist ebenfalls ein Backlog-Element (2026-11-23)
 - References: Konzept `EPIC-008_spec.md` im Epic `EPIC-008`; Ideensammlung `TASK-064`; Story STORY-086
 
-State confirmed after entry 2026-11-23 — Äste tiefer als drei Ebenen (936e7e8662cb)
+State confirmed after entry 2026-11-23 — Ideen-Knoten zu einem Memo machen (1243db8a494a)
 
 ## 2026-11-13 — Übernahme der Entscheidungen aus der Ideensammlung
 
@@ -88,3 +90,22 @@ State confirmed after entry 2026-11-23 — Äste tiefer als drei Ebenen (936e7e8
 
 - Ob sich ein Ideen-Knoten auch zu einem Memo machen lässt (offen aus 2026-11-13).
 - Wie die Vorschau je Knoten zwischen Parent-Child und Abhängigkeit wählen lässt (Folge aus 2026-11-23, Typwahl).
+
+## 2026-11-23 — Ideen-Knoten zu einem Memo machen
+
+### Discussed
+
+- Frage: Soll sich ein Ideen-Knoten auch zu einem Memo machen lassen? Manche Ideen sind keine Arbeit mit Abschlusskriterium, sondern Erinnerung oder offene Frage.
+- Option A: nur Backlog; das Memo bleibt ein eigener Weg. Story bleibt klein. Empfehlung war A.
+- Option B: auch Memo, mit Titel und Text des Knotens als Vorschlag; das Memo hängt danach am Knoten. Passt zur individuellen Entscheidung je Knoten, macht die Story größer.
+- Der Owner wählt B: Die KI kann entscheiden, aus einem Knoten ein Memo zu machen, und das Memo ist ebenfalls ein Backlog-Element.
+
+### Decided
+
+- Option B: Ein Ideen-Knoten lässt sich zu einem Item oder zu einem Memo machen; Mensch oder KI entscheiden das je Knoten. Das Memo hängt danach am Knoten.
+- Verworfen: Option A, weil das Memo ebenfalls ein Backlog-Element ist und der Weg zum Memo nicht getrennt laufen soll.
+
+### Open
+
+- Ob ein Knoten, an dem nur ein Memo hängt, als „geplant“ gilt oder Idee bleibt.
+- Ziel und Abschlusskriterien 1 und 2 passen noch nicht zu den Entscheidungen (Memo als Ziel; Typ und Beziehung je Knoten ohne Vorgabe, Vorschau nur für Ast-Überführung mit Prüfung). Änderung braucht die Freigabe des Owners.

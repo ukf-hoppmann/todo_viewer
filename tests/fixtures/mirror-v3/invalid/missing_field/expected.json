@@ -1,0 +1,6 @@
+{
+  "code": "missing_field",
+  "file": "TODO.md",
+  "line": 49,
+  "reason": "`STORY-002` ohne `Priority`"
+}

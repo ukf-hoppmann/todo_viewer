@@ -1,4 +1,4 @@
-"""Syntax der Backlog-Dateien (Format Version 2): Einträge, Felder, Kennung. Reine Funktionen auf Zeilen."""
+"""Syntax der Backlog-Dateien (Format Version 3): Einträge, Felder, Kennung. Reine Funktionen auf Zeilen."""
 
 from __future__ import annotations
 
@@ -30,7 +30,6 @@ FIELD_ORDER = (
     "Required for parent",
     "Status",
     "Created",
-    "Area",
     "Priority",
     "Dependencies",
     "Goal",
@@ -39,6 +38,11 @@ FIELD_ORDER = (
     "Resolution",
     "Deleted",
 )
+#: Gelesene Versionen der Kennung; geschrieben wird immer `WRITE_VERSION`.
+READ_VERSIONS = (2, 3)
+WRITE_VERSION = 3
+#: Felder, die frühere Versionen kannten: beim Lesen ignoriert (kein Fehler), beim Schreiben eines Eintrags entfernt.
+IGNORED_FIELDS = frozenset({"Area"})
 #: Texte, die so stehen, wie sie sind (kein Punkt am Ende gehört zum Format).
 FREE_TEXT = frozenset({"Goal", "Completion criteria", "Summary", "Resolution"})
 #: Verweisfelder: Labels in Backticks, `None` ohne Verweis.
@@ -96,6 +100,18 @@ def format_line(lines: list[str]) -> tuple[int, int | None]:
             match = FORMAT_VERSION.search(" ".join(paragraph))
             return index + 1, int(match.group(1)) if match else None
     return 1, None
+
+
+def upgrade_format_line(lines: list[str]) -> None:
+    """Setzt die Version in der Kennung auf `WRITE_VERSION` (an Ort und Stelle); ohne Kennung bleibt alles."""
+    for index, line in enumerate(lines):
+        if line.startswith("Format:"):
+            while index < len(lines) and lines[index].strip():
+                lines[index] = FORMAT_VERSION.sub(
+                    lambda m: re.sub(r"\d+$", str(WRITE_VERSION), m.group(0)), lines[index]
+                )
+                index += 1
+            return
 
 
 def parse_blocks(lines: list[str]) -> list[Block]:

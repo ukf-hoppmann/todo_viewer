@@ -129,7 +129,7 @@ Verknüpfungen: `workspace_add_link`, `workspace_remove_link`, `workspace_list_l
 Der Systemtest `tests/implementation/system/server/test_harness_flow.py` führt diesen Ablauf gegen den ganzen Viewer
 (echter uvicorn-Server, alle Plugins) über einen MCP-Client aus.
 
-## Dateiformat des Markdown-Spiegels (Version 2)
+## Dateiformat des Markdown-Spiegels (Backlog: Version 3, Alarme und Memos: Version 2)
 
 Grundsatz: so nah wie
 möglich an Version 1 und am früheren Notes-Format, damit der Harness wenig
@@ -241,20 +241,27 @@ Eintrag selbst, dort ordnet der Sync ihn zu.
 ### Kennung
 
 `TODO.md`, `archive.md` und `alarms.md` enthalten einen Absatz, der mit
-`Format:` beginnt und `backlog format version 2` enthält, z. B.
+`Format:` beginnt und `backlog format version N` enthält, z. B.
 
 ```
-Format: Claude_Harness backlog format version 2. The rules are defined in
+Format: Claude_Harness backlog format version 3. The rules are defined in
 `docs/techdocs/interfaces.md` of the ToDo Viewer.
 ```
 
-Fehlt die Kennung oder nennt sie eine andere Version, bricht der Sync mit
-`format_version` ab. Version 1 wird nicht gelesen; die Datenübernahme
-(`STORY-082`) und der erste Sync nach dem Umstieg schreiben Version 2.
+- **Backlog (`TODO.md`, `archive.md`):** Der Codec schreibt immer Version 3
+  und liest Version 2 und 3. Eine Datei, die er schreibt, bekommt dabei die
+  Kennung 3, auch wenn sie vorher Version 2 trug; eine Datei ohne Änderung
+  bleibt unberührt. Jede andere Version und eine fehlende Kennung bricht den
+  Sync mit `format_version` ab.
+- **Alarme (`alarms.md`):** unverändert Version 2.
+- **Unterschied Version 3 zu 2:** das Feld `Area` entfällt (siehe
+  „Backlog-Einträge“).
+- Version 1 wird nicht gelesen; die Datenübernahme (`STORY-082`) und der
+  erste Sync nach dem Umstieg schreiben das aktuelle Format.
 
 ### Backlog-Einträge
 
-Aufbau wie Version 1, eine Liste unter `## Work items`:
+Aufbau wie Version 1 (Format Version 3), eine Liste unter `## Work items`:
 
 ```markdown
 - `STORY-012` **Kurzer Titel**
@@ -264,7 +271,6 @@ Aufbau wie Version 1, eine Liste unter `## Work items`:
   - Required for parent: Yes.
   - Status: Open.
   - Created: 2026-10-16.
-  - Area: Backend-API.
   - Priority: Normal.
   - Dependencies: `TASK-004`, `STORY-010`.
   - Goal: Ergebnis. Folgezeilen sind
@@ -275,12 +281,18 @@ Aufbau wie Version 1, eine Liste unter `## Work items`:
 
 - **Felder und Reihenfolge** (fest; der Codec schreibt sie in dieser
   Reihenfolge, liest sie in jeder): `Uid`, `Type`, `Parent`,
-  `Required for parent`, `Status`, `Created`, `Area`, `Priority`,
+  `Required for parent`, `Status`, `Created`, `Priority`,
   `Dependencies`, `Goal`, `Completion criteria`, `Summary`, `Resolution`,
   `Deleted`. Andere Felder sind ein Fehler (`unknown_field`); `Notes` und
   `Spec` aus Version 1 entfallen, die Dokumente findet der Codec über
   `items/<LABEL>/`.
-- **Pflicht:** `Uid` (außer bei neuen Einträgen), `Type`, `Status`, `Area`,
+- **`Area`:** Version 2 kannte das Feld `Area` (zwischen `Created` und
+  `Priority`, Pflicht). In Version 3 gibt es es nicht mehr. Der Codec liest
+  es in jeder Version als bekanntes, ignoriertes Feld (kein `unknown_field`,
+  kein `missing_field`, kein Absturz) und schreibt es nie; es verschwindet,
+  sobald er den Eintrag ohnehin ändert (ein unveränderter Eintrag wird nicht
+  allein deswegen umgeschrieben).
+- **Pflicht:** `Uid` (außer bei neuen Einträgen), `Type`, `Status`,
   `Priority`, `Dependencies`, `Goal`, `Completion criteria`; bei Story und
   Task `Parent`, bei vorhandenem Parent `Required for parent`; bei
   `Completed`/`Rejected` `Resolution`. `Created` darf bei neuen Einträgen
@@ -400,7 +412,7 @@ Datei und Zeile.
 
 | Code | Bedeutung |
 |---|---|
-| `format_version` | Kennung fehlt oder ist nicht Version 2 |
+| `format_version` | Kennung fehlt oder ist nicht Version 3 (Backlog: auch 2) bzw. 2 (Alarme, Memos) |
 | `unknown_field` | Feld, das das Format nicht kennt |
 | `missing_field` | Pflichtfeld fehlt |
 | `invalid_value` | unbekannter Typ, Status, Priorität oder Wecker-Status; ungültiger Tag, Zeitpunkt oder `Uid` |
@@ -415,11 +427,12 @@ Datei und Zeile.
 
 ### Beispiele
 
-`tests/fixtures/mirror-v2/valid/` ist ein vollständiges Projekt mit allen
-Feldern, neuen Einträgen mit Platzhaltern, Memos, Topics und Weckern.
-`tests/fixtures/mirror-v2/invalid/<code>/` enthält je Fehlercode ein
-Beispiel. Die Beispiele sind die Golden-Files der Codecs (`STORY-075`,
-`STORY-079`, `STORY-080`).
+`tests/fixtures/mirror-v3/` enthält den Backlog-Teil (`TODO.md`, `archive.md`,
+`items/`) in Version 3, `valid/` als vollständiges Projekt und `invalid/<code>/`
+je Fehlercode ein Beispiel. `tests/fixtures/mirror-v2/valid/` ist dasselbe
+Projekt in Version 2 (mit `Area`, dazu Memos, Topics und Wecker); es sichert
+das Lesen von Version 2 und die Codecs von Memos und Alarmen. Die Beispiele
+sind die Golden-Files der Codecs (`STORY-075`, `STORY-079`, `STORY-080`).
 
 ## CLI: `todo.sh`
 

@@ -1,0 +1,6 @@
+{
+  "code": "duplicate_uid",
+  "file": "TODO.md",
+  "line": 50,
+  "reason": "`STORY-002` trägt die Uid von `TASK-001`"
+}

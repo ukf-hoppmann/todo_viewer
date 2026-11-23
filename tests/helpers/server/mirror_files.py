@@ -7,7 +7,8 @@ from pathlib import Path
 
 from viewer.core.domain.files import FileEntry, FileSet
 
-FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "mirror-v2"
+FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "mirror-v2"  # Format 2: Alarme, Memos, v2-Lesen
+BACKLOG_FIXTURES = FIXTURES.parent / "mirror-v3"  # Format 3: Backlog (`TODO.md`, `archive.md`, `items/`)
 
 
 def read_folder(folder: Path) -> FileSet:

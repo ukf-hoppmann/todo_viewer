@@ -4,14 +4,14 @@ import difflib
 from dataclasses import replace
 from typing import Any
 
-from mirror_files import FIXTURES, read_folder
+from mirror_files import BACKLOG_FIXTURES, FIXTURES, read_folder
 from viewer.core.domain.files import Change, DeleteFile, FileEntry, FileSet, RenameFile, WriteFile
 from viewer.core.domain.sync import MirrorEntry
 from viewer.plugins.backlog.infrastructure.mirror.decode import decode
 from viewer.plugins.backlog.infrastructure.mirror.encode import encode
 from viewer.plugins.backlog.infrastructure.mirror.syntax import field_lines
 
-CURRENT = read_folder(FIXTURES / "valid")
+CURRENT = read_folder(BACKLOG_FIXTURES / "valid")
 ENTRIES = decode(CURRENT)
 BY_LABEL = {e.label: e for e in ENTRIES if e.label}
 
@@ -115,7 +115,6 @@ def test_a_new_item_is_appended_with_all_fields_in_the_order_of_the_format() -> 
             "title": "Neu",
             "status": "Open",
             "priority": "Urgent",
-            "area": "Server",
             "created": "2026-10-17",
             "goal": "Ziel",
             "completion_criteria": "Kriterien",
@@ -140,7 +139,6 @@ def test_a_new_item_is_appended_with_all_fields_in_the_order_of_the_format() -> 
                 "  - Required for parent: Yes.",
                 "  - Status: Open.",
                 "  - Created: 2026-10-17.",
-                "  - Area: Server.",
                 "  - Priority: Urgent.",
                 "  - Dependencies: `TASK-001`.",
                 "  - Goal: Ziel",
@@ -237,7 +235,7 @@ def test_removed_items_and_documents_disappear_from_the_files() -> None:
 
 def test_the_last_entry_removed_leaves_the_section_marked_empty() -> None:
     text = (
-        "# Project Backlog Archive\n\nFormat: Claude_Harness backlog format version 2.\n\n## Work items\n\n"
+        "# Project Backlog Archive\n\nFormat: Claude_Harness backlog format version 3.\n\n## Work items\n\n"
         "- `TASK-001` **Eins**\n  - Uid: 33333333-3333-4333-8333-333333333333.\n  - Type: Task.\n"
     )
     current = FileSet({"archive.md": FileEntry("archive.md", text, "v")})
@@ -257,7 +255,7 @@ def test_without_any_file_a_new_item_creates_todo_md_from_the_template_and_no_ar
 
     assert list(texts(changes)) == ["TODO.md"]
     out = texts(changes)["TODO.md"]
-    assert out.startswith("# Project Backlog\n") and "backlog format version 2" in out and "## Work items" in out
+    assert out.startswith("# Project Backlog\n") and "backlog format version 3" in out and "## Work items" in out
     assert decode(FileSet({"TODO.md": FileEntry("TODO.md", out, "v")}))[0].uid == entry.uid
 
 
@@ -297,3 +295,35 @@ def test_a_list_survives_writing_and_reading() -> None:
 
     assert read.count("\n") == 2 and same_text(read, value)
     assert not same_text("Flach 1. Eins 2. Zwei", "Flach 1. Eins\n2. Zwei")
+
+
+def test_a_new_item_gets_no_area_line_and_the_templates_carry_version_3() -> None:
+    entry = replace(changed(BY_LABEL["EPIC-001"], status="Open"), refs={})
+
+    out = texts(encode([entry], [], FileSet({})))["TODO.md"]
+
+    assert "  - Area:" not in out and "backlog format version 3" in out and "version 2" not in out
+
+
+V2 = read_folder(FIXTURES / "valid")
+
+
+def test_unchanged_entries_of_a_version_2_file_are_not_rewritten_because_of_area() -> None:
+    known = [e for e in decode(V2) if e.uid is not None]
+
+    assert encode(known, [], V2) == []
+
+
+def test_a_changed_entry_in_a_version_2_file_loses_area_and_the_file_becomes_version_3() -> None:
+    entry = changed({e.label: e for e in decode(V2) if e.label}["TASK-001"], status="In progress")
+
+    out = texts(encode([entry], [], V2))["TODO.md"]
+
+    assert "backlog format version 3" in out and "backlog format version 2" not in out
+    task = out.split("- `TASK-001`")[1].split("\n- `")[0]
+    assert "  - Area:" not in task and "  - Status: In progress." in task
+    other = out.split("- `STORY-001`")[1].split("\n- `")[0]
+    assert "  - Area:" in other  # ein unveränderter Eintrag behält sie; gelesen wird sie ignoriert
+    assert {e.label: dict(e.fields) for e in decode(FileSet({**V2.files, "TODO.md": FileEntry("TODO.md", out, "v")}))}[
+        "TASK-001"
+    ]["status"] == "In progress"

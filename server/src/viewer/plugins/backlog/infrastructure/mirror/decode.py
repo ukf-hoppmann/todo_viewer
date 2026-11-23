@@ -1,4 +1,4 @@
-"""Dateien → Einträge: liest `TODO.md`, `archive.md` und `items/**` und prüft sie nach dem Format Version 2."""
+"""Dateien → Einträge: liest `TODO.md`, `archive.md` und `items/**` und prüft sie (Format Version 3, auch 2)."""
 
 from __future__ import annotations
 
@@ -18,8 +18,10 @@ from viewer.plugins.backlog.infrastructure.mirror.syntax import (
     ARCHIVE_FILE,
     DAY,
     FIELD_ORDER,
+    IGNORED_FIELDS,
     LABEL,
     PLACEHOLDER,
+    READ_VERSIONS,
     TODO_FILE,
     Block,
     clean,
@@ -63,10 +65,10 @@ def _items(files: FileSet) -> list[_Decoded]:
             continue
         lines = entry.text.split("\n")
         line, version = format_line(lines)
-        if version != 2:
+        if version not in READ_VERSIONS:
             raise MirrorFormatError(
                 "format_version",
-                "Die Kennung fehlt" if version is None else f"Die Kennung nennt Version {version}, gebraucht wird 2",
+                "Die Kennung fehlt" if version is None else f"Die Kennung nennt Version {version}, gebraucht: 2 oder 3",
                 file=path,
                 line=line,
             )
@@ -114,7 +116,7 @@ def _entry(path: str, block: Block) -> MirrorEntry:
     values: dict[str, str] = {}
     lines: dict[str, int] = {}
     for field in block.fields:
-        if field.label not in FIELD_ORDER:
+        if field.label not in FIELD_ORDER and field.label not in IGNORED_FIELDS:
             raise _fail("unknown_field", f"Das Feld `{field.label}` kennt das Format nicht", path, field.line)
         if field.label in values:
             raise _fail("invalid_value", f"Das Feld `{field.label}` steht zweimal", path, field.line)
@@ -145,7 +147,6 @@ def _entry(path: str, block: Block) -> MirrorEntry:
         raise _fail("invalid_value", f"Typ `{type_}` passt nicht zu `{ident}`", path, lines["Type"])
     status = _choice("Status", clean(need("Status")), STATUSES, path, lines)
     priority = _choice("Priority", clean(need("Priority")), tuple(PRIORITIES), path, lines)
-    area = clean(need("Area"))
     goal = need("Goal").strip()
     criteria = need("Completion criteria").strip()
     dependencies = _refs(need("Dependencies"), path, lines["Dependencies"])
@@ -173,7 +174,6 @@ def _entry(path: str, block: Block) -> MirrorEntry:
         "title": block.title,
         "status": status,
         "priority": priority,
-        "area": area,
         "created": created,
         "goal": goal,
         "completion_criteria": criteria,
@@ -292,7 +292,7 @@ def _check_rules(items: list[_Decoded], docs: list[MirrorEntry]) -> None:
                 title=f["title"],
                 status=f["status"],
                 priority=f["priority"],
-                area=f["area"],
+                area=None,
                 parent_uid=keys.get(parent[0], f"unknown:{parent[0]}") if parent else None,
                 required_for_parent=f["required_for_parent"],
                 goal=f["goal"],

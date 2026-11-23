@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 import pytest
-from mirror_files import FIXTURES, read_folder
+from mirror_files import BACKLOG_FIXTURES, FIXTURES, read_folder
 from viewer.core.domain.sync import MirrorFormatError
 from viewer.plugins.backlog.infrastructure.mirror.decode import decode
 
@@ -20,7 +21,7 @@ CODES = [
 
 
 def _decode(name: str):  # type: ignore[no-untyped-def]
-    return decode(read_folder(FIXTURES / name))
+    return decode(read_folder(BACKLOG_FIXTURES / name))
 
 
 def test_the_valid_project_is_read_with_all_items_and_documents() -> None:
@@ -50,7 +51,6 @@ def test_fields_and_references_of_an_item() -> None:
         "title": "Task mit Abhängigkeit",
         "status": "Awaiting confirmation",
         "priority": "Normal",
-        "area": "Web-UI",
         "created": "2026-10-03",
         "goal": "Ein Task, der von einer anderen Story abhängt.",
         "completion_criteria": "Die Abhängigkeit ist erfüllt.",
@@ -78,7 +78,7 @@ def test_a_new_item_has_a_placeholder_and_no_uid_label_or_created() -> None:
 
     assert (new.uid, new.label, new.fields["created"]) == (None, None, None)
     assert new.refs == {"parent": ("STORY-001",), "dependencies": ("TASK-001",)}
-    assert new.source == ("TODO.md", 77)
+    assert new.source == ("TODO.md", 72)
 
 
 def test_an_existing_item_may_name_a_placeholder() -> None:
@@ -105,10 +105,10 @@ def test_documents_are_entries_with_the_uid_of_the_item_and_the_name() -> None:
 
 @pytest.mark.parametrize("code", CODES)
 def test_every_error_names_code_file_and_line_of_the_golden_example(code: str) -> None:
-    expected = json.loads((FIXTURES / "invalid" / code / "expected.json").read_text(encoding="utf-8"))
+    expected = json.loads((BACKLOG_FIXTURES / "invalid" / code / "expected.json").read_text(encoding="utf-8"))
 
     with pytest.raises(MirrorFormatError) as error:
-        decode(read_folder(FIXTURES / "invalid" / code))
+        decode(read_folder(BACKLOG_FIXTURES / "invalid" / code))
 
     assert (error.value.code, error.value.details["file"], error.value.details["line"]) == (
         expected["code"],
@@ -124,7 +124,7 @@ def test_a_missing_file_is_no_entry_and_an_empty_folder_gives_none() -> None:
 
 
 def test_a_document_in_the_wrong_folder_is_a_file_label_mismatch() -> None:
-    files = read_folder(FIXTURES / "valid")
+    files = read_folder(BACKLOG_FIXTURES / "valid")
     moved = {
         ("items/STORY-001/STORY-009_notes.md" if p == "items/STORY-001/STORY-001_notes.md" else p): e
         for p, e in files.files.items()
@@ -141,7 +141,7 @@ def test_a_document_in_the_wrong_folder_is_a_file_label_mismatch() -> None:
 
 
 def test_a_document_of_an_item_that_is_not_in_the_files_is_left_alone() -> None:
-    files = read_folder(FIXTURES / "valid")
+    files = read_folder(BACKLOG_FIXTURES / "valid")
     extra = dict(files.files)
     extra["items/STORY-099/STORY-099_notes.md"] = files.files["items/STORY-001/STORY-001_notes.md"]
 
@@ -153,13 +153,13 @@ def test_a_document_of_an_item_that_is_not_in_the_files_is_left_alone() -> None:
 def test_an_active_item_below_a_closed_parent_is_reported_at_its_parent_line() -> None:
     # Die Zeile steht im Golden-File; hier zusätzlich die Meldung.
     with pytest.raises(MirrorFormatError) as error:
-        decode(read_folder(FIXTURES / "invalid" / "rule_violation"))
+        decode(read_folder(BACKLOG_FIXTURES / "invalid" / "rule_violation"))
 
     assert "STORY-003" in str(error.value)
 
 
 def test_a_type_that_does_not_match_the_label_is_invalid() -> None:
-    files = read_folder(FIXTURES / "valid")
+    files = read_folder(BACKLOG_FIXTURES / "valid")
     changed = {
         p: (
             type(e)(
@@ -186,7 +186,7 @@ def test_notes_are_compared_in_the_layout_the_database_produces() -> None:
     """Zusätzliche Leerzeilen nach dem Stempel sind kein Unterschied: die Datenbank bringt Notes ins feste Layout."""
     from dataclasses import replace
 
-    files = read_folder(FIXTURES / "valid")
+    files = read_folder(BACKLOG_FIXTURES / "valid")
     path = "items/STORY-001/STORY-001_notes.md"
     text = (
         "# STORY-001 — Pflicht-Story mit Dokumenten\n\n## State\n\n- Goal/Status: a\n\n"
@@ -201,3 +201,43 @@ def test_notes_are_compared_in_the_layout_the_database_produces() -> None:
         return next(e for e in decode(folder) if e.label == "STORY-001_notes.md").fields["content"]
 
     assert content_of(extra) == content_of(plain)
+
+
+def _with_text(files, path: str, old: str, new: str):  # type: ignore[no-untyped-def]
+    changed = replace(files.files[path], text=files.files[path].text.replace(old, new))
+    return type(files)({**files.files, path: changed})
+
+
+def test_version_2_with_area_is_read_like_version_3_and_area_is_ignored() -> None:
+    v2 = decode(read_folder(FIXTURES / "valid"))
+    v3 = _decode("valid")
+
+    assert [(e.kind, e.uid, e.label, e.placeholder, dict(e.fields), e.refs) for e in v2] == [
+        (e.kind, e.uid, e.label, e.placeholder, dict(e.fields), e.refs) for e in v3
+    ]
+    assert all("area" not in e.fields for e in v2)
+
+
+def test_a_version_3_file_may_still_carry_area_which_is_ignored() -> None:
+    files = read_folder(BACKLOG_FIXTURES / "valid")
+    with_area = _with_text(files, "TODO.md", "  - Status: In progress.\n", "  - Status: In progress.\n  - Area: Alt.\n")
+    assert with_area.files["TODO.md"].text != files.files["TODO.md"].text
+
+    assert [dict(e.fields) for e in decode(with_area)] == [dict(e.fields) for e in decode(files)]
+
+
+def test_area_is_not_required_in_either_version() -> None:
+    files = read_folder(BACKLOG_FIXTURES / "valid")
+    v2 = _with_text(files, "TODO.md", "backlog format version 3", "backlog format version 2")
+
+    assert decode(v2) and "Area" not in v2.files["TODO.md"].text
+
+
+def test_version_4_and_a_missing_version_are_rejected_with_the_format_version_code() -> None:
+    files = read_folder(BACKLOG_FIXTURES / "valid")
+    for text, version in (("backlog format version 4", 4), ("backlog format", None)):
+        broken = _with_text(files, "TODO.md", "backlog format version 3", text)
+        with pytest.raises(MirrorFormatError) as error:
+            decode(broken)
+        assert error.value.code == "format_version", version
+        assert error.value.details["file"] == "TODO.md"

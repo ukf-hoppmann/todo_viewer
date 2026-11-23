@@ -15,7 +15,7 @@ Der ToDo-Viewer ist ein lokaler Dienst für Backlogs, Memos, Wecker und eine Min
 | Client (`client/`, React, Vite, TypeScript) | Oberfläche aus einem Kern und Plugins mit Seiten, Slots und Zustand | [Neubau: Client](neubau-client.md) |
 | Plugins `workspace`, `backlog`, `memos`, `alarms`, `mindmap` | Je ein Server- und ein Client-Teil: Projekte und Verknüpfungen; Epics/Stories/Tasks; Memos und Topics; Wecker; Themenbaum | in den beiden Dokumenten oben |
 | Datenbank (SQLite) | Einzige Quelle der Wahrheit; Tabellen gehören je einem Plugin (Präfix) | [Neubau: Server](neubau-server.md#datenbank) |
-| Markdown-Spiegel | Optionale Dateikopie eines Projekts (Backlog-Format Version 2) zum Mitnehmen über Git, auch in die Cloud | [Schnittstellen](interfaces.md) |
+| Markdown-Spiegel | Optionale Dateikopie eines Projekts (Backlog-Format Version 3) zum Mitnehmen über Git, auch in die Cloud | [Schnittstellen](interfaces.md) |
 | MCP-Server (`/mcp`) | Dieselben Operationen als Werkzeuge für den Harness und andere KI-Agenten | [Schnittstellen](interfaces.md) |
 | Proxy (nginx) | Macht den Viewer ohne Port unter `todo.localhost` erreichbar | [Betrieb](operations.md) |
 

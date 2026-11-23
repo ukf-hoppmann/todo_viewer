@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from mirror_files import FIXTURES
+from mirror_files import BACKLOG_FIXTURES, FIXTURES
 from workspace_env import Env
 
 BASE = {"title": "Ein Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
@@ -17,7 +17,8 @@ class Mirror:
         self.env = env
         self.folder = tmp_path / "mirror"
         if fixture:
-            shutil.copytree(FIXTURES / fixture, self.folder)
+            root = FIXTURES if fixture.startswith("v2/") else BACKLOG_FIXTURES  # "v2/…": Format 2 mit Area
+            shutil.copytree(root / fixture.removeprefix("v2/"), self.folder)
         else:
             self.folder.mkdir()
         created = env.client.post(
@@ -233,10 +234,10 @@ def test_unknown_references_formats_and_rules_stop_the_sync_with_file_and_line_a
     backlog: Env, tmp_path: Path
 ) -> None:
     expected = {
-        "unknown_reference": ("TODO.md", 48),
+        "unknown_reference": ("TODO.md", 45),
         "format_version": ("TODO.md", 7),
-        "invalid_value": ("TODO.md", 33),
-        "rule_violation": ("TODO.md", 42),
+        "invalid_value": ("TODO.md", 31),
+        "rule_violation": ("TODO.md", 40),
     }
     for index, (code, (file, line)) in enumerate(expected.items()):
         sub = tmp_path / f"case{index}"
@@ -443,3 +444,45 @@ def test_deleting_the_notes_removes_their_file_too(backlog: Env, tmp_path: Path)
 
     assert not path.exists()
     assert mirror.sync().json()["conflicts_left"] == []
+
+
+def test_files_of_version_2_with_area_are_imported_without_area_and_without_error(
+    backlog: Env, tmp_path: Path
+) -> None:
+    mirror = Mirror(backlog, tmp_path, "v2/valid")
+
+    result = mirror.sync()
+
+    assert result.status_code == 200, result.text
+    items = mirror.items()
+    assert sorted(items) == ["EPIC-001", "STORY-001", "STORY-002", "STORY-003", "TASK-001", "TASK-002", "TASK-004"]
+    assert all(item["area"] is None for item in items.values())
+
+
+def test_a_version_2_file_is_written_as_version_3_without_area_for_changed_items(backlog: Env, tmp_path: Path) -> None:
+    mirror = Mirror(backlog, tmp_path, "v2/valid")
+    mirror.sync()
+    item = mirror.items()["TASK-001"]
+    changed = backlog.client.put(
+        f"/api/backlog/items/{item['uid']}", json={"version": item["version"], "fields": {"status": "In progress"}}
+    )
+    assert changed.status_code == 200, changed.text
+
+    result = mirror.sync()
+
+    assert result.status_code == 200, result.text
+    todo = mirror.text("TODO.md")
+    assert "backlog format version 3" in todo and "backlog format version 2" not in todo
+    task = todo.split("- `TASK-001`")[1].split("\n- `")[0]
+    assert "  - Area:" not in task and "  - Status: In progress." in task
+    assert mirror.status()["state"] == "in_sync"
+
+
+def test_items_created_in_the_viewer_are_written_without_area(backlog: Env, tmp_path: Path) -> None:
+    mirror = Mirror(backlog, tmp_path)
+    mirror.create("Epic")
+
+    mirror.sync()
+
+    todo = mirror.text("TODO.md")
+    assert "  - Area:" not in todo and "backlog format version 3" in todo

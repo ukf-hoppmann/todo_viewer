@@ -13,6 +13,7 @@ from viewer.plugins.backlog.infrastructure.mirror.syntax import (
     ARCHIVE_FILE,
     FIELD_ORDER,
     FREE_TEXT,
+    IGNORED_FIELDS,
     NO_ENTRIES,
     REFERENCE_FIELDS,
     TODO_FILE,
@@ -24,6 +25,7 @@ from viewer.plugins.backlog.infrastructure.mirror.syntax import (
     reference_text,
     references,
     same_text,
+    upgrade_format_line,
     with_period,
 )
 
@@ -33,7 +35,7 @@ _TEMPLATES = {
         "Active project work: open, in progress, or awaiting a project-owner decision.\n"
         "Completed and rejected items are moved to `archive.md`; per-item notes and\n"
         "specs live in `items/<ID>/`.\n\n"
-        "Format: Claude_Harness backlog format version 2. The rules are defined in\n"
+        "Format: Claude_Harness backlog format version 3. The rules are defined in\n"
         "`docs/techdocs/interfaces.md` of the ToDo Viewer.\n\n"
         "## Work items\n"
     ),
@@ -41,7 +43,7 @@ _TEMPLATES = {
         "# Project Backlog Archive\n\n"
         "Completed and rejected work items, moved unchanged from `TODO.md` after the\n"
         "project owner's decision.\n\n"
-        "Format: Claude_Harness backlog format version 2. The rules are defined in\n"
+        "Format: Claude_Harness backlog format version 3. The rules are defined in\n"
         "`docs/techdocs/interfaces.md` of the ToDo Viewer.\n\n"
         "## Work items\n"
     ),
@@ -55,7 +57,7 @@ def target_file(entry: MirrorEntry) -> str:
 
 
 def desired_fields(entry: MirrorEntry) -> dict[str, str]:
-    """Feld → Text, wie er im Eintrag stehen soll (Format Version 2); fehlende Werte fehlen."""
+    """Feld → Text, wie er im Eintrag stehen soll (Format Version 3); fehlende Werte fehlen."""
     f = entry.fields
     parent = entry.refs.get("parent", ())
     values: dict[str, str] = {}
@@ -70,7 +72,6 @@ def desired_fields(entry: MirrorEntry) -> dict[str, str]:
     values["Status"] = f["status"]
     if f["created"]:
         values["Created"] = f["created"]
-    values["Area"] = f["area"]
     values["Priority"] = f["priority"]
     values["Dependencies"] = reference_text(entry.refs.get("dependencies", ()))
     values["Goal"] = f["goal"]
@@ -149,6 +150,7 @@ def _edit(file: _File, first: int, entry: MirrorEntry) -> None:
     if file.lines[current.first] != header:
         file.lines[current.first] = header
     wanted = desired_fields(entry)
+    before = list(file.lines)
     # Ersetzen und Einfügen in der Reihenfolge des Formats; jedes Mal neu lesen, weil sich Indizes verschieben.
     for label in FIELD_ORDER:
         current = block()
@@ -168,6 +170,11 @@ def _edit(file: _File, first: int, entry: MirrorEntry) -> None:
             if present is not None:
                 position = present.end
         file.lines[position:position] = field_lines(label, text)
+    if file.lines != before:  # nur ein ohnehin geänderter Eintrag verliert die Felder früherer Versionen
+        for label in IGNORED_FIELDS:
+            old = block().field(label)
+            if old is not None:
+                del file.lines[old.first : old.end]
 
 
 def _section_start(lines: list[str]) -> int | None:
@@ -256,6 +263,8 @@ def encode(upserts: Sequence[MirrorEntry], removed: Sequence[MirrorEntry], curre
         text = "\n".join(file.lines).rstrip("\n") + "\n"
         if file.existed and text == file.original:
             continue
+        upgrade_format_line(file.lines)  # geschrieben wird immer die aktuelle Version
+        text = "\n".join(file.lines).rstrip("\n") + "\n"
         if not file.existed and not parse_blocks(file.lines):
             continue  # eine Datei, die es nicht gibt und die leer bliebe, wird nicht angelegt
         changes.append(WriteFile(file.path, text))

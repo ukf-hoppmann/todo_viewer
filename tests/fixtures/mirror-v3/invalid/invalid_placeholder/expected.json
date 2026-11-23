@@ -1,0 +1,6 @@
+{
+  "code": "invalid_placeholder",
+  "file": "TODO.md",
+  "line": 83,
+  "reason": "Großbuchstaben und `_` im Kurznamen"
+}

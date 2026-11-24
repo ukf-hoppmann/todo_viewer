@@ -441,8 +441,7 @@ vom Backlog-Format. Es liegt im Spiegel-Ordner unter `mindmap/` (Muster des Code
 Grundsatz: **der Inhalt eines Knotens steht genau einmal in einer Datei; jeder Baum ist eine eigene Datei, die nur
 Verweise auf Knoten in ihrer Ordnung enthält.** Mehrfache Platzierungen sind Verweise, nie Kopien. Der Codec
 (`MindmapCodec`, `server/src/viewer/plugins/mindmap/infrastructure/mirror/`) liest und schreibt diese Dateien; der
-`MindmapParticipant` nimmt Knoten, Bäume und Dokumente in den Sync auf (Zuordnungen, `Removed:` und der Papierkorb der
-Bäume folgen mit `TASK-081`). Feldnamen und Werte sind englisch, Inhalte in der Sprache
+`MindmapParticipant` nimmt Knoten, Bäume, Dokumente, Zuordnungen, `Removed:` und den Papierkorb in den Sync auf. Feldnamen und Werte sind englisch, Inhalte in der Sprache
 des Projekts, Zeitpunkte UTC mit `Z`.
 
 | Pfad | Inhalt |
@@ -548,6 +547,19 @@ Jeder Fehler nennt Datei und Zeile (`MirrorFormatError`).
 `unknown_reference` (ein Baum nennt einen Knoten, den es nie gab) entscheidet nur die Datenbank: der Teilnehmer meldet ihn
 beim Übernehmen mit Datei und Zeile; ebenso `rule_violation` bei einem Kreis oder einem Knoten, der in der Liste keinen
 Parent findet.
+
+Was der Sync daraus macht (Teilnehmer, `MindmapParticipant`):
+
+- `Items:`/`Memos:` sind die Zuordnungen des Knotens; ein Verweis auf ein Element, das es nicht gibt, ist
+  `unknown_reference`, auf eines eines anderen Projekts (`Projekt:LABEL`), im Papierkorb oder der falschen Art
+  `rule_violation`, beide mit Datei und Zeile. Der Sync ändert nur die Verknüpfung, nie das Item oder Memo.
+- `Removed:` ersetzt das Gedächtnis der entfernten Platzierungen des Baums; nicht mehr genannte Zeilen werden
+  vergessen, solange der Knoten nicht wieder in der Liste steht. Ein Knoten unter `Removed:` darf im Baum keine Kinder
+  mehr haben (`rule_violation`). Die Zeilen stehen im Baum nach Knoten sortiert.
+- `Deleted:` einer freien Map legt sie samt den Knoten, die nur in ihr stehen, in den Papierkorb; leer holt sie mit
+  diesen Knoten zurück. Ein Papierkorb in den Dateien führt nie zum endgültigen Löschen.
+- Eine gelöschte Dokument-Datei ist ein Konflikt; erst die Entscheidung „Dateien“ löscht das Dokument in der
+  Datenbank. Wird ein Knoten im Papierkorb endgültig gelöscht, gehen seine Dateien mit, wenn sie unverändert sind.
 
 Beispiele: `tests/fixtures/mirror-mindmap/valid/` und `…/invalid/<code>/` sind die Golden-Files des Codecs.
 

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 
 from viewer.plugins.mindmap.domain import tree as rules
-from viewer.plugins.mindmap.domain.model import MindmapViolation, Placement
+from viewer.plugins.mindmap.domain.model import MindmapViolation, Placement, RemovedPlacement
 
 
 def placements_from_listing(tree_uid: str, nodes: Sequence[str], depths: Sequence[int]) -> list[Placement]:
@@ -34,8 +34,7 @@ def changed_placements(stored: Sequence[Placement], wanted: Sequence[Placement])
 
     Eine Geschwistergruppe (je Parent der Liste) wird nur angefasst, wenn sich ihre Mitglieder oder deren Reihenfolge
     ändern; Lücken in den gespeicherten Stellen allein sind kein Unterschied. Knoten, die die Liste nicht nennt,
-    behalten ihren Parent und stehen hinter den genannten Geschwistern (entfernte Platzierungen sind nicht Teil dieser
-    Stufe)."""
+    behalten ihren Parent und stehen hinter den genannten Geschwistern; `Removed:` regelt `changed_removed`."""
     listed = {p.node_uid for p in wanted}
     result: list[Placement] = []
     for parent in dict.fromkeys(p.parent_uid for p in wanted):
@@ -48,3 +47,28 @@ def changed_placements(stored: Sequence[Placement], wanted: Sequence[Placement])
             if rules.find(stored, node) != now:
                 result.append(now)
     return result
+
+
+def changed_removed(
+    stored: Sequence[RemovedPlacement], wanted: Sequence[RemovedPlacement], listed: Collection[str]
+) -> tuple[list[RemovedPlacement], list[RemovedPlacement]]:
+    """Was mit den entfernten Platzierungen eines Baums geschieht, damit er `Removed:` der Datei folgt: (zu merken, zu
+    vergessen). Gemerkt wird, was neu oder anders ist. Vergessen wird, was die Datei nicht mehr nennt, solange der
+    Knoten nicht in der Liste des Baums steht (dann holt ihn das Schreiben der Platzierung zurück)."""
+    known = {r.node_uid: r for r in stored}
+    named = {r.node_uid for r in wanted}
+    mark = [r for r in wanted if known.get(r.node_uid) != r]
+    forget = [r for r in stored if r.node_uid not in named and r.node_uid not in listed]
+    return mark, forget
+
+
+def check_no_children_of_removed(live: Sequence[Placement], removed: Collection[str]) -> None:
+    """Ein entfernter Knoten hat keine Kinder mehr im Baum: sie müssten unter ihm stehen, den es dort nicht gibt."""
+    for placement in live:
+        if placement.parent_uid in removed:
+            raise MindmapViolation(
+                "mindmap_parent_removed",
+                "Der Parent steht unter Removed:, der Knoten aber noch im Baum (er gehört mit unter Removed:)",
+                node=placement.node_uid,
+                parent=placement.parent_uid,
+            )

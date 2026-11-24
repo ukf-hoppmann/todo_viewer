@@ -233,6 +233,7 @@ def _tree(path: str, text: str, expected_kind: str, stem: str | None) -> MirrorE
             if key in values:
                 _fail("invalid_value", f"Der Projektbaum hat kein `{key}`", path, values[key][1])
     nodes, depths, removed_rows = _tree_body(lines, index, path)
+    removed_rows.sort(key=lambda row: row[0])  # die Reihenfolge der Zeilen trägt nichts: so vergleicht der Sync stabil
     refs: dict[str, tuple[str, ...]] = {}
     if nodes:
         refs["nodes"] = tuple(nodes)

@@ -349,3 +349,8 @@ class SqlDocumentRepository:
                 "Das Dokument wurde inzwischen geändert", details={"name": name, "expected": expected}
             )
         return expected + 1
+
+    def delete(self, tx: Transaction, node_uid: str, name: str) -> None:
+        _conn(tx).execute(
+            text("DELETE FROM mindmap_documents WHERE node_uid = :u AND name = :n"), {"u": node_uid, "n": name}
+        )

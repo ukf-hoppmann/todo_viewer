@@ -135,6 +135,10 @@ class DocumentRepository(Protocol):
         """Ersetzt den Inhalt, wenn die Revision `expected` ist (sonst `version_conflict`); gibt die neue zurück."""
         ...
 
+    def delete(self, tx: Transaction, node_uid: str, name: str) -> None:
+        """Entfernt das Dokument endgültig (nur der Sync tut das, nach einer Entscheidung des Owners)."""
+        ...
+
 
 @dataclass(frozen=True)
 class BacklogItem:

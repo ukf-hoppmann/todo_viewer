@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 
 from viewer.core.application.ports import Clock, Database, EventBus, Transaction
 from viewer.core.domain.errors import NotFound
@@ -47,6 +48,30 @@ class MapDeleted:
     nodes_deleted: int
     #: Die Knoten, die auch in einem anderen Baum stehen und dort erhalten bleiben.
     kept_elsewhere: int
+
+
+def trash_map(
+    repository: MindmapRepository,
+    registry: ElementRegistry,
+    tx: Transaction,
+    tree: Tree,
+    at: datetime,
+    expected: int | None,
+) -> tuple[list[Node], int]:
+    """Legt die freie Map mit den lebenden Knoten, die in keinem anderen Baum stehen, in den Papierkorb (mit `expected`
+    wird ihre Version geprüft). Gibt diese Knoten und die Zahl der Knoten zurück, die auch anderswo stehen und dort
+    bleiben. Gemeinsam für die API und den Sync."""
+    rules.check_deletable(tree)
+    shared = repository.shared_count(tx, tree.uid)
+    own = [
+        n
+        for n in repository.nodes_in_tree(tx, tree.uid)
+        if all(p.tree_uid == tree.uid for p in repository.placements_of(tx, n.uid))
+    ]
+    repository.set_tree_deleted(tx, tree.uid, at, expected)
+    for node in own:
+        registry.mark_deleted(tx, node.uid, at)
+    return own, shared
 
 
 class MapService:
@@ -111,12 +136,7 @@ class MapService:
             tree = self._require_tree(tx, tree_uid)
             rules.check_deletable(tree)
             self._require_alive(tree)
-            at = self._clock.now()
-            shared = self._repository.shared_count(tx, tree.uid)
-            own = self._exclusive_nodes(tx, tree.uid)
-            self._repository.set_tree_deleted(tx, tree.uid, at, version)
-            for node in own:
-                self._registry.mark_deleted(tx, node.uid, at)
+            own, shared = trash_map(self._repository, self._registry, tx, tree, self._clock.now(), version)
         self._map_changed(tree, "deleted")
         self._nodes_changed(own, "deleted")
         return MapDeleted(tree.uid, len(own), shared)
@@ -149,14 +169,6 @@ class MapService:
 
     def _free_names(self, tx: Transaction, project_uid: str, except_uid: str | None = None) -> list[str]:
         return [t.name or "" for t in self._repository.free_maps(tx, project_uid) if t.uid != except_uid]
-
-    def _exclusive_nodes(self, tx: Transaction, tree_uid: str) -> list[Node]:
-        """Die lebenden Knoten, die in keinem anderen Baum stehen."""
-        return [
-            n
-            for n in self._repository.nodes_in_tree(tx, tree_uid)
-            if all(p.tree_uid == tree_uid for p in self._repository.placements_of(tx, n.uid))
-        ]
 
     def _require_project(self, tx: Transaction, project_uid: str) -> Project:
         project = self._projects.get(tx, project_uid)

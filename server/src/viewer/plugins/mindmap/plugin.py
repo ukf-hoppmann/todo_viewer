@@ -82,7 +82,15 @@ def _build(context: PluginContext) -> MindmapServices:
         assignments,
         maps,
         branches,
-        MindmapParticipant(repository, documents, workspace.registry, context.database, context.clock),
+        MindmapParticipant(
+            repository,
+            documents,
+            workspace.registry,
+            workspace.links,
+            workspace.project_store,
+            context.database,
+            context.clock,
+        ),
     )
 
 

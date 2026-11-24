@@ -4,8 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from viewer.plugins.mindmap.domain.listing import changed_placements, placements_from_listing
-from viewer.plugins.mindmap.domain.model import MindmapViolation, Placement
+from viewer.plugins.mindmap.domain.listing import (
+    changed_placements,
+    changed_removed,
+    check_no_children_of_removed,
+    placements_from_listing,
+)
+from viewer.plugins.mindmap.domain.model import MindmapViolation, Placement, RemovedPlacement
 from viewer.plugins.mindmap.domain.tree import apply, check_acyclic
 
 T = "tree-1"
@@ -64,3 +69,36 @@ def test_a_reordered_group_is_rewritten_and_nodes_left_out_of_the_listing_stay_w
 
     assert sorted((p.node_uid, p.parent_uid, p.position) for p in result) == [("a", None, 1), ("b", None, 0)]
     check_acyclic(apply(stored, result))
+
+
+def _removed(node: str, parent: str | None = None, position: int = 0, root: str = "r") -> RemovedPlacement:
+    return RemovedPlacement("t", node, parent, position, root)
+
+
+def test_removed_rows_that_are_new_or_different_are_remembered_and_unchanged_ones_are_left_alone() -> None:
+    stored = [_removed("a"), _removed("b", "a", 1)]
+    wanted = [_removed("a"), _removed("b", "a", 2), _removed("c")]
+
+    mark, forget = changed_removed(stored, wanted, listed=[])
+
+    assert mark == [_removed("b", "a", 2), _removed("c")]
+    assert forget == []
+
+
+def test_a_removed_row_the_file_no_longer_names_is_forgotten_unless_the_node_is_listed_again() -> None:
+    stored = [_removed("a"), _removed("b")]
+
+    mark, forget = changed_removed(stored, [_removed("a")], listed=["b"])
+    assert (mark, forget) == ([], [])
+
+    mark, forget = changed_removed(stored, [_removed("a")], listed=[])
+    assert (mark, forget) == ([], [_removed("b")])
+
+
+def test_a_live_child_under_a_removed_parent_is_a_rule_violation() -> None:
+    live = [Placement("t", "x", None, 0), Placement("t", "y", "a", 0)]
+
+    check_no_children_of_removed(live, {"b"})
+    with pytest.raises(MindmapViolation) as error:
+        check_no_children_of_removed(live, {"a"})
+    assert error.value.code == "mindmap_parent_removed"

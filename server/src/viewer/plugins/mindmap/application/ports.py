@@ -198,3 +198,26 @@ class NodeAssigner(Protocol):
     def assign_item(self, item_ref: str, node_ref: str, project_uid: str | None, replace: bool) -> Node: ...
 
     def link_memo(self, memo_ref: str, node_ref: str, project_uid: str | None) -> Node: ...
+
+
+@dataclass(frozen=True)
+class BacklogProblem:
+    """Ein Problem des Backlogs an einem geplanten Item; `key` ist die uid des Knotens (`None`: ganzer Plan)."""
+
+    key: str | None
+    code: str
+    message: str
+    details: dict[str, Any]
+
+
+class BacklogChecker(Protocol):
+    """Nicht schreibende Prüfung geplanter Items mit den Regeln des Backlogs (Adapter in
+    `infrastructure/backlog_gateway.py`). `planned` sind `domain.transfer.PlannedItem`."""
+
+    def check_new_items(self, project_uid: str, planned: Sequence[Any]) -> list[BacklogProblem]: ...
+
+
+class BranchSource(Protocol):
+    """Der Ast, der überführt wird: der Knoten zuerst, dann seine lebenden Nachkommen."""
+
+    def branch_of(self, ref: str, project_uid: str | None, tree_uid: str | None) -> list[Node]: ...

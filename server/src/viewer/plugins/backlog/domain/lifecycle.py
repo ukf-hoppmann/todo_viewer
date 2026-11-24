@@ -49,6 +49,15 @@ class Violation:
     related: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True)
+class Introduced:
+    """Eine neu eingeführte Verletzung: `uid` und `related` nennen die beteiligten Items, `error` ist die Meldung."""
+
+    uid: str
+    related: tuple[str, ...]
+    error: LifecycleViolation
+
+
 def is_closed(item: Item) -> bool:
     return item.status in FINAL_STATUSES
 
@@ -74,6 +83,15 @@ class LifecycleRules:
         `returning` sind Items, die wieder in Gebrauch kommen (aus dem Papierkorb): ihre eigenen alten Mängel
         (`OWN_RULES`) gelten nicht als neu, Regeln zwischen Items schon.
         """
+        found = self.introduced(before, after, returning)
+        if found:
+            raise found[0].error
+
+    def introduced(
+        self, before: Sequence[Item], after: Sequence[Item], returning: Sequence[Item] = ()
+    ) -> list[Introduced]:
+        """Alle Verletzungen, die die Änderung einführt oder erweitert, in fester Reihenfolge (`check_change` wirft
+        die erste). Dieselben Regeln; die Vorschau eines Astes (`TASK-074`) braucht alle statt der ersten."""
         label = {item.uid: item.label for item in (*before, *after, *returning)}
         existing = {(v.code, v.uid): set(v.related) for v in self.violations(before)}
         back = {item.uid for item in returning}
@@ -81,6 +99,7 @@ class LifecycleRules:
             if v.uid in back and v.code in OWN_RULES:
                 existing[(v.code, v.uid)] = set(v.related)
         was_closed = {item.uid for item in before if is_closed(item)}
+        found: list[Introduced] = []
         for v in sorted(self.violations(after)):
             known = existing.get((v.code, v.uid))
             if known is not None and set(v.related) <= known:
@@ -90,13 +109,16 @@ class LifecycleRules:
                 # Der Parent blieb geschlossen, ihm wurde ein aktives Kind hinzugefügt (nicht er geschlossen).
                 child = next(uid for uid in v.related if uid not in (known or set()))
                 chain = closed_ancestors(after, child)
-                raise LifecycleViolation(
+                error = LifecycleViolation(
                     "parent_closed",
                     label[child],
                     tuple(label[uid] for uid in chain),
                     ancestors=[{"uid": uid, "label": label[uid]} for uid in chain],
                 )
-            raise LifecycleViolation(v.code, label.get(v.uid, v.uid), related)
+            else:
+                error = LifecycleViolation(v.code, label.get(v.uid, v.uid), related)
+            found.append(Introduced(v.uid, v.related, error))
+        return found
 
     @staticmethod
     def _structure(item: Item, known: set[str]) -> Iterable[Violation]:

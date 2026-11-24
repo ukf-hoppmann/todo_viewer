@@ -17,7 +17,12 @@ from viewer.plugins.mindmap.application.documents import DocumentService
 from viewer.plugins.mindmap.application.maps import MapService, MapTrash
 from viewer.plugins.mindmap.application.operations import OPERATIONS, MindmapServices
 from viewer.plugins.mindmap.application.service import KIND, MindmapService
-from viewer.plugins.mindmap.infrastructure.backlog_gateway import ServicesBacklogItems, ServicesBacklogWriter
+from viewer.plugins.mindmap.application.transfer import BranchTransferService
+from viewer.plugins.mindmap.infrastructure.backlog_gateway import (
+    ServicesBacklogChecker,
+    ServicesBacklogItems,
+    ServicesBacklogWriter,
+)
 from viewer.plugins.mindmap.infrastructure.memo_gateway import ServicesMemoWriter
 from viewer.plugins.mindmap.infrastructure.database.repository import SqlDocumentRepository, SqlMindmapRepository
 from viewer.plugins.mindmap.infrastructure.database.schema import MIGRATIONS
@@ -85,6 +90,7 @@ def _build(context: PluginContext) -> MindmapServices:
         ServicesBacklogWriter(backlog, context.database),
         ServicesMemoWriter(memos),
     )
+    transfer = BranchTransferService(service, ServicesBacklogChecker(backlog), creation)
     return MindmapServices(
         service,
         DocumentService(documents, service, context.database, context.clock, context.events),
@@ -92,6 +98,7 @@ def _build(context: PluginContext) -> MindmapServices:
         maps,
         branches,
         creation,
+        transfer,
         MindmapParticipant(
             repository,
             documents,

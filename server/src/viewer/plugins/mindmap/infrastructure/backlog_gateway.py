@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from viewer.core.application.ports import Database, Transaction
-from viewer.plugins.mindmap.application.ports import BacklogItem, CreatedElement
+from viewer.plugins.mindmap.application.ports import BacklogItem, BacklogProblem, CreatedElement
 
 
 class ServicesBacklogItems:
@@ -44,3 +45,17 @@ class ServicesBacklogWriter:
         with self._database.transaction() as tx:
             item = self._services.repository.get(tx, uid)
         return CreatedElement(uid, item.label, item.title, item.type)
+
+
+class ServicesBacklogChecker:
+    """Prüft geplante Items über `services.editing` des Plugins `backlog`, mit den Regeln, die beim Anlegen gelten.
+
+    Die geplanten Items (`PlannedItem` der Mindmap) haben dieselben Felder wie die des Backlogs und werden so
+    übergeben; Code des Plugins `backlog` wird nicht importiert."""
+
+    def __init__(self, services: Any) -> None:
+        self._editing = services.editing
+
+    def check_new_items(self, project_uid: str, planned: Sequence[Any]) -> list[BacklogProblem]:
+        found = self._editing.check_new_items(project_uid, planned)
+        return [BacklogProblem(p.key, p.code, p.message, dict(p.details)) for p in found]

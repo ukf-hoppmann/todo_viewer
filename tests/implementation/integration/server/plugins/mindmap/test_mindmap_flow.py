@@ -314,6 +314,8 @@ def test_the_operations_are_published_as_http_routes_and_mcp_tools(mindmap: Env)
         "append_node_entry",
         "create_item_at_node",
         "create_memo_at_node",
+        "preview_branch_transfer",
+        "transfer_branch",
         "assign_item",
         "unassign_item",
         "link_memo",

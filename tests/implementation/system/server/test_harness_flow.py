@@ -158,13 +158,47 @@ async def session(harness: Harness) -> None:
     done = await harness.call("alarms_finish_alarm", ref=alarm["uid"], version=alarm["version"])
     assert done["status"] == "Done"
 
+    # Ast überführen: Vorschau, dann Anlegen (TASK-074); je Knoten legt der Aufrufer Item oder Memo fest
+    root = await harness.call("mindmap_create_node", project=general, title="Anmeldung", text="Login überarbeiten")
+    child = await harness.call(
+        "mindmap_create_node", project=general, title="Maske", text="Eingabemaske", parent=root["uid"]
+    )
+    idea = await harness.call("mindmap_create_node", project=general, title="Passwortregeln", parent=root["uid"])
+    crit = "1. Tests grün"
+    plan = [
+        {"node": root["uid"], "kind": "item", "type": "Epic", "completion_criteria": crit},
+        {"node": child["uid"], "kind": "item", "type": "Story", "completion_criteria": crit, "parent": root["uid"]},
+        {"node": idea["uid"], "kind": "memo"},
+    ]
+    preview = await harness.call("mindmap_preview_branch_transfer", root=root["uid"], entries=plan)
+    assert preview["ok"] and preview["order"] == [root["uid"], child["uid"], idea["uid"]]
+    broken = await harness.call(
+        "mindmap_preview_branch_transfer",
+        root=root["uid"],
+        entries=[{"node": child["uid"], "kind": "item", "type": "Task", "parent": "STORY-999"}],
+        project=general,
+    )
+    assert not broken["ok"] and {p["code"] for p in broken["entries"][0]["problems"]} >= {
+        "parent_not_found",
+        "criteria_missing",
+    }
+    blocked = await harness.fails(
+        "mindmap_transfer_branch", root=root["uid"], entries=[plan[0], {**plan[1], "type": "Epic"}]
+    )
+    assert blocked["code"] == "transfer_blocked"
+    moved = await harness.call("mindmap_transfer_branch", root=root["uid"], entries=plan)
+    assert [e["status"] for e in moved["entries"]] == ["created", "created", "created"]
+    assert (await harness.call("mindmap_get_item_node", item=moved["entries"][1]["created"]["uid"]))[
+        "node_uid"
+    ] == child["uid"]
+
     # delete, trash und restore
     current = await harness.call("backlog_get_item", ref=story["uid"])
     gone = await harness.call("workspace_delete_element", uid=story["uid"], version=current["version"], cascade=False)
     assert (gone["has_children"], gone["deleted"]) == (False, 1)
     assert [t["uid"] for t in await harness.call("workspace_list_trash")] == [story["uid"]]
     await harness.call("workspace_restore_elements", uids=[story["uid"]])
-    assert (await harness.call("backlog_index_lines", projects=general))["count"] == 2
+    assert (await harness.call("backlog_index_lines", projects=general))["count"] == 4
 
 
 def test_a_typical_harness_session_works_over_mcp(viewer: RunningServer) -> None:

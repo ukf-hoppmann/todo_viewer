@@ -27,6 +27,8 @@ from viewer.plugins.mindmap.application.documents import DocumentService
 from viewer.plugins.mindmap.application.maps import MapDeleted, MapService, MapView
 from viewer.plugins.mindmap.application.ports import BacklogItem, Document
 from viewer.plugins.mindmap.application.service import MindmapService, NodeView, TreeView
+from viewer.plugins.mindmap.application.transfer import BranchTransferService, Preview, TransferResult
+from viewer.plugins.mindmap.domain.transfer import Problem, TransferEntry
 
 
 class MindmapServices:
@@ -38,6 +40,7 @@ class MindmapServices:
         maps: MapService,
         branches: BranchService,
         creation: NodeCreationService,
+        transfer: BranchTransferService,
         participant: SyncParticipant,
     ) -> None:
         self.mindmap = mindmap
@@ -46,6 +49,7 @@ class MindmapServices:
         self.maps = maps
         self.branches = branches
         self.creation = creation
+        self.transfer = transfer
         self.participant = participant
 
 
@@ -660,6 +664,91 @@ class CreatedMemoAtNodeOut:
 
 
 @dataclass(frozen=True)
+class TransferEntryIn:
+    """Was aus einem Knoten des Astes wird. Ohne Eintrag (oder mit `skip`) wird aus dem Knoten nichts."""
+
+    #: Knoten des Astes (uid oder Label); höchstens einmal im Plan.
+    node: str
+    #: `item`, `memo` oder `skip`.
+    kind: str = "skip"
+    #: Bei `item`: `Epic`, `Story` oder `Task`. Er wird nie aus Ebene oder Tiefe abgeleitet.
+    type: str | None = None
+    #: Bei `item`; fehlt `title`, gilt der Titel des Knotens, fehlt `goal`, sein Text; `completion_criteria` sind
+    #: Pflicht.
+    title: str | None = None
+    goal: str | None = None
+    completion_criteria: str | None = None
+    summary: str | None = None
+    priority: str | None = None
+    #: Bei `item` mit Parent: Standard `true`.
+    required_for_parent: bool | None = None
+    #: Bei `memo`: `summary` und `body` (wie bei `memos_create_memo`; Standard Titel und Text des Knotens).
+    memo: dict[str, Any] | None = None
+    #: Ein anderer Knoten des Plans (das neue Item wird sein Kind) oder ein vorhandenes Item (uid oder Label).
+    parent: str | None = None
+    #: Knoten des Plans oder vorhandene Items, von denen das neue Item abhängt.
+    depends_on: list[str] | None = None
+
+
+@dataclass(frozen=True)
+class PreviewBranchTransfer:
+    #: Der oberste Knoten des Astes (uid oder Label).
+    root: str
+    entries: list[TransferEntryIn]
+    #: Nur nötig, wenn `root` ein Label ist.
+    project: str | None = None
+    #: Die Map, in der der Ast steht; nötig, wenn der Knoten in mehreren Bäumen steht.
+    tree: str | None = None
+
+
+@dataclass(frozen=True)
+class TransferBranch(PreviewBranchTransfer):
+    pass
+
+
+@dataclass(frozen=True)
+class ProblemOut:
+    code: str
+    message: str
+    details: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class EntryPreviewOut:
+    node: str
+    ok: bool
+    problems: list[ProblemOut]
+
+
+@dataclass(frozen=True)
+class BranchPreviewOut:
+    root: str
+    ok: bool
+    entries: list[EntryPreviewOut]
+    #: Probleme des ganzen Plans (z. B. Kreise).
+    problems: list[ProblemOut]
+    #: Die Knoten in der Reihenfolge, in der angelegt würde.
+    order: list[str]
+
+
+@dataclass(frozen=True)
+class TransferEntryOut:
+    node: str
+    #: `created`, `failed`, `skipped` oder `not_attempted`.
+    status: str
+    created: CreatedElementOut | None = None
+    #: Bei `failed`: `code`, `message`, `details`.
+    error: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class BranchTransferOut:
+    root: str
+    #: Alle Knoten des Astes, die Wurzel zuerst.
+    entries: list[TransferEntryOut]
+
+
+@dataclass(frozen=True)
 class Done:
     ok: bool = True
 
@@ -707,6 +796,48 @@ def _created_memo(services: MindmapServices, created: Created, tree: str | None)
     e = created.element
     return CreatedMemoAtNodeOut(
         CreatedElementOut(e.uid, e.label, e.title), _tree_node(services, created.node.uid, tree)
+    )
+
+
+def _problem_out(problem: Problem) -> ProblemOut:
+    return ProblemOut(problem.code, problem.message, problem.details)
+
+
+def _transfer_entry(entry: TransferEntryIn) -> TransferEntry:
+    fields = {
+        name: value
+        for name in ("title", "goal", "completion_criteria", "summary", "priority", "required_for_parent")
+        if (value := getattr(entry, name)) is not None
+    }
+    return TransferEntry(
+        entry.node, entry.kind, entry.type, fields, entry.memo or {}, entry.parent, tuple(entry.depends_on or ())
+    )
+
+
+def _preview_out(preview: Preview) -> BranchPreviewOut:
+    return BranchPreviewOut(
+        preview.root_uid,
+        preview.ok,
+        [EntryPreviewOut(e.node, e.ok, [_problem_out(p) for p in e.problems]) for e in preview.entries],
+        [_problem_out(p) for p in preview.problems],
+        preview.order,
+    )
+
+
+def _transfer_out(result: TransferResult) -> BranchTransferOut:
+    return BranchTransferOut(
+        result.root_uid,
+        [
+            TransferEntryOut(
+                e.node,
+                e.status,
+                CreatedElementOut(e.element.uid, e.element.label, e.element.title, e.element.type)
+                if e.element
+                else None,
+                e.error,
+            )
+            for e in result.entries
+        ],
     )
 
 
@@ -987,6 +1118,36 @@ OPERATIONS: tuple[Operation, ...] = (
         CreatedMemoAtNodeOut,
         lambda s, d: _created_memo(s, s.creation.create_memo(d.node, d.fields, d.project), d.tree),
         HttpBinding("POST", "/nodes/{node}/create-memo"),
+    ),
+    Operation(
+        "preview_branch_transfer",
+        "Prüft den Plan, einen Ast ins Backlog zu überführen, ohne etwas zu schreiben. Je Knoten des Astes legt der "
+        "Aufrufer fest: `item` (mit Typ), `memo` oder `skip`; nichts wird aus Ebene oder Tiefe abgeleitet. "
+        "`parent` und `depends_on` nennen andere Knoten des Plans oder vorhandene Items. Die Antwort nennt je Eintrag und "
+        "für den ganzen Plan die Probleme (`code`, `message`; u. a. node_not_in_branch, node_duplicate, invalid_type, "
+        "goal_missing, criteria_missing, parent_type_not_allowed, parent_is_memo, parent_not_found, parent_closed, "
+        "dependency_cycle, depends_on_not_found) und die Reihenfolge des Anlegens",
+        "read",
+        PreviewBranchTransfer,
+        BranchPreviewOut,
+        lambda s, d: _preview_out(
+            s.transfer.preview(d.root, d.project, d.tree, [_transfer_entry(e) for e in d.entries])
+        ),
+        HttpBinding("POST", "/nodes/{root}/preview-branch-transfer"),
+    ),
+    Operation(
+        "transfer_branch",
+        "Überführt einen Ast ins Backlog: prüft den Plan wie `preview_branch_transfer` und legt ihn nur an, wenn die "
+        "Vorschau ohne Probleme ist (sonst transfer_blocked, Probleme in `details`). Items und Memos entstehen in der "
+        "Reihenfolge ihrer Beziehungen, jedes am Knoten. Je Knoten des Astes meldet die Antwort created, failed, "
+        "skipped oder not_attempted (alles, was von einem gescheiterten Eintrag abhängt); Angelegtes bleibt bestehen",
+        "write",
+        TransferBranch,
+        BranchTransferOut,
+        lambda s, d: _transfer_out(
+            s.transfer.transfer(d.root, d.project, d.tree, [_transfer_entry(e) for e in d.entries])
+        ),
+        HttpBinding("POST", "/nodes/{root}/transfer-branch"),
     ),
     Operation(
         "unassign_item",

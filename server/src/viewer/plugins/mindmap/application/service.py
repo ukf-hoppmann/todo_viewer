@@ -107,6 +107,21 @@ class MindmapService:
             raise MindmapViolation("mindmap_other_project", f"{node.label} gehört zu einem anderen Projekt")
         return node
 
+    def branch_of(self, ref: str, project_uid: str | None, tree_uid: str | None) -> list[Node]:
+        """Der Ast ab dem Knoten `ref` in einem Baum: der Knoten zuerst, dann seine lebenden Nachkommen (Eltern vor
+        Kindern). Wie bei `node_for_creation` muss der Knoten leben und zum genannten Projekt gehören."""
+        with self._database.transaction() as tx:
+            node = self._resolve(tx, ref, project_uid)
+            self.require_alive(node)
+            if project_uid is not None and node.project_uid != project_uid:
+                raise MindmapViolation("mindmap_other_project", f"{node.label} gehört zu einem anderen Projekt")
+            tree = self._tree_of_node(tx, node, tree_uid)
+            placements = self._repository.placements(tx, tree.uid)
+            live = self._live(tx, tree.uid)
+            below = [uid for uid in rules.descendants(placements, node.uid) if uid in live]
+            found = [self._repository.get_node(tx, uid) for uid in below]
+        return [node, *(n for n in found if n is not None and n.deleted_at is None)]
+
     # --- Schreiben ------------------------------------------------------------------------------------------------
 
     def create_node(

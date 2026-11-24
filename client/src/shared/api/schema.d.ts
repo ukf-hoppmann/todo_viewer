@@ -1313,6 +1313,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mindmap/nodes/{root}/preview-branch-transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prüft den Plan, einen Ast ins Backlog zu überführen, ohne etwas zu schreiben. Je Knoten des Astes legt der Aufrufer fest: `item` (mit Typ), `memo` oder `skip`; nichts wird aus Ebene oder Tiefe abgeleitet. `parent` und `depends_on` nennen andere Knoten des Plans oder vorhandene Items. Die Antwort nennt je Eintrag und für den ganzen Plan die Probleme (`code`, `message`; u. a. node_not_in_branch, node_duplicate, invalid_type, goal_missing, criteria_missing, parent_type_not_allowed, parent_is_memo, parent_not_found, parent_closed, dependency_cycle, depends_on_not_found) und die Reihenfolge des Anlegens */
+        post: operations["mindmap_preview_branch_transfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{root}/transfer-branch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Überführt einen Ast ins Backlog: prüft den Plan wie `preview_branch_transfer` und legt ihn nur an, wenn die Vorschau ohne Probleme ist (sonst transfer_blocked, Probleme in `details`). Items und Memos entstehen in der Reihenfolge ihrer Beziehungen, jedes am Knoten. Je Knoten des Astes meldet die Antwort created, failed, skipped oder not_attempted (alles, was von einem gescheiterten Eintrag abhängt); Angelegtes bleibt bestehen */
+        post: operations["mindmap_transfer_branch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mindmap/trash/{project}": {
         parameters: {
             query?: never;
@@ -1776,6 +1810,26 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** BranchPreviewOut */
+        BranchPreviewOut: {
+            /** Entries */
+            entries: components["schemas"]["EntryPreviewOut"][];
+            /** Ok */
+            ok: boolean;
+            /** Order */
+            order: string[];
+            /** Problems */
+            problems: components["schemas"]["ProblemOut"][];
+            /** Root */
+            root: string;
+        };
+        /** BranchTransferOut */
+        BranchTransferOut: {
+            /** Entries */
+            entries: components["schemas"]["TransferEntryOut"][];
+            /** Root */
+            root: string;
+        };
         /**
          * ClientLogOut
          * @description `accepted` ist `False`, wenn der Eintrag wegen der Mengenbegrenzung verworfen wurde.
@@ -2055,6 +2109,15 @@ export interface components {
             uid: string;
             /** Version */
             version: number;
+        };
+        /** EntryPreviewOut */
+        EntryPreviewOut: {
+            /** Node */
+            node: string;
+            /** Ok */
+            ok: boolean;
+            /** Problems */
+            problems: components["schemas"]["ProblemOut"][];
         };
         /** EntryRefOut */
         EntryRefOut: {
@@ -2750,6 +2813,15 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** MindmapPreviewBranchTransferBody */
+        MindmapPreviewBranchTransferBody: {
+            /** Entries */
+            entries: components["schemas"]["TransferEntryIn"][];
+            /** Project */
+            project?: string | null;
+            /** Tree */
+            tree?: string | null;
+        };
         /** MindmapPutNodeDocumentBody */
         MindmapPutNodeDocumentBody: {
             /** Content */
@@ -2796,6 +2868,15 @@ export interface components {
             tree?: string | null;
             /** Version */
             version: number;
+        };
+        /** MindmapTransferBranchBody */
+        MindmapTransferBranchBody: {
+            /** Entries */
+            entries: components["schemas"]["TransferEntryIn"][];
+            /** Project */
+            project?: string | null;
+            /** Tree */
+            tree?: string | null;
         };
         /** MindmapTransferNodeToMapBody */
         MindmapTransferNodeToMapBody: {
@@ -2971,6 +3052,17 @@ export interface components {
             token: string;
             /** Transfers */
             transfers: components["schemas"]["TransferOut"][];
+        };
+        /** ProblemOut */
+        ProblemOut: {
+            /** Code */
+            code: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /** Message */
+            message: string;
         };
         /** ProgressOut */
         ProgressOut: {
@@ -3206,6 +3298,53 @@ export interface components {
             name: string;
             /** Uid */
             uid: string;
+        };
+        /**
+         * TransferEntryIn
+         * @description Was aus einem Knoten des Astes wird. Ohne Eintrag (oder mit `skip`) wird aus dem Knoten nichts.
+         */
+        TransferEntryIn: {
+            /** Completion Criteria */
+            completion_criteria?: string | null;
+            /** Depends On */
+            depends_on?: string[] | null;
+            /** Goal */
+            goal?: string | null;
+            /**
+             * Kind
+             * @default skip
+             */
+            kind: string;
+            /** Memo */
+            memo?: {
+                [key: string]: unknown;
+            } | null;
+            /** Node */
+            node: string;
+            /** Parent */
+            parent?: string | null;
+            /** Priority */
+            priority?: string | null;
+            /** Required For Parent */
+            required_for_parent?: boolean | null;
+            /** Summary */
+            summary?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Type */
+            type?: string | null;
+        };
+        /** TransferEntryOut */
+        TransferEntryOut: {
+            created?: components["schemas"]["CreatedElementOut"] | null;
+            /** Error */
+            error?: {
+                [key: string]: unknown;
+            } | null;
+            /** Node */
+            node: string;
+            /** Status */
+            status: string;
         };
         /** TransferOut */
         TransferOut: {
@@ -6538,6 +6677,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NodeTreeOut"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_preview_branch_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                root: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapPreviewBranchTransferBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BranchPreviewOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_transfer_branch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                root: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapTransferBranchBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BranchTransferOut"];
                 };
             };
             /** @description Client Error */

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any
 
 from viewer.core.application.ports import Clock, Database, EventBus, Transaction
-from viewer.core.domain.errors import InvalidInput
+from viewer.core.domain.errors import DomainError, InvalidInput
 from viewer.core.domain.events import Event
 from viewer.plugins.backlog.application.items import ItemService
 from viewer.plugins.backlog.application.ports import DocumentRepository, ItemRepository, NotesRepository
@@ -18,6 +18,7 @@ from viewer.plugins.backlog.domain.editing import (
 )
 from viewer.plugins.backlog.domain.lifecycle import LifecycleRules, LifecycleViolation, closed_ancestors, is_closed
 from viewer.plugins.backlog.domain.model import KIND_BY_TYPE, TYPES, Item
+from viewer.plugins.backlog.domain.planning import PlannedItem, PlanProblem, check_planned
 
 CHANGED_TOPIC = "backlog.item.changed"
 STATUS_TOPIC = "backlog.item.status_changed"
@@ -89,6 +90,51 @@ class EditService:
             self._repository.insert(tx, item)
         self._changed(item.uid, "created")
         return item.uid
+
+    def check_new_items(self, project_uid: str, planned: Sequence[PlannedItem]) -> list[PlanProblem]:
+        """Prüft geplante neue Items mit denselben Regeln wie `create_item`, ohne etwas zu schreiben (`TASK-074`).
+
+        Ein Verweis auf ein vorhandenes Item steht in `fields` unter `parent` und `dependencies` (uid oder Label).
+        Gefunden werden alle Probleme, nicht nur das erste."""
+        today = self._clock.now().date()
+        problems: list[PlanProblem] = []
+        resolved: list[PlannedItem] = []
+        with self._database.transaction() as tx:
+            for entry in planned:
+                values = dict(entry.fields)
+                parent = values.get("parent")
+                if parent not in (None, ""):
+                    uid = self._existing(tx, str(parent), project_uid)
+                    if uid is None:
+                        problems.append(self._not_found(entry.key, "parent_not_found", "Parent", str(parent)))
+                        del values["parent"]
+                    else:
+                        values["parent"] = uid
+                deps = []
+                for ref in values.get("dependencies") or ():
+                    uid = self._existing(tx, str(ref), project_uid)
+                    if uid is None:
+                        problems.append(self._not_found(entry.key, "depends_on_not_found", "Abhängigkeit", str(ref)))
+                    else:
+                        deps.append(uid)
+                if "dependencies" in values:
+                    values["dependencies"] = deps
+                resolved.append(replace(entry, fields=values))
+            before = self._repository.list_in(tx, [project_uid])
+        return [*problems, *check_planned(before, project_uid, resolved, today)]
+
+    def _existing(self, tx: Transaction, ref: str, project_uid: str) -> str | None:
+        try:
+            item = self._items.resolve(tx, ref, project_uid)
+        except DomainError:
+            return None
+        return None if item.deleted_at is not None or item.project_uid != project_uid else item.uid
+
+    @staticmethod
+    def _not_found(key: str, code: str, what: str, ref: str) -> PlanProblem:
+        return PlanProblem(
+            key, code, f"{what} {ref} gibt es im Projekt nicht (oder es liegt im Papierkorb)", {"ref": ref}
+        )
 
     # --- Ändern ---------------------------------------------------------------------------------------------------
 

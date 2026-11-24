@@ -14,19 +14,25 @@ def _given(fields: Mapping[str, Any], name: str) -> bool:
     return value is not None and not (isinstance(value, str) and not value.strip())
 
 
-def item_fields(node: Node, fields: Mapping[str, Any]) -> dict[str, Any]:
-    """Die Felder des neuen Items: fehlt `title`, gilt der Titel des Knotens, fehlt `goal`, sein Text (falls er einen
-    hat). Die Abschlusskriterien kommen immer vom Aufrufer, der Knoten hat keine; alles Weitere prüft das Backlog."""
+def item_defaults(node: Node, fields: Mapping[str, Any]) -> dict[str, Any]:
+    """Die Felder des neuen Items mit den Standardwerten des Knotens: fehlt `title`, gilt sein Titel, fehlt `goal`,
+    sein Text (falls er einen hat). Prüft nichts (die Vorschau eines Astes sammelt die Mängel selbst)."""
     result = {k: v for k, v in fields.items() if k not in ("title", "goal") or _given(fields, k)}
+    result.setdefault("title", node.title)
+    if "goal" not in result and node.text:
+        result["goal"] = node.text
+    return result
+
+
+def item_fields(node: Node, fields: Mapping[str, Any]) -> dict[str, Any]:
+    """Die Felder des neuen Items: Standardwerte aus `item_defaults`. Die Abschlusskriterien kommen immer vom
+    Aufrufer, der Knoten hat keine; alles Weitere prüft das Backlog."""
     if not _given(fields, "completion_criteria"):
         raise InvalidInput(
             "completion_criteria fehlt: der Knoten hat keine Abschlusskriterien",
             details={"field": "completion_criteria"},
         )
-    result.setdefault("title", node.title)
-    if "goal" not in result and node.text:
-        result["goal"] = node.text
-    return result
+    return item_defaults(node, fields)
 
 
 def memo_fields(node: Node, fields: Mapping[str, Any]) -> dict[str, Any]:

@@ -131,3 +131,36 @@ def test_an_old_flaw_of_a_returning_item_is_not_new_but_a_rule_between_items_is(
         check([closed_parent], [closed_parent, replace(flawed, required_for_parent=True)], returning=[flawed])
         == "parent_closed"
     )
+
+
+def test_introduced_collects_all_new_violations_and_check_change_raises_the_first() -> None:
+    """`introduced` (`TASK-074`) ist die sammelnde Fassung derselben Regeln, die `check_change` anwendet."""
+    old = [item("ok")]
+    bad = [
+        replace(epic("e1"), parent_uid="x"),
+        replace(epic("e2"), parent_uid="x"),
+        item("t", parent="e1", required=None),
+    ]
+    found = rules.introduced(old, [*old, *bad])
+    codes = sorted((v.error.code, v.uid) for v in found)
+
+    assert ("epic_with_parent", "e1") in codes and ("epic_with_parent", "e2") in codes
+    assert ("required_for_parent_missing", "t") in codes
+    assert len(found) > 1
+    with pytest.raises(LifecycleViolation) as first:
+        rules.check_change(old, [*old, *bad])
+    assert first.value.code == found[0].error.code
+
+
+def test_introduced_ignores_violations_that_were_already_there() -> None:
+    flawed = [replace(epic("e"), parent_uid="x")]
+    assert rules.introduced(flawed, flawed) == []
+
+
+def test_introduced_names_the_uids_involved() -> None:
+    a = replace(item("a"), dependencies=("b",))
+    b = replace(item("b"), dependencies=("a",))
+    [found] = rules.introduced([], [a, b])
+
+    assert found.error.code == "dependency_cycle"
+    assert {found.uid, *found.related} == {"a", "b"}

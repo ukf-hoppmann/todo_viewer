@@ -128,6 +128,9 @@ Verknüpfungen: `workspace_add_link`, `workspace_remove_link`, `workspace_list_l
 
 Der Systemtest `tests/implementation/system/server/test_harness_flow.py` führt diesen Ablauf gegen den ganzen Viewer
 (echter uvicorn-Server, alle Plugins) über einen MCP-Client aus.
+Ein zweiter Test in derselben Datei bildet das Zuordnen und Vorschlagen von Knoten nach (`mindmap_get_tree`,
+`mindmap_create_item_at_node`, `mindmap_create_node`, `mindmap_assign_item`): der Vorschlag lebt im Gespräch und ändert
+nichts; ohne Zustimmung bleibt das Item „Nicht zugeordnet“.
 
 ## Dateiformat des Markdown-Spiegels (Backlog: Version 3, Alarme und Memos: Version 2)
 

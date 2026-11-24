@@ -201,9 +201,70 @@ async def session(harness: Harness) -> None:
     assert (await harness.call("backlog_index_lines", projects=general))["count"] == 4
 
 
+async def assignment_session(harness: Harness) -> None:
+    """Zuordnen und Vorschlagen (STORY-104): der Vorschlag lebt im Gespräch, der Server hält keinen Zustand.
+
+    Das Gespräch ist durch getrennte Aufrufsfolgen nachgebildet: ein Vorschlag ändert nichts; erst nach der
+    Zustimmung entsteht der Knoten.
+    """
+    general = next(p for p in await harness.call("workspace_list_projects") if p["builtin"])["uid"]
+    crit = "1. Tests grün"
+
+    # Vorbereitung: ein Themenbaum mit einem Knoten
+    login = await harness.call("mindmap_create_node", project=general, title="Anmeldung", text="Login überarbeiten")
+
+    # 1. Die KI liest den Themenbaum; das Item passt zu „Anmeldung“ und wird dort angelegt
+    tree = await harness.call("mindmap_get_tree", project=general)
+    assert [n["title"] for n in tree["nodes"]] == ["Anmeldung"] and tree["unassigned"] == []
+    assert tree["nodes"][0]["state"] == "idea"
+    placed = await harness.call(
+        "mindmap_create_item_at_node",
+        node=login["uid"],
+        type="Story",
+        fields={"title": "Maske", "goal": "Eingabemaske", "completion_criteria": crit},
+    )
+    assert placed["node"]["state"] == "planned"
+    item_node = await harness.call("mindmap_get_item_node", item=placed["item"]["uid"])
+    assert (item_node["node_uid"], item_node["explicit"]) == (login["uid"], True)
+    tree = await harness.call("mindmap_get_tree", project=general)
+    assert tree["nodes"][0]["total"] == 1 and tree["unassigned"] == []
+
+    # 2. Ein Item ohne passenden Knoten: die KI schlägt vor, es ändert sich nichts; das Item steht „Nicht zugeordnet“
+    fields = {"title": "Berichte exportieren", "goal": "Export", "completion_criteria": crit}
+    loose = await harness.call("backlog_create_item", project=general, type="Story", fields=fields)
+    tree = await harness.call("mindmap_get_tree", project=general)
+    assert [i["uid"] for i in tree["unassigned"]] == [loose["uid"]]
+    assert [n["title"] for n in tree["nodes"]] == ["Anmeldung"]  # kein Knoten erfunden
+
+    # 3. Nach der Zustimmung: Knoten anlegen, Item zuordnen; „Nicht zugeordnet“ ist leer
+    reports = await harness.call("mindmap_create_node", project=general, title="Berichte")
+    await harness.call("mindmap_assign_item", node=reports["uid"], item=loose["uid"])
+    item_node = await harness.call("mindmap_get_item_node", item=loose["uid"])
+    assert item_node["node_uid"] == reports["uid"]
+    tree = await harness.call("mindmap_get_tree", project=general)
+    assert [n["title"] for n in tree["nodes"]] == ["Anmeldung", "Berichte"] and tree["unassigned"] == []
+
+    # 4. Zustimmung verweigert: das nächste Item bleibt „Nicht zugeordnet“, der Baum ist unverändert
+    refused = await harness.call(
+        "backlog_create_item", project=general, type="Task", fields={**fields, "title": "Archiv aufräumen"}
+    )
+    after = await harness.call("mindmap_get_tree", project=general)
+    assert [i["uid"] for i in after["unassigned"]] == [refused["uid"]]
+    assert [n["uid"] for n in after["nodes"]] == [n["uid"] for n in tree["nodes"]]
+    assert (await harness.call("mindmap_get_item_node", item=refused["uid"]))["node_uid"] is None
+
+
 def test_a_typical_harness_session_works_over_mcp(viewer: RunningServer) -> None:
     async def scenario() -> None:
         async with Client(viewer.base_url + "/mcp") as client:
             await session(Harness(client))
+
+    asyncio.run(scenario())
+
+
+def test_the_ai_assigns_items_to_the_topic_tree_and_proposes_nodes_only_after_consent(viewer: RunningServer) -> None:
+    async def scenario() -> None:
+        async with Client(viewer.base_url + "/mcp") as client:
+            await assignment_session(Harness(client))
 
     asyncio.run(scenario())

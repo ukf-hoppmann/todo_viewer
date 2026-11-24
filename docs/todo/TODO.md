@@ -235,127 +235,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     übernimmt die Einordnung nach Themen. Den ersten Themenbaum baut eine KI
     aus den vorhandenen Items, du bekommst dafür einen fertigen Prompt.
 
-- `TASK-068` **Backlog-Spiegel: Format Version 3 ohne Area**
-  - Uid: 5490cf98-8cec-4c5a-94a5-c0c5f95c120f.
-  - Type: Task.
-  - Parent: `STORY-106`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-23.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Der Spiegel des Backlogs (`TODO.md`, `archive.md`) schreibt das
-    Format Version 3 ohne das Feld Area und liest die Versionen 2 und 3. Ein
-    Feld Area in einer gelesenen Datei wird ignoriert und führt nie zu einem
-    Fehler.
-  - Completion criteria: 1. Der Codec schreibt die Kennung „backlog format
-    version 3“ und kein Feld Area; die übrigen Felder behalten ihre
-    Reihenfolge.
-    2. Der Codec liest Version 2 und 3; ein Feld Area wird in beiden
-    ignoriert, ohne Fehler; jede andere Versionsnummer ergibt weiter
-    `format_version`.
-    3. Der Teilnehmer lädt und schreibt Area nicht mehr; Items aus Dateien
-    bekommen `area=None`.
-    4. Golden-Files für Version 3 liegen unter `tests/fixtures/mirror-v3/`
-    (gültige und ungültige Beispiele); `tests/fixtures/mirror-v2/` bleibt
-    unverändert und prüft das Lesen von Version 2.
-    5. Das Format ist in `docs/techdocs/interfaces.md` (Abschnitt
-    „Backlog-Einträge“) als Version 3 beschrieben: Pflichtfelder ohne Area,
-    Area wird gelesen und ignoriert, Unterschied zu Version 2.
-    6. Alle Tests sind grün.
-  - Summary: Die Backlog-Dateien kommen ohne das Feld Area aus und heißen
-    Format Version 3. Alte Dateien mit Area lassen sich weiter einlesen.
-
-- `TASK-069` **Area ist beim Anlegen nicht mehr Pflicht**
-  - Uid: 945d33d7-a499-4bbf-a044-2bab0b29ba18.
-  - Type: Task.
-  - Parent: `STORY-106`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-23.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Items und Beförderungen von Memos lassen sich ohne Area anlegen.
-    Area bleibt in dieser Task noch ein erlaubtes, optionales Feld, damit die
-    Oberfläche in der nächsten Task ohne Bruch umgebaut werden kann.
-  - Completion criteria: 1. `create_item` verlangt nur noch `title`, `goal`
-    und `completion_criteria`; `area` darf fehlen und ist dann `None`.
-    2. `promote_memo` verlangt nur noch `goal` und `completion_criteria`.
-    3. Beschreibungen der HTTP-Routen und MCP-Tools nennen Area nicht mehr als
-    Pflicht.
-    4. Vorhandenes Verhalten mit Area (Anlegen, Ändern, Index, Spiegel) bleibt
-    unverändert.
-    5. Unit- und Integrationstests sind grün; ein Test legt ein Item ohne Area
-    an, einer befördert ein Memo ohne Area.
-  - Summary: Beim Anlegen eines Items muss kein Bereich mehr angegeben werden.
-    Das Feld bleibt vorerst, damit die Oberfläche in einem eigenen Schritt
-    umgebaut werden kann.
-
-- `TASK-070` **Oberfläche ohne Area**
-  - Uid: 84329ee9-90ad-4214-bb27-46cadae823b8.
-  - Type: Task.
-  - Parent: `STORY-106`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-23.
-  - Area: Web-UI.
-  - Priority: Normal.
-  - Dependencies: `TASK-069`.
-  - Goal: Die Oberfläche zeigt, verlangt und ändert Area nirgends mehr: nicht
-    im Item-Formular, nicht im Detail eines Items, nicht beim Befördern eines
-    Memos.
-  - Completion criteria: 1. Das Formular zum Anlegen und Ändern eines Items
-    hat kein Feld Area; es sendet kein `area`.
-    2. Das Detail eines Items zeigt und ändert Area nicht mehr; der Dialog
-    „Neuer Bereich“ entfällt.
-    3. Der Dialog zum Befördern eines Memos fragt Area nicht mehr ab und
-    sendet kein `area`.
-    4. Der API-Zugriff `listAreas` (`backlog/areas`) und alle Übersetzungen zu
-    Area (de und en) sind entfernt.
-    5. Der Abschnitt „Knoten“ des Mindmap-Plugins im Detail eines Items (Slot
-    `backlog.item-detail`) steht weiter dort, wo Area stand, und zeigt das
-    Thema des Items.
-    6. Typprüfung, Lint und alle Client-Tests sind grün.
-  - Summary: In der Oberfläche gibt es keinen Bereich mehr. Das Thema eines
-    Items steht im Abschnitt „Knoten“ der Mindmap im Detail.
-
-- `TASK-071` **Area aus Server und Datenbank entfernen**
-  - Uid: 8a9a4732-2bd1-4fe4-baa2-db84d44c3bbd.
-  - Type: Task.
-  - Parent: `STORY-106`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-23.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `TASK-068`, `TASK-070`.
-  - Goal: Das Feld Area gibt es in Domain, Anwendungsfällen, HTTP, MCP und
-    Datenbank nicht mehr. Bestehende Daten bleiben bis auf die Area-Werte
-    erhalten; ein Import alter Daten oder Dateien mit dem Feld läuft ohne
-    Fehler.
-  - Completion criteria: 1. `Item`, `ItemOut`, `IndexItem`, `CreateItem`,
-    `UpdateItem` und die Operationen kennen kein `area` mehr; ein `area` in
-    den Eingaben wird wie jedes unbekannte Feld abgewiesen.
-    2. Die Index-Zeilen für Agenten (`backlog_index_lines`) lauten `ID | Type
-    | Status | Title | Parent | Notes`; `list_areas` (HTTP und MCP
-    `backlog_list_areas`) entfällt.
-    3. Die Beförderung von Memos kennt kein `area` mehr.
-    4. Eine Migration entfernt die Spalte `area_uid` und die Tabelle
-    `backlog_areas` vorwärts mit Backup; alle anderen Felder der Items bleiben
-    gleich; ein Test lädt eine Datenbank der Vorversion mit Daten und prüft
-    das.
-    5. Der Import aus dem alten Viewer ignoriert die Bereiche, ohne Fehler.
-    6. Die generierten Client-Typen sind neu erzeugt und eingecheckt; `npx tsc
-    -b` ist grün.
-    7. Technische Doku (`docs/techdocs/interfaces.md`, `neubau-server.md`,
-    `README.md`) nennt Area nicht mehr (außer als ignoriertes Feld im
-    Dateiformat).
-    8. Alle Tests und `scripts/check-next.sh` sind grün.
-  - Summary: Das Feld Area verschwindet endgültig aus Server, Datenbank und
-    Schnittstellen. Alles andere an den Items bleibt erhalten.
-
 - `TASK-072` **Prompts: Themenbaum aus den Items erzeugen und Claude_Harness anpassen**
   - Uid: c79d3455-4859-4f8f-9b35-8a2804c99101.
   - Type: Task.
@@ -570,108 +449,6 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Ein Test beweist den Ablauf Zuordnen und Vorschlagen über die
     Werkzeuge der KI. Du bekommst den Prompt für Claude_Harness.
 
-- `TASK-079` **Mindmap-Spiegel: Dateiformat und Codec mit Golden-Files**
-  - Uid: 9e6775f1-faa6-4e27-88c8-042f708bccae.
-  - Type: Task.
-  - Parent: `STORY-105`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-23.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: None.
-  - Goal: Das Dateiformat der Mindmap (Knoten, Bäume, Platzierungen,
-    Zuordnungen, Dokumente) ist beschrieben und als Codec umgesetzt: Dateien
-    werden in Einträge gelesen und Einträge in Dateien geschrieben, byte-genau
-    über Golden-Files abgesichert. Der Codec kennt keine Datenbank.
-  - Completion criteria: 1. `docs/techdocs/interfaces.md` enthält einen
-    Abschnitt „Mindmap-Dateien (Format Version 1)“ mit Dateien, Kopfzeilen,
-    Verweisen, Platzhaltern, Dokumenten und den Fehlercodes.
-    2. Der `MindmapCodec` (`patterns = ("mindmap/**/*.md",)`, `for_project`,
-    `decode`, `encode`) liest und schreibt Knoten, Dokumente, den Projektbaum
-    und freie Maps (auch mehrfache Platzierungen eines Knotens und entfernte
-    Platzierungen).
-    3. Ungültiger Inhalt ergibt `MirrorFormatError` mit Datei und Zeile
-    (unbekanntes Feld, fehlendes Feld, ungültiger Wert, doppelte Uid,
-    doppeltes Label, Dokument im Ordner eines anderen Labels, Merge-Marker,
-    Knoten zweimal im selben Baum, Zyklus in der Ordnung).
-    4. Schreiben ändert nur betroffene Einträge und Dateien, atomar über die
-    Änderungen des Kerns; Zeilenenden bleiben erhalten; ein
-    Platzhalter-Eintrag wird durch Label und Uid ersetzt, seine Dateien
-    umbenannt.
-    5. Golden-Files unter `tests/fixtures/mirror-mindmap/valid` und
-    `…/invalid` decken jeden Fehlercode und jede Dateiart ab; Unit-Tests für
-    `encode` und `decode` sind grün.
-  - Summary: Das Dateiformat der Mindmap steht fest und lässt sich lesen und
-    schreiben, mit Beispieldateien als Absicherung. Die Datenbank ist noch
-    nicht beteiligt.
-
-- `TASK-080` **Mindmap-Spiegel: Teilnehmer für Knoten und Bäume**
-  - Uid: cea5e2b3-594c-4fca-80d1-33de8f27473c.
-  - Type: Task.
-  - Parent: `STORY-105`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-23.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `TASK-079`.
-  - Goal: Knoten, Bäume und Platzierungen laufen über den Sync zwischen
-    Datenbank und Dateien: laden, vergleichen, übernehmen, mit neuen Einträgen
-    aus der Cloud (Platzhalter) und freien Maps. Der Teilnehmer ist beim Sync
-    des Projekts registriert.
-  - Completion criteria: 1. `MindmapParticipant` (`load`, `resolve_labels`,
-    `assign_labels`, `apply`) liefert und schreibt Knoten (Titel, Text,
-    Markierung, Papierkorb), den Projektbaum und freie Maps mit Platzierungen.
-    2. Neue Knoten und neue freie Maps aus Dateien (Platzhalter) bekommen Uid
-    und Label; Verweise der Bäume folgen dem neuen Label; ein umgehängter oder
-    übertragener Ast in den Dateien ändert die Platzierungen in der Datenbank
-    mit denselben Regeln wie die API (keine Kopie, Knoten mit gleicher Uid).
-    3. Der Mindmap-Spiegel ist per `mirror=…` im Plugin `mindmap` registriert;
-    ein Sync des Projekts nimmt ihn mit Vorschau und Konflikten auf (Konflikt:
-    Knoten auf beiden Seiten geändert, Baum auf beiden Seiten geändert).
-    4. Zuordnungen von Items und Memos, Dokumente der Knoten, entfernte
-    Platzierungen und Papierkorb folgen in der nächsten Task; bis dahin
-    bleiben sie unverändert (Dateien tragen sie nicht, der Sync lässt sie in
-    der Datenbank stehen).
-    5. Integrationstests (Contract-Suite wie für die anderen Plugins, Sync mit
-    Konflikt) sind grün.
-  - Summary: Knoten und Bäume der Mindmap gleichen sich zwischen Datenbank und
-    Dateien ab, auch neue aus der Cloud. Zuordnungen und Dokumente folgen im
-    nächsten Schritt.
-
-- `TASK-081` **Mindmap-Spiegel: Zuordnungen, Dokumente, entfernte Platzierungen und Papierkorb**
-  - Uid: 7cff08f1-f39d-4fe9-857d-bb9fadc0d970.
-  - Type: Task.
-  - Parent: `STORY-105`.
-  - Required for parent: Yes.
-  - Status: Awaiting confirmation.
-  - Created: 2026-11-23.
-  - Area: Backend-API.
-  - Priority: Normal.
-  - Dependencies: `TASK-080`.
-  - Goal: Der Mindmap-Spiegel trägt auch die Zuordnung von Items und Memos zu
-    Knoten, die Dokumente der Knoten, die entfernten Platzierungen und den
-    Papierkorb-Zustand von Knoten und freien Maps.
-  - Completion criteria: 1. Zuordnungen (`Items:`, `Memos:`) laufen über den
-    Sync: Datenbank → Dateien und zurück; ein Item bei zwei Knoten (Dateien)
-    wird als `rule_violation` mit beiden Dateien abgewiesen.
-    2. Verweise auf Items und Memos werden gegen die Datenbank geprüft
-    (`unknown_reference` mit Zeile); Items und Memos aus anderen Projekten
-    sind als `Projekt:LABEL` möglich, soweit sie die API zulässt.
-    3. Dokumente der Knoten (`NODE-nnn_notes.md`, `_spec…`) laufen über den
-    Sync wie die Dokumente von Memos, inklusive Löschen nach den Regeln der
-    Architektur §2 (Löschung mit Absicht nur bei unveränderter Datei).
-    4. Entfernte Platzierungen (`Removed:`) und der Papierkorb (Knoten
-    `Deleted:`, freie Maps `Deleted:`) werden übertragen; ein im Papierkorb
-    liegender Knoten in den Dateien führt zum Papierkorb in der Datenbank,
-    nicht zum endgültigen Löschen.
-    5. Ein kompletter Rundlauf (Datenbank → Dateien → neue Datenbank) ergibt
-    dieselbe Mindmap; Integrationstests sind grün.
-  - Summary: Der Mindmap-Spiegel enthält jetzt alles: welche Items und Memos
-    an welchem Knoten hängen, die Notizen der Knoten, entfernte Platzierungen
-    und den Papierkorb.
-
 - `TASK-082` **Mindmap-Spiegel: Sync-Dialog, Cloud-Ablauf, Doku und Prompt für Claude_Harness**
   - Uid: f0241f7d-367f-44f1-8aec-51536800f5cd.
   - Type: Task.
@@ -703,3 +480,96 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Summary: Der Mindmap-Spiegel ist fertig: der Sync-Dialog zeigt ihn
     verständlich, ein Test spielt eine Cloud-Sitzung durch, und du bekommst
     den Prompt für Claude_Harness.
+
+- `STORY-107` **Mindmap: Layout anpassbar, Unterknoten optional**
+  - Uid: a6e3004c-7249-4f80-b289-19425c0b7776.
+  - Type: Story.
+  - Parent: `EPIC-009`.
+  - Required for parent: No.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-24.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Baum der Mindmap bekommt mehr Platz; „Nicht zugeordnet“ und
+    das Detail sind bei Bedarf sichtbar, die Trennlinien lassen sich
+    verschieben, und das Detail eines Knotens zeigt Items wahlweise mit oder
+    ohne Unterknoten.
+  - Completion criteria: 1. „Nicht zugeordnet“ lässt sich über ein Icon oben
+    ein- und ausklappen; das Icon zeigt, ob es Items gibt.
+    2. Das Detail öffnet sich beim Klick auf einen Knoten und schließt sich
+    durch erneuten Klick oder das X.
+    3. Die Trennlinien sind verschiebbar; ein Icon stellt die
+    Grundeinstellung wieder her.
+    4. Der Baum hat mehr Platz, das Detail ist schmaler; die Knoten behalten
+    ihre Größe.
+    5. Im Detail wählt ein Schalter mit Hovertext, ob die Items der
+    Unterknoten mitgezeigt werden.
+
+- `TASK-084` **Mindmap-Detail: Schalter für Items der Unterknoten**
+  - Uid: 2528174b-535a-4536-acf9-4823dd833d6d.
+  - Type: Task.
+  - Parent: `STORY-107`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-24.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Im Detail eines Knotens lässt sich einstellen, ob Items der
+    Unterknoten mitgezeigt werden.
+  - Completion criteria: 1. Ein Schalter mit erklärendem Hovertext steht
+    über der Item-Liste.
+    2. Angehakt zeigt die Liste alle Items der Zahl am Knoten, sonst nur die
+    direkten.
+
+- `TASK-083` **Mindmap-Server: Items eines Knotens wahlweise mit Unterknoten lesen**
+  - Uid: 7947fb9e-2c33-4fbf-82a0-e903e542d69c.
+  - Type: Task.
+  - Parent: `STORY-107`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-24.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: get_node_content liefert auf Wunsch auch die Items der
+    Unterknoten.
+  - Completion criteria: 1. Die Operation get_node_content hat die Option
+    include_subnodes.
+    2. Ohne sie bleibt das Ergebnis unverändert, mit ihr enthält es die
+    Items aller Unterknoten.
+    3. Ein Test deckt beides ab.
+
+- `TASK-086` **Mindmap: verschiebbare Trennlinien, schmaleres Detail**
+  - Uid: 94901edc-5d01-4b8d-8b68-e39e516c7b5a.
+  - Type: Task.
+  - Parent: `STORY-107`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-24.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Die Aufteilung der Seite lässt sich anpassen.
+  - Completion criteria: 1. Die Trennlinie zwischen Karte und Detail lässt
+    sich ziehen und bleibt gespeichert.
+    2. Ein Icon stellt die Grundeinstellung wieder her.
+    3. Das Detail ist standardmäßig schmaler, der Baum bekommt den Platz.
+
+- `TASK-085` **Mindmap: Panel „Nicht zugeordnet“ per Icon ein- und ausklappen**
+  - Uid: a63cbaf2-c862-4bbf-b223-6532fcaaefd0.
+  - Type: Task.
+  - Parent: `STORY-107`.
+  - Required for parent: Yes.
+  - Status: Awaiting confirmation.
+  - Created: 2026-11-24.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Das Panel steht nicht mehr dauerhaft neben der Karte.
+  - Completion criteria: 1. Ein Icon oben mit Anzahl-Badge öffnet und
+    schließt das Panel; es ist standardmäßig zu.
+    2. Der Schalter in der Seitenleiste entfällt.
+    3. Das Detail öffnet sich bei Klick auf einen Knoten und schließt sich
+    durch erneuten Klick oder das X.

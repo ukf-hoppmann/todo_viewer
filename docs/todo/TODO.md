@@ -338,7 +338,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Type: Task.
   - Parent: `STORY-103`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-11-23.
   - Area: Web-UI.
   - Priority: Normal.
@@ -395,7 +395,7 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
   - Type: Task.
   - Parent: `STORY-104`.
   - Required for parent: Yes.
-  - Status: Open.
+  - Status: Awaiting confirmation.
   - Created: 2026-11-23.
   - Area: Backend-API.
   - Priority: Normal.

@@ -1,6 +1,8 @@
 import { createPluginApi } from "../../core";
 import type { components } from "../../shared";
 
+export type CreatedItemAtNodeOut = components["schemas"]["CreatedItemAtNodeOut"];
+export type CreatedMemoAtNodeOut = components["schemas"]["CreatedMemoAtNodeOut"];
 export type NodeOut = components["schemas"]["NodeOut"];
 export type TreeOut = components["schemas"]["TreeOut"];
 export type TreeNodeOut = components["schemas"]["TreeNodeOut"];
@@ -114,6 +116,16 @@ export const mindmapApi = createPluginApi(
 			query: ({ node, memo }) => ({ url: `mindmap/nodes/${node}/memos/${memo}`, method: "DELETE" }),
 			invalidatesTags: ["Content"],
 		}),
+		// `TASK-075`: a new item or memo made from a node; the item hangs on the node afterwards (the node becomes "planned"),
+		// the memo is only linked. `fields` are those of the backlog or memo creation; title/goal (summary/body) default to the node's.
+		createItemAtNode: build.mutation<CreatedItemAtNodeOut, { node: string; type: string; fields: Record<string, unknown> }>({
+			query: ({ node, ...body }) => ({ url: `mindmap/nodes/${node}/create-item`, method: "POST", body }),
+			invalidatesTags: ["Tree", "Content", "ItemNode"],
+		}),
+		createMemoAtNode: build.mutation<CreatedMemoAtNodeOut, { node: string; fields: Record<string, unknown> }>({
+			query: ({ node, ...body }) => ({ url: `mindmap/nodes/${node}/create-memo`, method: "POST", body }),
+			invalidatesTags: ["Content"],
+		}),
 		createNode: build.mutation<NodeOut, { project: string; title: string; parent?: string; position?: number; tree?: string }>({
 			query: (body) => ({ url: "mindmap/nodes", method: "POST", body }),
 			invalidatesTags: ["Tree", "Maps"],
@@ -198,6 +210,8 @@ export const {
 	useLinkMemoMutation,
 	useUnlinkMemoMutation,
 	useCreateNodeMutation,
+	useCreateItemAtNodeMutation,
+	useCreateMemoAtNodeMutation,
 	useUpdateNodeMutation,
 	useMoveNodeMutation,
 	useMoveNodeToMapMutation,

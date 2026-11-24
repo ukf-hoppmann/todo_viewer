@@ -77,4 +77,11 @@ export const mindmapTestIds = {
 	trashEntry: (id: string) => `mindmap.trash-entry.${id}`,
 	trashSwitch: "mindmap.trash-switch",
 	mapDropTarget: "mindmap.map-drop-target",
+	createItem: "mindmap.create-item",
+	createMemo: "mindmap.create-memo",
+	createDialog: (kind: string) => `mindmap.create-dialog.${kind}`,
+	createField: (kind: string, field: string) => `mindmap.create-field.${kind}.${field}`,
+	createConfirm: (kind: string) => `mindmap.create-confirm.${kind}`,
+	createCancel: (kind: string) => `mindmap.create-cancel.${kind}`,
+	createError: (kind: string) => `mindmap.create-error.${kind}`,
 } as const;

@@ -118,7 +118,7 @@ export interface paths {
         /** Items der Projekte als flache Liste mit Fortschritt; Filter nach Status, Priorität und Text (Projekte, Status und Prioritäten komma-getrennt) */
         get: operations["backlog_list_items"];
         put?: never;
-        /** Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria */
+        /** Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria. Hat das Projekt einen Themenbaum (MCP-Tools `mindmap_…`), ordne das neue Item einem Knoten zu: lege es mit mindmap_create_item_at_node an, statt es hier ohne Knoten anzulegen; die Regel steht dort */
         post: operations["backlog_create_item"];
         delete?: never;
         options?: never;
@@ -996,7 +996,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Legt einen Knoten (Titel, optionaler Text) im Themenbaum des Projekts oder, mit `tree`, in einer freien Map an, unter `parent` oder unter der Wurzel, an der Stelle `position` (sonst am Ende). Leere Knoten sind erlaubt */
+        /** Legt einen Knoten (Titel, optionaler Text) im Themenbaum des Projekts oder, mit `tree`, in einer freien Map an, unter `parent` oder unter der Wurzel, an der Stelle `position` (sonst am Ende). Leere Knoten sind erlaubt. Regel beim Anlegen eines Items: Lies zuerst den Themenbaum (mindmap_get_tree). Passt ein Knoten, lege das Item dort an (mindmap_create_item_at_node) oder ordne ein vorhandenes zu (mindmap_assign_item). Passt keiner, schlage dem Owner im Gespräch einen Knoten oder Unterknoten vor (Titel, Ort im Baum) und lege ihn (mindmap_create_node) erst nach seiner Zustimmung an; erfinde keine Themen. Ohne Zustimmung lege das Item ohne Knoten an (backlog_create_item); es steht dann unter „Nicht zugeordnet“ */
         post: operations["mindmap_create_node"];
         delete?: never;
         options?: never;
@@ -1013,7 +1013,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Legt aus einem Knoten ein Item (Epic, Story oder Task) an und hängt es an den Knoten. Typ und Felder bestimmt der Aufrufer; fehlt `title`, gilt der Titel des Knotens, fehlt `goal`, sein Text; `completion_criteria` sind Pflicht. Der Knoten bleibt stehen und wechselt von Idee zu geplant. Scheitert das Anhängen, nennt mindmap_assign_failed das angelegte Item (`details.created`) */
+        /** Legt aus einem Knoten ein Item (Epic, Story oder Task) an und hängt es an den Knoten. Typ und Felder bestimmt der Aufrufer; fehlt `title`, gilt der Titel des Knotens, fehlt `goal`, sein Text; `completion_criteria` sind Pflicht. Der Knoten bleibt stehen und wechselt von Idee zu geplant. Scheitert das Anhängen, nennt mindmap_assign_failed das angelegte Item (`details.created`). Regel beim Anlegen eines Items: Lies zuerst den Themenbaum (mindmap_get_tree). Passt ein Knoten, lege das Item dort an (mindmap_create_item_at_node) oder ordne ein vorhandenes zu (mindmap_assign_item). Passt keiner, schlage dem Owner im Gespräch einen Knoten oder Unterknoten vor (Titel, Ort im Baum) und lege ihn (mindmap_create_node) erst nach seiner Zustimmung an; erfinde keine Themen. Ohne Zustimmung lege das Item ohne Knoten an (backlog_create_item); es steht dann unter „Nicht zugeordnet“ */
         post: operations["mindmap_create_item_at_node"];
         delete?: never;
         options?: never;
@@ -1047,7 +1047,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Hängt ein Item (Epic, Story oder Task) an einen Knoten. Seine Kinder erben den Knoten, wenn sie nicht eigens angehängt sind. Ein Item hängt an höchstens einem Knoten: ein zweiter wird mit mindmap_item_assigned abgewiesen, außer `replace` ist gesetzt */
+        /** Hängt ein Item (Epic, Story oder Task) an einen Knoten. Seine Kinder erben den Knoten, wenn sie nicht eigens angehängt sind. Ein Item hängt an höchstens einem Knoten: ein zweiter wird mit mindmap_item_assigned abgewiesen, außer `replace` ist gesetzt. Regel beim Anlegen eines Items: Lies zuerst den Themenbaum (mindmap_get_tree). Passt ein Knoten, lege das Item dort an (mindmap_create_item_at_node) oder ordne ein vorhandenes zu (mindmap_assign_item). Passt keiner, schlage dem Owner im Gespräch einen Knoten oder Unterknoten vor (Titel, Ort im Baum) und lege ihn (mindmap_create_node) erst nach seiner Zustimmung an; erfinde keine Themen. Ohne Zustimmung lege das Item ohne Knoten an (backlog_create_item); es steht dann unter „Nicht zugeordnet“ */
         post: operations["mindmap_assign_item"];
         delete?: never;
         options?: never;
@@ -1371,7 +1371,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Der Themenbaum eines Projekts (das Projekt ist die Wurzel) oder, mit `tree`, einer freien Map: alle Knoten mit Parent und Stelle, Eltern vor Kindern, je Knoten Anzahl, Fortschritt und Zustand über ihn und seine Unterknoten, dazu im Projektbaum die Items ohne Knoten (in freien Maps gibt es „Nicht zugeordnet“ nicht). Knoten im Papierkorb fehlen. `statuses` ist der Statusfilter des Backlogs für die Zahlen */
+        /** Der Themenbaum eines Projekts (das Projekt ist die Wurzel) oder, mit `tree`, einer freien Map: alle Knoten mit Parent und Stelle, Eltern vor Kindern, je Knoten Anzahl, Fortschritt und Zustand über ihn und seine Unterknoten, dazu im Projektbaum die Items ohne Knoten (in freien Maps gibt es „Nicht zugeordnet“ nicht). Knoten im Papierkorb fehlen. `statuses` ist der Statusfilter des Backlogs für die Zahlen. Regel beim Anlegen eines Items: Lies zuerst den Themenbaum (mindmap_get_tree). Passt ein Knoten, lege das Item dort an (mindmap_create_item_at_node) oder ordne ein vorhandenes zu (mindmap_assign_item). Passt keiner, schlage dem Owner im Gespräch einen Knoten oder Unterknoten vor (Titel, Ort im Baum) und lege ihn (mindmap_create_node) erst nach seiner Zustimmung an; erfinde keine Themen. Ohne Zustimmung lege das Item ohne Knoten an (backlog_create_item); es steht dann unter „Nicht zugeordnet“ */
         get: operations["mindmap_get_tree"];
         put?: never;
         post?: never;

@@ -514,7 +514,9 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "create_item",
-        "Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria",
+        "Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria. "
+        "Hat das Projekt einen Themenbaum (MCP-Tools `mindmap_…`), ordne das neue Item einem Knoten zu: lege es "
+        "mit mindmap_create_item_at_node an, statt es hier ohne Knoten anzulegen; die Regel steht dort",
         "write",
         CreateItem,
         ItemOut,

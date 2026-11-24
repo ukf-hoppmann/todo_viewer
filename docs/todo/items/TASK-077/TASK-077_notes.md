@@ -2,16 +2,17 @@
 
 ## State
 
-- Goal/Status: Geplant; Spec geschrieben, die Task ist für eine eigene Session vorbereitet.
-- Next step: In eigener Session umsetzen: Plan aus `TASK-077_spec.md` ableiten, vorlegen und freigeben lassen.
+- Goal/Status: Umgesetzt und verifiziert (Server- und Client-Tests grün); wartet auf die Abnahme des Owners.
+- Next step: Abnahme durch den Owner; danach `TASK-078` (Systemtest und Prompt für Claude_Harness).
 - Open:
-  - Nichts offen für die Umsetzung (2026-11-23)
+  - Nichts offen (2026-11-24)
 - Decided:
   - Die Regel steht in den MCP-Tool-Beschreibungen des Viewers und zusätzlich als Skill-Regel in Claude_Harness (Owner) (2026-11-23)
   - Die Beschreibung von backlog_create_item enthält nur einen Texthinweis, weil backlog die Mindmap nicht kennen darf (Architektur §1; Zuschnitt) (2026-11-23)
-- References: Spec `TASK-077_spec.md`; Story `STORY-104` (Notes mit den Entscheidungen des Owners); Abhängigkeiten: TASK-073
+  - Ein gemeinsamer Satz `ASSIGNMENT_RULE` in `mindmap/application/guidance.py` an vier Tools (2026-11-24)
+- References: Spec `TASK-077_spec.md`; Story `STORY-104`; Abhängigkeiten: TASK-073; Folge: TASK-078
 
-State confirmed after entry 2026-11-23 — Zuschnitt aus der Planung von STORY-104 (9a72b956feff)
+State confirmed after entry 2026-11-24 — Umsetzung (819c39cc9b56)
 
 ## 2026-11-23 — Zuschnitt aus der Planung von STORY-104
 
@@ -26,6 +27,23 @@ State confirmed after entry 2026-11-23 — Zuschnitt aus der Planung von STORY-1
 
 - Die Regel steht in den MCP-Tool-Beschreibungen des Viewers und zusätzlich als Skill-Regel in Claude_Harness (Owner)
 - Die Beschreibung von backlog_create_item enthält nur einen Texthinweis, weil backlog die Mindmap nicht kennen darf (Architektur §1; Zuschnitt)
+
+### Open
+
+- Nichts.
+
+## 2026-11-24 — Umsetzung
+
+### Discussed
+
+- Test zuerst: `test_tool_descriptions.py` (6 Fälle) rot gesehen (Modul `guidance` fehlte), dann `application/guidance.py` mit `ASSIGNMENT_RULE` und Anhängen an die vier Mindmap-Tools; `backlog_create_item` bekam nur den Texthinweis.
+- Die Beschreibungen stehen im OpenAPI-Schema; die Client-Typen (`schema.d.ts`) wurden mit `scripts/gen-api.sh` neu erzeugt, sonst schlägt `test_openapi_types` fehl.
+- Kriterium 3 und 4 brauchen keinen neuen Code: `get_tree`, `assign_item`, `create_node`, `create_item_at_node` gibt es; `get_tree` zeigt `unassigned` schon. Der Systemtest dazu folgt in `TASK-078`.
+- Vor der Umsetzung die Server-Suite einmal komplett laufen lassen (Auftrag): grün, nichts Auffälliges aus `TASK-073`.
+
+### Decided
+
+- Der Regeltext steht als eine Konstante an einer Stelle und wird per Zeichenkette angehängt.
 
 ### Open
 

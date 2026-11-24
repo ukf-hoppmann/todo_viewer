@@ -24,6 +24,7 @@ from viewer.plugins.mindmap.application.branches import (
 )
 from viewer.plugins.mindmap.application.creation import Created, NodeCreationService
 from viewer.plugins.mindmap.application.documents import DocumentService
+from viewer.plugins.mindmap.application.guidance import ASSIGNMENT_RULE
 from viewer.plugins.mindmap.application.maps import MapDeleted, MapService, MapView
 from viewer.plugins.mindmap.application.ports import BacklogItem, Document
 from viewer.plugins.mindmap.application.service import MindmapService, NodeView, TreeView
@@ -758,7 +759,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "Der Themenbaum eines Projekts (das Projekt ist die Wurzel) oder, mit `tree`, einer freien Map: alle Knoten "
         "mit Parent und Stelle, Eltern vor Kindern, je Knoten Anzahl, Fortschritt und Zustand über ihn und seine "
         "Unterknoten, dazu im Projektbaum die Items ohne Knoten (in freien Maps gibt es „Nicht zugeordnet“ nicht). "
-        "Knoten im Papierkorb fehlen. `statuses` ist der Statusfilter des Backlogs für die Zahlen",
+        "Knoten im Papierkorb fehlen. `statuses` ist der Statusfilter des Backlogs für die Zahlen. " + ASSIGNMENT_RULE,
         "read",
         GetTree,
         TreeOut,
@@ -779,7 +780,8 @@ OPERATIONS: tuple[Operation, ...] = (
     Operation(
         "create_node",
         "Legt einen Knoten (Titel, optionaler Text) im Themenbaum des Projekts oder, mit `tree`, in einer freien Map "
-        "an, unter `parent` oder unter der Wurzel, an der Stelle `position` (sonst am Ende). Leere Knoten sind erlaubt",
+        "an, unter `parent` oder unter der Wurzel, an der Stelle `position` (sonst am Ende). Leere Knoten sind "
+        "erlaubt. " + ASSIGNMENT_RULE,
         "write",
         CreateNode,
         NodeOut,
@@ -959,7 +961,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "assign_item",
         "Hängt ein Item (Epic, Story oder Task) an einen Knoten. Seine Kinder erben den Knoten, wenn sie nicht eigens "
         "angehängt sind. Ein Item hängt an höchstens einem Knoten: ein zweiter wird mit mindmap_item_assigned "
-        "abgewiesen, außer `replace` ist gesetzt",
+        "abgewiesen, außer `replace` ist gesetzt. " + ASSIGNMENT_RULE,
         "write",
         AssignItem,
         NodeOut,
@@ -971,7 +973,7 @@ OPERATIONS: tuple[Operation, ...] = (
         "Legt aus einem Knoten ein Item (Epic, Story oder Task) an und hängt es an den Knoten. Typ und Felder bestimmt "
         "der Aufrufer; fehlt `title`, gilt der Titel des Knotens, fehlt `goal`, sein Text; `completion_criteria` sind "
         "Pflicht. Der Knoten bleibt stehen und wechselt von Idee zu geplant. Scheitert das Anhängen, nennt "
-        "mindmap_assign_failed das angelegte Item (`details.created`)",
+        "mindmap_assign_failed das angelegte Item (`details.created`). " + ASSIGNMENT_RULE,
         "write",
         CreateItemAtNode,
         CreatedItemAtNodeOut,

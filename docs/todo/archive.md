@@ -4937,3 +4937,211 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     verständlich, ein Test spielt eine Cloud-Sitzung durch, und du bekommst
     den Prompt für Claude_Harness.
   - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `STORY-103` **Ideen-Knoten ins Backlog überführen**
+  - Uid: 688f456a-295f-453d-a6cd-39d7bb6c6aa8.
+  - Type: Story.
+  - Parent: `EPIC-008`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `STORY-100`.
+  - Goal: Aus einem Knoten ohne Items lässt sich direkt ein Backlog-Item
+    oder ein Memo anlegen. Der Knoten bleibt stehen und das Ergebnis hängt
+    daran; mit einem Item wechselt der Knoten seinen Zustand von Idee zu
+    geplant, ein Memo ändert den Zustand nicht.
+  - Completion criteria: 1. Im Detail eines Knotens legt eine Aktion ein Item
+    (Epic, Story oder Task) oder ein Memo an, mit Titel und Text des Knotens
+    als Vorschlag, und hängt das Ergebnis an den Knoten. Den Typ legt der
+    Mensch oder die KI je Knoten fest.
+    2. Ein ganzer Ast lässt sich mit Vorschau überführen; Typ und Beziehung
+    (Parent-Child oder Abhängigkeit) wählt der Mensch oder die KI für jeden
+    Knoten einzeln, ohne Vorgabe aus Ebene oder Tiefe; Titel sind vor dem
+    Anlegen änderbar.
+    3. Was die Struktur des Backlogs nicht erlaubt, zeigt die Vorschau, bevor
+    etwas angelegt wird.
+    4. Domain-, API- und UI-Tests sind grün.
+  - Summary: Aus einer gesammelten Idee einen Backlog-Eintrag oder ein Memo
+    machen, einzeln je Knoten oder für einen ganzen Ast mit Vorschau. Die Idee
+    bleibt in der Map stehen; mit einem Item zeigt sie, dass sie eingeplant
+    ist.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `STORY-104` **KI ordnet neue Items der Mindmap zu und schlägt Knoten vor**
+  - Uid: 5b8e795e-adf2-49e3-9cb8-6a2de4a49101.
+  - Type: Story.
+  - Parent: `EPIC-008`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-100`.
+  - Goal: Wenn die KI ein Item anlegt, überlegt sie, an welchen Knoten es
+    gehört, und hängt es dorthin. Passt keiner, schlägt sie einen Knoten oder
+    Unterknoten vor und legt ihn nach Bestätigung an. So wird die Map nebenbei
+    gefüllt, ohne zu wuchern.
+  - Completion criteria: 1. Über API und MCP kann die KI den Themenbaum lesen,
+    ein Item zuordnen und einen Knoten anlegen.
+    2. Ein von der KI vorgeschlagener Knoten entsteht erst nach Bestätigung
+    des Owners; ohne passenden Knoten landet das Item unter „Nicht
+    zugeordnet“.
+    3. Die Regel für die KI steht in den MCP-Tool-Beschreibungen des Viewers,
+    und der Owner hat einen fertigen Prompt, mit dem er sie an Claude_Harness
+    übergibt.
+    4. Der Systemtest deckt Zuordnen und Vorschlagen ab.
+  - Summary: Die KI sortiert neue Backlog-Einträge selbst in die Map ein und
+    darf neue Themen vorschlagen, legt sie aber erst an, wenn du zustimmst.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `STORY-105` **Mindmap im Markdown-Spiegel: Dateiformat und Sync**
+  - Uid: fad60a4f-0990-4d9f-8036-b123bb43a596.
+  - Type: Story.
+  - Parent: `EPIC-008`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-100`, `STORY-102`.
+  - Goal: Die Mindmap geht wie Backlog und Memos als Markdown über den Sync
+    mit, damit sie über Git zwischen Rechnern wandert und die KI auch in
+    Cloud-Sitzungen, die nur auf den Dateien arbeiten, zuordnen kann.
+  - Completion criteria: 1. Ein Dateiformat für Bäume (Projektbäume und freie
+    Maps), Knoten, Platzierungen (auch mehrere je Knoten und entfernte) und
+    Zuordnungen ist beschrieben und mit Golden-Files abgedeckt; eine
+    Cloud-Sitzung kann freie Maps füllen und Äste umhängen oder übertragen.
+    2. Der Sync nimmt die Mindmap mit Vorschau und Konflikten in denselben
+    Dialog auf.
+    3. Die Regeln für den Datei-Modus sind beschrieben, und der Owner hat einen
+    fertigen Prompt, mit dem er sie an Claude_Harness übergibt.
+  - Summary: Die Map auch als Dateien speichern, damit sie über Git mitgeht
+    und die KI in der Cloud damit arbeiten kann. Gewünscht, aber kein Muss.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `STORY-106` **Area durch die Mindmap ersetzen**
+  - Uid: 2583a192-6eb8-481d-8637-86eb8408fa9a.
+  - Type: Story.
+  - Parent: `EPIC-008`.
+  - Required for parent: No.
+  - Status: Completed.
+  - Created: 2026-11-16.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `STORY-100`.
+  - Goal: Die Einordnung eines Items nach Themen läuft nur noch über die
+    Knoten der Mindmap; das Feld Area entfällt ganz, ohne abgeleiteten
+    Ersatzwert. Die Themenbäume der Projekte entstehen einmalig durch eine KI
+    aus den vorhandenen Items und werden nicht von Hand aufgebaut.
+  - Completion criteria: 1. Das Feld Area entfällt ganz, auch als abgeleiteter
+    Wert; die Schichten Web-UI und Backend-API sind keine eigene Einordnung
+    mehr. Das Thema eines Items zeigt die Oberfläche im Abschnitt „Knoten“ der
+    Mindmap im Detail des Items; ein abgeleiteter Wert oder eine Spalte dafür
+    entfällt.
+    2. Der Owner hat einen fertigen Prompt, mit dem er in jedem Projekt eine
+    KI den Themenbaum aus den vorhandenen Items erzeugen und die Items
+    zuordnen lässt; die KI arbeitet aus Titel, Ziel und Text der Items, kein
+    Item geht verloren.
+    3. Das Feld wird direkt entfernt; Anzeige, API, MCP, Index-Zeilen und
+    Markdown-Spiegel kommen ohne Area aus; der Spiegel schreibt das Format
+    Version 3 und liest Version 2 und 3. Eine Markdown-Datei, die das Feld noch
+    enthält, lässt sich weiter importieren: das Feld wird ignoriert und führt
+    nicht zu einem Fehler.
+    4. Die Dokumentation ist angepasst, und der Owner hat einen fertigen
+    Prompt, mit dem er Claude_Harness anpasst.
+    5. Domain-, API- und UI-Tests sind grün.
+  - Summary: Das Etikett „Area“ an den Items verschwindet. Die Mindmap
+    übernimmt die Einordnung nach Themen. Den ersten Themenbaum baut eine KI
+    aus den vorhandenen Items, du bekommst dafür einen fertigen Prompt.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `TASK-076` **Oberfläche: einen Ast mit Vorschau ins Backlog überführen**
+  - Uid: f415cc3d-9c46-4f3a-8f0c-cfdd5f472ec1.
+  - Type: Task.
+  - Parent: `STORY-103`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-23.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-074`, `TASK-075`.
+  - Goal: Ein Ast lässt sich in einem Dialog überführen: je Knoten wählt der
+    Mensch Item (Typ), Memo oder nichts und die Beziehung zu den anderen
+    Knoten; die Vorschau zeigt Probleme, bevor etwas angelegt wird.
+  - Completion criteria: 1. Im Menü eines Knotens öffnet „Ast überführen“
+    einen Dialog mit dem Ast als Baum; jeder Knoten hat eine Wahl (nichts,
+    Item mit Typ, Memo) und Felder für Titel, Ziel und Abschlusskriterien.
+    2. Je Item-Knoten lässt sich die Beziehung wählen: „Kind von“ (ein Knoten
+    des Plans oder ein vorhandenes Item), „hängt ab von“ (mehrere) oder keine;
+    es gibt keine Vorbelegung aus Ebene oder Tiefe.
+    3. Die Vorschau läuft live gegen den Server (`preview_branch_transfer`)
+    und markiert Probleme am Knoten; „Überführen“ ist nur ohne Probleme
+    möglich.
+    4. Nach dem Überführen zeigt der Dialog das Ergebnis je Knoten (angelegt,
+    Fehler, nicht versucht) und die Knoten tragen ihren neuen Zustand.
+    5. Typprüfung, Lint und Client-Tests sind grün; Texte in de und en.
+  - Summary: Ein ganzer Ast wird in einem Dialog überführt. Du wählst je
+    Knoten, was daraus wird und wie die Teile zusammenhängen, und siehst
+    vorher, was nicht geht.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `TASK-078` **Systemtest Zuordnen und Vorschlagen; Prompt für Claude_Harness**
+  - Uid: ee66e6e2-4d92-4d00-9415-52cd63d7d378.
+  - Type: Task.
+  - Parent: `STORY-104`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-23.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-077`.
+  - Goal: Der Systemtest über MCP deckt das Zuordnen und das Vorschlagen ab.
+    Der Owner bekommt den fertigen Prompt, mit dem er die Regel in
+    Claude_Harness übergibt.
+  - Completion criteria: 1. Der Systemtest über MCP liest den Themenbaum, legt
+    ein Item an einem vorhandenen Knoten an, legt nach einem simulierten „Ja“
+    einen Knoten an und hängt ein Item daran, und lässt ein Item ohne
+    passenden Knoten unter „Nicht zugeordnet“ stehen, ohne einen Knoten zu
+    erfinden.
+    2. Der Prompt für Claude_Harness steht als Datei in der Spec dieser Task
+    (`…_spec_prompt-harness.md`) und im Abschluss der Session als Text beim
+    Owner; er beschreibt die Regel und die Werkzeuge so, dass Claude_Harness
+    sie in seinen Skill übernehmen kann.
+    3. Die KI übergibt nichts selbst an Claude_Harness.
+    4. Alle Tests sind grün.
+  - Summary: Ein Test beweist den Ablauf Zuordnen und Vorschlagen über die
+    Werkzeuge der KI. Du bekommst den Prompt für Claude_Harness.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `EPIC-008` **Mindmap: Themen-Gerippe zum Brainstormen und als Übersicht des Backlogs**
+  - Uid: 039478f4-0b3b-4807-8fd3-36fec9a4d372.
+  - Type: Epic.
+  - Status: Completed.
+  - Created: 2026-11-13.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: None.
+  - Goal: Der Viewer bekommt eine Mindmap als eigenes Datenmodell: ein Gerippe
+    aus Themenknoten, in dem man Ideen sammelt und ordnet und an das
+    Backlog-Items und Memos verlinkt werden. Sie zeigt mit wenigen Schritten,
+    was es gibt und was kommt, ohne dass die Menge der Tasks die Darstellung
+    füllt.
+  - Completion criteria: 1. Je Projekt gibt es einen Themenbaum, in dem Knoten
+    angelegt, geordnet und mit Notizen versehen werden.
+    2. Items und Memos lassen sich an Knoten hängen; Knoten zeigen Anzahl,
+    Fortschritt und einen abgeleiteten Zustand, Items sind keine eigenen
+    Knoten.
+    3. Fokus auf einen Knoten, Einzel- und Gesamtansicht sowie runde und
+    seitliche Anordnung sind umschaltbar.
+    4. Freie Maps und das Umhängen und Übertragen von Ästen zwischen Bäumen
+    funktionieren, ohne dass etwas kopiert wird.
+    5. Aus einem Ideen-Knoten lässt sich ein Backlog-Item anlegen, und die KI
+    kann über API und MCP zuordnen und Knoten vorschlagen.
+    6. Die Umsetzung lief in einem eigenen Branch und ist nach Freigabe des
+    Owners zusammengeführt.
+  - Summary: Eine Mindmap im Viewer: Themen sammeln und ordnen,
+    Backlog-Einträge und Memos daran hängen und so schnell sehen, was es gibt
+    und was kommt. Sie ist nur ein Gerippe und verlinkt; kopiert wird nichts.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; alle Stories (STORY-099 bis STORY-106) abgeschlossen, Umsetzung nach `main` gemergt.

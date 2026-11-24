@@ -477,7 +477,8 @@ def test_the_content_of_a_node_includes_the_items_of_its_subnodes_on_request(min
     _assign(mindmap, child, deeper)
 
     own = mindmap.client.get(f"{API}/nodes/{top['uid']}/content").json()["items"]
-    summed = mindmap.client.get(f"{API}/nodes/{top['uid']}/content", params={"include_subnodes": "true"}).json()["items"]
+    response = mindmap.client.get(f"{API}/nodes/{top['uid']}/content", params={"include_subnodes": "true"})
+    summed = response.json()["items"]
 
     assert [i["label"] for i in own] == [a["label"]]
     assert [i["label"] for i in summed] == [a["label"], deeper["label"]]

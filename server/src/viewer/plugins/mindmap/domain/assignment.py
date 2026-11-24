@@ -221,7 +221,9 @@ def dependency_links(
         for needed_uid in item.dependencies:
             needed = by_uid.get(needed_uid)
             source = effective.get(needed_uid)
-            if needed is None or needed.deleted or source is None or source == target or (statuses and needed.status not in statuses):
+            if needed is None or needed.deleted or source is None or source == target:
+                continue
+            if statuses and needed.status not in statuses:
                 continue
             counts[(source, target)] = counts.get((source, target), 0) + 1
     return [LinkFact(a, b, n) for (a, b), n in sorted(counts.items())]

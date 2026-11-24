@@ -97,7 +97,8 @@ def test_a_node_stands_at_most_once_per_tree_and_its_parent_in_the_same_tree(
             text(insert), {"n": "n1", "p": None}
         )  # derselbe Knoten, derselbe Baum
     with database.engine.begin() as connection:
-        # Ab Version 5 darf ein gemerkter Parent später fehlen; dass ein gültiger Parent im Baum steht, prüft die Domäne.
+        # Ab Version 5 darf ein gemerkter Parent später fehlen;
+        # dass ein gültiger Parent im Baum steht, prüft die Domäne.
         connection.execute(
             text(insert + " ON CONFLICT DO NOTHING"), {"n": "n2", "p": "unbekannt"}
         )
@@ -133,7 +134,10 @@ def test_a_document_belongs_to_one_node_and_is_named_once(
     runner: MigrationRunner, database: SqliteDatabase
 ) -> None:
     _prepare(runner, database)
-    insert = "INSERT INTO mindmap_documents(node_uid, name, content, updated_at) VALUES (:n, 'NODE-001_notes.md', 'x', :t)"
+    insert = (
+        "INSERT INTO mindmap_documents(node_uid, name, content, updated_at) "
+        "VALUES (:n, 'NODE-001_notes.md', 'x', :t)"
+    )
     with database.engine.begin() as connection:
         connection.execute(text(insert), {"n": "n1", "t": NOW})
     with pytest.raises(IntegrityError), database.engine.begin() as connection:

@@ -54,7 +54,7 @@ MULTILINE_TEXT = frozenset({"goal", "completion_criteria", "summary", "resolutio
 
 
 def _block(value: object) -> str:
-    """Getrimmt; je Zeile zusammengefasst, Zeilenumbrüche bleiben, Leerzeilen am Rand und doppelte Leerzeilen entfallen."""
+    """Getrimmt; je Zeile zusammengefasst, Zeilenumbrüche bleiben, Leerzeilen am Rand und doppelte entfallen."""
     if value is None:
         return ""
     lines = [" ".join(line.split()) for line in str(value).replace("\r\n", "\n").replace("\r", "\n").split("\n")]

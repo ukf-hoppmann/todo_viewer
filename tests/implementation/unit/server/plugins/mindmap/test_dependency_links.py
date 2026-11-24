@@ -52,7 +52,12 @@ def test_items_without_a_node_or_in_the_trash_or_outside_the_project_give_no_lin
 
 
 def test_the_status_filter_counts_only_items_it_lets_through_on_both_ends() -> None:
-    items = [item("a1", status="Completed"), item("a2"), item("b1", needs=("a1", "a2")), item("c1", needs=("a2",), status="Completed")]
+    items = [
+        item("a1", status="Completed"),
+        item("a2"),
+        item("b1", needs=("a1", "a2")),
+        item("c1", needs=("a2",), status="Completed"),
+    ]
     effective = {"a1": "a", "a2": "a", "b1": "b", "c1": "c"}
 
     assert rules.dependency_links(items, effective, ["Open"]) == [LinkFact("a", "b", 1)]

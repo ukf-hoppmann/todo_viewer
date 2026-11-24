@@ -383,7 +383,8 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "add_link",
-        "Verknüpft zwei Elemente (Rolle reference oder origin; 'trigger' legt nur ein Auslöser der Notes an, 'node' die Mindmap)",
+        "Verknüpft zwei Elemente (Rolle reference oder origin; "
+        "'trigger' legt nur ein Auslöser der Notes an, 'node' die Mindmap)",
         "write",
         AddLink,
         LinkedElement,

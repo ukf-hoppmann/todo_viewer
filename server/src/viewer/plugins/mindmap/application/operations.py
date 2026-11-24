@@ -1125,7 +1125,8 @@ OPERATIONS: tuple[Operation, ...] = (
         "preview_branch_transfer",
         "Prüft den Plan, einen Ast ins Backlog zu überführen, ohne etwas zu schreiben. Je Knoten des Astes legt der "
         "Aufrufer fest: `item` (mit Typ), `memo` oder `skip`; nichts wird aus Ebene oder Tiefe abgeleitet. "
-        "`parent` und `depends_on` nennen andere Knoten des Plans oder vorhandene Items. Die Antwort nennt je Eintrag und "
+        "`parent` und `depends_on` nennen andere Knoten des Plans oder vorhandene Items. "
+        "Die Antwort nennt je Eintrag und "
         "für den ganzen Plan die Probleme (`code`, `message`; u. a. node_not_in_branch, node_duplicate, invalid_type, "
         "goal_missing, criteria_missing, parent_type_not_allowed, parent_is_memo, parent_not_found, parent_closed, "
         "dependency_cycle, depends_on_not_found) und die Reihenfolge des Anlegens",

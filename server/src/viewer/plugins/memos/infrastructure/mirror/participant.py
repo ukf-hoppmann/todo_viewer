@@ -139,7 +139,8 @@ class MemosParticipant:
             "created": format_time(element.created_at) if element else None,
             "updated": format_time(element.updated_at) if element else None,
         }
-        return MirrorEntry(KIND_MEMO, memo.label, fields, refs, memo.uid, extra=extra, trashed=memo.deleted_at is not None)
+        trashed = memo.deleted_at is not None
+        return MirrorEntry(KIND_MEMO, memo.label, fields, refs, memo.uid, extra=extra, trashed=trashed)
 
     def resolve_labels(self, project: str, labels: Collection[str]) -> Mapping[str, str]:
         found: dict[str, str] = {}

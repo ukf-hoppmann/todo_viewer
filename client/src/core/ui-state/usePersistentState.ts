@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "react-redux";
 import type { AppStore } from "../store/createAppStore";
 import { useGetUiStateQuery } from "./coreApi";
@@ -18,7 +18,7 @@ export function usePersistentState<T>(owner: string, key: string, defaultValue: 
 	const { data } = useGetUiStateQuery(owner);
 	const stored = data?.document[key];
 	// Callers pass fresh literals (`[]`); the first one is kept, so the value stays the same object between renders.
-	const fallback = useRef(defaultValue).current;
+	const [fallback] = useState(() => defaultValue);
 	const value = (stored === undefined ? fallback : stored) as T;
 
 	// The setter must see the latest value without changing identity at each change.

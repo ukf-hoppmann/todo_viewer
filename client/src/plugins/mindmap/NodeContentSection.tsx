@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ConfirmDialog, EntityPicker, IconAction, type Entity } from "../../shared";
 import { useShownStatuses } from "../backlog";
 import { useSearchElementsQuery } from "../workspace";
+import { ItemFromNodeDialog, MemoFromNodeDialog } from "./CreateFromNodeDialogs";
 import {
 	errorMessage,
 	toWriteError,
@@ -36,7 +37,8 @@ function useCandidates(projectUid: string, kinds: readonly string[]) {
  * their parent item; the status filter of the backlog decides which are listed) and the memos linked to it. An own
  * item can be released, an item or memo of the project can be added. A memo is not counted in the node's number.
  * The switch "Unterknoten einbeziehen" lists the items of the sub-nodes too, so that the list matches the number at the node.
- * An item that hangs on another node is moved only after a confirmation.
+ * An item that hangs on another node is moved only after a confirmation. "Item anlegen" and "Memo anlegen" make a new
+ * item or memo from the node (dialogs in `CreateFromNodeDialogs.tsx`); the result hangs on the node at once.
  */
 export function NodeContentSection({ node }: { node: NodeOut }) {
 	const { t } = useTranslation("mindmap");
@@ -52,6 +54,7 @@ export function NodeContentSection({ node }: { node: NodeOut }) {
 	const [item, setItem] = useState<string | null>(null);
 	const [memo, setMemo] = useState<string | null>(null);
 	const [replacing, setReplacing] = useState<Entity>();
+	const [creating, setCreating] = useState<"item" | "memo">();
 	const [error, setError] = useState<string>();
 	const fail = (failure: unknown) => setError(errorMessage(failure, t("error.failed")));
 
@@ -115,6 +118,9 @@ export function NodeContentSection({ node }: { node: NodeOut }) {
 						{t("content.assign")}
 					</Button>
 				</Stack>
+				<Button size="small" variant="outlined" sx={{ mt: 1 }} onClick={() => setCreating("item")} data-testid={mindmapTestIds.createItem}>
+					{t("create.item.open")}
+				</Button>
 			</Box>
 			<Box>
 				<Typography variant="overline" color="text.secondary">
@@ -156,7 +162,12 @@ export function NodeContentSection({ node }: { node: NodeOut }) {
 						{t("content.link")}
 					</Button>
 				</Stack>
+				<Button size="small" variant="outlined" sx={{ mt: 1 }} onClick={() => setCreating("memo")} data-testid={mindmapTestIds.createMemo}>
+					{t("create.memo.open")}
+				</Button>
 			</Box>
+			{creating === "item" && <ItemFromNodeDialog node={node} onClose={() => setCreating(undefined)} />}
+			{creating === "memo" && <MemoFromNodeDialog node={node} onClose={() => setCreating(undefined)} />}
 			<ConfirmDialog
 				open={Boolean(replacing)}
 				title={t("content.replaceTitle")}

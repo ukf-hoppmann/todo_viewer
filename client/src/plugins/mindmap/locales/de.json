@@ -189,5 +189,34 @@
 		"jump": "Zu einem Baum springen",
 		"highlight": "Übertragene Äste einrahmen",
 		"pick": "In welchem Baum?"
+	},
+	"create": {
+		"item": {
+			"open": "Item anlegen",
+			"title": "Item aus „{{title}}“ anlegen",
+			"confirm": "Anlegen",
+			"type": "Typ",
+			"types": {
+				"Epic": "Epic",
+				"Story": "Story",
+				"Task": "Task"
+			},
+			"priority": "Priorität",
+			"priorities": {
+				"Urgent": "Dringend",
+				"Important": "Wichtig",
+				"Normal": "Normal",
+				"Prospective": "Perspektivisch"
+			},
+			"goal": "Ziel",
+			"criteria": "Abschlusskriterien"
+		},
+		"memo": {
+			"open": "Memo anlegen",
+			"title": "Memo aus „{{title}}“ anlegen",
+			"confirm": "Anlegen",
+			"summary": "Zusammenfassung",
+			"body": "Text"
+		}
 	}
 }

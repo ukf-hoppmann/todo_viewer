@@ -14,11 +14,28 @@ import {
 	type SyncDirection,
 	type SyncResult,
 } from "./api";
-import { choiceBlocked, choiceEffect, decisionsOf, differences, documentContext, isDeletionConflict, isTextDiff, lineDiff, onlyWhitespaceDiffers, originKey, visibleWhitespace, withBulkChoice, type Choices, type DiffLine } from "./sync";
+import { choiceBlocked, choiceEffect, decisionsOf, differences, documentContext, entryName, isDeletionConflict, isTextDiff, lineDiff, onlyWhitespaceDiffers, originKey, visibleWhitespace, withBulkChoice, type Choices, type DiffLine } from "./sync";
 import { workspaceTestIds } from "./testIds";
 
 const directions: SyncDirection[] = ["both", "to_files", "to_database"];
 const choices: SyncChoice[] = ["database", "files", "defer"];
+
+/** The name of an entry in a list: the mindmap's nodes, maps, and trees by their names, everything else by label or kind. */
+function useEntryName() {
+	const { t } = useTranslation("workspace");
+	return (entry: { kind: string; label?: string | null; database?: unknown; files?: unknown }): string => {
+		const name = entryName(entry);
+		if (!name) return entry.label ?? entry.kind;
+		const text = t(`sync.names.${name.key}`, name.params);
+		return name.key === "node" && name.params.title ? `${text} · ${name.params.title}` : text;
+	};
+}
+
+/** The key below `sync.context` for a document: spec, notes, or other, of an item or of a node of the mindmap. */
+function contextKey(context: { kind: string; node?: string }): string {
+	const kind = context.kind === "spec" || context.kind === "notes" ? context.kind : "other";
+	return context.node === undefined ? kind : `node${kind[0]!.toUpperCase()}${kind.slice(1)}`;
+}
 
 /** The text of a failed request, with the file and the line of a format error if the server named them. */
 function failureText(error: unknown, fallback: string): string {
@@ -34,6 +51,7 @@ export function SyncDialog({ project, onClose }: { project: Project; onClose: ()
 	const { t } = useTranslation("workspace");
 	const [direction, setDirection] = useState<SyncDirection>(project.sync_direction);
 	const { data: preview, error, isFetching, refetch } = useGetSyncPreviewQuery({ project: project.uid, direction }, { refetchOnMountOrArgChange: true });
+	const nameOf = useEntryName();
 	const [execute, { isLoading: running }] = useExecuteSyncMutation();
 	const [picked, setPicked] = useState<Choices>({});
 	const [result, setResult] = useState<SyncResult>();
@@ -142,7 +160,7 @@ export function SyncDialog({ project, onClose }: { project: Project; onClose: ()
 						) : (
 							preview.transfers.map((transfer) => (
 								<Typography key={`${transfer.target}-${transfer.key}`} variant="body2">
-									{t(`sync.targets.${transfer.target}`)} · {t(`sync.actions.${transfer.action}`)} · {transfer.label ?? transfer.kind}
+									{t(`sync.targets.${transfer.target}`)} · {t(`sync.actions.${transfer.action}`)} · {nameOf(transfer)}
 								</Typography>
 							))
 						)}
@@ -168,17 +186,19 @@ export function SyncDialog({ project, onClose }: { project: Project; onClose: ()
 
 function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: SyncConflict; direction: SyncDirection; choice: SyncChoice | undefined; onChoose: (choice: SyncChoice) => void }) {
 	const { t, i18n } = useTranslation("workspace");
+	const nameOf = useEntryName();
 	const context = documentContext(conflict);
-	const rows = differences(conflict).filter((row) => !context || (row.name !== "kind" && row.name !== "item"));
+	const rows = differences(conflict).filter((row) => !context || !["kind", "item", "node"].includes(row.name));
+	const ofMindmap = conflict.kind.startsWith("mindmap.");
 	const renamed = conflict.renamed_to;
 	return (
 		<Box sx={{ border: 1, borderColor: "divider", borderRadius: 1, p: 1, mb: 1 }} data-testid={workspaceTestIds.syncConflict(conflict.key)}>
 			<Typography variant="body2" sx={{ fontWeight: 600 }}>
-				{conflict.label ?? conflict.kind} · {t(`sync.conflict.${conflict.conflict}`)}
+				{nameOf(conflict)} · {t(`sync.conflict.${conflict.conflict}`)}
 			</Typography>
 			{context && (
 				<Typography variant="caption" color="text.secondary" component="div" data-testid={workspaceTestIds.syncContext(conflict.key)}>
-					{t(`sync.context.${context.kind === "spec" || context.kind === "notes" ? context.kind : "other"}`, { item: context.item ?? "", kind: context.kind })}
+					{t(`sync.context.${contextKey(context)}`, { item: context.item ?? "", node: context.node ?? "", kind: context.kind })}
 				</Typography>
 			)}
 			<Typography variant="body2" sx={{ mt: 0.5 }} data-testid={workspaceTestIds.syncOrigin(conflict.key)}>
@@ -217,7 +237,7 @@ function ConflictCard({ conflict, direction, choice, onChoose }: { conflict: Syn
 				<tbody>
 					{rows.map((row) => (
 						<tr key={row.name} data-testid={workspaceTestIds.syncDifference(conflict.key, row.name)}>
-							<td>{row.name}</td>
+							<td>{ofMindmap ? t(`sync.mindmapFields.${row.name}`, { defaultValue: row.name }) : row.name}</td>
 							<TextCells conflictKey={conflict.key} row={row} />
 						</tr>
 					))}

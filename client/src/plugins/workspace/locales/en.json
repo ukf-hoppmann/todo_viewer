@@ -168,7 +168,10 @@
 		"context": {
 			"spec": "Spec of {{item}}",
 			"notes": "Notes of {{item}}",
-			"other": "{{kind}} of {{item}}"
+			"other": "{{kind}} of {{item}}",
+			"nodeSpec": "Spec of node {{node}}",
+			"nodeNotes": "Notes of node {{node}}",
+			"nodeOther": "{{kind}} of node {{node}}"
 		},
 		"renamedTo": "Probably renamed to {{label}} ({{percent}} % alike).",
 		"recommended": "Recommended",
@@ -186,19 +189,19 @@
 		"database": "Database",
 		"files": "Files",
 		"choices": {
-		"database": "Use database",
-		"files": "Use files",
-		"defer": "Decide later"
-	},
+			"database": "Use database",
+			"files": "Use files",
+			"defer": "Decide later"
+		},
 		"effect": {
-		"database": "The files are overwritten with the database version.",
-		"files": "The database is overwritten with the files version.",
-		"defer": "Nothing changes, the conflict stays open.",
-		"databaseDeletes": "The entry is deleted in the files as well.",
-		"filesDeletes": "The entry is deleted in the database as well.",
-		"databaseRecreates": "The entry is created again in the files.",
-		"filesRecreates": "The entry is created again in the database."
-	},
+			"database": "The files are overwritten with the database version.",
+			"files": "The database is overwritten with the files version.",
+			"defer": "Nothing changes, the conflict stays open.",
+			"databaseDeletes": "The entry is deleted in the files as well.",
+			"filesDeletes": "The entry is deleted in the database as well.",
+			"databaseRecreates": "The entry is created again in the files.",
+			"filesRecreates": "The entry is created again in the database."
+		},
 		"all": {
 			"database": "All: database",
 			"files": "All: files"
@@ -220,7 +223,26 @@
 		"result": "{{toDatabase}} to the database, {{toFiles}} to the files.",
 		"created": "Created: {{labels}}.",
 		"conflictsLeft_one": "{{count}} conflict stays open.",
-		"conflictsLeft_other": "{{count}} conflicts stay open."
+		"conflictsLeft_other": "{{count}} conflicts stay open.",
+		"names": {
+			"node": "Node {{label}}",
+			"projectTree": "Project tree of the mindmap",
+			"freeMap": "Map “{{name}}”",
+			"tree": "Mindmap tree"
+		},
+		"mindmapFields": {
+			"title": "Title",
+			"text": "Text",
+			"mark": "Mark",
+			"deleted_at": "Deleted at",
+			"items": "Items",
+			"memos": "Memos",
+			"content": "Content",
+			"tree_kind": "Kind",
+			"name": "Name",
+			"order": "Order",
+			"removed": "Removed placements (node · branch · parent · position)"
+		}
 	},
 	"detail": {
 		"close": "Close"

@@ -54,7 +54,7 @@ Datenbank sichert der Dienst sie.
 
 Der **Auto-Sync** (je Projekt, Standard aus) gleicht nur Konfliktfreies ab, löscht nie und pausiert bei fehlendem Ordner,
 Git-Merge-Markern oder laufendem Git-Vorgang. In der Projektliste zeigt ⚠ „braucht dich“ oder „pausiert“, ↻ einen
-gespiegelten Projekt. So lassen sich Backlogs über Git zwischen Rechnern und in die Cloud (claude.ai) mitnehmen.
+gespiegelten Projekt. Auch die Mindmap liegt im Spiegel (Unterordner `mindmap/`: ein Knoten je Datei, ein Baum je Datei mit Verweisen), sodass eine Cloud-Sitzung Maps füllen und Items zuordnen kann. So lassen sich Backlogs über Git zwischen Rechnern und in die Cloud (claude.ai) mitnehmen.
 
 ## Backlog
 

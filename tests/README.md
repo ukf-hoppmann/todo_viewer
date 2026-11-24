@@ -5,11 +5,11 @@ Alle Tests (`server/`, `client/`) liegen hier.
 ```
 implementation/unit/server/…         spiegelt server/src/viewer/, mit Fakes statt Adaptern
 implementation/integration/server/…  echte SQLite-Datei, echte Ordner, echter uvicorn-Server, Contract-Suiten
-implementation/system/server/…       ganzer Viewer, bedient über MCP wie vom Harness (STORY-081)
+implementation/system/server/…       ganzer Viewer, bedient über MCP wie vom Harness (STORY-081); Cloud-Sitzung der Mindmap-Dateien (TASK-082)
 implementation/system/ops/…          Betrieb: `todo.sh`, Compose-Datei, Server als Prozess, Image (STORY-083)
 implementation/unit/client/…         spiegelt client/src/ (Vitest, Testing Library)
 fixtures/                            synthetische Testdaten (nie echte Backlogs); `mirror-v2/` und `mirror-mindmap/` sind die Golden-Files der Spiegel-Codecs
-helpers/server/                      Beispiel-Plugin und Hilfen nur für Tests
+helpers/server/                      Beispiel-Plugin und Hilfen nur für Tests (`mcp_viewer.py`: ganzer Viewer als Server samt MCP-Aufrufen)
 helpers/client/                      Fakes und Render-Hilfen für die Client-Tests
 ```
 

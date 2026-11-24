@@ -21,6 +21,7 @@ import uvicorn
 from mcp import Client
 from mcp.types import TextContent
 from running_server import RunningServer
+
 from viewer.app.composition import create_app
 from viewer.core.domain.settings import Settings
 

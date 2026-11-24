@@ -226,7 +226,7 @@ def test_an_alarm_in_the_trash_stops_waiting_and_comes_back_waiting(alarms: Env)
 
 
 def _task(env: Env, title: str) -> dict[str, Any]:
-    fields = {"title": title, "area": "A", "goal": "G", "completion_criteria": "C"}
+    fields = {"title": title, "goal": "G", "completion_criteria": "C"}
     response = env.client.post("/api/backlog/items", json={"project": _project(env), "type": "Task", "fields": fields})
     assert response.status_code == 200, response.text
     return response.json()  # type: ignore[no-any-return]

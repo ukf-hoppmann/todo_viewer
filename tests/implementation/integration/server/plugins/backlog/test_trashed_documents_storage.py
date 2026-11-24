@@ -56,12 +56,12 @@ def _snapshot(uid: str, item_uid: str, name: str, kind: str = "spec", summary: s
     return TrashedDocument(uid, item_uid, name, kind, f"# {name}\n", summary, AT)
 
 
-def test_an_empty_database_reaches_version_4_with_the_trash_table(
+def test_an_empty_database_reaches_the_current_version_with_the_trash_table(
     runner: MigrationRunner, database: SqliteDatabase
 ) -> None:
     runner.run(_defs())
 
-    assert versions(database)["backlog"] == 4
+    assert versions(database)["backlog"] == len(MIGRATIONS)
     with database.engine.begin() as connection:
         tables = {row[0] for row in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'table'"))}
     assert "backlog_trashed_documents" in tables

@@ -18,7 +18,6 @@ def _add(
     status: str = "Open",
     priority: str = "Normal",
     required: bool | None = None,
-    area: str | None = None,
     dependencies: tuple[str, ...] = (),
 ) -> Item:
     database = env.backlog.repository
@@ -33,7 +32,6 @@ def _add(
             title=title,
             status=status,
             priority=priority,
-            area=area,
             parent_uid=parent.uid if parent else None,
             required_for_parent=required,
             goal="Ziel",
@@ -68,7 +66,7 @@ def test_items_get_register_labels_per_type(backlog: Env) -> None:
 
 def test_list_items_returns_a_flat_index_with_progress(backlog: Env) -> None:
     project = str(backlog.general()["uid"])
-    epic = _add(backlog, project, "Epic", "E", priority="Urgent", area="Server")
+    epic = _add(backlog, project, "Epic", "E", priority="Urgent")
     story = _add(backlog, project, "Story", "S", parent=epic, status="In progress")
     _add(backlog, project, "Task", "T1", parent=story, status="Completed")
     _add(backlog, project, "Task", "T2", parent=story)
@@ -80,11 +78,8 @@ def test_list_items_returns_a_flat_index_with_progress(backlog: Env) -> None:
     assert index["STORY-001"]["progress"] == {"done": 1, "total": 2}
     assert index["TASK-001"]["progress"] is None
     assert index["STORY-001"]["parent_uid"] == epic.uid
-    assert (index["EPIC-001"]["priority"], index["EPIC-001"]["area"], index["EPIC-001"]["type"]) == (
-        "Urgent",
-        "Server",
-        "Epic",
-    )
+    assert (index["EPIC-001"]["priority"], index["EPIC-001"]["type"]) == ("Urgent", "Epic")
+    assert "area" not in index["EPIC-001"]
     assert index["EPIC-001"]["version"] == 1
     assert index["EPIC-001"]["dependencies"] == []
 
@@ -152,7 +147,7 @@ def test_get_item_by_uid_returns_all_fields_children_and_dependencies(backlog: E
     project = str(backlog.general()["uid"])
     epic = _add(backlog, project, "Epic", "E")
     first = _add(backlog, project, "Task", "Erst", parent=epic)
-    second = _add(backlog, project, "Task", "Danach", parent=epic, dependencies=(first.uid,), area="Server")
+    second = _add(backlog, project, "Task", "Danach", parent=epic, dependencies=(first.uid,))
     gone = _add(backlog, project, "Task", "Gelöscht", parent=epic)
     backlog.client.delete(f"/api/workspace/elements/{gone.uid}", params={"version": 1})
 
@@ -173,7 +168,8 @@ def test_get_item_by_uid_returns_all_fields_children_and_dependencies(backlog: E
     )
     assert child["parent"]["label"] == "EPIC-001"
     assert [d["label"] for d in child["dependencies"]] == ["TASK-001"]
-    assert (child["area"], child["status"], child["priority"], child["deleted"]) == ("Server", "Open", "Normal", False)
+    assert (child["status"], child["priority"], child["deleted"]) == ("Open", "Normal", False)
+    assert "area" not in child
 
 
 def test_get_item_by_label_needs_the_project_and_finds_earlier_labels(backlog: Env) -> None:
@@ -200,17 +196,11 @@ def test_a_deleted_item_can_still_be_read_and_says_so(backlog: Env) -> None:
     assert backlog.client.get(f"/api/backlog/items/{task.uid}").json()["deleted"] is True
 
 
-def test_an_area_is_shared_inside_a_project_and_not_between_projects(backlog: Env) -> None:
-    one = str(backlog.general()["uid"])
-    two = str(backlog.create("Zwei")["uid"])
-
-    _add(backlog, one, "Task", "A", area="Server")
-    _add(backlog, one, "Task", "B", area="Server")
-    _add(backlog, two, "Task", "C", area="Server")
-
+def test_there_is_no_area_table_or_column(backlog: Env) -> None:
     with backlog.app.state.database.transaction() as tx:
-        rows = tx.connection.exec_driver_sql("SELECT project_uid, name FROM backlog_areas ORDER BY project_uid").all()
-    assert sorted(r[0] for r in rows) == sorted([one, two]) and {r[1] for r in rows} == {"Server"}
+        tables = {r[0] for r in tx.connection.exec_driver_sql("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        columns = {r[1] for r in tx.connection.exec_driver_sql("PRAGMA table_info(backlog_items)")}
+    assert "backlog_areas" not in tables and "area_uid" not in columns
 
 
 def test_the_value_lists_are_enforced_by_the_database(backlog: Env) -> None:
@@ -282,8 +272,8 @@ def test_show_and_index_name_the_state_of_the_notes_head(backlog: Env) -> None:
     lines = backlog.client.get("/api/backlog/index", params={"projects": project}).json()["text"].splitlines()
 
     assert states == {"Ohne": None, "Fehlt": "missing", "Aktuell": "current", "Veraltet": "stale"}
-    assert lines[0] == "ID | Type | Status | Area | Title | Parent | Notes"
-    assert {line.split(" | ")[4]: line.split(" | ")[6] for line in lines[1:]} == {
+    assert lines[0] == "ID | Type | Status | Title | Parent | Notes"
+    assert {line.split(" | ")[3]: line.split(" | ")[5] for line in lines[1:]} == {
         "Ohne": "-",
         "Fehlt": "missing",
         "Aktuell": "current",

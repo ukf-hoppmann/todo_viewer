@@ -169,7 +169,7 @@ def test_promote_as_a_decision_creates_the_item_and_decides_the_hint(memos: Env)
     uid = _hint(memos, entry["uid"])["uid"]
 
     decided = decide(
-        memos, uid, "promote", type="Task", fields={"area": "Server", "goal": "Ziel", "completion_criteria": "K"}
+        memos, uid, "promote", type="Task", fields={"goal": "Ziel", "completion_criteria": "K"}
     )
 
     assert decided.status_code == 200, decided.text

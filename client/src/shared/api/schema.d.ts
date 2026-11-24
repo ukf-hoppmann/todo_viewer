@@ -91,23 +91,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/backlog/areas": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Die Bereiche eines Projekts (ein neuer entsteht mit dem ersten Item, das seinen Namen trägt) */
-        get: operations["backlog_list_areas"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/backlog/index": {
         parameters: {
             query?: never;
@@ -115,7 +98,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Wie list_items, aber als kompakter Text für Agenten: eine Zeile je Item `ID | Type | Status | Area | Title | Parent` */
+        /** Wie list_items, aber als kompakter Text für Agenten: eine Zeile je Item `ID | Type | Status | Title | Parent | Notes` */
         get: operations["backlog_index_lines"];
         put?: never;
         post?: never;
@@ -135,7 +118,7 @@ export interface paths {
         /** Items der Projekte als flache Liste mit Fortschritt; Filter nach Status, Priorität und Text (Projekte, Status und Prioritäten komma-getrennt) */
         get: operations["backlog_list_items"];
         put?: never;
-        /** Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria; area ist optional */
+        /** Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria */
         post: operations["backlog_create_item"];
         delete?: never;
         options?: never;
@@ -704,7 +687,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Befördert ein Memo zu einem Item (Epic, Story oder Task) im selben Projekt: Langtext, Notizen und Specs werden übernommen, das Memo ist danach befördert (Archiv) und mit dem Item verknüpft (origin). Pflicht: type und die Felder goal, completion_criteria (area ist optional) */
+        /** Befördert ein Memo zu einem Item (Epic, Story oder Task) im selben Projekt: Langtext, Notizen und Specs werden übernommen, das Memo ist danach befördert (Archiv) und mit dem Item verknüpft (origin). Pflicht: type und die Felder goal, completion_criteria */
         post: operations["memos_promote_memo"];
         delete?: never;
         options?: never;
@@ -1661,11 +1644,6 @@ export interface components {
             /** Version */
             version: number;
         };
-        /** AreasOut */
-        AreasOut: {
-            /** Areas */
-            areas: string[];
-        };
         /** BacklogAppendNoteBody */
         BacklogAppendNoteBody: {
             /** Decided */
@@ -2082,8 +2060,6 @@ export interface components {
         };
         /** IndexItem */
         IndexItem: {
-            /** Area */
-            area: string | null;
             /** Dependencies */
             dependencies: string[];
             /** Label */
@@ -2151,8 +2127,6 @@ export interface components {
         };
         /** ItemOut */
         ItemOut: {
-            /** Area */
-            area: string | null;
             /** Children */
             children: components["schemas"]["ItemSummary"][];
             /** Completion Criteria */
@@ -3591,37 +3565,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AlarmOut"];
-                };
-            };
-            /** @description Client Error */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorBody"];
-                };
-            };
-        };
-    };
-    backlog_list_areas: {
-        parameters: {
-            query: {
-                project: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AreasOut"];
                 };
             };
             /** @description Client Error */

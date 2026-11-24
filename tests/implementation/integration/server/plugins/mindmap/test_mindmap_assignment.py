@@ -8,7 +8,7 @@ from viewer.core.domain.events import Event
 from workspace_env import Env
 
 API = "/api/mindmap"
-BASE = {"title": "Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
+BASE = {"title": "Item", "goal": "Ziel", "completion_criteria": "Kriterien"}
 
 
 def _project(env: Env) -> str:

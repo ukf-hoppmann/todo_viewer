@@ -34,10 +34,8 @@ class ItemRepository(Protocol):
         ...
 
     def update(self, tx: Transaction, item: Item) -> None:
-        """Schreibt alle änderbaren Felder (Typ, Bereich, Parent, Abhängigkeiten …); die Revision hat das Register."""
+        """Schreibt alle änderbaren Felder (Typ, Parent, Abhängigkeiten …); die Revision hat das Register."""
         ...
-
-    def area_names(self, tx: Transaction, project_uid: str) -> list[str]: ...
 
     def siblings(self, tx: Transaction, project_uid: str, parent_uid: str | None) -> list[Item]:
         """Nicht gelöschte Items unter einem Parent (oder die Wurzeln), nach Position und Label."""

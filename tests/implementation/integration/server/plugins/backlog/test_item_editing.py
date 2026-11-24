@@ -4,7 +4,7 @@ from typing import Any
 
 from workspace_env import Env
 
-BASE = {"title": "Neues Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
+BASE = {"title": "Neues Item", "goal": "Ziel", "completion_criteria": "Kriterien"}
 
 
 def _project(env: Env) -> str:
@@ -66,15 +66,16 @@ def test_create_refuses_missing_required_fields_and_leaves_no_trace(backlog: Env
     assert backlog.client.get("/api/backlog/items").json()[0]["label"] == "TASK-001"
 
 
-def test_create_without_area_leaves_it_empty(backlog: Env) -> None:
-    fields = {k: v for k, v in BASE.items() if k != "area"}
-    r = backlog.client.post(
-        "/api/backlog/items", json={"project": _project(backlog), "type": "Task", "fields": fields}
+def test_area_is_refused_like_any_unknown_field(backlog: Env) -> None:
+    created = backlog.client.post(
+        "/api/backlog/items",
+        json={"project": _project(backlog), "type": "Task", "fields": {**BASE, "area": "Server"}},
     )
-    assert r.status_code == 200, r.text
-    assert r.json()["area"] is None
-    assert _get(backlog, r.json()["uid"])["area"] is None
-    assert _create(backlog, area="Server")["area"] == "Server"
+    item = _create(backlog)
+    updated = _update(backlog, item, {"area": "Server"})
+
+    assert created.status_code == updated.status_code == 400
+    assert "area" not in item and "area" not in _get(backlog, str(item["uid"]))
 
 
 def test_create_checks_the_structure_rules(backlog: Env) -> None:
@@ -126,14 +127,13 @@ def test_a_parent_must_be_in_the_same_project(backlog: Env) -> None:
 def test_update_changes_fields_bumps_the_version_and_refuses_a_stale_one(backlog: Env) -> None:
     item = _create(backlog)
 
-    r = _update(backlog, item, {"title": "Anders", "priority": "Important", "area": "Client", "summary": "Kurz"})
+    r = _update(backlog, item, {"title": "Anders", "priority": "Important", "summary": "Kurz"})
     stale = _update(backlog, item, {"title": "Zu spät"})
 
     body = r.json()
-    assert (body["title"], body["priority"], body["area"], body["summary"], body["version"]) == (
+    assert (body["title"], body["priority"], body["summary"], body["version"]) == (
         "Anders",
         "Important",
-        "Client",
         "Kurz",
         2,
     )
@@ -362,17 +362,6 @@ def test_retype_refuses_the_same_type_an_unknown_type_a_stale_version_and_broken
     assert _get(backlog, story["uid"])["label"] == "STORY-001"  # nichts blieb halb geändert
 
 
-def test_areas_come_with_the_items_of_the_project(backlog: Env) -> None:
-    other = str(backlog.create("Zwei")["uid"])
-    _create(backlog, area="Server")
-    _create(backlog, area="Client")
-    _create(backlog, project=other, area="Nur zwei")
-
-    areas = backlog.client.get("/api/backlog/areas", params={"project": _project(backlog)}).json()
-
-    assert areas == {"areas": ["Client", "Server"]}
-
-
 def test_the_editing_operations_are_mcp_tools(backlog: Env) -> None:
     names = {
         op.name
@@ -390,5 +379,5 @@ def test_the_editing_operations_are_mcp_tools(backlog: Env) -> None:
         "move_item",
         "retype_item",
         "reopen_ancestors",
-        "list_areas",
     } <= names
+    assert "list_areas" not in names

@@ -33,7 +33,6 @@ items = sa.Table(
     sa.Column("parent_uid", sa.String(36)),
     sa.Column("required_for_parent", sa.Boolean),
     sa.Column("created", sa.Text),
-    sa.Column("area", sa.Text),
     sa.Column("priority", sa.Text),
     sa.Column("goal", sa.Text),
     sa.Column("completion_criteria", sa.Text),

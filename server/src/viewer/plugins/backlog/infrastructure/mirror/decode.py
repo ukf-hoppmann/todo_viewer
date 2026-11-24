@@ -292,7 +292,6 @@ def _check_rules(items: list[_Decoded], docs: list[MirrorEntry]) -> None:
                 title=f["title"],
                 status=f["status"],
                 priority=f["priority"],
-                area=None,
                 parent_uid=keys.get(parent[0], f"unknown:{parent[0]}") if parent else None,
                 required_for_parent=f["required_for_parent"],
                 goal=f["goal"],

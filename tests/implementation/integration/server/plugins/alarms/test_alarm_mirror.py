@@ -98,7 +98,7 @@ def test_an_alarm_set_in_the_database_appears_in_the_file_and_comes_back_unchang
         json={
             "project": mirror.project,
             "type": "Task",
-            "fields": {"title": "Ziel", "area": "A", "goal": "G", "completion_criteria": "K"},
+            "fields": {"title": "Ziel", "goal": "G", "completion_criteria": "K"},
         },
     ).json()
     created = full.client.post(

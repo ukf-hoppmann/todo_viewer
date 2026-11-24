@@ -139,26 +139,13 @@ class Importer:
 
     def _backlog(self) -> None:
         legacy = self._legacy
-        areas: dict[tuple[str, str], str] = {}
-        for item in legacy.items:
-            project = self._project[str(item["project_id"])]
-            area = str(item["area"] or "").strip()
-            if area and (project, area) not in areas:
-                areas[(project, area)] = stable_uid("area", project, area)
-                self._exec(
-                    "INSERT INTO backlog_areas(uid, project_uid, name) VALUES (:u, :p, :n)",
-                    u=areas[(project, area)],
-                    p=project,
-                    n=area,
-                )
-                self._report.count("Bereiche")
         self._item_uids = {str(item["uid"]) for item in legacy.items}
         for item in legacy.items:
-            self._item(item, areas)
+            self._item(item)
         self._dependencies()
         self._item_documents()
 
-    def _item(self, item: Row, areas: Mapping[tuple[str, str], str]) -> None:
+    def _item(self, item: Row) -> None:
         project = self._project[str(item["project_id"])]
         kind = ITEM_KINDS[str(item["item_type"])]
         label = str(item["label"])
@@ -173,15 +160,14 @@ class Importer:
         if priority != (item["priority"] or ""):
             self._report.deviation(f"{label}: Priorität '{item['priority'] or ''}' → {priority}")
         self._exec(
-            "INSERT INTO backlog_items(uid, type, title, status, priority, area_uid, parent_uid, required_for_parent, "
+            "INSERT INTO backlog_items(uid, type, title, status, priority, parent_uid, required_for_parent, "
             "goal, completion_criteria, summary, resolution, created, position) VALUES (:uid, :type, :title, :status, "
-            ":priority, :area, :parent, :required, :goal, :criteria, :summary, :resolution, :created, :position)",
+            ":priority, :parent, :required, :goal, :criteria, :summary, :resolution, :created, :position)",
             uid=item["uid"],
             type=item["item_type"],
             title=item["title"],
             status=item["status"],
             priority=priority,
-            area=areas.get((project, str(item["area"] or "").strip())),
             parent=parent,
             required=_bool(item["required_for_parent"]),
             goal=item["goal"],

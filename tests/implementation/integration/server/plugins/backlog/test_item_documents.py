@@ -4,7 +4,7 @@ from typing import Any
 
 from workspace_env import Env
 
-BASE = {"title": "Ein Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
+BASE = {"title": "Ein Item", "goal": "Ziel", "completion_criteria": "Kriterien"}
 
 
 def _create(env: Env, type_: str = "Task", **fields: Any) -> dict[str, Any]:

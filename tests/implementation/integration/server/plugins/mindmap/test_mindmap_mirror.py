@@ -11,7 +11,7 @@ API = "/api/mindmap"
 PROJECT_UID = "9a2b0f4c-0d5e-4f60-8a71-2b3c4d5e6f70"
 MAP_UID = "9a2b0f4c-0d5e-4f60-8a71-2b3c4d5e6f71"
 NODE_UIDS = [f"5d1c0c2e-7a53-4a0e-9f3b-0c9f8f6e1a0{n}" for n in range(1, 5)]
-BASE = {"title": "Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
+BASE = {"title": "Item", "goal": "Ziel", "completion_criteria": "Kriterien"}
 
 
 class Mirror:

@@ -24,7 +24,6 @@ def item(
         title=title or uid,
         status=status,
         priority=priority,
-        area=None,
         parent_uid=parent,
         required_for_parent=required,
         goal=None,

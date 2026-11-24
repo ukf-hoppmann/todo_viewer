@@ -1,4 +1,4 @@
-"""Migrationen von `backlog`: feste Wertelisten als Nachschlagetabellen, Items, Bereiche, Abhängigkeiten."""
+"""Migrationen von `backlog`: feste Wertelisten als Nachschlagetabellen, Items, Abhängigkeiten, Dokumente, Notes."""
 
 from __future__ import annotations
 
@@ -152,4 +152,135 @@ def _v4(connection: Any) -> None:
     connection.exec_driver_sql("CREATE INDEX backlog_trashed_documents_item ON backlog_trashed_documents(item_uid)")
 
 
-MIGRATIONS: tuple[Migration, ...] = (Migration(1, _v1), Migration(2, _v2), Migration(3, _v3), Migration(4, _v4))
+# Tabellen, die auf `backlog_items` zeigen, mit ihrem Stand nach `_v4` (Reihenfolge: Eltern vor Kindern).
+_V5_CHILDREN: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    (
+        "backlog_dependencies",
+        """CREATE TABLE backlog_dependencies (
+            item_uid TEXT NOT NULL REFERENCES backlog_items(uid) ON DELETE CASCADE,
+            depends_on_uid TEXT NOT NULL REFERENCES backlog_items(uid) ON DELETE CASCADE,
+            PRIMARY KEY (item_uid, depends_on_uid),
+            CHECK (item_uid <> depends_on_uid)
+        )""",
+        ("CREATE INDEX backlog_dependencies_target ON backlog_dependencies(depends_on_uid)",),
+    ),
+    (
+        "backlog_documents",
+        """CREATE TABLE backlog_documents (
+            item_uid TEXT NOT NULL REFERENCES backlog_items(uid) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            kind TEXT NOT NULL CHECK (kind IN ('notes', 'spec')),
+            content TEXT NOT NULL,
+            revision INTEGER NOT NULL DEFAULT 1,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (item_uid, name)
+        )""",
+        (),
+    ),
+    (
+        "backlog_notes",
+        """CREATE TABLE backlog_notes (
+            item_uid TEXT PRIMARY KEY REFERENCES backlog_items(uid) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            preamble TEXT NOT NULL,
+            state TEXT NOT NULL,
+            stamp_day TEXT,
+            stamp_topic TEXT,
+            stamp_checksum TEXT,
+            state_revision INTEGER NOT NULL DEFAULT 1,
+            revision INTEGER NOT NULL DEFAULT 1,
+            updated_at TEXT NOT NULL,
+            CHECK ((stamp_day IS NULL) = (stamp_topic IS NULL) AND (stamp_day IS NULL) = (stamp_checksum IS NULL))
+        )""",
+        (),
+    ),
+    (
+        "backlog_notes_entries",
+        """CREATE TABLE backlog_notes_entries (
+            item_uid TEXT NOT NULL REFERENCES backlog_notes(item_uid) ON DELETE CASCADE,
+            position INTEGER NOT NULL,
+            day TEXT NOT NULL,
+            topic TEXT NOT NULL,
+            body TEXT NOT NULL,
+            PRIMARY KEY (item_uid, position)
+        )""",
+        (),
+    ),
+    (
+        "backlog_trashed_documents",
+        """CREATE TABLE backlog_trashed_documents (
+            uid TEXT PRIMARY KEY,
+            item_uid TEXT NOT NULL REFERENCES backlog_items(uid) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            kind TEXT NOT NULL CHECK (kind IN ('notes', 'spec')),
+            content TEXT NOT NULL,
+            summary TEXT,
+            deleted_at TEXT NOT NULL
+        )""",
+        ("CREATE INDEX backlog_trashed_documents_item ON backlog_trashed_documents(item_uid)",),
+    ),
+)
+
+_V5_ITEM_COLUMNS = (
+    "uid, type, title, status, priority, parent_uid, required_for_parent, goal, completion_criteria, summary, "
+    "resolution, created, position"
+)
+
+
+def _v5(connection: Any) -> None:
+    """Das Feld Area entfällt (`STORY-106`): Spalte `area_uid` und Tabelle `backlog_areas` werden entfernt.
+
+    SQLite kann eine Spalte mit Fremdschlüssel nicht per `DROP COLUMN` entfernen, und `backlog_items` lässt sich nicht
+    einfach ersetzen, weil `DROP TABLE` die Zeilen der abhängigen Tabellen (ON DELETE CASCADE) mitnähme. Deshalb: die
+    abhängigen Tabellen in Zwischentabellen sichern und entfernen, `backlog_items` ohne Area neu aufbauen, die
+    abhängigen Tabellen neu anlegen und füllen; die Eltern der Items (Verweis auf die eigene Tabelle) werden erst am
+    Ende gesetzt. Nur die Area-Werte gehen verloren."""
+    run = connection.exec_driver_sql
+    run("CREATE TABLE backlog_parents_v5 AS SELECT uid, parent_uid FROM backlog_items")  # Eltern erst am Ende setzen
+    for name, _, _ in _V5_CHILDREN:
+        run(f"CREATE TABLE {name}_v5 AS SELECT * FROM {name}")
+    for name, _, _ in reversed(_V5_CHILDREN):
+        run(f"DROP TABLE {name}")
+    run(
+        """CREATE TABLE backlog_items_v5 (
+            uid TEXT PRIMARY KEY REFERENCES workspace_elements(uid),
+            type TEXT NOT NULL REFERENCES backlog_types(code),
+            title TEXT NOT NULL,
+            status TEXT NOT NULL REFERENCES backlog_statuses(code),
+            priority TEXT NOT NULL REFERENCES backlog_priorities(code),
+            parent_uid TEXT REFERENCES backlog_items(uid),
+            required_for_parent INTEGER CHECK (required_for_parent IN (0, 1)),
+            goal TEXT,
+            completion_criteria TEXT,
+            summary TEXT,
+            resolution TEXT,
+            created TEXT NOT NULL,
+            position INTEGER NOT NULL DEFAULT 0
+        )"""
+    )
+    run(f"INSERT INTO backlog_items_v5({_V5_ITEM_COLUMNS}) SELECT {_V5_ITEM_COLUMNS} FROM backlog_items")
+    run("UPDATE backlog_items_v5 SET parent_uid = NULL")
+    run("DROP TABLE backlog_items")
+    run("DROP TABLE backlog_areas")
+    run("ALTER TABLE backlog_items_v5 RENAME TO backlog_items")
+    run(
+        "UPDATE backlog_items SET parent_uid = "
+        "(SELECT p.parent_uid FROM backlog_parents_v5 p WHERE p.uid = backlog_items.uid)"
+    )
+    run("DROP TABLE backlog_parents_v5")
+    run("CREATE INDEX backlog_items_parent ON backlog_items(parent_uid)")
+    for name, create, indexes in _V5_CHILDREN:
+        run(create)
+        run(f"INSERT INTO {name} SELECT * FROM {name}_v5")
+        run(f"DROP TABLE {name}_v5")
+        for index in indexes:
+            run(index)
+
+
+MIGRATIONS: tuple[Migration, ...] = (
+    Migration(1, _v1),
+    Migration(2, _v2),
+    Migration(3, _v3),
+    Migration(4, _v4),
+    Migration(5, _v5),
+)

@@ -96,7 +96,7 @@ class ConversionService:
         self, ref: str, project_uid: str | None, version: int, item_type: str, given: Mapping[str, Any]
     ) -> Promoted:
         """Legt das Item im Projekt des Memos an, übernimmt Langtext, Notizen und Specs und schließt das Memo als
-        `promoted`. `given` sind die Felder des Items (`goal`, `completion_criteria`, optional `area`, …)."""
+        `promoted`. `given` sind die Felder des Items (`goal`, `completion_criteria`, …)."""
         d = self._d
         with d.database.transaction() as tx:
             memo = d.resolver.memo(tx, ref, project_uid)

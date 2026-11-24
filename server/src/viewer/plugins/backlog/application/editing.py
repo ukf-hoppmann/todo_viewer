@@ -238,9 +238,5 @@ class EditService:
         }
         self._events.publish(Event(STATUS_TOPIC, payload, public=False))
 
-    def list_areas(self, project_uid: str) -> list[str]:
-        with self._database.transaction() as tx:
-            return self._repository.area_names(tx, project_uid)
-
 
 __all__ = ["CHANGED_TOPIC", "STATUS_TOPIC", "EditService", "Notice", "RetypeResult"]

@@ -8,7 +8,7 @@ from workspace_env import Env
 
 NOTES = "/api/memos"
 BACKLOG = "/api/backlog"
-ITEM_FIELDS = {"title": "Ein Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
+ITEM_FIELDS = {"title": "Ein Item", "goal": "Ziel", "completion_criteria": "Kriterien"}
 
 
 def project(env: Env) -> str:

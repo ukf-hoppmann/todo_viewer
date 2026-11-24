@@ -54,5 +54,5 @@ diesem Text.
 
 ## Ablage
 
-Beide Prompts stehen als `<ID>_spec_prompt-baum.md` und `<ID>_spec_prompt-harness.md` neben dieser Spec und werden
+Beide Prompts stehen (geschrieben am 2026-11-24) als `<ID>_spec_prompt-baum.md` und `<ID>_spec_prompt-harness.md` neben dieser Spec und werden
 dem Owner am Ende der Sitzung vollständig im Text gegeben. Ein Prompt ist ein einziger Text, den der Owner kopiert.

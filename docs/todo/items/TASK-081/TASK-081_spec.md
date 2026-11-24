@@ -9,7 +9,8 @@ Rahmen: Architektur `docs/development/architecture.md` und `docs/development/arc
 
 - Zuordnungen: in der Datenbank die Verknüpfungen der Rolle `node` in `workspace_links` (`application/assignments.py`:
   `ROLE`, `AssignmentService`). Die Dateien nennen sie auf dem Knoten (`Items:`, `Memos:`). Beim Übernehmen aus Dateien
-  über `AssignmentService.assign_item`/`link_memo` und die Löse-Operationen, nicht über SQL; die Regel „ein Item an
+  mit den Regeln der Domäne (`check_assign`) über die Ports `Links` und `ElementRegistry` in der Transaktion des Sync
+  (die Dienste öffnen eigene Transaktionen), nicht über SQL; erst alles Gelöste, dann das Neue; die Regel „ein Item an
   höchstens einem Knoten“ gilt (ein Konflikt in den Dateien ist `rule_violation` schon beim Lesen, siehe Codec).
   Ein Item, das in den Dateien bei keinem Knoten mehr steht, wird gelöst (bleibt aber erhalten).
 - Dokumente: Eintrag `mindmap.document` je Datei (`uid` = `<Knoten-uid>/<notes|spec|spec_…>`); Datenbank über

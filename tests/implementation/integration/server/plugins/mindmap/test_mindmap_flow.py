@@ -312,6 +312,8 @@ def test_the_operations_are_published_as_http_routes_and_mcp_tools(mindmap: Env)
         "get_node_document",
         "put_node_document",
         "append_node_entry",
+        "create_item_at_node",
+        "create_memo_at_node",
         "assign_item",
         "unassign_item",
         "link_memo",

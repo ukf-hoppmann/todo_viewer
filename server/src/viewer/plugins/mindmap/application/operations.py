@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 from viewer.core.application.sync import SyncParticipant
 from viewer.core.domain.operations import HttpBinding, Operation
@@ -21,6 +22,7 @@ from viewer.plugins.mindmap.application.branches import (
     RemovedFrom,
     TrashedBranch,
 )
+from viewer.plugins.mindmap.application.creation import Created, NodeCreationService
 from viewer.plugins.mindmap.application.documents import DocumentService
 from viewer.plugins.mindmap.application.maps import MapDeleted, MapService, MapView
 from viewer.plugins.mindmap.application.ports import BacklogItem, Document
@@ -35,6 +37,7 @@ class MindmapServices:
         assignments: AssignmentService,
         maps: MapService,
         branches: BranchService,
+        creation: NodeCreationService,
         participant: SyncParticipant,
     ) -> None:
         self.mindmap = mindmap
@@ -42,6 +45,7 @@ class MindmapServices:
         self.assignments = assignments
         self.maps = maps
         self.branches = branches
+        self.creation = creation
         self.participant = participant
 
 
@@ -608,6 +612,54 @@ class ListMemoNodes:
 
 
 @dataclass(frozen=True)
+class CreateItemAtNode:
+    #: Knoten (uid oder Label).
+    node: str
+    #: `Epic`, `Story` oder `Task`; die Ebene des Knotens bestimmt ihn nicht.
+    type: str
+    #: Wie bei `backlog_create_item`: `completion_criteria` sind Pflicht; fehlt `title`, gilt der Titel des Knotens,
+    #: fehlt `goal`, sein Text. Dazu `priority`, `required_for_parent`, `summary`, `parent` (uid), `dependencies`.
+    fields: dict[str, Any]
+    #: Nur nötig, wenn `node` ein Label ist; mit Angabe muss der Knoten zu diesem Projekt gehören.
+    project: str | None = None
+    #: Die Map, in der der zurückgegebene Knoten gelesen wird; ohne Angabe der Projektbaum.
+    tree: str | None = None
+
+
+@dataclass(frozen=True)
+class CreateMemoAtNode:
+    node: str
+    #: Wie bei `memos_create_memo`; fehlt `summary`, gilt der Titel des Knotens, fehlt `body`, sein Text.
+    fields: dict[str, Any]
+    project: str | None = None
+    tree: str | None = None
+
+
+@dataclass(frozen=True)
+class CreatedElementOut:
+    uid: str
+    label: str
+    #: Bei Items der Titel, bei Memos die Zusammenfassung.
+    title: str
+    #: Nur bei Items: `Epic`, `Story` oder `Task`.
+    type: str | None = None
+
+
+@dataclass(frozen=True)
+class CreatedItemAtNodeOut:
+    item: CreatedElementOut
+    #: Der Knoten danach, mit Zahlen und Zustand (`idea` → `planned`).
+    node: TreeNodeOut
+
+
+@dataclass(frozen=True)
+class CreatedMemoAtNodeOut:
+    memo: CreatedElementOut
+    #: Der Knoten danach; ein Memo ändert seinen Zustand nicht.
+    node: TreeNodeOut
+
+
+@dataclass(frozen=True)
 class Done:
     ok: bool = True
 
@@ -630,6 +682,32 @@ def _deleted_out(result: MapDeleted) -> MapDeletedOut:
 
 def _detail(services: MindmapServices, uid: str, tree: str | None = None) -> NodeOut:
     return node_out(services.mindmap.get_node(uid, None, tree))
+
+
+def _tree_node(services: MindmapServices, uid: str, tree: str | None) -> TreeNodeOut:
+    """Der Knoten wie in `get_tree` mit Zahlen und Zustand."""
+    view = services.mindmap.get_node(uid, None, tree)
+    stats = services.assignments.stats(view.node.project_uid, [], tree).stats.get(uid)
+    return TreeNodeOut(
+        **vars(node_out(view)),
+        total=stats.total if stats else 0,
+        done=stats.done if stats else 0,
+        state=stats.state if stats else "idea",
+    )
+
+
+def _created_item(services: MindmapServices, created: Created, tree: str | None) -> CreatedItemAtNodeOut:
+    e = created.element
+    return CreatedItemAtNodeOut(
+        CreatedElementOut(e.uid, e.label, e.title, e.type), _tree_node(services, created.node.uid, tree)
+    )
+
+
+def _created_memo(services: MindmapServices, created: Created, tree: str | None) -> CreatedMemoAtNodeOut:
+    e = created.element
+    return CreatedMemoAtNodeOut(
+        CreatedElementOut(e.uid, e.label, e.title), _tree_node(services, created.node.uid, tree)
+    )
 
 
 OPERATIONS: tuple[Operation, ...] = (
@@ -887,6 +965,28 @@ OPERATIONS: tuple[Operation, ...] = (
         NodeOut,
         lambda s, d: _detail(s, s.assignments.assign_item(d.item, d.node, d.project, d.replace).uid),
         HttpBinding("POST", "/nodes/{node}/items"),
+    ),
+    Operation(
+        "create_item_at_node",
+        "Legt aus einem Knoten ein Item (Epic, Story oder Task) an und hängt es an den Knoten. Typ und Felder bestimmt "
+        "der Aufrufer; fehlt `title`, gilt der Titel des Knotens, fehlt `goal`, sein Text; `completion_criteria` sind "
+        "Pflicht. Der Knoten bleibt stehen und wechselt von Idee zu geplant. Scheitert das Anhängen, nennt "
+        "mindmap_assign_failed das angelegte Item (`details.created`)",
+        "write",
+        CreateItemAtNode,
+        CreatedItemAtNodeOut,
+        lambda s, d: _created_item(s, s.creation.create_item(d.node, d.type, d.fields, d.project), d.tree),
+        HttpBinding("POST", "/nodes/{node}/create-item"),
+    ),
+    Operation(
+        "create_memo_at_node",
+        "Legt aus einem Knoten ein Memo an und verlinkt es mit dem Knoten; fehlt `summary`, gilt der Titel des "
+        "Knotens, fehlt `body`, sein Text. Der Zustand des Knotens ändert sich nicht",
+        "write",
+        CreateMemoAtNode,
+        CreatedMemoAtNodeOut,
+        lambda s, d: _created_memo(s, s.creation.create_memo(d.node, d.fields, d.project), d.tree),
+        HttpBinding("POST", "/nodes/{node}/create-memo"),
     ),
     Operation(
         "unassign_item",

@@ -31,8 +31,8 @@ Nach dem Muster der vorhandenen Operationen in `server/src/viewer/plugins/mindma
 
 ## Aufbau
 
-- Neue Ports in `application/ports.py`: `BacklogWriter.create_item(project_uid, type_, fields) -> str` und
-  `MemoWriter.create_memo(project_uid, fields) -> str`. Adapter in `infrastructure/` (wie
+- Neue Ports in `application/ports.py`: `BacklogWriter.create_item(project_uid, type_, fields) -> CreatedElement` und
+  `MemoWriter.create_memo(project_uid, fields) -> CreatedElement` (`CreatedElement`: `uid`, `label`, `title`, `type`). Adapter in `infrastructure/` (wie
   `backlog_gateway.py`, der `services.repository` des Plugins `backlog` benutzt): `ServicesBacklogWriter` ruft
   `services.editing.create_item(project_uid, type_, fields)`; `ServicesMemoWriter` ruft `services.memos.create(
   project_uid, fields)` des Plugins `memos`. Vorbild für beide ist `memos/infrastructure/backlog_gateway.py`
@@ -58,3 +58,10 @@ Nach dem Muster der vorhandenen Operationen in `server/src/viewer/plugins/mindma
 ## Nicht Teil
 
 Ganze Äste (nächste Task), Oberfläche, die Regel für die KI.
+
+## Umsetzung (Stand 2026-11-24)
+
+HTTP: `POST /api/mindmap/nodes/{node}/create-item` und `…/create-memo`; MCP `mindmap_create_item_at_node`,
+`mindmap_create_memo_at_node`. Anwendungsfall `application/creation.py` (`NodeCreationService`), Standardwerte in
+`domain/creation.py`. Fehler beim Anhängen: `mindmap_assign_failed` (`details.created`, `details.cause`). Die Antwort
+liefert den Knoten wie `get_tree` (mit `state`).

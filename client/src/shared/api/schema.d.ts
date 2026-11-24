@@ -1004,6 +1004,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mindmap/nodes/{node}/create-item": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Legt aus einem Knoten ein Item (Epic, Story oder Task) an und hängt es an den Knoten. Typ und Felder bestimmt der Aufrufer; fehlt `title`, gilt der Titel des Knotens, fehlt `goal`, sein Text; `completion_criteria` sind Pflicht. Der Knoten bleibt stehen und wechselt von Idee zu geplant. Scheitert das Anhängen, nennt mindmap_assign_failed das angelegte Item (`details.created`) */
+        post: operations["mindmap_create_item_at_node"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mindmap/nodes/{node}/create-memo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Legt aus einem Knoten ein Memo an und verlinkt es mit dem Knoten; fehlt `summary`, gilt der Titel des Knotens, fehlt `body`, sein Text. Der Zustand des Knotens ändert sich nicht */
+        post: operations["mindmap_create_memo_at_node"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mindmap/nodes/{node}/items": {
         parameters: {
             query?: never;
@@ -1858,6 +1892,27 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** CreatedElementOut */
+        CreatedElementOut: {
+            /** Label */
+            label: string;
+            /** Title */
+            title: string;
+            /** Type */
+            type?: string | null;
+            /** Uid */
+            uid: string;
+        };
+        /** CreatedItemAtNodeOut */
+        CreatedItemAtNodeOut: {
+            item: components["schemas"]["CreatedElementOut"];
+            node: components["schemas"]["TreeNodeOut"];
+        };
+        /** CreatedMemoAtNodeOut */
+        CreatedMemoAtNodeOut: {
+            memo: components["schemas"]["CreatedElementOut"];
+            node: components["schemas"]["TreeNodeOut"];
+        };
         /** Decision */
         Decision: {
             /**
@@ -2618,12 +2673,36 @@ export interface components {
              */
             replace: boolean;
         };
+        /** MindmapCreateItemAtNodeBody */
+        MindmapCreateItemAtNodeBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
+            /** Tree */
+            tree?: string | null;
+            /** Type */
+            type: string;
+        };
         /** MindmapCreateMapBody */
         MindmapCreateMapBody: {
             /** Name */
             name: string;
             /** Project */
             project: string;
+        };
+        /** MindmapCreateMemoAtNodeBody */
+        MindmapCreateMemoAtNodeBody: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            };
+            /** Project */
+            project?: string | null;
+            /** Tree */
+            tree?: string | null;
         };
         /** MindmapCreateNodeBody */
         MindmapCreateNodeBody: {
@@ -5732,6 +5811,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_create_item_at_node: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapCreateItemAtNodeBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedItemAtNodeOut"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mindmap_create_memo_at_node: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MindmapCreateMemoAtNodeBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedMemoAtNodeOut"];
                 };
             };
             /** @description Client Error */

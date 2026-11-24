@@ -12,11 +12,13 @@ from viewer.core.domain.events import Event
 from viewer.core.domain.plugin import ElementKind, Subscription
 from viewer.plugins.mindmap.application.assignments import AssignmentService
 from viewer.plugins.mindmap.application.branches import BranchService
+from viewer.plugins.mindmap.application.creation import NodeCreationService
 from viewer.plugins.mindmap.application.documents import DocumentService
 from viewer.plugins.mindmap.application.maps import MapService, MapTrash
 from viewer.plugins.mindmap.application.operations import OPERATIONS, MindmapServices
 from viewer.plugins.mindmap.application.service import KIND, MindmapService
-from viewer.plugins.mindmap.infrastructure.backlog_gateway import ServicesBacklogItems
+from viewer.plugins.mindmap.infrastructure.backlog_gateway import ServicesBacklogItems, ServicesBacklogWriter
+from viewer.plugins.mindmap.infrastructure.memo_gateway import ServicesMemoWriter
 from viewer.plugins.mindmap.infrastructure.database.repository import SqlDocumentRepository, SqlMindmapRepository
 from viewer.plugins.mindmap.infrastructure.database.schema import MIGRATIONS
 from viewer.plugins.mindmap.infrastructure.mirror.codec import MindmapCodec
@@ -29,6 +31,7 @@ ELEMENT_KINDS = (ElementKind(KIND, "NODE"),)
 def _build(context: PluginContext) -> MindmapServices:
     workspace: Any = context.required["workspace"]
     backlog: Any = context.required["backlog"]
+    memos: Any = context.required["memos"]
     repository = SqlMindmapRepository()
     documents = SqlDocumentRepository()
     service = MindmapService(
@@ -76,12 +79,19 @@ def _build(context: PluginContext) -> MindmapServices:
         context.clock,
         workspace.trash.restore_elements,
     )
+    creation = NodeCreationService(
+        service,
+        assignments,
+        ServicesBacklogWriter(backlog, context.database),
+        ServicesMemoWriter(memos),
+    )
     return MindmapServices(
         service,
         DocumentService(documents, service, context.database, context.clock, context.events),
         assignments,
         maps,
         branches,
+        creation,
         MindmapParticipant(
             repository,
             documents,
@@ -108,7 +118,7 @@ def _on_workspace_event(services: MindmapServices, event: Event) -> None:
 plugin = PluginDefinition(
     id="mindmap",
     build=_build,
-    requires=("workspace", "backlog"),
+    requires=("workspace", "backlog", "memos"),
     migrations=MIGRATIONS,
     element_kinds=ELEMENT_KINDS,
     operations=OPERATIONS,

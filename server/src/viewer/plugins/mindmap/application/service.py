@@ -98,6 +98,15 @@ class MindmapService:
             node = self._resolve(tx, ref, project_uid)
             return self._view(tx, node, tree_uid)
 
+    def node_for_creation(self, ref: str, project_uid: str | None) -> Node:
+        """Der Knoten, aus dem ein Item oder Memo entsteht: lebend und (mit `project_uid`) aus diesem Projekt."""
+        with self._database.transaction() as tx:
+            node = self._resolve(tx, ref, project_uid)
+        self.require_alive(node)
+        if project_uid is not None and node.project_uid != project_uid:
+            raise MindmapViolation("mindmap_other_project", f"{node.label} gehört zu einem anderen Projekt")
+        return node
+
     # --- Schreiben ------------------------------------------------------------------------------------------------
 
     def create_node(

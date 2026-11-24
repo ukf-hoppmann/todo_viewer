@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol
+from typing import Any, Protocol
 
 from viewer.core.application.ports import Transaction
 from viewer.plugins.mindmap.domain.model import Node, Placement, RemovedPlacement, Tree
@@ -162,3 +162,39 @@ class BacklogItems(Protocol):
     def list_items(self, tx: Transaction, project_uid: str) -> list[BacklogItem]:
         """Alle Items des Projekts, auch die im Papierkorb."""
         ...
+
+
+@dataclass(frozen=True)
+class CreatedElement:
+    """Ein neu angelegtes Item oder Memo (`title` ist bei Memos die Zusammenfassung)."""
+
+    uid: str
+    label: str
+    title: str
+    type: str | None = None
+
+
+class BacklogWriter(Protocol):
+    """Anlegen eines Items im Plugin `backlog` (Adapter in `infrastructure/backlog_gateway.py`)."""
+
+    def create_item(self, project_uid: str, type_: str, fields: dict[str, Any]) -> CreatedElement: ...
+
+
+class MemoWriter(Protocol):
+    """Anlegen eines Memos im Plugin `memos` (Adapter in `infrastructure/memo_gateway.py`)."""
+
+    def create_memo(self, project_uid: str, fields: dict[str, Any]) -> CreatedElement: ...
+
+
+class NodeSource(Protocol):
+    """Der Knoten, aus dem etwas entsteht: lebend und, falls ein Projekt genannt ist, aus diesem."""
+
+    def node_for_creation(self, ref: str, project_uid: str | None) -> Node: ...
+
+
+class NodeAssigner(Protocol):
+    """Anhängen des Angelegten an den Knoten (`AssignmentService`)."""
+
+    def assign_item(self, item_ref: str, node_ref: str, project_uid: str | None, replace: bool) -> Node: ...
+
+    def link_memo(self, memo_ref: str, node_ref: str, project_uid: str | None) -> Node: ...

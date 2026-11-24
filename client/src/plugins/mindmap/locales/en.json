@@ -189,5 +189,34 @@
 		"jump": "Jump to a tree",
 		"highlight": "Frame transferred branches",
 		"pick": "Which tree?"
+	},
+	"create": {
+		"item": {
+			"open": "Create item",
+			"title": "Create item from “{{title}}”",
+			"confirm": "Create",
+			"type": "Type",
+			"types": {
+				"Epic": "Epic",
+				"Story": "Story",
+				"Task": "Task"
+			},
+			"priority": "Priority",
+			"priorities": {
+				"Urgent": "Urgent",
+				"Important": "Important",
+				"Normal": "Normal",
+				"Prospective": "Prospective"
+			},
+			"goal": "Goal",
+			"criteria": "Completion criteria"
+		},
+		"memo": {
+			"open": "Create memo",
+			"title": "Create memo from “{{title}}”",
+			"confirm": "Create",
+			"summary": "Summary",
+			"body": "Text"
+		}
 	}
 }

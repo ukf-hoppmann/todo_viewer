@@ -164,6 +164,22 @@ export function fakeMindmapBackend(options: Options = {}) {
 				memos.set(unlink[1]!, (memos.get(unlink[1]!) ?? []).filter((entry) => entry.uid !== unlink[2]));
 				return Response.json({ ok: true });
 			}
+			const createAt = /^mindmap\/nodes\/([^/]+)\/create-(item|memo)$/.exec(path);
+			if (createAt && method === "POST") {
+				const target = nodes.find((entry) => entry.uid === createAt[1]);
+				if (!target) return failure("not_found", "Knoten gibt es nicht", 404);
+				const fields = (body.fields ?? {}) as Record<string, string | undefined>;
+				created += 1;
+				if (createAt[2] === "memo") {
+					const memo = { uid: `memo${created}`, label: `MEMO-${created}`, title: fields.summary ?? target.title };
+					memos.set(target.uid, [...(memos.get(target.uid) ?? []), memo]);
+					return Response.json({ memo: { ...memo, type: null }, node: target });
+				}
+				const item = { uid: `item${created}`, label: `${String(body.type).toUpperCase()}-${created}`, type: body.type as string, title: fields.title ?? target.title, status: "Open" };
+				contents.set(target.uid, [...(contents.get(target.uid) ?? []), { ...item, explicit: true }]);
+				nodes = nodes.map((entry) => (entry.uid === target.uid ? { ...entry, state: "planned", total: entry.total + 1 } : entry));
+				return Response.json({ item, node: nodes.find((entry) => entry.uid === target.uid) });
+			}
 			if (path === "mindmap/nodes" && method === "POST") {
 				created += 1;
 				const parent = (body.parent as string | undefined) ?? null;

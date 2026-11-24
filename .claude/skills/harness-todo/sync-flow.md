@@ -11,7 +11,7 @@ stay as they are: [SKILL.md](SKILL.md) (backlog), [memos.md](memos.md) and
 
 - Locally the AI works only through the viewer's API. The viewer keeps the
   truth in its database and mirrors it into the backlog folder (`todo.path`,
-  for example `docs/todo`: `TODO.md`, `archive.md`, `items/`, `memos/`). The
+  for example `docs/todo`: `TODO.md`, `archive.md`, `items/`, `memos/`, `mindmap/`). The
   mirror is how the state gets into Git.
 - A cloud session cannot reach the viewer. It clones the repository, works on
   the mirror files (backend `files`, chosen automatically in the cloud) and
@@ -30,7 +30,7 @@ stay as they are: [SKILL.md](SKILL.md) (backlog), [memos.md](memos.md) and
   change when it is the same in two checks, so a change shows up after about a
   minute. Without auto-sync the owner starts the sync in the viewer's sync
   dialog; the AI never starts or decides a sync.
-- The whole backlog folder (`TODO.md`, `archive.md`, `items/`, `memos/`) is
+- The whole backlog folder (`TODO.md`, `archive.md`, `items/`, `memos/`, `mindmap/`) is
   committed to the repository. The cloud reads only what Git holds.
 
 ## Before the cloud session (local)
@@ -38,14 +38,14 @@ stay as they are: [SKILL.md](SKILL.md) (backlog), [memos.md](memos.md) and
 1. Let the viewer finish: no open conflicts in the viewer, and the last change
    older than a minute. You cannot see this through the API: ask the owner when
    in doubt.
-2. Commit the backlog folder in the main checkout, `memos/` included, with a
+2. Commit the backlog folder in the main checkout, `memos/` and `mindmap/` included, with a
    message `Backlog: …` ([SKILL.md](SKILL.md), committing backlog changes).
 3. The owner pushes `main`. You never push. A cloud session started before the
    push works on old files.
 
 ## In the cloud session
 
-- The backend is `files`: edit `TODO.md`, `archive.md`, `items/`, and `memos/`
+- The backend is `files`: edit `TODO.md`, `archive.md`, `items/`, `memos/`, and `mindmap/`
   directly and follow [format.md](format.md) and [memos-files.md](memos-files.md);
   the checks at the end of a turn tell you what is wrong.
 - A new item gets a placeholder `NEW-<name>`, a new memo `new-<name>.md`.

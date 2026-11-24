@@ -127,6 +127,30 @@ Read only what the task needs:
 - If the fitting parent is closed, ask whether to reopen it in the same
   question that proposes the new item, before creating anything. Without a
   yes, do not create the item without a parent; ask how to proceed.
+- API mode, creating an item: also place it in the viewer's topic tree (the
+  mindmap), tools in [api.md](api.md#topic-tree-mcp-tools-of-the-viewer).
+  Read the tree first (`mindmap_get_tree`). If a node fits, create the item
+  there (`mindmap_create_item_at_node`) or assign an existing one
+  (`mindmap_assign_item`). If none fits, propose a node or subnode to the
+  owner in the conversation (title, place in the tree) and create it
+  (`mindmap_create_node`) only after the owner's yes; do not invent topics.
+  Without a yes, or on a no or no answer, create no node and create the item
+  without one (`backlog_create_item`, or the helper's `create`): it then
+  appears under "Nicht zugeordnet". If the viewer's MCP tools are not
+  available in the session, tell the owner that the topic tree cannot be
+  reached, create the item with the helper's `create` without a node, and say
+  that it is unassigned. Files mode: see the next point.
+- Files mode, creating an item: if the project has a `mindmap/` folder, think
+  about which node fits (read `mindmap/project.md` and the node files: title,
+  text) and write the item's label under `Items:` of that node
+  ([format.md](format.md#mindmap-files-mode)). If none fits, propose a new
+  node (and its parent) to the owner in the conversation; only after the
+  owner's yes create it as a placeholder file and list it in `project.md`.
+  Without a yes no node is created and the item stays unassigned (the viewer
+  shows it under "Nicht zugeordnet"); do not invent topics. If the project has
+  no `mindmap/` folder, do not create it; tell the owner that the mindmap is
+  not mirrored yet. A new node also needs the owner's yes when it comes up
+  while placing an existing item. Never delete nodes, maps, or files there.
 - With subprojects, each project has its own backlog. New items go into the
   backlog of the project the work belongs to; if that is unclear, ask.
 - A session works only on the backlog of its own project. Another project's
@@ -142,8 +166,13 @@ Read only what the task needs:
   - Before every call into another project, name that project in your answer.
   - The rules of the other project's backlog do not change: format, parent
     rules, and the change authority below apply there as well.
-- Reuse existing areas before inventing new ones. Files: new IDs take the
-  next free number of their type; API: the server assigns them.
+- Files: new IDs take the next free number of their type; API: the server
+  assigns them.
+- The topic of an item is the node of the viewer's mindmap it hangs on (tools
+  `mindmap_…`, e.g. `mindmap_get_item_node`, `mindmap_assign_item`, or the
+  section "Knoten" in the item's detail). There is no field, no filter, and no
+  column in the index lines for it; scripts and skills here do not rebuild it.
+  Rule for new items: see "API mode, creating an item" above.
 
 ## Memos
 

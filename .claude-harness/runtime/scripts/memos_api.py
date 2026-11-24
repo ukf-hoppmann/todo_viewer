@@ -53,7 +53,7 @@ Writing (JSON on stdin; <version> is the number you read last):
   put-doc <MEMO> <name> <version|new>    stdin: the complete document text
   memo-entry <MEMO>                       dated entry {topic, discussed?, decided?, open?}
   decide <hint-uid>                     {decision: keep|detach|drop|promote|acknowledge, version?, type?, fields?}
-  promote <MEMO>                          {version, type, fields: {area, goal, completion_criteria, title?, ...}}
+  promote <MEMO>                          {version, type, fields: {goal, completion_criteria, title?, ...}}
   demote <ITEM-ID>                        {version, topic?}: an open item without children becomes a memo
   topic-create                            {name, parent?, due_at?}
   topic-update <TOPIC> <version>          {name?, due_at?}; due_at null removes the date

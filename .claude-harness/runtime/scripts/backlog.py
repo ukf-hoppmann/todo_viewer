@@ -26,7 +26,6 @@ REQUIRED_FIELDS = {
     "Type",
     "Status",
     "Created",
-    "Area",
     "Priority",
     "Dependencies",
     "Goal",
@@ -40,12 +39,17 @@ KNOWN_FIELDS = REQUIRED_FIELDS | {
     "Summary",
     # Items in the ToDo-Viewer's trash; they belong in archive.md with any status.
     "Deleted",
+    # Version 2 had an Area field; version 3 dropped it. It is read and ignored, never written.
+    "Area",
 }
 # New entries written without the ToDo-Viewer: no Uid yet, and the import sets Created.
 PLACEHOLDER_OPTIONAL_FIELDS = {"Created"}
 
 FORMAT_PREFIX = "Format:"
-FORMAT_MARKER = "backlog format version 2"
+FORMAT_VERSION = 3
+# Read: versions 2 and 3. Written: only the current version (FORMAT_VERSION).
+FORMAT_MARKER = f"backlog format version {FORMAT_VERSION}"
+_FORMAT_READ = re.compile(r"backlog format version (?:2|3)(?![0-9])")
 
 _ID = r"[A-Z][A-Z0-9_-]*-[0-9]{3,}"
 # A placeholder stands for an entry the ToDo-Viewer has not given a label yet.
@@ -70,7 +74,6 @@ class BacklogItem:
     item_type: str
     status: str
     created: date | None
-    area: str
     priority: str
     dependencies: tuple[str, ...]
     parent: str | None
@@ -186,9 +189,9 @@ def _check_format(name: str, head: list[str], report: BacklogReport) -> None:
             f"{name} has no format line; expected a paragraph "
             f"'{FORMAT_PREFIX} Claude_Harness {FORMAT_MARKER}' before '## Work items'"
         )
-    elif not any(FORMAT_MARKER in " ".join(f.split()) for f in formats):
+    elif not any(_FORMAT_READ.search(" ".join(f.split())) for f in formats):
         report.errors.append(
-            f"{name} uses an unsupported backlog format (only {FORMAT_MARKER} is valid; "
+            f"{name} uses an unsupported backlog format (versions 2 and 3 are read, {FORMAT_MARKER} is written; "
             f"convert older backlogs): {formats[0]}"
         )
 
@@ -298,7 +301,6 @@ def _build_item(
         item_type=item_type,
         status=status,
         created=created,
-        area=_scalar(fields["Area"]),
         priority=priority,
         dependencies=dependencies,
         parent=parent,
@@ -492,11 +494,11 @@ def format_report(report: BacklogReport) -> str:
 
 
 def format_index(report: BacklogReport) -> str:
-    lines = ["ID | Type | Status | Area | Title | Parent"]
+    lines = ["ID | Type | Status | Title | Parent"]
     for item in sorted(report.items, key=lambda i: i.identifier):
         status = item.status if item.deleted is None else f"{item.status} (deleted {item.deleted.isoformat()})"
         lines.append(
-            f"{item.identifier} | {item.item_type} | {status} | {item.area} | {item.title} "
+            f"{item.identifier} | {item.item_type} | {status} | {item.title} "
             f"| {item.parent or '-'}"
         )
     return "\n".join(lines)

@@ -119,7 +119,7 @@ affected memo with a new `topic_date` trigger.
 
 ## Converting
 
-- **Memo to backlog item:** ask, propose parent, area, goal, and completion
+- **Memo to backlog item:** ask, propose parent, goal, and completion
   criteria as [SKILL.md](SKILL.md) requires, then `promote`. The memo becomes
   `promoted` and keeps an `origin` link. If the server answers `parent_closed`,
   follow [SKILL.md](SKILL.md) (ask once about reopening).

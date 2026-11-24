@@ -24,12 +24,11 @@ USAGE = """usage: backlog_api.py [--project <name> | --source <name>] <command> 
   health                                  server reachable?
   sources                                 the names of all projects the viewer knows, with their folders
   register                                register this backlog as a viewer project (only after the owner's yes)
-  index [--with-trash]                    one line per item: ID | Type | Status | Area | Title | Parent;
+  index [--with-trash]                    one line per item: ID | Type | Status | Title | Parent | Notes;
                                           items in the trash are left out, or marked (Papierkorb) with --with-trash
   show <ID>                               item as JSON, with its version (archived items too); deleted children
                                           are marked and do not count as open work
-  areas                                   the areas in use, one per line
-  create                                  stdin: JSON fields (type, title, area, goal, completion_criteria, ...)
+  create                                  stdin: JSON fields (type, title, goal, completion_criteria, ...)
   update <ID> <version>                   stdin: JSON {"fields": {...}, "resolution": ...}
   move <ID> <version> <parent|-> [--position N]   new parent ('-' = no parent) and position among siblings
   reopen <ID>                             reopen the item and its closed ancestors (In progress)
@@ -126,7 +125,7 @@ def _options(command: str, args: list[str]) -> tuple[list[str], dict[str, str | 
     return positional, options
 
 
-ARITY = {"health": 0, "sources": 0, "register": 0, "index": 0, "show": 1, "areas": 0, "create": 0, "update": 2,
+ARITY = {"health": 0, "sources": 0, "register": 0, "index": 0, "show": 1, "create": 0, "update": 2,
          "move": 3, "reopen": 1, "note": 1, "state": 1, "put-state": 2, "confirm-state": 2, "entries": 1, "doc": 2, "put-doc": 3, "delete-doc": 3, "retype": 3, "delete": 2, "trash": 0,
          "restore": 1}
 # Position of the <version> argument per command.
@@ -225,8 +224,6 @@ def _run(target: Target, command: str, positional: list[str], options: dict[str,
             print(f"hint: {', '.join(unclosed)} liegt im Papierkorb, ist aber nicht geschlossen; "
                   "gelöschte Kinder zählen nicht für Fortschritt und Abschluss, sie blockieren nichts.",
                   file=sys.stderr)
-    elif command == "areas":
-        print("\n".join(api.call("GET", "/backlog/areas", query={"project": project})["areas"]))
     elif command == "create":
         fields = stdin_json()
         item_type = fields.pop("type", None)

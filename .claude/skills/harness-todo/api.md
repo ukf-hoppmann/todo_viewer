@@ -35,11 +35,10 @@ EOF
 | `health` | Is the server reachable? |
 | `sources` | `Project \| Folder` of every project the viewer knows; the names `--source` accepts |
 | `register` | Register the session's backlog as a viewer project with a mirror. Only after the owner said yes (exit code 4 below) |
-| `index [--with-trash]` | Overview: `ID \| Type \| Status \| Area \| Title \| Parent`; items in the trash are left out, with `--with-trash` they are shown marked `(Papierkorb)` |
+| `index [--with-trash]` | Overview: `ID \| Type \| Status \| Title \| Parent \| Notes` (`Notes`: state of the notes head, or `-`); items in the trash are left out, with `--with-trash` they are shown marked `(Papierkorb)` |
 | `show <ID>` | One item as JSON with its `version`, archived items included; deleted children carry a `note` and do not count as open work (stderr names unclosed ones as a hint) |
-| `areas` | The areas in use, one per line |
-| `create` | New item. stdin: `type`, `title`, `area`, `goal`, `completion_criteria` (numbered list, one criterion per line, `\n`-separated), optional `parent` (ID), `required_for_parent` (`"Yes"`/`"No"`), `priority`, `dependencies` (list of IDs), `summary`. Prints the item with its new ID |
-| `update <ID> <version>` | stdin: `{"fields": {...}}` with any of `title`, `status`, `parent`, `required_for_parent`, `priority`, `dependencies`, `area`, `goal`, `completion_criteria`, `summary`; add `"resolution": "..."` when setting `Completed` or `Rejected` |
+| `create` | New item. stdin: `type`, `title`, `goal`, `completion_criteria` (numbered list, one criterion per line, `\n`-separated), optional `parent` (ID), `required_for_parent` (`"Yes"`/`"No"`), `priority`, `dependencies` (list of IDs), `summary`. Prints the item with its new ID |
+| `update <ID> <version>` | stdin: `{"fields": {...}}` with any of `title`, `status`, `parent`, `required_for_parent`, `priority`, `dependencies`, `goal`, `completion_criteria`, `summary`; add `"resolution": "..."` when setting `Completed` or `Rejected` |
 | `move <ID> <version> <parent\|-> [--position N]` | New parent (`-` = none) and position among its siblings |
 | `reopen <ID>` | Set the item and its closed ancestors to `In progress`, from the top down |
 | `note <ID>` | Append a dated notes entry. stdin: `{"topic": "...", "discussed": [...], "decided": [...], "open": [...]}`; add `"summary"` if the item has none yet, and `"state"` (the new head) with `"state_version"` (the head's version, once there is a head) to replace the head in the same call. After every notes write (`note`, `put-state`, `confirm-state`, `put-doc` on notes) the server's hints are printed on stderr, one `hint:` line each (stale or long head, rewritten log); they never reject the call. The same commands also print a line `[harness] notes-state <ID> <current|stale|missing>` on stderr (and `update` to `In progress`, `reopen`, and `doc <ID> <ID>_spec.md` print `[harness] active <ID>`): a hook reads them to check the head at the end of your turn and to remind you of the notes; they are not for you to act on. On an epic or story with a child `In progress` (also for `put-doc` on its notes) a hint on stderr asks whether the discussion belongs in that child's notes; the entry is written either way |
@@ -71,6 +70,28 @@ with a status that is not final, e.g. `{"fields": {"status": "In progress"}}`,
 or `reopen <ID>`, which also reopens its closed ancestors. This works for
 archived items too: the server moves them back to `TODO.md` and drops
 `Resolution`. Then record the reason with `note`.
+
+The topic of an item is the node of the viewer's mindmap it hangs on (tools
+`mindmap_…`, e.g. `mindmap_get_item_node`, `mindmap_assign_item`; or the
+section "Knoten" in the item's detail). There is no filter and no column in the
+index lines for it, and this helper does not offer it. The viewer has no `area`
+field any more: a call with `area` in `fields` fails with `not_editable`, and
+`show` returns no such field.
+
+## Topic tree (MCP tools of the viewer)
+
+Only the viewer's MCP server `todo-viewer` offers these (names as `tools/list`
+prints them; HTTP paths below `/api/mindmap/…`); `backlog_api.py` has no
+commands for them. The rule for using them is in [SKILL.md](SKILL.md)
+(creating an item).
+
+| Tool | Purpose | Main inputs |
+|---|---|---|
+| `mindmap_get_tree` | Read the topic tree: nodes (uid, title, parent, position, counts, state) and the items without a node (`unassigned`) | `project` |
+| `mindmap_create_item_at_node` | Create an item and hang it on the node | `node`, `type` (Epic, Story, Task), `fields` (`completion_criteria` required; `title`, `goal` otherwise from the node) |
+| `mindmap_assign_item` | Hang an existing item on a node | `node`, `item`, `replace` (only to replace another node) |
+| `mindmap_create_node` | Create a node, only after the owner's yes | `project`, `title`, `text`, `parent` |
+| `backlog_create_item` | Create an item without a node, when none fits or the owner declines | `project`, `type`, `fields` |
 
 ## Errors
 

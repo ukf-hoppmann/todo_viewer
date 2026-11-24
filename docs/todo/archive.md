@@ -4741,3 +4741,199 @@ Format: Claude_Harness backlog format version 2. The rules are defined in
     5. Im Detail wählt ein Schalter mit Hovertext, ob die Items der
     Unterknoten mitgezeigt werden.
   - Resolution: Vom Owner bestätigt.
+
+- `TASK-072` **Prompts: Themenbaum aus den Items erzeugen und Claude_Harness anpassen**
+  - Uid: c79d3455-4859-4f8f-9b35-8a2804c99101.
+  - Type: Task.
+  - Parent: `STORY-106`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-23.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-071`.
+  - Goal: Der Owner bekommt zwei fertige Prompts: einen, mit dem eine KI in
+    jedem Projekt den Themenbaum aus den vorhandenen Items erzeugt und die
+    Items zuordnet, und einen, mit dem Claude_Harness auf Format Version 3
+    ohne Area angepasst wird.
+  - Completion criteria: 1. Der Prompt für den Themenbaum steht als Datei in
+    der Spec dieser Task (`…_spec_prompt-baum.md`) und im Abschluss der
+    Session als Text beim Owner.
+    2. Er arbeitet nur mit den Werkzeugen, die es nach der Entfernung gibt
+    (MCP-Tools des Viewers), und ist gegen den echten Server mit einem
+    Beispielprojekt ausprobiert: ein Projekt mit Items ohne Themen ergibt
+    danach einen Baum, und kein Item geht verloren oder wird verändert.
+    3. Der Prompt für Claude_Harness steht als Datei in der Spec dieser Task
+    (`…_spec_prompt-harness.md`) und im Abschluss der Session als Text beim
+    Owner; er nennt alle Änderungen am Format und an den Schnittstellen.
+    4. Die KI übergibt nichts selbst an Claude_Harness.
+  - Summary: Du bekommst zwei Prompts: einen, der in jedem Projekt den
+    Themenbaum aus den Items erzeugt, und einen, mit dem du Claude_Harness auf
+    das Format ohne Area bringst.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `TASK-073` **Server: aus einem Knoten ein Item oder ein Memo anlegen**
+  - Uid: 27f711f2-355e-4d1f-81a2-18569ebbdca6.
+  - Type: Task.
+  - Parent: `STORY-103`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-23.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-071`.
+  - Goal: Über HTTP und MCP lässt sich aus einem Knoten ein Backlog-Item oder
+    ein Memo anlegen; das Ergebnis hängt danach am Knoten. Typ des Items und
+    seine Felder bestimmt der Aufrufer (Mensch oder KI).
+  - Completion criteria: 1. Die Operation `create_item_at_node` legt ein Item
+    (Epic, Story oder Task) mit den gegebenen Feldern an und hängt es an den
+    Knoten; fehlt `title`, gilt der Titel des Knotens, fehlt `goal`, gilt der
+    Text des Knotens; `completion_criteria` sind Pflicht.
+    2. Die Operation `create_memo_at_node` legt ein Memo an (Pflicht
+    `summary`, Standard der Titel des Knotens; `body` Standard der Text des
+    Knotens) und verlinkt es mit dem Knoten.
+    3. Ein Knoten im Papierkorb oder eines anderen Projekts wird abgewiesen;
+    scheitert das Anhängen nach dem Anlegen, nennt der Fehler das angelegte
+    Item, das dann unter „Nicht zugeordnet“ steht.
+    4. Mit einem Item wechselt der Knoten seinen Zustand von Idee zu geplant;
+    ein Memo ändert den Zustand nicht.
+    5. Beide Operationen sind als HTTP-Route und als MCP-Tool vorhanden; die
+    generierten Client-Typen sind neu erzeugt.
+    6. Unit-Tests mit Fakes der neuen Ports und Integrationstests gegen die
+    echten Plugins sind grün; die Import-Regeln (`server/pyproject.toml`)
+    kennen die neue Abhängigkeit.
+  - Summary: Aus einem Knoten der Mindmap lässt sich ein Item oder ein Memo
+    anlegen, das gleich am Knoten hängt. Das ist die Grundlage für die
+    Oberfläche und für die KI.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `TASK-074` **Server: einen Ast mit Vorschau ins Backlog überführen**
+  - Uid: d84f4d62-8979-4ce4-a2d9-b6b5fa3750b7.
+  - Type: Task.
+  - Parent: `STORY-103`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-23.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-073`.
+  - Goal: Ein ganzer Ast lässt sich mit einer Vorschau ins Backlog überführen.
+    Für jeden Knoten legt der Aufrufer Item (mit Typ) oder Memo fest und wie
+    das Ergebnis zu den anderen Knoten steht (Parent-Child oder Abhängigkeit).
+    Was die Struktur des Backlogs nicht erlaubt, nennt die Vorschau, bevor
+    etwas angelegt wird.
+  - Completion criteria: 1. `preview_branch_transfer` prüft einen Plan für
+    einen Ast, ohne etwas zu schreiben, und nennt je Eintrag und für den
+    ganzen Plan die Probleme mit stabilem Code.
+    2. `transfer_branch` legt den Plan an, nur wenn die Vorschau ohne Probleme
+    ist: Items und Memos in der Reihenfolge ihrer Beziehungen, jedes an seinem
+    Knoten, mit Parent und Abhängigkeiten.
+    3. Die Regeln des Backlogs (erlaubte Parent-Typen, keine Zyklen, kein
+    Parent in geschlossenem Zustand, Pflichtfelder) werden mit demselben
+    Regelsatz geprüft, der beim Anlegen gilt, nicht in der Mindmap noch einmal
+    geschrieben.
+    4. Es gibt keinen Automatismus: ohne Angabe für einen Knoten wird nichts
+    angelegt; es gibt keine Vorgabe aus Ebene oder Tiefe.
+    5. Scheitert das Anlegen mittendrin, nennt das Ergebnis, was angelegt
+    wurde und was nicht (kein Rückbau).
+    6. Beide Operationen sind HTTP und MCP; Unit-, Integrations- und der
+    Harness-Systemtest sind grün.
+  - Summary: Ein ganzer Ast der Mindmap wird mit Vorschau ins Backlog
+    überführt. Du oder die KI legen je Knoten fest, was daraus wird; die
+    Vorschau meldet, was nicht geht.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `TASK-075` **Oberfläche: im Detail eines Knotens ein Item oder Memo anlegen**
+  - Uid: 69e694e4-d8bc-4cd2-ba89-29d4efadc56a.
+  - Type: Task.
+  - Parent: `STORY-103`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-23.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-073`.
+  - Goal: Im Detail eines Knotens legt eine Aktion ein Item oder ein Memo an,
+    mit Titel und Text des Knotens als Vorschlag. Das Ergebnis hängt am
+    Knoten.
+  - Completion criteria: 1. Das Detail eines Knotens bietet „Item anlegen“ und
+    „Memo anlegen“; beide nicht für Knoten im Papierkorb.
+    2. Der Dialog für ein Item fragt Typ, Titel (vorbelegt mit dem
+    Knotentitel), Ziel (vorbelegt mit dem Knotentext) und Abschlusskriterien
+    (Pflicht, leer); der Dialog für ein Memo fragt Zusammenfassung
+    (Knotentitel) und Text (Knotentext).
+    3. Nach dem Anlegen erscheint das Ergebnis im Detail des Knotens, und der
+    Zustand des Knotens ist neu berechnet (Item: geplant; Memo: unverändert).
+    4. Serverfehler erscheinen im Dialog, der Dialog bleibt offen und behält
+    die Eingaben.
+    5. Typprüfung, Lint und Client-Tests sind grün; Texte in de und en.
+  - Summary: Im Detail eines Knotens gibt es „Item anlegen“ und „Memo
+    anlegen“. Titel und Text des Knotens sind der Vorschlag, das Ergebnis
+    hängt gleich am Knoten.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `TASK-077` **MCP-Tools nennen die Regel zum Zuordnen und Vorschlagen**
+  - Uid: 33e20e2a-7ffb-444a-aea8-b79f27aa9361.
+  - Type: Task.
+  - Parent: `STORY-104`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-23.
+  - Area: Backend-API.
+  - Priority: Normal.
+  - Dependencies: `TASK-073`.
+  - Goal: Die Beschreibungen der MCP-Tools des Viewers sagen einer KI, wie sie
+    ein neues Item einem Knoten zuordnet: Baum lesen, passenden Knoten wählen,
+    das Item an ihm anlegen; passt keiner, im Gespräch einen Knoten
+    vorschlagen und ihn erst nach der Zustimmung des Owners anlegen; ohne
+    Zustimmung bleibt das Item unter „Nicht zugeordnet“.
+  - Completion criteria: 1. Die Beschreibungen von `backlog_create_item`,
+    `mindmap_get_tree`, `mindmap_create_node`, `mindmap_assign_item` und
+    `mindmap_create_item_at_node` nennen die Regel knapp und gleichlautend
+    (ein gemeinsamer Text, an einer Stelle gepflegt).
+    2. Ein Test hält fest, dass die Beschreibungen die Regel enthalten
+    (Schlüsselaussagen: Baum lesen, Knoten wählen oder vorschlagen, nur nach
+    Bestätigung anlegen, sonst „Nicht zugeordnet“).
+    3. Über HTTP und MCP kann eine KI den Themenbaum lesen, ein Item zuordnen
+    und einen Knoten anlegen; kein neues Werkzeug ist nötig (es gibt
+    `get_tree`, `assign_item`, `create_node`, `create_item_at_node`).
+    4. Das Verhalten ohne passenden Knoten (Item unter „Nicht zugeordnet“,
+    kein erfundener Knoten) bleibt in `get_tree` sichtbar.
+    5. Alle Tests sind grün.
+  - Summary: Die KI erfährt über die Beschreibungen der Werkzeuge, dass sie
+    neue Items einem Knoten zuordnen und Knoten nur nach deiner Zustimmung
+    anlegen soll.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.
+
+- `TASK-082` **Mindmap-Spiegel: Sync-Dialog, Cloud-Ablauf, Doku und Prompt für Claude_Harness**
+  - Uid: f0241f7d-367f-44f1-8aec-51536800f5cd.
+  - Type: Task.
+  - Parent: `STORY-105`.
+  - Required for parent: Yes.
+  - Status: Completed.
+  - Created: 2026-11-23.
+  - Area: Web-UI.
+  - Priority: Normal.
+  - Dependencies: `TASK-081`.
+  - Goal: Der Sync-Dialog benennt die Einträge der Mindmap verständlich, ein
+    Systemtest zeigt eine Cloud-Sitzung, die nur mit Dateien arbeitet, die
+    Doku ist aktuell und der Owner hat den fertigen Prompt für Claude_Harness.
+  - Completion criteria: 1. Der Sync-Dialog (Plugin `workspace`) zeigt Knoten,
+    Bäume und Dokumente der Mindmap mit lesbaren Namen und im Konfliktfall mit
+    Diff (de und en); Client-Tests sind grün.
+    2. Ein Systemtest bildet eine Cloud-Sitzung nach: Dateien eines Projekts
+    werden bearbeitet (freie Map füllen, einen Ast umhängen, einen Ast in eine
+    andere Map übertragen, ein Item einem Knoten zuordnen, ein neuer Knoten
+    mit Platzhalter), ein Sync übernimmt sie, die Datenbank zeigt dasselbe
+    Ergebnis wie die gleichen Schritte über die API.
+    3. `docs/techdocs/neubau-server.md`, `interfaces.md`, `operations.md`
+    (falls berührt) und `README.md` beschreiben den Mindmap-Spiegel;
+    `docs/todo/items/EPIC-008/EPIC-008_spec.md` nennt den Stand.
+    4. Der Prompt für Claude_Harness steht als Datei in der Spec dieser Task
+    (`…_spec_prompt-harness.md`) und im Abschluss der Session als Text beim
+    Owner; er beschreibt die Regeln für den Datei-Modus.
+    5. Die KI übergibt nichts selbst an Claude_Harness. Alle Tests sind grün.
+  - Summary: Der Mindmap-Spiegel ist fertig: der Sync-Dialog zeigt ihn
+    verständlich, ein Test spielt eine Cloud-Sitzung durch, und du bekommst
+    den Prompt für Claude_Harness.
+  - Resolution: Vom Projekteigner am 2026-11-24 bestätigt; auf `claude/amazing-cray-4fgu7q`, nach `main` gemergt.

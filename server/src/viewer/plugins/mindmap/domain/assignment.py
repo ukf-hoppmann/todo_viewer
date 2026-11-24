@@ -72,6 +72,24 @@ def live_ancestor(node_uid: str, live: Collection[str], parent_of: Mapping[str, 
     return current
 
 
+def subtree_nodes(node_uid: str, live: Collection[str], parent_of: Mapping[str, str | None]) -> set[str]:
+    """Der Knoten und alle lebenden Unterknoten; ein Knoten im Papierkorb reicht seine Kinder an den nächsten
+    lebenden Vorfahren weiter (wie bei den Summen). Ein Kreis in den Daten bricht ab."""
+    found = {node_uid}
+    for uid in live:
+        seen = {uid}
+        above = parent_of.get(uid)
+        current = live_ancestor(above, live, parent_of) if above else None
+        while current is not None and current not in seen:
+            if current == node_uid:
+                found.add(uid)
+                break
+            seen.add(current)
+            above = parent_of.get(current)
+            current = live_ancestor(above, live, parent_of) if above else None
+    return found
+
+
 def effective_nodes(
     items: Sequence[ItemFact],
     assigned: Mapping[str, str],

@@ -181,3 +181,10 @@ def test_a_second_node_for_an_item_is_refused_unless_replacing_is_explicit() -> 
 def test_assigning_to_the_same_node_again_or_to_a_free_item_needs_no_change() -> None:
     assert rules.check_assign([], "a", replace=False) == []
     assert rules.check_assign(["a"], "a", replace=False) == []
+
+
+def test_the_subtree_of_a_node_holds_it_and_its_live_descendants_and_passes_children_of_a_trashed_node_up() -> None:
+    assert rules.subtree_nodes("a", LIVE, PARENT) == {"a", "b", "c"}
+    assert rules.subtree_nodes("e", LIVE, PARENT) == {"e"}
+    assert rules.subtree_nodes("a", {"a", "c"}, PARENT) == {"a", "c"}  # b liegt im Papierkorb
+    assert rules.subtree_nodes("a", {"a", "d"}, {"a": None, "b": "a", "d": "b"}) == {"a", "d"}

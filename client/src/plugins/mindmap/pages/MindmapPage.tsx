@@ -1,9 +1,11 @@
-import { Alert, Box, Breadcrumbs, Link, Typography } from "@mui/material";
+import InboxIcon from "@mui/icons-material/Inbox";
+import { Alert, Badge, Box, Breadcrumbs, IconButton, Link, Tooltip, Typography } from "@mui/material";
 import { Background, Controls, MarkerType, ReactFlow, type Edge, type ReactFlowInstance } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageDetail } from "../../../core";
+import { Splitter } from "../../../shared";
 import { useShownStatuses } from "../../backlog";
 import { useDeleteElement, useProjectSelection } from "../../workspace";
 import { errorMessage, useAssignItemMutation, useCreateNodeMutation, useGetTreeQuery, useGetTreesQuery, useListMapsQuery, useListTrashedNodesQuery, useMoveNodeMutation, useRestoreAndMoveNodeMutation, useRemoveNodeFromMapMutation, useUpdateNodeMutation, type ItemRefOut, type NodeTreeOut, type TrashedNodeOut, type TreeNodeOut } from "../api";
@@ -28,6 +30,7 @@ const NO_NODES: readonly TreeNodeOut[] = [];
 const NO_ITEMS: readonly ItemRefOut[] = [];
 const NO_TRASH: readonly TrashedNodeOut[] = [];
 const DOUBLE_CLICK_MS = 250;
+const UNASSIGNED_WIDTH = { basic: 220, min: 160, max: 480 };
 const FIT = { maxZoom: 1, padding: 0.15 };
 const EDGE_STYLE = { stroke: "#5b8cff", strokeOpacity: 0.7 };
 const LINK_COLOR = "#e0a83a";
@@ -48,7 +51,7 @@ export default function MindmapPage() {
 	const { visible, marked, mark } = useProjectSelection();
 	const project = shownProject(visible, marked);
 	const statuses = useShownStatuses();
-	const { view, setView, chosenMaps, chooseMapOf, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, showTrash, showDependencies, highlightShared, layout: mode } = useMindmapState();
+	const { view, setView, chosenMaps, chooseMapOf, fold, setFold, selected, setSelected, hiddenStates, hiddenMarks, showUnassigned, setShowUnassigned, unassignedWidth, setUnassignedWidth, showTrash, showDependencies, highlightShared, layout: mode } = useMindmapState();
 	const all = view === "all";
 	// The single view loads the tree of one project, the overall view those of all visible projects.
 	// The single view shows the map chosen in the sidebar list: the project tree, or a free map of the project (named by `tree`).
@@ -97,6 +100,7 @@ export default function MindmapPage() {
 	const dragsTrash = useRef(false);
 	const { requestDelete, dialog: deleteDialog, failed: deleteFailed } = useDeleteElement();
 	const [editing, setEditing] = useState<string | null>(null);
+	const [liveUnassignedWidth, setLiveUnassignedWidth] = useState<number>();
 	// The menu of a node, the dialog that hangs over or transfers a branch, the list of trees to jump to, and the question before a shared node is deleted everywhere.
 	const [menu, setMenu] = useState<{ id: string; anchor: MenuAnchor }>();
 	const [branch, setBranch] = useState<{ source: BranchSource; action: BranchAction }>();
@@ -401,6 +405,7 @@ export default function MindmapPage() {
 		return [...lines, ...treeEdges];
 	}, [dependencyLinks, treeEdges, layout, mode]);
 
+	const unassignedAvailable = !freeTree && (!all || Boolean(unassignedProject));
 	if (all ? visible.length === 0 : !project) {
 		return (
 			<Box sx={{ p: 2 }} data-testid={mindmapTestIds.page}>
@@ -411,6 +416,7 @@ export default function MindmapPage() {
 		);
 	}
 	const message = error ?? deleteFailed;
+	const unassignedPanelWidth = liveUnassignedWidth ?? unassignedWidth ?? UNASSIGNED_WIDTH.basic;
 	return (
 		<Box sx={{ p: 2, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }} data-testid={mindmapTestIds.page}>
 			{message && (
@@ -434,9 +440,27 @@ export default function MindmapPage() {
 					})}
 				</Breadcrumbs>
 			)}
-			<Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
-				{t("page.hint")}
-			</Typography>
+			<Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+				<Typography variant="caption" color="text.secondary" sx={{ flexGrow: 1 }}>
+					{t("page.hint")}
+				</Typography>
+				{unassignedAvailable && (
+					<Tooltip title={t(showUnassigned ? "unassigned.hide" : "unassigned.show")}>
+						<IconButton
+							size="small"
+							color={showUnassigned ? "primary" : "default"}
+							aria-pressed={showUnassigned}
+							aria-label={t(showUnassigned ? "unassigned.hide" : "unassigned.show")}
+							onClick={() => setShowUnassigned(!showUnassigned)}
+							data-testid={mindmapTestIds.unassignedToggle}
+						>
+							<Badge badgeContent={unassigned.length} color="warning" max={99}>
+								<InboxIcon fontSize="small" />
+							</Badge>
+						</IconButton>
+					</Tooltip>
+				)}
+			</Box>
 			<MapActionsContext.Provider value={actions}>
 				<Box sx={{ flexGrow: 1, minHeight: 300, display: "flex" }}>
 					<Box sx={{ flexGrow: 1, minWidth: 0, border: 1, borderColor: "divider" }} data-testid={mindmapTestIds.map}>
@@ -463,7 +487,30 @@ export default function MindmapPage() {
 							</ReactFlow>
 						)}
 					</Box>
-					{showUnassigned && !freeTree && (!all || unassignedProject) && <UnassignedPanel items={unassigned} />}
+					{showUnassigned && unassignedAvailable && (
+						<>
+							<Splitter
+								id="unassigned"
+								label={t("unassigned.resize")}
+								resetLabel={t("unassigned.reset")}
+								width={unassignedPanelWidth}
+								min={UNASSIGNED_WIDTH.min}
+								max={UNASSIGNED_WIDTH.max}
+								panel="after"
+								onLive={setLiveUnassignedWidth}
+								onCommit={(width) => {
+									setLiveUnassignedWidth(undefined);
+									setUnassignedWidth(width);
+								}}
+								canReset={unassignedPanelWidth !== UNASSIGNED_WIDTH.basic}
+								onReset={() => {
+									setLiveUnassignedWidth(undefined);
+									setUnassignedWidth(null);
+								}}
+							/>
+							<UnassignedPanel items={unassigned} width={unassignedPanelWidth} />
+						</>
+					)}
 						{showTrash && !all && map && <TrashPanel branches={trashed ?? NO_TRASH} />}
 				</Box>
 			</MapActionsContext.Provider>

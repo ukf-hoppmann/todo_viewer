@@ -6,7 +6,9 @@
 		"main": "Main content",
 		"sidebar": "Sidebar",
 		"detail": "Details",
-		"loading": "Loading"
+		"loading": "Loading",
+		"resizeDetail": "Resize the details",
+		"resetDetail": "Reset the width of the details"
 	},
 	"appBar": {
 		"language": "Language"

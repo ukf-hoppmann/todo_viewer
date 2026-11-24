@@ -6,16 +6,16 @@ import { mindmapTestIds } from "./testIds";
 
 /**
  * The side view "Nicht zugeordnet": the items without a node, to the side of the map. It is no node and does not
- * count in the tree. An item is dragged onto a node of the map to assign it; it leaves the list when the server
+ * count in the tree. `width` in px (the page lets the user change it). An item is dragged onto a node of the map to assign it; it leaves the list when the server
  * has assigned it.
  */
-export function UnassignedPanel({ items }: { items: readonly ItemRefOut[] }) {
+export function UnassignedPanel({ items, width }: { items: readonly ItemRefOut[]; width: number }) {
 	const { t } = useTranslation("mindmap");
 	const actions = useMapActions();
 	return (
 		<Box
 			data-testid={mindmapTestIds.unassigned}
-			sx={{ width: 220, flexShrink: 0, ml: 1, border: 1, borderColor: "divider", display: "flex", flexDirection: "column", minHeight: 0 }}
+			sx={{ width, flexShrink: 0, border: 1, borderColor: "divider", display: "flex", flexDirection: "column", minHeight: 0 }}
 		>
 			<Box sx={{ p: 1, borderBottom: 1, borderColor: "divider" }}>
 				<Typography variant="subtitle2">

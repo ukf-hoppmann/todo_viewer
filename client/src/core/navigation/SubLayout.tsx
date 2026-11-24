@@ -5,6 +5,8 @@ import { ErrorBoundary } from "../errors/ErrorBoundary";
 import type { MainLayout } from "../plugins/types";
 import { useSlot } from "../plugins/useSlot";
 import { coreTestIds } from "../testIds";
+import { usePersistentState } from "../ui-state/usePersistentState";
+import { Splitter } from "../../shared";
 import { PageDetailContext } from "./PageDetailContext";
 import { PageHeaderContext } from "./PageHeaderContext";
 
@@ -38,6 +40,49 @@ function SidebarSections() {
 	);
 }
 
+const MIN_DETAIL_WIDTH = 260;
+/** At most this share of the window; the rest stays for the content. */
+const MAX_DETAIL_SHARE = 0.7;
+
+/** The detail column with a splitter at its left edge; the width is kept per owner in the UI state of the core. */
+function ResizableDetail({ ownerId, basicWidth, children }: { ownerId: string; basicWidth: number; children: ReactNode }) {
+	const { t } = useTranslation("core");
+	const [stored, setStored] = usePersistentState<number | null>("core", `detailWidth.${ownerId}`, null);
+	const [live, setLive] = useState<number>();
+	const width = live ?? stored ?? basicWidth;
+	return (
+		<>
+			<Splitter
+				id="detail"
+				label={t("layout.resizeDetail")}
+				resetLabel={t("layout.resetDetail")}
+				width={width}
+				min={MIN_DETAIL_WIDTH}
+				max={Math.max(MIN_DETAIL_WIDTH, Math.round(window.innerWidth * MAX_DETAIL_SHARE))}
+				panel="after"
+				onLive={setLive}
+				onCommit={(next) => {
+					setLive(undefined);
+					setStored(next);
+				}}
+				canReset={width !== basicWidth}
+				onReset={() => {
+					setLive(undefined);
+					setStored(null);
+				}}
+			/>
+			<Box
+				component="section"
+				aria-label={t("layout.detail")}
+				data-testid={coreTestIds.detail}
+				sx={{ flex: `0 0 ${width}px`, minWidth: 0, minHeight: 0, overflowY: "auto", py: 2, pr: 2 }}
+			>
+				{children}
+			</Box>
+		</>
+	);
+}
+
 /**
  * The frame below the tabs, the same for every main route: a header area, a sidebar at the left and a detail
  * column at the right if the main route asks for them (`layout`), and the content in the middle. The areas are
@@ -54,6 +99,8 @@ export function SubLayout({ ownerId, layout, children }: SubLayoutProps) {
 	const headerContext = useMemo(() => ({ enabled: header, set: setHeaderContent }), [header]);
 	const detailContext = useMemo(() => ({ enabled: detail, set: setDetailContent }), [detail]);
 	const showDetail = detail && detailContent !== undefined;
+	const detailWidth = layout?.detailWidth;
+	const detailBody = <ErrorBoundary origin={ownerId}>{detailContent}</ErrorBoundary>;
 
 	return (
 		<PageHeaderContext value={headerContext}>
@@ -65,17 +112,22 @@ export function SubLayout({ ownerId, layout, children }: SubLayoutProps) {
 				)}
 				<Box sx={{ display: "flex", flexGrow: 1, minHeight: 0 }}>
 					{layout?.sidebar === true && <SidebarSections />}
-					<Box data-testid={coreTestIds.content} sx={{ flex: "1 1 50%", minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+					<Box data-testid={coreTestIds.content} sx={{ flex: detailWidth === undefined ? "1 1 50%" : "1 1 0", minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto" }}>
 						{children}
 					</Box>
-					{showDetail && (
+					{showDetail && detailWidth !== undefined && (
+						<ResizableDetail ownerId={ownerId} basicWidth={detailWidth}>
+							{detailBody}
+						</ResizableDetail>
+					)}
+					{showDetail && detailWidth === undefined && (
 						<Box
 							component="section"
 							aria-label={t("layout.detail")}
 							data-testid={coreTestIds.detail}
 							sx={{ flex: "1 1 50%", minWidth: 0, minHeight: 0, overflowY: "auto", py: 2, pr: 2 }}
 						>
-							<ErrorBoundary origin={ownerId}>{detailContent}</ErrorBoundary>
+							{detailBody}
 						</Box>
 					)}
 				</Box>

@@ -46,7 +46,7 @@ export function errorMessage(error: unknown, fallback: string): string {
  * The API of the plugin (`mindmap.api`): `getTree` reads the topic tree of a project (the project is the root) with
  * count, progress and state of every node and the items without a node; `getTrees` reads the trees of several projects at once (the overall view; one tree per project, in the order given); `statuses` is the status filter of the
  * backlog (comma-separated, empty: all),
- * `listMaps` lists the maps of a project (the project tree first, then the free maps, each with its node count), `createMap`, `renameMap` and `deleteMap` (into the trash) write them (tag `Maps`); `getTree`, `createNode` and `getNodeContent` take the free map as `tree`.
+ * `listMaps` lists the maps of a project (the project tree first, then the free maps, each with its node count), `createMap`, `renameMap` and `deleteMap` (into the trash) write them (tag `Maps`); `getTree`, `createNode` and `getNodeContent` take the free map as `tree`; `getNodeContent` also takes `includeSubnodes` (the items of the sub-nodes too).
  * `moveNodeToMap` hangs a branch into another map, `transferNodeToMap` puts it into another map too (same records, structure below per tree), `removeNodeFromMap` takes it out of one map ("Hier entfernen"), `deleteNode` out of all ("Knoten löschen"); `listNodeTrees` lists the maps a node stands in.
  * `listTrashedNodes` lists the deleted branches of a map (the side view "Papierkorb", tag `Trashed`), `restoreAndMoveNode` brings one back to a new place of the map ("wiederherstellen und umziehen").
  * `createNode` and `updateNode` write a node, `moveNode` hangs a node with its branch under another parent (empty:
@@ -90,8 +90,8 @@ export const mindmapApi = createPluginApi(
 			},
 			providesTags: ["Tree"],
 		}),
-		getNodeContent: build.query<NodeContentOut, { node: string; statuses: string; tree?: string }>({
-			query: ({ node, statuses, tree }) => ({ url: `mindmap/nodes/${node}/content`, params: { ...(statuses ? { statuses } : {}), ...(tree ? { tree } : {}) } }),
+		getNodeContent: build.query<NodeContentOut, { node: string; statuses: string; tree?: string; includeSubnodes?: boolean }>({
+			query: ({ node, statuses, tree, includeSubnodes }) => ({ url: `mindmap/nodes/${node}/content`, params: { ...(statuses ? { statuses } : {}), ...(tree ? { tree } : {}), ...(includeSubnodes ? { include_subnodes: true } : {}) } }),
 			providesTags: ["Content"],
 		}),
 		getItemNode: build.query<ItemNodeOut, string>({

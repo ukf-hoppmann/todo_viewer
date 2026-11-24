@@ -494,12 +494,28 @@ describe("MindmapPage: count, ring and state", () => {
 	});
 });
 
+describe("MindmapPage: the detail column", () => {
+	it("has a splitter, resizes with the keys, keeps the width and brings back the basic width with the reset icon", async () => {
+		const backend = fakeMindmapBackend({ projects, nodes, documents: { ...marked, mindmap: { selected: "a" } } });
+		await renderWorkspace(<MindmapPage />, { backend, detailWidth: 400 });
+		await screen.findByTestId(ids.detail);
+		expect(screen.queryByTestId(sharedTestIds.splitterReset("detail"))).toBeNull();
+
+		fireEvent.keyDown(screen.getByTestId(sharedTestIds.splitter("detail")), { key: "ArrowLeft" });
+
+		await waitFor(() => expect((backend.documents.get("core") as Record<string, unknown>)["detailWidth.test"]).toBe(424));
+		fireEvent.click(await screen.findByTestId(sharedTestIds.splitterReset("detail")));
+		await waitFor(() => expect((backend.documents.get("core") as Record<string, unknown>)["detailWidth.test"]).toBeNull());
+	});
+});
+
 describe("MindmapPage: the side view Nicht zugeordnet", () => {
 	const loose = [itemRef("x1"), itemRef("x2", { status: "In progress" })];
+	const opened = { ...marked, mindmap: { showUnassigned: true } };
 	const startItemDrag = (uid: string) => fireEvent.dragStart(screen.getByTestId(ids.unassignedItem(uid)), { dataTransfer: { setData: () => {}, effectAllowed: "" } });
 
 	it("lists the items without a node next to the map and keeps them out of the tree", async () => {
-		await renderPage({ unassigned: loose });
+		await renderPage({ unassigned: loose, documents: opened });
 
 		const panel = await screen.findByTestId(ids.unassigned);
 		await screen.findByTestId(ids.unassignedItem("x1"));
@@ -510,15 +526,33 @@ describe("MindmapPage: the side view Nicht zugeordnet", () => {
 		expect(shownIds()).toEqual(["p1", "a", "a1", "b"]);
 	});
 
-	it("is not there while it is switched off", async () => {
-		await renderPage({ unassigned: loose, documents: { ...marked, mindmap: { showUnassigned: false } } });
+	it("is closed at the start; the icon above the map shows how many items wait and opens and closes the panel", async () => {
+		await renderPage({ unassigned: loose });
 
-		await screen.findByTestId(ids.node("a"));
+		const toggle = await screen.findByTestId(ids.unassignedToggle);
+		await waitFor(() => expect(toggle.textContent).toBe("2"));
 		expect(screen.queryByTestId(ids.unassigned)).toBeNull();
+		fireEvent.click(toggle);
+		expect(await screen.findByTestId(ids.unassigned)).toBeTruthy();
+		fireEvent.click(screen.getByTestId(ids.unassignedToggle));
+		await waitFor(() => expect(screen.queryByTestId(ids.unassigned)).toBeNull());
+	});
+
+	it("has a splitter that resizes the panel and a reset icon that brings back the basic width", async () => {
+		const backend = await renderPage({ unassigned: loose, documents: opened });
+		await screen.findByTestId(ids.unassigned);
+		expect(screen.queryByTestId(sharedTestIds.splitterReset("unassigned"))).toBeNull();
+
+		const bar = screen.getByTestId(sharedTestIds.splitter("unassigned"));
+		fireEvent.keyDown(bar, { key: "ArrowRight" });
+
+		await waitFor(() => expect((backend.documents.get("mindmap") as { unassignedWidth?: number }).unassignedWidth).toBe(196));
+		fireEvent.click(await screen.findByTestId(sharedTestIds.splitterReset("unassigned")));
+		await waitFor(() => expect((backend.documents.get("mindmap") as { unassignedWidth?: number | null }).unassignedWidth).toBeNull());
 	});
 
 	it("assigns an item to the node it is dropped on, and the item leaves the list", async () => {
-		const backend = await renderPage({ unassigned: loose });
+		const backend = await renderPage({ unassigned: loose, documents: opened });
 		await screen.findByTestId(ids.unassignedItem("x1"));
 		await screen.findByTestId(ids.node("b"));
 
@@ -534,7 +568,7 @@ describe("MindmapPage: the side view Nicht zugeordnet", () => {
 	});
 
 	it("takes an item on any zone of a node as a drop on the node, never above or below it", async () => {
-		const backend = await renderPage({ unassigned: loose });
+		const backend = await renderPage({ unassigned: loose, documents: opened });
 		await screen.findByTestId(ids.unassignedItem("x1"));
 		await screen.findByTestId(ids.node("b"));
 
@@ -547,7 +581,7 @@ describe("MindmapPage: the side view Nicht zugeordnet", () => {
 	});
 
 	it("offers no drop on the root (the project)", async () => {
-		const backend = await renderPage({ unassigned: loose });
+		const backend = await renderPage({ unassigned: loose, documents: opened });
 		await screen.findByTestId(ids.unassignedItem("x1"));
 		await screen.findByTestId(ids.node("b"));
 
@@ -562,6 +596,7 @@ describe("MindmapPage: the side view Nicht zugeordnet", () => {
 	it("shows the message of the server when the assignment is rejected", async () => {
 		await renderPage({
 			unassigned: loose,
+			documents: opened,
 			respond: ({ method, path }) =>
 				method === "POST" && path === "mindmap/nodes/b/items" ? Response.json({ code: "mindmap_other_project", message: "Item und Knoten stehen in verschiedenen Projekten", details: {} }, { status: 400 }) : undefined,
 		});
@@ -577,7 +612,7 @@ describe("MindmapPage: the side view Nicht zugeordnet", () => {
 	});
 
 	it("still moves nodes by dragging while the side view is on", async () => {
-		const backend = await renderPage({ unassigned: loose });
+		const backend = await renderPage({ unassigned: loose, documents: opened });
 		await screen.findByTestId(ids.node("a1"));
 
 		startDrag("a1");
@@ -1089,11 +1124,11 @@ describe("MindmapPage: the overall view", () => {
 	});
 
 	it("shows the items without a node of the marked project, else the side view is off", async () => {
-		await renderAll({ unassigned: [itemRef("x1")] });
+		await renderAll({ unassigned: [itemRef("x1")], documents: { ...marked, mindmap: { view: "all", showUnassigned: true } } });
 		await screen.findByTestId(ids.unassignedItem("x1"));
 		cleanup();
 
-		await renderAll({ unassigned: [itemRef("x1")], documents: { ...overall } });
+		await renderAll({ unassigned: [itemRef("x1")], documents: { mindmap: { view: "all", showUnassigned: true } } });
 		await screen.findByTestId(ids.node("c"));
 		expect(screen.queryByTestId(ids.unassigned)).toBeNull();
 	});
@@ -1188,7 +1223,7 @@ describe("MindmapPage: free maps", () => {
 		expect(screen.queryByTestId(ids.unassigned)).toBeNull();
 		cleanup();
 
-		await renderPage({ nodes: inMap, maps: free, unassigned: [itemRef("i1")] });
+		await renderPage({ nodes: inMap, maps: free, unassigned: [itemRef("i1")], documents: { ...marked, mindmap: { showUnassigned: true } } });
 		expect(await screen.findByTestId(ids.unassigned)).toBeTruthy();
 	});
 

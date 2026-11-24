@@ -67,6 +67,20 @@ describe("NodeContentSection: what the node holds", () => {
 	});
 });
 
+describe("NodeContentSection: the switch for the sub-nodes", () => {
+	it("asks for the items of the sub-nodes only when the switch is on, and keeps it", async () => {
+		const backend = await renderSection({ items: { a: [nodeItem("t1")] } });
+		await screen.findByTestId(ids.contentItem("t1"));
+		expect(backend.calls("GET", "mindmap/nodes/a/content")[0]!.query.has("include_subnodes")).toBe(false);
+		expect((screen.getByTestId(ids.includeSubnodes) as HTMLInputElement).checked).toBe(false);
+
+		fireEvent.click(screen.getByTestId(ids.includeSubnodes));
+
+		await waitFor(() => expect(backend.calls("GET", "mindmap/nodes/a/content").at(-1)!.query.get("include_subnodes")).toBe("true"));
+		await waitFor(() => expect((backend.documents.get("mindmap") as { includeSubnodes?: boolean }).includeSubnodes).toBe(true));
+	});
+});
+
 describe("NodeContentSection: assigning and releasing items", () => {
 	it("assigns a found item of the project and lists it", async () => {
 		const backend = await renderSection({ unassigned: [itemRef("t1", { label: "TASK-001", title: "Erste Aufgabe" })] });

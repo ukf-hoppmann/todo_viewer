@@ -16,6 +16,7 @@ export { MarkdownEditor, type MarkdownEditorLabels } from "./markdown/MarkdownEd
 export { MarkdownView } from "./markdown/MarkdownView";
 export { extractHeadings, renderMarkdown, slugify, type Heading } from "./markdown/renderMarkdown";
 export { ProgressRing } from "./ProgressRing";
+export { Splitter, type SplitterProps } from "./Splitter";
 export { sharedTestIds } from "./testIds";
 export { TreeView, type TreeDrop } from "./tree/TreeView";
 export { ancestorChain, ancestorsOf, buildTree, dropPosition, flattenVisible, guideLines, isInSubtree } from "./tree/treeModel";

@@ -67,7 +67,6 @@
 	},
 	"filter": {
 		"state": "Zustand",
-		"unassigned": "Nicht zugeordnet anzeigen",
 		"trash": "Papierkorb anzeigen",
 		"dependencies": "Abhängigkeiten zwischen Themen zeigen",
 		"mark": "Markierung",
@@ -80,6 +79,10 @@
 		"done": "Erledigt"
 	},
 	"unassigned": {
+		"show": "Nicht zugeordnete Items anzeigen",
+		"hide": "Nicht zugeordnete Items ausblenden",
+		"resize": "Breite von „Nicht zugeordnet“ ändern",
+		"reset": "Breite von „Nicht zugeordnet“ zurücksetzen",
 		"title": "Nicht zugeordnet",
 		"empty": "Alle Items hängen an einem Knoten.",
 		"hint": "Ziehe ein Item auf einen Knoten, um es zuzuordnen."
@@ -95,6 +98,8 @@
 		"noItems": "Keine Items",
 		"noMemos": "Keine Memos",
 		"items": "Items",
+		"includeSubnodes": "Unterknoten einbeziehen",
+		"includeSubnodesHint": "Zeigt auch die Items aller Unterknoten, so wie sie in der Zahl am Knoten stehen. Ohne Haken nur die Items, die direkt an diesem Knoten hängen.",
 		"memos": "Memos",
 		"inherited": "geerbt",
 		"assignItem": "Item zuordnen",

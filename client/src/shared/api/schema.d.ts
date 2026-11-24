@@ -1081,7 +1081,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Das Detail eines Knotens: seine Items (wirksamer Knoten, nach `statuses`) und seine verlinkten Memos */
+        /** Das Detail eines Knotens: seine Items (wirksamer Knoten, nach `statuses`; mit `include_subnodes` auch die der Unterknoten) und seine verlinkten Memos */
         get: operations["mindmap_get_node_content"];
         put?: never;
         post?: never;
@@ -2744,7 +2744,8 @@ export interface components {
         };
         /**
          * NodeContentOut
-         * @description Das Detail eines Knotens: die Items, deren wirksamer Knoten er ist (nach Statusfilter, ohne Unterknoten),
+         * @description Das Detail eines Knotens: die Items, deren wirksamer Knoten er ist (nach Statusfilter; Unterknoten nur mit
+         *     `include_subnodes`),
          *     und seine Memos. Memos zählen nicht in der Zahl.
          */
         NodeContentOut: {
@@ -5957,6 +5958,7 @@ export interface operations {
                 statuses?: string | null;
                 project?: string | null;
                 tree?: string | null;
+                include_subnodes?: boolean;
             };
             header?: never;
             path: {

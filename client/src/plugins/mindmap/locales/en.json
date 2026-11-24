@@ -67,7 +67,6 @@
 	},
 	"filter": {
 		"state": "State",
-		"unassigned": "Show unassigned",
 		"trash": "Show trash",
 		"dependencies": "Show dependencies between topics",
 		"mark": "Mark",
@@ -80,6 +79,10 @@
 		"done": "Done"
 	},
 	"unassigned": {
+		"show": "Show unassigned items",
+		"hide": "Hide unassigned items",
+		"resize": "Resize 'Unassigned'",
+		"reset": "Reset the width of 'Unassigned'",
 		"title": "Unassigned",
 		"empty": "Every item hangs on a node.",
 		"hint": "Drag an item onto a node to assign it."
@@ -95,6 +98,8 @@
 		"noItems": "No items",
 		"noMemos": "No memos",
 		"items": "Items",
+		"includeSubnodes": "Include sub-nodes",
+		"includeSubnodesHint": "Also lists the items of all sub-nodes, as counted in the number at the node. Unchecked, only the items that hang directly on this node are listed.",
 		"memos": "Memos",
 		"inherited": "inherited",
 		"assignItem": "Assign item",

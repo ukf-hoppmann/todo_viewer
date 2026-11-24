@@ -10,14 +10,16 @@ const OWNER = "mindmap";
  * What the user chose in the mind map, kept in the UI state of the server (owner `mindmap`): `fold` holds, by node,
  * only what differs from the default (two levels open); `selected` is the node open in the detail column;
  * `hiddenStates` and `hiddenMarks` are the node states and marks the filter hides; `view` is the single view or the overall view with all chosen projects, `showUnassigned` says whether the side view "Nicht
- * zugeordnet" is on, `showTrash` whether the side view "Papierkorb" is on (off by default), `chosenMaps` the free map chosen per project (project uid → tree uid; none: the project tree), `showDependencies` whether the lines between topics that depend on each other are drawn (off by default), `highlightShared` whether transferred branches (a node in several trees) get a frame (off by default).
+ * zugeordnet" is open (off by default; the icon above the map switches it), `unassignedWidth` its width in px (none: the basic width), `includeSubnodes` whether the detail of a node lists the items of its sub-nodes too (off by default), `showTrash` whether the side view "Papierkorb" is on (off by default), `chosenMaps` the free map chosen per project (project uid → tree uid; none: the project tree), `showDependencies` whether the lines between topics that depend on each other are drawn (off by default), `highlightShared` whether transferred branches (a node in several trees) get a frame (off by default).
  */
 export function useMindmapState() {
 	const [fold, setFold] = usePersistentState<Fold>(OWNER, "fold", {});
 	const [selected, setSelected] = usePersistentState<string | null>(OWNER, "selected", null);
 	const [hiddenStates, setHiddenStates] = usePersistentState<string[]>(OWNER, "hiddenStates", []);
 	const [hiddenMarks, setHiddenMarks] = usePersistentState<string[]>(OWNER, "hiddenMarks", []);
-	const [showUnassigned, setShowUnassigned] = usePersistentState<boolean>(OWNER, "showUnassigned", true);
+	const [showUnassigned, setShowUnassigned] = usePersistentState<boolean>(OWNER, "showUnassigned", false);
+	const [unassignedWidth, setUnassignedWidth] = usePersistentState<number | null>(OWNER, "unassignedWidth", null);
+	const [includeSubnodes, setIncludeSubnodes] = usePersistentState<boolean>(OWNER, "includeSubnodes", false);
 	const [showTrash, setShowTrash] = usePersistentState<boolean>(OWNER, "showTrash", false);
 	const [showDependencies, setShowDependencies] = usePersistentState<boolean>(OWNER, "showDependencies", false);
 	const [highlightShared, setHighlightShared] = usePersistentState<boolean>(OWNER, "highlightShared", false);
@@ -34,7 +36,7 @@ export function useMindmapState() {
 		[setChosenMaps],
 	);
 	return useMemo(
-		() => ({ chosenMaps, chooseMapOf, view, setView, fold, setFold, selected, setSelected, hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned, showTrash, setShowTrash, showDependencies, setShowDependencies, highlightShared, setHighlightShared, layout, setLayout }),
-		[chosenMaps, chooseMapOf, view, setView, fold, setFold, selected, setSelected, hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned, showTrash, setShowTrash, showDependencies, setShowDependencies, highlightShared, setHighlightShared, layout, setLayout],
+		() => ({ chosenMaps, chooseMapOf, view, setView, fold, setFold, selected, setSelected, hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned, unassignedWidth, setUnassignedWidth, includeSubnodes, setIncludeSubnodes, showTrash, setShowTrash, showDependencies, setShowDependencies, highlightShared, setHighlightShared, layout, setLayout }),
+		[chosenMaps, chooseMapOf, view, setView, fold, setFold, selected, setSelected, hiddenStates, setHiddenStates, hiddenMarks, setHiddenMarks, showUnassigned, setShowUnassigned, unassignedWidth, setUnassignedWidth, includeSubnodes, setIncludeSubnodes, showTrash, setShowTrash, showDependencies, setShowDependencies, highlightShared, setHighlightShared, layout, setLayout],
 	);
 }

@@ -41,6 +41,8 @@ export interface MainLayout {
 	sidebar?: boolean;
 	/** A detail column at the right, filled by the page with `usePageDetail`; shown only while it has content. */
 	detail?: boolean;
+	/** The basic width of the detail column in px. With it the column is resizable by a splitter (the width is kept in the UI state of the core); without it the content and the column share the width equally. */
+	detailWidth?: number;
 }
 
 /**

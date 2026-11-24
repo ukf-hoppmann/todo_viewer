@@ -6,7 +6,9 @@
 		"main": "Hauptbereich",
 		"sidebar": "Seitenleiste",
 		"detail": "Details",
-		"loading": "Wird geladen"
+		"loading": "Wird geladen",
+		"resizeDetail": "Breite der Details ändern",
+		"resetDetail": "Breite der Details zurücksetzen"
 	},
 	"appBar": {
 		"language": "Sprache"

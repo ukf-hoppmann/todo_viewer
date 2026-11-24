@@ -49,7 +49,7 @@ export const plugin = definePlugin({
 			if (api?.util) dispatch(api.util.invalidateTags(["Tree", "Documents", "Content", "ItemNode", "Maps", "Trashed"]));
 		},
 	},
-	contributions: [{ slot: "core.main", name: "main", title: "tab.mindmap", icon: MindmapIcon, page: () => import("./pages/MindmapPage"), layout: { sidebar: true, detail: true } },
+	contributions: [{ slot: "core.main", name: "main", title: "tab.mindmap", icon: MindmapIcon, page: () => import("./pages/MindmapPage"), layout: { sidebar: true, detail: true, detailWidth: 400 } },
 		{ slot: "backlog.item-detail", name: "node", component: ItemNodeSection, order: 5 },
 		{ slot: "core.sidebar-sections", name: "maps", component: MapList, order: 17, when: ["mindmap/main"] },
 		{ slot: "core.sidebar-sections", name: "view", component: ViewSwitch, order: 18, when: ["mindmap/main"] },

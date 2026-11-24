@@ -104,7 +104,9 @@ export function checkContributions(contributions: unknown, { reservedNames = [] 
 			if (!isObject(layout)) problem("`layout` is no object");
 			else {
 				for (const [key, value] of Object.entries(layout)) {
-					if (!layoutSwitches.includes(key)) problem(`\`layout.${key}\` is unknown`);
+					if (key === "detailWidth") {
+						if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) problem("`layout.detailWidth` is no positive number");
+					} else if (!layoutSwitches.includes(key)) problem(`\`layout.${key}\` is unknown`);
 					else if (typeof value !== "boolean") problem(`\`layout.${key}\` is no boolean`);
 				}
 			}

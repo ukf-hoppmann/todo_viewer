@@ -469,6 +469,22 @@ def test_the_content_of_a_node_lists_only_its_own_items_by_the_status_filter(min
     assert labels("Open") == [a["label"]]
 
 
+def test_the_content_of_a_node_includes_the_items_of_its_subnodes_on_request(mindmap: Env) -> None:
+    top = _node(mindmap, "Oben")
+    child = _node(mindmap, "Kind", parent=top)
+    a, deeper = _item(mindmap), _item(mindmap)
+    _assign(mindmap, top, a)
+    _assign(mindmap, child, deeper)
+
+    own = mindmap.client.get(f"{API}/nodes/{top['uid']}/content").json()["items"]
+    summed = mindmap.client.get(f"{API}/nodes/{top['uid']}/content", params={"include_subnodes": "true"}).json()["items"]
+
+    assert [i["label"] for i in own] == [a["label"]]
+    assert [i["label"] for i in summed] == [a["label"], deeper["label"]]
+    assert all(i["explicit"] for i in summed)
+    assert _tree(mindmap)["nodes"][0]["total"] == len(summed)
+
+
 def test_the_content_of_a_node_says_which_items_are_assigned_to_it_and_which_are_inherited(mindmap: Env) -> None:
     node = _node(mindmap)
     story = _item(mindmap, "Story")

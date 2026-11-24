@@ -535,7 +535,8 @@ class NodeItemOut(ItemRefOut):
 
 @dataclass(frozen=True)
 class NodeContentOut:
-    """Das Detail eines Knotens: die Items, deren wirksamer Knoten er ist (nach Statusfilter, ohne Unterknoten),
+    """Das Detail eines Knotens: die Items, deren wirksamer Knoten er ist (nach Statusfilter; Unterknoten nur mit
+    `include_subnodes`),
     und seine Memos. Memos zählen nicht in der Zahl."""
 
     node_uid: str
@@ -590,6 +591,8 @@ class GetNodeContent:
     project: str | None = None
     #: Die Map, in der der Knoten gelesen wird (bestimmt den wirksamen Knoten der Items); ohne Angabe der Projektbaum.
     tree: str | None = None
+    #: Auch die Items der Unterknoten liefern (wie die Zahl am Knoten); ohne: nur die des Knotens selbst.
+    include_subnodes: bool = False
 
 
 @dataclass(frozen=True)
@@ -914,11 +917,14 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "get_node_content",
-        "Das Detail eines Knotens: seine Items (wirksamer Knoten, nach `statuses`) und seine verlinkten Memos",
+        "Das Detail eines Knotens: seine Items (wirksamer Knoten, nach `statuses`; mit `include_subnodes` auch die der "
+        "Unterknoten) und seine verlinkten Memos",
         "read",
         GetNodeContent,
         NodeContentOut,
-        lambda s, d: _content_out(s.assignments.node_content(d.ref, d.project, _statuses(d.statuses), d.tree)),
+        lambda s, d: _content_out(
+            s.assignments.node_content(d.ref, d.project, _statuses(d.statuses), d.tree, d.include_subnodes)
+        ),
         HttpBinding("GET", "/nodes/{ref}/content"),
     ),
     Operation(

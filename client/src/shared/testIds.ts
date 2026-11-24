@@ -12,6 +12,9 @@ export const sharedTestIds = {
 	/** The drop marker on a node: `shared.tree-drop.<node id>.<position>`. */
 	treeDrop: (id: string, position: string) => `shared.tree-drop.${id}.${position}`,
 	progressRing: "shared.progress-ring",
+	/** A splitter bar: `shared.splitter.<id>` and its reset icon `shared.splitter-reset.<id>`. */
+	splitter: (id: string) => `shared.splitter.${id}`,
+	splitterReset: (id: string) => `shared.splitter-reset.${id}`,
 	detailPanel: "shared.detail-panel",
 	detailTitle: "shared.detail-title",
 	/** An action button of the header bar: `shared.detail-action.<id>`. */

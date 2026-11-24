@@ -154,34 +154,40 @@ class AssignmentService:
         Knoten. „Nicht zugeordnet“ gibt es nur im Projektbaum; in einer freien Map ist die Liste leer."""
         check_statuses(statuses)
         with self._database.transaction() as tx:
-            overview, items = self._overview(tx, project_uid, statuses, tree_uid)
+            overview, items, _, _ = self._overview(tx, project_uid, statuses, tree_uid)
         loose = set(overview.unassigned) if tree_uid is None else set()
         links = rules.dependency_links(_facts(items), overview.effective, statuses)
         # Die Items ohne Knoten in der Reihenfolge des Backlogs
         return TreeStats(overview.stats, [i for i in items if i.uid in loose], links)
 
     def node_content(
-        self, node_ref: str, project_uid: str | None, statuses: list[str], tree_uid: str | None = None
+        self,
+        node_ref: str,
+        project_uid: str | None,
+        statuses: list[str],
+        tree_uid: str | None = None,
+        include_subnodes: bool = False,
     ) -> NodeContent:
+        """Die Items des Knotens; mit `include_subnodes` auch die seiner Unterknoten (dann stimmt die Liste mit der
+        Zahl am Knoten überein). Die Memos sind immer nur die des Knotens."""
         check_statuses(statuses)
         with self._database.transaction() as tx:
             node = self._mindmap.resolve(tx, node_ref, project_uid)
-            overview, items = self._overview(tx, node.project_uid, statuses, tree_uid)
+            overview, items, live, parent_of = self._overview(tx, node.project_uid, statuses, tree_uid)
+            wanted = rules.subtree_nodes(node.uid, live, parent_of) if include_subnodes else {node.uid}
             shown = [
                 i
                 for i in items
-                if not i.deleted
-                and overview.effective.get(i.uid) == node.uid
-                and (not statuses or i.status in statuses)
+                if not i.deleted and overview.effective.get(i.uid) in wanted and (not statuses or i.status in statuses)
             ]
             memos = self._memos_of(tx, node.uid)
-            explicit = frozenset(i.uid for i in shown if any(n == node.uid for n, _ in self._nodes_of(tx, i.uid)))
+            explicit = frozenset(i.uid for i in shown if any(n in wanted for n, _ in self._nodes_of(tx, i.uid)))
         return NodeContent(node, shown, memos, explicit)
 
     def item_node(self, item_ref: str, project_uid: str | None) -> ItemNode:
         with self._database.transaction() as tx:
             element = self._element(tx, item_ref, project_uid, ITEM_KINDS, allow_deleted=True)
-            overview, items = self._overview(tx, element.project_uid, [])
+            overview, items, _, _ = self._overview(tx, element.project_uid, [])
             item = next(i for i in items if i.uid == element.uid)
             node_uid = overview.effective.get(item.uid)
             node = self._repository.get_node(tx, node_uid) if node_uid else None
@@ -199,7 +205,7 @@ class AssignmentService:
 
     def _overview(
         self, tx: Transaction, project_uid: str, statuses: list[str], tree_uid: str | None = None
-    ) -> tuple[Overview, list[BacklogItem]]:
+    ) -> tuple[Overview, list[BacklogItem], set[str], dict[str, str | None]]:
         items = self._backlog.list_items(tx, project_uid)
         tree = (
             self._repository.get_tree(tx, tree_uid) if tree_uid else self._repository.tree_of_project(tx, project_uid)
@@ -220,7 +226,7 @@ class AssignmentService:
                 for view in self._links.outgoing(tx, node.uid):
                     if view.link.role == ROLE and view.element.uid in wanted:
                         assigned.setdefault(view.element.uid, node.uid)
-        return rules.overview(_facts(items), assigned, live, parent_of, statuses), items
+        return rules.overview(_facts(items), assigned, live, parent_of, statuses), items, live, parent_of
 
     def _element(
         self, tx: Transaction, ref: str, project_uid: str | None, kinds: tuple[str, ...], *, allow_deleted: bool = False

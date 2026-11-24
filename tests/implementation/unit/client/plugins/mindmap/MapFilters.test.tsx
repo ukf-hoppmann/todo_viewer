@@ -20,7 +20,7 @@ const stored = async (backend: Awaited<ReturnType<typeof renderFilters>>) => {
 };
 
 describe("MapFilters: the sidebar section of the mind map", () => {
-	it("offers the four states, all shown at the start, and the switch for the side view", async () => {
+	it("offers the four states, all shown at the start", async () => {
 		await renderFilters();
 
 		const section = await screen.findByTestId(ids.stateFilter);
@@ -28,7 +28,6 @@ describe("MapFilters: the sidebar section of the mind map", () => {
 		for (const state of ["idea", "planned", "in_progress", "done"]) {
 			expect((screen.getByTestId(sharedTestIds.filterOption(state)) as HTMLInputElement).checked).toBe(true);
 		}
-		expect((screen.getByTestId(ids.unassignedSwitch) as HTMLInputElement).checked).toBe(true);
 	});
 
 	it("offers the switch for the side view Papierkorb, off at the start, and keeps it", async () => {
@@ -61,16 +60,6 @@ describe("MapFilters: the sidebar section of the mind map", () => {
 
 		await waitFor(async () => expect((await stored(backend))?.hiddenStates).toEqual(["done"]));
 		expect((screen.getByTestId(sharedTestIds.filterOption("done")) as HTMLInputElement).checked).toBe(false);
-	});
-
-	it("switches the side view off and keeps that", async () => {
-		const backend = await renderFilters({ mindmap: { hiddenStates: ["idea"] } });
-		await screen.findByTestId(ids.stateFilter);
-		await waitFor(() => expect((screen.getByTestId(sharedTestIds.filterOption("idea")) as HTMLInputElement).checked).toBe(false));
-
-		fireEvent.click(screen.getByTestId(ids.unassignedSwitch));
-
-		await waitFor(async () => expect((await stored(backend))?.showUnassigned).toBe(false));
 	});
 
 	it("offers the two marks, shown at the start, and keeps a hidden one in the UI state", async () => {

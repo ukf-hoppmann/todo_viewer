@@ -1,5 +1,5 @@
 import CloseIcon from "@mui/icons-material/Close";
-import { Alert, Box, Button, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Checkbox, FormControlLabel, Stack, Tooltip, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmDialog, EntityPicker, IconAction, type Entity } from "../../shared";
@@ -15,6 +15,7 @@ import {
 	useUnlinkMemoMutation,
 	type NodeOut,
 } from "./api";
+import { useMindmapState } from "./state";
 import { mindmapTestIds } from "./testIds";
 
 const ITEM_KINDS = ["epic", "story", "task"];
@@ -34,12 +35,14 @@ function useCandidates(projectUid: string, kinds: readonly string[]) {
  * The section "Items und Memos" in the detail of a node: the items whose node it is (assigned to it or inherited from
  * their parent item; the status filter of the backlog decides which are listed) and the memos linked to it. An own
  * item can be released, an item or memo of the project can be added. A memo is not counted in the node's number.
+ * The switch "Unterknoten einbeziehen" lists the items of the sub-nodes too, so that the list matches the number at the node.
  * An item that hangs on another node is moved only after a confirmation.
  */
 export function NodeContentSection({ node }: { node: NodeOut }) {
 	const { t } = useTranslation("mindmap");
 	const statuses = useShownStatuses();
-	const { data } = useGetNodeContentQuery({ node: node.uid, statuses, tree: node.tree_uid || undefined });
+	const { includeSubnodes, setIncludeSubnodes } = useMindmapState();
+	const { data } = useGetNodeContentQuery({ node: node.uid, statuses, tree: node.tree_uid || undefined, includeSubnodes });
 	const [assignItem] = useAssignItemMutation();
 	const [unassignItem] = useUnassignItemMutation();
 	const [linkMemo] = useLinkMemoMutation();
@@ -73,9 +76,18 @@ export function NodeContentSection({ node }: { node: NodeOut }) {
 				</Alert>
 			)}
 			<Box>
-				<Typography variant="overline" color="text.secondary">
-					{t("content.items")}
-				</Typography>
+				<Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+					<Typography variant="overline" color="text.secondary">
+						{t("content.items")}
+					</Typography>
+					<Tooltip title={t("content.includeSubnodesHint")}>
+						<FormControlLabel
+							control={<Checkbox size="small" checked={includeSubnodes} onChange={(event) => setIncludeSubnodes(event.target.checked)} slotProps={{ input: { "data-testid": mindmapTestIds.includeSubnodes } as never }} />}
+							label={<Typography variant="caption">{t("content.includeSubnodes")}</Typography>}
+							sx={{ mr: 0 }}
+						/>
+					</Tooltip>
+				</Stack>
 				{(data?.items.length ?? 0) === 0 && (
 					<Typography variant="body2" color="text.secondary">
 						{t("content.noItems")}

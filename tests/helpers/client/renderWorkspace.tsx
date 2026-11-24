@@ -36,6 +36,8 @@ export async function renderWorkspace(
 		initialEntries?: string[];
 		/** Widgets of other slots, e.g. `backlog.item-detail`. */
 		widgets?: Array<{ ownerId: string; slot: string; name: string; component: ComponentType }>;
+		/** The basic width of the detail column; with it the column has a splitter (as the route of the mind map). */
+		detailWidth?: number;
 	} = {},
 ) {
 	const backend = options.backend ?? fakeWorkspaceBackend();
@@ -67,7 +69,7 @@ export async function renderWorkspace(
 				<PluginRegistryProvider registry={registry}>
 					<MemoryRouter initialEntries={options.initialEntries}>
 						{/* Pages fill the detail column of their route (`usePageDetail`); other components ignore it. */}
-						<SubLayout ownerId="test" layout={{ detail: true }}>
+						<SubLayout ownerId="test" layout={{ detail: true, ...(options.detailWidth === undefined ? {} : { detailWidth: options.detailWidth }) }}>
 							{ui}
 							<LocationProbe />
 						</SubLayout>

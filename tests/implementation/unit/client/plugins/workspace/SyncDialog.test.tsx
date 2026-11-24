@@ -93,6 +93,54 @@ describe("SyncDialog explains a conflict", () => {
 	});
 });
 
+describe("SyncDialog mit der Mindmap", () => {
+	const side = (kind: string, fields: Record<string, unknown>, refs: Record<string, string[]> = {}, label: string | null = null) => ({ label, kind, fields, refs });
+	const base = { recommendation: "none", reason: "both_changed" } as const;
+	const mindmap = preview({
+		transfers: [
+			{ key: "n2", kind: "mindmap.node", label: "NODE-002", target: "files", action: "create" },
+			{ key: "t9", kind: "mindmap.tree", label: null, target: "database", action: "update" },
+		],
+		conflicts: [
+			{ ...base, key: "n1", kind: "mindmap.node", label: "NODE-001", conflict: "both_changed", database: side("mindmap.node", { title: "Idee", text: "alt", mark: null }, { items: ["TASK-001"] }, "NODE-001"), files: side("mindmap.node", { title: "Idee", text: "neu", mark: "later" }, { items: ["TASK-001"] }, "NODE-001") },
+			{
+				...base,
+				key: "t1",
+				kind: "mindmap.tree",
+				label: null,
+				conflict: "both_changed",
+				database: side("mindmap.tree", { tree_kind: "free", name: "Ideen", depths: [0, 1, 0], removed: [] }, { nodes: ["NODE-001", "NODE-002", "NODE-003"] }),
+				files: side("mindmap.tree", { tree_kind: "free", name: "Ideen", depths: [0, 0, 1], removed: [] }, { nodes: ["NODE-001", "NODE-003", "NODE-002"] }),
+			},
+			{ ...base, key: "d1", kind: "mindmap.document", label: "NODE-001_notes.md", conflict: "both_changed", database: side("mindmap.document", { kind: "notes", content: "a\nalt" }, { node: ["NODE-001"] }), files: side("mindmap.document", { kind: "notes", content: "a\nneu" }, { node: ["NODE-001"] }) },
+		],
+	});
+
+	it("nennt Knoten, Map und Notiz mit lesbaren Namen und Feldnamen", async () => {
+		await renderDialog({ syncPreview: mindmap });
+
+		expect(screen.getByTestId(ids.syncConflict("n1")).textContent).toContain("Knoten NODE-001 · Idee · beide Seiten geändert");
+		expect(screen.getByTestId(ids.syncDifference("n1", "text")).textContent).toContain("Text");
+		expect(screen.getByTestId(ids.syncDifference("n1", "mark")).textContent).toContain("Markierung");
+		expect(screen.getByTestId(ids.syncConflict("t1")).textContent).toContain("Map „Ideen“ · beide Seiten geändert");
+		expect(screen.getByTestId(ids.syncContext("d1")).textContent).toBe("Notiz zu Knoten NODE-001");
+		expect(screen.getByTestId(ids.syncConflict("d1")).textContent).toContain("NODE-001_notes.md · beide Seiten geändert");
+		expect(screen.getByTestId(ids.syncTransfers).textContent).toContain("in die Dateien · anlegen · Knoten NODE-002");
+		expect(screen.getByTestId(ids.syncTransfers).textContent).toContain("in die Datenbank · ändern · Mindmap-Baum");
+	});
+
+	it("zeigt die Ordnung des Baums als Diff einer Liste, nicht als JSON", async () => {
+		await renderDialog({ syncPreview: mindmap });
+		const diff = screen.getByTestId(ids.syncDiff("t1", "order"));
+
+		expect(diff.textContent).toContain("NODE-002");
+		expect(diff.textContent).toContain("−  NODE-002"); // eingerückt in der Datenbank
+		expect(diff.textContent).toContain("+  NODE-002"); // eingerückt in den Dateien
+		expect(screen.getByTestId(ids.syncDifference("t1", "order")).textContent).toContain("Ordnung");
+		expect(screen.getByTestId(ids.syncConflict("t1")).textContent).not.toContain("[");
+	});
+});
+
 describe("SyncDialog", () => {
 	it("shows the conflicts first with the fields that differ, then the transfers", async () => {
 		await renderDialog();

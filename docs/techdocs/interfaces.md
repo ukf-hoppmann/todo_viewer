@@ -542,7 +542,7 @@ Jeder Fehler nennt Datei und Zeile (`MirrorFormatError`).
 | `merge_markers` | Datei mit Git-Merge-Markern |
 | `duplicate_node_in_tree` | ein Knoten steht zweimal in einem Baum (auch zwischen Liste und `Removed:`) |
 | `tree_cycle` | die früheren Parents unter `Removed:` bilden einen Kreis |
-| `rule_violation` | dasselbe Item steht bei zwei Knoten |
+| `rule_violation` | eine Regel der Mindmap ist verletzt: dasselbe Item steht bei zwei Knoten, ein Kreis, ein Parent, der im Baum fehlt, ein Knoten eines anderen Projekts |
 
 `unknown_reference` (ein Baum nennt einen Knoten, den es nie gab) entscheidet nur die Datenbank: der Teilnehmer meldet ihn
 beim Übernehmen mit Datei und Zeile; ebenso `rule_violation` bei einem Kreis oder einem Knoten, der in der Liste keinen
@@ -560,6 +560,21 @@ Was der Sync daraus macht (Teilnehmer, `MindmapParticipant`):
   diesen Knoten zurück. Ein Papierkorb in den Dateien führt nie zum endgültigen Löschen.
 - Eine gelöschte Dokument-Datei ist ein Konflikt; erst die Entscheidung „Dateien“ löscht das Dokument in der
   Datenbank. Wird ein Knoten im Papierkorb endgültig gelöscht, gehen seine Dateien mit, wenn sie unverändert sind.
+
+### Bearbeiten in den Dateien (Cloud-Sitzung)
+
+Eine Sitzung ohne Server (Cloud, Datei-Modus) ändert nur Textdateien; der Sync übernimmt sie später mit denselben
+Regeln wie die API. Der Ablauf ist als Systemtest gesichert
+(`tests/implementation/system/server/test_mindmap_mirror_flow.py`).
+
+- *Freie Map füllen:* neuer Knoten als `mindmap/new-<kurzname>.md` (`# NEW`, `Title:`) und sein Platzhalter als Zeile in
+  der Baumdatei der Map. Nach der Kopfzeile folgt eine Leerzeile, erst dann die Liste.
+- *Ast umhängen:* die Zeilen des Asts in der Baumdatei an die neue Stelle schreiben (verschieben, nicht kopieren).
+- *Ast in eine andere Map übertragen:* dieselben Labels (mit ihren Kindern) zusätzlich in die Baumdatei der Ziel-Map
+  schreiben; die Knotendateien bleiben unberührt, der Inhalt steht weiter einmal.
+- *Item zuordnen:* `- <LABEL>` unter `Items:` der Knotendatei; ein Item steht bei höchstens einem Knoten.
+- Haben beide Seiten denselben Knoten geändert, ist das ein Konflikt: nichts wird überschrieben, der Owner entscheidet im
+  Sync-Dialog (Knoten, Maps und Notizen erscheinen dort mit lesbaren Namen, die Ordnung eines Baums als Liste).
 
 Beispiele: `tests/fixtures/mirror-mindmap/valid/` und `…/invalid/<code>/` sind die Golden-Files des Codecs.
 

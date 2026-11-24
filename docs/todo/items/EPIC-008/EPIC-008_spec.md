@@ -80,7 +80,7 @@ Stand der Planung. Der Weg zu den Entscheidungen steht in den Notizen des Tasks
   gespeicherter Zustand; ohne Zustimmung entsteht kein Knoten und das Item steht unter „Nicht zugeordnet“. Die Regel
   steht in den MCP-Tool-Beschreibungen des Viewers und wird als Skill-Regel an Claude_Harness übergeben, durch einen
   Prompt, den der Owner selbst weitergibt.
-- Markdown-Spiegel: mitgeplant, nicht Pflicht; nötig, damit Cloud-Sitzungen zuordnen können. Er muss auch freie
+- Markdown-Spiegel: umgesetzt (`STORY-105`, Stand 2026-11-24: Format, Codec, Teilnehmer, Sync-Dialog und Systemtest „Cloud-Sitzung“; Doku in `interfaces.md` „Mindmap-Dateien“; der Prompt für Claude_Harness liegt in `TASK-082_spec_prompt-harness.md`). War mitgeplant, nicht Pflicht; nötig, damit Cloud-Sitzungen zuordnen können. Er muss auch freie
   Maps enthalten, damit eine Cloud-Sitzung sie beim Brainstormen füllen kann. Format: der Inhalt eines Knotens steht
   einmal in einer Datei, jeder Baum ist eine eigene Datei mit Verweisen auf Knoten, mehrfache Platzierungen sind
   Verweise; die Zuordnung von Items und Memos steht auf dem Knoten, nicht im Item. Das Format hat eine eigene

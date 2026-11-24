@@ -88,10 +88,36 @@ function text(value: unknown): string {
 	return String(value);
 }
 
+const TREE_KIND = "mindmap.tree";
+
+/**
+ * A tree of the mindmap as the rows of a conflict: its order is one indented list of labels (one level per step of
+ * depth), its removed placements one line each (`node · branch · parent · position`), instead of the raw lists.
+ */
+function treeView(side: EntryView): EntryView {
+	if (!side) return side;
+	const fields = { ...side.fields };
+	const refs = { ...side.refs };
+	const depths = Array.isArray(fields.depths) ? (fields.depths as number[]) : [];
+	const nodes = refs.nodes ?? [];
+	const removed = Array.isArray(fields.removed) ? (fields.removed as { position: number; has_parent: boolean }[]) : [];
+	const parents = [...(refs.removed_parents ?? [])];
+	delete fields.depths;
+	delete refs.nodes;
+	delete fields.removed;
+	fields.order = nodes.map((label, index) => `${"  ".repeat(depths[index] ?? 0)}${label}`).join("\n");
+	fields.removed = removed
+		.map((row, index) => [refs.removed_nodes?.[index] ?? "—", refs.removed_groups?.[index] ?? "—", row.has_parent ? (parents.shift() ?? "—") : "—", row.position].join(" · "))
+		.join("\n");
+	for (const name of ["removed_nodes", "removed_groups", "removed_parents"]) delete refs[name];
+	return { fields, refs };
+}
+
 /** The fields and references that differ between the two sides of a conflict (all of them if a side is missing). */
 export function differences(conflict: SyncConflict): FieldDifference[] {
-	const database = conflict.database as EntryView;
-	const files = conflict.files as EntryView;
+	const view = (side: unknown): EntryView => (conflict.kind === TREE_KIND ? treeView(side as EntryView) : (side as EntryView));
+	const database = view(conflict.database);
+	const files = view(conflict.files);
 	const names = new Set<string>();
 	for (const side of [database, files]) {
 		for (const name of Object.keys(side?.fields ?? {})) names.add(name);
@@ -112,13 +138,31 @@ export function originKey(conflict: SyncConflict): string {
 	return conflict.conflict;
 }
 
-/** What a document conflict is about (spec or notes of an item), shown in the header instead of the rows `kind` and `item`. */
-export function documentContext(conflict: SyncConflict): { kind: string; item: string | null } | null {
-	if (conflict.kind !== "document") return null;
+/**
+ * What a document conflict is about (spec or notes of an item, or of a node of the mindmap, then with `node`), shown
+ * in the header instead of the rows `kind`, `item` and `node`.
+ */
+export function documentContext(conflict: SyncConflict): { kind: string; item: string | null; node?: string } | null {
+	const ofNode = conflict.kind === "mindmap.document";
+	if (conflict.kind !== "document" && !ofNode) return null;
 	const side = (conflict.database ?? conflict.files) as EntryView;
 	const kind = side?.fields?.kind;
 	if (typeof kind !== "string") return null;
+	if (ofNode) return { kind, item: null, node: side?.refs?.node?.[0] ?? "" };
 	return { kind, item: side?.refs?.item?.[0] ?? null };
+}
+
+/** The name of an entry of the mindmap for the owner, as a key below `sync.names` with its parameters; none for other entries. */
+export function entryName(entry: { kind: string; label?: string | null; database?: unknown; files?: unknown }): { key: string; params: Record<string, string> } | null {
+	if (entry.kind === "mindmap.node") {
+		const title = ((entry.database ?? entry.files) as EntryView)?.fields?.title;
+		return { key: "node", params: { label: entry.label ?? "", title: typeof title === "string" ? title : "" } };
+	}
+	if (entry.kind !== TREE_KIND) return null;
+	const fields = ((entry.database ?? entry.files) as EntryView)?.fields;
+	if (fields?.tree_kind === "project") return { key: "projectTree", params: {} };
+	if (fields?.tree_kind === "free") return { key: "freeMap", params: { name: String(fields.name ?? "") } };
+	return { key: "tree", params: {} };
 }
 
 export type DiffLine = { op: "same" | "add" | "del"; text: string } | { op: "skip"; count: number };

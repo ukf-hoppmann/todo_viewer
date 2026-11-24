@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SyncConflict, SyncStatus } from "../../../../../../client/src/plugins/workspace/api";
-import { choiceDeletes, decisionsOf, differences, documentContext, isDeletionConflict, lineDiff, needsAttention, onlyWhitespaceDiffers, originKey, syncView, visibleWhitespace, withBulkChoice, choiceBlocked } from "../../../../../../client/src/plugins/workspace/sync";
+import { choiceDeletes, decisionsOf, differences, documentContext, entryName, isDeletionConflict, lineDiff, needsAttention, onlyWhitespaceDiffers, originKey, syncView, visibleWhitespace, withBulkChoice, choiceBlocked } from "../../../../../../client/src/plugins/workspace/sync";
 
 const status = (state: SyncStatus["state"], extra: Partial<SyncStatus> = {}): SyncStatus => ({ project: "p", state, conflicts: 0, to_database: 0, to_files: 0, files: [], reason: null, last_sync: null, ...extra });
 const on = { mirror_enabled: true };
@@ -171,5 +171,47 @@ describe("lineDiff", () => {
 		]);
 		const long = Array.from({ length: 1200 }, (_, i) => `a${i}`).join("\n");
 		expect(lineDiff(long, long.replace("a5", "z"))).toBeNull();
+	});
+});
+
+describe("Mindmap-Einträge im Abgleich", () => {
+	const tree = (fields: Record<string, unknown>, refs: Record<string, string[]> = {}) => ({ label: null, kind: "mindmap.tree", fields, refs });
+	const treeConflict = (database: unknown, files: unknown) => ({ key: "t1", kind: "mindmap.tree", label: null, conflict: "both_changed", database, files }) as SyncConflict;
+
+	it("zeigt die Ordnung eines Baums als eingerückte Liste statt als Zahlen und Labels", () => {
+		const before = tree({ tree_kind: "free", name: "Ideen", depths: [0, 1, 1, 0], removed: [] }, { nodes: ["NODE-001", "NODE-002", "NODE-003", "NODE-004"] });
+		const after = tree({ tree_kind: "free", name: "Ideen", depths: [0, 1, 0, 1], removed: [] }, { nodes: ["NODE-001", "NODE-002", "NODE-004", "NODE-003"] });
+
+		expect(differences(treeConflict(before, after))).toEqual([
+			{ name: "order", database: "NODE-001\n  NODE-002\n  NODE-003\nNODE-004", files: "NODE-001\n  NODE-002\nNODE-004\n  NODE-003" },
+		]);
+	});
+
+	it("schreibt entfernte Platzierungen als Zeilen und zeigt gleiche Bäume nicht", () => {
+		const removedFields = [{ position: 2, has_parent: true }, { position: 0, has_parent: false }];
+		const refs = { nodes: ["NODE-001"], removed_nodes: ["NODE-005", "NODE-006"], removed_groups: ["NODE-004", "NODE-006"], removed_parents: ["NODE-001"] };
+		const same = tree({ tree_kind: "project", depths: [0], removed: removedFields }, refs);
+		const other = tree({ tree_kind: "project", depths: [0], removed: [] }, { nodes: ["NODE-001"] });
+
+		expect(differences(treeConflict(same, structuredClone(same)))).toEqual([]);
+		const rows = differences(treeConflict(same, other));
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({ name: "removed", files: "—" });
+		expect(rows[0]!.database.split("\n")).toEqual(["NODE-005 · NODE-004 · NODE-001 · 2", "NODE-006 · NODE-006 · — · 0"]);
+	});
+
+	it("benennt Knoten, Maps und Bäume lesbar", () => {
+		const node = { kind: "mindmap.node", label: "NODE-001", database: { fields: { title: "Idee" } }, files: null };
+		expect(entryName(node)).toEqual({ key: "node", params: { label: "NODE-001", title: "Idee" } });
+		const free = { kind: "mindmap.tree", label: null, database: null, files: tree({ tree_kind: "free", name: "Ideen" }) };
+		expect(entryName(free)).toEqual({ key: "freeMap", params: { name: "Ideen" } });
+		expect(entryName({ kind: "mindmap.tree", label: null, database: tree({ tree_kind: "project" }), files: null })).toEqual({ key: "projectTree", params: {} });
+		expect(entryName({ kind: "mindmap.tree", label: null })).toEqual({ key: "tree", params: {} });
+		expect(entryName({ kind: "task", label: "TASK-001" })).toBeNull();
+	});
+
+	it("liest bei einer Notiz zu einem Knoten das Label des Knotens statt eines Items", () => {
+		const doc = { ...conflict("d", "both_changed", entry({ kind: "notes" }, { node: ["NODE-007"] }), null), kind: "mindmap.document" } as SyncConflict;
+		expect(documentContext(doc)).toEqual({ kind: "notes", item: null, node: "NODE-007" });
 	});
 });

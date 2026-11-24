@@ -57,7 +57,9 @@ Dienste aus `docker-compose.yml`:
 
 - Ein Projekt kann einen Spiegel-Ordner haben (Backlog, Memos und Wecker als Markdown, Format siehe
   [Schnittstellen](interfaces.md)). Er trägt die Daten über Git zwischen Rechnern und in die Cloud (claude.ai). Neue
-  Einträge dort legt man mit einem Platzhalter an; der Sync vergibt `Uid` und Label.
+  Einträge dort legt man mit einem Platzhalter an; der Sync vergibt `Uid` und Label. Die Mindmap liegt im Unterordner
+  `mindmap/` des Spiegel-Ordners (Knoten, Bäume, Dokumente; eigenes Format, siehe [Schnittstellen](interfaces.md)); eine
+  Cloud-Sitzung bearbeitet sie wie die übrigen Dateien, der nächste Sync übernimmt sie.
 - Der Sync gleicht Eintrag für Eintrag ab und zeigt vorher eine Vorschau. Was nur auf einer Seite geändert wurde, geht
   auf die andere. Ein Eintrag, der auf beiden Seiten geändert, auf beiden neu oder auf einer Seite gelöscht wurde, ist
   ein Konflikt: er wird nie überschrieben oder gelöscht, und man entscheidet je Konflikt (Datenbank, Dateien oder

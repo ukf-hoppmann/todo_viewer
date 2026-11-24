@@ -47,7 +47,6 @@ class IndexItem:
     title: str
     status: str
     priority: str
-    area: str | None
     parent_uid: str | None
     required_for_parent: bool | None
     #: Die `uid`s der Items, von denen dieses abhängt.
@@ -84,7 +83,6 @@ class ItemOut:
     title: str
     status: str
     priority: str
-    area: str | None
     parent: ItemSummary | None
     required_for_parent: bool | None
     goal: str | None
@@ -107,7 +105,7 @@ class ItemOut:
 class CreateItem:
     project: str
     type: str
-    #: `title`, `goal`, `completion_criteria` sind Pflicht, `area` ist optional; dazu `priority`,
+    #: `title`, `goal`, `completion_criteria` sind Pflicht; dazu `priority`,
     #: `required_for_parent`, `summary`, `parent` (uid), `dependencies` (uids), `created` (JJJJ-MM-TT).
     fields: dict[str, Any]
 
@@ -117,7 +115,7 @@ class UpdateItem:
     ref: str
     version: int
     #: Geändert werden nur die genannten Felder (`title`, `status`, `priority`, `required_for_parent`, `goal`,
-    #: `completion_criteria`, `summary`, `area`, `parent`, `dependencies`).
+    #: `completion_criteria`, `summary`, `parent`, `dependencies`).
     fields: dict[str, Any]
     #: Pflicht bei `Completed` und `Rejected`.
     resolution: str | None = None
@@ -169,16 +167,6 @@ class RetypeOut:
 class ReopenOut:
     #: Die wieder geöffneten Items, von oben nach unten.
     reopened: list[ItemSummary]
-
-
-@dataclass(frozen=True)
-class ListAreas:
-    project: str
-
-
-@dataclass(frozen=True)
-class AreasOut:
-    areas: list[str]
 
 
 @dataclass(frozen=True)
@@ -413,7 +401,6 @@ def index_item(entry: IndexEntry) -> IndexItem:
         i.title,
         i.status,
         i.priority,
-        i.area,
         i.parent_uid,
         i.required_for_parent,
         list(i.dependencies),
@@ -433,7 +420,6 @@ def item_out(detail: ItemDetail) -> ItemOut:
         i.title,
         i.status,
         i.priority,
-        i.area,
         summary(detail.parent) if detail.parent else None,
         i.required_for_parent,
         i.goal,
@@ -475,14 +461,14 @@ class IndexLines:
     count: int
 
 
-INDEX_HEADER = "ID | Type | Status | Area | Title | Parent | Notes"
+INDEX_HEADER = "ID | Type | Status | Title | Parent | Notes"
 
 
 def _lines(services: BacklogServices, data: ListItems) -> IndexLines:
     entries = _list(services, data)
     labels = {entry.uid: entry.label for entry in _list(services, ListItems(projects=data.projects))}
     rows = [
-        f"{e.label} | {e.type} | {e.status} | {e.area or '-'} | {e.title} | "
+        f"{e.label} | {e.type} | {e.status} | {e.title} | "
         f"{labels.get(e.parent_uid, e.parent_uid) if e.parent_uid else '-'} | {e.notes_state or '-'}"
         for e in entries
     ]
@@ -508,8 +494,8 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "index_lines",
-        "Wie list_items, aber als kompakter Text für Agenten: eine Zeile je Item `ID | Type | Status | Area | Title | "
-        "Parent`",
+        "Wie list_items, aber als kompakter Text für Agenten: eine Zeile je Item `ID | Type | Status | Title | "
+        "Parent | Notes`",
         "read",
         ListItems,
         IndexLines,
@@ -528,8 +514,7 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
     Operation(
         "create_item",
-        "Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria; "
-        "area ist optional",
+        "Legt ein Item an (Status Open); das Label vergibt der Server. Pflicht: title, goal, completion_criteria",
         "write",
         CreateItem,
         ItemOut,
@@ -572,15 +557,6 @@ OPERATIONS: tuple[Operation, ...] = (
         ReopenOut,
         _reopen,
         HttpBinding("POST", "/items/{ref}/reopen"),
-    ),
-    Operation(
-        "list_areas",
-        "Die Bereiche eines Projekts (ein neuer entsteht mit dem ersten Item, das seinen Namen trägt)",
-        "read",
-        ListAreas,
-        AreasOut,
-        lambda s, d: AreasOut(s.editing.list_areas(d.project)),
-        HttpBinding("GET", "/areas"),
     ),
     Operation(
         "list_documents",

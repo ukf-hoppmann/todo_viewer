@@ -5,7 +5,7 @@ from typing import Any
 from memos_api import NOTES, item, link, links, memo, new_item, new_memo, project, set_status
 from workspace_env import Env
 
-FIELDS = {"area": "Server", "goal": "Das Ziel", "completion_criteria": "Die Kriterien"}
+FIELDS = {"goal": "Das Ziel", "completion_criteria": "Die Kriterien"}
 
 
 def _promote(env: Env, entry: dict[str, Any], **body: Any) -> Any:
@@ -41,17 +41,9 @@ def test_promote_creates_the_item_links_it_and_closes_the_memo(memos: Env) -> No
         "Eine gute Idee",
         "Eine gute Idee",
     )
-    assert (created["area"], created["goal"], created["completion_criteria"]) == ("Server", "Das Ziel", "Die Kriterien")
+    assert (created["goal"], created["completion_criteria"]) == ("Das Ziel", "Die Kriterien")
+    assert "area" not in created
     assert [o["uid"] for o in _origin(memos, entry["uid"])] == [body["item_uid"]]
-
-
-def test_promote_works_without_area(memos: Env) -> None:
-    entry = new_memo(memos)
-
-    result = _promote(memos, entry, fields={"goal": "Das Ziel", "completion_criteria": "Die Kriterien"})
-
-    assert result.status_code == 200, result.text
-    assert item(memos, result.json()["item_uid"])["area"] is None
 
 
 def test_promote_takes_over_text_memos_and_specs(memos: Env) -> None:

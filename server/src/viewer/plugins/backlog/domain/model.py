@@ -29,7 +29,6 @@ class Item:
     title: str
     status: str
     priority: str
-    area: str | None
     parent_uid: str | None
     required_for_parent: bool | None
     goal: str | None

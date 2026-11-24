@@ -17,7 +17,7 @@ from viewer.plugins.backlog.domain.editing import (
 )
 
 TODAY = date(2026, 10, 16)
-NEW = {"title": "  Neues\n Item ", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
+NEW = {"title": "  Neues\n Item ", "goal": "Ziel", "completion_criteria": "Kriterien"}
 
 
 def create(**extra: object):  # type: ignore[no-untyped-def]
@@ -47,11 +47,13 @@ def test_title_goal_and_criteria_are_required() -> None:
             build_new_item("u", "TASK-001", "p", "Task", fields, TODAY, 0, 1)
 
 
-def test_area_is_optional_when_creating() -> None:
-    without = {k: v for k, v in NEW.items() if k != "area"}
-    assert build_new_item("u", "TASK-001", "p", "Task", without, TODAY, 0, 1).area is None
-    assert build_new_item("u", "TASK-001", "p", "Task", {**without, "area": "  "}, TODAY, 0, 1).area is None
-    assert build_new_item("u", "TASK-001", "p", "Task", NEW, TODAY, 0, 1).area == "Server"
+def test_area_is_an_unknown_field_when_creating_and_updating() -> None:
+    with pytest.raises(NotEditable):
+        build_new_item("u", "TASK-001", "p", "Task", {**NEW, "area": "Server"}, TODAY, 0, 1)
+    created = build_new_item("u", "TASK-001", "p", "Task", NEW, TODAY, 0, 1)
+    assert not hasattr(created, "area")
+    with pytest.raises(NotEditable):
+        apply_update(created, {"area": "Server"}, None)
 
 
 def test_new_items_refuse_unknown_type_status_and_fields() -> None:

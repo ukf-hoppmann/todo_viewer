@@ -38,7 +38,7 @@ Grundregeln:
   (`backlog_append_note`) und jedes Schreiben eines Dokuments zählen als Änderung: danach die Version neu lesen.
 - **Zeiten:** ISO 8601, ohne Zone gilt UTC; der Server antwortet in UTC.
 - **Kompakte Ausgabe:** `backlog_index_lines` → `{text, count}`, `text` mit der Kopfzeile
-  `ID | Type | Status | Area | Title | Parent | Notes` (Zustand des Kopfs der Notes oder `-`) und einer Zeile je Item; `memos_index_lines` → `{topics, memos, …}` als Tabellen
+  `ID | Type | Status | Title | Parent | Notes` (Zustand des Kopfs der Notes oder `-`) und einer Zeile je Item; `memos_index_lines` → `{topics, memos, …}` als Tabellen
   `Label | Name | Due at | Due | Notes` und `Label | Status | Reason | Review at | Topic | Summary`. Beide nehmen dieselben
   Filter wie `backlog_list_items` bzw. `memos_index` (`projects`, `statuses`, `query`, …; ohne `projects` alle Projekte, das
   ist `--all-projects`).
@@ -69,7 +69,7 @@ Grundregeln:
 | `trash` | `workspace_list_trash` | auch gelöschte Dokumente: `kind` `document`, `uid`, `label` = Item, `title` = Dokumentname, `owner_uid` |
 | `restore <ID\|trash uid> <version>` | `workspace_restore_elements` | `uids` (mit Nachkommen, die der Papierkorb mitbringt; ein gelöschtes Dokument über seine `uid`) |
 
-Neu gegenüber dem alten Helfer: `backlog_move_item` (Parent/Position), `backlog_list_areas`.
+Neu gegenüber dem alten Helfer: `backlog_move_item` (Parent/Position).
 
 ### `notes_api.py` → MCP (die Befehle des Harness; die Tools heißen `memos_…`)
 

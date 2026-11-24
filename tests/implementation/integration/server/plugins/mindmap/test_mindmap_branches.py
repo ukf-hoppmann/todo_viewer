@@ -9,7 +9,6 @@ from workspace_env import Env
 API = "/api/mindmap"
 BASE = {
     "title": "Item",
-    "area": "Server",
     "goal": "Ziel",
     "completion_criteria": "Kriterien",
 }

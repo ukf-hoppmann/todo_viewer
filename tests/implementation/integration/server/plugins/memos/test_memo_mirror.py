@@ -66,7 +66,7 @@ class Mirror:
         return response.json()  # type: ignore[no-any-return]
 
     def create_item(self, **fields: Any) -> dict[str, Any]:
-        base = {"title": "Ein Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
+        base = {"title": "Ein Item", "goal": "Ziel", "completion_criteria": "Kriterien"}
         response = self.env.client.post(
             "/api/backlog/items", json={"project": self.project, "type": "Task", "fields": {**base, **fields}}
         )

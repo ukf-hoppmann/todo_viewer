@@ -20,7 +20,6 @@ EDITABLE = frozenset(
         "goal",
         "completion_criteria",
         "summary",
-        "area",
         "parent",
         "dependencies",
     }
@@ -122,8 +121,6 @@ def apply_update(item: Item, changes: Mapping[str, object], resolution: str | No
             values["parent_uid"] = value
             if value is None:
                 values["required_for_parent"] = None
-        elif field == "area":
-            values["area"] = value
         else:
             values[field] = value
     if "status" in changes:
@@ -171,7 +168,6 @@ def build_new_item(
         title=str(values["title"]),
         status="Open",
         priority=str(values.get("priority") or DEFAULT_PRIORITY),
-        area=values.get("area"),  # type: ignore[arg-type]
         parent_uid=values.get("parent"),  # type: ignore[arg-type]
         required_for_parent=required if isinstance(required, bool) else None,
         goal=str(values["goal"]),

@@ -95,18 +95,18 @@ def test_items_keep_uid_and_label_and_priorities_are_mapped(imported: tuple[sqli
     assert items["STORY-002"]["created_at"] == "2026-01-02T00:00:00+00:00"
 
 
-def test_areas_dependencies_and_documents(imported: tuple[sqlite3.Connection, Report]) -> None:
+def test_areas_of_the_old_viewer_are_ignored_without_error(imported: tuple[sqlite3.Connection, Report]) -> None:
+    db, report = imported
+
+    assert "backlog_areas" not in {r["name"] for r in rows(db, "SELECT name FROM sqlite_master WHERE type='table'")}
+    assert "area_uid" not in {r["name"] for r in rows(db, "PRAGMA table_info(backlog_items)")}
+    assert scalar(db, "SELECT count(*) FROM backlog_items") > 0
+    assert "Bereiche" not in report.counts
+
+
+def test_dependencies_and_documents(imported: tuple[sqlite3.Connection, Report]) -> None:
     db, _ = imported
 
-    areas = rows(db, "SELECT project_uid, name FROM backlog_areas ORDER BY name")
-    assert areas == [
-        {"project_uid": legacy_db.P_MAIN, "name": "Client"},
-        {"project_uid": legacy_db.P_MAIN, "name": "Server"},
-    ]
-    assert (
-        scalar(db, "SELECT a.name FROM backlog_items i JOIN backlog_areas a ON a.uid = i.area_uid WHERE i.uid='s2'")
-        == "Client"
-    )
     assert rows(db, "SELECT item_uid, depends_on_uid FROM backlog_dependencies") == [
         {"item_uid": "t1", "depends_on_uid": "s2"}
     ]
@@ -226,7 +226,6 @@ def test_the_report_names_numbers_per_type_and_every_deviation(imported: tuple[s
 
     assert dict(report.counts) == {
         "Projekte": 2,
-        "Bereiche": 2,
         "Items Epic": 1,
         "Items Story": 5,
         "Items Task": 4,
@@ -389,10 +388,11 @@ def test_the_imported_database_runs_in_the_viewer(legacy: Path, tmp_path: Path) 
     assert len(items) == 9  # ohne das gelöschte TASK-002
     assert {n["label"] for n in index["memos"] if n["project_uid"] == legacy_db.P_MAIN} >= {"MEMO-001", "MEMO-004"}
     assert len(alarms) == 2
-    assert (item["label"], item["priority"], item["area"]) == ("STORY-002", "Normal", "Client")
+    assert (item["label"], item["priority"]) == ("STORY-002", "Normal")
+    assert "area" not in item
     assert note["triggers"][0]["target"]["label"] == "STORY-001" and note["triggers"][0]["arrived"] is True
     assert {t["label"] for t in trash} == {"TASK-002", "TOPIC-003", "MEMO-006"}
-    assert "STORY-001 | Story | In progress | Server | Titel STORY-001 | EPIC-001 | -" in lines["text"].splitlines()
+    assert "STORY-001 | Story | In progress | Titel STORY-001 | EPIC-001 | -" in lines["text"].splitlines()
 
 
 def test_the_command_prints_the_report_and_writes_a_log(

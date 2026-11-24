@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import uuid
 from collections.abc import Sequence
 from datetime import date, datetime
 
@@ -12,11 +11,10 @@ from viewer.plugins.backlog.domain.model import Item
 
 _SELECT = """
 SELECT e.uid, e.project_uid, e.label, e.revision, e.deleted_at,
-       i.type, i.title, i.status, i.priority, a.name AS area, i.parent_uid, i.required_for_parent,
+       i.type, i.title, i.status, i.priority, i.parent_uid, i.required_for_parent,
        i.goal, i.completion_criteria, i.summary, i.resolution, i.created, i.position
 FROM backlog_items i
 JOIN workspace_elements e ON e.uid = i.uid
-LEFT JOIN backlog_areas a ON a.uid = i.area_uid
 """
 
 
@@ -32,12 +30,11 @@ def _optional_bool(value: int | None) -> bool | None:
 class SqlItemRepository:
     def insert(self, tx: Transaction, item: Item) -> None:
         connection = _conn(tx)
-        area_uid = self._area_uid(connection, item) if item.area else None
         connection.execute(
             text(
-                "INSERT INTO backlog_items(uid, type, title, status, priority, area_uid, parent_uid, "
+                "INSERT INTO backlog_items(uid, type, title, status, priority, parent_uid, "
                 "required_for_parent, goal, completion_criteria, summary, resolution, created, position) "
-                "VALUES (:uid, :type, :title, :status, :priority, :area, :parent, :required, :goal, :criteria, "
+                "VALUES (:uid, :type, :title, :status, :priority, :parent, :required, :goal, :criteria, "
                 ":summary, :resolution, :created, :position)"
             ),
             {
@@ -46,7 +43,6 @@ class SqlItemRepository:
                 "title": item.title,
                 "status": item.status,
                 "priority": item.priority,
-                "area": area_uid,
                 "parent": item.parent_uid,
                 "required": None if item.required_for_parent is None else int(item.required_for_parent),
                 "goal": item.goal,
@@ -65,11 +61,10 @@ class SqlItemRepository:
 
     def update(self, tx: Transaction, item: Item) -> None:
         connection = _conn(tx)
-        area_uid = self._area_uid(connection, item) if item.area else None
         connection.execute(
             text(
                 "UPDATE backlog_items SET type = :type, title = :title, status = :status, priority = :priority, "
-                "area_uid = :area, parent_uid = :parent, required_for_parent = :required, goal = :goal, "
+                "parent_uid = :parent, required_for_parent = :required, goal = :goal, "
                 "completion_criteria = :criteria, summary = :summary, resolution = :resolution, position = :position "
                 "WHERE uid = :uid"
             ),
@@ -79,7 +74,6 @@ class SqlItemRepository:
                 "title": item.title,
                 "status": item.status,
                 "priority": item.priority,
-                "area": area_uid,
                 "parent": item.parent_uid,
                 "required": None if item.required_for_parent is None else int(item.required_for_parent),
                 "goal": item.goal,
@@ -96,12 +90,6 @@ class SqlItemRepository:
                 {"i": item.uid, "d": target},
             )
 
-    def area_names(self, tx: Transaction, project_uid: str) -> list[str]:
-        rows = _conn(tx).execute(
-            text("SELECT name FROM backlog_areas WHERE project_uid = :p ORDER BY name"), {"p": project_uid}
-        )
-        return [str(row[0]) for row in rows]
-
     def siblings(self, tx: Transaction, project_uid: str, parent_uid: str | None) -> list[Item]:
         where = "i.parent_uid IS NULL" if parent_uid is None else "i.parent_uid = :parent"
         return self._load(
@@ -113,21 +101,6 @@ class SqlItemRepository:
     def set_positions(self, tx: Transaction, uids: Sequence[str]) -> None:
         for position, uid in enumerate(uids):
             _conn(tx).execute(text("UPDATE backlog_items SET position = :n WHERE uid = :u"), {"n": position, "u": uid})
-
-    @staticmethod
-    def _area_uid(connection: Connection, item: Item) -> str:
-        row = connection.execute(
-            text("SELECT uid FROM backlog_areas WHERE project_uid = :p AND name = :n"),
-            {"p": item.project_uid, "n": item.area},
-        ).first()
-        if row is not None:
-            return str(row[0])
-        uid = str(uuid.uuid4())
-        connection.execute(
-            text("INSERT INTO backlog_areas(uid, project_uid, name) VALUES (:u, :p, :n)"),
-            {"u": uid, "p": item.project_uid, "n": item.area},
-        )
-        return uid
 
     def get(self, tx: Transaction, uid: str) -> Item | None:
         rows = self._load(tx, _SELECT + " WHERE i.uid = :u", {"u": uid})
@@ -197,7 +170,6 @@ class SqlItemRepository:
                 title=row.title,
                 status=row.status,
                 priority=row.priority,
-                area=row.area,
                 parent_uid=row.parent_uid,
                 required_for_parent=_optional_bool(row.required_for_parent),
                 goal=row.goal,

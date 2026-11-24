@@ -74,7 +74,7 @@ class Harness:
         return body
 
 
-ITEM = {"title": "Login bauen", "area": "Server", "goal": "Anmelden", "completion_criteria": "Tests grün"}
+ITEM = {"title": "Login bauen", "goal": "Anmelden", "completion_criteria": "Tests grün"}
 
 
 async def session(harness: Harness) -> None:
@@ -86,7 +86,7 @@ async def session(harness: Harness) -> None:
 
     # index: die kompakten Zeilen, zuerst leer
     empty = await harness.call("backlog_index_lines", projects=general)
-    assert empty == {"text": "ID | Type | Status | Area | Title | Parent | Notes", "count": 0}
+    assert empty == {"text": "ID | Type | Status | Title | Parent | Notes", "count": 0}
 
     # create und update mit Version
     epic = await harness.call("backlog_create_item", project=general, type="Epic", fields=ITEM)
@@ -107,7 +107,7 @@ async def session(harness: Harness) -> None:
     assert stale["code"] == "version_conflict"
     index = await harness.call("backlog_index_lines", projects=general)
     assert index["count"] == 2
-    assert "STORY-001 | Story | In progress | Server | Maske | EPIC-001 | -" in index["text"].splitlines()
+    assert "STORY-001 | Story | In progress | Maske | EPIC-001 | -" in index["text"].splitlines()
 
     # note: Eintrag an die Notizen des Items
     entry = await harness.call(

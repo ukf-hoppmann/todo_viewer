@@ -9,7 +9,7 @@ from typing import Any
 from mirror_files import BACKLOG_FIXTURES, FIXTURES
 from workspace_env import Env
 
-BASE = {"title": "Ein Item", "area": "Server", "goal": "Ziel", "completion_criteria": "Kriterien"}
+BASE = {"title": "Ein Item", "goal": "Ziel", "completion_criteria": "Kriterien"}
 
 
 class Mirror:
@@ -456,7 +456,7 @@ def test_files_of_version_2_with_area_are_imported_without_area_and_without_erro
     assert result.status_code == 200, result.text
     items = mirror.items()
     assert sorted(items) == ["EPIC-001", "STORY-001", "STORY-002", "STORY-003", "TASK-001", "TASK-002", "TASK-004"]
-    assert all(item["area"] is None for item in items.values())
+    assert all("area" not in item for item in items.values())
 
 
 def test_a_version_2_file_is_written_as_version_3_without_area_for_changed_items(backlog: Env, tmp_path: Path) -> None:

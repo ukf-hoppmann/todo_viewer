@@ -13,6 +13,7 @@ import { chooseMap } from "../domain/maps";
 import { COMBINED_ROOT, canDropItem, combinedTree, dropPlacement, filterByMark, filterByState, focusPath, isOpen, liftLinks, restorePlacement, shownProject, toggledFold, visibleNodes, type DropZone } from "../domain/tree";
 import type { TreeOut } from "../api";
 import { BranchDialog } from "../BranchDialog";
+import { TransferBranchDialog } from "../TransferBranchDialog";
 import type { BranchAction, BranchSource } from "../domain/branches";
 import { MapActionsContext, type MapActions } from "../mapActions";
 import { dropZonesOf, edgeSides, layoutTree } from "../mindmapLayout";
@@ -104,6 +105,7 @@ export default function MindmapPage() {
 	// The menu of a node, the dialog that hangs over or transfers a branch, the list of trees to jump to, and the question before a shared node is deleted everywhere.
 	const [menu, setMenu] = useState<{ id: string; anchor: MenuAnchor }>();
 	const [branch, setBranch] = useState<{ source: BranchSource; action: BranchAction }>();
+	const [toBacklog, setToBacklog] = useState<BranchSource>();
 	const [trees, setTrees] = useState<{ id: string; anchor: MenuAnchor }>();
 	const [sharedDelete, setSharedDelete] = useState<string>();
 	const [error, setError] = useState<string>();
@@ -522,6 +524,7 @@ export default function MindmapPage() {
 					onClose={() => setMenu(undefined)}
 					onMove={() => setBranch({ source: sourceOf(nodeOf(menu.id)!), action: "move" })}
 					onTransfer={() => setBranch({ source: sourceOf(nodeOf(menu.id)!), action: "transfer" })}
+					onTransferBranch={() => setToBacklog(sourceOf(nodeOf(menu.id)!))}
 					onRemoveHere={() => {
 						const node = nodeOf(menu.id)!;
 						setError(undefined);
@@ -530,6 +533,7 @@ export default function MindmapPage() {
 					onDelete={() => actions.remove(menu.id)}
 				/>
 			)}
+			{toBacklog && <TransferBranchDialog source={toBacklog} onClose={() => setToBacklog(undefined)} />}
 			{branch && <BranchDialog source={branch.source} action={branch.action} onClose={() => setBranch(undefined)} />}
 			{trees && nodeOf(trees.id) && <TreeJumpMenu anchor={trees.anchor} node={trees.id} onClose={() => setTrees(undefined)} onPick={(tree) => jump(trees.id, tree)} />}
 			{sharedDelete && nodeOf(sharedDelete) && (

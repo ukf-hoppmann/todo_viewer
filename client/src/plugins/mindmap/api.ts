@@ -3,6 +3,10 @@ import type { components } from "../../shared";
 
 export type CreatedItemAtNodeOut = components["schemas"]["CreatedItemAtNodeOut"];
 export type CreatedMemoAtNodeOut = components["schemas"]["CreatedMemoAtNodeOut"];
+export type BranchPreviewOut = components["schemas"]["BranchPreviewOut"];
+export type BranchTransferOut = components["schemas"]["BranchTransferOut"];
+export type TransferEntryIn = components["schemas"]["TransferEntryIn"];
+export type ProblemOut = components["schemas"]["ProblemOut"];
 export type NodeOut = components["schemas"]["NodeOut"];
 export type TreeOut = components["schemas"]["TreeOut"];
 export type TreeNodeOut = components["schemas"]["TreeNodeOut"];
@@ -126,6 +130,16 @@ export const mindmapApi = createPluginApi(
 			query: ({ node, ...body }) => ({ url: `mindmap/nodes/${node}/create-memo`, method: "POST", body }),
 			invalidatesTags: ["Content"],
 		}),
+		// `TASK-076`: an entire branch into the backlog. `previewBranchTransfer` writes nothing and names the problems per entry
+		// and for the plan (a POST, but a query: the answer is cached by the plan); `transferBranch` creates what the plan names
+		// and answers per node `created`, `failed`, `skipped` or `not_attempted`.
+		previewBranchTransfer: build.query<BranchPreviewOut, { root: string; tree?: string; entries: TransferEntryIn[] }>({
+			query: ({ root, ...body }) => ({ url: `mindmap/nodes/${root}/preview-branch-transfer`, method: "POST", body }),
+		}),
+		transferBranch: build.mutation<BranchTransferOut, { root: string; tree?: string; entries: TransferEntryIn[] }>({
+			query: ({ root, ...body }) => ({ url: `mindmap/nodes/${root}/transfer-branch`, method: "POST", body }),
+			invalidatesTags: ["Tree", "Content", "ItemNode"],
+		}),
 		createNode: build.mutation<NodeOut, { project: string; title: string; parent?: string; position?: number; tree?: string }>({
 			query: (body) => ({ url: "mindmap/nodes", method: "POST", body }),
 			invalidatesTags: ["Tree", "Maps"],
@@ -212,6 +226,8 @@ export const {
 	useCreateNodeMutation,
 	useCreateItemAtNodeMutation,
 	useCreateMemoAtNodeMutation,
+	usePreviewBranchTransferQuery,
+	useTransferBranchMutation,
 	useUpdateNodeMutation,
 	useMoveNodeMutation,
 	useMoveNodeToMapMutation,

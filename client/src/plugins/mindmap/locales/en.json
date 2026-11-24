@@ -156,7 +156,8 @@
 		"removeHere": "Remove here",
 		"deleteNode": "Delete node …",
 		"delete": "Delete",
-		"open": "Menu of node {{title}}"
+		"open": "Menu of node {{title}}",
+		"transferBranch": "Transfer branch …"
 	},
 	"branch": {
 		"title": "Move “{{title}}”",
@@ -217,6 +218,44 @@
 			"confirm": "Create",
 			"summary": "Summary",
 			"body": "Text"
+		}
+	},
+	"transfer": {
+		"title": "Transfer branch “{{title}}”",
+		"hint": "Choose for each node whether it becomes an item, a memo or nothing, and how the items relate. Nothing is preset. The preview checks the plan as you change it; only a plan without problems is transferred.",
+		"kind": "Becomes",
+		"kinds": {
+			"skip": "Nothing",
+			"item": "Item",
+			"memo": "Memo"
+		},
+		"parent": "Child of",
+		"dependsOn": "Depends on",
+		"noTargets": "No target in the plan",
+		"confirm": "Transfer",
+		"close": "Close",
+		"previewFailed": "The preview failed; the plan is not checked.",
+		"result": {
+			"created": "Created: {{label}}",
+			"failed": "Failed: {{message}}",
+			"skipped": "Skipped",
+			"not_attempted": "Not attempted because an earlier entry failed"
+		},
+		"problem": {
+			"node_not_in_branch": "The node is not part of the branch.",
+			"node_duplicate": "The node appears more than once in the plan.",
+			"invalid_type": "Choose a type.",
+			"goal_missing": "The goal is missing.",
+			"criteria_missing": "The completion criteria are missing.",
+			"title_missing": "The title is missing.",
+			"parent_type_not_allowed": "This type cannot stand there: the parent does not fit the type.",
+			"parent_is_memo": "A memo cannot be a parent.",
+			"parent_not_found": "The parent is not created or does not exist.",
+			"parent_closed": "The parent is closed.",
+			"dependency_cycle": "The dependencies form a cycle.",
+			"depends_on_not_found": "A dependency is not created or does not exist.",
+			"memo_with_relation": "A memo has neither a parent nor dependencies.",
+			"depends_on_is_memo": "A memo cannot be the target of a dependency."
 		}
 	}
 }

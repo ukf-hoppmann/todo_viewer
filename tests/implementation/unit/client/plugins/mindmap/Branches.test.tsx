@@ -64,6 +64,7 @@ describe("the menu of a node", () => {
 
 		expect(await screen.findByTestId(ids.nodeMenuMove)).toBeTruthy();
 		expect(screen.getByTestId(ids.nodeMenuTransfer)).toBeTruthy();
+		expect(screen.getByTestId(ids.nodeMenuTransferBranch).textContent).toBe("Ast überführen …");
 		expect(screen.getByTestId(ids.nodeMenuDelete).textContent).toBe("Löschen");
 		expect(screen.queryByTestId(ids.nodeMenuRemoveHere)).toBeNull();
 	});
@@ -117,6 +118,18 @@ describe("hanging over and transferring in the dialog", () => {
 		await waitFor(() => expect(backend.calls("POST", "mindmap/nodes/a/move-to-map")).toHaveLength(1));
 		expect(backend.calls("POST", "mindmap/nodes/a/move-to-map")[0]!.body).toEqual({ version: 1, target: "f1", tree: "t1" });
 		await waitFor(() => expect(screen.queryByTestId(ids.branchDialog)).toBeNull());
+	});
+
+	it("opens the dialog \"Ast überführen\" with the branch of the node", async () => {
+		await renderPage({ nodes: [node("a"), node("a1", "a"), node("b", null, 1)] });
+		await screen.findByTestId(ids.node("a"));
+		rightClick("a");
+		fireEvent.click(await screen.findByTestId(ids.nodeMenuTransferBranch));
+
+		await screen.findByTestId(ids.transferDialog);
+		await screen.findByTestId(ids.transferRow("a1"));
+		expect(screen.getByTestId(ids.transferRow("a"))).toBeTruthy();
+		expect(screen.queryByTestId(ids.transferRow("b"))).toBeNull();
 	});
 
 	it("transfers a branch when asked to", async () => {

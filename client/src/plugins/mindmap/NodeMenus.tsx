@@ -13,16 +13,17 @@ function anchorProps(anchor: MenuAnchor) {
 }
 
 /**
- * The menu of a node (right click or the button of its actions): hang it over to or transfer it to another map and,
+ * The menu of a node (right click or the button of its actions): hang it over to or transfer it to another map, transfer its branch into the backlog ("Ast überführen") and,
  * depending on where it stands, remove or delete it. A node in one tree only is deleted ("Löschen"); one in several is
  * either taken out of this tree without a question ("Hier entfernen") or deleted everywhere ("Knoten löschen", after a question).
  */
-export function NodeMenu({ anchor, shared, onClose, onMove, onTransfer, onRemoveHere, onDelete }: {
+export function NodeMenu({ anchor, shared, onClose, onMove, onTransfer, onTransferBranch, onRemoveHere, onDelete }: {
 	anchor: MenuAnchor;
 	shared: boolean;
 	onClose: () => void;
 	onMove: () => void;
 	onTransfer: () => void;
+	onTransferBranch: () => void;
 	onRemoveHere: () => void;
 	onDelete: () => void;
 }) {
@@ -38,6 +39,9 @@ export function NodeMenu({ anchor, shared, onClose, onMove, onTransfer, onRemove
 			</MenuItem>
 			<MenuItem onClick={pick(onTransfer)} data-testid={mindmapTestIds.nodeMenuTransfer}>
 				{t("menu.transfer")}
+			</MenuItem>
+			<MenuItem onClick={pick(onTransferBranch)} data-testid={mindmapTestIds.nodeMenuTransferBranch}>
+				{t("menu.transferBranch")}
 			</MenuItem>
 			{shared && (
 				<MenuItem onClick={pick(onRemoveHere)} data-testid={mindmapTestIds.nodeMenuRemoveHere}>

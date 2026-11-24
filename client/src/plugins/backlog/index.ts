@@ -56,7 +56,8 @@ export const plugin = definePlugin({
 	],
 });
 
-export type { ItemOut } from "./api";
+export type { IndexItem, ItemOut } from "./api";
+export { useListItemsQuery } from "./api";
 export { PRIORITIES, TYPES } from "./constants";
 export { useItemDetail } from "./itemDetailContext";
 export { StatusFilter } from "./Filters";

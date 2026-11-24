@@ -156,7 +156,8 @@
 		"removeHere": "Hier entfernen",
 		"deleteNode": "Knoten löschen …",
 		"delete": "Löschen",
-		"open": "Menü des Knotens {{title}}"
+		"open": "Menü des Knotens {{title}}",
+		"transferBranch": "Ast überführen …"
 	},
 	"branch": {
 		"title": "„{{title}}“ verschieben",
@@ -217,6 +218,44 @@
 			"confirm": "Anlegen",
 			"summary": "Zusammenfassung",
 			"body": "Text"
+		}
+	},
+	"transfer": {
+		"title": "Ast „{{title}}“ überführen",
+		"hint": "Wähle je Knoten, ob daraus ein Item, ein Memo oder nichts wird, und wie die Items zusammenhängen. Nichts wird vorbelegt. Die Vorschau prüft den Plan beim Ändern; überführt wird nur ein Plan ohne Probleme.",
+		"kind": "Wird zu",
+		"kinds": {
+			"skip": "Nichts",
+			"item": "Item",
+			"memo": "Memo"
+		},
+		"parent": "Kind von",
+		"dependsOn": "Hängt ab von",
+		"noTargets": "Kein Ziel im Plan",
+		"confirm": "Überführen",
+		"close": "Schließen",
+		"previewFailed": "Die Vorschau ist fehlgeschlagen; der Plan ist nicht geprüft.",
+		"result": {
+			"created": "Angelegt: {{label}}",
+			"failed": "Fehlgeschlagen: {{message}}",
+			"skipped": "Übersprungen",
+			"not_attempted": "Nicht versucht, weil ein Eintrag davor fehlschlug"
+		},
+		"problem": {
+			"node_not_in_branch": "Der Knoten gehört nicht zum Ast.",
+			"node_duplicate": "Der Knoten steht mehrmals im Plan.",
+			"invalid_type": "Wähle einen Typ.",
+			"goal_missing": "Das Ziel fehlt.",
+			"criteria_missing": "Die Abschlusskriterien fehlen.",
+			"title_missing": "Der Titel fehlt.",
+			"parent_type_not_allowed": "Dieser Typ darf dort nicht stehen: das Parent passt nicht zum Typ.",
+			"parent_is_memo": "Ein Memo kann kein Parent sein.",
+			"parent_not_found": "Das Parent wird nicht angelegt oder gibt es nicht.",
+			"parent_closed": "Das Parent ist abgeschlossen.",
+			"dependency_cycle": "Die Abhängigkeiten bilden einen Kreis.",
+			"depends_on_not_found": "Eine Abhängigkeit wird nicht angelegt oder gibt es nicht.",
+			"memo_with_relation": "Ein Memo hat weder Parent noch Abhängigkeiten.",
+			"depends_on_is_memo": "Ein Memo kann kein Ziel einer Abhängigkeit sein."
 		}
 	}
 }
